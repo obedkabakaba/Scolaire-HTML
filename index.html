@@ -360,16 +360,23 @@
 
       const roles = donnees.user?.roles || [];
 
-      if (roles.includes('directeur')) {
-        window.location.href = 'dashboard-directeur.html';
+      const pageAtterrissage =
+        (roles.includes('directeur') || roles.includes('prefet')) ? 'dashboard-directeur.html' :
+        roles.includes('secretaire') ? 'eleves.html' :
+        roles.includes('professeur') ? 'notes.html' :
+        roles.includes('titulaire') ? 'bulletins.html' :
+        null;
+
+      if (pageAtterrissage) {
+        window.location.href = pageAtterrissage;
         return;
       }
 
       formulaire.style.display = 'none';
       zoneSucces.classList.add('visible');
       document.getElementById('succes-detail').textContent = roles.includes('super_admin')
-        ? 'Bienvenue, Super Administrateur. Le tableau de bord Super Admin arrive dans une prochaine étape.'
-        : 'Bienvenue. Le tableau de bord de ton rôle arrive dans une prochaine étape.';
+        ? 'Bienvenue, Super Administrateur. Utilise le panneau Super Admin dédié pour gérer les écoles.'
+        : 'Bienvenue. Aucun rôle reconnu sur ce compte — contacte ton administrateur.';
 
     } catch (err) {
       console.error(err);

@@ -477,6 +477,49 @@
     } catch (e) { /* on se déconnecte localement même si l'appel échoue */ }
     retourConnexion();
   });
+
+  // ---------- Filtrage de la navigation selon le rôle connecté ----------
+  (function gererAccesParRole() {
+    const permissions = {
+      'dashboard-directeur.html': ['directeur', 'prefet'],
+      'eleves.html': ['directeur', 'prefet', 'secretaire'],
+      'classes.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire'],
+      'notes.html': ['directeur', 'prefet', 'professeur'],
+      'bulletins.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
+      'generateur-modeles.html': ['directeur'],
+      'calendrier.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire'],
+      'parametres.html': ['directeur']
+    };
+    const ordrePriorite = ['dashboard-directeur.html', 'eleves.html', 'notes.html', 'bulletins.html'];
+
+    let utilisateur = null;
+    try { utilisateur = JSON.parse(localStorage.getItem('ardoise_user') || 'null'); } catch (e) {}
+    const roles = (utilisateur && utilisateur.roles) || [];
+    const estSuperAdmin = roles.includes('super_admin');
+
+    // Masquer dans la barre latérale les pages que ce rôle ne peut pas utiliser
+    document.querySelectorAll('.nav-item[href]').forEach((lien) => {
+      const page = lien.getAttribute('href');
+      const rolesAutorises = permissions[page];
+      if (rolesAutorises && !estSuperAdmin && !roles.some((r) => rolesAutorises.includes(r))) {
+        const li = lien.closest('li');
+        if (li) li.style.display = 'none';
+      }
+    });
+
+    // Si le rôle n'a pas accès à CETTE page précise, renvoyer vers sa page d'atterrissage
+    const pageActuelle = 'eleves.html';
+    const rolesPourCettePage = permissions[pageActuelle];
+    if (rolesPourCettePage && !estSuperAdmin && !roles.some((r) => rolesPourCettePage.includes(r))) {
+      const pageDeRepli = ordrePriorite.find((p) => {
+        const r = permissions[p];
+        return !r || roles.some((role) => r.includes(role));
+      });
+      if (pageDeRepli && pageDeRepli !== pageActuelle) {
+        window.location.href = pageDeRepli;
+      }
+    }
+  })();
 </script>
 
 </body>

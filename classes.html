@@ -420,12 +420,51 @@
 
   // ---------- Cours assignés à une classe (dans la modale Classe) ----------
   async function chargerCoursDeLaClasse(classeId) {
-    // On dérive la liste depuis /classes (nb_eleves etc. pas suffisant) — on utilise
-    // simplement le catalogue de cours + un appel dédié n'existe pas encore côté liste;
-    // on affiche donc le catalogue complet avec un bouton "Assigner" par cours non encore lié.
-    const optionsCours = coursCache.map(c => `<option value="${c.id}">${c.nom}</option>`).join('');
-    document.getElementById('select-cours-a-ajouter').innerHTML = optionsCours;
-    document.getElementById('liste-cours-classe').innerHTML = '<li style="color:var(--texte-att);">Utilise le menu ci-dessous pour assigner un cours à cette classe.</li>';
+    const r = await appelApi(`/classes/${classeId}/cours`);
+    const coursAssignes = (r && r.ok) ? await r.json() : [];
+
+    const professeurs = utilisateursCache.filter(u => (u.roles || []).includes('professeur'));
+    const optionsProf = '<option value="">— Aucun —</option>' + professeurs.map(p => `<option value="${p.id}">${p.nom} ${p.prenom || ''}</option>`).join('');
+
+    document.getElementById('liste-cours-classe').innerHTML = coursAssignes.length === 0
+      ? '<li style="color:var(--texte-att);">Aucun cours assigné pour l\'instant.</li>'
+      : coursAssignes.map(cc => `
+          <li style="flex-direction:column; align-items:stretch; gap:6px;">
+            <div style="display:flex; justify-content:space-between;">
+              <span><strong>${cc.nom}</strong> ${cc.code ? '(' + cc.code + ')' : ''} — max ${cc.maximum}</span>
+            </div>
+            <div class="form-inline">
+              <select data-classe-cours-id="${cc.classe_cours_id}" class="select-professeur-cours">${optionsProf}</select>
+              <button class="bouton bouton-secondaire bouton-petit" data-classe-cours-id="${cc.classe_cours_id}" onclick="assignerProfesseurCours(this)">Assigner</button>
+            </div>
+          </li>
+        `).join('');
+
+    // Pré-sélectionne le professeur déjà assigné, s'il y en a un
+    coursAssignes.forEach(cc => {
+      if (cc.professeur_id) {
+        const select = document.querySelector(`.select-professeur-cours[data-classe-cours-id="${cc.classe_cours_id}"]`);
+        if (select) select.value = cc.professeur_id;
+      }
+    });
+
+    // Menu pour assigner un NOUVEAU cours (pas encore lié à la classe)
+    const coursDejaAssignesIds = coursAssignes.map(cc => cc.cours_id);
+    const coursDisponibles = coursCache.filter(c => !coursDejaAssignesIds.includes(c.id));
+    document.getElementById('select-cours-a-ajouter').innerHTML = coursDisponibles.map(c => `<option value="${c.id}">${c.nom}</option>`).join('') || '<option value="">Tous les cours sont déjà assignés</option>';
+  }
+
+  async function assignerProfesseurCours(bouton) {
+    const classeCoursId = bouton.dataset.classeCoursId;
+    const select = document.querySelector(`.select-professeur-cours[data-classe-cours-id="${classeCoursId}"]`);
+    const utilisateurId = select.value;
+    if (!utilisateurId) { afficherMessage('Choisis un professeur avant d\'assigner.', 'erreur'); return; }
+
+    const r = await appelApi(`/classe-cours/${classeCoursId}/professeur`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ utilisateur_id: utilisateurId })
+    });
+    if (r && r.ok) afficherMessage('Professeur assigné à ce cours.', 'succes');
+    else afficherMessage("Erreur lors de l'assignation du professeur.", 'erreur');
   }
 
   document.getElementById('bouton-assigner-cours').addEventListener('click', async () => {
@@ -434,8 +473,12 @@
     const r = await appelApi(`/classes/${classeEnEditionCoursId}/cours`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cours_id: coursId })
     });
-    if (r && r.ok) afficherMessage('Cours assigné à la classe.', 'succes');
-    else afficherMessage("Erreur lors de l'assignation.", 'erreur');
+    if (r && r.ok) {
+      afficherMessage('Cours assigné à la classe.', 'succes');
+      chargerCoursDeLaClasse(classeEnEditionCoursId);
+    } else {
+      afficherMessage("Erreur lors de l'assignation.", 'erreur');
+    }
   });
 
   // ---------- Cours (catalogue) ----------

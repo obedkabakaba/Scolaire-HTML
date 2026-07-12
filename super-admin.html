@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ardoise — Super Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ardoise: #1F2B24; --craie: #F6F2E7; --craie-2: #FBF9F3;
+    --ocre: #C98A3E; --ocre-dark: #A96F2E; --encre: #3C5A62;
+    --rouge: #B23A2E; --vert-ok: #4C7A5A;
+    --texte-sombre: #1F2B24; --texte-att: #6B7269; --bordure: #E4DFCF;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Inter', sans-serif; color: var(--texte-sombre); background: var(--craie); }
+
+  /* ---------- Écran de connexion Super Admin ---------- */
+  .ecran-connexion { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .carte-connexion { background: var(--craie-2); border: 1px solid var(--bordure); border-radius: 12px; padding: 36px; max-width: 380px; width: 100%; }
+  .carte-connexion h1 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.6rem; margin: 0 0 4px 0; }
+  .carte-connexion .sous-titre { color: var(--texte-att); font-size: 0.9rem; margin: 0 0 28px 0; }
+
+  .champ { margin-bottom: 16px; }
+  .champ label { display: block; font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--texte-att); margin-bottom: 6px; }
+  .champ input, .champ select {
+    width: 100%; padding: 11px 13px; font-size: 0.92rem; font-family: 'Inter', sans-serif;
+    border: 1.5px solid var(--bordure); border-radius: 7px; background: #fff; color: var(--texte-sombre);
+  }
+  .champ input:focus, .champ select:focus { outline: none; border-color: var(--encre); }
+
+  .bouton { padding: 11px 18px; border-radius: 7px; font-family: 'Inter', sans-serif; font-size: 0.9rem; font-weight: 600; cursor: pointer; border: 1.5px solid transparent; }
+  .bouton-principal { background: var(--ocre); color: var(--craie-2); width: 100%; }
+  .bouton-principal:hover { background: var(--ocre-dark); }
+  .bouton-secondaire { background: none; border-color: var(--bordure); color: var(--texte-sombre); }
+  .bouton-secondaire:hover { border-color: var(--ardoise); }
+  .bouton:disabled { opacity: 0.55; cursor: not-allowed; }
+
+  .message-erreur { display: none; margin: -4px 0 16px 0; padding: 10px 12px; font-size: 0.85rem; color: var(--rouge); border-left: 2.5px solid var(--rouge); background: rgba(178,58,46,0.06); }
+  .message-erreur.visible { display: block; }
+
+  /* ---------- Panneau principal ---------- */
+  .panneau-principal { display: none; padding: 36px 44px 60px 44px; max-width: 1000px; margin: 0 auto; }
+  .entete-page { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px; flex-wrap: wrap; gap: 16px; }
+  .entete-page h1 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.9rem; margin: 0 0 4px 0; }
+  .entete-page .sous-titre { color: var(--texte-att); font-size: 0.95rem; margin: 0; }
+  .bouton-deconnexion { background: none; border: 1.5px solid var(--bordure); color: var(--texte-sombre); padding: 9px 16px; border-radius: 7px; font-size: 0.86rem; font-weight: 500; cursor: pointer; }
+
+  .conteneur-tableau { background: var(--craie-2); border: 1px solid var(--bordure); border-radius: 10px; overflow: hidden; margin-bottom: 24px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th { text-align: left; padding: 13px 16px; background: rgba(31,43,36,0.03); color: var(--texte-att); font-size: 0.78rem; text-transform: uppercase; font-weight: 600; }
+  td { padding: 13px 16px; border-top: 1px solid var(--bordure); }
+  .matricule-cell { font-family: 'IBM Plex Mono', monospace; font-size: 0.82rem; color: var(--encre); }
+  .badge-statut { display: inline-block; padding: 3px 9px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+  .badge-statut.actif { background: rgba(76,122,90,0.12); color: var(--vert-ok); }
+  .badge-statut.autre { background: rgba(178,58,46,0.1); color: var(--rouge); }
+  .etat-vide-tableau { padding: 40px 20px; text-align: center; color: var(--texte-att); }
+
+  /* Modale création école */
+  .voile { position: fixed; inset: 0; background: rgba(31,43,36,0.45); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 10; }
+  .voile.visible { display: flex; }
+  .modale { background: var(--craie-2); border-radius: 12px; padding: 30px; max-width: 520px; width: 100%; max-height: 90vh; overflow-y: auto; }
+  .modale h2 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.4rem; margin: 0 0 6px 0; }
+  .modale .separation { border: none; border-top: 1px solid var(--bordure); margin: 20px 0; }
+  .modale .sous-section { font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--texte-att); margin-bottom: 12px; }
+  .ligne-champs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .actions-modale { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; }
+
+  .message-flash { display: none; padding: 12px 16px; border-radius: 8px; font-size: 0.88rem; margin-bottom: 20px; }
+  .message-flash.visible { display: block; }
+  .message-flash.succes { background: rgba(76,122,90,0.1); color: var(--vert-ok); }
+  .message-flash.erreur { background: rgba(178,58,46,0.08); color: var(--rouge); }
+</style>
+</head>
+<body>
+
+<!-- Écran de connexion Super Admin -->
+<div class="ecran-connexion" id="ecran-connexion">
+  <div class="carte-connexion">
+    <h1>Ardoise — Super Admin</h1>
+    <p class="sous-titre">Accès réservé à l'administration de la plateforme.</p>
+    <div class="message-erreur" id="zone-erreur-connexion"></div>
+    <form id="formulaire-connexion-admin">
+      <div class="champ"><label for="admin-email">Email</label><input type="email" id="admin-email" required /></div>
+      <div class="champ"><label for="admin-mdp">Mot de passe</label><input type="password" id="admin-mdp" required /></div>
+      <button type="submit" class="bouton bouton-principal" id="bouton-connexion-admin">Se connecter</button>
+    </form>
+  </div>
+</div>
+
+<!-- Panneau principal -->
+<div class="panneau-principal" id="panneau-principal">
+  <div class="entete-page">
+    <div>
+      <h1>Écoles clientes</h1>
+      <p class="sous-titre" id="compteur-ecoles">Chargement…</p>
+    </div>
+    <div style="display:flex; gap:10px;">
+      <button class="bouton bouton-secondaire" id="bouton-deconnexion-admin">Se déconnecter</button>
+      <button class="bouton bouton-principal" id="bouton-nouvelle-ecole">+ Nouvelle école</button>
+    </div>
+  </div>
+
+  <div class="message-flash" id="message-flash"></div>
+
+  <div class="conteneur-tableau">
+    <table>
+      <thead><tr><th>École</th><th>Code</th><th>Ville</th><th>Statut</th><th>Abonnement</th></tr></thead>
+      <tbody id="corps-tableau-ecoles"><tr><td colspan="5" class="etat-vide-tableau">Chargement…</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modale création d'école -->
+<div class="voile" id="voile-modale">
+  <div class="modale">
+    <h2>Nouvelle école</h2>
+    <p class="sous-titre" style="margin-bottom:20px; color:var(--texte-att); font-size:0.88rem;">Crée l'école et son premier compte Directeur en une fois.</p>
+    <form id="formulaire-ecole">
+      <div class="sous-section">École</div>
+      <div class="ligne-champs">
+        <div class="champ"><label for="ecole-nom">Nom de l'école</label><input type="text" id="ecole-nom" required /></div>
+        <div class="champ"><label for="ecole-code">Code (identifiant de connexion)</label><input type="text" id="ecole-code" placeholder="ex. college-boboto" required /></div>
+      </div>
+      <div class="ligne-champs">
+        <div class="champ"><label for="ecole-ville">Ville</label><input type="text" id="ecole-ville" /></div>
+        <div class="champ"><label for="ecole-province">Province</label><input type="text" id="ecole-province" /></div>
+      </div>
+      <div class="ligne-champs">
+        <div class="champ"><label for="ecole-email">Email de l'école</label><input type="email" id="ecole-email" /></div>
+        <div class="champ"><label for="ecole-telephone">Téléphone</label><input type="text" id="ecole-telephone" /></div>
+      </div>
+      <div class="ligne-champs">
+        <div class="champ"><label for="ecole-type">Type d'enseignement</label>
+          <select id="ecole-type">
+            <option value="les_deux">Primaire et secondaire</option>
+            <option value="primaire">Primaire uniquement</option>
+            <option value="secondaire">Secondaire uniquement</option>
+          </select>
+        </div>
+        <div class="champ"><label for="ecole-plan">Plan d'abonnement</label><select id="ecole-plan" required></select></div>
+      </div>
+
+      <hr class="separation" />
+      <div class="sous-section">Premier compte Directeur</div>
+      <div class="ligne-champs">
+        <div class="champ"><label for="dir-nom">Nom</label><input type="text" id="dir-nom" required /></div>
+        <div class="champ"><label for="dir-prenom">Prénom</label><input type="text" id="dir-prenom" /></div>
+      </div>
+      <div class="champ"><label for="dir-email">Email</label><input type="email" id="dir-email" required /></div>
+      <div class="champ"><label for="dir-mdp">Mot de passe provisoire</label><input type="text" id="dir-mdp" required /></div>
+
+      <div class="actions-modale">
+        <button type="button" class="bouton bouton-secondaire" id="bouton-annuler-modale">Annuler</button>
+        <button type="submit" class="bouton bouton-principal" id="bouton-creer-ecole">Créer l'école</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  const API_BASE_URL = "https://scolaire-saas-backend.onrender.com";
+
+  function obtenirTokens() {
+    return {
+      accessToken: localStorage.getItem('ardoise_admin_access_token'),
+      refreshToken: localStorage.getItem('ardoise_admin_refresh_token')
+    };
+  }
+
+  function reinitialiserEcranConnexion() {
+    localStorage.removeItem('ardoise_admin_access_token');
+    localStorage.removeItem('ardoise_admin_refresh_token');
+    document.getElementById('ecran-connexion').style.display = 'flex';
+    document.getElementById('panneau-principal').style.display = 'none';
+  }
+
+  async function rafraichirToken(refreshToken) {
+    const reponse = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: refreshToken })
+    });
+    if (!reponse.ok) return null;
+    const donnees = await reponse.json();
+    localStorage.setItem('ardoise_admin_access_token', donnees.access_token);
+    return donnees.access_token;
+  }
+
+  async function appelApi(chemin, options = {}) {
+    let { accessToken, refreshToken } = obtenirTokens();
+    if (!accessToken) { reinitialiserEcranConnexion(); return null; }
+
+    const executer = (token) => fetch(`${API_BASE_URL}${chemin}`, {
+      ...options, headers: { ...(options.headers || {}), Authorization: `Bearer ${token}` }
+    });
+
+    let reponse = await executer(accessToken);
+    if (reponse.status === 401 && refreshToken) {
+      const nouveauToken = await rafraichirToken(refreshToken);
+      if (!nouveauToken) { reinitialiserEcranConnexion(); return null; }
+      reponse = await executer(nouveauToken);
+    }
+    if (reponse.status === 401 || reponse.status === 403) { reinitialiserEcranConnexion(); return null; }
+    return reponse;
+  }
+
+  function afficherMessage(texte, type) {
+    const zone = document.getElementById('message-flash');
+    zone.textContent = texte;
+    zone.className = `message-flash visible ${type}`;
+    setTimeout(() => zone.classList.remove('visible'), 6000);
+  }
+
+  // ---------- Connexion Super Admin ----------
+  document.getElementById('formulaire-connexion-admin').addEventListener('submit', async (evt) => {
+    evt.preventDefault();
+    const zoneErreur = document.getElementById('zone-erreur-connexion');
+    zoneErreur.classList.remove('visible');
+
+    const bouton = document.getElementById('bouton-connexion-admin');
+    bouton.disabled = true;
+    bouton.textContent = 'Connexion…';
+
+    try {
+      const reponse = await fetch(`${API_BASE_URL}/auth/login`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: document.getElementById('admin-email').value.trim(),
+          password: document.getElementById('admin-mdp').value
+        })
+      });
+      const donnees = await reponse.json();
+
+      if (!reponse.ok) {
+        zoneErreur.textContent = donnees.message || 'Identifiants incorrects.';
+        zoneErreur.classList.add('visible');
+        bouton.disabled = false; bouton.textContent = 'Se connecter';
+        return;
+      }
+
+      if (!(donnees.user?.roles || []).includes('super_admin')) {
+        zoneErreur.textContent = "Ce compte n'a pas les droits Super Admin.";
+        zoneErreur.classList.add('visible');
+        bouton.disabled = false; bouton.textContent = 'Se connecter';
+        return;
+      }
+
+      localStorage.setItem('ardoise_admin_access_token', donnees.access_token);
+      localStorage.setItem('ardoise_admin_refresh_token', donnees.refresh_token);
+
+      document.getElementById('ecran-connexion').style.display = 'none';
+      document.getElementById('panneau-principal').style.display = 'block';
+      chargerPlans();
+      chargerEcoles();
+
+    } catch (err) {
+      zoneErreur.textContent = 'Impossible de contacter le serveur.';
+      zoneErreur.classList.add('visible');
+      bouton.disabled = false; bouton.textContent = 'Se connecter';
+    }
+  });
+
+  document.getElementById('bouton-deconnexion-admin').addEventListener('click', reinitialiserEcranConnexion);
+
+  // ---------- Liste des écoles ----------
+  async function chargerEcoles() {
+    const reponse = await appelApi('/admin/ecoles');
+    if (!reponse || !reponse.ok) return;
+    const ecoles = await reponse.json();
+
+    document.getElementById('compteur-ecoles').textContent = `${ecoles.length} école${ecoles.length !== 1 ? 's' : ''}`;
+
+    const corps = document.getElementById('corps-tableau-ecoles');
+    if (ecoles.length === 0) {
+      corps.innerHTML = '<tr><td colspan="5" class="etat-vide-tableau">Aucune école pour l\'instant. Crée la première !</td></tr>';
+      return;
+    }
+
+    corps.innerHTML = ecoles.map((e) => `
+      <tr>
+        <td>${e.nom}</td>
+        <td class="matricule-cell">${e.code}</td>
+        <td>${e.ville || '—'}</td>
+        <td><span class="badge-statut ${e.statut === 'actif' ? 'actif' : 'autre'}">${e.statut}</span></td>
+        <td>${e.statut_abonnement || '—'}</td>
+      </tr>
+    `).join('');
+  }
+
+  // ---------- Plans d'abonnement ----------
+  async function chargerPlans() {
+    const reponse = await appelApi('/admin/ecoles/plans/liste');
+    if (!reponse || !reponse.ok) return;
+    const plans = await reponse.json();
+    document.getElementById('ecole-plan').innerHTML = plans.map((p) =>
+      `<option value="${p.id}">${p.nom} — ${p.prix} ${p.devise}/${p.duree_jours}j</option>`
+    ).join('');
+  }
+
+  // ---------- Modale création d'école ----------
+  document.getElementById('bouton-nouvelle-ecole').addEventListener('click', () => {
+    document.getElementById('voile-modale').classList.add('visible');
+  });
+  document.getElementById('bouton-annuler-modale').addEventListener('click', () => {
+    document.getElementById('voile-modale').classList.remove('visible');
+    document.getElementById('formulaire-ecole').reset();
+  });
+
+  document.getElementById('formulaire-ecole').addEventListener('submit', async (evt) => {
+    evt.preventDefault();
+
+    const corpsRequete = {
+      nom: document.getElementById('ecole-nom').value.trim(),
+      code: document.getElementById('ecole-code').value.trim(),
+      ville: document.getElementById('ecole-ville').value.trim(),
+      province: document.getElementById('ecole-province').value.trim(),
+      email: document.getElementById('ecole-email').value.trim(),
+      telephone: document.getElementById('ecole-telephone').value.trim(),
+      type_enseignement: document.getElementById('ecole-type').value,
+      plan_id: document.getElementById('ecole-plan').value,
+      directeur: {
+        nom: document.getElementById('dir-nom').value.trim(),
+        prenom: document.getElementById('dir-prenom').value.trim(),
+        email: document.getElementById('dir-email').value.trim(),
+        password: document.getElementById('dir-mdp').value
+      }
+    };
+
+    const bouton = document.getElementById('bouton-creer-ecole');
+    bouton.disabled = true;
+    bouton.textContent = 'Création…';
+
+    const reponse = await appelApi('/admin/ecoles', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(corpsRequete)
+    });
+
+    bouton.disabled = false;
+    bouton.textContent = "Créer l'école";
+
+    if (!reponse) return;
+    const donnees = await reponse.json();
+
+    if (!reponse.ok) {
+      afficherMessage(donnees.message || 'Erreur lors de la création.', 'erreur');
+      return;
+    }
+
+    document.getElementById('voile-modale').classList.remove('visible');
+    document.getElementById('formulaire-ecole').reset();
+    afficherMessage(
+      `École créée. Le directeur peut se connecter avec le code "${corpsRequete.code}", son email et son mot de passe.`,
+      'succes'
+    );
+    chargerEcoles();
+  });
+
+  // Reprise de session si déjà connecté
+  if (obtenirTokens().accessToken) {
+    document.getElementById('ecran-connexion').style.display = 'none';
+    document.getElementById('panneau-principal').style.display = 'block';
+    chargerPlans();
+    chargerEcoles();
+  }
+</script>
+
+</body>
+</html>

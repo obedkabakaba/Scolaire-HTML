@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ardoise — Paramètres</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ardoise: #1F2B24; --craie: #F6F2E7; --craie-2: #FBF9F3;
+    --ocre: #C98A3E; --ocre-dark: #A96F2E; --encre: #3C5A62;
+    --rouge: #B23A2E; --vert-ok: #4C7A5A;
+    --texte-sombre: #1F2B24; --texte-att: #6B7269; --bordure: #E4DFCF;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Inter', sans-serif; color: var(--texte-sombre); background: var(--craie); }
+  .mise-en-page { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+  @media (max-width: 780px) { .mise-en-page { grid-template-columns: 1fr; } }
+  .barre-laterale { background: var(--ardoise); color: var(--craie); padding: 32px 22px; }
+  @media (max-width: 780px) { .barre-laterale { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px; } }
+  .barre-laterale .marque { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.5rem; margin: 0 0 40px 0; }
+  @media (max-width: 780px) { .barre-laterale .marque { margin: 0; } }
+  .nav-liste { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
+  @media (max-width: 780px) { .nav-liste { display: none; } }
+  .nav-item, .nav-item:visited { padding: 10px 12px; border-radius: 6px; font-size: 0.92rem; color: rgba(246,242,231,0.55); text-decoration: none; display: flex; justify-content: space-between; align-items: center; }
+  .nav-item.actif { background: rgba(246,242,231,0.08); color: var(--craie); font-weight: 600; }
+  .contenu { padding: 36px 44px 60px 44px; max-width: 760px; }
+  @media (max-width: 780px) { .contenu { padding: 24px 20px 48px 20px; } }
+  .entete-page h1 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.9rem; margin: 0 0 4px 0; }
+  .entete-page .sous-titre { color: var(--texte-att); font-size: 0.95rem; margin: 0 0 28px 0; }
+
+  .carte-section { background: var(--craie-2); border: 1px solid var(--bordure); border-radius: 10px; padding: 26px; margin-bottom: 22px; }
+  .carte-section h2 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.2rem; margin: 0 0 18px 0; }
+
+  .champ { margin-bottom: 16px; }
+  .champ label { display: block; font-size: 0.76rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--texte-att); margin-bottom: 6px; }
+  .champ input, .champ select { width: 100%; padding: 10px 12px; font-size: 0.9rem; border: 1.5px solid var(--bordure); border-radius: 7px; background: #fff; }
+  .champ input:focus, .champ select:focus { outline: none; border-color: var(--encre); }
+  .ligne-champs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+  .bouton { padding: 10px 16px; border-radius: 7px; font-family: 'Inter', sans-serif; font-size: 0.88rem; font-weight: 600; cursor: pointer; border: 1.5px solid transparent; }
+  .bouton-principal { background: var(--ocre); color: var(--craie-2); }
+  .bouton-principal:hover { background: var(--ocre-dark); }
+  .bouton-secondaire { background: none; border-color: var(--bordure); color: var(--texte-sombre); }
+  .bouton-secondaire:hover { border-color: var(--ardoise); }
+  .bouton-petit { padding: 6px 11px; font-size: 0.78rem; }
+  .bouton:disabled { opacity: 0.55; cursor: not-allowed; }
+
+  .zone-logo { display: flex; align-items: center; gap: 16px; margin-bottom: 18px; }
+  .apercu-logo { width: 64px; height: 64px; border-radius: 8px; background: var(--bordure); object-fit: contain; border: 1px solid var(--bordure); }
+  input[type="file"] { display: none; }
+
+  .liste-mentions { list-style: none; margin: 0 0 16px 0; padding: 0; }
+  .liste-mentions li { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--bordure); font-size: 0.88rem; }
+  .liste-mentions li:last-child { border-bottom: none; }
+  .lien-suppr { background: none; border: none; color: var(--rouge); cursor: pointer; font-size: 0.82rem; }
+  .form-inline-mention { display: grid; grid-template-columns: 1fr 1fr 1.4fr auto; gap: 8px; }
+  .form-inline-mention input { padding: 8px 10px; border: 1.5px solid var(--bordure); border-radius: 6px; font-size: 0.85rem; }
+
+  .message-flash { display: none; padding: 12px 16px; border-radius: 8px; font-size: 0.88rem; margin-bottom: 20px; }
+  .message-flash.visible { display: block; }
+  .message-flash.succes { background: rgba(76,122,90,0.1); color: var(--vert-ok); }
+  .message-flash.erreur { background: rgba(178,58,46,0.08); color: var(--rouge); }
+</style>
+</head>
+<body>
+
+<div class="mise-en-page">
+  <nav class="barre-laterale">
+    <div class="marque">Ardoise</div>
+    <ul class="nav-liste">
+      <li><a class="nav-item" href="dashboard-directeur.html">Tableau de bord</a></li>
+      <li><a class="nav-item" href="eleves.html">Élèves</a></li>
+      <li><a class="nav-item" href="classes.html">Classes</a></li>
+      <li><a class="nav-item" href="notes.html">Notes</a></li>
+      <li><a class="nav-item" href="bulletins.html">Bulletins</a></li>
+      <li><a class="nav-item" href="calendrier.html">Calendrier</a></li>
+      <li><a class="nav-item actif" href="parametres.html">Paramètres</a></li>
+    </ul>
+  </nav>
+
+  <main class="contenu">
+    <div class="entete-page">
+      <h1>Paramètres</h1>
+      <p class="sous-titre">Informations de l'école, logo, système de notation et mentions.</p>
+    </div>
+
+    <div class="message-flash" id="message-flash"></div>
+
+    <!-- Infos école -->
+    <div class="carte-section">
+      <h2>Informations de l'école</h2>
+      <div class="zone-logo">
+        <img class="apercu-logo" id="apercu-logo" src="" alt="Logo" style="display:none;" />
+        <div>
+          <button type="button" class="bouton bouton-secondaire bouton-petit" id="bouton-changer-logo">Changer le logo</button>
+          <input type="file" id="input-logo" accept="image/*" />
+        </div>
+      </div>
+      <form id="formulaire-ecole">
+        <div class="champ"><label for="champ-nom">Nom de l'école</label><input type="text" id="champ-nom" /></div>
+        <div class="ligne-champs">
+          <div class="champ"><label for="champ-ville">Ville</label><input type="text" id="champ-ville" /></div>
+          <div class="champ"><label for="champ-province">Province</label><input type="text" id="champ-province" /></div>
+        </div>
+        <div class="ligne-champs">
+          <div class="champ"><label for="champ-email">Email</label><input type="email" id="champ-email" /></div>
+          <div class="champ"><label for="champ-telephone">Téléphone</label><input type="text" id="champ-telephone" /></div>
+        </div>
+        <div class="champ"><label for="champ-adresse">Adresse</label><input type="text" id="champ-adresse" /></div>
+        <div class="champ"><label for="champ-type-enseignement">Type d'enseignement</label>
+          <select id="champ-type-enseignement">
+            <option value="les_deux">Primaire et secondaire</option>
+            <option value="primaire">Primaire uniquement</option>
+            <option value="secondaire">Secondaire uniquement</option>
+          </select>
+        </div>
+        <button type="submit" class="bouton bouton-principal">Enregistrer</button>
+      </form>
+    </div>
+
+    <!-- Système de notation -->
+    <div class="carte-section">
+      <h2>Système de notation</h2>
+      <form id="formulaire-notation">
+        <div class="ligne-champs">
+          <div class="champ"><label for="champ-note-max">Maximum par défaut (sur)</label><input type="number" id="champ-note-max" /></div>
+          <div class="champ"><label for="champ-nb-trimestres">Nombre de trimestres</label><input type="number" id="champ-nb-trimestres" /></div>
+        </div>
+        <div class="ligne-champs">
+          <div class="champ"><label for="champ-nb-periodes">Nombre de périodes</label><input type="number" id="champ-nb-periodes" /></div>
+          <div class="champ"><label for="champ-nb-semestres">Nombre de semestres</label><input type="number" id="champ-nb-semestres" /></div>
+        </div>
+        <button type="submit" class="bouton bouton-principal">Enregistrer</button>
+      </form>
+    </div>
+
+    <!-- Mentions -->
+    <div class="carte-section">
+      <h2>Mentions</h2>
+      <p style="color:var(--texte-att); font-size:0.86rem; margin-top:-10px; margin-bottom:16px;">Utilisées automatiquement sur les bulletins selon le pourcentage obtenu.</p>
+      <ul class="liste-mentions" id="liste-mentions"></ul>
+      <form class="form-inline-mention" id="formulaire-mention">
+        <input type="number" id="champ-seuil-min" placeholder="Min %" step="0.01" required />
+        <input type="number" id="champ-seuil-max" placeholder="Max %" step="0.01" required />
+        <input type="text" id="champ-libelle-mention" placeholder="Libellé (ex. Excellence)" required />
+        <button type="submit" class="bouton bouton-secondaire bouton-petit">Ajouter</button>
+      </form>
+    </div>
+  </main>
+</div>
+
+<script>
+  const API_BASE_URL = "https://scolaire-saas-backend.onrender.com";
+
+  function obtenirTokens() {
+    return { accessToken: localStorage.getItem('ardoise_access_token'), refreshToken: localStorage.getItem('ardoise_refresh_token') };
+  }
+  function retourConnexion() {
+    localStorage.removeItem('ardoise_access_token'); localStorage.removeItem('ardoise_refresh_token'); localStorage.removeItem('ardoise_user');
+    window.location.href = 'index.html';
+  }
+  async function rafraichirToken(refreshToken) {
+    const reponse = await fetch(`${API_BASE_URL}/auth/refresh`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refresh_token: refreshToken }) });
+    if (!reponse.ok) return null;
+    const donnees = await reponse.json();
+    localStorage.setItem('ardoise_access_token', donnees.access_token);
+    return donnees.access_token;
+  }
+  async function appelApi(chemin, options = {}) {
+    let { accessToken, refreshToken } = obtenirTokens();
+    if (!accessToken) { retourConnexion(); return null; }
+    const executer = (token) => fetch(`${API_BASE_URL}${chemin}`, { ...options, headers: { ...(options.headers || {}), Authorization: `Bearer ${token}` } });
+    let reponse = await executer(accessToken);
+    if (reponse.status === 401 && refreshToken) {
+      const nouveauToken = await rafraichirToken(refreshToken);
+      if (!nouveauToken) { retourConnexion(); return null; }
+      reponse = await executer(nouveauToken);
+    }
+    if (reponse.status === 401) { retourConnexion(); return null; }
+    return reponse;
+  }
+  function afficherMessage(texte, type) {
+    const zone = document.getElementById('message-flash');
+    zone.textContent = texte; zone.className = `message-flash visible ${type}`;
+    setTimeout(() => zone.classList.remove('visible'), 5000);
+  }
+
+  async function chargerEcole() {
+    const r = await appelApi('/ecole/moi');
+    if (!r || !r.ok) return;
+    const ecole = await r.json();
+    if (!ecole) return;
+
+    document.getElementById('champ-nom').value = ecole.nom || '';
+    document.getElementById('champ-ville').value = ecole.ville || '';
+    document.getElementById('champ-province').value = ecole.province || '';
+    document.getElementById('champ-email').value = ecole.email || '';
+    document.getElementById('champ-telephone').value = ecole.telephone || '';
+    document.getElementById('champ-adresse').value = ecole.adresse || '';
+    document.getElementById('champ-type-enseignement').value = ecole.type_enseignement || 'les_deux';
+    document.getElementById('champ-note-max').value = ecole.systeme_notation?.max || 20;
+    document.getElementById('champ-nb-trimestres').value = ecole.nb_trimestres || 0;
+    document.getElementById('champ-nb-periodes').value = ecole.nb_periodes || 0;
+    document.getElementById('champ-nb-semestres').value = ecole.nb_semestres || 0;
+
+    if (ecole.logo_url) {
+      const img = document.getElementById('apercu-logo');
+      img.src = ecole.logo_url;
+      img.style.display = 'block';
+    }
+  }
+
+  document.getElementById('formulaire-ecole').addEventListener('submit', async (evt) => {
+    evt.preventDefault();
+    const corpsRequete = {
+      nom: document.getElementById('champ-nom').value.trim(),
+      ville: document.getElementById('champ-ville').value.trim(),
+      province: document.getElementById('champ-province').value.trim(),
+      email: document.getElementById('champ-email').value.trim(),
+      telephone: document.getElementById('champ-telephone').value.trim(),
+      adresse: document.getElementById('champ-adresse').value.trim(),
+      type_enseignement: document.getElementById('champ-type-enseignement').value
+    };
+    const r = await appelApi('/ecole/moi', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpsRequete) });
+    if (r && r.ok) afficherMessage('Informations enregistrées.', 'succes');
+    else afficherMessage("Erreur lors de l'enregistrement.", 'erreur');
+  });
+
+  document.getElementById('formulaire-notation').addEventListener('submit', async (evt) => {
+    evt.preventDefault();
+    const corpsRequete = {
+      systeme_notation: { max: parseFloat(document.getElementById('champ-note-max').value) || 20 },
+      nb_trimestres: parseInt(document.getElementById('champ-nb-trimestres').value, 10) || 0,
+      nb_periodes: parseInt(document.getElementById('champ-nb-periodes').value, 10) || 0,
+      nb_semestres: parseInt(document.getElementById('champ-nb-semestres').value, 10) || 0
+    };
+    const r = await appelApi('/ecole/moi', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpsRequete) });
+    if (r && r.ok) afficherMessage('Système de notation mis à jour.', 'succes');
+    else afficherMessage("Erreur lors de l'enregistrement.", 'erreur');
+  });
+
+  document.getElementById('bouton-changer-logo').addEventListener('click', () => document.getElementById('input-logo').click());
+  document.getElementById('input-logo').addEventListener('change', async (evt) => {
+    const fichier = evt.target.files[0];
+    if (!fichier) return;
+    const formData = new FormData();
+    formData.append('fichier', fichier);
+    const r = await appelApi('/uploads/logo-ecole', { method: 'POST', body: formData });
+    if (r && r.ok) {
+      const donnees = await r.json();
+      const img = document.getElementById('apercu-logo');
+      img.src = donnees.url; img.style.display = 'block';
+      afficherMessage('Logo mis à jour.', 'succes');
+    } else {
+      afficherMessage("Erreur lors de l'upload du logo.", 'erreur');
+    }
+  });
+
+  async function chargerMentions() {
+    const r = await appelApi('/mentions');
+    if (!r || !r.ok) return;
+    const mentions = await r.json();
+    document.getElementById('liste-mentions').innerHTML = mentions.length === 0
+      ? '<li style="color:var(--texte-att);">Aucune mention définie pour l\'instant.</li>'
+      : mentions.map(m => `
+          <li data-id="${m.id}">
+            <span>${m.seuil_min}% – ${m.seuil_max}% → <strong>${m.libelle}</strong></span>
+            <button class="lien-suppr" data-id="${m.id}">Supprimer</button>
+          </li>
+        `).join('');
+
+    document.querySelectorAll('.lien-suppr').forEach((bouton) => {
+      bouton.addEventListener('click', async () => {
+        const r = await appelApi(`/mentions/${bouton.dataset.id}`, { method: 'DELETE' });
+        if (r && r.ok) { afficherMessage('Mention supprimée.', 'succes'); chargerMentions(); }
+      });
+    });
+  }
+
+  document.getElementById('formulaire-mention').addEventListener('submit', async (evt) => {
+    evt.preventDefault();
+    const corpsRequete = {
+      seuil_min: parseFloat(document.getElementById('champ-seuil-min').value),
+      seuil_max: parseFloat(document.getElementById('champ-seuil-max').value),
+      libelle: document.getElementById('champ-libelle-mention').value.trim()
+    };
+    const r = await appelApi('/mentions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpsRequete) });
+    if (r && r.ok) { evt.target.reset(); afficherMessage('Mention ajoutée.', 'succes'); chargerMentions(); }
+    else afficherMessage("Erreur lors de l'ajout de la mention.", 'erreur');
+  });
+
+  chargerEcole();
+  chargerMentions();
+</script>
+
+</body>
+</html>

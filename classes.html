@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Ardoise — Classes & Cours</title>
+<link rel="icon" type="image/jpeg" href="favicon.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
@@ -107,6 +108,18 @@
   @media (max-width: 780px) {
     .nav-deconnexion { border-top: none; padding: 8px 12px; }
   }
+
+  .lettre-i { position: relative; display: inline-block; }
+  .point-i-marque {
+    position: absolute;
+    width: 0.11em;
+    height: 0.11em;
+    border-radius: 50%;
+    background: var(--ocre);
+    left: 50%;
+    top: 0.01em;
+    transform: translateX(-50%);
+  }
 </style>
 </head>
 <body>
@@ -114,7 +127,7 @@
 <div class="mise-en-page">
   <nav class="barre-laterale">
     <div>
-      <div class="marque">Ardoise</div>
+      <div class="marque">Ardo<span class="lettre-i">ı<span class="point-i-marque"></span></span>se</div>
     <ul class="nav-liste">
       <li><a class="nav-item" href="dashboard-directeur.html">Tableau de bord</a></li>
       <li><a class="nav-item" href="eleves.html">Élèves</a></li>

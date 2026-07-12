@@ -369,13 +369,18 @@
       localStorage.setItem('ardoise_refresh_token', donnees.refresh_token);
       localStorage.setItem('ardoise_user', JSON.stringify(donnees.user));
 
+      const roles = donnees.user?.roles || [];
+
+      if (roles.includes('directeur')) {
+        window.location.href = 'dashboard-directeur.html';
+        return;
+      }
+
       formulaire.style.display = 'none';
       zoneSucces.classList.add('visible');
-
-      const roles = donnees.user?.roles || [];
       document.getElementById('succes-detail').textContent = roles.includes('super_admin')
-        ? 'Bienvenue, Super Administrateur. Le tableau de bord arrive dans une prochaine étape.'
-        : 'Bienvenue. Le tableau de bord arrive dans une prochaine étape.';
+        ? 'Bienvenue, Super Administrateur. Le tableau de bord Super Admin arrive dans une prochaine étape.'
+        : 'Bienvenue. Le tableau de bord de ton rôle arrive dans une prochaine étape.';
 
     } catch (err) {
       console.error(err);

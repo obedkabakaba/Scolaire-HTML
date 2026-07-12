@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ardoise — Élèves</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ardoise: #1F2B24; --ardoise-2: #263129;
+    --craie: #F6F2E7; --craie-2: #FBF9F3;
+    --ocre: #C98A3E; --ocre-dark: #A96F2E;
+    --encre: #3C5A62; --rouge: #B23A2E; --vert-ok: #4C7A5A;
+    --texte-sombre: #1F2B24; --texte-att: #6B7269; --bordure: #E4DFCF;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Inter', sans-serif; color: var(--texte-sombre); background: var(--craie); }
+
+  .mise-en-page { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+  @media (max-width: 780px) { .mise-en-page { grid-template-columns: 1fr; } }
+
+  .barre-laterale { background: var(--ardoise); color: var(--craie); padding: 32px 22px; }
+  @media (max-width: 780px) { .barre-laterale { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px; } }
+  .barre-laterale .marque { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.5rem; margin: 0 0 40px 0; }
+  @media (max-width: 780px) { .barre-laterale .marque { margin: 0; } }
+  .nav-liste { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
+  @media (max-width: 780px) { .nav-liste { display: none; } }
+  .nav-item, .nav-item:visited { padding: 10px 12px; border-radius: 6px; font-size: 0.92rem; color: rgba(246,242,231,0.55); text-decoration: none; display: flex; justify-content: space-between; align-items: center; }
+  .nav-item.actif { background: rgba(246,242,231,0.08); color: var(--craie); font-weight: 600; }
+  .nav-item .etiquette-bientot { font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(246,242,231,0.35); }
+
+  .contenu { padding: 36px 44px 60px 44px; }
+  @media (max-width: 780px) { .contenu { padding: 24px 20px 48px 20px; } }
+
+  .entete-page { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; flex-wrap: wrap; gap: 16px; }
+  .entete-page h1 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.9rem; margin: 0 0 4px 0; }
+  .entete-page .sous-titre { color: var(--texte-att); font-size: 0.95rem; margin: 0; }
+
+  .groupe-boutons { display: flex; gap: 10px; flex-wrap: wrap; }
+  .bouton {
+    padding: 10px 16px; border-radius: 7px; font-family: 'Inter', sans-serif; font-size: 0.88rem;
+    font-weight: 600; cursor: pointer; border: 1.5px solid transparent;
+  }
+  .bouton-principal { background: var(--ocre); color: var(--craie-2); }
+  .bouton-principal:hover { background: var(--ocre-dark); }
+  .bouton-secondaire { background: none; border-color: var(--bordure); color: var(--texte-sombre); }
+  .bouton-secondaire:hover { border-color: var(--ardoise); }
+  .bouton:disabled { opacity: 0.55; cursor: not-allowed; }
+
+  .barre-filtres { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+  .barre-filtres input, .barre-filtres select {
+    padding: 10px 13px; border: 1.5px solid var(--bordure); border-radius: 7px;
+    font-family: 'Inter', sans-serif; font-size: 0.9rem; background: var(--craie-2); color: var(--texte-sombre);
+  }
+  .barre-filtres input { flex: 1; min-width: 200px; }
+  .barre-filtres input:focus, .barre-filtres select:focus { outline: none; border-color: var(--encre); }
+
+  .conteneur-tableau { background: var(--craie-2); border: 1px solid var(--bordure); border-radius: 10px; overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th { text-align: left; padding: 13px 16px; background: rgba(31,43,36,0.03); color: var(--texte-att); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 600; }
+  td { padding: 13px 16px; border-top: 1px solid var(--bordure); }
+  tr:hover td { background: rgba(31,43,36,0.02); }
+  .matricule-cell { font-family: 'IBM Plex Mono', monospace; font-size: 0.82rem; color: var(--encre); }
+  .badge-statut { display: inline-block; padding: 3px 9px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+  .badge-statut.actif { background: rgba(76,122,90,0.12); color: var(--vert-ok); }
+  .badge-statut.autre { background: rgba(107,114,105,0.12); color: var(--texte-att); }
+  .lien-action { background: none; border: none; color: var(--encre); cursor: pointer; font-size: 0.85rem; font-weight: 500; padding: 4px 8px; }
+  .lien-action.suppr { color: var(--rouge); }
+  .etat-vide-tableau { padding: 50px 20px; text-align: center; color: var(--texte-att); }
+
+  /* Modale */
+  .voile { position: fixed; inset: 0; background: rgba(31,43,36,0.45); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 10; }
+  .voile.visible { display: flex; }
+  .modale { background: var(--craie-2); border-radius: 12px; padding: 30px; max-width: 480px; width: 100%; max-height: 90vh; overflow-y: auto; }
+  .modale h2 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.4rem; margin: 0 0 20px 0; }
+  .ligne-champs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .champ { margin-bottom: 14px; }
+  .champ label { display: block; font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--texte-att); margin-bottom: 6px; }
+  .champ input, .champ select {
+    width: 100%; padding: 10px 12px; font-size: 0.92rem; font-family: 'Inter', sans-serif;
+    border: 1.5px solid var(--bordure); border-radius: 7px; background: #fff; color: var(--texte-sombre);
+  }
+  .champ input:focus, .champ select:focus { outline: none; border-color: var(--encre); }
+  .actions-modale { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; }
+
+  .message-flash {
+    display: none; padding: 12px 16px; border-radius: 8px; font-size: 0.88rem; margin-bottom: 20px;
+  }
+  .message-flash.visible { display: block; }
+  .message-flash.succes { background: rgba(76,122,90,0.1); color: var(--vert-ok); }
+  .message-flash.erreur { background: rgba(178,58,46,0.08); color: var(--rouge); }
+
+  input[type="file"] { display: none; }
+</style>
+</head>
+<body>
+
+<div class="mise-en-page">
+  <nav class="barre-laterale">
+    <div class="marque">Ardoise</div>
+    <ul class="nav-liste">
+      <li><a class="nav-item" href="dashboard-directeur.html">Tableau de bord</a></li>
+      <li><a class="nav-item actif" href="eleves.html">Élèves</a></li>
+      <li class="nav-item">Classes <span class="etiquette-bientot">bientôt</span></li>
+      <li class="nav-item">Notes <span class="etiquette-bientot">bientôt</span></li>
+      <li class="nav-item">Bulletins <span class="etiquette-bientot">bientôt</span></li>
+      <li class="nav-item">Calendrier <span class="etiquette-bientot">bientôt</span></li>
+      <li class="nav-item">Paramètres <span class="etiquette-bientot">bientôt</span></li>
+    </ul>
+  </nav>
+
+  <main class="contenu">
+    <div class="entete-page">
+      <div>
+        <h1>Élèves</h1>
+        <p class="sous-titre" id="compteur-eleves">Chargement…</p>
+      </div>
+      <div class="groupe-boutons">
+        <button class="bouton bouton-secondaire" id="bouton-importer">Importer Excel</button>
+        <input type="file" id="input-fichier-import" accept=".xlsx,.xls" />
+        <button class="bouton bouton-secondaire" id="bouton-exporter">Exporter Excel</button>
+        <button class="bouton bouton-principal" id="bouton-ajouter">+ Ajouter un élève</button>
+      </div>
+    </div>
+
+    <div class="message-flash" id="message-flash"></div>
+
+    <div class="barre-filtres">
+      <input type="text" id="champ-recherche" placeholder="Rechercher par nom ou matricule…" />
+      <select id="filtre-classe"><option value="">Toutes les classes</option></select>
+    </div>
+
+    <div class="conteneur-tableau">
+      <table>
+        <thead>
+          <tr><th>Matricule</th><th>Nom</th><th>Sexe</th><th>Classe</th><th>Statut</th><th></th></tr>
+        </thead>
+        <tbody id="corps-tableau">
+          <tr><td colspan="6" class="etat-vide-tableau">Chargement…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<!-- Modale ajout/modification -->
+<div class="voile" id="voile-modale">
+  <div class="modale">
+    <h2 id="titre-modale">Ajouter un élève</h2>
+    <form id="formulaire-eleve">
+      <input type="hidden" id="eleve-id" />
+      <div class="ligne-champs">
+        <div class="champ"><label for="champ-matricule">Matricule</label><input type="text" id="champ-matricule" required /></div>
+        <div class="champ"><label for="champ-classe">Classe</label><select id="champ-classe"></select></div>
+      </div>
+      <div class="ligne-champs">
+        <div class="champ"><label for="champ-nom">Nom</label><input type="text" id="champ-nom" required /></div>
+        <div class="champ"><label for="champ-postnom">Postnom</label><input type="text" id="champ-postnom" /></div>
+      </div>
+      <div class="ligne-champs">
+        <div class="champ"><label for="champ-prenom">Prénom</label><input type="text" id="champ-prenom" /></div>
+        <div class="champ"><label for="champ-sexe">Sexe</label>
+          <select id="champ-sexe"><option value="">—</option><option value="M">M</option><option value="F">F</option></select>
+        </div>
+      </div>
+      <div class="champ"><label for="champ-naissance">Date de naissance</label><input type="date" id="champ-naissance" /></div>
+      <div class="ligne-champs">
+        <div class="champ"><label for="champ-resp-nom">Responsable</label><input type="text" id="champ-resp-nom" /></div>
+        <div class="champ"><label for="champ-resp-tel">Téléphone responsable</label><input type="text" id="champ-resp-tel" /></div>
+      </div>
+      <div class="actions-modale">
+        <button type="button" class="bouton bouton-secondaire" id="bouton-annuler-modale">Annuler</button>
+        <button type="submit" class="bouton bouton-principal" id="bouton-enregistrer">Enregistrer</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  const API_BASE_URL = "https://scolaire-saas-backend.onrender.com";
+
+  function obtenirTokens() {
+    return {
+      accessToken: localStorage.getItem('ardoise_access_token'),
+      refreshToken: localStorage.getItem('ardoise_refresh_token')
+    };
+  }
+
+  function retourConnexion() {
+    localStorage.removeItem('ardoise_access_token');
+    localStorage.removeItem('ardoise_refresh_token');
+    localStorage.removeItem('ardoise_user');
+    window.location.href = 'index.html';
+  }
+
+  async function rafraichirToken(refreshToken) {
+    const reponse = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: refreshToken })
+    });
+    if (!reponse.ok) return null;
+    const donnees = await reponse.json();
+    localStorage.setItem('ardoise_access_token', donnees.access_token);
+    return donnees.access_token;
+  }
+
+  async function appelApi(chemin, options = {}) {
+    let { accessToken, refreshToken } = obtenirTokens();
+    if (!accessToken) { retourConnexion(); return null; }
+
+    const executer = (token) => fetch(`${API_BASE_URL}${chemin}`, {
+      ...options,
+      headers: { ...(options.headers || {}), Authorization: `Bearer ${token}` }
+    });
+
+    let reponse = await executer(accessToken);
+
+    if (reponse.status === 401 && refreshToken) {
+      const nouveauToken = await rafraichirToken(refreshToken);
+      if (!nouveauToken) { retourConnexion(); return null; }
+      reponse = await executer(nouveauToken);
+    }
+
+    if (reponse.status === 401 || reponse.status === 403) { retourConnexion(); return null; }
+    return reponse;
+  }
+
+  function afficherMessage(texte, type) {
+    const zone = document.getElementById('message-flash');
+    zone.textContent = texte;
+    zone.className = `message-flash visible ${type}`;
+    setTimeout(() => zone.classList.remove('visible'), 5000);
+  }
+
+  let classesCache = [];
+
+  async function chargerClasses() {
+    const reponse = await appelApi('/classes');
+    if (!reponse || !reponse.ok) return;
+    classesCache = await reponse.json();
+
+    const options = classesCache.map((c) => `<option value="${c.id}">${c.nom}</option>`).join('');
+    document.getElementById('filtre-classe').innerHTML = '<option value="">Toutes les classes</option>' + options;
+    document.getElementById('champ-classe').innerHTML = '<option value="">— Aucune —</option>' + options;
+  }
+
+  async function chargerEleves() {
+    const recherche = document.getElementById('champ-recherche').value.trim();
+    const classeId = document.getElementById('filtre-classe').value;
+
+    const params = new URLSearchParams();
+    if (recherche) params.set('q', recherche);
+    if (classeId) params.set('classeId', classeId);
+
+    const reponse = await appelApi(`/eleves?${params.toString()}`);
+    if (!reponse) return;
+
+    if (!reponse.ok) {
+      document.getElementById('corps-tableau').innerHTML = '<tr><td colspan="6" class="etat-vide-tableau">Erreur de chargement.</td></tr>';
+      return;
+    }
+
+    const eleves = await reponse.json();
+    document.getElementById('compteur-eleves').textContent = `${eleves.length} élève${eleves.length !== 1 ? 's' : ''}`;
+
+    const corps = document.getElementById('corps-tableau');
+    if (eleves.length === 0) {
+      corps.innerHTML = '<tr><td colspan="6" class="etat-vide-tableau">Aucun élève ne correspond. Ajoute-en un ou modifie ta recherche.</td></tr>';
+      return;
+    }
+
+    corps.innerHTML = eleves.map((e) => `
+      <tr data-id="${e.id}">
+        <td class="matricule-cell">${e.matricule}</td>
+        <td>${e.nom} ${e.postnom || ''} ${e.prenom || ''}</td>
+        <td>${e.sexe || '—'}</td>
+        <td>${e.classe_nom || '—'}</td>
+        <td><span class="badge-statut ${e.statut === 'actif' ? 'actif' : 'autre'}">${e.statut}</span></td>
+        <td>
+          <button class="lien-action" data-action="modifier">Modifier</button>
+          <button class="lien-action suppr" data-action="supprimer">Supprimer</button>
+        </td>
+      </tr>
+    `).join('');
+
+    corps.querySelectorAll('button[data-action]').forEach((bouton) => {
+      const ligne = bouton.closest('tr');
+      const eleveId = ligne.dataset.id;
+      const eleve = eleves.find((e) => e.id === eleveId);
+
+      if (bouton.dataset.action === 'modifier') {
+        bouton.addEventListener('click', () => ouvrirModale(eleve));
+      } else {
+        bouton.addEventListener('click', () => supprimerEleve(eleveId, eleve.nom));
+      }
+    });
+  }
+
+  function ouvrirModale(eleve) {
+    document.getElementById('titre-modale').textContent = eleve ? 'Modifier un élève' : 'Ajouter un élève';
+    document.getElementById('eleve-id').value = eleve?.id || '';
+    document.getElementById('champ-matricule').value = eleve?.matricule || '';
+    document.getElementById('champ-nom').value = eleve?.nom || '';
+    document.getElementById('champ-postnom').value = eleve?.postnom || '';
+    document.getElementById('champ-prenom').value = eleve?.prenom || '';
+    document.getElementById('champ-sexe').value = eleve?.sexe || '';
+    document.getElementById('champ-naissance').value = eleve?.date_naissance ? eleve.date_naissance.slice(0, 10) : '';
+    document.getElementById('champ-classe').value = eleve?.classe_id || '';
+    document.getElementById('champ-resp-nom').value = eleve?.responsable_nom || '';
+    document.getElementById('champ-resp-tel').value = eleve?.responsable_telephone || '';
+    document.getElementById('voile-modale').classList.add('visible');
+  }
+
+  function fermerModale() {
+    document.getElementById('voile-modale').classList.remove('visible');
+    document.getElementById('formulaire-eleve').reset();
+  }
+
+  document.getElementById('bouton-ajouter').addEventListener('click', () => ouvrirModale(null));
+  document.getElementById('bouton-annuler-modale').addEventListener('click', fermerModale);
+
+  document.getElementById('formulaire-eleve').addEventListener('submit', async (evt) => {
+    evt.preventDefault();
+    const id = document.getElementById('eleve-id').value;
+    const corpsRequete = {
+      matricule: document.getElementById('champ-matricule').value.trim(),
+      nom: document.getElementById('champ-nom').value.trim(),
+      postnom: document.getElementById('champ-postnom').value.trim(),
+      prenom: document.getElementById('champ-prenom').value.trim(),
+      sexe: document.getElementById('champ-sexe').value || null,
+      date_naissance: document.getElementById('champ-naissance').value || null,
+      classe_id: document.getElementById('champ-classe').value || null,
+      responsable_nom: document.getElementById('champ-resp-nom').value.trim(),
+      responsable_telephone: document.getElementById('champ-resp-tel').value.trim()
+    };
+
+    const bouton = document.getElementById('bouton-enregistrer');
+    bouton.disabled = true;
+    bouton.textContent = 'Enregistrement…';
+
+    const reponse = await appelApi(id ? `/eleves/${id}` : '/eleves', {
+      method: id ? 'PATCH' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(corpsRequete)
+    });
+
+    bouton.disabled = false;
+    bouton.textContent = 'Enregistrer';
+
+    if (!reponse) return;
+    const donnees = await reponse.json();
+
+    if (!reponse.ok) {
+      afficherMessage(donnees.message || "Erreur lors de l'enregistrement.", 'erreur');
+      return;
+    }
+
+    fermerModale();
+    afficherMessage(id ? 'Élève mis à jour.' : 'Élève ajouté.', 'succes');
+    chargerEleves();
+  });
+
+  async function supprimerEleve(id, nom) {
+    if (!confirm(`Supprimer définitivement ${nom} ? Cette action est irréversible.`)) return;
+    const reponse = await appelApi(`/eleves/${id}`, { method: 'DELETE' });
+    if (!reponse) return;
+    if (!reponse.ok) {
+      const donnees = await reponse.json();
+      afficherMessage(donnees.message || 'Erreur lors de la suppression.', 'erreur');
+      return;
+    }
+    afficherMessage('Élève supprimé.', 'succes');
+    chargerEleves();
+  }
+
+  document.getElementById('champ-recherche').addEventListener('input', debounce(chargerEleves, 350));
+  document.getElementById('filtre-classe').addEventListener('change', chargerEleves);
+
+  function debounce(fn, delai) {
+    let minuteur;
+    return (...args) => { clearTimeout(minuteur); minuteur = setTimeout(() => fn(...args), delai); };
+  }
+
+  // Import Excel
+  document.getElementById('bouton-importer').addEventListener('click', () => {
+    document.getElementById('input-fichier-import').click();
+  });
+
+  document.getElementById('input-fichier-import').addEventListener('change', async (evt) => {
+    const fichier = evt.target.files[0];
+    if (!fichier) return;
+
+    const formData = new FormData();
+    formData.append('fichier', fichier);
+
+    afficherMessage('Import en cours…', 'succes');
+    const reponse = await appelApi('/eleves/import', { method: 'POST', body: formData });
+    evt.target.value = '';
+
+    if (!reponse) return;
+    const donnees = await reponse.json();
+
+    if (!reponse.ok) {
+      afficherMessage(donnees.message || "Erreur lors de l'import.", 'erreur');
+      return;
+    }
+
+    const { crees, mis_a_jour, erreurs } = donnees.bilan;
+    afficherMessage(
+      `Import terminé : ${crees} créé(s), ${mis_a_jour} mis à jour${erreurs.length ? `, ${erreurs.length} avertissement(s)` : ''}.`,
+      erreurs.length ? 'erreur' : 'succes'
+    );
+    chargerEleves();
+  });
+
+  // Export Excel (nécessite le token, donc pas un simple lien <a>)
+  document.getElementById('bouton-exporter').addEventListener('click', async () => {
+    const classeId = document.getElementById('filtre-classe').value;
+    const params = classeId ? `?classeId=${classeId}` : '';
+    const reponse = await appelApi(`/eleves/export${params}`);
+    if (!reponse || !reponse.ok) { afficherMessage("Erreur lors de l'export.", 'erreur'); return; }
+
+    const blob = await reponse.blob();
+    const url = window.URL.createObjectURL(blob);
+    const lien = document.createElement('a');
+    lien.href = url;
+    lien.download = 'eleves.xlsx';
+    lien.click();
+    window.URL.revokeObjectURL(url);
+  });
+
+  chargerClasses().then(chargerEleves);
+</script>
+
+</body>
+</html>

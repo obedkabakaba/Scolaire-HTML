@@ -62,8 +62,8 @@
   .badge-mono { font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem; color: var(--encre); }
 
   /* Cartes structure (années/sections/options) */
-  .grille-structure { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
-  @media (max-width: 900px) { .grille-structure { grid-template-columns: 1fr; } }
+  .grille-structure { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+  @media (max-width: 700px) { .grille-structure { grid-template-columns: 1fr; } }
   .carte-structure { background: var(--craie-2); border: 1px solid var(--bordure); border-radius: 10px; padding: 20px; }
   .carte-structure h3 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.05rem; margin: 0 0 14px 0; }
   .liste-simple { list-style: none; margin: 0 0 14px 0; padding: 0; }
@@ -102,7 +102,7 @@
       <li><a class="nav-item" href="dashboard-directeur.html">Tableau de bord</a></li>
       <li><a class="nav-item" href="eleves.html">Élèves</a></li>
       <li><a class="nav-item actif" href="classes.html">Classes</a></li>
-      <li class="nav-item">Notes <span class="etiquette-bientot">bientôt</span></li>
+      <li><a class="nav-item" href="notes.html">Notes</a></li>
       <li class="nav-item">Bulletins <span class="etiquette-bientot">bientôt</span></li>
       <li class="nav-item">Calendrier <span class="etiquette-bientot">bientôt</span></li>
       <li class="nav-item">Paramètres <span class="etiquette-bientot">bientôt</span></li>
@@ -175,6 +175,25 @@
             <input type="text" id="champ-option-nom" placeholder="ex. Biochimie" required style="margin-bottom:8px;" />
             <div style="display:flex; gap:8px;">
               <select id="champ-option-section" style="flex:1;"></select>
+              <button type="submit" class="bouton bouton-secondaire bouton-petit">Ajouter</button>
+            </div>
+          </form>
+        </div>
+        <div class="carte-structure">
+          <h3>Périodes</h3>
+          <select id="champ-periode-annee" style="width:100%; margin-bottom:10px; padding:8px 10px; border:1.5px solid var(--bordure); border-radius:6px;"></select>
+          <ul class="liste-simple" id="liste-periodes"></ul>
+          <form id="form-periode" style="display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; gap:8px;">
+              <select id="champ-periode-type" style="flex:1; padding:8px; border:1.5px solid var(--bordure); border-radius:6px;">
+                <option value="periode">Période</option>
+                <option value="trimestre">Trimestre</option>
+                <option value="semestre">Semestre</option>
+              </select>
+              <input type="number" id="champ-periode-numero" placeholder="N°" min="1" style="width:70px; padding:8px; border:1.5px solid var(--bordure); border-radius:6px;" required />
+            </div>
+            <div class="form-inline">
+              <input type="text" id="champ-periode-libelle" placeholder="Libellé (ex. 1er Trimestre)" />
               <button type="submit" class="bouton bouton-secondaire bouton-petit">Ajouter</button>
             </div>
           </form>
@@ -293,7 +312,35 @@
     anneesCache = await r.json();
     document.getElementById('liste-annees').innerHTML = anneesCache.map(a => `<li>${a.libelle}${a.active ? ' <span style="color:var(--vert-ok);font-size:0.75rem;">● active</span>' : ''}</li>`).join('') || '<li style="color:var(--texte-att);">Aucune pour l\'instant.</li>';
     document.getElementById('champ-classe-annee').innerHTML = anneesCache.map(a => `<option value="${a.id}">${a.libelle}</option>`).join('');
+    document.getElementById('champ-periode-annee').innerHTML = anneesCache.map(a => `<option value="${a.id}">${a.libelle}</option>`).join('');
+    if (anneesCache.length > 0) chargerPeriodes();
   }
+
+  async function chargerPeriodes() {
+    const anneeId = document.getElementById('champ-periode-annee').value;
+    if (!anneeId) { document.getElementById('liste-periodes').innerHTML = ''; return; }
+    const r = await appelApi(`/periodes?anneeScolaireId=${anneeId}`); if (!r || !r.ok) return;
+    const periodes = await r.json();
+    document.getElementById('liste-periodes').innerHTML = periodes.length === 0
+      ? '<li style="color:var(--texte-att);">Aucune pour l\'instant.</li>'
+      : periodes.map(p => `<li>${p.libelle}</li>`).join('');
+  }
+
+  document.getElementById('champ-periode-annee').addEventListener('change', chargerPeriodes);
+
+  document.getElementById('form-periode').addEventListener('submit', async (evt) => {
+    evt.preventDefault();
+    const corpsRequete = {
+      annee_scolaire_id: document.getElementById('champ-periode-annee').value,
+      type: document.getElementById('champ-periode-type').value,
+      numero: parseInt(document.getElementById('champ-periode-numero').value, 10),
+      libelle: document.getElementById('champ-periode-libelle').value.trim() || null
+    };
+    if (!corpsRequete.annee_scolaire_id) { afficherMessage("Choisis d'abord une année scolaire.", 'erreur'); return; }
+    const r = await appelApi('/periodes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpsRequete) });
+    if (r && r.ok) { evt.target.reset(); chargerPeriodes(); afficherMessage('Période ajoutée.', 'succes'); }
+    else afficherMessage("Erreur lors de l'ajout de la période.", 'erreur');
+  });
   async function chargerSections() {
     const r = await appelApi('/sections'); if (!r || !r.ok) return;
     sectionsCache = await r.json();

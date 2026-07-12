@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ardoise — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ardoise: #1F2B24; --craie: #F6F2E7; --craie-2: #FBF9F3;
+    --ocre: #C98A3E; --ocre-dark: #A96F2E; --encre: #3C5A62;
+    --rouge: #B23A2E; --vert-ok: #4C7A5A;
+    --texte-sombre: #1F2B24; --texte-att: #6B7269; --bordure: #E4DFCF;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Inter', sans-serif; color: var(--texte-sombre); background: var(--craie); }
+
+  .mise-en-page { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+  @media (max-width: 780px) { .mise-en-page { grid-template-columns: 1fr; } }
+  .barre-laterale { background: var(--ardoise); color: var(--craie); padding: 32px 22px; }
+  @media (max-width: 780px) { .barre-laterale { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px; } }
+  .barre-laterale .marque { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.5rem; margin: 0 0 40px 0; }
+  @media (max-width: 780px) { .barre-laterale .marque { margin: 0; } }
+  .nav-liste { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
+  @media (max-width: 780px) { .nav-liste { display: none; } }
+  .nav-item, .nav-item:visited { padding: 10px 12px; border-radius: 6px; font-size: 0.92rem; color: rgba(246,242,231,0.55); text-decoration: none; display: flex; justify-content: space-between; align-items: center; }
+  .nav-item.actif { background: rgba(246,242,231,0.08); color: var(--craie); font-weight: 600; }
+  .nav-item .etiquette-bientot { font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(246,242,231,0.35); }
+
+  .contenu { padding: 36px 44px 60px 44px; }
+  @media (max-width: 780px) { .contenu { padding: 24px 20px 48px 20px; } }
+  .entete-page h1 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.9rem; margin: 0 0 4px 0; }
+  .entete-page .sous-titre { color: var(--texte-att); font-size: 0.95rem; margin: 0 0 24px 0; }
+
+  .barre-selecteurs { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 22px; align-items: flex-end; }
+  .champ-selecteur { display: flex; flex-direction: column; gap: 6px; }
+  .champ-selecteur label { font-size: 0.76rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--texte-att); }
+  .champ-selecteur select { padding: 9px 12px; border: 1.5px solid var(--bordure); border-radius: 7px; font-family: 'Inter', sans-serif; font-size: 0.9rem; background: var(--craie-2); min-width: 190px; }
+  .champ-selecteur select:focus { outline: none; border-color: var(--encre); }
+
+  .bouton { padding: 10px 16px; border-radius: 7px; font-family: 'Inter', sans-serif; font-size: 0.88rem; font-weight: 600; cursor: pointer; border: 1.5px solid transparent; }
+  .bouton-principal { background: var(--ocre); color: var(--craie-2); }
+  .bouton-principal:hover { background: var(--ocre-dark); }
+  .bouton-secondaire { background: none; border-color: var(--bordure); color: var(--texte-sombre); }
+  .bouton-secondaire:hover { border-color: var(--ardoise); }
+  .bouton-danger { background: none; border-color: var(--rouge); color: var(--rouge); }
+  .bouton:disabled { opacity: 0.55; cursor: not-allowed; }
+
+  .bandeau-verrouille { display: none; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 8px; background: rgba(178,58,46,0.07); color: var(--rouge); font-size: 0.88rem; margin-bottom: 18px; }
+  .bandeau-verrouille.visible { display: flex; }
+
+  .conteneur-tableau { background: var(--craie-2); border: 1px solid var(--bordure); border-radius: 10px; overflow: hidden; margin-bottom: 20px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th { text-align: left; padding: 12px 16px; background: rgba(31,43,36,0.03); color: var(--texte-att); font-size: 0.76rem; text-transform: uppercase; font-weight: 600; }
+  td { padding: 10px 16px; border-top: 1px solid var(--bordure); }
+  .matricule-cell { font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: var(--encre); }
+  input.champ-note { width: 80px; padding: 7px 9px; border: 1.5px solid var(--bordure); border-radius: 6px; font-size: 0.9rem; text-align: center; }
+  input.champ-note:focus { outline: none; border-color: var(--encre); }
+  input.champ-note:disabled { background: #eee; color: var(--texte-att); }
+  .etat-vide-tableau { padding: 50px 20px; text-align: center; color: var(--texte-att); }
+
+  .barre-actions { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+
+  .message-flash { display: none; padding: 12px 16px; border-radius: 8px; font-size: 0.88rem; margin-bottom: 20px; }
+  .message-flash.visible { display: block; }
+  .message-flash.succes { background: rgba(76,122,90,0.1); color: var(--vert-ok); }
+  .message-flash.erreur { background: rgba(178,58,46,0.08); color: var(--rouge); }
+</style>
+</head>
+<body>
+
+<div class="mise-en-page">
+  <nav class="barre-laterale">
+    <div class="marque">Ardoise</div>
+    <ul class="nav-liste">
+      <li><a class="nav-item" href="dashboard-directeur.html">Tableau de bord</a></li>
+      <li><a class="nav-item" href="eleves.html">Élèves</a></li>
+      <li><a class="nav-item" href="classes.html">Classes</a></li>
+      <li><a class="nav-item actif" href="notes.html">Notes</a></li>
+      <li class="nav-item">Bulletins <span class="etiquette-bientot">bientôt</span></li>
+      <li class="nav-item">Calendrier <span class="etiquette-bientot">bientôt</span></li>
+      <li class="nav-item">Paramètres <span class="etiquette-bientot">bientôt</span></li>
+    </ul>
+  </nav>
+
+  <main class="contenu">
+    <div class="entete-page">
+      <h1>Notes</h1>
+      <p class="sous-titre">Choisis une classe, un cours et une période pour afficher la grille de saisie.</p>
+    </div>
+
+    <div class="message-flash" id="message-flash"></div>
+
+    <div class="barre-selecteurs">
+      <div class="champ-selecteur"><label for="select-classe">Classe</label><select id="select-classe"></select></div>
+      <div class="champ-selecteur"><label for="select-cours">Cours</label><select id="select-cours"></select></div>
+      <div class="champ-selecteur"><label for="select-periode">Période</label><select id="select-periode"></select></div>
+      <button class="bouton bouton-principal" id="bouton-charger-grille">Afficher la grille</button>
+    </div>
+
+    <div class="bandeau-verrouille" id="bandeau-verrouille">
+      🔒 Ces notes ont été validées et sont verrouillées. Seul le Directeur/Préfet peut les déverrouiller.
+    </div>
+
+    <div class="conteneur-tableau">
+      <table>
+        <thead><tr><th>Matricule</th><th>Élève</th><th>Note (sur <span id="max-affiche">—</span>)</th></tr></thead>
+        <tbody id="corps-grille"><tr><td colspan="3" class="etat-vide-tableau">Choisis une classe, un cours et une période, puis clique "Afficher la grille".</td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="barre-actions" id="barre-actions" style="display:none;">
+      <button class="bouton bouton-principal" id="bouton-enregistrer-notes">Enregistrer les notes</button>
+      <div style="display:flex; gap:10px;">
+        <button class="bouton bouton-secondaire" id="bouton-valider-notes">Valider (verrouiller)</button>
+        <button class="bouton bouton-danger" id="bouton-devalider-notes">Déverrouiller</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+  const API_BASE_URL = "https://scolaire-saas-backend.onrender.com";
+
+  function obtenirTokens() {
+    return { accessToken: localStorage.getItem('ardoise_access_token'), refreshToken: localStorage.getItem('ardoise_refresh_token'), user: JSON.parse(localStorage.getItem('ardoise_user') || 'null') };
+  }
+  function retourConnexion() {
+    localStorage.removeItem('ardoise_access_token'); localStorage.removeItem('ardoise_refresh_token'); localStorage.removeItem('ardoise_user');
+    window.location.href = 'index.html';
+  }
+  async function rafraichirToken(refreshToken) {
+    const reponse = await fetch(`${API_BASE_URL}/auth/refresh`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refresh_token: refreshToken }) });
+    if (!reponse.ok) return null;
+    const donnees = await reponse.json();
+    localStorage.setItem('ardoise_access_token', donnees.access_token);
+    return donnees.access_token;
+  }
+  async function appelApi(chemin, options = {}) {
+    let { accessToken, refreshToken } = obtenirTokens();
+    if (!accessToken) { retourConnexion(); return null; }
+    const executer = (token) => fetch(`${API_BASE_URL}${chemin}`, { ...options, headers: { ...(options.headers || {}), Authorization: `Bearer ${token}` } });
+    let reponse = await executer(accessToken);
+    if (reponse.status === 401 && refreshToken) {
+      const nouveauToken = await rafraichirToken(refreshToken);
+      if (!nouveauToken) { retourConnexion(); return null; }
+      reponse = await executer(nouveauToken);
+    }
+    if (reponse.status === 401) { retourConnexion(); return null; }
+    return reponse;
+  }
+  function afficherMessage(texte, type) {
+    const zone = document.getElementById('message-flash');
+    zone.textContent = texte; zone.className = `message-flash visible ${type}`;
+    setTimeout(() => zone.classList.remove('visible'), 6000);
+  }
+
+  const { user } = obtenirTokens();
+  const estDirecteurOuPrefet = (user?.roles || []).some(r => ['directeur', 'prefet'].includes(r));
+  if (!estDirecteurOuPrefet) {
+    document.getElementById('bouton-valider-notes').style.display = 'none';
+    document.getElementById('bouton-devalider-notes').style.display = 'none';
+  }
+
+  async function chargerSelecteurs() {
+    const [rClasses, rCours, rPeriodes] = await Promise.all([
+      appelApi('/classes'), appelApi('/cours'), appelApi('/periodes')
+    ]);
+    if (rClasses?.ok) {
+      const classes = await rClasses.json();
+      document.getElementById('select-classe').innerHTML = classes.map(c => `<option value="${c.id}">${c.nom}</option>`).join('');
+    }
+    if (rCours?.ok) {
+      const cours = await rCours.json();
+      document.getElementById('select-cours').innerHTML = cours.map(c => `<option value="${c.id}">${c.nom}</option>`).join('');
+    }
+    if (rPeriodes?.ok) {
+      const periodes = await rPeriodes.json();
+      document.getElementById('select-periode').innerHTML = periodes.map(p => `<option value="${p.id}">${p.libelle}</option>`).join('') || '<option value="">Aucune période créée</option>';
+    }
+  }
+
+  let maximumActuel = null;
+  let classeCoursVerrouille = false;
+
+  async function chargerGrille() {
+    const classeId = document.getElementById('select-classe').value;
+    const coursId = document.getElementById('select-cours').value;
+    const periodeId = document.getElementById('select-periode').value;
+
+    if (!classeId || !coursId || !periodeId) { afficherMessage('Choisis une classe, un cours et une période.', 'erreur'); return; }
+
+    const r = await appelApi(`/notes/grille?classeId=${classeId}&coursId=${coursId}&periodeId=${periodeId}`);
+    if (!r) return;
+    const donnees = await r.json();
+
+    if (!r.ok) {
+      afficherMessage(donnees.message || 'Erreur lors du chargement de la grille.', 'erreur');
+      document.getElementById('corps-grille').innerHTML = '<tr><td colspan="3" class="etat-vide-tableau">Impossible d\'afficher cette grille.</td></tr>';
+      document.getElementById('barre-actions').style.display = 'none';
+      return;
+    }
+
+    maximumActuel = donnees.maximum;
+    document.getElementById('max-affiche').textContent = donnees.maximum;
+
+    classeCoursVerrouille = donnees.eleves.length > 0 && donnees.eleves.every(e => e.points_obtenus === null || e.valide);
+    const auMoinsUneNoteVerrouillee = donnees.eleves.some(e => e.valide);
+    document.getElementById('bandeau-verrouille').classList.toggle('visible', auMoinsUneNoteVerrouillee);
+
+    const corps = document.getElementById('corps-grille');
+    if (donnees.eleves.length === 0) {
+      corps.innerHTML = '<tr><td colspan="3" class="etat-vide-tableau">Aucun élève actif dans cette classe.</td></tr>';
+      document.getElementById('barre-actions').style.display = 'none';
+      return;
+    }
+
+    corps.innerHTML = donnees.eleves.map(e => `
+      <tr data-eleve-id="${e.eleve_id}">
+        <td class="matricule-cell">${e.matricule}</td>
+        <td>${e.nom} ${e.postnom || ''} ${e.prenom || ''}</td>
+        <td><input type="number" class="champ-note" min="0" max="${donnees.maximum}" step="0.5"
+              value="${e.points_obtenus ?? ''}" ${auMoinsUneNoteVerrouillee && !estDirecteurOuPrefet ? 'disabled' : ''} /></td>
+      </tr>
+    `).join('');
+
+    document.getElementById('barre-actions').style.display = 'flex';
+  }
+
+  document.getElementById('bouton-charger-grille').addEventListener('click', chargerGrille);
+
+  document.getElementById('bouton-enregistrer-notes').addEventListener('click', async () => {
+    const classeId = document.getElementById('select-classe').value;
+    const coursId = document.getElementById('select-cours').value;
+    const periodeId = document.getElementById('select-periode').value;
+
+    const notes = Array.from(document.querySelectorAll('#corps-grille tr')).map(ligne => ({
+      eleve_id: ligne.dataset.eleveId,
+      points_obtenus: ligne.querySelector('.champ-note').value === '' ? null : parseFloat(ligne.querySelector('.champ-note').value)
+    }));
+
+    const bouton = document.getElementById('bouton-enregistrer-notes');
+    bouton.disabled = true; bouton.textContent = 'Enregistrement…';
+
+    const r = await appelApi('/notes/grille', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ classeId, coursId, periodeId, notes })
+    });
+
+    bouton.disabled = false; bouton.textContent = 'Enregistrer les notes';
+
+    if (!r) return;
+    const donnees = await r.json();
+    if (!r.ok) { afficherMessage(donnees.message || "Erreur lors de l'enregistrement.", 'erreur'); return; }
+    afficherMessage('Notes enregistrées.', 'succes');
+  });
+
+  document.getElementById('bouton-valider-notes')?.addEventListener('click', async () => {
+    if (!confirm('Valider ces notes ? Elles seront verrouillées pour le professeur.')) return;
+    const classeId = document.getElementById('select-classe').value;
+    const coursId = document.getElementById('select-cours').value;
+    const periodeId = document.getElementById('select-periode').value;
+
+    const r = await appelApi('/notes/valider', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ classeId, coursId, periodeId })
+    });
+    if (!r) return;
+    const donnees = await r.json();
+    if (!r.ok) { afficherMessage(donnees.message || 'Erreur lors de la validation.', 'erreur'); return; }
+    afficherMessage('Notes validées et classement recalculé.', 'succes');
+    chargerGrille();
+  });
+
+  document.getElementById('bouton-devalider-notes')?.addEventListener('click', async () => {
+    if (!confirm('Déverrouiller ces notes pour correction ?')) return;
+    const classeId = document.getElementById('select-classe').value;
+    const coursId = document.getElementById('select-cours').value;
+    const periodeId = document.getElementById('select-periode').value;
+
+    const r = await appelApi('/notes/devalider', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ classeId, coursId, periodeId })
+    });
+    if (!r) return;
+    const donnees = await r.json();
+    if (!r.ok) { afficherMessage(donnees.message || 'Erreur lors de la dévalidation.', 'erreur'); return; }
+    afficherMessage('Notes déverrouillées.', 'succes');
+    chargerGrille();
+  });
+
+  chargerSelecteurs();
+</script>
+
+</body>
+</html>

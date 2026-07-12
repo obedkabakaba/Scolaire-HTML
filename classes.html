@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ardoise — Classes & Cours</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ardoise: #1F2B24; --craie: #F6F2E7; --craie-2: #FBF9F3;
+    --ocre: #C98A3E; --ocre-dark: #A96F2E; --encre: #3C5A62;
+    --rouge: #B23A2E; --vert-ok: #4C7A5A;
+    --texte-sombre: #1F2B24; --texte-att: #6B7269; --bordure: #E4DFCF;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Inter', sans-serif; color: var(--texte-sombre); background: var(--craie); }
+
+  .mise-en-page { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+  @media (max-width: 780px) { .mise-en-page { grid-template-columns: 1fr; } }
+
+  .barre-laterale { background: var(--ardoise); color: var(--craie); padding: 32px 22px; }
+  @media (max-width: 780px) { .barre-laterale { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px; } }
+  .barre-laterale .marque { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.5rem; margin: 0 0 40px 0; }
+  @media (max-width: 780px) { .barre-laterale .marque { margin: 0; } }
+  .nav-liste { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
+  @media (max-width: 780px) { .nav-liste { display: none; } }
+  .nav-item, .nav-item:visited { padding: 10px 12px; border-radius: 6px; font-size: 0.92rem; color: rgba(246,242,231,0.55); text-decoration: none; display: flex; justify-content: space-between; align-items: center; }
+  .nav-item.actif { background: rgba(246,242,231,0.08); color: var(--craie); font-weight: 600; }
+  .nav-item .etiquette-bientot { font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(246,242,231,0.35); }
+
+  .contenu { padding: 36px 44px 60px 44px; }
+  @media (max-width: 780px) { .contenu { padding: 24px 20px 48px 20px; } }
+
+  .entete-page h1 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.9rem; margin: 0 0 4px 0; }
+  .entete-page .sous-titre { color: var(--texte-att); font-size: 0.95rem; margin: 0 0 24px 0; }
+
+  .bouton { padding: 9px 15px; border-radius: 7px; font-family: 'Inter', sans-serif; font-size: 0.86rem; font-weight: 600; cursor: pointer; border: 1.5px solid transparent; }
+  .bouton-principal { background: var(--ocre); color: var(--craie-2); }
+  .bouton-principal:hover { background: var(--ocre-dark); }
+  .bouton-secondaire { background: none; border-color: var(--bordure); color: var(--texte-sombre); }
+  .bouton-secondaire:hover { border-color: var(--ardoise); }
+  .bouton-petit { padding: 5px 10px; font-size: 0.78rem; }
+  .bouton:disabled { opacity: 0.55; cursor: not-allowed; }
+
+  /* Onglets */
+  .barre-onglets { display: flex; gap: 6px; border-bottom: 1.5px solid var(--bordure); margin-bottom: 24px; }
+  .onglet { padding: 10px 4px; margin-right: 20px; font-size: 0.92rem; font-weight: 600; color: var(--texte-att); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1.5px; }
+  .onglet.actif { color: var(--ardoise); border-bottom-color: var(--ocre); }
+  .panneau-onglet { display: none; }
+  .panneau-onglet.visible { display: block; }
+
+  /* Tableaux */
+  .conteneur-tableau { background: var(--craie-2); border: 1px solid var(--bordure); border-radius: 10px; overflow: hidden; margin-bottom: 20px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  th { text-align: left; padding: 12px 15px; background: rgba(31,43,36,0.03); color: var(--texte-att); font-size: 0.76rem; text-transform: uppercase; font-weight: 600; }
+  td { padding: 12px 15px; border-top: 1px solid var(--bordure); }
+  .lien-action { background: none; border: none; color: var(--encre); cursor: pointer; font-size: 0.83rem; font-weight: 500; padding: 3px 7px; }
+  .lien-action.suppr { color: var(--rouge); }
+  .etat-vide-tableau { padding: 30px 20px; text-align: center; color: var(--texte-att); font-size: 0.88rem; }
+  .badge-mono { font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem; color: var(--encre); }
+
+  /* Cartes structure (années/sections/options) */
+  .grille-structure { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  @media (max-width: 900px) { .grille-structure { grid-template-columns: 1fr; } }
+  .carte-structure { background: var(--craie-2); border: 1px solid var(--bordure); border-radius: 10px; padding: 20px; }
+  .carte-structure h3 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.05rem; margin: 0 0 14px 0; }
+  .liste-simple { list-style: none; margin: 0 0 14px 0; padding: 0; }
+  .liste-simple li { padding: 8px 0; border-bottom: 1px solid var(--bordure); font-size: 0.88rem; display: flex; justify-content: space-between; align-items: center; }
+  .liste-simple li:last-child { border-bottom: none; }
+  .form-inline { display: flex; gap: 8px; }
+  .form-inline input, .form-inline select { flex: 1; padding: 8px 10px; border: 1.5px solid var(--bordure); border-radius: 6px; font-size: 0.85rem; font-family: 'Inter', sans-serif; }
+  .form-inline input:focus, .form-inline select:focus { outline: none; border-color: var(--encre); }
+
+  /* Modale générique */
+  .voile { position: fixed; inset: 0; background: rgba(31,43,36,0.45); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 10; }
+  .voile.visible { display: flex; }
+  .modale { background: var(--craie-2); border-radius: 12px; padding: 28px; max-width: 460px; width: 100%; max-height: 90vh; overflow-y: auto; }
+  .modale h2 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.3rem; margin: 0 0 18px 0; }
+  .champ { margin-bottom: 14px; }
+  .champ label { display: block; font-size: 0.76rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--texte-att); margin-bottom: 6px; }
+  .champ input, .champ select { width: 100%; padding: 9px 11px; font-size: 0.9rem; border: 1.5px solid var(--bordure); border-radius: 7px; background: #fff; }
+  .champ input:focus, .champ select:focus { outline: none; border-color: var(--encre); }
+  .ligne-champs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .actions-modale { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; }
+
+  .message-flash { display: none; padding: 11px 15px; border-radius: 8px; font-size: 0.86rem; margin-bottom: 18px; }
+  .message-flash.visible { display: block; }
+  .message-flash.succes { background: rgba(76,122,90,0.1); color: var(--vert-ok); }
+  .message-flash.erreur { background: rgba(178,58,46,0.08); color: var(--rouge); }
+
+  .separation-cours { border: none; border-top: 1px solid var(--bordure); margin: 16px 0; }
+</style>
+</head>
+<body>
+
+<div class="mise-en-page">
+  <nav class="barre-laterale">
+    <div class="marque">Ardoise</div>
+    <ul class="nav-liste">
+      <li><a class="nav-item" href="dashboard-directeur.html">Tableau de bord</a></li>
+      <li><a class="nav-item" href="eleves.html">Élèves</a></li>
+      <li><a class="nav-item actif" href="classes.html">Classes</a></li>
+      <li class="nav-item">Notes <span class="etiquette-bientot">bientôt</span></li>
+      <li class="nav-item">Bulletins <span class="etiquette-bientot">bientôt</span></li>
+      <li class="nav-item">Calendrier <span class="etiquette-bientot">bientôt</span></li>
+      <li class="nav-item">Paramètres <span class="etiquette-bientot">bientôt</span></li>
+    </ul>
+  </nav>
+
+  <main class="contenu">
+    <div class="entete-page">
+      <h1>Classes & Cours</h1>
+      <p class="sous-titre">Structure académique de l'école : années, classes, cours et affectations.</p>
+    </div>
+
+    <div class="message-flash" id="message-flash"></div>
+
+    <div class="barre-onglets">
+      <div class="onglet actif" data-onglet="classes">Classes</div>
+      <div class="onglet" data-onglet="cours">Cours</div>
+      <div class="onglet" data-onglet="structure">Années, sections & options</div>
+    </div>
+
+    <!-- Onglet Classes -->
+    <div class="panneau-onglet visible" id="onglet-classes">
+      <div style="display:flex; justify-content:flex-end; margin-bottom:14px;">
+        <button class="bouton bouton-principal" id="bouton-ajouter-classe">+ Ajouter une classe</button>
+      </div>
+      <div class="conteneur-tableau">
+        <table>
+          <thead><tr><th>Classe</th><th>Section</th><th>Option</th><th>Titulaire</th><th>Élèves</th><th></th></tr></thead>
+          <tbody id="corps-tableau-classes"><tr><td colspan="6" class="etat-vide-tableau">Chargement…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Onglet Cours -->
+    <div class="panneau-onglet" id="onglet-cours">
+      <div style="display:flex; justify-content:flex-end; margin-bottom:14px;">
+        <button class="bouton bouton-principal" id="bouton-ajouter-cours">+ Ajouter un cours</button>
+      </div>
+      <div class="conteneur-tableau">
+        <table>
+          <thead><tr><th>Nom</th><th>Code</th><th>Coefficient</th><th>Max</th></tr></thead>
+          <tbody id="corps-tableau-cours"><tr><td colspan="4" class="etat-vide-tableau">Chargement…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Onglet Structure -->
+    <div class="panneau-onglet" id="onglet-structure">
+      <div class="grille-structure">
+        <div class="carte-structure">
+          <h3>Années scolaires</h3>
+          <ul class="liste-simple" id="liste-annees"></ul>
+          <form class="form-inline" id="form-annee">
+            <input type="text" id="champ-annee-libelle" placeholder="ex. 2026-2027" required />
+            <button type="submit" class="bouton bouton-secondaire bouton-petit">Ajouter</button>
+          </form>
+        </div>
+        <div class="carte-structure">
+          <h3>Sections</h3>
+          <ul class="liste-simple" id="liste-sections"></ul>
+          <form class="form-inline" id="form-section">
+            <input type="text" id="champ-section-nom" placeholder="ex. Scientifique" required />
+            <button type="submit" class="bouton bouton-secondaire bouton-petit">Ajouter</button>
+          </form>
+        </div>
+        <div class="carte-structure">
+          <h3>Options</h3>
+          <ul class="liste-simple" id="liste-options"></ul>
+          <form class="form-inline" id="form-option" style="flex-direction:column;">
+            <input type="text" id="champ-option-nom" placeholder="ex. Biochimie" required style="margin-bottom:8px;" />
+            <div style="display:flex; gap:8px;">
+              <select id="champ-option-section" style="flex:1;"></select>
+              <button type="submit" class="bouton bouton-secondaire bouton-petit">Ajouter</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Modale Classe -->
+<div class="voile" id="voile-modale-classe">
+  <div class="modale">
+    <h2 id="titre-modale-classe">Ajouter une classe</h2>
+    <form id="formulaire-classe">
+      <input type="hidden" id="classe-id" />
+      <div class="champ"><label for="champ-classe-nom">Nom de la classe</label><input type="text" id="champ-classe-nom" placeholder="ex. 3ème Scientifique A" required /></div>
+      <div class="ligne-champs">
+        <div class="champ"><label for="champ-classe-section">Section</label><select id="champ-classe-section"></select></div>
+        <div class="champ"><label for="champ-classe-option">Option</label><select id="champ-classe-option"></select></div>
+      </div>
+      <div class="ligne-champs">
+        <div class="champ"><label for="champ-classe-titulaire">Titulaire</label><select id="champ-classe-titulaire"></select></div>
+        <div class="champ"><label for="champ-classe-annee">Année scolaire</label><select id="champ-classe-annee"></select></div>
+      </div>
+      <div class="actions-modale">
+        <button type="button" class="bouton bouton-secondaire" onclick="fermerModale('voile-modale-classe')">Annuler</button>
+        <button type="submit" class="bouton bouton-principal" id="bouton-enregistrer-classe">Enregistrer</button>
+      </div>
+    </form>
+
+    <div id="section-cours-classe" style="display:none;">
+      <hr class="separation-cours" />
+      <h3 style="font-family:'Fraunces',serif; font-size:1rem; margin-bottom:10px;">Cours assignés à cette classe</h3>
+      <ul class="liste-simple" id="liste-cours-classe"></ul>
+      <div class="form-inline" style="margin-top:10px;">
+        <select id="select-cours-a-ajouter"></select>
+        <button class="bouton bouton-secondaire bouton-petit" id="bouton-assigner-cours">Assigner</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modale Cours -->
+<div class="voile" id="voile-modale-cours">
+  <div class="modale">
+    <h2>Ajouter un cours</h2>
+    <form id="formulaire-cours">
+      <div class="champ"><label for="champ-cours-nom">Nom du cours</label><input type="text" id="champ-cours-nom" required /></div>
+      <div class="ligne-champs">
+        <div class="champ"><label for="champ-cours-code">Code</label><input type="text" id="champ-cours-code" /></div>
+        <div class="champ"><label for="champ-cours-coef">Coefficient</label><input type="number" step="0.5" id="champ-cours-coef" value="1" /></div>
+      </div>
+      <div class="champ"><label for="champ-cours-max">Maximum de points</label><input type="number" id="champ-cours-max" value="20" /></div>
+      <div class="actions-modale">
+        <button type="button" class="bouton bouton-secondaire" onclick="fermerModale('voile-modale-cours')">Annuler</button>
+        <button type="submit" class="bouton bouton-principal">Enregistrer</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  const API_BASE_URL = "https://scolaire-saas-backend.onrender.com";
+
+  function obtenirTokens() {
+    return { accessToken: localStorage.getItem('ardoise_access_token'), refreshToken: localStorage.getItem('ardoise_refresh_token') };
+  }
+  function retourConnexion() {
+    localStorage.removeItem('ardoise_access_token'); localStorage.removeItem('ardoise_refresh_token'); localStorage.removeItem('ardoise_user');
+    window.location.href = 'index.html';
+  }
+  async function rafraichirToken(refreshToken) {
+    const reponse = await fetch(`${API_BASE_URL}/auth/refresh`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refresh_token: refreshToken }) });
+    if (!reponse.ok) return null;
+    const donnees = await reponse.json();
+    localStorage.setItem('ardoise_access_token', donnees.access_token);
+    return donnees.access_token;
+  }
+  async function appelApi(chemin, options = {}) {
+    let { accessToken, refreshToken } = obtenirTokens();
+    if (!accessToken) { retourConnexion(); return null; }
+    const executer = (token) => fetch(`${API_BASE_URL}${chemin}`, { ...options, headers: { ...(options.headers || {}), Authorization: `Bearer ${token}` } });
+    let reponse = await executer(accessToken);
+    if (reponse.status === 401 && refreshToken) {
+      const nouveauToken = await rafraichirToken(refreshToken);
+      if (!nouveauToken) { retourConnexion(); return null; }
+      reponse = await executer(nouveauToken);
+    }
+    if (reponse.status === 401 || reponse.status === 403) { retourConnexion(); return null; }
+    return reponse;
+  }
+  function afficherMessage(texte, type) {
+    const zone = document.getElementById('message-flash');
+    zone.textContent = texte; zone.className = `message-flash visible ${type}`;
+    setTimeout(() => zone.classList.remove('visible'), 5000);
+  }
+  function fermerModale(idVoile) {
+    document.getElementById(idVoile).classList.remove('visible');
+  }
+
+  // ---------- Onglets ----------
+  document.querySelectorAll('.onglet').forEach((onglet) => {
+    onglet.addEventListener('click', () => {
+      document.querySelectorAll('.onglet').forEach((o) => o.classList.remove('actif'));
+      document.querySelectorAll('.panneau-onglet').forEach((p) => p.classList.remove('visible'));
+      onglet.classList.add('actif');
+      document.getElementById(`onglet-${onglet.dataset.onglet}`).classList.add('visible');
+    });
+  });
+
+  let anneesCache = [], sectionsCache = [], optionsCache = [], coursCache = [], utilisateursCache = [];
+
+  // ---------- Structure : années / sections / options ----------
+  async function chargerAnnees() {
+    const r = await appelApi('/annees-scolaires'); if (!r || !r.ok) return;
+    anneesCache = await r.json();
+    document.getElementById('liste-annees').innerHTML = anneesCache.map(a => `<li>${a.libelle}${a.active ? ' <span style="color:var(--vert-ok);font-size:0.75rem;">● active</span>' : ''}</li>`).join('') || '<li style="color:var(--texte-att);">Aucune pour l\'instant.</li>';
+    document.getElementById('champ-classe-annee').innerHTML = anneesCache.map(a => `<option value="${a.id}">${a.libelle}</option>`).join('');
+  }
+  async function chargerSections() {
+    const r = await appelApi('/sections'); if (!r || !r.ok) return;
+    sectionsCache = await r.json();
+    document.getElementById('liste-sections').innerHTML = sectionsCache.map(s => `<li>${s.nom}</li>`).join('') || '<li style="color:var(--texte-att);">Aucune pour l\'instant.</li>';
+    const optionsHtml = '<option value="">—</option>' + sectionsCache.map(s => `<option value="${s.id}">${s.nom}</option>`).join('');
+    document.getElementById('champ-classe-section').innerHTML = optionsHtml;
+    document.getElementById('champ-option-section').innerHTML = optionsHtml;
+  }
+  async function chargerOptions() {
+    const r = await appelApi('/options'); if (!r || !r.ok) return;
+    optionsCache = await r.json();
+    document.getElementById('liste-options').innerHTML = optionsCache.map(o => `<li>${o.nom}</li>`).join('') || '<li style="color:var(--texte-att);">Aucune pour l\'instant.</li>';
+    document.getElementById('champ-classe-option').innerHTML = '<option value="">—</option>' + optionsCache.map(o => `<option value="${o.id}">${o.nom}</option>`).join('');
+  }
+
+  document.getElementById('form-annee').addEventListener('submit', async (evt) => {
+    evt.preventDefault();
+    const libelle = document.getElementById('champ-annee-libelle').value.trim();
+    const r = await appelApi('/annees-scolaires', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ libelle }) });
+    if (r && r.ok) { evt.target.reset(); chargerAnnees(); } else { afficherMessage("Erreur lors de l'ajout de l'année.", 'erreur'); }
+  });
+  document.getElementById('form-section').addEventListener('submit', async (evt) => {
+    evt.preventDefault();
+    const nom = document.getElementById('champ-section-nom').value.trim();
+    const r = await appelApi('/sections', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nom }) });
+    if (r && r.ok) { evt.target.reset(); chargerSections(); } else { afficherMessage("Erreur lors de l'ajout de la section.", 'erreur'); }
+  });
+  document.getElementById('form-option').addEventListener('submit', async (evt) => {
+    evt.preventDefault();
+    const nom = document.getElementById('champ-option-nom').value.trim();
+    const section_id = document.getElementById('champ-option-section').value || null;
+    const r = await appelApi('/options', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nom, section_id }) });
+    if (r && r.ok) { evt.target.reset(); chargerOptions(); } else { afficherMessage("Erreur lors de l'ajout de l'option.", 'erreur'); }
+  });
+
+  // ---------- Utilisateurs (pour titulaire / professeurs) ----------
+  async function chargerUtilisateurs() {
+    const r = await appelApi('/utilisateurs'); if (!r || !r.ok) return;
+    utilisateursCache = await r.json();
+    const titulairesEtProfs = utilisateursCache.filter(u => (u.roles || []).some(role => ['titulaire', 'professeur'].includes(role)));
+    document.getElementById('champ-classe-titulaire').innerHTML = '<option value="">—</option>' + titulairesEtProfs.map(u => `<option value="${u.id}">${u.nom} ${u.prenom || ''}</option>`).join('');
+  }
+
+  // ---------- Classes ----------
+  let classeEnEditionCoursId = null;
+
+  async function chargerClasses() {
+    const r = await appelApi('/classes'); if (!r || !r.ok) return;
+    const classes = await r.json();
+    const corps = document.getElementById('corps-tableau-classes');
+    if (classes.length === 0) { corps.innerHTML = '<tr><td colspan="6" class="etat-vide-tableau">Aucune classe. Ajoute la première.</td></tr>'; return; }
+
+    corps.innerHTML = classes.map(c => `
+      <tr data-id="${c.id}">
+        <td>${c.nom}</td>
+        <td>${c.section_nom || '—'}</td>
+        <td>${c.option_nom || '—'}</td>
+        <td>${c.titulaire_nom ? c.titulaire_nom + ' ' + (c.titulaire_prenom || '') : '—'}</td>
+        <td>${c.nb_eleves}</td>
+        <td><button class="lien-action" data-action="modifier">Modifier</button><button class="lien-action suppr" data-action="supprimer">Supprimer</button></td>
+      </tr>
+    `).join('');
+
+    corps.querySelectorAll('button[data-action]').forEach((bouton) => {
+      const ligne = bouton.closest('tr');
+      const classeId = ligne.dataset.id;
+      const classe = classes.find(c => c.id === classeId);
+      if (bouton.dataset.action === 'modifier') bouton.addEventListener('click', () => ouvrirModaleClasse(classe));
+      else bouton.addEventListener('click', () => supprimerClasse(classeId, classe.nom));
+    });
+  }
+
+  async function ouvrirModaleClasse(classe) {
+    document.getElementById('titre-modale-classe').textContent = classe ? 'Modifier la classe' : 'Ajouter une classe';
+    document.getElementById('classe-id').value = classe?.id || '';
+    document.getElementById('champ-classe-nom').value = classe?.nom || '';
+    document.getElementById('champ-classe-section').value = classe?.section_id || '';
+    document.getElementById('champ-classe-option').value = classe?.option_id || '';
+    document.getElementById('champ-classe-titulaire').value = classe?.titulaire_id || '';
+    document.getElementById('champ-classe-annee').value = classe?.annee_scolaire_id || '';
+
+    const sectionCours = document.getElementById('section-cours-classe');
+    if (classe) {
+      sectionCours.style.display = 'block';
+      classeEnEditionCoursId = classe.id;
+      await chargerCoursDeLaClasse(classe.id);
+    } else {
+      sectionCours.style.display = 'none';
+      classeEnEditionCoursId = null;
+    }
+
+    document.getElementById('voile-modale-classe').classList.add('visible');
+  }
+
+  document.getElementById('bouton-ajouter-classe').addEventListener('click', () => ouvrirModaleClasse(null));
+
+  document.getElementById('formulaire-classe').addEventListener('submit', async (evt) => {
+    evt.preventDefault();
+    const id = document.getElementById('classe-id').value;
+    const corpsRequete = {
+      nom: document.getElementById('champ-classe-nom').value.trim(),
+      section_id: document.getElementById('champ-classe-section').value || null,
+      option_id: document.getElementById('champ-classe-option').value || null,
+      titulaire_id: document.getElementById('champ-classe-titulaire').value || null,
+      annee_scolaire_id: document.getElementById('champ-classe-annee').value || null
+    };
+    const bouton = document.getElementById('bouton-enregistrer-classe');
+    bouton.disabled = true; bouton.textContent = 'Enregistrement…';
+    const r = await appelApi(id ? `/classes/${id}` : '/classes', { method: id ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpsRequete) });
+    bouton.disabled = false; bouton.textContent = 'Enregistrer';
+    if (!r) return;
+    if (!r.ok) { const d = await r.json(); afficherMessage(d.message || 'Erreur.', 'erreur'); return; }
+    if (!id) { fermerModale('voile-modale-classe'); }
+    afficherMessage(id ? 'Classe mise à jour.' : 'Classe ajoutée.', 'succes');
+    chargerClasses();
+  });
+
+  async function supprimerClasse(id, nom) {
+    if (!confirm(`Supprimer la classe "${nom}" ? Cette action est irréversible.`)) return;
+    const r = await appelApi(`/classes/${id}`, { method: 'DELETE' });
+    if (r && r.ok) { afficherMessage('Classe supprimée.', 'succes'); chargerClasses(); }
+    else afficherMessage('Erreur lors de la suppression.', 'erreur');
+  }
+
+  // ---------- Cours assignés à une classe (dans la modale Classe) ----------
+  async function chargerCoursDeLaClasse(classeId) {
+    // On dérive la liste depuis /classes (nb_eleves etc. pas suffisant) — on utilise
+    // simplement le catalogue de cours + un appel dédié n'existe pas encore côté liste;
+    // on affiche donc le catalogue complet avec un bouton "Assigner" par cours non encore lié.
+    const optionsCours = coursCache.map(c => `<option value="${c.id}">${c.nom}</option>`).join('');
+    document.getElementById('select-cours-a-ajouter').innerHTML = optionsCours;
+    document.getElementById('liste-cours-classe').innerHTML = '<li style="color:var(--texte-att);">Utilise le menu ci-dessous pour assigner un cours à cette classe.</li>';
+  }
+
+  document.getElementById('bouton-assigner-cours').addEventListener('click', async () => {
+    const coursId = document.getElementById('select-cours-a-ajouter').value;
+    if (!coursId || !classeEnEditionCoursId) return;
+    const r = await appelApi(`/classes/${classeEnEditionCoursId}/cours`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cours_id: coursId })
+    });
+    if (r && r.ok) afficherMessage('Cours assigné à la classe.', 'succes');
+    else afficherMessage("Erreur lors de l'assignation.", 'erreur');
+  });
+
+  // ---------- Cours (catalogue) ----------
+  async function chargerCours() {
+    const r = await appelApi('/cours'); if (!r || !r.ok) return;
+    coursCache = await r.json();
+    const corps = document.getElementById('corps-tableau-cours');
+    corps.innerHTML = coursCache.length === 0
+      ? '<tr><td colspan="4" class="etat-vide-tableau">Aucun cours. Ajoute le premier.</td></tr>'
+      : coursCache.map(c => `<tr><td>${c.nom}</td><td class="badge-mono">${c.code || '—'}</td><td>${c.coefficient}</td><td>${c.maximum_points}</td></tr>`).join('');
+  }
+
+  document.getElementById('bouton-ajouter-cours').addEventListener('click', () => document.getElementById('voile-modale-cours').classList.add('visible'));
+
+  document.getElementById('formulaire-cours').addEventListener('submit', async (evt) => {
+    evt.preventDefault();
+    const corpsRequete = {
+      nom: document.getElementById('champ-cours-nom').value.trim(),
+      code: document.getElementById('champ-cours-code').value.trim(),
+      coefficient: parseFloat(document.getElementById('champ-cours-coef').value) || 1,
+      maximum_points: parseFloat(document.getElementById('champ-cours-max').value) || 20
+    };
+    const r = await appelApi('/cours', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpsRequete) });
+    if (!r) return;
+    if (!r.ok) { afficherMessage('Erreur lors de l\'ajout du cours.', 'erreur'); return; }
+    fermerModale('voile-modale-cours');
+    document.getElementById('formulaire-cours').reset();
+    afficherMessage('Cours ajouté.', 'succes');
+    chargerCours();
+  });
+
+  // ---------- Initialisation ----------
+  async function initialiser() {
+    await Promise.all([chargerAnnees(), chargerSections(), chargerOptions(), chargerUtilisateurs(), chargerCours()]);
+    chargerClasses();
+  }
+  initialiser();
+</script>
+
+</body>
+</html>

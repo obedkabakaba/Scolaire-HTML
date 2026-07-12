@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ardoise — Bulletins</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ardoise: #1F2B24; --craie: #F6F2E7; --craie-2: #FBF9F3;
+    --ocre: #C98A3E; --ocre-dark: #A96F2E; --encre: #3C5A62;
+    --rouge: #B23A2E; --vert-ok: #4C7A5A;
+    --texte-sombre: #1F2B24; --texte-att: #6B7269; --bordure: #E4DFCF;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Inter', sans-serif; color: var(--texte-sombre); background: var(--craie); }
+
+  .mise-en-page { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+  @media (max-width: 780px) { .mise-en-page { grid-template-columns: 1fr; } }
+  .barre-laterale { background: var(--ardoise); color: var(--craie); padding: 32px 22px; }
+  @media (max-width: 780px) { .barre-laterale { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px; } }
+  .barre-laterale .marque { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.5rem; margin: 0 0 40px 0; }
+  @media (max-width: 780px) { .barre-laterale .marque { margin: 0; } }
+  .nav-liste { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
+  @media (max-width: 780px) { .nav-liste { display: none; } }
+  .nav-item, .nav-item:visited { padding: 10px 12px; border-radius: 6px; font-size: 0.92rem; color: rgba(246,242,231,0.55); text-decoration: none; display: flex; justify-content: space-between; align-items: center; }
+  .nav-item.actif { background: rgba(246,242,231,0.08); color: var(--craie); font-weight: 600; }
+  .nav-item .etiquette-bientot { font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(246,242,231,0.35); }
+
+  .contenu { padding: 36px 44px 60px 44px; }
+  @media (max-width: 780px) { .contenu { padding: 24px 20px 48px 20px; } }
+  .entete-page { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; }
+  .entete-page h1 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.9rem; margin: 0 0 4px 0; }
+  .entete-page .sous-titre { color: var(--texte-att); font-size: 0.95rem; margin: 0; }
+
+  .barre-selecteurs { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 22px; align-items: flex-end; }
+  .champ-selecteur { display: flex; flex-direction: column; gap: 6px; }
+  .champ-selecteur label { font-size: 0.76rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--texte-att); }
+  .champ-selecteur select { padding: 9px 12px; border: 1.5px solid var(--bordure); border-radius: 7px; font-family: 'Inter', sans-serif; font-size: 0.9rem; background: var(--craie-2); min-width: 190px; }
+  .champ-selecteur select:focus { outline: none; border-color: var(--encre); }
+
+  .bouton { padding: 10px 16px; border-radius: 7px; font-family: 'Inter', sans-serif; font-size: 0.88rem; font-weight: 600; cursor: pointer; border: 1.5px solid transparent; }
+  .bouton-principal { background: var(--ocre); color: var(--craie-2); }
+  .bouton-principal:hover { background: var(--ocre-dark); }
+  .bouton-secondaire { background: none; border-color: var(--bordure); color: var(--texte-sombre); }
+  .bouton-secondaire:hover { border-color: var(--ardoise); }
+  .bouton-petit { padding: 6px 11px; font-size: 0.78rem; }
+  .bouton:disabled { opacity: 0.55; cursor: not-allowed; }
+
+  .conteneur-tableau { background: var(--craie-2); border: 1px solid var(--bordure); border-radius: 10px; overflow-x: auto; margin-bottom: 20px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.87rem; min-width: 900px; }
+  th { text-align: left; padding: 12px 14px; background: rgba(31,43,36,0.03); color: var(--texte-att); font-size: 0.74rem; text-transform: uppercase; font-weight: 600; white-space: nowrap; }
+  td { padding: 10px 14px; border-top: 1px solid var(--bordure); vertical-align: top; }
+  .matricule-cell { font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem; color: var(--encre); white-space: nowrap; }
+  .cellule-resultat { white-space: nowrap; font-size: 0.85rem; }
+  .cellule-resultat .classement { font-weight: 700; }
+  input.champ-appreciation { width: 130px; padding: 6px 8px; border: 1.5px solid var(--bordure); border-radius: 6px; font-size: 0.83rem; }
+  input.champ-appreciation:focus { outline: none; border-color: var(--encre); }
+  .badge-signe { font-size: 0.75rem; color: var(--vert-ok); font-weight: 600; white-space: nowrap; }
+  .badge-non-signe { font-size: 0.75rem; color: var(--texte-att); white-space: nowrap; }
+  .etat-vide-tableau { padding: 50px 20px; text-align: center; color: var(--texte-att); }
+
+  .message-flash { display: none; padding: 12px 16px; border-radius: 8px; font-size: 0.88rem; margin-bottom: 20px; }
+  .message-flash.visible { display: block; }
+  .message-flash.succes { background: rgba(76,122,90,0.1); color: var(--vert-ok); }
+  .message-flash.erreur { background: rgba(178,58,46,0.08); color: var(--rouge); }
+</style>
+</head>
+<body>
+
+<div class="mise-en-page">
+  <nav class="barre-laterale">
+    <div class="marque">Ardoise</div>
+    <ul class="nav-liste">
+      <li><a class="nav-item" href="dashboard-directeur.html">Tableau de bord</a></li>
+      <li><a class="nav-item" href="eleves.html">Élèves</a></li>
+      <li><a class="nav-item" href="classes.html">Classes</a></li>
+      <li><a class="nav-item" href="notes.html">Notes</a></li>
+      <li><a class="nav-item actif" href="bulletins.html">Bulletins</a></li>
+      <li class="nav-item">Calendrier <span class="etiquette-bientot">bientôt</span></li>
+      <li class="nav-item">Paramètres <span class="etiquette-bientot">bientôt</span></li>
+    </ul>
+  </nav>
+
+  <main class="contenu">
+    <div class="entete-page">
+      <div>
+        <h1>Bulletins</h1>
+        <p class="sous-titre">Résultats calculés, appréciations du titulaire, et génération du PDF.</p>
+      </div>
+      <button class="bouton bouton-principal" id="bouton-generer-pdf">📄 Générer le PDF de la classe</button>
+    </div>
+
+    <div class="message-flash" id="message-flash"></div>
+
+    <div class="barre-selecteurs">
+      <div class="champ-selecteur"><label for="select-classe">Classe</label><select id="select-classe"></select></div>
+      <div class="champ-selecteur"><label for="select-periode">Période</label><select id="select-periode"></select></div>
+      <button class="bouton bouton-secondaire" id="bouton-afficher">Afficher</button>
+    </div>
+
+    <div class="conteneur-tableau">
+      <table>
+        <thead>
+          <tr>
+            <th>Matricule</th><th>Élève</th><th>Résultat</th>
+            <th>Conduite</th><th>Application</th><th>Observation</th><th>Statut</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="corps-tableau">
+          <tr><td colspan="8" class="etat-vide-tableau">Choisis une classe et une période, puis clique "Afficher".</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<script>
+  const API_BASE_URL = "https://scolaire-saas-backend.onrender.com";
+
+  function obtenirTokens() {
+    return { accessToken: localStorage.getItem('ardoise_access_token'), refreshToken: localStorage.getItem('ardoise_refresh_token') };
+  }
+  function retourConnexion() {
+    localStorage.removeItem('ardoise_access_token'); localStorage.removeItem('ardoise_refresh_token'); localStorage.removeItem('ardoise_user');
+    window.location.href = 'index.html';
+  }
+  async function rafraichirToken(refreshToken) {
+    const reponse = await fetch(`${API_BASE_URL}/auth/refresh`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refresh_token: refreshToken }) });
+    if (!reponse.ok) return null;
+    const donnees = await reponse.json();
+    localStorage.setItem('ardoise_access_token', donnees.access_token);
+    return donnees.access_token;
+  }
+  async function appelApi(chemin, options = {}) {
+    let { accessToken, refreshToken } = obtenirTokens();
+    if (!accessToken) { retourConnexion(); return null; }
+    const executer = (token) => fetch(`${API_BASE_URL}${chemin}`, { ...options, headers: { ...(options.headers || {}), Authorization: `Bearer ${token}` } });
+    let reponse = await executer(accessToken);
+    if (reponse.status === 401 && refreshToken) {
+      const nouveauToken = await rafraichirToken(refreshToken);
+      if (!nouveauToken) { retourConnexion(); return null; }
+      reponse = await executer(nouveauToken);
+    }
+    if (reponse.status === 401) { retourConnexion(); return null; }
+    return reponse;
+  }
+  function afficherMessage(texte, type) {
+    const zone = document.getElementById('message-flash');
+    zone.textContent = texte; zone.className = `message-flash visible ${type}`;
+    setTimeout(() => zone.classList.remove('visible'), 6000);
+  }
+
+  async function chargerSelecteurs() {
+    const [rClasses, rPeriodes] = await Promise.all([appelApi('/classes'), appelApi('/periodes')]);
+    if (rClasses?.ok) {
+      const classes = await rClasses.json();
+      document.getElementById('select-classe').innerHTML = classes.map(c => `<option value="${c.id}">${c.nom}</option>`).join('');
+    }
+    if (rPeriodes?.ok) {
+      const periodes = await rPeriodes.json();
+      document.getElementById('select-periode').innerHTML = periodes.map(p => `<option value="${p.id}">${p.libelle}</option>`).join('') || '<option value="">Aucune période créée</option>';
+    }
+  }
+
+  async function chargerBulletins() {
+    const classeId = document.getElementById('select-classe').value;
+    const periodeId = document.getElementById('select-periode').value;
+    if (!classeId || !periodeId) { afficherMessage('Choisis une classe et une période.', 'erreur'); return; }
+
+    const r = await appelApi(`/bulletins/classe/${classeId}/liste?periodeId=${periodeId}`);
+    if (!r) return;
+    const eleves = await r.json();
+    if (!r.ok) { afficherMessage(eleves.message || 'Erreur lors du chargement.', 'erreur'); return; }
+
+    const corps = document.getElementById('corps-tableau');
+    if (eleves.length === 0) {
+      corps.innerHTML = '<tr><td colspan="8" class="etat-vide-tableau">Aucun élève actif dans cette classe.</td></tr>';
+      return;
+    }
+
+    corps.innerHTML = eleves.map(e => `
+      <tr data-eleve-id="${e.eleve_id}">
+        <td class="matricule-cell">${e.matricule}</td>
+        <td>${e.nom} ${e.postnom || ''} ${e.prenom || ''}</td>
+        <td class="cellule-resultat">
+          <span class="classement">${e.classement ?? '—'}${e.classement ? 'ᵉ' : ''}</span> · ${e.pourcentage ?? '—'}% · ${e.mention ?? '—'}
+        </td>
+        <td><input type="text" class="champ-appreciation" data-champ="conduite" value="${e.conduite || ''}" /></td>
+        <td><input type="text" class="champ-appreciation" data-champ="application" value="${e.application || ''}" /></td>
+        <td><input type="text" class="champ-appreciation" data-champ="observation" value="${e.observation || ''}" /></td>
+        <td>${e.signe_at ? '<span class="badge-signe">✓ Signé</span>' : '<span class="badge-non-signe">Non signé</span>'}</td>
+        <td style="white-space:nowrap;">
+          <button class="bouton bouton-secondaire bouton-petit" data-action="enregistrer">Enregistrer</button>
+          ${!e.signe_at ? '<button class="bouton bouton-secondaire bouton-petit" data-action="signer">Signer</button>' : ''}
+        </td>
+      </tr>
+    `).join('');
+
+    corps.querySelectorAll('button[data-action]').forEach((bouton) => {
+      const ligne = bouton.closest('tr');
+      const eleveId = ligne.dataset.eleveId;
+      if (bouton.dataset.action === 'enregistrer') {
+        bouton.addEventListener('click', () => enregistrerAppreciations(eleveId, ligne, periodeId));
+      } else {
+        bouton.addEventListener('click', () => signerBulletin(eleveId, periodeId));
+      }
+    });
+  }
+
+  async function enregistrerAppreciations(eleveId, ligne, periodeId) {
+    const corpsRequete = { periodeId };
+    ligne.querySelectorAll('.champ-appreciation').forEach((input) => { corpsRequete[input.dataset.champ] = input.value.trim(); });
+
+    const r = await appelApi(`/bulletins/${eleveId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpsRequete) });
+    if (!r) return;
+    const donnees = await r.json();
+    if (!r.ok) { afficherMessage(donnees.message || "Erreur lors de l'enregistrement.", 'erreur'); return; }
+    afficherMessage('Appréciations enregistrées.', 'succes');
+  }
+
+  async function signerBulletin(eleveId, periodeId) {
+    if (!confirm('Signer ce bulletin ?')) return;
+    const r = await appelApi(`/bulletins/${eleveId}/signer`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ periodeId }) });
+    if (!r) return;
+    const donnees = await r.json();
+    if (!r.ok) { afficherMessage(donnees.message || 'Erreur lors de la signature.', 'erreur'); return; }
+    afficherMessage('Bulletin signé.', 'succes');
+    chargerBulletins();
+  }
+
+  document.getElementById('bouton-afficher').addEventListener('click', chargerBulletins);
+
+  document.getElementById('bouton-generer-pdf').addEventListener('click', async () => {
+    const classeId = document.getElementById('select-classe').value;
+    const periodeId = document.getElementById('select-periode').value;
+    if (!classeId || !periodeId) { afficherMessage('Choisis une classe et une période.', 'erreur'); return; }
+
+    const bouton = document.getElementById('bouton-generer-pdf');
+    bouton.disabled = true; bouton.textContent = 'Génération en cours…';
+
+    const r = await appelApi(`/bulletins/classe/${classeId}/imprimer?periodeId=${periodeId}`);
+    bouton.disabled = false; bouton.textContent = '📄 Générer le PDF de la classe';
+
+    if (!r || !r.ok) { afficherMessage('Erreur lors de la génération du PDF.', 'erreur'); return; }
+
+    const blob = await r.blob();
+    const url = window.URL.createObjectURL(blob);
+    window.open(url, '_blank');
+  });
+
+  chargerSelecteurs();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ardoise — Utilisateurs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ardoise: #1F2B24; --craie: #F6F2E7; --craie-2: #FBF9F3;
+    --ocre: #C98A3E; --ocre-dark: #A96F2E; --encre: #3C5A62;
+    --rouge: #B23A2E; --vert-ok: #4C7A5A;
+    --texte-sombre: #1F2B24; --texte-att: #6B7269; --bordure: #E4DFCF;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Inter', sans-serif; color: var(--texte-sombre); background: var(--craie); }
+  .mise-en-page { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+  @media (max-width: 780px) { .mise-en-page { grid-template-columns: 1fr; } }
+  .barre-laterale { background: var(--ardoise); color: var(--craie); padding: 32px 22px; position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; justify-content: space-between; }
+  @media (max-width: 780px) { .barre-laterale { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px; height: auto; z-index: 5; } }
+  .barre-laterale .marque { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.5rem; margin: 0 0 40px 0; }
+  @media (max-width: 780px) { .barre-laterale .marque { margin: 0; } }
+  .nav-liste { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
+  @media (max-width: 780px) { .nav-liste { display: none; } }
+  .nav-item, .nav-item:visited { padding: 10px 12px; border-radius: 6px; font-size: 0.92rem; color: rgba(246,242,231,0.55); text-decoration: none; display: flex; justify-content: space-between; align-items: center; }
+  .nav-item.actif { background: rgba(246,242,231,0.08); color: var(--craie); font-weight: 600; }
+  .lettre-i { position: relative; display: inline-block; line-height: 1; }
+  .point-i-marque { position: absolute; width: 0.13em; height: 0.13em; border-radius: 50%; background: var(--ocre); left: 50%; top: 0.16em; transform: translateX(-50%); }
+  .nav-deconnexion { background: none; border: none; border-top: 1px solid rgba(246,242,231,0.12); color: rgba(246,242,231,0.55); text-align: left; padding: 14px 12px 4px 12px; font-size: 0.86rem; font-family: 'Inter', sans-serif; cursor: pointer; }
+  .nav-deconnexion:hover { color: var(--craie); }
+  @media (max-width: 780px) { .nav-deconnexion { border-top: none; padding: 8px 12px; } }
+
+  .contenu { padding: 36px 44px 60px 44px; }
+  @media (max-width: 780px) { .contenu { padding: 24px 20px 48px 20px; } }
+  .entete-page { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; }
+  .entete-page h1 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.9rem; margin: 0 0 4px 0; }
+  .entete-page .sous-titre { color: var(--texte-att); font-size: 0.95rem; margin: 0; }
+
+  .bouton { padding: 10px 16px; border-radius: 7px; font-family: 'Inter', sans-serif; font-size: 0.88rem; font-weight: 600; cursor: pointer; border: 1.5px solid transparent; }
+  .bouton-principal { background: var(--ocre); color: var(--craie-2); }
+  .bouton-principal:hover { background: var(--ocre-dark); }
+  .bouton-secondaire { background: none; border-color: var(--bordure); color: var(--texte-sombre); }
+  .bouton-secondaire:hover { border-color: var(--ardoise); }
+  .bouton:disabled { opacity: 0.55; cursor: not-allowed; }
+
+  .conteneur-tableau { background: var(--craie-2); border: 1px solid var(--bordure); border-radius: 10px; overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th { text-align: left; padding: 13px 16px; background: rgba(31,43,36,0.03); color: var(--texte-att); font-size: 0.78rem; text-transform: uppercase; font-weight: 600; }
+  td { padding: 13px 16px; border-top: 1px solid var(--bordure); }
+  tr:hover td { background: rgba(31,43,36,0.02); }
+  .badge-role { display: inline-block; padding: 3px 9px; border-radius: 20px; font-size: 0.72rem; font-weight: 600; background: rgba(60,90,98,0.1); color: var(--encre); margin-right: 4px; margin-bottom: 3px; }
+  .badge-statut { display: inline-block; padding: 3px 9px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+  .badge-statut.actif { background: rgba(76,122,90,0.12); color: var(--vert-ok); }
+  .badge-statut.autre { background: rgba(107,114,105,0.12); color: var(--texte-att); }
+  .lien-action { background: none; border: none; color: var(--encre); cursor: pointer; font-size: 0.85rem; font-weight: 500; padding: 4px 8px; }
+  .lien-action.suppr { color: var(--rouge); }
+  .etat-vide-tableau { padding: 50px 20px; text-align: center; color: var(--texte-att); }
+
+  .voile { position: fixed; inset: 0; background: rgba(31,43,36,0.45); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 10; }
+  .voile.visible { display: flex; }
+  .modale { background: var(--craie-2); border-radius: 12px; padding: 30px; max-width: 460px; width: 100%; max-height: 90vh; overflow-y: auto; }
+  .modale h2 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.4rem; margin: 0 0 20px 0; }
+  .ligne-champs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .champ { margin-bottom: 14px; }
+  .champ label { display: block; font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--texte-att); margin-bottom: 6px; }
+  .champ input, .champ select { width: 100%; padding: 10px 12px; font-size: 0.92rem; border: 1.5px solid var(--bordure); border-radius: 7px; background: #fff; }
+  .champ input:focus, .champ select:focus { outline: none; border-color: var(--encre); }
+  .grille-roles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .case-role { display: flex; align-items: center; gap: 7px; font-size: 0.86rem; padding: 7px 10px; border: 1.5px solid var(--bordure); border-radius: 7px; cursor: pointer; }
+  .case-role input { width: auto; }
+  .actions-modale { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; }
+
+  .message-flash { display: none; padding: 12px 16px; border-radius: 8px; font-size: 0.88rem; margin-bottom: 20px; }
+  .message-flash.visible { display: block; }
+  .message-flash.succes { background: rgba(76,122,90,0.1); color: var(--vert-ok); }
+  .message-flash.erreur { background: rgba(178,58,46,0.08); color: var(--rouge); }
+</style>
+</head>
+<body>
+
+<div class="mise-en-page">
+  <nav class="barre-laterale">
+    <div>
+      <div class="marque">Ardo<span class="lettre-i">ı<span class="point-i-marque"></span></span>se</div>
+      <ul class="nav-liste">
+        <li><a class="nav-item" href="dashboard-directeur.html">Tableau de bord</a></li>
+        <li><a class="nav-item" href="eleves.html">Élèves</a></li>
+        <li><a class="nav-item actif" href="utilisateurs.html">Utilisateurs</a></li>
+        <li><a class="nav-item" href="classes.html">Classes</a></li>
+        <li><a class="nav-item" href="notes.html">Notes</a></li>
+        <li><a class="nav-item" href="bulletins.html">Bulletins</a></li>
+        <li><a class="nav-item" href="generateur-modeles.html">Modèles de bulletins</a></li>
+        <li><a class="nav-item" href="calendrier.html">Calendrier</a></li>
+        <li><a class="nav-item" href="parametres.html">Paramètres</a></li>
+      </ul>
+    </div>
+    <button class="nav-deconnexion" id="bouton-deconnexion-nav">↩ Se déconnecter</button>
+  </nav>
+
+  <main class="contenu">
+    <div class="entete-page">
+      <div>
+        <h1>Utilisateurs</h1>
+        <p class="sous-titre" id="compteur-utilisateurs">Chargement…</p>
+      </div>
+      <button class="bouton bouton-principal" id="bouton-ajouter">+ Ajouter un utilisateur</button>
+    </div>
+
+    <div class="message-flash" id="message-flash"></div>
+
+    <div class="conteneur-tableau">
+      <table>
+        <thead><tr><th>Nom</th><th>Email</th><th>Rôles</th><th>Statut</th><th></th></tr></thead>
+        <tbody id="corps-tableau"><tr><td colspan="5" class="etat-vide-tableau">Chargement…</td></tr></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<!-- Modale ajout/modification -->
+<div class="voile" id="voile-modale">
+  <div class="modale">
+    <h2 id="titre-modale">Ajouter un utilisateur</h2>
+    <form id="formulaire-utilisateur">
+      <input type="hidden" id="utilisateur-id" />
+      <div class="ligne-champs">
+        <div class="champ"><label for="champ-nom">Nom</label><input type="text" id="champ-nom" required /></div>
+        <div class="champ"><label for="champ-prenom">Prénom</label><input type="text" id="champ-prenom" /></div>
+      </div>
+      <div class="champ"><label for="champ-email">Email</label><input type="email" id="champ-email" required /></div>
+      <div class="champ"><label for="champ-telephone">Téléphone</label><input type="text" id="champ-telephone" /></div>
+      <div class="champ" id="champ-mdp-conteneur">
+        <label for="champ-mdp">Mot de passe provisoire</label>
+        <input type="text" id="champ-mdp" />
+      </div>
+      <div class="champ">
+        <label>Rôles</label>
+        <div class="grille-roles">
+          <label class="case-role"><input type="checkbox" value="professeur" /> Professeur</label>
+          <label class="case-role"><input type="checkbox" value="titulaire" /> Titulaire</label>
+          <label class="case-role"><input type="checkbox" value="secretaire" /> Secrétaire</label>
+          <label class="case-role"><input type="checkbox" value="prefet" /> Préfet des études</label>
+        </div>
+      </div>
+      <div class="actions-modale">
+        <button type="button" class="bouton bouton-secondaire" id="bouton-annuler-modale">Annuler</button>
+        <button type="submit" class="bouton bouton-principal" id="bouton-enregistrer">Enregistrer</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  const API_BASE_URL = "https://scolaire-saas-backend.onrender.com";
+
+  const LIBELLES_ROLES = {
+    professeur: 'Professeur', titulaire: 'Titulaire', secretaire: 'Secrétaire',
+    prefet: 'Préfet', directeur: 'Directeur', super_admin: 'Super Admin'
+  };
+
+  function obtenirTokens() {
+    return { accessToken: localStorage.getItem('ardoise_access_token'), refreshToken: localStorage.getItem('ardoise_refresh_token') };
+  }
+  function retourConnexion() {
+    localStorage.removeItem('ardoise_access_token'); localStorage.removeItem('ardoise_refresh_token'); localStorage.removeItem('ardoise_user');
+    window.location.href = 'index.html';
+  }
+  async function rafraichirToken(refreshToken) {
+    const reponse = await fetch(`${API_BASE_URL}/auth/refresh`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refresh_token: refreshToken }) });
+    if (!reponse.ok) return null;
+    const donnees = await reponse.json();
+    localStorage.setItem('ardoise_access_token', donnees.access_token);
+    return donnees.access_token;
+  }
+  async function appelApi(chemin, options = {}) {
+    let { accessToken, refreshToken } = obtenirTokens();
+    if (!accessToken) { retourConnexion(); return null; }
+    const executer = (token) => fetch(`${API_BASE_URL}${chemin}`, { ...options, headers: { ...(options.headers || {}), Authorization: `Bearer ${token}` } });
+    let reponse = await executer(accessToken);
+    if (reponse.status === 401 && refreshToken) {
+      const nouveauToken = await rafraichirToken(refreshToken);
+      if (!nouveauToken) { retourConnexion(); return null; }
+      reponse = await executer(nouveauToken);
+    }
+    if (reponse.status === 401) { retourConnexion(); return null; }
+    return reponse;
+  }
+  function afficherMessage(texte, type) {
+    const zone = document.getElementById('message-flash');
+    zone.textContent = texte; zone.className = `message-flash visible ${type}`;
+    setTimeout(() => zone.classList.remove('visible'), 5000);
+  }
+
+  document.getElementById('bouton-deconnexion-nav')?.addEventListener('click', async () => {
+    const { refreshToken } = obtenirTokens();
+    try {
+      await fetch(`${API_BASE_URL}/auth/logout`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refresh_token: refreshToken }) });
+    } catch (e) {}
+    retourConnexion();
+  });
+
+  async function chargerUtilisateurs() {
+    const r = await appelApi('/utilisateurs');
+    if (!r) return;
+    if (!r.ok) {
+      document.getElementById('corps-tableau').innerHTML = '<tr><td colspan="5" class="etat-vide-tableau">Accès non autorisé ou erreur de chargement.</td></tr>';
+      return;
+    }
+    const utilisateurs = await r.json();
+    document.getElementById('compteur-utilisateurs').textContent = `${utilisateurs.length} utilisateur${utilisateurs.length !== 1 ? 's' : ''}`;
+
+    const corps = document.getElementById('corps-tableau');
+    if (utilisateurs.length === 0) {
+      corps.innerHTML = '<tr><td colspan="5" class="etat-vide-tableau">Aucun utilisateur pour l\'instant.</td></tr>';
+      return;
+    }
+
+    corps.innerHTML = utilisateurs.map(u => `
+      <tr data-id="${u.id}">
+        <td>${u.nom} ${u.prenom || ''}</td>
+        <td>${u.email}</td>
+        <td>${(u.roles || []).filter(Boolean).map(r => `<span class="badge-role">${LIBELLES_ROLES[r] || r}</span>`).join('')}</td>
+        <td><span class="badge-statut ${u.statut === 'actif' ? 'actif' : 'autre'}">${u.statut}</span></td>
+        <td>
+          <button class="lien-action" data-action="modifier">Modifier</button>
+          <button class="lien-action suppr" data-action="supprimer">Supprimer</button>
+        </td>
+      </tr>
+    `).join('');
+
+    corps.querySelectorAll('button[data-action]').forEach((bouton) => {
+      const ligne = bouton.closest('tr');
+      const id = ligne.dataset.id;
+      const u = utilisateurs.find(x => x.id === id);
+      if (bouton.dataset.action === 'modifier') bouton.addEventListener('click', () => ouvrirModale(u));
+      else bouton.addEventListener('click', () => supprimerUtilisateur(id, u.nom));
+    });
+  }
+
+  function ouvrirModale(utilisateur) {
+    document.getElementById('titre-modale').textContent = utilisateur ? 'Modifier un utilisateur' : 'Ajouter un utilisateur';
+    document.getElementById('utilisateur-id').value = utilisateur?.id || '';
+    document.getElementById('champ-nom').value = utilisateur?.nom || '';
+    document.getElementById('champ-prenom').value = utilisateur?.prenom || '';
+    document.getElementById('champ-email').value = utilisateur?.email || '';
+    document.getElementById('champ-telephone').value = utilisateur?.telephone || '';
+    document.getElementById('champ-mdp').value = '';
+    document.getElementById('champ-mdp-conteneur').style.display = utilisateur ? 'none' : 'block';
+    document.getElementById('champ-mdp').required = !utilisateur;
+
+    document.querySelectorAll('.case-role input').forEach((c) => {
+      c.checked = utilisateur ? (utilisateur.roles || []).includes(c.value) : false;
+    });
+
+    document.getElementById('voile-modale').classList.add('visible');
+  }
+
+  document.getElementById('bouton-ajouter').addEventListener('click', () => ouvrirModale(null));
+  document.getElementById('bouton-annuler-modale').addEventListener('click', () => {
+    document.getElementById('voile-modale').classList.remove('visible');
+    document.getElementById('formulaire-utilisateur').reset();
+  });
+
+  document.getElementById('formulaire-utilisateur').addEventListener('submit', async (evt) => {
+    evt.preventDefault();
+    const id = document.getElementById('utilisateur-id').value;
+    const roles = Array.from(document.querySelectorAll('.case-role input:checked')).map(c => c.value);
+
+    if (!id && roles.length === 0) {
+      afficherMessage('Choisis au moins un rôle.', 'erreur');
+      return;
+    }
+
+    const bouton = document.getElementById('bouton-enregistrer');
+    bouton.disabled = true; bouton.textContent = 'Enregistrement…';
+
+    let reponse;
+    if (id) {
+      reponse = await appelApi(`/utilisateurs/${id}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nom: document.getElementById('champ-nom').value.trim(),
+          prenom: document.getElementById('champ-prenom').value.trim(),
+          telephone: document.getElementById('champ-telephone').value.trim()
+        })
+      });
+    } else {
+      reponse = await appelApi('/utilisateurs', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nom: document.getElementById('champ-nom').value.trim(),
+          prenom: document.getElementById('champ-prenom').value.trim(),
+          email: document.getElementById('champ-email').value.trim(),
+          telephone: document.getElementById('champ-telephone').value.trim(),
+          password: document.getElementById('champ-mdp').value,
+          roles
+        })
+      });
+    }
+
+    bouton.disabled = false; bouton.textContent = 'Enregistrer';
+
+    if (!reponse) return;
+    const donnees = await reponse.json();
+    if (!reponse.ok) { afficherMessage(donnees.message || "Erreur lors de l'enregistrement.", 'erreur'); return; }
+
+    document.getElementById('voile-modale').classList.remove('visible');
+    document.getElementById('formulaire-utilisateur').reset();
+    afficherMessage(id ? 'Utilisateur mis à jour.' : 'Utilisateur créé.', 'succes');
+    chargerUtilisateurs();
+  });
+
+  async function supprimerUtilisateur(id, nom) {
+    if (!confirm(`Supprimer définitivement ${nom} ? Cette action est irréversible.`)) return;
+    const r = await appelApi(`/utilisateurs/${id}`, { method: 'DELETE' });
+    if (!r) return;
+    if (!r.ok) { const d = await r.json(); afficherMessage(d.message || 'Erreur lors de la suppression.', 'erreur'); return; }
+    afficherMessage('Utilisateur supprimé.', 'succes');
+    chargerUtilisateurs();
+  }
+
+  chargerUtilisateurs();
+
+  // ---------- Filtrage de la navigation selon le rôle connecté ----------
+  (function gererAccesParRole() {
+    const permissions = {
+      'dashboard-directeur.html': ['directeur', 'prefet'],
+      'eleves.html': ['directeur', 'prefet', 'secretaire'],
+      'utilisateurs.html': ['directeur', 'prefet', 'secretaire'],
+      'classes.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire'],
+      'notes.html': ['directeur', 'prefet', 'professeur'],
+      'bulletins.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
+      'generateur-modeles.html': ['directeur'],
+      'calendrier.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire'],
+      'parametres.html': ['directeur']
+    };
+    const ordrePriorite = ['dashboard-directeur.html', 'eleves.html', 'notes.html', 'bulletins.html'];
+
+    let utilisateur = null;
+    try { utilisateur = JSON.parse(localStorage.getItem('ardoise_user') || 'null'); } catch (e) {}
+    const roles = (utilisateur && utilisateur.roles) || [];
+    const estSuperAdmin = roles.includes('super_admin');
+
+    document.querySelectorAll('.nav-item[href]').forEach((lien) => {
+      const page = lien.getAttribute('href');
+      const rolesAutorises = permissions[page];
+      if (rolesAutorises && !estSuperAdmin && !roles.some((r) => rolesAutorises.includes(r))) {
+        const li = lien.closest('li');
+        if (li) li.style.display = 'none';
+      }
+    });
+
+    const pageActuelle = 'utilisateurs.html';
+    const rolesPourCettePage = permissions[pageActuelle];
+    if (rolesPourCettePage && !estSuperAdmin && !roles.some((r) => rolesPourCettePage.includes(r))) {
+      const pageDeRepli = ordrePriorite.find((p) => {
+        const r = permissions[p];
+        return !r || roles.some((role) => r.includes(role));
+      });
+      if (pageDeRepli && pageDeRepli !== pageActuelle) {
+        window.location.href = pageDeRepli;
+      }
+    }
+  })();
+</script>
+
+</body>
+</html>

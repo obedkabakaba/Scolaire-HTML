@@ -109,6 +109,7 @@
     <ul class="nav-liste">
       <li><a class="nav-item" href="dashboard-directeur.html">Tableau de bord</a></li>
       <li><a class="nav-item" href="eleves.html">Élèves</a></li>
+        <li><a class="nav-item" href="utilisateurs.html">Utilisateurs</a></li>
       <li><a class="nav-item" href="classes.html">Classes</a></li>
       <li><a class="nav-item" href="notes.html">Notes</a></li>
       <li><a class="nav-item" href="bulletins.html">Bulletins</a></li>
@@ -288,6 +289,7 @@
     const permissions = {
       'dashboard-directeur.html': ['directeur', 'prefet'],
       'eleves.html': ['directeur', 'prefet', 'secretaire'],
+      'utilisateurs.html': ['directeur', 'prefet', 'secretaire'],
       'classes.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire'],
       'notes.html': ['directeur', 'prefet', 'professeur'],
       'bulletins.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],

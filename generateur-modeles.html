@@ -168,6 +168,10 @@
           <button class="bouton bouton-secondaire bouton-petit" id="bouton-retour-liste">← Retour aux modèles</button>
           <h1 id="titre-editeur" style="font-family:'Fraunces',serif; font-size:1.5rem; margin: 10px 0 0 0;"></h1>
         </div>
+        <div>
+          <span id="badge-actif" style="display:none; font-size:0.78rem; color:var(--vert-ok); font-weight:600; margin-right:12px;">✓ Modèle actif</span>
+          <button class="bouton bouton-principal" id="bouton-activer-modele">Activer ce modèle pour les bulletins</button>
+        </div>
       </div>
 
       <div class="zone-travail">
@@ -289,7 +293,7 @@
       <div class="carte-modele" data-id="${m.id}">
         <div class="apercu">${m.fichier_source_url ? `<img src="${m.fichier_source_url}" />` : '📄'}</div>
         <div class="infos">
-          <div class="nom">${m.nom}</div>
+          <div class="nom">${m.nom} ${m.actif ? '<span style="color:var(--vert-ok); font-size:0.75rem;">✓ actif</span>' : ''}</div>
           <div class="type">${m.type === 'annuel' ? 'Bulletin annuel' : 'Bulletin de période'}</div>
         </div>
       </div>
@@ -370,6 +374,12 @@
     document.getElementById('titre-editeur').textContent = modele.nom;
     document.getElementById('image-modele').src = modele.fichier_source_url || '';
 
+    document.getElementById('badge-actif').style.display = modele.actif ? 'inline' : 'none';
+    document.getElementById('bouton-activer-modele').textContent = modele.actif
+      ? 'Déjà actif'
+      : 'Activer ce modèle pour les bulletins';
+    document.getElementById('bouton-activer-modele').disabled = !!modele.actif;
+
     document.getElementById('liste-cles-rapides').innerHTML = CLES_SUGGEREES.map(cle =>
       `<span class="cle-rapide" data-cle="${cle}">${cle}</span>`
     ).join('');
@@ -379,6 +389,16 @@
 
     chargerZones();
   }
+
+  document.getElementById('bouton-activer-modele').addEventListener('click', async () => {
+    if (!confirm('Utiliser ce modèle pour générer les bulletins de cette école à partir de maintenant ?')) return;
+    const r = await appelApi(`/modeles-bulletins/${modeleCourantId}/activer`, { method: 'POST' });
+    if (!r || !r.ok) { afficherMessage("Erreur lors de l'activation.", 'erreur'); return; }
+    afficherMessage('Modèle activé — il sera utilisé pour la génération des bulletins.', 'succes');
+    document.getElementById('badge-actif').style.display = 'inline';
+    document.getElementById('bouton-activer-modele').textContent = 'Déjà actif';
+    document.getElementById('bouton-activer-modele').disabled = true;
+  });
 
   document.getElementById('bouton-retour-liste').addEventListener('click', () => {
     document.getElementById('vue-editeur').style.display = 'none';

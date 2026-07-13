@@ -127,6 +127,35 @@
 
     <div class="message-flash" id="message-flash"></div>
 
+    <!-- Mon abonnement -->
+    <div class="carte-section">
+      <h2>Mon abonnement</h2>
+      <div id="details-abonnement" style="margin-bottom:18px; font-size:0.92rem;">Chargement…</div>
+
+      <div id="section-paiement">
+        <p style="font-size:0.85rem; color:var(--texte-att); margin-bottom:14px;">
+          Payer via Mobile Money. Le client recevra une demande de confirmation directement sur son téléphone.
+        </p>
+        <form id="formulaire-paiement">
+          <div class="ligne-champs">
+            <div class="champ"><label for="champ-operateur">Opérateur</label>
+              <select id="champ-operateur">
+                <option value="orange_money">Orange Money</option>
+                <option value="airtel_money">Airtel Money</option>
+                <option value="mpesa">M-Pesa (Vodacom)</option>
+              </select>
+            </div>
+            <div class="champ"><label for="champ-telephone-paiement">Téléphone (format international, sans +)</label><input type="text" id="champ-telephone-paiement" placeholder="ex. 243812345678" required /></div>
+          </div>
+          <div class="champ">
+            <label for="champ-code-provider">Code opérateur PawaPay</label>
+            <input type="text" id="champ-code-provider" placeholder="ex. ORANGE_COD — voir ton tableau de bord PawaPay" required />
+          </div>
+          <button type="submit" class="bouton bouton-principal" id="bouton-payer">Envoyer la demande de paiement</button>
+        </form>
+      </div>
+    </div>
+
     <!-- Infos école -->
     <div class="carte-section">
       <h2>Informations de l'école</h2>
@@ -330,8 +359,60 @@
     else afficherMessage("Erreur lors de l'ajout de la mention.", 'erreur');
   });
 
+  const LIBELLES_STATUT_ABONNEMENT = {
+    en_attente: 'En attente', actif: 'Actif', expire: 'Expiré',
+    suspendu: 'Suspendu', resilie: 'Résilié', renouvele: 'Renouvelé'
+  };
+
+  let abonnementCourantId = null;
+
+  async function chargerAbonnement() {
+    const r = await appelApi('/abonnements/courant');
+    if (!r || !r.ok) return;
+    const abo = await r.json();
+    const zone = document.getElementById('details-abonnement');
+
+    if (!abo) {
+      zone.textContent = 'Aucun abonnement trouvé.';
+      document.getElementById('section-paiement').style.display = 'none';
+      return;
+    }
+
+    abonnementCourantId = abo.id;
+    const dateExpiration = abo.date_expiration ? new Date(abo.date_expiration).toLocaleDateString('fr-FR') : '—';
+    zone.innerHTML = `
+      <strong>${abo.plan_nom}</strong> — ${abo.prix} ${abo.devise} · Statut : ${LIBELLES_STATUT_ABONNEMENT[abo.statut] || abo.statut} · Expire le ${dateExpiration}
+    `;
+  }
+
+  document.getElementById('formulaire-paiement').addEventListener('submit', async (evt) => {
+    evt.preventDefault();
+    if (!abonnementCourantId) { afficherMessage('Aucun abonnement à payer pour le moment.', 'erreur'); return; }
+
+    const bouton = document.getElementById('bouton-payer');
+    bouton.disabled = true; bouton.textContent = 'Envoi en cours…';
+
+    const r = await appelApi(`/abonnements/${abonnementCourantId}/payer-mobile-money`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        methode: document.getElementById('champ-operateur').value,
+        telephone: document.getElementById('champ-telephone-paiement').value.trim(),
+        provider: document.getElementById('champ-code-provider').value.trim()
+      })
+    });
+
+    bouton.disabled = false; bouton.textContent = 'Envoyer la demande de paiement';
+
+    if (!r) return;
+    const donnees = await r.json();
+    if (!r.ok) { afficherMessage(donnees.message || "Erreur lors de l'envoi du paiement.", 'erreur'); return; }
+
+    afficherMessage('Demande envoyée ! Le client doit confirmer sur son téléphone. Le statut se mettra à jour automatiquement une fois confirmé.', 'succes');
+  });
+
   chargerEcole();
   chargerMentions();
+  chargerAbonnement();
 
   document.getElementById('bouton-deconnexion-nav')?.addEventListener('click', async () => {
     const { refreshToken } = obtenirTokens();

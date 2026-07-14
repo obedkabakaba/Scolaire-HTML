@@ -104,7 +104,8 @@
     <div>
       <div class="marque">Ardo<span class="lettre-i">ı<span class="point-i-marque"></span></span>se</div>
     <ul class="nav-liste">
-      <li><a class="nav-item" href="dashboard-directeur.html">Tableau de bord</a></li>
+      <li><a class="nav-item" href="espace-professeur.html">Mes cours</a></li>
+        <li><a class="nav-item" href="dashboard-directeur.html">Tableau de bord</a></li>
       <li><a class="nav-item" href="eleves.html">Élèves</a></li>
         <li><a class="nav-item" href="utilisateurs.html">Utilisateurs</a></li>
       <li><a class="nav-item" href="classes.html">Classes</a></li>
@@ -303,6 +304,7 @@
   // ---------- Filtrage de la navigation selon le rôle connecté ----------
   (function gererAccesParRole() {
     const permissions = {
+      'espace-professeur.html': ['professeur'],
       'dashboard-directeur.html': ['directeur', 'prefet'],
       'eleves.html': ['directeur', 'prefet', 'secretaire'],
       'utilisateurs.html': ['directeur', 'prefet', 'secretaire'],

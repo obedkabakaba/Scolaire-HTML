@@ -105,7 +105,8 @@
     <div>
       <div class="marque">Ardo<span class="lettre-i">ı<span class="point-i-marque"></span></span>se</div>
     <ul class="nav-liste">
-      <li><a class="nav-item" href="dashboard-directeur.html">Tableau de bord</a></li>
+      <li><a class="nav-item" href="espace-professeur.html">Mes cours</a></li>
+        <li><a class="nav-item" href="dashboard-directeur.html">Tableau de bord</a></li>
       <li><a class="nav-item" href="eleves.html">Élèves</a></li>
         <li><a class="nav-item" href="utilisateurs.html">Utilisateurs</a></li>
       <li><a class="nav-item" href="classes.html">Classes</a></li>
@@ -194,27 +195,59 @@
 
   const { user } = obtenirTokens();
   const estDirecteurOuPrefet = (user?.roles || []).some(r => ['directeur', 'prefet'].includes(r));
+  const estProfesseurSeul = !estDirecteurOuPrefet && (user?.roles || []).includes('professeur');
   if (!estDirecteurOuPrefet) {
     document.getElementById('bouton-valider-notes').style.display = 'none';
     document.getElementById('bouton-devalider-notes').style.display = 'none';
   }
 
+  const parametresUrl = new URLSearchParams(window.location.search);
+  let mesCoursCache = [];
+
   async function chargerSelecteurs() {
-    const [rClasses, rCours, rPeriodes] = await Promise.all([
-      appelApi('/classes'), appelApi('/cours'), appelApi('/periodes')
-    ]);
-    if (rClasses?.ok) {
-      const classes = await rClasses.json();
-      document.getElementById('select-classe').innerHTML = classes.map(c => `<option value="${c.id}">${c.nom}</option>`).join('');
+    if (estProfesseurSeul) {
+      // Un professeur ne voit que ses propres cours assignés, pas toute l'école
+      const rMesCours = await appelApi('/mes-cours');
+      if (rMesCours?.ok) {
+        mesCoursCache = await rMesCours.json();
+        const classesUniques = [...new Map(mesCoursCache.map(c => [c.classe_id, c.classe_nom])).entries()];
+        document.getElementById('select-classe').innerHTML = classesUniques.map(([id, nom]) => `<option value="${id}">${nom}</option>`).join('');
+        document.getElementById('select-classe').addEventListener('change', remplirCoursSelonClasse);
+        remplirCoursSelonClasse();
+      }
+    } else {
+      const rClasses = await appelApi('/classes');
+      if (rClasses?.ok) {
+        const classes = await rClasses.json();
+        document.getElementById('select-classe').innerHTML = classes.map(c => `<option value="${c.id}">${c.nom}</option>`).join('');
+      }
+      const rCours = await appelApi('/cours');
+      if (rCours?.ok) {
+        const cours = await rCours.json();
+        document.getElementById('select-cours').innerHTML = cours.map(c => `<option value="${c.id}">${c.nom}</option>`).join('');
+      }
     }
-    if (rCours?.ok) {
-      const cours = await rCours.json();
-      document.getElementById('select-cours').innerHTML = cours.map(c => `<option value="${c.id}">${c.nom}</option>`).join('');
-    }
+
+    const rPeriodes = await appelApi('/periodes');
     if (rPeriodes?.ok) {
       const periodes = await rPeriodes.json();
       document.getElementById('select-periode').innerHTML = periodes.map(p => `<option value="${p.id}">${p.libelle}</option>`).join('') || '<option value="">Aucune période créée</option>';
     }
+
+    // Pré-sélection depuis l'URL (ex: lien "Encoder les notes" depuis l'espace professeur)
+    const classeIdUrl = parametresUrl.get('classeId');
+    const coursIdUrl = parametresUrl.get('coursId');
+    if (classeIdUrl) {
+      document.getElementById('select-classe').value = classeIdUrl;
+      if (estProfesseurSeul) remplirCoursSelonClasse();
+    }
+    if (coursIdUrl) document.getElementById('select-cours').value = coursIdUrl;
+  }
+
+  function remplirCoursSelonClasse() {
+    const classeId = document.getElementById('select-classe').value;
+    const coursDeCetteClasse = mesCoursCache.filter(c => c.classe_id === classeId);
+    document.getElementById('select-cours').innerHTML = coursDeCetteClasse.map(c => `<option value="${c.cours_id}">${c.cours_nom}</option>`).join('');
   }
 
   let maximumActuel = null;
@@ -343,6 +376,7 @@
   // ---------- Filtrage de la navigation selon le rôle connecté ----------
   (function gererAccesParRole() {
     const permissions = {
+      'espace-professeur.html': ['professeur'],
       'dashboard-directeur.html': ['directeur', 'prefet'],
       'eleves.html': ['directeur', 'prefet', 'secretaire'],
       'utilisateurs.html': ['directeur', 'prefet', 'secretaire'],

@@ -280,7 +280,31 @@
         </div>
 
         <button type="submit" class="bouton-connexion" id="bouton-connexion">Se connecter</button>
+
+        <button type="button" id="lien-mdp-oublie" style="background:none; border:none; color:var(--encre); font-size:0.85rem; margin-top:14px; cursor:pointer; text-decoration:underline; display:block; width:100%;">Mot de passe oublié ?</button>
       </form>
+
+      <div id="panneau-mdp-oublie" style="display:none;">
+        <h2>Mot de passe oublié</h2>
+        <p class="sous-titre">Entre ton email (et le code école si tu n'es pas Super Admin), on t'enverra un lien pour en choisir un nouveau.</p>
+        <div class="message-erreur" id="zone-erreur-mdp-oublie" role="alert"></div>
+        <div class="message-succes visible" id="zone-succes-mdp-oublie" style="display:none;">
+          <div class="coche">✓</div>
+          <p>Si un compte correspond, un email vient d'être envoyé avec un lien de réinitialisation (vérifie aussi tes spams).</p>
+        </div>
+        <form id="formulaire-mdp-oublie">
+          <div class="champ">
+            <label for="mdp-oublie-code-ecole">Code de l'école (laisser vide si Super Admin)</label>
+            <input type="text" id="mdp-oublie-code-ecole" placeholder="ex. college-boboto" />
+          </div>
+          <div class="champ">
+            <label for="mdp-oublie-email">Adresse email</label>
+            <input type="email" id="mdp-oublie-email" required />
+          </div>
+          <button type="submit" class="bouton-connexion" id="bouton-envoyer-mdp-oublie">Envoyer le lien</button>
+        </form>
+        <button type="button" id="bouton-retour-connexion" style="background:none; border:none; color:var(--encre); font-size:0.85rem; margin-top:14px; cursor:pointer; text-decoration:underline; display:block; width:100%;">← Retour à la connexion</button>
+      </div>
 
       <div class="message-succes" id="zone-succes">
         <div class="coche">✓</div>
@@ -363,6 +387,7 @@
       const pageAtterrissage =
         (roles.includes('directeur') || roles.includes('prefet')) ? 'dashboard-directeur.html' :
         roles.includes('secretaire') ? 'eleves.html' :
+        roles.includes('comptable') ? 'frais-scolaires.html' :
         roles.includes('professeur') ? 'espace-professeur.html' :
         roles.includes('titulaire') ? 'espace-titulaire.html' :
         null;
@@ -384,6 +409,50 @@
       boutonConnexion.disabled = false;
       boutonConnexion.textContent = 'Se connecter';
     }
+  });
+
+  // ---------- Mot de passe oublié ----------
+  const formulaireConnexion = document.getElementById('formulaire-connexion');
+  const panneauMdpOublie = document.getElementById('panneau-mdp-oublie');
+
+  document.getElementById('lien-mdp-oublie').addEventListener('click', () => {
+    formulaireConnexion.style.display = 'none';
+    panneauMdpOublie.style.display = 'block';
+  });
+  document.getElementById('bouton-retour-connexion').addEventListener('click', () => {
+    panneauMdpOublie.style.display = 'none';
+    formulaireConnexion.style.display = 'block';
+    document.getElementById('zone-succes-mdp-oublie').style.display = 'none';
+    document.getElementById('formulaire-mdp-oublie').style.display = 'block';
+  });
+
+  document.getElementById('formulaire-mdp-oublie').addEventListener('submit', async (evt) => {
+    evt.preventDefault();
+    const zoneErreurMdp = document.getElementById('zone-erreur-mdp-oublie');
+    zoneErreurMdp.classList.remove('visible');
+
+    const bouton = document.getElementById('bouton-envoyer-mdp-oublie');
+    bouton.disabled = true; bouton.textContent = 'Envoi en cours…';
+
+    try {
+      const reponse = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: document.getElementById('mdp-oublie-email').value.trim(),
+          code_ecole: document.getElementById('mdp-oublie-code-ecole').value.trim() || undefined
+        })
+      });
+      await reponse.json();
+
+      document.getElementById('formulaire-mdp-oublie').style.display = 'none';
+      document.getElementById('zone-succes-mdp-oublie').style.display = 'block';
+    } catch (err) {
+      zoneErreurMdp.textContent = 'Impossible de contacter le serveur.';
+      zoneErreurMdp.classList.add('visible');
+    }
+
+    bouton.disabled = false; bouton.textContent = 'Envoyer le lien';
   });
 </script>
 

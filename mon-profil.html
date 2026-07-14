@@ -116,12 +116,13 @@
 
   const LIBELLES_ROLES = {
     professeur: 'Professeur', titulaire: 'Titulaire', secretaire: 'Secrétaire',
-    prefet: 'Préfet', directeur: 'Directeur', super_admin: 'Super Admin'
+    prefet: 'Préfet', comptable: 'Comptable', directeur: 'Directeur', super_admin: 'Super Admin'
   };
 
   const PAGES_ACCUEIL_PAR_ROLE = {
     directeur: 'dashboard-directeur.html', prefet: 'dashboard-directeur.html',
-    secretaire: 'eleves.html', professeur: 'espace-professeur.html', titulaire: 'espace-titulaire.html'
+    secretaire: 'eleves.html', professeur: 'espace-professeur.html', titulaire: 'espace-titulaire.html',
+    comptable: 'frais-scolaires.html'
   };
 
   function obtenirTokens() {
@@ -169,12 +170,12 @@
   let utilisateurLocal = null;
   try { utilisateurLocal = JSON.parse(localStorage.getItem('ardoise_user') || 'null'); } catch (e) {}
   const rolesLocal = utilisateurLocal?.roles || [];
-  const rolePrincipal = ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire'].find(r => rolesLocal.includes(r));
+  const rolePrincipal = ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire', 'comptable'].find(r => rolesLocal.includes(r));
   if (rolePrincipal) {
     const lienAccueil = document.querySelector('.nav-item[href="dashboard-directeur.html"]');
     if (lienAccueil) {
       lienAccueil.href = PAGES_ACCUEIL_PAR_ROLE[rolePrincipal];
-      lienAccueil.textContent = rolePrincipal === 'professeur' ? 'Mes cours' : rolePrincipal === 'titulaire' ? 'Ma classe' : 'Tableau de bord';
+      lienAccueil.textContent = rolePrincipal === 'professeur' ? 'Mes cours' : rolePrincipal === 'titulaire' ? 'Ma classe' : rolePrincipal === 'comptable' ? 'Frais scolaires' : 'Tableau de bord';
     }
   }
 

@@ -304,6 +304,7 @@
         <li><a class="nav-item" href="espace-titulaire.html">Ma classe</a></li>
         <li class="nav-item actif">Tableau de bord</li>
       <li><a class="nav-item" href="eleves.html">Élèves</a></li>
+        <li><a class="nav-item" href="frais-scolaires.html">Frais scolaires</a></li>
         <li><a class="nav-item" href="utilisateurs.html">Utilisateurs</a></li>
       <li><a class="nav-item" href="classes.html">Classes</a></li>
       <li><a class="nav-item" href="notes.html">Notes</a></li>
@@ -580,6 +581,7 @@
   // ---------- Filtrage de la navigation selon le rôle connecté ----------
   (function gererAccesParRole() {
     const permissions = {
+      'frais-scolaires.html': ['directeur', 'comptable', 'secretaire'],
       'bulletin-annuel.html': ['directeur', 'prefet'],
       'espace-titulaire.html': ['titulaire'],
       'espace-professeur.html': ['professeur'],

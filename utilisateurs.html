@@ -90,6 +90,7 @@
         <li><a class="nav-item" href="espace-titulaire.html">Ma classe</a></li>
         <li><a class="nav-item" href="dashboard-directeur.html">Tableau de bord</a></li>
         <li><a class="nav-item" href="eleves.html">Élèves</a></li>
+        <li><a class="nav-item" href="frais-scolaires.html">Frais scolaires</a></li>
         <li><a class="nav-item actif" href="utilisateurs.html">Utilisateurs</a></li>
         <li><a class="nav-item" href="classes.html">Classes</a></li>
         <li><a class="nav-item" href="notes.html">Notes</a></li>
@@ -150,6 +151,7 @@
           <label class="case-role"><input type="checkbox" value="titulaire" /> Titulaire</label>
           <label class="case-role"><input type="checkbox" value="secretaire" /> Secrétaire</label>
           <label class="case-role"><input type="checkbox" value="prefet" /> Préfet des études</label>
+          <label class="case-role"><input type="checkbox" value="comptable" /> Comptable</label>
         </div>
       </div>
       <div class="actions-modale">
@@ -165,7 +167,7 @@
 
   const LIBELLES_ROLES = {
     professeur: 'Professeur', titulaire: 'Titulaire', secretaire: 'Secrétaire',
-    prefet: 'Préfet', directeur: 'Directeur', super_admin: 'Super Admin'
+    prefet: 'Préfet', comptable: 'Comptable', directeur: 'Directeur', super_admin: 'Super Admin'
   };
 
   function obtenirTokens() {
@@ -354,6 +356,7 @@
   // ---------- Filtrage de la navigation selon le rôle connecté ----------
   (function gererAccesParRole() {
     const permissions = {
+      'frais-scolaires.html': ['directeur', 'comptable', 'secretaire'],
       'bulletin-annuel.html': ['directeur', 'prefet'],
       'espace-titulaire.html': ['titulaire'],
       'espace-professeur.html': ['professeur'],

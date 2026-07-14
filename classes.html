@@ -15,6 +15,20 @@
     --rouge: #B23A2E; --vert-ok: #4C7A5A;
     --texte-sombre: #1F2B24; --texte-att: #6B7269; --bordure: #E4DFCF;
   }
+  :root.sombre {
+    --craie: #14201A;
+    --craie-2: #1C2921;
+    --texte-sombre: #EDE9DE;
+    --texte-att: #93A196;
+    --bordure: #33422F;
+    --encre: #8FB4BD;
+  }
+  .bouton-mode-sombre {
+    background: none; border: 1px solid rgba(246,242,231,0.25); color: var(--craie);
+    border-radius: 6px; padding: 5px 9px; font-size: 0.85rem; cursor: pointer; margin-top: 6px;
+  }
+  .bouton-mode-sombre:hover { border-color: rgba(246,242,231,0.5); }
+
   * { box-sizing: border-box; }
   body { margin: 0; font-family: 'Inter', sans-serif; color: var(--texte-sombre); background: var(--craie); }
 
@@ -128,8 +142,10 @@
   <nav class="barre-laterale">
     <div>
       <div class="marque">Ardo<span class="lettre-i">ı<span class="point-i-marque"></span></span>se</div>
+      <button class="bouton-mode-sombre" id="bouton-mode-sombre">🌙 Mode sombre</button>
     <ul class="nav-liste">
       <li><a class="nav-item" href="espace-professeur.html">Mes cours</a></li>
+        <li><a class="nav-item" href="espace-secretaire.html">Accueil Secrétariat</a></li>
         <li><a class="nav-item" href="espace-titulaire.html">Ma classe</a></li>
         <li><a class="nav-item" href="dashboard-directeur.html">Tableau de bord</a></li>
       <li><a class="nav-item" href="eleves.html">Élèves</a></li>
@@ -619,6 +635,7 @@
   // ---------- Filtrage de la navigation selon le rôle connecté ----------
   (function gererAccesParRole() {
     const permissions = {
+      'espace-secretaire.html': ['secretaire'],
       'frais-scolaires.html': ['directeur', 'comptable', 'secretaire'],
       'bulletin-annuel.html': ['directeur', 'prefet'],
       'espace-titulaire.html': ['titulaire'],
@@ -663,6 +680,19 @@
         window.location.href = pageDeRepli;
       }
     }
+  })();
+
+  // ---------- Mode sombre ----------
+  (function initModeSombre() {
+    const actif = localStorage.getItem('ardoise_mode_sombre') === 'true';
+    if (actif) document.documentElement.classList.add('sombre');
+    const bouton = document.getElementById('bouton-mode-sombre');
+    if (bouton) bouton.textContent = actif ? '☀️ Mode clair' : '🌙 Mode sombre';
+    bouton?.addEventListener('click', () => {
+      const estSombre = document.documentElement.classList.toggle('sombre');
+      localStorage.setItem('ardoise_mode_sombre', estSombre);
+      bouton.textContent = estSombre ? '☀️ Mode clair' : '🌙 Mode sombre';
+    });
   })();
 </script>
 

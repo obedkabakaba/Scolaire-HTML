@@ -301,6 +301,7 @@
       <div class="marque">Ardo<span class="lettre-i">ı<span class="point-i-marque"></span></span>se</div>
     <ul class="nav-liste">
       <li><a class="nav-item" href="espace-professeur.html">Mes cours</a></li>
+        <li><a class="nav-item" href="espace-titulaire.html">Ma classe</a></li>
         <li class="nav-item actif">Tableau de bord</li>
       <li><a class="nav-item" href="eleves.html">Élèves</a></li>
         <li><a class="nav-item" href="utilisateurs.html">Utilisateurs</a></li>
@@ -508,6 +509,7 @@
   // ---------- Filtrage de la navigation selon le rôle connecté ----------
   (function gererAccesParRole() {
     const permissions = {
+      'espace-titulaire.html': ['titulaire'],
       'espace-professeur.html': ['professeur'],
       'dashboard-directeur.html': ['directeur', 'prefet'],
       'eleves.html': ['directeur', 'prefet', 'secretaire'],

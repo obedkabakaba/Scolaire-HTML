@@ -105,6 +105,7 @@
       <div class="marque">Ardo<span class="lettre-i">ı<span class="point-i-marque"></span></span>se</div>
     <ul class="nav-liste">
       <li><a class="nav-item" href="espace-professeur.html">Mes cours</a></li>
+        <li><a class="nav-item" href="espace-titulaire.html">Ma classe</a></li>
         <li><a class="nav-item" href="dashboard-directeur.html">Tableau de bord</a></li>
       <li><a class="nav-item" href="eleves.html">Élèves</a></li>
         <li><a class="nav-item" href="utilisateurs.html">Utilisateurs</a></li>
@@ -199,6 +200,11 @@
       const periodes = await rPeriodes.json();
       document.getElementById('select-periode').innerHTML = periodes.map(p => `<option value="${p.id}">${p.libelle}</option>`).join('') || '<option value="">Aucune période créée</option>';
     }
+
+    // Pré-sélection depuis l'URL (ex: lien depuis l'espace titulaire)
+    const parametresUrl = new URLSearchParams(window.location.search);
+    const classeIdUrl = parametresUrl.get('classeId');
+    if (classeIdUrl) document.getElementById('select-classe').value = classeIdUrl;
   }
 
   async function chargerBulletins() {
@@ -304,6 +310,7 @@
   // ---------- Filtrage de la navigation selon le rôle connecté ----------
   (function gererAccesParRole() {
     const permissions = {
+      'espace-titulaire.html': ['titulaire'],
       'espace-professeur.html': ['professeur'],
       'dashboard-directeur.html': ['directeur', 'prefet'],
       'eleves.html': ['directeur', 'prefet', 'secretaire'],

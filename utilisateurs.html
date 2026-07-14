@@ -99,6 +99,7 @@
         <li><a class="nav-item" href="calendrier.html">Calendrier</a></li>
         <li><a class="nav-item" href="journal.html">Journal d'activité</a></li>
         <li><a class="nav-item" href="parametres.html">Paramètres</a></li>
+      <li><a class="nav-item" href="mon-profil.html">Mon profil</a></li>
       </ul>
     </div>
     <button class="nav-deconnexion" id="bouton-deconnexion-nav">↩ Se déconnecter</button>
@@ -111,6 +112,8 @@
         <p class="sous-titre" id="compteur-utilisateurs">Chargement…</p>
       </div>
       <button class="bouton bouton-principal" id="bouton-ajouter">+ Ajouter un utilisateur</button>
+      <button class="bouton bouton-secondaire" id="bouton-importer">Importer Excel</button>
+      <input type="file" id="input-fichier-import" accept=".xlsx,.xls" style="display:none;" />
     </div>
 
     <div class="message-flash" id="message-flash"></div>
@@ -263,6 +266,26 @@
   }
 
   document.getElementById('bouton-ajouter').addEventListener('click', () => ouvrirModale(null));
+
+  document.getElementById('bouton-importer').addEventListener('click', () => document.getElementById('input-fichier-import').click());
+  document.getElementById('input-fichier-import').addEventListener('change', async (evt) => {
+    const fichier = evt.target.files[0];
+    if (!fichier) return;
+
+    const formData = new FormData();
+    formData.append('fichier', fichier);
+    afficherMessage('Import en cours…', 'succes');
+
+    const r = await appelApi('/utilisateurs/import', { method: 'POST', body: formData });
+    evt.target.value = '';
+    if (!r) return;
+    const donnees = await r.json();
+    if (!r.ok) { afficherMessage(donnees.message || "Erreur lors de l'import.", 'erreur'); return; }
+
+    const { crees, erreurs } = donnees.bilan;
+    afficherMessage(`Import terminé : ${crees} créé(s)${erreurs.length ? `, ${erreurs.length} avertissement(s)` : ''}.`, erreurs.length ? 'erreur' : 'succes');
+    chargerUtilisateurs();
+  });
   document.getElementById('bouton-annuler-modale').addEventListener('click', () => {
     document.getElementById('voile-modale').classList.remove('visible');
     document.getElementById('formulaire-utilisateur').reset();

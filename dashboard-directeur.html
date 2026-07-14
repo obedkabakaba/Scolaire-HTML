@@ -326,6 +326,18 @@
         <h1>Tableau de bord</h1>
         <p class="sous-titre" id="texte-bienvenue">Vue d'ensemble de votre école.</p>
       </div>
+      <div style="position:relative;">
+        <button id="bouton-cloche" style="background:none; border:1.5px solid var(--bordure); border-radius:8px; padding:9px 13px; cursor:pointer; font-size:1.1rem; position:relative;">
+          🔔<span id="badge-notif" style="display:none; position:absolute; top:-4px; right:-4px; background:var(--rouge); color:#fff; font-size:0.62rem; font-weight:700; border-radius:10px; padding:1px 5px; min-width:16px; text-align:center;"></span>
+        </button>
+        <div id="panneau-notifications" style="display:none; position:absolute; right:0; top:calc(100% + 8px); width:340px; max-height:400px; overflow-y:auto; background:var(--craie-2); border:1px solid var(--bordure); border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,0.12); z-index:15; padding:10px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <strong style="font-size:0.85rem;">Notifications</strong>
+            <button id="bouton-tout-lu" style="background:none; border:none; color:var(--encre); font-size:0.76rem; cursor:pointer; text-decoration:underline;">Tout marquer lu</button>
+          </div>
+          <div id="liste-notifications" style="font-size:0.85rem;">Chargement…</div>
+        </div>
+      </div>
     </div>
 
     <div class="banniere-abonnement" id="banniere-abonnement"></div>
@@ -506,7 +518,64 @@
     retourConnexion();
   });
 
+  const LIBELLES_SUJETS = {
+    rappel_expiration_j7: "L'abonnement expire dans 7 jours",
+    rappel_expiration_j1: "L'abonnement expire demain",
+    abonnement_expire: 'Abonnement expiré',
+    ecole_suspendue: 'Accès suspendu (impayé)'
+  };
+
+  async function chargerNotifications() {
+    const r = await appelApi('/notifications');
+    if (!r || !r.ok) return;
+    const notifs = await r.json();
+
+    const nonLues = notifs.filter(n => !n.lu);
+    const badge = document.getElementById('badge-notif');
+    if (nonLues.length > 0) { badge.textContent = nonLues.length; badge.style.display = 'block'; }
+    else { badge.style.display = 'none'; }
+
+    const liste = document.getElementById('liste-notifications');
+    liste.innerHTML = notifs.length === 0
+      ? '<p style="color:var(--texte-att); padding:10px 4px;">Aucune notification.</p>'
+      : notifs.map(n => `
+          <div data-id="${n.id}" style="padding:9px 6px; border-bottom:1px solid var(--bordure); ${n.lu ? 'opacity:0.55;' : ''} cursor:pointer;">
+            <div style="font-weight:${n.lu ? '400' : '600'};">${LIBELLES_SUJETS[n.sujet] || n.contenu.slice(0, 60)}</div>
+            <div style="font-size:0.72rem; color:var(--texte-att); margin-top:2px;">${new Date(n.created_at).toLocaleDateString('fr-FR', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })}</div>
+          </div>
+        `).join('');
+
+    liste.querySelectorAll('[data-id]').forEach(el => {
+      el.addEventListener('click', async () => {
+        await appelApi(`/notifications/${el.dataset.id}/lu`, { method: 'PATCH' });
+        chargerNotifications();
+      });
+    });
+  }
+
+  document.getElementById('bouton-cloche').addEventListener('click', () => {
+    const panneau = document.getElementById('panneau-notifications');
+    const visible = panneau.style.display === 'block';
+    panneau.style.display = visible ? 'none' : 'block';
+    if (!visible) chargerNotifications();
+  });
+
+  document.getElementById('bouton-tout-lu').addEventListener('click', async (evt) => {
+    evt.stopPropagation();
+    await appelApi('/notifications/tout-marquer-lu', { method: 'POST' });
+    chargerNotifications();
+  });
+
+  document.addEventListener('click', (evt) => {
+    const panneau = document.getElementById('panneau-notifications');
+    const bouton = document.getElementById('bouton-cloche');
+    if (panneau.style.display === 'block' && !panneau.contains(evt.target) && !bouton.contains(evt.target)) {
+      panneau.style.display = 'none';
+    }
+  });
+
   chargerDashboard();
+  chargerNotifications();
 
   // ---------- Filtrage de la navigation selon le rôle connecté ----------
   (function gererAccesParRole() {

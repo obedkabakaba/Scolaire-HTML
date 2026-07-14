@@ -217,6 +217,17 @@
   </div>
 </div>
 
+<!-- Modale historique scolaire -->
+<div class="voile" id="voile-historique">
+  <div class="modale">
+    <h2 id="titre-historique">Historique scolaire</h2>
+    <ul id="liste-historique" style="list-style:none; margin:0 0 16px 0; padding:0;"></ul>
+    <div class="actions-modale">
+      <button type="button" class="bouton bouton-secondaire" id="bouton-fermer-historique">Fermer</button>
+    </div>
+  </div>
+</div>
+
 <script>
   const API_BASE_URL = "https://scolaire-saas-backend.onrender.com";
 
@@ -319,6 +330,7 @@
         <td><span class="badge-statut ${e.statut === 'actif' ? 'actif' : 'autre'}">${e.statut}</span></td>
         <td>
           <button class="lien-action" data-action="modifier">Modifier</button>
+          <button class="lien-action" data-action="historique">Historique</button>
           <button class="lien-action suppr" data-action="supprimer">Supprimer</button>
         </td>
       </tr>
@@ -331,6 +343,8 @@
 
       if (bouton.dataset.action === 'modifier') {
         bouton.addEventListener('click', () => ouvrirModale(eleve));
+      } else if (bouton.dataset.action === 'historique') {
+        bouton.addEventListener('click', () => ouvrirHistorique(eleve));
       } else {
         bouton.addEventListener('click', () => supprimerEleve(eleveId, eleve.nom));
       }
@@ -413,6 +427,29 @@
     afficherMessage('Élève supprimé.', 'succes');
     chargerEleves();
   }
+
+  async function ouvrirHistorique(eleve) {
+    document.getElementById('titre-historique').textContent = `Historique — ${eleve.nom} ${eleve.postnom || ''} ${eleve.prenom || ''}`;
+    document.getElementById('liste-historique').innerHTML = '<li style="color:var(--texte-att);">Chargement…</li>';
+    document.getElementById('voile-historique').classList.add('visible');
+
+    const r = await appelApi(`/eleves/${eleve.id}/historique`);
+    const liste = document.getElementById('liste-historique');
+    if (!r || !r.ok) { liste.innerHTML = '<li style="color:var(--rouge);">Erreur de chargement.</li>'; return; }
+
+    const historique = await r.json();
+    liste.innerHTML = historique.length === 0
+      ? '<li style="color:var(--texte-att);">Aucun historique enregistré pour cet élève (première année dans l\'école, probablement).</li>'
+      : historique.map(h => `
+          <li style="padding:9px 0; border-bottom:1px solid var(--bordure); font-size:0.9rem;">
+            <strong>${h.annee_libelle}</strong> — ${h.classe_nom}${h.resultat_final ? ' · ' + h.resultat_final : ''}
+          </li>
+        `).join('');
+  }
+
+  document.getElementById('bouton-fermer-historique').addEventListener('click', () => {
+    document.getElementById('voile-historique').classList.remove('visible');
+  });
 
   document.getElementById('champ-recherche').addEventListener('input', debounce(chargerEleves, 350));
   document.getElementById('filtre-classe').addEventListener('change', chargerEleves);

@@ -139,7 +139,8 @@
       <li><a class="nav-item" href="classes.html">Classes</a></li>
       <li><a class="nav-item" href="notes.html">Notes</a></li>
       <li><a class="nav-item" href="bulletins.html">Bulletins</a></li>
-      <li><a class="nav-item" href="generateur-modeles.html">Modèles de bulletins</a></li>
+      <li><a class="nav-item" href="bulletin-annuel.html">Bulletin annuel</a></li>
+        <li><a class="nav-item" href="generateur-modeles.html">Modèles de bulletins</a></li>
       <li><a class="nav-item" href="calendrier.html">Calendrier</a></li>
       <li><a class="nav-item" href="journal.html">Journal d'activité</a></li>
         <li><a class="nav-item" href="parametres.html">Paramètres</a></li>
@@ -485,6 +486,7 @@
   // ---------- Filtrage de la navigation selon le rôle connecté ----------
   (function gererAccesParRole() {
     const permissions = {
+      'bulletin-annuel.html': ['directeur', 'prefet'],
       'espace-titulaire.html': ['titulaire'],
       'espace-professeur.html': ['professeur'],
       'dashboard-directeur.html': ['directeur', 'prefet'],

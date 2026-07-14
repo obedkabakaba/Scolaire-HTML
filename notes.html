@@ -113,7 +113,8 @@
       <li><a class="nav-item" href="classes.html">Classes</a></li>
       <li><a class="nav-item actif" href="notes.html">Notes</a></li>
       <li><a class="nav-item" href="bulletins.html">Bulletins</a></li>
-      <li><a class="nav-item" href="generateur-modeles.html">Modèles de bulletins</a></li>
+      <li><a class="nav-item" href="bulletin-annuel.html">Bulletin annuel</a></li>
+        <li><a class="nav-item" href="generateur-modeles.html">Modèles de bulletins</a></li>
       <li><a class="nav-item" href="calendrier.html">Calendrier</a></li>
       <li><a class="nav-item" href="journal.html">Journal d'activité</a></li>
         <li><a class="nav-item" href="parametres.html">Paramètres</a></li>
@@ -149,7 +150,10 @@
     </div>
 
     <div class="barre-actions" id="barre-actions" style="display:none;">
-      <button class="bouton bouton-principal" id="bouton-enregistrer-notes">Enregistrer les notes</button>
+      <div style="display:flex; gap:10px;">
+        <button class="bouton bouton-principal" id="bouton-enregistrer-notes">Enregistrer les notes</button>
+        <button class="bouton bouton-secondaire" id="bouton-fiche-cotes">📄 Fiche des cotes</button>
+      </div>
       <div style="display:flex; gap:10px;">
         <button class="bouton bouton-secondaire" id="bouton-valider-notes">Valider (verrouiller)</button>
         <button class="bouton bouton-danger" id="bouton-devalider-notes">Déverrouiller</button>
@@ -360,6 +364,19 @@
     chargerGrille();
   });
 
+  document.getElementById('bouton-fiche-cotes').addEventListener('click', async () => {
+    const classeId = document.getElementById('select-classe').value;
+    const coursId = document.getElementById('select-cours').value;
+    const periodeId = document.getElementById('select-periode').value;
+    if (!classeId || !coursId || !periodeId) return;
+
+    const r = await appelApi(`/notes/fiche-cotes?classeId=${classeId}&coursId=${coursId}&periodeId=${periodeId}`);
+    if (!r || !r.ok) { afficherMessage('Erreur lors de la génération de la fiche.', 'erreur'); return; }
+    const blob = await r.blob();
+    const url = window.URL.createObjectURL(blob);
+    window.open(url, '_blank');
+  });
+
   chargerSelecteurs();
 
   document.getElementById('bouton-deconnexion-nav')?.addEventListener('click', async () => {
@@ -377,6 +394,7 @@
   // ---------- Filtrage de la navigation selon le rôle connecté ----------
   (function gererAccesParRole() {
     const permissions = {
+      'bulletin-annuel.html': ['directeur', 'prefet'],
       'espace-titulaire.html': ['titulaire'],
       'espace-professeur.html': ['professeur'],
       'dashboard-directeur.html': ['directeur', 'prefet'],

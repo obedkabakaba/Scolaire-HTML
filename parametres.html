@@ -113,7 +113,8 @@
       <li><a class="nav-item" href="classes.html">Classes</a></li>
       <li><a class="nav-item" href="notes.html">Notes</a></li>
       <li><a class="nav-item" href="bulletins.html">Bulletins</a></li>
-      <li><a class="nav-item" href="generateur-modeles.html">Modèles de bulletins</a></li>
+      <li><a class="nav-item" href="bulletin-annuel.html">Bulletin annuel</a></li>
+        <li><a class="nav-item" href="generateur-modeles.html">Modèles de bulletins</a></li>
       <li><a class="nav-item" href="calendrier.html">Calendrier</a></li>
       <li><a class="nav-item" href="journal.html">Journal d'activité</a></li>
         <li><a class="nav-item actif" href="parametres.html">Paramètres</a></li>
@@ -169,6 +170,22 @@
           <input type="file" id="input-logo" accept="image/*" />
         </div>
       </div>
+
+      <div style="display:flex; gap:24px; margin-bottom:20px; flex-wrap:wrap;">
+        <div>
+          <label style="display:block; font-size:0.76rem; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; color:var(--texte-att); margin-bottom:8px;">Cachet de l'école</label>
+          <img id="apercu-cachet" src="" alt="Cachet" style="display:none; width:64px; height:64px; object-fit:contain; border:1px solid var(--bordure); border-radius:8px; margin-bottom:8px;" />
+          <div><button type="button" class="bouton bouton-secondaire bouton-petit" id="bouton-changer-cachet">Choisir une image</button></div>
+          <input type="file" id="input-cachet" accept="image/*" />
+        </div>
+        <div>
+          <label style="display:block; font-size:0.76rem; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; color:var(--texte-att); margin-bottom:8px;">Signature du titulaire (générique)</label>
+          <img id="apercu-signature" src="" alt="Signature" style="display:none; width:64px; height:64px; object-fit:contain; border:1px solid var(--bordure); border-radius:8px; margin-bottom:8px;" />
+          <div><button type="button" class="bouton bouton-secondaire bouton-petit" id="bouton-changer-signature">Choisir une image</button></div>
+          <input type="file" id="input-signature" accept="image/*" />
+        </div>
+      </div>
+      <p style="font-size:0.8rem; color:var(--texte-att); margin-top:-10px; margin-bottom:18px;">Ces images apparaîtront automatiquement sur les bulletins générés, à la place des cases vides.</p>
       <form id="formulaire-ecole">
         <div class="champ"><label for="champ-nom">Nom de l'école</label><input type="text" id="champ-nom" /></div>
         <div class="ligne-champs">
@@ -413,9 +430,59 @@
     afficherMessage('Demande envoyée ! Le client doit confirmer sur son téléphone. Le statut se mettra à jour automatiquement une fois confirmé.', 'succes');
   });
 
+  document.getElementById('bouton-changer-cachet').addEventListener('click', () => document.getElementById('input-cachet').click());
+  document.getElementById('input-cachet').addEventListener('change', async (evt) => {
+    const fichier = evt.target.files[0];
+    if (!fichier) return;
+    const formData = new FormData();
+    formData.append('fichier', fichier);
+    formData.append('type', 'cachet');
+    const r = await appelApi('/uploads/document', { method: 'POST', body: formData });
+    if (r && r.ok) {
+      const donnees = await r.json();
+      const img = document.getElementById('apercu-cachet');
+      img.src = donnees.url; img.style.display = 'block';
+      afficherMessage('Cachet mis à jour.', 'succes');
+    } else {
+      afficherMessage("Erreur lors de l'upload du cachet.", 'erreur');
+    }
+  });
+
+  document.getElementById('bouton-changer-signature').addEventListener('click', () => document.getElementById('input-signature').click());
+  document.getElementById('input-signature').addEventListener('change', async (evt) => {
+    const fichier = evt.target.files[0];
+    if (!fichier) return;
+    const formData = new FormData();
+    formData.append('fichier', fichier);
+    formData.append('type', 'signature');
+    const r = await appelApi('/uploads/document', { method: 'POST', body: formData });
+    if (r && r.ok) {
+      const donnees = await r.json();
+      const img = document.getElementById('apercu-signature');
+      img.src = donnees.url; img.style.display = 'block';
+      afficherMessage('Signature mise à jour.', 'succes');
+    } else {
+      afficherMessage("Erreur lors de l'upload de la signature.", 'erreur');
+    }
+  });
+
+  async function chargerApercusDocuments() {
+    const rCachet = await appelApi('/uploads/documents?type=cachet');
+    if (rCachet?.ok) {
+      const doc = await rCachet.json();
+      if (doc) { const img = document.getElementById('apercu-cachet'); img.src = doc.url; img.style.display = 'block'; }
+    }
+    const rSignature = await appelApi('/uploads/documents?type=signature');
+    if (rSignature?.ok) {
+      const doc = await rSignature.json();
+      if (doc) { const img = document.getElementById('apercu-signature'); img.src = doc.url; img.style.display = 'block'; }
+    }
+  }
+
   chargerEcole();
   chargerMentions();
   chargerAbonnement();
+  chargerApercusDocuments();
 
   document.getElementById('bouton-deconnexion-nav')?.addEventListener('click', async () => {
     const { refreshToken } = obtenirTokens();
@@ -432,6 +499,7 @@
   // ---------- Filtrage de la navigation selon le rôle connecté ----------
   (function gererAccesParRole() {
     const permissions = {
+      'bulletin-annuel.html': ['directeur', 'prefet'],
       'espace-titulaire.html': ['titulaire'],
       'espace-professeur.html': ['professeur'],
       'dashboard-directeur.html': ['directeur', 'prefet'],

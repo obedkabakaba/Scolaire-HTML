@@ -168,7 +168,6 @@
 
     <div class="barre-onglets">
       <div class="onglet actif" data-onglet="classes">Classes</div>
-      <div class="onglet" data-onglet="cours">Cours</div>
       <div class="onglet" data-onglet="structure">Sections &amp; options</div>
     </div>
 
@@ -181,19 +180,6 @@
         <table>
           <thead><tr><th>Classe</th><th>Section</th><th>Option</th><th>Titulaire</th><th>Élèves</th><th></th></tr></thead>
           <tbody id="corps-tableau-classes"><tr><td colspan="6" class="etat-vide-tableau"><span class="spinner"></span>Chargement…</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Onglet Cours -->
-    <div class="panneau-onglet" id="onglet-cours">
-      <div style="display:flex; justify-content:flex-end; margin-bottom:14px;">
-        <button class="bouton bouton-principal" id="bouton-ajouter-cours">+ Ajouter un cours</button>
-      </div>
-      <div class="conteneur-tableau">
-        <table>
-          <thead><tr><th>Nom</th><th>Code</th><th>Coefficient</th><th>Max</th><th></th></tr></thead>
-          <tbody id="corps-tableau-cours"><tr><td colspan="5" class="etat-vide-tableau"><span class="spinner"></span>Chargement…</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -256,33 +242,19 @@
 
     <div id="section-cours-classe" style="display:none;">
       <hr class="separation-cours" />
-      <h3 style="font-family:'Fraunces',serif; font-size:1rem; margin-bottom:10px;">Cours assignés à cette classe</h3>
+      <h3 style="font-family:'Fraunces',serif; font-size:1rem; margin-bottom:10px;">Cours de cette classe</h3>
       <ul class="liste-simple" id="liste-cours-classe"></ul>
-      <div class="form-inline" style="margin-top:10px;">
-        <select id="select-cours-a-ajouter"></select>
-        <button class="bouton bouton-secondaire bouton-petit" id="bouton-assigner-cours">Assigner</button>
+      <div style="margin-top:14px; padding-top:14px; border-top:1px dashed var(--bordure);">
+        <p style="font-size:0.78rem; color:var(--texte-att); margin:0 0 8px 0;">+ Ajouter un nouveau cours à cette classe</p>
+        <div class="form-inline">
+          <input type="text" id="champ-nouveau-cours-nom" placeholder="Nom du cours" style="flex:1;" />
+          <input type="text" id="champ-nouveau-cours-code" placeholder="Code" style="width:80px;" />
+          <input type="number" id="champ-nouveau-cours-coef" placeholder="Coef" value="1" step="0.5" style="width:70px;" />
+          <input type="number" id="champ-nouveau-cours-max" placeholder="Max" value="20" style="width:70px;" />
+          <button class="bouton bouton-secondaire bouton-petit" id="bouton-ajouter-cours-classe">Ajouter</button>
+        </div>
       </div>
     </div>
-  </div>
-</div>
-
-<!-- Modale Cours -->
-<div class="voile" id="voile-modale-cours">
-  <div class="modale">
-    <h2 id="titre-modale-cours">Ajouter un cours</h2>
-    <form id="formulaire-cours">
-      <input type="hidden" id="cours-id" />
-      <div class="champ"><label for="champ-cours-nom">Nom du cours</label><input type="text" id="champ-cours-nom" required /></div>
-      <div class="ligne-champs">
-        <div class="champ"><label for="champ-cours-code">Code</label><input type="text" id="champ-cours-code" /></div>
-        <div class="champ"><label for="champ-cours-coef">Coefficient</label><input type="number" step="0.5" id="champ-cours-coef" value="1" /></div>
-      </div>
-      <div class="champ"><label for="champ-cours-max">Maximum de points</label><input type="number" id="champ-cours-max" value="20" /></div>
-      <div class="actions-modale">
-        <button type="button" class="bouton bouton-secondaire" onclick="fermerModale('voile-modale-cours')">Annuler</button>
-        <button type="submit" class="bouton bouton-principal">Enregistrer</button>
-      </div>
-    </form>
   </div>
 </div>
 
@@ -486,20 +458,20 @@
     const optionsProf = '<option value="">— Aucun —</option>' + professeurs.map(p => `<option value="${p.id}">${p.nom} ${p.prenom || ''}</option>`).join('');
 
     document.getElementById('liste-cours-classe').innerHTML = coursAssignes.length === 0
-      ? '<li style="color:var(--texte-att);">Aucun cours assigné pour l\'instant.</li>'
+      ? '<li style="color:var(--texte-att);">Aucun cours pour l\'instant — ajoutes-en un ci-dessous.</li>'
       : coursAssignes.map(cc => `
-          <li style="flex-direction:column; align-items:stretch; gap:6px;">
-            <div style="display:flex; justify-content:space-between;">
+          <li style="flex-direction:column; align-items:stretch; gap:6px;" data-cours-id="${cc.cours_id}">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
               <span><strong>${cc.nom}</strong> ${cc.code ? '(' + cc.code + ')' : ''} — max ${cc.maximum}</span>
+              <button class="lien-action" style="color:var(--rouge);" data-action="retirer-cours" data-cours-id="${cc.cours_id}">Retirer</button>
             </div>
             <div class="form-inline">
               <select data-classe-cours-id="${cc.classe_cours_id}" class="select-professeur-cours">${optionsProf}</select>
-              <button class="bouton bouton-secondaire bouton-petit" data-classe-cours-id="${cc.classe_cours_id}" onclick="assignerProfesseurCours(this)">Assigner</button>
+              <button class="bouton bouton-secondaire bouton-petit" data-classe-cours-id="${cc.classe_cours_id}" onclick="assignerProfesseurCours(this)">Assigner le prof</button>
             </div>
           </li>
         `).join('');
 
-    // Pré-sélectionne le professeur déjà assigné, s'il y en a un
     coursAssignes.forEach(cc => {
       if (cc.professeur_id) {
         const select = document.querySelector(`.select-professeur-cours[data-classe-cours-id="${cc.classe_cours_id}"]`);
@@ -507,10 +479,16 @@
       }
     });
 
-    // Menu pour assigner un NOUVEAU cours (pas encore lié à la classe)
-    const coursDejaAssignesIds = coursAssignes.map(cc => cc.cours_id);
-    const coursDisponibles = coursCache.filter(c => !coursDejaAssignesIds.includes(c.id));
-    document.getElementById('select-cours-a-ajouter').innerHTML = coursDisponibles.map(c => `<option value="${c.id}">${c.nom}</option>`).join('') || '<option value="">Tous les cours sont déjà assignés</option>';
+    document.querySelectorAll('[data-action="retirer-cours"]').forEach(bouton => {
+      bouton.addEventListener('click', async () => {
+        if (!confirm('Retirer ce cours de la classe ? Impossible si des notes existent déjà.')) return;
+        const r = await appelApi(`/classes/${classeId}/cours/${bouton.dataset.coursId}`, { method: 'DELETE' });
+        const d = await r.json();
+        if (!r.ok) { afficherMessage(d.message || 'Erreur lors du retrait.', 'erreur'); return; }
+        afficherMessage('Cours retiré.', 'succes');
+        chargerCoursDeLaClasse(classeId);
+      });
+    });
   }
 
   async function assignerProfesseurCours(bouton) {
@@ -526,96 +504,41 @@
     else afficherMessage("Erreur lors de l'assignation du professeur.", 'erreur');
   }
 
-  document.getElementById('bouton-assigner-cours').addEventListener('click', async () => {
-    const coursId = document.getElementById('select-cours-a-ajouter').value;
-    if (!coursId || !classeEnEditionCoursId) return;
-    const r = await appelApi(`/classes/${classeEnEditionCoursId}/cours`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cours_id: coursId })
-    });
-    if (r && r.ok) {
-      afficherMessage('Cours assigné à la classe.', 'succes');
-      chargerCoursDeLaClasse(classeEnEditionCoursId);
-    } else {
-      afficherMessage("Erreur lors de l'assignation.", 'erreur');
-    }
-  });
+  document.getElementById('bouton-ajouter-cours-classe').addEventListener('click', async () => {
+    if (!classeEnEditionCoursId) return;
+    const nom = document.getElementById('champ-nouveau-cours-nom').value.trim();
+    if (!nom) { afficherMessage('Le nom du cours est requis.', 'erreur'); return; }
 
-  // ---------- Cours (catalogue) ----------
-  async function chargerCours() {
-    const r = await appelApi('/cours'); if (!r || !r.ok) return;
-    coursCache = await r.json();
-    const corps = document.getElementById('corps-tableau-cours');
-    corps.innerHTML = coursCache.length === 0
-      ? '<tr><td colspan="5" class="etat-vide-tableau">Aucun cours. Ajoute le premier.</td></tr>'
-      : coursCache.map(c => `
-          <tr>
-            <td>${c.nom}</td><td class="badge-mono">${c.code || '—'}</td><td>${c.coefficient}</td><td>${c.maximum_points}</td>
-            <td>
-              <button class="lien-action" data-action="modifier-cours" data-id="${c.id}">Modifier</button>
-              <button class="lien-action" style="color:var(--rouge);" data-action="supprimer-cours" data-id="${c.id}">Supprimer</button>
-            </td>
-          </tr>`).join('');
+    const bouton = document.getElementById('bouton-ajouter-cours-classe');
+    bouton.disabled = true;
 
-    corps.querySelectorAll('[data-action="modifier-cours"]').forEach(b => b.addEventListener('click', () => {
-      const cours = coursCache.find(c => c.id === b.dataset.id);
-      ouvrirModaleCours(cours);
-    }));
-    corps.querySelectorAll('[data-action="supprimer-cours"]').forEach(b => b.addEventListener('click', async () => {
-      const cours = coursCache.find(c => c.id === b.dataset.id);
-      if (!confirm(`Supprimer le cours "${cours.nom}" ? Impossible si des notes existent déjà pour lui.`)) return;
-      const r = await appelApi(`/cours/${b.dataset.id}`, { method: 'DELETE' });
-      if (!r) return;
-      const d = await r.json();
-      if (!r.ok) { afficherMessage(d.message || 'Erreur lors de la suppression.', 'erreur'); return; }
-      afficherMessage('Cours supprimé.', 'succes');
-      chargerCours();
-    }));
-  }
-
-  function ouvrirModaleCours(cours) {
-    document.getElementById('titre-modale-cours').textContent = cours ? 'Modifier le cours' : 'Ajouter un cours';
-    document.getElementById('cours-id').value = cours?.id || '';
-    document.getElementById('champ-cours-nom').value = cours?.nom || '';
-    document.getElementById('champ-cours-code').value = cours?.code || '';
-    document.getElementById('champ-cours-coef').value = cours?.coefficient ?? 1;
-    document.getElementById('champ-cours-max').value = cours?.maximum_points ?? 20;
-    document.getElementById('voile-modale-cours').classList.add('visible');
-  }
-
-  document.getElementById('bouton-ajouter-cours').addEventListener('click', () => ouvrirModaleCours(null));
-
-  document.getElementById('formulaire-cours').addEventListener('submit', async (evt) => {
-    evt.preventDefault();
-    const id = document.getElementById('cours-id').value;
-    const corpsRequete = {
-      nom: document.getElementById('champ-cours-nom').value.trim(),
-      code: document.getElementById('champ-cours-code').value.trim(),
-      coefficient: parseFloat(document.getElementById('champ-cours-coef').value) || 1,
-      maximum_points: parseFloat(document.getElementById('champ-cours-max').value) || 20
-    };
-
-    const bouton = evt.target.querySelector('button[type="submit"]');
-    bouton.disabled = true; bouton.textContent = 'Enregistrement…';
-
-    const r = await appelApi(id ? `/cours/${id}` : '/cours', {
-      method: id ? 'PATCH' : 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(corpsRequete)
+    const r = await appelApi(`/classes/${classeEnEditionCoursId}/nouveau-cours`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nom,
+        code: document.getElementById('champ-nouveau-cours-code').value.trim() || null,
+        coefficient: parseFloat(document.getElementById('champ-nouveau-cours-coef').value) || 1,
+        maximum_points: parseFloat(document.getElementById('champ-nouveau-cours-max').value) || 20
+      })
     });
 
-    bouton.disabled = false; bouton.textContent = 'Enregistrer';
+    bouton.disabled = false;
 
-    if (!r) return;
-    if (!r.ok) { afficherMessage("Erreur lors de l'enregistrement du cours.", 'erreur'); return; }
-    fermerModale('voile-modale-cours');
-    document.getElementById('formulaire-cours').reset();
-    afficherMessage(id ? 'Cours mis à jour.' : 'Cours ajouté.', 'succes');
-    chargerCours();
+    if (!r || !r.ok) { afficherMessage("Erreur lors de l'ajout du cours.", 'erreur'); return; }
+
+    document.getElementById('champ-nouveau-cours-nom').value = '';
+    document.getElementById('champ-nouveau-cours-code').value = '';
+    document.getElementById('champ-nouveau-cours-coef').value = '1';
+    document.getElementById('champ-nouveau-cours-max').value = '20';
+    afficherMessage('Cours ajouté à la classe.', 'succes');
+    chargerCoursDeLaClasse(classeEnEditionCoursId);
   });
+
+  // La gestion des cours se fait maintenant entièrement par classe.
 
   // ---------- Initialisation ----------
   async function initialiser() {
-    await Promise.all([chargerAnnees(), chargerSections(), chargerOptions(), chargerUtilisateurs(), chargerCours()]);
+    await Promise.all([chargerAnnees(), chargerSections(), chargerOptions(), chargerUtilisateurs()]);
     chargerClasses();
   }
   initialiser();

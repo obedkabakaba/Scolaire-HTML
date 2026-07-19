@@ -228,11 +228,8 @@
       if (rClasses?.ok) {
         const classes = await rClasses.json();
         document.getElementById('select-classe').innerHTML = classes.map(c => `<option value="${c.id}">${c.nom}</option>`).join('');
-      }
-      const rCours = await appelApi('/cours');
-      if (rCours?.ok) {
-        const cours = await rCours.json();
-        document.getElementById('select-cours').innerHTML = cours.map(c => `<option value="${c.id}">${c.nom}</option>`).join('');
+        document.getElementById('select-classe').addEventListener('change', remplirCoursDeLaClasseSelectionnee);
+        await remplirCoursDeLaClasseSelectionnee();
       }
     }
 
@@ -248,6 +245,7 @@
     if (classeIdUrl) {
       document.getElementById('select-classe').value = classeIdUrl;
       if (estProfesseurSeul) remplirCoursSelonClasse();
+      else await remplirCoursDeLaClasseSelectionnee();
     }
     if (coursIdUrl) document.getElementById('select-cours').value = coursIdUrl;
 
@@ -263,6 +261,20 @@
     const coursId = document.getElementById('select-cours').value;
     const periodeId = document.getElementById('select-periode').value;
     if (classeId && coursId && periodeId) chargerGrille();
+  }
+
+  // Pour Directeur/Préfet : les cours affichés dépendent de la classe choisie,
+  // au lieu de montrer tout le catalogue de l'école mélangé.
+  async function remplirCoursDeLaClasseSelectionnee() {
+    const classeId = document.getElementById('select-classe').value;
+    if (!classeId) { document.getElementById('select-cours').innerHTML = ''; return; }
+    const r = await appelApi(`/classes/${classeId}/cours`);
+    if (!r || !r.ok) return;
+    const cours = await r.json();
+    document.getElementById('select-cours').innerHTML = cours.length === 0
+      ? '<option value="">Aucun cours dans cette classe</option>'
+      : cours.map(c => `<option value="${c.cours_id}">${c.nom}</option>`).join('');
+    verifierEtChargerGrille();
   }
 
   function remplirCoursSelonClasse() {

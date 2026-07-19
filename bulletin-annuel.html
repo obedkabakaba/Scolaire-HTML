@@ -94,8 +94,8 @@
   <main class="contenu">
     <div class="entete-page">
       <div>
-        <h1>Bulletin annuel</h1>
-        <p class="sous-titre">Moyenne, classement et mention calculés automatiquement à partir de toutes les périodes de l'année.</p>
+        <h1>Bulletin annuel &amp; semestre</h1>
+        <p class="sous-titre">Moyenne, classement et mention calculés automatiquement — sur toute l'année, ou sur un semestre (2 périodes + examen).</p>
       </div>
       <button class="bouton bouton-principal" id="bouton-generer-pdf">📄 Générer le PDF de la classe</button>
     </div>
@@ -105,14 +105,24 @@
     <div class="barre-selecteurs">
       <div class="champ-selecteur"><label for="select-classe">Classe</label><select id="select-classe"></select></div>
       <div class="champ-selecteur"><label for="select-annee">Année scolaire</label><select id="select-annee"></select></div>
+      <div class="champ-selecteur"><label for="select-portee">Portée</label>
+        <select id="select-portee">
+          <option value="annee">Année complète</option>
+          <option value="semestre">Un semestre</option>
+        </select>
+      </div>
+      <div class="champ-selecteur" id="conteneur-select-semestre" style="display:none;">
+        <label for="select-semestre">Semestre</label>
+        <select id="select-semestre"></select>
+      </div>
       <button class="bouton bouton-secondaire" id="bouton-afficher">Afficher le récapitulatif</button>
     </div>
 
     <div class="conteneur-tableau">
       <table>
-        <thead><tr><th>Classement</th><th>Élève</th><th>Moyenne annuelle</th><th>Mention</th></tr></thead>
+        <thead><tr><th>Classement</th><th>Élève</th><th>Moyenne</th><th>Mention</th></tr></thead>
         <tbody id="corps-tableau">
-          <tr><td colspan="4" class="etat-vide-tableau">Choisis une classe et une année, puis clique "Afficher le récapitulatif".</td></tr>
+          <tr><td colspan="4" class="etat-vide-tableau">Choisis une classe, une année (et un semestre si besoin), puis clique "Afficher le récapitulatif".</td></tr>
         </tbody>
       </table>
     </div>
@@ -175,12 +185,38 @@
     }
   }
 
+  document.getElementById('select-portee').addEventListener('change', (evt) => {
+    document.getElementById('conteneur-select-semestre').style.display = evt.target.value === 'semestre' ? 'block' : 'none';
+    if (evt.target.value === 'semestre') chargerSemestresDeLAnnee();
+  });
+  document.getElementById('select-annee').addEventListener('change', () => {
+    if (document.getElementById('select-portee').value === 'semestre') chargerSemestresDeLAnnee();
+  });
+
+  async function chargerSemestresDeLAnnee() {
+    const anneeId = document.getElementById('select-annee').value;
+    if (!anneeId) return;
+    const r = await appelApi(`/periodes?anneeScolaireId=${anneeId}`);
+    if (!r || !r.ok) return;
+    const periodes = await r.json();
+    const semestres = periodes.filter(p => p.type === 'semestre');
+    document.getElementById('select-semestre').innerHTML = semestres.map(s => `<option value="${s.id}">${s.libelle}</option>`).join('') || '<option value="">Aucun semestre créé</option>';
+  }
+
   async function chargerRecapitulatif() {
     const classeId = document.getElementById('select-classe').value;
     const anneeScolaireId = document.getElementById('select-annee').value;
-    if (!classeId || !anneeScolaireId) { afficherMessage('Choisis une classe et une année scolaire.', 'erreur'); return; }
+    const portee = document.getElementById('select-portee').value;
+    const semestreId = document.getElementById('select-semestre').value;
 
-    const r = await appelApi(`/bulletins/annuel/recapitulatif?classeId=${classeId}&anneeScolaireId=${anneeScolaireId}`);
+    if (!classeId || !anneeScolaireId) { afficherMessage('Choisis une classe et une année scolaire.', 'erreur'); return; }
+    if (portee === 'semestre' && !semestreId) { afficherMessage('Choisis un semestre.', 'erreur'); return; }
+
+    const chemin = portee === 'semestre'
+      ? `/bulletins/semestre/recapitulatif?classeId=${classeId}&semestreId=${semestreId}`
+      : `/bulletins/annuel/recapitulatif?classeId=${classeId}&anneeScolaireId=${anneeScolaireId}`;
+
+    const r = await appelApi(chemin);
     const corps = document.getElementById('corps-tableau');
     if (!r) return;
     if (!r.ok) { corps.innerHTML = '<tr><td colspan="4" class="etat-vide-tableau">Erreur lors du chargement.</td></tr>'; return; }
@@ -193,10 +229,10 @@
 
     corps.innerHTML = eleves.map(e => `
       <tr>
-        <td class="classement-cell">${e.classement_annuel ?? '—'}</td>
+        <td class="classement-cell">${(portee === 'semestre' ? e.classement_semestre : e.classement_annuel) ?? '—'}</td>
         <td>${e.nom} ${e.postnom || ''} ${e.prenom || ''}</td>
-        <td>${e.moyenne_annuelle != null ? e.moyenne_annuelle + '%' : '—'}</td>
-        <td>${e.mention_annuelle || '—'}</td>
+        <td>${(portee === 'semestre' ? e.moyenne_semestre : e.moyenne_annuelle) != null ? (portee === 'semestre' ? e.moyenne_semestre : e.moyenne_annuelle) + '%' : '—'}</td>
+        <td>${(portee === 'semestre' ? e.mention_semestre : e.mention_annuelle) || '—'}</td>
       </tr>
     `).join('');
   }
@@ -206,15 +242,28 @@
   document.getElementById('bouton-generer-pdf').addEventListener('click', async () => {
     const classeId = document.getElementById('select-classe').value;
     const anneeScolaireId = document.getElementById('select-annee').value;
+    const portee = document.getElementById('select-portee').value;
+    const semestreId = document.getElementById('select-semestre').value;
+
     if (!classeId || !anneeScolaireId) { afficherMessage('Choisis une classe et une année scolaire.', 'erreur'); return; }
+    if (portee === 'semestre' && !semestreId) { afficherMessage('Choisis un semestre.', 'erreur'); return; }
 
     const bouton = document.getElementById('bouton-generer-pdf');
     bouton.disabled = true; bouton.textContent = 'Génération en cours…';
 
-    const r = await appelApi(`/bulletins/annuel/classe/${classeId}/imprimer?anneeScolaireId=${anneeScolaireId}`);
+    const chemin = portee === 'semestre'
+      ? `/bulletins/semestre/classe/${classeId}/imprimer?semestreId=${semestreId}`
+      : `/bulletins/annuel/classe/${classeId}/imprimer?anneeScolaireId=${anneeScolaireId}`;
+
+    const r = await appelApi(chemin);
     bouton.disabled = false; bouton.textContent = '📄 Générer le PDF de la classe';
 
-    if (!r || !r.ok) { afficherMessage('Erreur lors de la génération du PDF.', 'erreur'); return; }
+    if (!r || !r.ok) {
+      let detail = '';
+      try { const d = await r.json(); detail = d.message ? ` (${d.message})` : ''; } catch (e) {}
+      afficherMessage(`Erreur lors de la génération du PDF${detail}.`, 'erreur');
+      return;
+    }
 
     const blob = await r.blob();
     const url = window.URL.createObjectURL(blob);

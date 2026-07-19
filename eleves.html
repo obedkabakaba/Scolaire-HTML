@@ -122,6 +122,13 @@
     top: 0.16em;
     transform: translateX(-50%);
   }
+
+  .spinner {
+    display: inline-block; width: 14px; height: 14px; border: 2px solid var(--bordure);
+    border-top-color: var(--ocre); border-radius: 50%; animation: tourner 0.65s linear infinite;
+    vertical-align: middle; margin-right: 8px;
+  }
+  @keyframes tourner { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
@@ -156,7 +163,7 @@
     <div class="entete-page">
       <div>
         <h1>Élèves</h1>
-        <p class="sous-titre" id="compteur-eleves">Chargement…</p>
+        <p class="sous-titre" id="compteur-eleves"><span class="spinner"></span>Chargement…</p>
       </div>
       <div class="groupe-boutons">
         <button class="bouton bouton-secondaire" id="bouton-importer">Importer Excel</button>
@@ -171,6 +178,14 @@
     <div class="barre-filtres">
       <input type="text" id="champ-recherche" placeholder="Rechercher par nom ou matricule…" />
       <select id="filtre-classe"><option value="">Toutes les classes</option></select>
+      <select id="filtre-statut">
+        <option value="actif">Élèves actifs</option>
+        <option value="renvoye">Élèves renvoyés</option>
+        <option value="transfere">Élèves transférés</option>
+        <option value="abandon">Abandons</option>
+        <option value="diplome">Diplômés</option>
+        <option value="tous">Tous les statuts</option>
+      </select>
     </div>
 
     <div class="conteneur-tableau">
@@ -179,7 +194,7 @@
           <tr><th>Matricule</th><th>Nom</th><th>Sexe</th><th>Classe</th><th>Statut</th><th></th></tr>
         </thead>
         <tbody id="corps-tableau">
-          <tr><td colspan="6" class="etat-vide-tableau">Chargement…</td></tr>
+          <tr><td colspan="6" class="etat-vide-tableau"><span class="spinner"></span>Chargement…</td></tr>
         </tbody>
       </table>
     </div>
@@ -193,7 +208,7 @@
     <form id="formulaire-eleve">
       <input type="hidden" id="eleve-id" />
       <div class="ligne-champs">
-        <div class="champ"><label for="champ-matricule">Matricule</label><input type="text" id="champ-matricule" required /></div>
+        <div class="champ"><label for="champ-matricule">Matricule (laisser vide pour génération automatique)</label><input type="text" id="champ-matricule" placeholder="ex. ELV-0001" /></div>
         <div class="champ"><label for="champ-classe">Classe</label><select id="champ-classe"></select></div>
       </div>
       <div class="ligne-champs">
@@ -210,6 +225,16 @@
       <div class="ligne-champs">
         <div class="champ"><label for="champ-resp-nom">Responsable</label><input type="text" id="champ-resp-nom" /></div>
         <div class="champ"><label for="champ-resp-tel">Téléphone responsable</label><input type="text" id="champ-resp-tel" /></div>
+      </div>
+      <div class="champ" id="champ-statut-conteneur" style="display:none;">
+        <label for="champ-statut">Statut</label>
+        <select id="champ-statut">
+          <option value="actif">Actif</option>
+          <option value="renvoye">Renvoyé</option>
+          <option value="transfere">Transféré</option>
+          <option value="abandon">Abandon</option>
+          <option value="diplome">Diplômé</option>
+        </select>
       </div>
       <div class="actions-modale">
         <button type="button" class="bouton bouton-secondaire" id="bouton-annuler-modale">Annuler</button>
@@ -232,6 +257,10 @@
 
 <script>
   const API_BASE_URL = "https://scolaire-saas-backend.onrender.com";
+
+  const LIBELLES_STATUT = {
+    actif: 'Actif', renvoye: 'Renvoyé', transfere: 'Transféré', abandon: 'Abandon', diplome: 'Diplômé'
+  };
 
   function obtenirTokens() {
     return {
@@ -301,10 +330,12 @@
   async function chargerEleves() {
     const recherche = document.getElementById('champ-recherche').value.trim();
     const classeId = document.getElementById('filtre-classe').value;
+    const statut = document.getElementById('filtre-statut').value;
 
     const params = new URLSearchParams();
     if (recherche) params.set('q', recherche);
     if (classeId) params.set('classeId', classeId);
+    if (statut) params.set('statut', statut);
 
     const reponse = await appelApi(`/eleves?${params.toString()}`);
     if (!reponse) return;
@@ -329,7 +360,7 @@
         <td>${e.nom} ${e.postnom || ''} ${e.prenom || ''}</td>
         <td>${e.sexe || '—'}</td>
         <td>${e.classe_nom || '—'}</td>
-        <td><span class="badge-statut ${e.statut === 'actif' ? 'actif' : 'autre'}">${e.statut}</span></td>
+        <td><span class="badge-statut ${e.statut === 'actif' ? 'actif' : 'autre'}">${LIBELLES_STATUT[e.statut] || e.statut}</span></td>
         <td>
           <button class="lien-action" data-action="modifier">Modifier</button>
           <button class="lien-action" data-action="historique">Historique</button>
@@ -365,6 +396,8 @@
     document.getElementById('champ-classe').value = eleve?.classe_id || '';
     document.getElementById('champ-resp-nom').value = eleve?.responsable_nom || '';
     document.getElementById('champ-resp-tel').value = eleve?.responsable_telephone || '';
+    document.getElementById('champ-statut-conteneur').style.display = eleve ? 'block' : 'none';
+    if (eleve) document.getElementById('champ-statut').value = eleve.statut || 'actif';
     document.getElementById('voile-modale').classList.add('visible');
   }
 
@@ -379,8 +412,8 @@
   document.getElementById('formulaire-eleve').addEventListener('submit', async (evt) => {
     evt.preventDefault();
     const id = document.getElementById('eleve-id').value;
+    const matriculeSaisi = document.getElementById('champ-matricule').value.trim();
     const corpsRequete = {
-      matricule: document.getElementById('champ-matricule').value.trim(),
       nom: document.getElementById('champ-nom').value.trim(),
       postnom: document.getElementById('champ-postnom').value.trim(),
       prenom: document.getElementById('champ-prenom').value.trim(),
@@ -390,6 +423,8 @@
       responsable_nom: document.getElementById('champ-resp-nom').value.trim(),
       responsable_telephone: document.getElementById('champ-resp-tel').value.trim()
     };
+    if (matriculeSaisi) corpsRequete.matricule = matriculeSaisi;
+    if (id) corpsRequete.statut = document.getElementById('champ-statut').value;
 
     const bouton = document.getElementById('bouton-enregistrer');
     bouton.disabled = true;
@@ -413,7 +448,7 @@
     }
 
     fermerModale();
-    afficherMessage(id ? 'Élève mis à jour.' : 'Élève ajouté.', 'succes');
+    afficherMessage(id ? 'Élève mis à jour.' : `Élève ajouté (matricule : ${donnees.matricule}).`, 'succes');
     chargerEleves();
   });
 
@@ -432,7 +467,7 @@
 
   async function ouvrirHistorique(eleve) {
     document.getElementById('titre-historique').textContent = `Historique — ${eleve.nom} ${eleve.postnom || ''} ${eleve.prenom || ''}`;
-    document.getElementById('liste-historique').innerHTML = '<li style="color:var(--texte-att);">Chargement…</li>';
+    document.getElementById('liste-historique').innerHTML = '<li style="color:var(--texte-att);"><span class="spinner"></span>Chargement…</li>';
     document.getElementById('voile-historique').classList.add('visible');
 
     const r = await appelApi(`/eleves/${eleve.id}/historique`);
@@ -455,6 +490,7 @@
 
   document.getElementById('champ-recherche').addEventListener('input', debounce(chargerEleves, 350));
   document.getElementById('filtre-classe').addEventListener('change', chargerEleves);
+  document.getElementById('filtre-statut').addEventListener('change', chargerEleves);
 
   function debounce(fn, delai) {
     let minuteur;

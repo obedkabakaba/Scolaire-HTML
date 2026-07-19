@@ -77,6 +77,13 @@
   .message-flash.visible { display: block; }
   .message-flash.succes { background: rgba(76,122,90,0.1); color: var(--vert-ok); }
   .message-flash.erreur { background: rgba(178,58,46,0.08); color: var(--rouge); }
+
+  .spinner {
+    display: inline-block; width: 14px; height: 14px; border: 2px solid var(--bordure);
+    border-top-color: var(--ocre); border-radius: 50%; animation: tourner 0.65s linear infinite;
+    vertical-align: middle; margin-right: 8px;
+  }
+  @keyframes tourner { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
@@ -111,7 +118,7 @@
     <div class="entete-page">
       <div>
         <h1>Utilisateurs</h1>
-        <p class="sous-titre" id="compteur-utilisateurs">Chargement…</p>
+        <p class="sous-titre" id="compteur-utilisateurs"><span class="spinner"></span>Chargement…</p>
       </div>
       <button class="bouton bouton-principal" id="bouton-ajouter">+ Ajouter un utilisateur</button>
       <button class="bouton bouton-secondaire" id="bouton-importer">Importer Excel</button>
@@ -120,10 +127,23 @@
 
     <div class="message-flash" id="message-flash"></div>
 
+    <div style="display:flex; gap:12px; margin-bottom:18px; flex-wrap:wrap;">
+      <input type="text" id="champ-recherche" placeholder="Rechercher par nom ou email…" style="flex:1; min-width:220px; padding:9px 12px; border:1.5px solid var(--bordure); border-radius:7px; font-size:0.9rem;" />
+      <select id="filtre-role" style="padding:9px 12px; border:1.5px solid var(--bordure); border-radius:7px; font-size:0.9rem; background:var(--craie-2);">
+        <option value="">Tous les rôles</option>
+        <option value="directeur">Directeur</option>
+        <option value="prefet">Préfet</option>
+        <option value="secretaire">Secrétaire</option>
+        <option value="professeur">Professeur</option>
+        <option value="titulaire">Titulaire</option>
+        <option value="comptable">Comptable</option>
+      </select>
+    </div>
+
     <div class="conteneur-tableau">
       <table>
         <thead><tr><th>Nom</th><th>Email</th><th>Rôles</th><th>Statut</th><th></th></tr></thead>
-        <tbody id="corps-tableau"><tr><td colspan="5" class="etat-vide-tableau">Chargement…</td></tr></tbody>
+        <tbody id="corps-tableau"><tr><td colspan="5" class="etat-vide-tableau"><span class="spinner"></span>Chargement…</td></tr></tbody>
       </table>
     </div>
   </main>
@@ -213,7 +233,13 @@
   });
 
   async function chargerUtilisateurs() {
-    const r = await appelApi('/utilisateurs');
+    const q = document.getElementById('champ-recherche').value.trim();
+    const role = document.getElementById('filtre-role').value;
+    const params = new URLSearchParams();
+    if (q) params.set('q', q);
+    if (role) params.set('role', role);
+
+    const r = await appelApi(`/utilisateurs?${params.toString()}`);
     if (!r) return;
     if (!r.ok) {
       document.getElementById('corps-tableau').innerHTML = '<tr><td colspan="5" class="etat-vide-tableau">Accès non autorisé ou erreur de chargement.</td></tr>';
@@ -351,6 +377,13 @@
     afficherMessage('Utilisateur supprimé.', 'succes');
     chargerUtilisateurs();
   }
+
+  function debounce(fn, delai) {
+    let minuteur;
+    return (...args) => { clearTimeout(minuteur); minuteur = setTimeout(() => fn(...args), delai); };
+  }
+  document.getElementById('champ-recherche').addEventListener('input', debounce(chargerUtilisateurs, 350));
+  document.getElementById('filtre-role').addEventListener('change', chargerUtilisateurs);
 
   chargerUtilisateurs();
 

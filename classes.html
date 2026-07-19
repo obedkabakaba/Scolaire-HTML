@@ -120,6 +120,13 @@
     top: 0.16em;
     transform: translateX(-50%);
   }
+
+  .spinner {
+    display: inline-block; width: 14px; height: 14px; border: 2px solid var(--bordure);
+    border-top-color: var(--ocre); border-radius: 50%; animation: tourner 0.65s linear infinite;
+    vertical-align: middle; margin-right: 8px;
+  }
+  @keyframes tourner { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
@@ -172,7 +179,7 @@
       <div class="conteneur-tableau">
         <table>
           <thead><tr><th>Classe</th><th>Section</th><th>Option</th><th>Titulaire</th><th>Élèves</th><th></th></tr></thead>
-          <tbody id="corps-tableau-classes"><tr><td colspan="6" class="etat-vide-tableau">Chargement…</td></tr></tbody>
+          <tbody id="corps-tableau-classes"><tr><td colspan="6" class="etat-vide-tableau"><span class="spinner"></span>Chargement…</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -184,8 +191,8 @@
       </div>
       <div class="conteneur-tableau">
         <table>
-          <thead><tr><th>Nom</th><th>Code</th><th>Coefficient</th><th>Max</th></tr></thead>
-          <tbody id="corps-tableau-cours"><tr><td colspan="4" class="etat-vide-tableau">Chargement…</td></tr></tbody>
+          <thead><tr><th>Nom</th><th>Code</th><th>Coefficient</th><th>Max</th><th></th></tr></thead>
+          <tbody id="corps-tableau-cours"><tr><td colspan="5" class="etat-vide-tableau"><span class="spinner"></span>Chargement…</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -280,8 +287,9 @@
 <!-- Modale Cours -->
 <div class="voile" id="voile-modale-cours">
   <div class="modale">
-    <h2>Ajouter un cours</h2>
+    <h2 id="titre-modale-cours">Ajouter un cours</h2>
     <form id="formulaire-cours">
+      <input type="hidden" id="cours-id" />
       <div class="champ"><label for="champ-cours-nom">Nom du cours</label><input type="text" id="champ-cours-nom" required /></div>
       <div class="ligne-champs">
         <div class="champ"><label for="champ-cours-code">Code</label><input type="text" id="champ-cours-code" /></div>
@@ -364,7 +372,16 @@
     const periodes = await r.json();
     document.getElementById('liste-periodes').innerHTML = periodes.length === 0
       ? '<li style="color:var(--texte-att);">Aucune pour l\'instant.</li>'
-      : periodes.map(p => `<li>${p.libelle}</li>`).join('');
+      : periodes.map(p => `<li style="display:flex; justify-content:space-between; align-items:center;">${p.libelle}<button type="button" class="lien-action" data-id="${p.id}" style="color:var(--rouge);">Supprimer</button></li>`).join('');
+
+    document.querySelectorAll('#liste-periodes button[data-id]').forEach(b => b.addEventListener('click', async () => {
+      if (!confirm('Supprimer cette période ? Impossible si des notes existent déjà.')) return;
+      const r = await appelApi(`/periodes/${b.dataset.id}`, { method: 'DELETE' });
+      const d = await r.json();
+      if (!r.ok) { afficherMessage(d.message || 'Erreur lors de la suppression.', 'erreur'); return; }
+      afficherMessage('Période supprimée.', 'succes');
+      chargerPeriodes();
+    }));
   }
 
   document.getElementById('champ-periode-annee').addEventListener('change', chargerPeriodes);
@@ -378,7 +395,14 @@
       libelle: document.getElementById('champ-periode-libelle').value.trim() || null
     };
     if (!corpsRequete.annee_scolaire_id) { afficherMessage("Choisis d'abord une année scolaire.", 'erreur'); return; }
+
+    const bouton = evt.target.querySelector('button[type="submit"]');
+    bouton.disabled = true;
+
     const r = await appelApi('/periodes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpsRequete) });
+
+    bouton.disabled = false;
+
     if (r && r.ok) { evt.target.reset(); chargerPeriodes(); afficherMessage('Période ajoutée.', 'succes'); }
     else afficherMessage("Erreur lors de l'ajout de la période.", 'erreur');
   });
@@ -399,21 +423,30 @@
 
   document.getElementById('form-annee').addEventListener('submit', async (evt) => {
     evt.preventDefault();
+    const bouton = evt.target.querySelector('button[type="submit"]');
+    bouton.disabled = true;
     const libelle = document.getElementById('champ-annee-libelle').value.trim();
     const r = await appelApi('/annees-scolaires', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ libelle }) });
+    bouton.disabled = false;
     if (r && r.ok) { evt.target.reset(); chargerAnnees(); } else { afficherMessage("Erreur lors de l'ajout de l'année.", 'erreur'); }
   });
   document.getElementById('form-section').addEventListener('submit', async (evt) => {
     evt.preventDefault();
+    const bouton = evt.target.querySelector('button[type="submit"]');
+    bouton.disabled = true;
     const nom = document.getElementById('champ-section-nom').value.trim();
     const r = await appelApi('/sections', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nom }) });
+    bouton.disabled = false;
     if (r && r.ok) { evt.target.reset(); chargerSections(); } else { afficherMessage("Erreur lors de l'ajout de la section.", 'erreur'); }
   });
   document.getElementById('form-option').addEventListener('submit', async (evt) => {
     evt.preventDefault();
+    const bouton = evt.target.querySelector('button[type="submit"]');
+    bouton.disabled = true;
     const nom = document.getElementById('champ-option-nom').value.trim();
     const section_id = document.getElementById('champ-option-section').value || null;
     const r = await appelApi('/options', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nom, section_id }) });
+    bouton.disabled = false;
     if (r && r.ok) { evt.target.reset(); chargerOptions(); } else { afficherMessage("Erreur lors de l'ajout de l'option.", 'erreur'); }
   });
 
@@ -575,26 +608,70 @@
     coursCache = await r.json();
     const corps = document.getElementById('corps-tableau-cours');
     corps.innerHTML = coursCache.length === 0
-      ? '<tr><td colspan="4" class="etat-vide-tableau">Aucun cours. Ajoute le premier.</td></tr>'
-      : coursCache.map(c => `<tr><td>${c.nom}</td><td class="badge-mono">${c.code || '—'}</td><td>${c.coefficient}</td><td>${c.maximum_points}</td></tr>`).join('');
+      ? '<tr><td colspan="5" class="etat-vide-tableau">Aucun cours. Ajoute le premier.</td></tr>'
+      : coursCache.map(c => `
+          <tr>
+            <td>${c.nom}</td><td class="badge-mono">${c.code || '—'}</td><td>${c.coefficient}</td><td>${c.maximum_points}</td>
+            <td>
+              <button class="lien-action" data-action="modifier-cours" data-id="${c.id}">Modifier</button>
+              <button class="lien-action" style="color:var(--rouge);" data-action="supprimer-cours" data-id="${c.id}">Supprimer</button>
+            </td>
+          </tr>`).join('');
+
+    corps.querySelectorAll('[data-action="modifier-cours"]').forEach(b => b.addEventListener('click', () => {
+      const cours = coursCache.find(c => c.id === b.dataset.id);
+      ouvrirModaleCours(cours);
+    }));
+    corps.querySelectorAll('[data-action="supprimer-cours"]').forEach(b => b.addEventListener('click', async () => {
+      const cours = coursCache.find(c => c.id === b.dataset.id);
+      if (!confirm(`Supprimer le cours "${cours.nom}" ? Impossible si des notes existent déjà pour lui.`)) return;
+      const r = await appelApi(`/cours/${b.dataset.id}`, { method: 'DELETE' });
+      if (!r) return;
+      const d = await r.json();
+      if (!r.ok) { afficherMessage(d.message || 'Erreur lors de la suppression.', 'erreur'); return; }
+      afficherMessage('Cours supprimé.', 'succes');
+      chargerCours();
+    }));
   }
 
-  document.getElementById('bouton-ajouter-cours').addEventListener('click', () => document.getElementById('voile-modale-cours').classList.add('visible'));
+  function ouvrirModaleCours(cours) {
+    document.getElementById('titre-modale-cours').textContent = cours ? 'Modifier le cours' : 'Ajouter un cours';
+    document.getElementById('cours-id').value = cours?.id || '';
+    document.getElementById('champ-cours-nom').value = cours?.nom || '';
+    document.getElementById('champ-cours-code').value = cours?.code || '';
+    document.getElementById('champ-cours-coef').value = cours?.coefficient ?? 1;
+    document.getElementById('champ-cours-max').value = cours?.maximum_points ?? 20;
+    document.getElementById('voile-modale-cours').classList.add('visible');
+  }
+
+  document.getElementById('bouton-ajouter-cours').addEventListener('click', () => ouvrirModaleCours(null));
 
   document.getElementById('formulaire-cours').addEventListener('submit', async (evt) => {
     evt.preventDefault();
+    const id = document.getElementById('cours-id').value;
     const corpsRequete = {
       nom: document.getElementById('champ-cours-nom').value.trim(),
       code: document.getElementById('champ-cours-code').value.trim(),
       coefficient: parseFloat(document.getElementById('champ-cours-coef').value) || 1,
       maximum_points: parseFloat(document.getElementById('champ-cours-max').value) || 20
     };
-    const r = await appelApi('/cours', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpsRequete) });
+
+    const bouton = evt.target.querySelector('button[type="submit"]');
+    bouton.disabled = true; bouton.textContent = 'Enregistrement…';
+
+    const r = await appelApi(id ? `/cours/${id}` : '/cours', {
+      method: id ? 'PATCH' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(corpsRequete)
+    });
+
+    bouton.disabled = false; bouton.textContent = 'Enregistrer';
+
     if (!r) return;
-    if (!r.ok) { afficherMessage('Erreur lors de l\'ajout du cours.', 'erreur'); return; }
+    if (!r.ok) { afficherMessage("Erreur lors de l'enregistrement du cours.", 'erreur'); return; }
     fermerModale('voile-modale-cours');
     document.getElementById('formulaire-cours').reset();
-    afficherMessage('Cours ajouté.', 'succes');
+    afficherMessage(id ? 'Cours mis à jour.' : 'Cours ajouté.', 'succes');
     chargerCours();
   });
 

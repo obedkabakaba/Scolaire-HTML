@@ -356,30 +356,54 @@
       const enfants = periodes.filter(p => p.semestre_id === sem.id);
       html += `
         <div class="bloc-semestre">
-          <div class="titre-semestre">${sem.libelle} <button class="lien-action" data-id="${sem.id}">Supprimer</button></div>
+          <div class="titre-semestre">${sem.libelle} <button class="lien-action" data-action="supprimer" data-id="${sem.id}">Supprimer</button></div>
           <ul class="liste-simple">
             ${enfants.length === 0 ? '<li style="color:var(--texte-att); border:none;">Aucune période rattachée.</li>' :
-              enfants.map(e => `<li>${e.libelle} <button class="lien-action" data-id="${e.id}">Supprimer</button></li>`).join('')}
+              enfants.map(e => `<li>${e.libelle} <button class="lien-action" data-action="supprimer" data-id="${e.id}">Supprimer</button></li>`).join('')}
           </ul>
         </div>`;
     });
     if (sansSemestre.length > 0) {
+      const optionsSemestres = '<option value="">Rattacher à…</option>' + semestres.map(s => `<option value="${s.id}">${s.libelle}</option>`).join('');
       html += `
         <div class="bloc-semestre">
           <div class="titre-semestre" style="color:var(--texte-att);">Sans semestre</div>
           <ul class="liste-simple">
-            ${sansSemestre.map(e => `<li>${e.libelle} <button class="lien-action" data-id="${e.id}">Supprimer</button></li>`).join('')}
+            ${sansSemestre.map(e => `
+              <li>
+                <span>${e.libelle}</span>
+                <span style="display:flex; gap:8px; align-items:center;">
+                  <select class="select-rattacher" data-id="${e.id}" style="padding:4px 8px; border:1.5px solid var(--bordure); border-radius:6px; font-size:0.8rem;">${optionsSemestres}</select>
+                  <button class="lien-action" style="color:var(--vert-ok);" data-action="rattacher" data-id="${e.id}">Rattacher</button>
+                  <button class="lien-action" data-action="supprimer" data-id="${e.id}">Supprimer</button>
+                </span>
+              </li>
+            `).join('')}
           </ul>
         </div>`;
     }
     conteneur.innerHTML = html;
 
-    conteneur.querySelectorAll('button[data-id]').forEach(b => b.addEventListener('click', async () => {
-      if (!confirm('Supprimer cette période ? Impossible si des notes existent déjà.')) return;
+    conteneur.querySelectorAll('[data-action="supprimer"]').forEach(b => b.addEventListener('click', async () => {
+      if (!confirm('Supprimer ? Impossible si des notes existent déjà pour cette période, ou pas d\'impact sur les notes si c\'est un semestre (juste un regroupement).')) return;
       const r = await appelApi(`/periodes/${b.dataset.id}`, { method: 'DELETE' });
       const d = await r.json();
       if (!r.ok) { afficherMessage(d.message || 'Erreur lors de la suppression.', 'erreur'); return; }
-      afficherMessage('Période supprimée.', 'succes');
+      afficherMessage('Supprimé.', 'succes');
+      chargerPeriodesDeLAnnee();
+    }));
+
+    conteneur.querySelectorAll('[data-action="rattacher"]').forEach(b => b.addEventListener('click', async () => {
+      const select = conteneur.querySelector(`.select-rattacher[data-id="${b.dataset.id}"]`);
+      const semestreId = select.value;
+      if (!semestreId) { afficherMessage('Choisis un semestre d\'abord.', 'erreur'); return; }
+      const r = await appelApi(`/periodes/${b.dataset.id}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ semestre_id: semestreId })
+      });
+      const d = await r.json();
+      if (!r.ok) { afficherMessage(d.message || 'Erreur lors du rattachement.', 'erreur'); return; }
+      afficherMessage('Période rattachée au semestre.', 'succes');
       chargerPeriodesDeLAnnee();
     }));
   }

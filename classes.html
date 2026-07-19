@@ -436,10 +436,20 @@
     const r = await appelApi(id ? `/classes/${id}` : '/classes', { method: id ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpsRequete) });
     bouton.disabled = false; bouton.textContent = 'Enregistrer';
     if (!r) return;
-    if (!r.ok) { const d = await r.json(); afficherMessage(d.message || 'Erreur.', 'erreur'); return; }
-    if (!id) { fermerModale('voile-modale-classe'); }
-    afficherMessage(id ? 'Classe mise à jour.' : 'Classe ajoutée.', 'succes');
-    chargerClasses();
+    const donnees = await r.json();
+    if (!r.ok) { afficherMessage(donnees.message || 'Erreur.', 'erreur'); return; }
+
+    afficherMessage(id ? 'Classe mise à jour.' : 'Classe ajoutée — tu peux maintenant lui ajouter des cours ci-dessous.', 'succes');
+    await chargerClasses();
+
+    if (!id && donnees.id) {
+      // On garde la fenêtre ouverte, basculée en mode édition, pour ajouter des cours tout de suite
+      document.getElementById('classe-id').value = donnees.id;
+      document.getElementById('titre-modale-classe').textContent = 'Modifier la classe';
+      classeEnEditionCoursId = donnees.id;
+      document.getElementById('section-cours-classe').style.display = 'block';
+      await chargerCoursDeLaClasse(donnees.id);
+    }
   });
 
   async function supprimerClasse(id, nom) {

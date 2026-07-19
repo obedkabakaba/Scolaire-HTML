@@ -176,6 +176,13 @@
           <label class="case-role"><input type="checkbox" value="comptable" /> Comptable</label>
         </div>
       </div>
+      <div class="champ" id="champ-statut-conteneur" style="display:none;">
+        <label for="champ-statut">Statut</label>
+        <select id="champ-statut">
+          <option value="actif">Actif</option>
+          <option value="inactif">Inactif (désactivé)</option>
+        </select>
+      </div>
       <div class="actions-modale">
         <button type="button" class="bouton bouton-secondaire" id="bouton-annuler-modale">Annuler</button>
         <button type="submit" class="bouton bouton-principal" id="bouton-enregistrer">Enregistrer</button>
@@ -292,6 +299,9 @@
       c.checked = utilisateur ? (utilisateur.roles || []).includes(c.value) : false;
     });
 
+    document.getElementById('champ-statut-conteneur').style.display = utilisateur ? 'block' : 'none';
+    if (utilisateur) document.getElementById('champ-statut').value = utilisateur.statut || 'actif';
+
     document.getElementById('voile-modale').classList.add('visible');
   }
 
@@ -341,7 +351,8 @@
         body: JSON.stringify({
           nom: document.getElementById('champ-nom').value.trim(),
           prenom: document.getElementById('champ-prenom').value.trim(),
-          telephone: document.getElementById('champ-telephone').value.trim()
+          telephone: document.getElementById('champ-telephone').value.trim(),
+          statut: document.getElementById('champ-statut').value
         })
       });
     } else {

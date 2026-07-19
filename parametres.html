@@ -96,6 +96,13 @@
     top: 0.16em;
     transform: translateX(-50%);
   }
+
+  .spinner {
+    display: inline-block; width: 14px; height: 14px; border: 2px solid var(--bordure);
+    border-top-color: var(--ocre); border-radius: 50%; animation: tourner 0.65s linear infinite;
+    vertical-align: middle; margin-right: 8px;
+  }
+  @keyframes tourner { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
@@ -109,7 +116,8 @@
         <li><a class="nav-item" href="espace-secretaire.html">Accueil Secrétariat</a></li>
         <li><a class="nav-item" href="espace-titulaire.html">Ma classe</a></li>
         <li><a class="nav-item" href="dashboard-directeur.html">Tableau de bord</a></li>
-      <li><a class="nav-item" href="eleves.html">Élèves</a></li>
+      <li><a class="nav-item" href="annee-scolaire.html">Année scolaire</a></li>
+        <li><a class="nav-item" href="eleves.html">Élèves</a></li>
         <li><a class="nav-item" href="frais-scolaires.html">Frais scolaires</a></li>
         <li><a class="nav-item" href="utilisateurs.html">Utilisateurs</a></li>
       <li><a class="nav-item" href="classes.html">Classes</a></li>
@@ -137,7 +145,7 @@
     <!-- Mon abonnement -->
     <div class="carte-section">
       <h2>Mon abonnement</h2>
-      <div id="details-abonnement" style="margin-bottom:18px; font-size:0.92rem;">Chargement…</div>
+      <div id="details-abonnement" style="margin-bottom:18px; font-size:0.92rem;"><span class="spinner"></span>Chargement…</div>
 
       <div id="section-paiement">
         <p style="font-size:0.85rem; color:var(--texte-att); margin-bottom:14px;">
@@ -223,6 +231,10 @@
           <div class="champ"><label for="champ-nb-periodes">Nombre de périodes</label><input type="number" id="champ-nb-periodes" /></div>
           <div class="champ"><label for="champ-nb-semestres">Nombre de semestres</label><input type="number" id="champ-nb-semestres" /></div>
         </div>
+        <div class="champ">
+          <label for="champ-seuil-promotion">Moyenne annuelle minimale pour passer en classe supérieure (%)</label>
+          <input type="number" id="champ-seuil-promotion" min="0" max="100" step="0.5" />
+        </div>
         <button type="submit" class="bouton bouton-principal">Enregistrer</button>
       </form>
     </div>
@@ -295,6 +307,7 @@
     document.getElementById('champ-nb-trimestres').value = ecole.nb_trimestres || 0;
     document.getElementById('champ-nb-periodes').value = ecole.nb_periodes || 0;
     document.getElementById('champ-nb-semestres').value = ecole.nb_semestres || 0;
+    document.getElementById('champ-seuil-promotion').value = ecole.seuil_promotion_pourcentage ?? 50;
 
     if (ecole.logo_url) {
       const img = document.getElementById('apercu-logo');
@@ -325,7 +338,8 @@
       systeme_notation: { max: parseFloat(document.getElementById('champ-note-max').value) || 20 },
       nb_trimestres: parseInt(document.getElementById('champ-nb-trimestres').value, 10) || 0,
       nb_periodes: parseInt(document.getElementById('champ-nb-periodes').value, 10) || 0,
-      nb_semestres: parseInt(document.getElementById('champ-nb-semestres').value, 10) || 0
+      nb_semestres: parseInt(document.getElementById('champ-nb-semestres').value, 10) || 0,
+      seuil_promotion_pourcentage: parseFloat(document.getElementById('champ-seuil-promotion').value) || 50
     };
     const r = await appelApi('/ecole/moi', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpsRequete) });
     if (r && r.ok) afficherMessage('Système de notation mis à jour.', 'succes');
@@ -502,6 +516,7 @@
   // ---------- Filtrage de la navigation selon le rôle connecté ----------
   (function gererAccesParRole() {
     const permissions = {
+      'annee-scolaire.html': ['directeur', 'prefet'],
       'espace-secretaire.html': ['secretaire'],
       'frais-scolaires.html': ['directeur', 'comptable', 'secretaire'],
       'bulletin-annuel.html': ['directeur', 'prefet'],

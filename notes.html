@@ -109,7 +109,8 @@
         <li><a class="nav-item" href="espace-secretaire.html">Accueil Secrétariat</a></li>
         <li><a class="nav-item" href="espace-titulaire.html">Ma classe</a></li>
         <li><a class="nav-item" href="dashboard-directeur.html">Tableau de bord</a></li>
-      <li><a class="nav-item" href="eleves.html">Élèves</a></li>
+      <li><a class="nav-item" href="annee-scolaire.html">Année scolaire</a></li>
+        <li><a class="nav-item" href="eleves.html">Élèves</a></li>
         <li><a class="nav-item" href="frais-scolaires.html">Frais scolaires</a></li>
         <li><a class="nav-item" href="utilisateurs.html">Utilisateurs</a></li>
       <li><a class="nav-item" href="classes.html">Classes</a></li>
@@ -138,7 +139,6 @@
       <div class="champ-selecteur"><label for="select-classe">Classe</label><select id="select-classe"></select></div>
       <div class="champ-selecteur"><label for="select-cours">Cours</label><select id="select-cours"></select></div>
       <div class="champ-selecteur"><label for="select-periode">Période</label><select id="select-periode"></select></div>
-      <button class="bouton bouton-principal" id="bouton-charger-grille">Afficher la grille</button>
     </div>
 
     <div class="bandeau-verrouille" id="bandeau-verrouille">
@@ -148,7 +148,7 @@
     <div class="conteneur-tableau">
       <table>
         <thead><tr><th>Matricule</th><th>Élève</th><th>Note (sur <span id="max-affiche">—</span>)</th></tr></thead>
-        <tbody id="corps-grille"><tr><td colspan="3" class="etat-vide-tableau">Choisis une classe, un cours et une période, puis clique "Afficher la grille".</td></tr></tbody>
+        <tbody id="corps-grille"><tr><td colspan="3" class="etat-vide-tableau">Choisis une classe, un cours et une période — la grille s'affiche automatiquement.</td></tr></tbody>
       </table>
     </div>
 
@@ -250,12 +250,26 @@
       if (estProfesseurSeul) remplirCoursSelonClasse();
     }
     if (coursIdUrl) document.getElementById('select-cours').value = coursIdUrl;
+
+    // Filtre automatique : dès que les 3 sélecteurs ont une valeur, la grille se charge seule
+    ['select-classe', 'select-cours', 'select-periode'].forEach((idSelect) => {
+      document.getElementById(idSelect).addEventListener('change', verifierEtChargerGrille);
+    });
+    verifierEtChargerGrille();
+  }
+
+  function verifierEtChargerGrille() {
+    const classeId = document.getElementById('select-classe').value;
+    const coursId = document.getElementById('select-cours').value;
+    const periodeId = document.getElementById('select-periode').value;
+    if (classeId && coursId && periodeId) chargerGrille();
   }
 
   function remplirCoursSelonClasse() {
     const classeId = document.getElementById('select-classe').value;
     const coursDeCetteClasse = mesCoursCache.filter(c => c.classe_id === classeId);
     document.getElementById('select-cours').innerHTML = coursDeCetteClasse.map(c => `<option value="${c.cours_id}">${c.cours_nom}</option>`).join('');
+    verifierEtChargerGrille();
   }
 
   let maximumActuel = null;
@@ -305,7 +319,6 @@
     document.getElementById('barre-actions').style.display = 'flex';
   }
 
-  document.getElementById('bouton-charger-grille').addEventListener('click', chargerGrille);
 
   document.getElementById('bouton-enregistrer-notes').addEventListener('click', async () => {
     const classeId = document.getElementById('select-classe').value;
@@ -397,6 +410,7 @@
   // ---------- Filtrage de la navigation selon le rôle connecté ----------
   (function gererAccesParRole() {
     const permissions = {
+      'annee-scolaire.html': ['directeur', 'prefet'],
       'espace-secretaire.html': ['secretaire'],
       'frais-scolaires.html': ['directeur', 'comptable', 'secretaire'],
       'bulletin-annuel.html': ['directeur', 'prefet'],

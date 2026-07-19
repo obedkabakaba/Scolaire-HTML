@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ardoise — Année scolaire</title>
+<link rel="icon" type="image/png" href="data:image/png;base64,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">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ardoise: #1F2B24; --craie: #F6F2E7; --craie-2: #FBF9F3;
+    --ocre: #C98A3E; --ocre-dark: #A96F2E; --encre: #3C5A62;
+    --rouge: #B23A2E; --vert-ok: #4C7A5A;
+    --texte-sombre: #1F2B24; --texte-att: #6B7269; --bordure: #E4DFCF;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Inter', sans-serif; color: var(--texte-sombre); background: var(--craie); }
+  .mise-en-page { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+  @media (max-width: 780px) { .mise-en-page { grid-template-columns: 1fr; } }
+  .barre-laterale { background: var(--ardoise); color: var(--craie); padding: 32px 22px; position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; justify-content: space-between; }
+  @media (max-width: 780px) { .barre-laterale { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px; height: auto; z-index: 5; } }
+  .barre-laterale .marque { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.5rem; margin: 0 0 40px 0; }
+  @media (max-width: 780px) { .barre-laterale .marque { margin: 0; } }
+  .nav-liste { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
+  @media (max-width: 780px) { .nav-liste { display: none; } }
+  .nav-item, .nav-item:visited { padding: 10px 12px; border-radius: 6px; font-size: 0.92rem; color: rgba(246,242,231,0.55); text-decoration: none; display: flex; justify-content: space-between; align-items: center; }
+  .nav-item.actif { background: rgba(246,242,231,0.08); color: var(--craie); font-weight: 600; }
+  .lettre-i { position: relative; display: inline-block; line-height: 1; }
+  .point-i-marque { position: absolute; width: 0.13em; height: 0.13em; border-radius: 50%; background: var(--ocre); left: 50%; top: 0.16em; transform: translateX(-50%); }
+  .nav-deconnexion { background: none; border: none; border-top: 1px solid rgba(246,242,231,0.12); color: rgba(246,242,231,0.55); text-align: left; padding: 14px 12px 4px 12px; font-size: 0.86rem; font-family: 'Inter', sans-serif; cursor: pointer; }
+  .nav-deconnexion:hover { color: var(--craie); }
+  @media (max-width: 780px) { .nav-deconnexion { border-top: none; padding: 8px 12px; } }
+
+  .contenu { padding: 36px 44px 60px 44px; }
+  @media (max-width: 780px) { .contenu { padding: 24px 20px 48px 20px; } }
+  .entete-page h1 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.9rem; margin: 0 0 4px 0; }
+  .entete-page .sous-titre { color: var(--texte-att); font-size: 0.95rem; margin: 0 0 24px 0; }
+
+  .barre-onglets { display: flex; gap: 6px; border-bottom: 1.5px solid var(--bordure); margin-bottom: 24px; flex-wrap: wrap; }
+  .onglet { padding: 10px 4px; margin-right: 20px; font-size: 0.92rem; font-weight: 600; color: var(--texte-att); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1.5px; }
+  .onglet.actif { color: var(--ardoise); border-bottom-color: var(--ocre); }
+  .panneau-onglet { display: none; }
+  .panneau-onglet.visible { display: block; }
+
+  .bouton { padding: 9px 15px; border-radius: 7px; font-family: 'Inter', sans-serif; font-size: 0.86rem; font-weight: 600; cursor: pointer; border: 1.5px solid transparent; }
+  .bouton-principal { background: var(--ocre); color: var(--craie-2); }
+  .bouton-principal:hover { background: var(--ocre-dark); }
+  .bouton-secondaire { background: none; border-color: var(--bordure); color: var(--texte-sombre); }
+  .bouton-secondaire:hover { border-color: var(--ardoise); }
+  .bouton-petit { padding: 5px 10px; font-size: 0.78rem; }
+  .bouton-danger { background: none; border-color: var(--rouge); color: var(--rouge); }
+  .bouton:disabled { opacity: 0.55; cursor: not-allowed; }
+
+  .carte-annee {
+    background: var(--craie-2); border: 1px solid var(--bordure); border-radius: 10px; padding: 20px;
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 12px;
+  }
+  .carte-annee .libelle { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.1rem; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.74rem; font-weight: 600; margin-left: 8px; }
+  .badge.actif { background: rgba(76,122,90,0.12); color: var(--vert-ok); }
+  .badge.cloturee { background: rgba(107,114,105,0.12); color: var(--texte-att); }
+  .actions-annee { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .form-inline { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 24px; }
+  .form-inline input, .form-inline select { padding: 9px 12px; border: 1.5px solid var(--bordure); border-radius: 7px; font-size: 0.88rem; }
+
+  .grille-2col { display: grid; grid-template-columns: 1fr 1.4fr; gap: 24px; }
+  @media (max-width: 900px) { .grille-2col { grid-template-columns: 1fr; } }
+  .panneau { background: var(--craie-2); border: 1px solid var(--bordure); border-radius: 10px; padding: 20px; }
+  .panneau h3 { font-family: 'Fraunces', serif; font-size: 1.05rem; margin: 0 0 14px 0; }
+
+  .bloc-semestre { border: 1.5px solid var(--bordure); border-radius: 8px; padding: 14px; margin-bottom: 14px; }
+  .bloc-semestre .titre-semestre { font-weight: 700; margin-bottom: 8px; }
+  .liste-simple { list-style: none; margin: 0; padding: 0; }
+  .liste-simple li { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--bordure); font-size: 0.88rem; }
+  .liste-simple li:last-child { border-bottom: none; }
+  .lien-action { background: none; border: none; color: var(--rouge); cursor: pointer; font-size: 0.8rem; }
+
+  .conteneur-tableau { background: var(--craie-2); border: 1px solid var(--bordure); border-radius: 10px; overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  th { text-align: left; padding: 11px 14px; background: rgba(31,43,36,0.03); color: var(--texte-att); font-size: 0.74rem; text-transform: uppercase; font-weight: 600; }
+  td { padding: 10px 14px; border-top: 1px solid var(--bordure); }
+  select.select-decision { padding: 5px 8px; border: 1.5px solid var(--bordure); border-radius: 6px; font-size: 0.82rem; }
+  .etat-vide-tableau { padding: 40px 20px; text-align: center; color: var(--texte-att); }
+
+  .message-flash { display: none; padding: 12px 16px; border-radius: 8px; font-size: 0.88rem; margin-bottom: 20px; }
+  .message-flash.visible { display: block; }
+  .message-flash.succes { background: rgba(76,122,90,0.1); color: var(--vert-ok); }
+  .message-flash.erreur { background: rgba(178,58,46,0.08); color: var(--rouge); }
+  .message-flash.info { background: rgba(60,90,98,0.08); color: var(--encre); }
+
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--bordure); border-top-color: var(--ocre); border-radius: 50%; animation: tourner 0.65s linear infinite; vertical-align: middle; margin-right: 8px; }
+  @keyframes tourner { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="mise-en-page">
+  <nav class="barre-laterale">
+    <div>
+      <div class="marque">Ardo<span class="lettre-i">ı<span class="point-i-marque"></span></span>se</div>
+      <ul class="nav-liste">
+        <li><a class="nav-item" href="dashboard-directeur.html">Tableau de bord</a></li>
+        <li><a class="nav-item actif" href="annee-scolaire.html">Année scolaire</a></li>
+        <li><a class="nav-item" href="eleves.html">Élèves</a></li>
+        <li><a class="nav-item" href="frais-scolaires.html">Frais scolaires</a></li>
+        <li><a class="nav-item" href="utilisateurs.html">Utilisateurs</a></li>
+        <li><a class="nav-item" href="classes.html">Classes</a></li>
+        <li><a class="nav-item" href="notes.html">Notes</a></li>
+        <li><a class="nav-item" href="bulletins.html">Bulletins</a></li>
+        <li><a class="nav-item" href="bulletin-annuel.html">Bulletin annuel</a></li>
+        <li><a class="nav-item" href="generateur-modeles.html">Modèles de bulletins</a></li>
+        <li><a class="nav-item" href="calendrier.html">Calendrier</a></li>
+        <li><a class="nav-item" href="journal.html">Journal d'activité</a></li>
+        <li><a class="nav-item" href="parametres.html">Paramètres</a></li>
+        <li><a class="nav-item" href="mon-profil.html">Mon profil</a></li>
+      </ul>
+    </div>
+    <button class="nav-deconnexion" id="bouton-deconnexion-nav">↩ Se déconnecter</button>
+  </nav>
+
+  <main class="contenu">
+    <div class="entete-page">
+      <h1>Année scolaire</h1>
+      <p class="sous-titre">Le pivot de toute la plateforme : années, périodes/semestres/examens, et passage à l'année suivante.</p>
+    </div>
+
+    <div class="message-flash" id="message-flash"></div>
+
+    <div class="barre-onglets">
+      <div class="onglet actif" data-onglet="annees">Années</div>
+      <div class="onglet" data-onglet="periodes">Périodes, semestres &amp; examens</div>
+      <div class="onglet" data-onglet="promotion">Promotion vers l'année suivante</div>
+    </div>
+
+    <!-- ===== Onglet Années ===== -->
+    <div class="panneau-onglet visible" id="onglet-annees">
+      <form class="form-inline" id="form-annee">
+        <input type="text" id="champ-annee-libelle" placeholder="ex. 2026-2027" required />
+        <input type="date" id="champ-annee-debut" title="Date de début" />
+        <input type="date" id="champ-annee-fin" title="Date de fin" />
+        <button type="submit" class="bouton bouton-principal">+ Créer une année</button>
+      </form>
+      <div id="liste-annees"><p class="etat-vide-tableau"><span class="spinner"></span>Chargement…</p></div>
+    </div>
+
+    <!-- ===== Onglet Périodes/Semestres/Examens ===== -->
+    <div class="panneau-onglet" id="onglet-periodes">
+      <div class="form-inline">
+        <label style="font-size:0.85rem; color:var(--texte-att);">Année :</label>
+        <select id="select-annee-periodes"></select>
+      </div>
+
+      <div class="grille-2col">
+        <div class="panneau">
+          <h3>Ajouter</h3>
+          <form id="form-periode" style="display:flex; flex-direction:column; gap:10px;">
+            <select id="champ-periode-type">
+              <option value="periode">Période</option>
+              <option value="examen">Examen</option>
+              <option value="semestre">Semestre (regroupement)</option>
+            </select>
+            <input type="number" id="champ-periode-numero" placeholder="N°" min="1" required />
+            <input type="text" id="champ-periode-libelle" placeholder="Libellé (ex. 1er Trimestre, Examen 1er semestre, 1er Semestre)" />
+            <div id="champ-rattachement-conteneur">
+              <label style="font-size:0.8rem; color:var(--texte-att); display:block; margin-bottom:6px;">Rattacher au semestre</label>
+              <select id="champ-periode-semestre"><option value="">— Aucun —</option></select>
+            </div>
+            <button type="submit" class="bouton bouton-principal">Ajouter</button>
+          </form>
+        </div>
+
+        <div class="panneau">
+          <h3>Structure de l'année</h3>
+          <div id="conteneur-semestres"><p class="etat-vide-tableau">Choisis une année.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== Onglet Promotion ===== -->
+    <div class="panneau-onglet" id="onglet-promotion">
+      <div class="form-inline">
+        <label style="font-size:0.85rem; color:var(--texte-att);">Année qui se termine :</label>
+        <select id="select-annee-source"></select>
+        <button class="bouton bouton-secondaire" id="bouton-calculer-apercu">Calculer l'aperçu</button>
+      </div>
+      <p style="font-size:0.82rem; color:var(--texte-att); margin-top:-10px;">
+        Seuil de promotion actuel : <strong id="seuil-actuel">—</strong>% (modifiable dans Paramètres). Ajuste chaque décision avant de valider.
+      </p>
+
+      <div class="conteneur-tableau" style="margin-top:18px;">
+        <table>
+          <thead><tr><th>Élève</th><th>Classe actuelle</th><th>Moyenne annuelle</th><th>Décision</th><th>Classe cible</th></tr></thead>
+          <tbody id="corps-tableau-promotion"><tr><td colspan="5" class="etat-vide-tableau">Choisis une année puis clique "Calculer l'aperçu".</td></tr></tbody>
+        </table>
+      </div>
+
+      <div style="margin-top:18px; display:flex; justify-content:flex-end;">
+        <button class="bouton bouton-principal" id="bouton-executer-promotion" style="display:none;">Valider et appliquer la promotion</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+  const API_BASE_URL = "https://scolaire-saas-backend.onrender.com";
+
+  function obtenirTokens() {
+    return { accessToken: localStorage.getItem('ardoise_access_token'), refreshToken: localStorage.getItem('ardoise_refresh_token') };
+  }
+  function retourConnexion() {
+    localStorage.removeItem('ardoise_access_token'); localStorage.removeItem('ardoise_refresh_token'); localStorage.removeItem('ardoise_user');
+    window.location.href = 'connexion.html';
+  }
+  async function rafraichirToken(refreshToken) {
+    const reponse = await fetch(`${API_BASE_URL}/auth/refresh`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refresh_token: refreshToken }) });
+    if (!reponse.ok) return null;
+    const donnees = await reponse.json();
+    localStorage.setItem('ardoise_access_token', donnees.access_token);
+    return donnees.access_token;
+  }
+  async function appelApi(chemin, options = {}) {
+    let { accessToken, refreshToken } = obtenirTokens();
+    if (!accessToken) { retourConnexion(); return null; }
+    const executer = (token) => fetch(`${API_BASE_URL}${chemin}`, { ...options, headers: { ...(options.headers || {}), Authorization: `Bearer ${token}` } });
+    let reponse = await executer(accessToken);
+    if (reponse.status === 401 && refreshToken) {
+      const nouveauToken = await rafraichirToken(refreshToken);
+      if (!nouveauToken) { retourConnexion(); return null; }
+      reponse = await executer(nouveauToken);
+    }
+    if (reponse.status === 401) { retourConnexion(); return null; }
+    return reponse;
+  }
+  function afficherMessage(texte, type) {
+    const zone = document.getElementById('message-flash');
+    zone.textContent = texte; zone.className = `message-flash visible ${type}`;
+    setTimeout(() => zone.classList.remove('visible'), 6000);
+  }
+
+  document.getElementById('bouton-deconnexion-nav')?.addEventListener('click', async () => {
+    const { refreshToken } = obtenirTokens();
+    try {
+      await fetch(`${API_BASE_URL}/auth/logout`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refresh_token: refreshToken }) });
+    } catch (e) {}
+    retourConnexion();
+  });
+
+  document.querySelectorAll('.onglet').forEach((onglet) => {
+    onglet.addEventListener('click', () => {
+      document.querySelectorAll('.onglet').forEach((o) => o.classList.remove('actif'));
+      document.querySelectorAll('.panneau-onglet').forEach((p) => p.classList.remove('visible'));
+      onglet.classList.add('actif');
+      document.getElementById(`onglet-${onglet.dataset.onglet}`).classList.add('visible');
+    });
+  });
+
+  // ---------- Onglet Années ----------
+  let anneesCache = [];
+
+  async function chargerAnnees() {
+    const r = await appelApi('/annees-scolaires');
+    if (!r || !r.ok) return;
+    anneesCache = await r.json();
+
+    const conteneur = document.getElementById('liste-annees');
+    conteneur.innerHTML = anneesCache.length === 0
+      ? '<p class="etat-vide-tableau">Aucune année créée.</p>'
+      : anneesCache.map(a => `
+          <div class="carte-annee">
+            <div>
+              <span class="libelle">${a.libelle}</span>
+              ${a.active ? '<span class="badge actif">✓ Active (pivot actuel)</span>' : ''}
+              ${a.cloturee ? '<span class="badge cloturee">🔒 Clôturée</span>' : ''}
+            </div>
+            <div class="actions-annee">
+              ${!a.active && !a.cloturee ? `<button class="bouton bouton-secondaire bouton-petit" data-action="activer" data-id="${a.id}">Activer comme pivot</button>` : ''}
+              ${!a.cloturee ? `<button class="bouton bouton-danger bouton-petit" data-action="cloturer" data-id="${a.id}">Clôturer (verrouiller)</button>` : ''}
+            </div>
+          </div>
+        `).join('');
+
+    conteneur.querySelectorAll('[data-action="activer"]').forEach(b => b.addEventListener('click', async () => {
+      const r = await appelApi(`/annees-scolaires/${b.dataset.id}/activer`, { method: 'POST' });
+      if (r && r.ok) { afficherMessage('Année activée comme pivot de la plateforme.', 'succes'); chargerAnnees(); }
+    }));
+    conteneur.querySelectorAll('[data-action="cloturer"]').forEach(b => b.addEventListener('click', async () => {
+      if (!confirm("Clôturer cette année la verrouille définitivement (consultation et impression uniquement). Continuer ?")) return;
+      const r = await appelApi(`/annees-scolaires/${b.dataset.id}/cloturer`, { method: 'POST' });
+      if (r && r.ok) { afficherMessage('Année clôturée.', 'succes'); chargerAnnees(); }
+    }));
+
+    remplirSelecteursAnnees();
+  }
+
+  function remplirSelecteursAnnees() {
+    const options = anneesCache.map(a => `<option value="${a.id}">${a.libelle}${a.cloturee ? ' (clôturée)' : ''}</option>`).join('');
+    document.getElementById('select-annee-periodes').innerHTML = options;
+    document.getElementById('select-annee-source').innerHTML = options;
+    const active = anneesCache.find(a => a.active);
+    if (active) {
+      document.getElementById('select-annee-periodes').value = active.id;
+      document.getElementById('select-annee-source').value = active.id;
+    }
+    chargerPeriodesDeLAnnee();
+  }
+
+  document.getElementById('form-annee').addEventListener('submit', async (evt) => {
+    evt.preventDefault();
+    const bouton = evt.target.querySelector('button[type="submit"]');
+    bouton.disabled = true;
+    const r = await appelApi('/annees-scolaires', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        libelle: document.getElementById('champ-annee-libelle').value.trim(),
+        date_debut: document.getElementById('champ-annee-debut').value || null,
+        date_fin: document.getElementById('champ-annee-fin').value || null,
+        active: false
+      })
+    });
+    bouton.disabled = false;
+    if (r && r.ok) { evt.target.reset(); afficherMessage('Année créée. Active-la comme pivot quand tu es prêt.', 'succes'); chargerAnnees(); }
+    else afficherMessage("Erreur lors de la création de l'année.", 'erreur');
+  });
+
+  // ---------- Onglet Périodes/Semestres/Examens ----------
+  document.getElementById('champ-periode-type').addEventListener('change', (evt) => {
+    document.getElementById('champ-rattachement-conteneur').style.display = evt.target.value === 'semestre' ? 'none' : 'block';
+  });
+
+  document.getElementById('select-annee-periodes').addEventListener('change', chargerPeriodesDeLAnnee);
+
+  async function chargerPeriodesDeLAnnee() {
+    const anneeId = document.getElementById('select-annee-periodes').value;
+    if (!anneeId) return;
+    const r = await appelApi(`/periodes?anneeScolaireId=${anneeId}`);
+    if (!r || !r.ok) return;
+    const periodes = await r.json();
+
+    const semestres = periodes.filter(p => p.type === 'semestre');
+    const sansSemestre = periodes.filter(p => p.type !== 'semestre' && !p.semestre_id);
+
+    document.getElementById('champ-periode-semestre').innerHTML =
+      '<option value="">— Aucun —</option>' + semestres.map(s => `<option value="${s.id}">${s.libelle}</option>`).join('');
+
+    const conteneur = document.getElementById('conteneur-semestres');
+    if (periodes.length === 0) {
+      conteneur.innerHTML = '<p class="etat-vide-tableau">Aucune période créée pour cette année.</p>';
+      return;
+    }
+
+    let html = '';
+    semestres.forEach(sem => {
+      const enfants = periodes.filter(p => p.semestre_id === sem.id);
+      html += `
+        <div class="bloc-semestre">
+          <div class="titre-semestre">${sem.libelle} <button class="lien-action" data-id="${sem.id}">Supprimer</button></div>
+          <ul class="liste-simple">
+            ${enfants.length === 0 ? '<li style="color:var(--texte-att); border:none;">Aucune période rattachée.</li>' :
+              enfants.map(e => `<li>${e.libelle} <button class="lien-action" data-id="${e.id}">Supprimer</button></li>`).join('')}
+          </ul>
+        </div>`;
+    });
+    if (sansSemestre.length > 0) {
+      html += `
+        <div class="bloc-semestre">
+          <div class="titre-semestre" style="color:var(--texte-att);">Sans semestre</div>
+          <ul class="liste-simple">
+            ${sansSemestre.map(e => `<li>${e.libelle} <button class="lien-action" data-id="${e.id}">Supprimer</button></li>`).join('')}
+          </ul>
+        </div>`;
+    }
+    conteneur.innerHTML = html;
+
+    conteneur.querySelectorAll('button[data-id]').forEach(b => b.addEventListener('click', async () => {
+      if (!confirm('Supprimer cette période ? Impossible si des notes existent déjà.')) return;
+      const r = await appelApi(`/periodes/${b.dataset.id}`, { method: 'DELETE' });
+      const d = await r.json();
+      if (!r.ok) { afficherMessage(d.message || 'Erreur lors de la suppression.', 'erreur'); return; }
+      afficherMessage('Période supprimée.', 'succes');
+      chargerPeriodesDeLAnnee();
+    }));
+  }
+
+  document.getElementById('form-periode').addEventListener('submit', async (evt) => {
+    evt.preventDefault();
+    const anneeId = document.getElementById('select-annee-periodes').value;
+    if (!anneeId) { afficherMessage("Choisis d'abord une année.", 'erreur'); return; }
+
+    const bouton = evt.target.querySelector('button[type="submit"]');
+    bouton.disabled = true;
+
+    const r = await appelApi('/periodes', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        annee_scolaire_id: anneeId,
+        type: document.getElementById('champ-periode-type').value,
+        numero: parseInt(document.getElementById('champ-periode-numero').value, 10),
+        libelle: document.getElementById('champ-periode-libelle').value.trim() || null,
+        semestre_id: document.getElementById('champ-periode-semestre').value || null
+      })
+    });
+
+    bouton.disabled = false;
+
+    if (!r) return;
+    const d = await r.json();
+    if (!r.ok) { afficherMessage(d.message || "Erreur lors de l'ajout.", 'erreur'); return; }
+    evt.target.reset();
+    afficherMessage('Ajouté.', 'succes');
+    chargerPeriodesDeLAnnee();
+  });
+
+  // ---------- Onglet Promotion ----------
+  let apercuCache = [];
+
+  async function chargerSeuil() {
+    const r = await appelApi('/ecole/moi');
+    if (r && r.ok) {
+      const ecole = await r.json();
+      document.getElementById('seuil-actuel').textContent = ecole.seuil_promotion_pourcentage ?? 50;
+    }
+  }
+
+  document.getElementById('bouton-calculer-apercu').addEventListener('click', async () => {
+    const anneeId = document.getElementById('select-annee-source').value;
+    if (!anneeId) return;
+    const r = await appelApi(`/promotion/apercu?anneeScolaireId=${anneeId}`);
+    const corps = document.getElementById('corps-tableau-promotion');
+    if (!r || !r.ok) { corps.innerHTML = '<tr><td colspan="5" class="etat-vide-tableau">Erreur de chargement.</td></tr>'; return; }
+    const donnees = await r.json();
+    apercuCache = donnees.eleves;
+
+    const classesCibles = [...new Map(apercuCache.filter(e => e.classe_cible_proposee_id).map(e => [e.classe_cible_proposee_id, e.classe_cible_proposee_nom])).entries()];
+
+    corps.innerHTML = apercuCache.length === 0
+      ? '<tr><td colspan="5" class="etat-vide-tableau">Aucun élève actif dans cette année.</td></tr>'
+      : apercuCache.map((e, i) => `
+          <tr data-index="${i}">
+            <td>${e.nom} ${e.postnom || ''} ${e.prenom || ''}</td>
+            <td>${e.classe_actuelle_nom}</td>
+            <td>${e.moyenne_annuelle !== null ? e.moyenne_annuelle.toFixed(1) + '%' : '—'}</td>
+            <td>
+              <select class="select-decision" data-champ="decision">
+                <option value="promu" ${e.decision_proposee === 'promu' ? 'selected' : ''}>Promu(e)</option>
+                <option value="redouble" ${e.decision_proposee === 'redouble' ? 'selected' : ''}>Redouble</option>
+                <option value="sortant">Sortant(e) / quitte l'école</option>
+              </select>
+            </td>
+            <td>
+              <select class="select-decision" data-champ="classe_cible">
+                <option value="">— Choisir —</option>
+                ${classesCibles.map(([id, nom]) => `<option value="${id}" ${id === e.classe_cible_proposee_id ? 'selected' : ''}>${nom}</option>`).join('')}
+              </select>
+            </td>
+          </tr>
+        `).join('');
+
+    document.getElementById('bouton-executer-promotion').style.display = apercuCache.length > 0 ? 'inline-block' : 'none';
+  });
+
+  document.getElementById('bouton-executer-promotion').addEventListener('click', async () => {
+    const anneeSourceId = document.getElementById('select-annee-source').value;
+    const lignes = document.querySelectorAll('#corps-tableau-promotion tr[data-index]');
+    const decisions = Array.from(lignes).map((ligne) => {
+      const index = parseInt(ligne.dataset.index, 10);
+      const eleve = apercuCache[index];
+      const action = ligne.querySelector('[data-champ="decision"]').value;
+      const classe_cible_id = ligne.querySelector('[data-champ="classe_cible"]').value || null;
+      return { eleve_id: eleve.eleve_id, action, classe_cible_id };
+    });
+
+    const sansClasseCible = decisions.filter(d => d.action !== 'sortant' && !d.classe_cible_id);
+    if (sansClasseCible.length > 0) {
+      afficherMessage(`${sansClasseCible.length} élève(s) n'ont pas de classe cible choisie.`, 'erreur');
+      return;
+    }
+
+    if (!confirm(`Appliquer la promotion pour ${decisions.length} élève(s) ? Cette action est irréversible.`)) return;
+
+    const bouton = document.getElementById('bouton-executer-promotion');
+    bouton.disabled = true; bouton.textContent = 'Application en cours…';
+
+    const r = await appelApi('/promotion/executer', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ anneeSourceId, decisions })
+    });
+
+    bouton.disabled = false; bouton.textContent = 'Valider et appliquer la promotion';
+
+    if (!r) return;
+    const d = await r.json();
+    if (!r.ok) { afficherMessage(d.message || "Erreur lors de l'application.", 'erreur'); return; }
+    afficherMessage(d.message, 'succes');
+    document.getElementById('bouton-executer-promotion').style.display = 'none';
+    document.getElementById('corps-tableau-promotion').innerHTML = '<tr><td colspan="5" class="etat-vide-tableau">Promotion appliquée.</td></tr>';
+  });
+
+  chargerAnnees();
+  chargerSeuil();
+</script>
+
+</body>
+</html>

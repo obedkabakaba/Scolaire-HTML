@@ -123,6 +123,13 @@
   .message-flash.succes { background: rgba(76,122,90,0.1); color: var(--vert-ok); }
   .message-flash.erreur { background: rgba(178,58,46,0.08); color: var(--rouge); }
   input[type="file"] { display: none; }
+
+  .spinner {
+    display: inline-block; width: 14px; height: 14px; border: 2px solid var(--bordure);
+    border-top-color: var(--ocre); border-radius: 50%; animation: tourner 0.65s linear infinite;
+    vertical-align: middle; margin-right: 8px;
+  }
+  @keyframes tourner { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
@@ -136,6 +143,7 @@
         <li><a class="nav-item" href="espace-secretaire.html">Accueil Secrétariat</a></li>
         <li><a class="nav-item" href="espace-titulaire.html">Ma classe</a></li>
         <li><a class="nav-item" href="dashboard-directeur.html">Tableau de bord</a></li>
+        <li><a class="nav-item" href="annee-scolaire.html">Année scolaire</a></li>
         <li><a class="nav-item" href="eleves.html">Élèves</a></li>
         <li><a class="nav-item" href="frais-scolaires.html">Frais scolaires</a></li>
         <li><a class="nav-item" href="utilisateurs.html">Utilisateurs</a></li>
@@ -166,7 +174,7 @@
         <button class="bouton bouton-principal" id="bouton-nouveau-modele">+ Nouveau modèle</button>
       </div>
       <div class="grille-modeles" id="grille-modeles">
-        <p class="etat-vide">Chargement…</p>
+        <p class="etat-vide"><span class="spinner"></span>Chargement…</p>
       </div>
     </div>
 
@@ -538,6 +546,7 @@
   // ---------- Filtrage de la navigation selon le rôle connecté ----------
   (function gererAccesParRole() {
     const permissions = {
+      'annee-scolaire.html': ['directeur', 'prefet'],
       'espace-secretaire.html': ['secretaire'],
       'frais-scolaires.html': ['directeur', 'comptable', 'secretaire'],
       'bulletin-annuel.html': ['directeur', 'prefet'],

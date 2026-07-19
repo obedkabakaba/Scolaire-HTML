@@ -140,7 +140,8 @@
         <li><a class="nav-item" href="espace-secretaire.html">Accueil Secrétariat</a></li>
         <li><a class="nav-item" href="espace-titulaire.html">Ma classe</a></li>
         <li><a class="nav-item" href="dashboard-directeur.html">Tableau de bord</a></li>
-      <li><a class="nav-item" href="eleves.html">Élèves</a></li>
+      <li><a class="nav-item" href="annee-scolaire.html">Année scolaire</a></li>
+        <li><a class="nav-item" href="eleves.html">Élèves</a></li>
         <li><a class="nav-item" href="frais-scolaires.html">Frais scolaires</a></li>
         <li><a class="nav-item" href="utilisateurs.html">Utilisateurs</a></li>
       <li><a class="nav-item actif" href="classes.html">Classes</a></li>
@@ -265,6 +266,10 @@
       <div class="ligne-champs">
         <div class="champ"><label for="champ-classe-titulaire">Titulaire</label><select id="champ-classe-titulaire"></select></div>
         <div class="champ"><label for="champ-classe-annee">Année scolaire</label><select id="champ-classe-annee"></select></div>
+      </div>
+      <div class="champ">
+        <label for="champ-classe-suivante">Classe suivante (pour la promotion des élèves qui réussissent)</label>
+        <select id="champ-classe-suivante"><option value="">— À définir plus tard —</option></select>
       </div>
       <div class="actions-modale">
         <button type="button" class="bouton bouton-secondaire" onclick="fermerModale('voile-modale-classe')">Annuler</button>
@@ -460,10 +465,12 @@
 
   // ---------- Classes ----------
   let classeEnEditionCoursId = null;
+  let classesCache = [];
 
   async function chargerClasses() {
     const r = await appelApi('/classes'); if (!r || !r.ok) return;
     const classes = await r.json();
+    classesCache = classes;
     const corps = document.getElementById('corps-tableau-classes');
     if (classes.length === 0) { corps.innerHTML = '<tr><td colspan="6" class="etat-vide-tableau">Aucune classe. Ajoute la première.</td></tr>'; return; }
 
@@ -496,6 +503,12 @@
     document.getElementById('champ-classe-titulaire').value = classe?.titulaire_id || '';
     document.getElementById('champ-classe-annee').value = classe?.annee_scolaire_id || '';
 
+    const optionsClasseSuivante = classesCache
+      .filter(c => c.id !== classe?.id)
+      .map(c => `<option value="${c.id}">${c.nom}</option>`).join('');
+    document.getElementById('champ-classe-suivante').innerHTML = '<option value="">— À définir plus tard —</option>' + optionsClasseSuivante;
+    document.getElementById('champ-classe-suivante').value = classe?.classe_suivante_id || '';
+
     const sectionCours = document.getElementById('section-cours-classe');
     if (classe) {
       sectionCours.style.display = 'block';
@@ -519,7 +532,8 @@
       section_id: document.getElementById('champ-classe-section').value || null,
       option_id: document.getElementById('champ-classe-option').value || null,
       titulaire_id: document.getElementById('champ-classe-titulaire').value || null,
-      annee_scolaire_id: document.getElementById('champ-classe-annee').value || null
+      annee_scolaire_id: document.getElementById('champ-classe-annee').value || null,
+      classe_suivante_id: document.getElementById('champ-classe-suivante').value || null
     };
     const bouton = document.getElementById('bouton-enregistrer-classe');
     bouton.disabled = true; bouton.textContent = 'Enregistrement…';
@@ -697,6 +711,7 @@
   // ---------- Filtrage de la navigation selon le rôle connecté ----------
   (function gererAccesParRole() {
     const permissions = {
+      'annee-scolaire.html': ['directeur', 'prefet'],
       'espace-secretaire.html': ['secretaire'],
       'frais-scolaires.html': ['directeur', 'comptable', 'secretaire'],
       'bulletin-annuel.html': ['directeur', 'prefet'],

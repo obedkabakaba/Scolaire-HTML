@@ -108,7 +108,8 @@
         <li><a class="nav-item" href="espace-secretaire.html">Accueil Secrétariat</a></li>
         <li><a class="nav-item" href="espace-titulaire.html">Ma classe</a></li>
         <li><a class="nav-item" href="dashboard-directeur.html">Tableau de bord</a></li>
-      <li><a class="nav-item" href="eleves.html">Élèves</a></li>
+      <li><a class="nav-item" href="annee-scolaire.html">Année scolaire</a></li>
+        <li><a class="nav-item" href="eleves.html">Élèves</a></li>
         <li><a class="nav-item" href="frais-scolaires.html">Frais scolaires</a></li>
         <li><a class="nav-item" href="utilisateurs.html">Utilisateurs</a></li>
       <li><a class="nav-item" href="classes.html">Classes</a></li>
@@ -139,7 +140,6 @@
     <div class="barre-selecteurs">
       <div class="champ-selecteur"><label for="select-classe">Classe</label><select id="select-classe"></select></div>
       <div class="champ-selecteur"><label for="select-periode">Période</label><select id="select-periode"></select></div>
-      <button class="bouton bouton-secondaire" id="bouton-afficher">Afficher</button>
     </div>
 
     <div class="conteneur-tableau">
@@ -151,7 +151,7 @@
           </tr>
         </thead>
         <tbody id="corps-tableau">
-          <tr><td colspan="8" class="etat-vide-tableau">Choisis une classe et une période, puis clique "Afficher".</td></tr>
+          <tr><td colspan="8" class="etat-vide-tableau">Choisis une classe et une période — la liste s'affiche automatiquement.</td></tr>
         </tbody>
       </table>
     </div>
@@ -209,6 +209,16 @@
     const parametresUrl = new URLSearchParams(window.location.search);
     const classeIdUrl = parametresUrl.get('classeId');
     if (classeIdUrl) document.getElementById('select-classe').value = classeIdUrl;
+
+    // Filtre automatique : dès que les 2 sélecteurs ont une valeur, la liste se charge seule
+    function verifierEtCharger() {
+      if (document.getElementById('select-classe').value && document.getElementById('select-periode').value) {
+        chargerBulletins();
+      }
+    }
+    document.getElementById('select-classe').addEventListener('change', verifierEtCharger);
+    document.getElementById('select-periode').addEventListener('change', verifierEtCharger);
+    verifierEtCharger();
   }
 
   async function chargerBulletins() {
@@ -277,7 +287,6 @@
     chargerBulletins();
   }
 
-  document.getElementById('bouton-afficher').addEventListener('click', chargerBulletins);
 
   document.getElementById('bouton-generer-pdf').addEventListener('click', async () => {
     const classeId = document.getElementById('select-classe').value;
@@ -290,7 +299,12 @@
     const r = await appelApi(`/bulletins/classe/${classeId}/imprimer?periodeId=${periodeId}`);
     bouton.disabled = false; bouton.textContent = '📄 Générer le PDF de la classe';
 
-    if (!r || !r.ok) { afficherMessage('Erreur lors de la génération du PDF.', 'erreur'); return; }
+    if (!r || !r.ok) {
+      let detail = '';
+      try { const d = await r.json(); detail = d.message ? ` (${d.message})` : ''; } catch (e) {}
+      afficherMessage(`Erreur lors de la génération du PDF${detail}.`, 'erreur');
+      return;
+    }
 
     const blob = await r.blob();
     const url = window.URL.createObjectURL(blob);
@@ -314,6 +328,7 @@
   // ---------- Filtrage de la navigation selon le rôle connecté ----------
   (function gererAccesParRole() {
     const permissions = {
+      'annee-scolaire.html': ['directeur', 'prefet'],
       'espace-secretaire.html': ['secretaire'],
       'frais-scolaires.html': ['directeur', 'comptable', 'secretaire'],
       'bulletin-annuel.html': ['directeur', 'prefet'],

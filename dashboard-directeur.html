@@ -286,6 +286,13 @@
     top: 0.16em;
     transform: translateX(-50%);
   }
+
+  .spinner {
+    display: inline-block; width: 14px; height: 14px; border: 2px solid var(--bordure);
+    border-top-color: var(--ocre); border-radius: 50%; animation: tourner 0.65s linear infinite;
+    vertical-align: middle; margin-right: 8px;
+  }
+  @keyframes tourner { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
@@ -300,7 +307,8 @@
     <div>
       <div class="marque">Ardo<span class="lettre-i">ı<span class="point-i-marque"></span></span>se</div>
     <ul class="nav-liste">
-      <li><a class="nav-item" href="espace-professeur.html">Mes cours</a></li>
+      <li><a class="nav-item" href="annee-scolaire.html">Année scolaire</a></li>
+        <li><a class="nav-item" href="espace-professeur.html">Mes cours</a></li>
         <li><a class="nav-item" href="espace-secretaire.html">Accueil Secrétariat</a></li>
         <li><a class="nav-item" href="espace-titulaire.html">Ma classe</a></li>
         <li class="nav-item actif">Tableau de bord</li>
@@ -337,7 +345,7 @@
             <strong style="font-size:0.85rem;">Notifications</strong>
             <button id="bouton-tout-lu" style="background:none; border:none; color:var(--encre); font-size:0.76rem; cursor:pointer; text-decoration:underline;">Tout marquer lu</button>
           </div>
-          <div id="liste-notifications" style="font-size:0.85rem;">Chargement…</div>
+          <div id="liste-notifications" style="font-size:0.85rem;"><span class="spinner"></span>Chargement…</div>
         </div>
       </div>
     </div>
@@ -582,6 +590,7 @@
   // ---------- Filtrage de la navigation selon le rôle connecté ----------
   (function gererAccesParRole() {
     const permissions = {
+      'annee-scolaire.html': ['directeur', 'prefet'],
       'espace-secretaire.html': ['secretaire'],
       'frais-scolaires.html': ['directeur', 'comptable', 'secretaire'],
       'bulletin-annuel.html': ['directeur', 'prefet'],

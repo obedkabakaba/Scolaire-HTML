@@ -53,6 +53,13 @@
   td { padding: 11px 16px; border-top: 1px solid var(--bordure); }
   .matricule-cell { font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: var(--encre); }
   .etat-vide { color: var(--texte-att); text-align: center; padding: 60px 20px; background: var(--craie-2); border: 1px solid var(--bordure); border-radius: 10px; }
+
+  .spinner {
+    display: inline-block; width: 14px; height: 14px; border: 2px solid var(--bordure);
+    border-top-color: var(--ocre); border-radius: 50%; animation: tourner 0.65s linear infinite;
+    vertical-align: middle; margin-right: 8px;
+  }
+  @keyframes tourner { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
@@ -62,6 +69,7 @@
     <div>
       <div class="marque">Ardo<span class="lettre-i">ı<span class="point-i-marque"></span></span>se</div>
       <ul class="nav-liste">
+        <li><a class="nav-item" href="annee-scolaire.html">Année scolaire</a></li>
         <li><a class="nav-item" href="espace-secretaire.html">Accueil Secrétariat</a></li>
         <li><a class="nav-item actif" href="espace-titulaire.html">Ma classe</a></li>
         <li><a class="nav-item" href="bulletins.html">Bulletins</a></li>
@@ -89,7 +97,7 @@
     </div>
 
     <div id="conteneur-classes">
-      <p class="etat-vide">Chargement…</p>
+      <p class="etat-vide"><span class="spinner"></span>Chargement…</p>
     </div>
   </main>
 </div>
@@ -158,7 +166,7 @@
         <div class="conteneur-tableau" style="margin-bottom:28px;">
           <table>
             <thead><tr><th>Matricule</th><th>Élève</th><th>Sexe</th></tr></thead>
-            <tbody id="corps-eleves-${classe.id}"><tr><td colspan="3" style="text-align:center; color:var(--texte-att); padding:20px;">Chargement…</td></tr></tbody>
+            <tbody id="corps-eleves-${classe.id}"><tr><td colspan="3" style="text-align:center; color:var(--texte-att); padding:20px;"><span class="spinner"></span>Chargement…</td></tr></tbody>
           </table>
         </div>
       `;

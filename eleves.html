@@ -138,24 +138,24 @@
     <div>
       <div class="marque">Ardo<span class="lettre-i">ı<span class="point-i-marque"></span></span>se</div>
     <ul class="nav-liste">
-      <li><a class="nav-item" href="espace-professeur.html">Mes cours</a></li>
-        <li><a class="nav-item" href="espace-secretaire.html">Accueil Secrétariat</a></li>
-        <li><a class="nav-item" href="espace-titulaire.html">Ma classe</a></li>
         <li><a class="nav-item" href="dashboard-directeur.html">Tableau de bord</a></li>
-      <li><a class="nav-item" href="annee-scolaire.html">Année scolaire</a></li>
+        <li><a class="nav-item" href="annee-scolaire.html">Année scolaire</a></li>
+        <li><a class="nav-item" href="espace-secretaire.html">Accueil Secrétariat</a></li>
+        <li><a class="nav-item" href="espace-professeur.html">Mes cours</a></li>
+        <li><a class="nav-item" href="espace-titulaire.html">Ma classe</a></li>
         <li><a class="nav-item actif" href="eleves.html">Élèves</a></li>
         <li><a class="nav-item" href="frais-scolaires.html">Frais scolaires</a></li>
         <li><a class="nav-item" href="utilisateurs.html">Utilisateurs</a></li>
-      <li><a class="nav-item" href="classes.html">Classes</a></li>
-      <li><a class="nav-item" href="notes.html">Notes</a></li>
-      <li><a class="nav-item" href="bulletins.html">Bulletins</a></li>
-      <li><a class="nav-item" href="bulletin-annuel.html">Bulletin annuel</a></li>
+        <li><a class="nav-item" href="classes.html">Classes</a></li>
+        <li><a class="nav-item" href="notes.html">Notes</a></li>
+        <li><a class="nav-item" href="bulletins.html">Bulletins</a></li>
+        <li><a class="nav-item" href="bulletin-annuel.html">Bulletin annuel</a></li>
         <li><a class="nav-item" href="generateur-modeles.html">Modèles de bulletins</a></li>
-      <li><a class="nav-item" href="calendrier.html">Calendrier</a></li>
-      <li><a class="nav-item" href="journal.html">Journal d'activité</a></li>
+        <li><a class="nav-item" href="calendrier.html">Calendrier</a></li>
+        <li><a class="nav-item" href="journal.html">Journal d'activité</a></li>
         <li><a class="nav-item" href="parametres.html">Paramètres</a></li>
-    <li><a class="nav-item" href="mon-profil.html">Mon profil</a></li>
-    </ul>
+        <li><a class="nav-item" href="mon-profil.html">Mon profil</a></li>
+      </ul>
     </div>
     <button class="nav-deconnexion" id="bouton-deconnexion-nav">↩ Se déconnecter</button>
   </nav>
@@ -563,31 +563,30 @@
   // ---------- Filtrage de la navigation selon le rôle connecté ----------
   (function gererAccesParRole() {
     const permissions = {
+      'dashboard-directeur.html': ['directeur', 'prefet'],
       'annee-scolaire.html': ['directeur', 'prefet'],
       'espace-secretaire.html': ['secretaire'],
-      'frais-scolaires.html': ['directeur', 'comptable', 'secretaire'],
-      'bulletin-annuel.html': ['directeur', 'prefet'],
-      'espace-titulaire.html': ['titulaire'],
       'espace-professeur.html': ['professeur'],
-      'dashboard-directeur.html': ['directeur', 'prefet'],
+      'espace-titulaire.html': ['titulaire'],
       'eleves.html': ['directeur', 'prefet', 'secretaire'],
+      'frais-scolaires.html': ['directeur', 'comptable', 'secretaire'],
       'utilisateurs.html': ['directeur', 'prefet', 'secretaire'],
-      'classes.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire'],
+      'classes.html': ['directeur', 'prefet', 'secretaire'],
       'notes.html': ['directeur', 'prefet', 'professeur'],
       'bulletins.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
+      'bulletin-annuel.html': ['directeur', 'prefet'],
       'generateur-modeles.html': ['directeur'],
       'calendrier.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire'],
       'journal.html': ['directeur', 'prefet'],
       'parametres.html': ['directeur']
     };
-    const ordrePriorite = ['dashboard-directeur.html', 'eleves.html', 'notes.html', 'bulletins.html'];
+    const ordrePriorite = ['dashboard-directeur.html', 'espace-secretaire.html', 'espace-professeur.html', 'espace-titulaire.html', 'frais-scolaires.html', 'eleves.html'];
 
     let utilisateur = null;
     try { utilisateur = JSON.parse(localStorage.getItem('ardoise_user') || 'null'); } catch (e) {}
     const roles = (utilisateur && utilisateur.roles) || [];
     const estSuperAdmin = roles.includes('super_admin');
 
-    // Masquer dans la barre latérale les pages que ce rôle ne peut pas utiliser
     document.querySelectorAll('.nav-item[href]').forEach((lien) => {
       const page = lien.getAttribute('href');
       const rolesAutorises = permissions[page];
@@ -597,7 +596,6 @@
       }
     });
 
-    // Si le rôle n'a pas accès à CETTE page précise, renvoyer vers sa page d'atterrissage
     const pageActuelle = 'eleves.html';
     const rolesPourCettePage = permissions[pageActuelle];
     if (rolesPourCettePage && !estSuperAdmin && !roles.some((r) => rolesPourCettePage.includes(r))) {

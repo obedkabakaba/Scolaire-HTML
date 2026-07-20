@@ -93,11 +93,11 @@
     <div>
       <div class="marque">Ardo<span class="lettre-i">ı<span class="point-i-marque"></span></span>se</div>
       <ul class="nav-liste">
-        <li><a class="nav-item" href="espace-professeur.html">Mes cours</a></li>
-        <li><a class="nav-item" href="espace-secretaire.html">Accueil Secrétariat</a></li>
-        <li><a class="nav-item" href="espace-titulaire.html">Ma classe</a></li>
         <li><a class="nav-item" href="dashboard-directeur.html">Tableau de bord</a></li>
         <li><a class="nav-item" href="annee-scolaire.html">Année scolaire</a></li>
+        <li><a class="nav-item" href="espace-secretaire.html">Accueil Secrétariat</a></li>
+        <li><a class="nav-item" href="espace-professeur.html">Mes cours</a></li>
+        <li><a class="nav-item" href="espace-titulaire.html">Ma classe</a></li>
         <li><a class="nav-item" href="eleves.html">Élèves</a></li>
         <li><a class="nav-item" href="frais-scolaires.html">Frais scolaires</a></li>
         <li><a class="nav-item actif" href="utilisateurs.html">Utilisateurs</a></li>
@@ -109,7 +109,7 @@
         <li><a class="nav-item" href="calendrier.html">Calendrier</a></li>
         <li><a class="nav-item" href="journal.html">Journal d'activité</a></li>
         <li><a class="nav-item" href="parametres.html">Paramètres</a></li>
-      <li><a class="nav-item" href="mon-profil.html">Mon profil</a></li>
+        <li><a class="nav-item" href="mon-profil.html">Mon profil</a></li>
       </ul>
     </div>
     <button class="nav-deconnexion" id="bouton-deconnexion-nav">↩ Se déconnecter</button>
@@ -402,24 +402,24 @@
   // ---------- Filtrage de la navigation selon le rôle connecté ----------
   (function gererAccesParRole() {
     const permissions = {
+      'dashboard-directeur.html': ['directeur', 'prefet'],
       'annee-scolaire.html': ['directeur', 'prefet'],
       'espace-secretaire.html': ['secretaire'],
-      'frais-scolaires.html': ['directeur', 'comptable', 'secretaire'],
-      'bulletin-annuel.html': ['directeur', 'prefet'],
-      'espace-titulaire.html': ['titulaire'],
       'espace-professeur.html': ['professeur'],
-      'dashboard-directeur.html': ['directeur', 'prefet'],
+      'espace-titulaire.html': ['titulaire'],
       'eleves.html': ['directeur', 'prefet', 'secretaire'],
+      'frais-scolaires.html': ['directeur', 'comptable', 'secretaire'],
       'utilisateurs.html': ['directeur', 'prefet', 'secretaire'],
-      'classes.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire'],
+      'classes.html': ['directeur', 'prefet', 'secretaire'],
       'notes.html': ['directeur', 'prefet', 'professeur'],
       'bulletins.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
+      'bulletin-annuel.html': ['directeur', 'prefet'],
       'generateur-modeles.html': ['directeur'],
       'calendrier.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire'],
       'journal.html': ['directeur', 'prefet'],
       'parametres.html': ['directeur']
     };
-    const ordrePriorite = ['dashboard-directeur.html', 'eleves.html', 'notes.html', 'bulletins.html'];
+    const ordrePriorite = ['dashboard-directeur.html', 'espace-secretaire.html', 'espace-professeur.html', 'espace-titulaire.html', 'frais-scolaires.html', 'eleves.html'];
 
     let utilisateur = null;
     try { utilisateur = JSON.parse(localStorage.getItem('ardoise_user') || 'null'); } catch (e) {}

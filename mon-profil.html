@@ -67,9 +67,23 @@
   <nav class="barre-laterale">
     <div>
       <div class="marque">Ardo<span class="lettre-i">ı<span class="point-i-marque"></span></span>se</div>
-      <ul class="nav-liste" id="nav-liste-dynamique">
+      <ul class="nav-liste">
         <li><a class="nav-item" href="dashboard-directeur.html">Tableau de bord</a></li>
         <li><a class="nav-item" href="annee-scolaire.html">Année scolaire</a></li>
+        <li><a class="nav-item" href="espace-secretaire.html">Accueil Secrétariat</a></li>
+        <li><a class="nav-item" href="espace-professeur.html">Mes cours</a></li>
+        <li><a class="nav-item" href="espace-titulaire.html">Ma classe</a></li>
+        <li><a class="nav-item" href="eleves.html">Élèves</a></li>
+        <li><a class="nav-item" href="frais-scolaires.html">Frais scolaires</a></li>
+        <li><a class="nav-item" href="utilisateurs.html">Utilisateurs</a></li>
+        <li><a class="nav-item" href="classes.html">Classes</a></li>
+        <li><a class="nav-item" href="notes.html">Notes</a></li>
+        <li><a class="nav-item" href="bulletins.html">Bulletins</a></li>
+        <li><a class="nav-item" href="bulletin-annuel.html">Bulletin annuel</a></li>
+        <li><a class="nav-item" href="generateur-modeles.html">Modèles de bulletins</a></li>
+        <li><a class="nav-item" href="calendrier.html">Calendrier</a></li>
+        <li><a class="nav-item" href="journal.html">Journal d'activité</a></li>
+        <li><a class="nav-item" href="parametres.html">Paramètres</a></li>
         <li><a class="nav-item actif" href="mon-profil.html">Mon profil</a></li>
       </ul>
     </div>
@@ -120,12 +134,6 @@
     prefet: 'Préfet', comptable: 'Comptable', directeur: 'Directeur', super_admin: 'Super Admin'
   };
 
-  const PAGES_ACCUEIL_PAR_ROLE = {
-    directeur: 'dashboard-directeur.html', prefet: 'dashboard-directeur.html',
-    secretaire: 'espace-secretaire.html', professeur: 'espace-professeur.html', titulaire: 'espace-titulaire.html',
-    comptable: 'frais-scolaires.html'
-  };
-
   function obtenirTokens() {
     return { accessToken: localStorage.getItem('ardoise_access_token'), refreshToken: localStorage.getItem('ardoise_refresh_token') };
   }
@@ -167,18 +175,54 @@
     retourConnexion();
   });
 
-  // Adapter le lien "Tableau de bord" à la vraie page d'accueil du rôle connecté
-  let utilisateurLocal = null;
-  try { utilisateurLocal = JSON.parse(localStorage.getItem('ardoise_user') || 'null'); } catch (e) {}
-  const rolesLocal = utilisateurLocal?.roles || [];
-  const rolePrincipal = ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire', 'comptable'].find(r => rolesLocal.includes(r));
-  if (rolePrincipal) {
-    const lienAccueil = document.querySelector('.nav-item[href="dashboard-directeur.html"]');
-    if (lienAccueil) {
-      lienAccueil.href = PAGES_ACCUEIL_PAR_ROLE[rolePrincipal];
-      lienAccueil.textContent = rolePrincipal === 'professeur' ? 'Mes cours' : rolePrincipal === 'titulaire' ? 'Ma classe' : rolePrincipal === 'comptable' ? 'Frais scolaires' : rolePrincipal === 'secretaire' ? 'Accueil' : 'Tableau de bord';
+  // ---------- Filtrage de la navigation selon le rôle connecté ----------
+  (function gererAccesParRole() {
+    const permissions = {
+      'dashboard-directeur.html': ['directeur', 'prefet'],
+      'annee-scolaire.html': ['directeur', 'prefet'],
+      'espace-secretaire.html': ['secretaire'],
+      'espace-professeur.html': ['professeur'],
+      'espace-titulaire.html': ['titulaire'],
+      'eleves.html': ['directeur', 'prefet', 'secretaire'],
+      'frais-scolaires.html': ['directeur', 'comptable', 'secretaire'],
+      'utilisateurs.html': ['directeur', 'prefet', 'secretaire'],
+      'classes.html': ['directeur', 'prefet', 'secretaire'],
+      'notes.html': ['directeur', 'prefet', 'professeur'],
+      'bulletins.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
+      'bulletin-annuel.html': ['directeur', 'prefet'],
+      'generateur-modeles.html': ['directeur'],
+      'calendrier.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire'],
+      'journal.html': ['directeur', 'prefet'],
+      'parametres.html': ['directeur']
+    };
+    const ordrePriorite = ['dashboard-directeur.html', 'espace-secretaire.html', 'espace-professeur.html', 'espace-titulaire.html', 'frais-scolaires.html', 'eleves.html'];
+
+    let utilisateur = null;
+    try { utilisateur = JSON.parse(localStorage.getItem('ardoise_user') || 'null'); } catch (e) {}
+    const roles = (utilisateur && utilisateur.roles) || [];
+    const estSuperAdmin = roles.includes('super_admin');
+
+    document.querySelectorAll('.nav-item[href]').forEach((lien) => {
+      const page = lien.getAttribute('href');
+      const rolesAutorises = permissions[page];
+      if (rolesAutorises && !estSuperAdmin && !roles.some((r) => rolesAutorises.includes(r))) {
+        const li = lien.closest('li');
+        if (li) li.style.display = 'none';
+      }
+    });
+
+    const pageActuelle = 'mon-profil.html';
+    const rolesPourCettePage = permissions[pageActuelle];
+    if (rolesPourCettePage && !estSuperAdmin && !roles.some((r) => rolesPourCettePage.includes(r))) {
+      const pageDeRepli = ordrePriorite.find((p) => {
+        const r = permissions[p];
+        return !r || roles.some((role) => r.includes(role));
+      });
+      if (pageDeRepli && pageDeRepli !== pageActuelle) {
+        window.location.href = pageDeRepli;
+      }
     }
-  }
+  })();
 
   async function chargerProfil() {
     const r = await appelApi('/utilisateurs/moi');

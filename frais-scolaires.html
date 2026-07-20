@@ -103,8 +103,8 @@
       <ul class="nav-liste">
         <li><a class="nav-item" href="dashboard-directeur.html">Tableau de bord</a></li>
         <li><a class="nav-item" href="annee-scolaire.html">Année scolaire</a></li>
-        <li><a class="nav-item" href="espace-professeur.html">Mes cours</a></li>
         <li><a class="nav-item" href="espace-secretaire.html">Accueil Secrétariat</a></li>
+        <li><a class="nav-item" href="espace-professeur.html">Mes cours</a></li>
         <li><a class="nav-item" href="espace-titulaire.html">Ma classe</a></li>
         <li><a class="nav-item" href="eleves.html">Élèves</a></li>
         <li><a class="nav-item actif" href="frais-scolaires.html">Frais scolaires</a></li>
@@ -414,24 +414,24 @@
   // ---------- Filtrage de la navigation selon le rôle connecté ----------
   (function gererAccesParRole() {
     const permissions = {
+      'dashboard-directeur.html': ['directeur', 'prefet'],
       'annee-scolaire.html': ['directeur', 'prefet'],
       'espace-secretaire.html': ['secretaire'],
-      'dashboard-directeur.html': ['directeur', 'prefet'],
+      'espace-professeur.html': ['professeur'],
+      'espace-titulaire.html': ['titulaire'],
       'eleves.html': ['directeur', 'prefet', 'secretaire'],
-      'utilisateurs.html': ['directeur', 'prefet', 'secretaire'],
       'frais-scolaires.html': ['directeur', 'comptable', 'secretaire'],
-      'classes.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire'],
+      'utilisateurs.html': ['directeur', 'prefet', 'secretaire'],
+      'classes.html': ['directeur', 'prefet', 'secretaire'],
       'notes.html': ['directeur', 'prefet', 'professeur'],
       'bulletins.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
       'bulletin-annuel.html': ['directeur', 'prefet'],
       'generateur-modeles.html': ['directeur'],
       'calendrier.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire'],
       'journal.html': ['directeur', 'prefet'],
-      'parametres.html': ['directeur'],
-      'espace-professeur.html': ['professeur'],
-      'espace-titulaire.html': ['titulaire']
+      'parametres.html': ['directeur']
     };
-    const ordrePriorite = ['dashboard-directeur.html', 'eleves.html', 'notes.html', 'bulletins.html'];
+    const ordrePriorite = ['dashboard-directeur.html', 'espace-secretaire.html', 'espace-professeur.html', 'espace-titulaire.html', 'frais-scolaires.html', 'eleves.html'];
 
     let utilisateur = null;
     try { utilisateur = JSON.parse(localStorage.getItem('ardoise_user') || 'null'); } catch (e) {}

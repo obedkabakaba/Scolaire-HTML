@@ -69,14 +69,11 @@
     <div>
       <div class="marque">Ardo<span class="lettre-i">ı<span class="point-i-marque"></span></span>se</div>
       <ul class="nav-liste">
-        <li><a class="nav-item" href="annee-scolaire.html">Année scolaire</a></li>
-        <li><a class="nav-item" href="espace-secretaire.html">Accueil Secrétariat</a></li>
         <li><a class="nav-item actif" href="espace-titulaire.html">Ma classe</a></li>
         <li><a class="nav-item" href="bulletins.html">Bulletins</a></li>
         <li><a class="nav-item" href="bulletin-annuel.html">Bulletin annuel</a></li>
-        <li><a class="nav-item" href="classes.html">Classes</a></li>
         <li><a class="nav-item" href="calendrier.html">Calendrier</a></li>
-      <li><a class="nav-item" href="mon-profil.html">Mon profil</a></li>
+        <li><a class="nav-item" href="mon-profil.html">Mon profil</a></li>
       </ul>
     </div>
     <button class="nav-deconnexion" id="bouton-deconnexion-nav">↩ Se déconnecter</button>
@@ -207,6 +204,21 @@
       if (doc) { const img = document.getElementById('apercu-signature'); img.src = doc.url; img.style.display = 'block'; }
     }
   }
+
+  // Multi-rôles : si ce titulaire est AUSSI professeur, on lui ajoute le lien
+  // vers son espace professeur, pour qu'il puisse basculer entre les deux.
+  (function ajouterLiensAutresRoles() {
+    let utilisateur = null;
+    try { utilisateur = JSON.parse(localStorage.getItem('ardoise_user') || 'null'); } catch (e) {}
+    const roles = utilisateur?.roles || [];
+    const navListe = document.querySelector('.nav-liste');
+    if (!navListe) return;
+    if (roles.includes('professeur')) {
+      const li = document.createElement('li');
+      li.innerHTML = '<a class="nav-item" href="espace-professeur.html">Mes cours (professeur)</a>';
+      navListe.querySelector('li:first-child').insertAdjacentElement('afterend', li);
+    }
+  })();
 
   chargerMaClasse();
   chargerApercuSignature();

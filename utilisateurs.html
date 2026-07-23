@@ -173,6 +173,7 @@
           <label class="case-role"><input type="checkbox" value="titulaire" /> Titulaire</label>
           <label class="case-role"><input type="checkbox" value="secretaire" /> Secrétaire</label>
           <label class="case-role"><input type="checkbox" value="prefet" /> Préfet des études</label>
+          <label class="case-role"><input type="checkbox" value="directeur" /> Directeur</label>
           <label class="case-role"><input type="checkbox" value="comptable" /> Comptable</label>
         </div>
       </div>
@@ -396,6 +397,24 @@
   }
   document.getElementById('champ-recherche').addEventListener('input', debounce(chargerUtilisateurs, 350));
   document.getElementById('filtre-role').addEventListener('change', chargerUtilisateurs);
+
+  // ---------- Restriction des combinaisons de rôles autorisées ----------
+  // Une personne ne peut avoir qu'UN SEUL rôle, sauf deux exceptions précises :
+  // Professeur + Titulaire, et Préfet + Directeur.
+  const PARTENAIRE_AUTORISE = { professeur: 'titulaire', titulaire: 'professeur', prefet: 'directeur', directeur: 'prefet' };
+
+  document.querySelectorAll('.case-role input').forEach((case_) => {
+    case_.addEventListener('change', () => {
+      if (!case_.checked) return; // décocher ne pose jamais de problème
+
+      const partenaire = PARTENAIRE_AUTORISE[case_.value];
+      document.querySelectorAll('.case-role input').forEach((autre) => {
+        if (autre === case_) return;
+        if (partenaire && autre.value === partenaire) return; // partenaire compatible : on le laisse
+        autre.checked = false; // tout le reste est décoché automatiquement
+      });
+    });
+  });
 
   chargerUtilisateurs();
 

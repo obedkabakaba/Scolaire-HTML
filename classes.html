@@ -249,8 +249,7 @@
         <div class="form-inline">
           <input type="text" id="champ-nouveau-cours-nom" placeholder="Nom du cours" style="flex:1;" />
           <input type="text" id="champ-nouveau-cours-code" placeholder="Code" style="width:80px;" />
-          <input type="number" id="champ-nouveau-cours-coef" placeholder="Coef" value="1" step="0.5" style="width:70px;" />
-          <input type="number" id="champ-nouveau-cours-max" placeholder="Max" value="20" style="width:70px;" />
+          <input type="number" id="champ-nouveau-cours-max" placeholder="Maximum de points (ex. 20 ou 100)" value="20" style="width:190px;" />
           <button class="bouton bouton-secondaire bouton-petit" id="bouton-ajouter-cours-classe">Ajouter</button>
         </div>
       </div>
@@ -527,7 +526,6 @@
       body: JSON.stringify({
         nom,
         code: document.getElementById('champ-nouveau-cours-code').value.trim() || null,
-        coefficient: parseFloat(document.getElementById('champ-nouveau-cours-coef').value) || 1,
         maximum_points: parseFloat(document.getElementById('champ-nouveau-cours-max').value) || 20
       })
     });
@@ -538,7 +536,6 @@
 
     document.getElementById('champ-nouveau-cours-nom').value = '';
     document.getElementById('champ-nouveau-cours-code').value = '';
-    document.getElementById('champ-nouveau-cours-coef').value = '1';
     document.getElementById('champ-nouveau-cours-max').value = '20';
     afficherMessage('Cours ajouté à la classe.', 'succes');
     chargerCoursDeLaClasse(classeEnEditionCoursId);

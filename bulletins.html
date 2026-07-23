@@ -139,7 +139,7 @@
     <div class="message-flash" id="message-flash"></div>
 
     <div class="barre-selecteurs">
-      <div class="champ-selecteur"><label for="select-classe">Classe</label><select id="select-classe"></select></div>
+      <div class="champ-selecteur" id="conteneur-select-classe"><label for="select-classe">Classe</label><select id="select-classe"></select></div>
       <div class="champ-selecteur"><label for="select-periode">Période</label><select id="select-periode"></select></div>
     </div>
 
@@ -157,6 +157,36 @@
       </table>
     </div>
   </main>
+</div>
+
+<!-- Modale détail élève (façon bulletin) -->
+<div class="voile" id="voile-detail-eleve" style="display:none; position:fixed; inset:0; background:rgba(31,43,36,0.45); align-items:center; justify-content:center; padding:20px; z-index:20;">
+  <div style="background:var(--craie-2); border-radius:12px; padding:28px; max-width:560px; width:100%; max-height:90vh; overflow-y:auto;">
+    <h2 id="detail-nom-eleve" style="font-family:'Fraunces',serif; font-weight:600; font-size:1.3rem; margin:0 0 4px 0;">Élève</h2>
+    <p id="detail-infos-eleve" style="color:var(--texte-att); font-size:0.85rem; margin:0 0 20px 0;"></p>
+
+    <table style="width:100%; border-collapse:collapse; font-size:0.9rem; margin-bottom:14px;">
+      <thead><tr><th style="text-align:left; padding:8px; border-bottom:1.5px solid var(--bordure);">Cours</th><th style="padding:8px; border-bottom:1.5px solid var(--bordure);">Côte</th><th style="padding:8px; border-bottom:1.5px solid var(--bordure);">Maximum</th><th style="padding:8px; border-bottom:1.5px solid var(--bordure);"></th></tr></thead>
+      <tbody id="detail-corps-cours"></tbody>
+      <tfoot>
+        <tr><td colspan="4" style="padding:10px 8px; border-top:2px solid var(--ardoise); font-weight:600; font-size:0.8rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--texte-att);">— Clôture —</td></tr>
+      </tfoot>
+    </table>
+
+    <div style="background:var(--craie); border-radius:8px; padding:14px 16px; margin-bottom:18px;">
+      <div style="display:flex; justify-content:space-between; padding:5px 0; font-size:0.9rem;"><span>Total</span><strong id="detail-total">—</strong></div>
+      <div style="display:flex; justify-content:space-between; padding:5px 0; font-size:0.9rem;"><span>Pourcentage</span><strong id="detail-pourcentage">—</strong></div>
+      <div style="display:flex; justify-content:space-between; padding:5px 0; font-size:0.9rem;"><span>Place (classement)</span><strong id="detail-classement">—</strong></div>
+      <div style="display:flex; justify-content:space-between; padding:5px 0; font-size:0.9rem;"><span>Application</span><strong id="detail-application">—</strong></div>
+      <div style="display:flex; justify-content:space-between; padding:5px 0; font-size:0.9rem;"><span>Conduite</span><strong id="detail-conduite">—</strong></div>
+    </div>
+
+    <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
+      <button type="button" class="bouton bouton-secondaire" id="bouton-fermer-detail-eleve">Fermer</button>
+      <button type="button" class="bouton bouton-secondaire" id="bouton-apercu-impression">Aperçu d'impression</button>
+      <button type="button" class="bouton bouton-principal" id="bouton-imprimer-classe">Imprimer</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -203,13 +233,32 @@
     return active ? active.id : (annees[0]?.id || '');
   }
 
+  const utilisateurConnecte = JSON.parse(localStorage.getItem('ardoise_user') || 'null');
+  const rolesConnecte = utilisateurConnecte?.roles || [];
+  const estTitulaireSeul = rolesConnecte.includes('titulaire') && !rolesConnecte.some(r => ['directeur', 'prefet', 'secretaire'].includes(r));
+
   async function chargerSelecteurs() {
     const anneeActiveId = await obtenirAnneeActiveId();
-    const [rClasses, rPeriodes] = await Promise.all([appelApi('/classes'), appelApi(`/periodes?anneeScolaireId=${anneeActiveId}`)]);
-    if (rClasses?.ok) {
-      const classes = await rClasses.json();
-      document.getElementById('select-classe').innerHTML = classes.map(c => `<option value="${c.id}">${c.nom}</option>`).join('');
+
+    if (estTitulaireSeul) {
+      // Un titulaire (sans autre rôle) n'a qu'une seule classe : pas besoin de sélecteur.
+      document.getElementById('conteneur-select-classe').style.display = 'none';
+      const rMaClasse = await appelApi('/ma-classe');
+      if (rMaClasse?.ok) {
+        const classes = await rMaClasse.json();
+        if (classes.length > 0) {
+          document.getElementById('select-classe').innerHTML = `<option value="${classes[0].id}">${classes[0].nom}</option>`;
+        }
+      }
+    } else {
+      const rClasses = await appelApi('/classes');
+      if (rClasses?.ok) {
+        const classes = await rClasses.json();
+        document.getElementById('select-classe').innerHTML = classes.map(c => `<option value="${c.id}">${c.nom}</option>`).join('');
+      }
     }
+
+    const rPeriodes = await appelApi(`/periodes?anneeScolaireId=${anneeActiveId}`);
     if (rPeriodes?.ok) {
       const periodes = (await rPeriodes.json()).filter(p => p.type !== 'semestre');
       document.getElementById('select-periode').innerHTML = periodes.map(p => `<option value="${p.id}">${p.libelle}</option>`).join('') || '<option value="">Aucune période créée pour l\'année active</option>';
@@ -218,7 +267,7 @@
     // Pré-sélection depuis l'URL (ex: lien depuis l'espace titulaire)
     const parametresUrl = new URLSearchParams(window.location.search);
     const classeIdUrl = parametresUrl.get('classeId');
-    if (classeIdUrl) document.getElementById('select-classe').value = classeIdUrl;
+    if (classeIdUrl && !estTitulaireSeul) document.getElementById('select-classe').value = classeIdUrl;
 
     // Filtre automatique : dès que les 2 sélecteurs ont une valeur, la liste se charge seule
     function verifierEtCharger() {
@@ -248,18 +297,18 @@
     }
 
     corps.innerHTML = eleves.map(e => `
-      <tr data-eleve-id="${e.eleve_id}">
+      <tr data-eleve-id="${e.eleve_id}" style="cursor:pointer;">
         <td class="matricule-cell">${e.matricule}</td>
         <td>${e.nom} ${e.postnom || ''} ${e.prenom || ''}</td>
         <td class="cellule-resultat">
           <span class="classement">${e.classement ?? '—'}${e.classement ? 'ᵉ' : ''}</span> · ${e.pourcentage ?? '—'}% · ${e.mention ?? '—'}
         </td>
-        <td><input type="text" class="champ-appreciation" data-champ="conduite" value="${e.conduite || ''}" /></td>
-        <td><input type="text" class="champ-appreciation" data-champ="application" value="${e.application || ''}" /></td>
-        <td><input type="text" class="champ-appreciation" data-champ="observation" value="${e.observation || ''}" /></td>
+        <td>${estTitulaireSeul ? (e.conduite || '—') : `<input type="text" class="champ-appreciation" data-champ="conduite" value="${e.conduite || ''}" />`}</td>
+        <td>${estTitulaireSeul ? (e.application || '—') : `<input type="text" class="champ-appreciation" data-champ="application" value="${e.application || ''}" />`}</td>
+        <td><input type="text" class="champ-appreciation" data-champ="observation" value="${e.observation || ''}" placeholder="Optionnel" /></td>
         <td>${e.signe_at ? '<span class="badge-signe">✓ Signé</span>' : '<span class="badge-non-signe">Non signé</span>'}</td>
         <td style="white-space:nowrap;">
-          <button class="bouton bouton-secondaire bouton-petit" data-action="enregistrer">Enregistrer</button>
+          <button class="bouton bouton-secondaire bouton-petit" data-action="modifier">Modifier</button>
           ${!e.signe_at ? '<button class="bouton bouton-secondaire bouton-petit" data-action="signer">Signer</button>' : ''}
         </td>
       </tr>
@@ -268,11 +317,19 @@
     corps.querySelectorAll('button[data-action]').forEach((bouton) => {
       const ligne = bouton.closest('tr');
       const eleveId = ligne.dataset.eleveId;
-      if (bouton.dataset.action === 'enregistrer') {
-        bouton.addEventListener('click', () => enregistrerAppreciations(eleveId, ligne, periodeId));
+      if (bouton.dataset.action === 'modifier') {
+        bouton.addEventListener('click', (evt) => { evt.stopPropagation(); enregistrerAppreciations(eleveId, ligne, periodeId); });
       } else {
-        bouton.addEventListener('click', () => signerBulletin(eleveId, periodeId));
+        bouton.addEventListener('click', (evt) => { evt.stopPropagation(); signerBulletin(eleveId, periodeId); });
       }
+    });
+
+    // Clic sur la ligne (hors bouton/champ) : ouvre la fenêtre de détail façon bulletin
+    corps.querySelectorAll('tr[data-eleve-id]').forEach((ligne) => {
+      ligne.addEventListener('click', (evt) => {
+        if (evt.target.closest('button') || evt.target.closest('input')) return;
+        ouvrirDetailEleve(ligne.dataset.eleveId, periodeId);
+      });
     });
   }
 
@@ -297,8 +354,72 @@
     chargerBulletins();
   }
 
+  // ---------- Fenêtre de détail élève (façon bulletin) ----------
+  let classeCourante = null;
 
-  document.getElementById('bouton-generer-pdf').addEventListener('click', async () => {
+  async function ouvrirDetailEleve(eleveId, periodeId) {
+    classeCourante = document.getElementById('select-classe').value;
+    const r = await appelApi(`/bulletins/${eleveId}/detail?periodeId=${periodeId}`);
+    if (!r || !r.ok) { afficherMessage('Erreur lors du chargement du détail.', 'erreur'); return; }
+    const d = await r.json();
+
+    document.getElementById('detail-nom-eleve').textContent = `${d.eleve.nom} ${d.eleve.postnom || ''} ${d.eleve.prenom || ''}`;
+    document.getElementById('detail-infos-eleve').textContent = `Matricule ${d.eleve.matricule} — ${d.eleve.classe_nom} — ${d.periode_libelle || ''}`;
+
+    document.getElementById('detail-corps-cours').innerHTML = d.cours.map(c => `
+      <tr data-classe-cours-id="${c.classe_cours_id}">
+        <td style="padding:7px 8px; border-bottom:1px solid var(--bordure);">${c.cours_nom}</td>
+        <td style="padding:7px 8px; border-bottom:1px solid var(--bordure); text-align:center;">
+          ${c.modifiable_par_moi
+            ? `<input type="number" class="champ-cote-modifiable" value="${c.points_obtenus ?? ''}" min="0" max="${c.maximum}" style="width:70px; padding:4px 6px; border:1.5px solid var(--bordure); border-radius:6px;" />`
+            : (c.points_obtenus ?? '—')}
+        </td>
+        <td style="padding:7px 8px; border-bottom:1px solid var(--bordure); text-align:center;">${c.maximum}</td>
+        <td style="padding:7px 8px; border-bottom:1px solid var(--bordure); text-align:center;">
+          ${c.modifiable_par_moi ? `<button class="lien-action" data-action="sauver-cote" data-eleve="${eleveId}" data-periode="${periodeId}" data-classe-cours="${c.classe_cours_id}" data-max="${c.maximum}" style="background:none; border:none; color:var(--encre); cursor:pointer; font-size:0.8rem;">Modifier</button>` : ''}
+        </td>
+      </tr>
+    `).join('');
+
+    document.getElementById('detail-total').textContent = d.bulletin.total ?? '—';
+    document.getElementById('detail-pourcentage').textContent = d.bulletin.pourcentage !== null ? `${d.bulletin.pourcentage}%` : '—';
+    document.getElementById('detail-classement').textContent = d.bulletin.classement ? `${d.bulletin.classement}ᵉ` : '—';
+    document.getElementById('detail-application').textContent = d.bulletin.application || '—';
+    document.getElementById('detail-conduite').textContent = d.bulletin.conduite || '—';
+
+    document.querySelectorAll('[data-action="sauver-cote"]').forEach((bouton) => {
+      bouton.addEventListener('click', async () => {
+        const input = bouton.closest('tr').querySelector('.champ-cote-modifiable');
+        const valeur = input.value === '' ? null : parseFloat(input.value);
+        const max = parseFloat(bouton.dataset.max);
+        if (valeur !== null && (valeur < 0 || valeur > max)) { afficherMessage(`La côte doit être entre 0 et ${max}.`, 'erreur'); return; }
+
+        const r2 = await appelApi('/notes/grille', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            classeId: classeCourante, coursId: null, periodeId: bouton.dataset.periode,
+            classeCoursId: bouton.dataset.classeCours,
+            notes: [{ eleve_id: bouton.dataset.eleve, points_obtenus: valeur }]
+          })
+        });
+        if (r2 && r2.ok) { afficherMessage('Côte mise à jour.', 'succes'); ouvrirDetailEleve(eleveId, periodeId); chargerBulletins(); }
+        else afficherMessage('Erreur lors de la mise à jour de la côte.', 'erreur');
+      });
+    });
+
+    document.getElementById('voile-detail-eleve').style.display = 'flex';
+  }
+
+  document.getElementById('bouton-fermer-detail-eleve').addEventListener('click', () => {
+    document.getElementById('voile-detail-eleve').style.display = 'none';
+  });
+  document.getElementById('bouton-apercu-impression').addEventListener('click', () => genererPdf(true));
+  document.getElementById('bouton-imprimer-classe').addEventListener('click', () => genererPdf(false));
+
+
+  document.getElementById('bouton-generer-pdf').addEventListener('click', () => genererPdf());
+
+  async function genererPdf() {
     const classeId = document.getElementById('select-classe').value;
     const periodeId = document.getElementById('select-periode').value;
     if (!classeId || !periodeId) { afficherMessage('Choisis une classe et une période.', 'erreur'); return; }
@@ -319,7 +440,7 @@
     const blob = await r.blob();
     const url = window.URL.createObjectURL(blob);
     window.open(url, '_blank');
-  });
+  }
 
   chargerSelecteurs();
 

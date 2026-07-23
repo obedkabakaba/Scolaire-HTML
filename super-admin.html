@@ -1,4 +1,13 @@
 <!DOCTYPE html>
+<!--
+  ATTENTION : cette page est volontairement TOTALEMENT ISOLÉE du reste de l'application.
+  - Aucune classe partagée (.nav-liste, .nav-item, gererAccesParRole) avec les autres pages.
+  - Clés de connexion dédiées (ardoise_admin_access_token / ardoise_admin_refresh_token),
+    jamais les mêmes que ardoise_access_token / ardoise_refresh_token utilisées ailleurs.
+  - Ne JAMAIS appliquer ici les scripts de mise à jour groupée destinés aux 17 pages
+    applicatives normales (barre latérale, permissions par rôle, etc.) — ce panneau a
+    son propre système de connexion et son propre système de navigation, à part entière.
+-->
 <html lang="fr">
 <head>
 <meta charset="UTF-8" />
@@ -73,6 +82,27 @@
   .message-flash.visible { display: block; }
   .message-flash.succes { background: rgba(76,122,90,0.1); color: var(--vert-ok); }
   .message-flash.erreur { background: rgba(178,58,46,0.08); color: var(--rouge); }
+
+  .grille-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 26px; }
+  @media (max-width: 900px) { .grille-stats { grid-template-columns: repeat(2, 1fr); } }
+  .carte-stat { background: var(--craie-2); border: 1px solid var(--bordure); border-radius: 10px; padding: 16px; }
+  .carte-stat .valeur { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.6rem; line-height: 1; }
+  .carte-stat .etiquette { font-size: 0.74rem; color: var(--texte-att); margin-top: 4px; }
+
+  .barre-recherche { margin-bottom: 16px; }
+  .barre-recherche input { width: 100%; max-width: 360px; padding: 9px 12px; border: 1.5px solid var(--bordure); border-radius: 7px; font-size: 0.9rem; font-family: 'Inter', sans-serif; }
+  tr.ligne-ecole { cursor: pointer; }
+  tr.ligne-ecole:hover { background: rgba(31,43,36,0.03); }
+
+  .modale-large { max-width: 720px; }
+  .section-detail { margin-bottom: 22px; }
+  .section-detail h3 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1rem; margin: 0 0 12px 0; display: flex; justify-content: space-between; align-items: center; }
+  .ligne-info { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--bordure); font-size: 0.88rem; }
+  .ligne-info:last-child { border-bottom: none; }
+  .ligne-info span:first-child { color: var(--texte-att); }
+  .grille-stats-mini { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .grille-stats-mini .carte-stat { text-align: center; padding: 12px; }
+  .mot-de-passe-affiche { background: rgba(201,138,62,0.1); border: 1px dashed var(--ocre); border-radius: 7px; padding: 10px 12px; font-family: 'IBM Plex Mono', monospace; font-size: 0.95rem; margin-top: 10px; }
 </style>
 </head>
 <body>
@@ -105,6 +135,18 @@
   </div>
 
   <div class="message-flash" id="message-flash"></div>
+
+  <div class="grille-stats" id="grille-stats">
+    <div class="carte-stat"><div class="valeur" id="stat-nb-ecoles">—</div><div class="etiquette">Écoles au total</div></div>
+    <div class="carte-stat"><div class="valeur" id="stat-nb-actives">—</div><div class="etiquette">Actives</div></div>
+    <div class="carte-stat"><div class="valeur" id="stat-nb-suspendues">—</div><div class="etiquette">Suspendues</div></div>
+    <div class="carte-stat"><div class="valeur" id="stat-nb-eleves">—</div><div class="etiquette">Élèves (toutes écoles)</div></div>
+    <div class="carte-stat"><div class="valeur" id="stat-revenu">—</div><div class="etiquette">Revenu confirmé</div></div>
+  </div>
+
+  <div class="barre-recherche">
+    <input type="text" id="champ-recherche-ecoles" placeholder="Rechercher une école (nom, code, ville)…" />
+  </div>
 
   <div class="conteneur-tableau">
     <table>
@@ -158,6 +200,85 @@
         <button type="submit" class="bouton bouton-principal" id="bouton-creer-ecole">Créer l'école</button>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- Modale détail d'une école -->
+<div class="voile" id="voile-detail">
+  <div class="modale modale-large">
+    <h2 id="detail-nom-ecole">École</h2>
+    <p class="sous-titre" id="detail-code-ecole" style="margin-bottom:20px; color:var(--texte-att); font-size:0.85rem;"></p>
+
+    <div class="section-detail">
+      <h3>Aperçu</h3>
+      <div class="grille-stats-mini">
+        <div class="carte-stat"><div class="valeur" id="detail-nb-eleves">—</div><div class="etiquette">Élèves actifs</div></div>
+        <div class="carte-stat"><div class="valeur" id="detail-nb-utilisateurs">—</div><div class="etiquette">Utilisateurs</div></div>
+        <div class="carte-stat"><div class="valeur" id="detail-nb-classes">—</div><div class="etiquette">Classes</div></div>
+      </div>
+    </div>
+
+    <div class="section-detail">
+      <h3>École <span><button class="bouton bouton-secondaire bouton-petit" id="bouton-toggle-statut-ecole"></button></span></h3>
+      <div class="ligne-info"><span>Email</span><span id="detail-email-ecole">—</span></div>
+      <div class="ligne-info"><span>Téléphone</span><span id="detail-telephone-ecole">—</span></div>
+      <div class="ligne-info"><span>Ville / Province</span><span id="detail-ville-ecole">—</span></div>
+      <div class="ligne-info"><span>Statut</span><span id="detail-statut-ecole">—</span></div>
+    </div>
+
+    <div class="section-detail">
+      <h3>Compte Directeur principal (premier créé)</h3>
+      <div id="detail-bloc-directeur">
+        <div class="ligne-info"><span>Nom</span><span id="detail-directeur-nom">—</span></div>
+        <div class="ligne-info"><span>Email</span><span id="detail-directeur-email">—</span></div>
+        <div class="ligne-info"><span>Créé le</span><span id="detail-directeur-date">—</span></div>
+        <div style="margin-top:12px;">
+          <button class="bouton bouton-secondaire bouton-petit" id="bouton-reset-mdp-directeur">Réinitialiser son mot de passe</button>
+        </div>
+        <div class="mot-de-passe-affiche" id="zone-nouveau-mdp" style="display:none;"></div>
+      </div>
+    </div>
+
+    <div class="section-detail">
+      <h3>Abonnement</h3>
+      <div class="ligne-info"><span>Plan actuel</span><span id="detail-plan-nom">—</span></div>
+      <div class="ligne-info"><span>Statut</span><span id="detail-abonnement-statut">—</span></div>
+      <div class="ligne-info"><span>Expire le</span><span id="detail-abonnement-expiration">—</span></div>
+
+      <div class="ligne-champs" style="margin-top:14px;">
+        <div class="champ"><label for="modif-plan">Changer de plan</label><select id="modif-plan"></select></div>
+        <div class="champ"><label for="modif-expiration">Nouvelle date d'expiration</label><input type="date" id="modif-expiration" /></div>
+      </div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="bouton bouton-secondaire bouton-petit" id="bouton-appliquer-abonnement">Appliquer les changements</button>
+        <button class="bouton bouton-secondaire bouton-petit" id="bouton-reactiver-abonnement">Réactiver l'abonnement</button>
+      </div>
+
+      <hr class="separation" />
+      <div class="sous-section">Confirmer un paiement manuel (hors Mobile Money)</div>
+      <div class="ligne-champs">
+        <div class="champ"><label for="paiement-montant">Montant</label><input type="number" id="paiement-montant" step="0.01" /></div>
+        <div class="champ"><label for="paiement-methode">Méthode</label>
+          <select id="paiement-methode">
+            <option value="virement">Virement</option>
+            <option value="cash">Espèces</option>
+            <option value="orange_money">Orange Money</option>
+            <option value="airtel_money">Airtel Money</option>
+            <option value="mpesa">M-Pesa</option>
+          </select>
+        </div>
+      </div>
+      <button class="bouton bouton-principal bouton-petit" id="bouton-confirmer-paiement">Confirmer ce paiement</button>
+    </div>
+
+    <div class="section-detail">
+      <h3>Historique des paiements</h3>
+      <div id="detail-liste-paiements" style="max-height:180px; overflow-y:auto;"></div>
+    </div>
+
+    <div class="actions-modale">
+      <button type="button" class="bouton bouton-secondaire" id="bouton-fermer-detail">Fermer</button>
+    </div>
   </div>
 </div>
 
@@ -255,6 +376,7 @@
       document.getElementById('panneau-principal').style.display = 'block';
       chargerPlans();
       chargerEcoles();
+      chargerStats();
 
     } catch (err) {
       zoneErreur.textContent = 'Impossible de contacter le serveur.';
@@ -265,12 +387,29 @@
 
   document.getElementById('bouton-deconnexion-admin').addEventListener('click', reinitialiserEcranConnexion);
 
+  // ---------- Statistiques globales ----------
+  async function chargerStats() {
+    const reponse = await appelApi('/admin/ecoles/stats/globales');
+    if (!reponse || !reponse.ok) return;
+    const s = await reponse.json();
+    document.getElementById('stat-nb-ecoles').textContent = s.nb_ecoles;
+    document.getElementById('stat-nb-actives').textContent = s.nb_ecoles_actives;
+    document.getElementById('stat-nb-suspendues').textContent = s.nb_ecoles_suspendues;
+    document.getElementById('stat-nb-eleves').textContent = s.nb_eleves_total;
+    document.getElementById('stat-revenu').textContent = `${Number(s.revenu_total_confirme).toLocaleString('fr-FR')} $`;
+  }
+
   // ---------- Liste des écoles ----------
+  let ecolesCache = [];
+
   async function chargerEcoles() {
     const reponse = await appelApi('/admin/ecoles');
     if (!reponse || !reponse.ok) return;
-    const ecoles = await reponse.json();
+    ecolesCache = await reponse.json();
+    afficherEcoles(ecolesCache);
+  }
 
+  function afficherEcoles(ecoles) {
     document.getElementById('compteur-ecoles').textContent = `${ecoles.length} école${ecoles.length !== 1 ? 's' : ''}`;
 
     const corps = document.getElementById('corps-tableau-ecoles');
@@ -280,7 +419,7 @@
     }
 
     corps.innerHTML = ecoles.map((e) => `
-      <tr>
+      <tr class="ligne-ecole" data-id="${e.id}">
         <td>${e.nom}</td>
         <td class="matricule-cell">${e.code}</td>
         <td>${e.ville || '—'}</td>
@@ -288,16 +427,151 @@
         <td>${e.statut_abonnement || '—'}</td>
       </tr>
     `).join('');
+
+    corps.querySelectorAll('tr[data-id]').forEach((ligne) => {
+      ligne.addEventListener('click', () => ouvrirDetailEcole(ligne.dataset.id));
+    });
   }
+
+  document.getElementById('champ-recherche-ecoles').addEventListener('input', (evt) => {
+    const q = evt.target.value.trim().toLowerCase();
+    const filtrees = ecolesCache.filter((e) =>
+      e.nom.toLowerCase().includes(q) || e.code.toLowerCase().includes(q) || (e.ville || '').toLowerCase().includes(q)
+    );
+    afficherEcoles(filtrees);
+  });
+
+  // ---------- Détail d'une école ----------
+  let ecoleDetailCourante = null;
+  let plansCache = [];
+
+  async function ouvrirDetailEcole(id) {
+    document.getElementById('zone-nouveau-mdp').style.display = 'none';
+    const reponse = await appelApi(`/admin/ecoles/${id}`);
+    if (!reponse || !reponse.ok) { afficherMessage('Erreur lors du chargement des détails.', 'erreur'); return; }
+    const d = await reponse.json();
+    ecoleDetailCourante = d;
+
+    document.getElementById('detail-nom-ecole').textContent = d.ecole.nom;
+    document.getElementById('detail-code-ecole').textContent = `Code de connexion : ${d.ecole.code}`;
+    document.getElementById('detail-email-ecole').textContent = d.ecole.email || '—';
+    document.getElementById('detail-telephone-ecole').textContent = d.ecole.telephone || '—';
+    document.getElementById('detail-ville-ecole').textContent = `${d.ecole.ville || '—'} / ${d.ecole.province || '—'}`;
+    document.getElementById('detail-statut-ecole').textContent = d.ecole.statut;
+
+    const boutonToggle = document.getElementById('bouton-toggle-statut-ecole');
+    boutonToggle.textContent = d.ecole.statut === 'actif' ? 'Suspendre cette école' : 'Réactiver cette école';
+
+    document.getElementById('detail-nb-eleves').textContent = d.stats.nb_eleves;
+    document.getElementById('detail-nb-utilisateurs').textContent = d.stats.nb_utilisateurs;
+    document.getElementById('detail-nb-classes').textContent = d.stats.nb_classes;
+
+    if (d.directeur_principal) {
+      document.getElementById('detail-directeur-nom').textContent = `${d.directeur_principal.nom} ${d.directeur_principal.prenom || ''}`;
+      document.getElementById('detail-directeur-email').textContent = d.directeur_principal.email;
+      document.getElementById('detail-directeur-date').textContent = new Date(d.directeur_principal.created_at).toLocaleDateString('fr-FR');
+      document.getElementById('detail-bloc-directeur').style.display = 'block';
+    } else {
+      document.getElementById('detail-bloc-directeur').innerHTML = '<p style="color:var(--texte-att); font-size:0.88rem;">Aucun compte Directeur trouvé pour cette école.</p>';
+    }
+
+    if (d.abonnement) {
+      document.getElementById('detail-plan-nom').textContent = `${d.abonnement.plan_nom} — ${d.abonnement.prix} ${d.abonnement.devise}`;
+      document.getElementById('detail-abonnement-statut').textContent = d.abonnement.statut;
+      document.getElementById('detail-abonnement-expiration').textContent = d.abonnement.date_expiration
+        ? new Date(d.abonnement.date_expiration).toLocaleDateString('fr-FR') : '—';
+      document.getElementById('modif-plan').value = d.abonnement.plan_id;
+    }
+
+    document.getElementById('detail-liste-paiements').innerHTML = d.paiements.length === 0
+      ? '<p style="color:var(--texte-att); font-size:0.85rem;">Aucun paiement enregistré.</p>'
+      : d.paiements.map((p) => `
+          <div class="ligne-info">
+            <span>${new Date(p.date_paiement).toLocaleDateString('fr-FR')} — ${p.methode}</span>
+            <span>${Number(p.montant).toLocaleString('fr-FR')} (${p.statut})</span>
+          </div>
+        `).join('');
+
+    document.getElementById('voile-detail').classList.add('visible');
+  }
+
+  document.getElementById('bouton-fermer-detail').addEventListener('click', () => {
+    document.getElementById('voile-detail').classList.remove('visible');
+  });
+
+  document.getElementById('bouton-toggle-statut-ecole').addEventListener('click', async () => {
+    if (!ecoleDetailCourante) return;
+    const nouveauStatut = ecoleDetailCourante.ecole.statut === 'actif' ? 'suspendu' : 'actif';
+    if (!confirm(`Confirmer : passer cette école au statut "${nouveauStatut}" ?`)) return;
+    const r = await appelApi(`/admin/ecoles/${ecoleDetailCourante.ecole.id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ statut: nouveauStatut })
+    });
+    if (r && r.ok) { afficherMessage('Statut mis à jour.', 'succes'); ouvrirDetailEcole(ecoleDetailCourante.ecole.id); chargerEcoles(); chargerStats(); }
+    else afficherMessage('Erreur lors de la mise à jour.', 'erreur');
+  });
+
+  document.getElementById('bouton-reset-mdp-directeur').addEventListener('click', async () => {
+    if (!ecoleDetailCourante?.directeur_principal) return;
+    if (!confirm("Générer un nouveau mot de passe pour ce compte Directeur ? L'ancien ne fonctionnera plus, et toutes ses sessions actives seront déconnectées.")) return;
+    const r = await appelApi(`/admin/ecoles/${ecoleDetailCourante.ecole.id}/reset-directeur-password`, { method: 'POST' });
+    if (!r || !r.ok) { afficherMessage('Erreur lors de la réinitialisation.', 'erreur'); return; }
+    const d = await r.json();
+    const zone = document.getElementById('zone-nouveau-mdp');
+    zone.textContent = `Nouveau mot de passe pour ${d.email} : ${d.nouveau_mot_de_passe} (transmets-le à l'école, il ne sera plus jamais affiché)`;
+    zone.style.display = 'block';
+  });
+
+  document.getElementById('bouton-appliquer-abonnement').addEventListener('click', async () => {
+    if (!ecoleDetailCourante) return;
+    const plan_id = document.getElementById('modif-plan').value;
+    const date_expiration = document.getElementById('modif-expiration').value;
+    const r = await appelApi(`/admin/ecoles/${ecoleDetailCourante.ecole.id}/abonnement`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ plan_id: plan_id || null, date_expiration: date_expiration || null })
+    });
+    if (r && r.ok) { afficherMessage('Abonnement mis à jour.', 'succes'); ouvrirDetailEcole(ecoleDetailCourante.ecole.id); chargerEcoles(); }
+    else afficherMessage("Erreur lors de la mise à jour de l'abonnement.", 'erreur');
+  });
+
+  document.getElementById('bouton-reactiver-abonnement').addEventListener('click', async () => {
+    if (!ecoleDetailCourante) return;
+    if (!confirm("Réactiver l'abonnement de cette école ?")) return;
+    const r = await appelApi(`/admin/ecoles/${ecoleDetailCourante.ecole.id}/abonnement`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ statut: 'actif' })
+    });
+    if (r && r.ok) { afficherMessage('Abonnement réactivé.', 'succes'); ouvrirDetailEcole(ecoleDetailCourante.ecole.id); chargerEcoles(); chargerStats(); }
+    else afficherMessage('Erreur lors de la réactivation.', 'erreur');
+  });
+
+  document.getElementById('bouton-confirmer-paiement').addEventListener('click', async () => {
+    if (!ecoleDetailCourante?.abonnement) { afficherMessage('Aucun abonnement à créditer.', 'erreur'); return; }
+    const montant = document.getElementById('paiement-montant').value;
+    const methode = document.getElementById('paiement-methode').value;
+    if (!montant) { afficherMessage('Indique un montant.', 'erreur'); return; }
+
+    const r = await appelApi(`/abonnements/${ecoleDetailCourante.abonnement.id}/confirmer-paiement`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ montant: parseFloat(montant), methode })
+    });
+    if (r && r.ok) {
+      afficherMessage('Paiement confirmé, abonnement réactivé.', 'succes');
+      document.getElementById('paiement-montant').value = '';
+      ouvrirDetailEcole(ecoleDetailCourante.ecole.id); chargerEcoles(); chargerStats();
+    } else {
+      afficherMessage('Erreur lors de la confirmation du paiement.', 'erreur');
+    }
+  });
 
   // ---------- Plans d'abonnement ----------
   async function chargerPlans() {
     const reponse = await appelApi('/admin/ecoles/plans/liste');
     if (!reponse || !reponse.ok) return;
-    const plans = await reponse.json();
-    document.getElementById('ecole-plan').innerHTML = plans.map((p) =>
+    plansCache = await reponse.json();
+    const options = plansCache.map((p) =>
       `<option value="${p.id}">${p.nom} — ${p.prix} ${p.devise}/${p.duree_jours}j</option>`
     ).join('');
+    document.getElementById('ecole-plan').innerHTML = options;
+    document.getElementById('modif-plan').innerHTML = options;
   }
 
   // ---------- Modale création d'école ----------
@@ -357,6 +631,7 @@
       'succes'
     );
     chargerEcoles();
+    chargerStats();
   });
 
   // Reprise de session si déjà connecté
@@ -365,6 +640,7 @@
     document.getElementById('panneau-principal').style.display = 'block';
     chargerPlans();
     chargerEcoles();
+    chargerStats();
   }
 </script>
 

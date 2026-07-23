@@ -293,18 +293,29 @@
 <script>
   const API_BASE_URL = "https://scolaire-saas-backend.onrender.com";
 
+
+  // Session par défaut = sessionStorage (effacée à la fermeture du navigateur),
+  // sauf si "Se souvenir de moi" a été coché à la connexion (alors localStorage).
+  function obtenirDuStockage(cle) {
+    return sessionStorage.getItem(cle) || localStorage.getItem(cle);
+  }
+  function definirDansStockage(cle, valeur) {
+    if (sessionStorage.getItem('ardoise_refresh_token')) sessionStorage.setItem(cle, valeur);
+    else localStorage.setItem(cle, valeur);
+  }
+
   function obtenirTokens() {
-    return { accessToken: localStorage.getItem('ardoise_access_token'), refreshToken: localStorage.getItem('ardoise_refresh_token') };
+    return { accessToken: obtenirDuStockage('ardoise_access_token'), refreshToken: obtenirDuStockage('ardoise_refresh_token') };
   }
   function retourConnexion() {
-    localStorage.removeItem('ardoise_access_token'); localStorage.removeItem('ardoise_refresh_token'); localStorage.removeItem('ardoise_user');
+    ['ardoise_access_token','ardoise_refresh_token','ardoise_user'].forEach(cle => { localStorage.removeItem(cle); sessionStorage.removeItem(cle); });
     window.location.href = 'connexion.html';
   }
   async function rafraichirToken(refreshToken) {
     const reponse = await fetch(`${API_BASE_URL}/auth/refresh`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refresh_token: refreshToken }) });
     if (!reponse.ok) return null;
     const donnees = await reponse.json();
-    localStorage.setItem('ardoise_access_token', donnees.access_token);
+    definirDansStockage('ardoise_access_token', donnees.access_token);
     return donnees.access_token;
   }
   async function appelApi(chemin, options = {}) {
@@ -638,7 +649,7 @@
     const ordrePriorite = ['dashboard-directeur.html', 'espace-secretaire.html', 'espace-professeur.html', 'espace-titulaire.html', 'frais-scolaires.html', 'eleves.html'];
 
     let utilisateur = null;
-    try { utilisateur = JSON.parse(localStorage.getItem('ardoise_user') || 'null'); } catch (e) {}
+    try { utilisateur = JSON.parse(obtenirDuStockage('ardoise_user') || 'null'); } catch (e) {}
     const roles = (utilisateur && utilisateur.roles) || [];
     const estSuperAdmin = roles.includes('super_admin');
 

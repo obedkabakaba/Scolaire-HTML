@@ -279,6 +279,11 @@
           <button type="button" class="bouton-oeil" id="bouton-oeil" aria-label="Afficher le mot de passe">Afficher</button>
         </div>
 
+        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; color:var(--texte-att); margin:2px 0 16px 0; cursor:pointer;">
+          <input type="checkbox" id="case-souvenir" style="width:auto;" />
+          Se souvenir de moi sur cet appareil
+        </label>
+
         <button type="submit" class="bouton-connexion" id="bouton-connexion">Se connecter</button>
 
         <button type="button" id="lien-mdp-oublie" style="background:none; border:none; color:var(--encre); font-size:0.85rem; margin-top:14px; cursor:pointer; text-decoration:underline; display:block; width:100%;">Mot de passe oublié ?</button>
@@ -375,12 +380,19 @@
       }
 
       // Stockage des tokens pour les prochaines pages (dashboard, etc.).
-      // Note : dans l'aperçu intégré au chat, le stockage navigateur peut être
-      // limité par le bac à sable — une fois le fichier déployé sur GitHub Pages,
-      // ceci fonctionne normalement.
-      localStorage.setItem('ardoise_access_token', donnees.access_token);
-      localStorage.setItem('ardoise_refresh_token', donnees.refresh_token);
-      localStorage.setItem('ardoise_user', JSON.stringify(donnees.user));
+      // Par défaut (case non cochée), on utilise sessionStorage : la session
+      // est effacée à la fermeture du navigateur/onglet, pour ne jamais rester
+      // connecté malgré soi sur un appareil partagé. Seul un "Se souvenir de moi"
+      // explicite bascule sur localStorage (persistant).
+      const seSouvenir = document.getElementById('case-souvenir').checked;
+      const stockage = seSouvenir ? localStorage : sessionStorage;
+      const autreStockage = seSouvenir ? sessionStorage : localStorage;
+      autreStockage.removeItem('ardoise_access_token');
+      autreStockage.removeItem('ardoise_refresh_token');
+      autreStockage.removeItem('ardoise_user');
+      stockage.setItem('ardoise_access_token', donnees.access_token);
+      stockage.setItem('ardoise_refresh_token', donnees.refresh_token);
+      stockage.setItem('ardoise_user', JSON.stringify(donnees.user));
 
       const roles = donnees.user?.roles || [];
 

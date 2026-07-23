@@ -117,6 +117,7 @@
         <li><a class="nav-item" href="espace-secretaire.html">Accueil Secrétariat</a></li>
         <li><a class="nav-item" href="espace-professeur.html">Mes cours</a></li>
         <li><a class="nav-item" href="espace-titulaire.html">Ma classe</a></li>
+        <li><a class="nav-item" href="cours-classe-titulaire.html">Cours de la classe</a></li>
         <li><a class="nav-item" href="eleves.html">Élèves</a></li>
         <li><a class="nav-item" href="frais-scolaires.html">Frais scolaires</a></li>
         <li><a class="nav-item" href="utilisateurs.html">Utilisateurs</a></li>
@@ -239,6 +240,41 @@
       </form>
     </div>
 
+    <!-- Paramètres pédagogiques -->
+    <div class="carte-section">
+      <h2>Titulaires — droits sur les bulletins</h2>
+      <form id="formulaire-pedagogique">
+        <div class="champ" style="display:flex; align-items:center; gap:10px;">
+          <input type="checkbox" id="champ-autoriser-bulletins-titulaires" style="width:auto;" />
+          <label for="champ-autoriser-bulletins-titulaires" style="margin:0;">Autoriser les titulaires à générer les bulletins de leur classe</label>
+        </div>
+
+        <div id="bloc-mode-titulaires" style="display:none; margin-top:14px; padding-left:26px;">
+          <div class="champ">
+            <label for="champ-mode-titulaires">Qui, précisément ?</label>
+            <select id="champ-mode-titulaires">
+              <option value="tous">Tous les titulaires</option>
+              <option value="certains">Seulement certains titulaires</option>
+            </select>
+          </div>
+          <div id="bloc-liste-titulaires" style="display:none;">
+            <label style="display:block; font-size:0.76rem; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; color:var(--texte-att); margin-bottom:8px;">Titulaires autorisés</label>
+            <div id="liste-titulaires-checkbox" style="display:flex; flex-direction:column; gap:8px; max-height:220px; overflow-y:auto; margin-bottom:14px;"></div>
+          </div>
+        </div>
+
+        <hr style="border:none; border-top:1px solid var(--bordure); margin:20px 0;" />
+
+        <div class="champ" style="display:flex; align-items:center; gap:10px;">
+          <input type="checkbox" id="champ-multi-classes" style="width:auto;" />
+          <label for="champ-multi-classes" style="margin:0;">Autoriser un même titulaire à gérer plusieurs classes à la fois</label>
+        </div>
+        <p style="color:var(--texte-att); font-size:0.82rem; margin:6px 0 16px 0;">Par défaut, un titulaire ne peut être assigné qu'à une seule classe.</p>
+
+        <button type="submit" class="bouton bouton-principal">Enregistrer</button>
+      </form>
+    </div>
+
     <!-- Mentions -->
     <div class="carte-section">
       <h2>Mentions</h2>
@@ -308,6 +344,14 @@
     document.getElementById('champ-nb-periodes').value = ecole.nb_periodes || 0;
     document.getElementById('champ-nb-semestres').value = ecole.nb_semestres || 0;
     document.getElementById('champ-seuil-promotion').value = ecole.seuil_promotion_pourcentage ?? 50;
+
+    document.getElementById('champ-autoriser-bulletins-titulaires').checked = ecole.autoriser_bulletins_titulaires || false;
+    document.getElementById('champ-mode-titulaires').value = ecole.bulletins_titulaires_mode || 'tous';
+    document.getElementById('champ-multi-classes').checked = ecole.autoriser_titulaire_multi_classes || false;
+    basculerBlocsTitulaires();
+    if (ecole.autoriser_bulletins_titulaires && ecole.bulletins_titulaires_mode === 'certains') {
+      chargerListeTitulaires();
+    }
 
     if (ecole.logo_url) {
       const img = document.getElementById('apercu-logo');
@@ -496,6 +540,63 @@
     }
   }
 
+  // ---------- Paramètres pédagogiques (droits des titulaires) ----------
+  function basculerBlocsTitulaires() {
+    const autorise = document.getElementById('champ-autoriser-bulletins-titulaires').checked;
+    document.getElementById('bloc-mode-titulaires').style.display = autorise ? 'block' : 'none';
+    const modeCertains = document.getElementById('champ-mode-titulaires').value === 'certains';
+    document.getElementById('bloc-liste-titulaires').style.display = (autorise && modeCertains) ? 'block' : 'none';
+  }
+
+  document.getElementById('champ-autoriser-bulletins-titulaires').addEventListener('change', () => {
+    basculerBlocsTitulaires();
+    if (document.getElementById('bloc-liste-titulaires').style.display === 'block') chargerListeTitulaires();
+  });
+  document.getElementById('champ-mode-titulaires').addEventListener('change', () => {
+    basculerBlocsTitulaires();
+    if (document.getElementById('bloc-liste-titulaires').style.display === 'block') chargerListeTitulaires();
+  });
+
+  async function chargerListeTitulaires() {
+    const r = await appelApi('/ecole/titulaires');
+    const conteneur = document.getElementById('liste-titulaires-checkbox');
+    if (!r || !r.ok) { conteneur.innerHTML = '<p style="color:var(--texte-att); font-size:0.85rem;">Erreur de chargement.</p>'; return; }
+    const titulaires = await r.json();
+    conteneur.innerHTML = titulaires.length === 0
+      ? '<p style="color:var(--texte-att); font-size:0.85rem;">Aucun titulaire pour l\'instant.</p>'
+      : titulaires.map(t => `
+          <label style="display:flex; align-items:center; gap:8px; font-size:0.88rem;">
+            <input type="checkbox" value="${t.id}" ${t.autorise_generation ? 'checked' : ''} style="width:auto;" />
+            ${t.nom} ${t.prenom || ''}
+          </label>
+        `).join('');
+  }
+
+  document.getElementById('formulaire-pedagogique').addEventListener('submit', async (evt) => {
+    evt.preventDefault();
+    const autoriser = document.getElementById('champ-autoriser-bulletins-titulaires').checked;
+    const mode = document.getElementById('champ-mode-titulaires').value;
+
+    const r = await appelApi('/ecole/moi', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        autoriser_bulletins_titulaires: autoriser,
+        bulletins_titulaires_mode: mode,
+        autoriser_titulaire_multi_classes: document.getElementById('champ-multi-classes').checked
+      })
+    });
+    if (!r || !r.ok) { afficherMessage('Erreur lors de l\'enregistrement.', 'erreur'); return; }
+
+    if (autoriser && mode === 'certains') {
+      const idsAutorises = Array.from(document.querySelectorAll('#liste-titulaires-checkbox input:checked')).map(c => c.value);
+      await appelApi('/ecole/titulaires-autorises', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ utilisateur_ids: idsAutorises })
+      });
+    }
+    afficherMessage('Paramètres pédagogiques mis à jour.', 'succes');
+  });
+
   chargerEcole();
   chargerMentions();
   chargerAbonnement();
@@ -521,6 +622,7 @@
       'espace-secretaire.html': ['secretaire'],
       'espace-professeur.html': ['professeur'],
       'espace-titulaire.html': ['titulaire'],
+      'cours-classe-titulaire.html': ['titulaire'],
       'eleves.html': ['directeur', 'prefet', 'secretaire'],
       'frais-scolaires.html': ['directeur', 'comptable', 'secretaire'],
       'utilisateurs.html': ['directeur', 'prefet', 'secretaire'],

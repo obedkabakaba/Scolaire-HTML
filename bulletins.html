@@ -109,6 +109,7 @@
         <li><a class="nav-item" href="espace-secretaire.html">Accueil Secrétariat</a></li>
         <li><a class="nav-item" href="espace-professeur.html">Mes cours</a></li>
         <li><a class="nav-item" href="espace-titulaire.html">Ma classe</a></li>
+        <li><a class="nav-item" href="cours-classe-titulaire.html">Cours de la classe</a></li>
         <li><a class="nav-item" href="eleves.html">Élèves</a></li>
         <li><a class="nav-item" href="frais-scolaires.html">Frais scolaires</a></li>
         <li><a class="nav-item" href="utilisateurs.html">Utilisateurs</a></li>
@@ -194,15 +195,24 @@
     setTimeout(() => zone.classList.remove('visible'), 6000);
   }
 
+  async function obtenirAnneeActiveId() {
+    const r = await appelApi('/annees-scolaires');
+    if (!r?.ok) return '';
+    const annees = await r.json();
+    const active = annees.find(a => a.active);
+    return active ? active.id : (annees[0]?.id || '');
+  }
+
   async function chargerSelecteurs() {
-    const [rClasses, rPeriodes] = await Promise.all([appelApi('/classes'), appelApi('/periodes')]);
+    const anneeActiveId = await obtenirAnneeActiveId();
+    const [rClasses, rPeriodes] = await Promise.all([appelApi('/classes'), appelApi(`/periodes?anneeScolaireId=${anneeActiveId}`)]);
     if (rClasses?.ok) {
       const classes = await rClasses.json();
       document.getElementById('select-classe').innerHTML = classes.map(c => `<option value="${c.id}">${c.nom}</option>`).join('');
     }
     if (rPeriodes?.ok) {
-      const periodes = await rPeriodes.json();
-      document.getElementById('select-periode').innerHTML = periodes.map(p => `<option value="${p.id}">${p.libelle}</option>`).join('') || '<option value="">Aucune période créée</option>';
+      const periodes = (await rPeriodes.json()).filter(p => p.type !== 'semestre');
+      document.getElementById('select-periode').innerHTML = periodes.map(p => `<option value="${p.id}">${p.libelle}</option>`).join('') || '<option value="">Aucune période créée pour l\'année active</option>';
     }
 
     // Pré-sélection depuis l'URL (ex: lien depuis l'espace titulaire)
@@ -333,6 +343,7 @@
       'espace-secretaire.html': ['secretaire'],
       'espace-professeur.html': ['professeur'],
       'espace-titulaire.html': ['titulaire'],
+      'cours-classe-titulaire.html': ['titulaire'],
       'eleves.html': ['directeur', 'prefet', 'secretaire'],
       'frais-scolaires.html': ['directeur', 'comptable', 'secretaire'],
       'utilisateurs.html': ['directeur', 'prefet', 'secretaire'],

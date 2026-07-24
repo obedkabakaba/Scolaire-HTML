@@ -182,6 +182,10 @@
 
 <script>
   const API_BASE_URL = "https://scolaire-saas-backend.onrender.com";
+
+  let utilisateurConnecte = null;
+  try { utilisateurConnecte = JSON.parse(sessionStorage.getItem('ardoise_user') || localStorage.getItem('ardoise_user') || 'null'); } catch (e) {}
+  const peutGererEvenements = (utilisateurConnecte?.roles || []).some(r => ['directeur', 'prefet', 'super_admin'].includes(r));
   const TYPES_EVENEMENTS = {
     debut_cours: 'Début des cours', examen: 'Examen', depot_resultats: 'Dépôt des résultats',
     conseil_classe: 'Conseil de classe', proclamation: 'Proclamation', vacances: 'Vacances', reunion: 'Réunion'
@@ -259,7 +263,7 @@
               <div class="titre">${evt.titre}</div>
               <div class="type">${TYPES_EVENEMENTS[evt.type] || evt.type}</div>
             </div>
-            <button class="lien-action" data-action="supprimer">Supprimer</button>
+            ${peutGererEvenements ? `<button class="lien-action" data-action="supprimer">Supprimer</button>` : ''}
           </div>
         `).join('')}
       </div>
@@ -298,6 +302,9 @@
   });
 
   chargerEvenements();
+  if (!peutGererEvenements) {
+    document.getElementById('bouton-ajouter').style.display = 'none';
+  }
 
   document.getElementById('bouton-deconnexion-nav')?.addEventListener('click', async () => {
     const { refreshToken } = obtenirTokens();

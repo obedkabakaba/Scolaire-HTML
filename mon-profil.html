@@ -112,12 +112,13 @@
       <div id="badges-roles" style="margin-bottom:18px;"></div>
       <form id="formulaire-profil">
         <div class="ligne-champs">
-          <div class="champ"><label for="champ-nom">Nom</label><input type="text" id="champ-nom" required /></div>
-          <div class="champ"><label for="champ-prenom">Prénom</label><input type="text" id="champ-prenom" /></div>
+          <div class="champ"><label for="champ-nom">Nom</label><input type="text" id="champ-nom" required disabled /></div>
+          <div class="champ"><label for="champ-prenom">Prénom</label><input type="text" id="champ-prenom" disabled /></div>
         </div>
         <div class="champ"><label for="champ-email">Email (non modifiable)</label><input type="email" id="champ-email" disabled /></div>
-        <div class="champ"><label for="champ-telephone">Téléphone</label><input type="text" id="champ-telephone" /></div>
-        <button type="submit" class="bouton bouton-principal">Modifier</button>
+        <div class="champ"><label for="champ-telephone">Téléphone</label><input type="text" id="champ-telephone" disabled /></div>
+        <button type="button" class="bouton bouton-secondaire" id="bouton-activer-modif-profil">Modifier</button>
+        <button type="submit" class="bouton bouton-principal" id="bouton-enregistrer-profil" style="display:none;">Enregistrer</button>
       </form>
     </div>
 
@@ -283,6 +284,21 @@
     afficherMessage('Photo mise à jour.', 'succes');
   });
 
+  const CHAMPS_PROFIL_MODIFIABLES = ['champ-nom', 'champ-prenom', 'champ-telephone'];
+
+  document.getElementById('bouton-activer-modif-profil').addEventListener('click', () => {
+    CHAMPS_PROFIL_MODIFIABLES.forEach(id => document.getElementById(id).disabled = false);
+    document.getElementById('champ-nom').focus();
+    document.getElementById('bouton-activer-modif-profil').style.display = 'none';
+    document.getElementById('bouton-enregistrer-profil').style.display = 'inline-block';
+  });
+
+  function reverrouillerFormulaireProfil() {
+    CHAMPS_PROFIL_MODIFIABLES.forEach(id => document.getElementById(id).disabled = true);
+    document.getElementById('bouton-activer-modif-profil').style.display = 'inline-block';
+    document.getElementById('bouton-enregistrer-profil').style.display = 'none';
+  }
+
   document.getElementById('formulaire-profil').addEventListener('submit', async (evt) => {
     evt.preventDefault();
     const r = await appelApi('/utilisateurs/moi', {
@@ -293,7 +309,7 @@
         telephone: document.getElementById('champ-telephone').value.trim()
       })
     });
-    if (r && r.ok) afficherMessage('Profil mis à jour.', 'succes');
+    if (r && r.ok) { afficherMessage('Profil mis à jour.', 'succes'); reverrouillerFormulaireProfil(); }
     else afficherMessage("Erreur lors de l'enregistrement.", 'erreur');
   });
 

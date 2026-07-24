@@ -103,10 +103,11 @@
       <div class="champ-selecteur"><label for="select-periode">Période</label><select id="select-periode"></select></div>
     </div>
 
-    <div class="grille-recap">
-      <div class="carte-recap moyenne"><div class="valeur" id="recap-moyenne">—</div><div class="etiquette">Moyenne de la classe</div></div>
-      <div class="carte-recap reussite"><div class="valeur" id="recap-reussites">—</div><div class="etiquette">Réussites</div></div>
-      <div class="carte-recap echec"><div class="valeur" id="recap-echecs">—</div><div class="etiquette">Échecs</div></div>
+    <div class="grille-recap" style="grid-template-columns: repeat(4, 1fr);">
+      <div class="carte-recap" style="border: 1.5px solid var(--ocre);"><div class="valeur" id="recap-moyenne-generale" style="color:var(--ocre-dark);">—</div><div class="etiquette">Moyenne générale de la classe (tous cours)</div></div>
+      <div class="carte-recap moyenne"><div class="valeur" id="recap-moyenne">—</div><div class="etiquette">Moyenne du cours sélectionné</div></div>
+      <div class="carte-recap reussite"><div class="valeur" id="recap-reussites">—</div><div class="etiquette">Réussites (ce cours)</div></div>
+      <div class="carte-recap echec"><div class="valeur" id="recap-echecs">—</div><div class="etiquette">Échecs (ce cours)</div></div>
     </div>
 
     <div class="conteneur-tableau">
@@ -204,8 +205,18 @@
     }
 
     document.getElementById('select-cours').addEventListener('change', chargerRecap);
-    document.getElementById('select-periode').addEventListener('change', chargerRecap);
+    document.getElementById('select-periode').addEventListener('change', () => { chargerMoyenneGenerale(); chargerRecap(); });
+    chargerMoyenneGenerale();
     chargerRecap();
+  }
+
+  async function chargerMoyenneGenerale() {
+    const periodeId = document.getElementById('select-periode').value;
+    if (!classeId || !periodeId) return;
+    const r = await appelApi(`/classes/${classeId}/moyenne-generale?periodeId=${periodeId}`);
+    if (!r || !r.ok) return;
+    const d = await r.json();
+    document.getElementById('recap-moyenne-generale').textContent = d.moyenne_generale !== null ? `${d.moyenne_generale}%` : '—';
   }
 
   async function chargerRecap() {

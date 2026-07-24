@@ -271,6 +271,14 @@
         </div>
         <p style="color:var(--texte-att); font-size:0.82rem; margin:6px 0 16px 0;">Par défaut, un titulaire ne peut être assigné qu'à une seule classe.</p>
 
+        <hr style="border:none; border-top:1px solid var(--bordure); margin:20px 0;" />
+
+        <div class="champ" style="display:flex; align-items:center; gap:10px;">
+          <input type="checkbox" id="champ-modif-apres-signature" style="width:auto;" />
+          <label for="champ-modif-apres-signature" style="margin:0;">Autoriser les titulaires à modifier les observations même après avoir signé un bulletin</label>
+        </div>
+        <p style="color:var(--texte-att); font-size:0.82rem; margin:6px 0 16px 0;">Par défaut, un bulletin signé (ou une période clôturée) ne peut plus être modifié par le titulaire.</p>
+
         <button type="submit" class="bouton bouton-principal">Enregistrer</button>
       </form>
     </div>
@@ -359,6 +367,7 @@
     document.getElementById('champ-autoriser-bulletins-titulaires').checked = ecole.autoriser_bulletins_titulaires || false;
     document.getElementById('champ-mode-titulaires').value = ecole.bulletins_titulaires_mode || 'tous';
     document.getElementById('champ-multi-classes').checked = ecole.autoriser_titulaire_multi_classes || false;
+    document.getElementById('champ-modif-apres-signature').checked = ecole.autoriser_modif_apres_signature || false;
     basculerBlocsTitulaires();
     if (ecole.autoriser_bulletins_titulaires && ecole.bulletins_titulaires_mode === 'certains') {
       chargerListeTitulaires();
@@ -593,7 +602,8 @@
       body: JSON.stringify({
         autoriser_bulletins_titulaires: autoriser,
         bulletins_titulaires_mode: mode,
-        autoriser_titulaire_multi_classes: document.getElementById('champ-multi-classes').checked
+        autoriser_titulaire_multi_classes: document.getElementById('champ-multi-classes').checked,
+        autoriser_modif_apres_signature: document.getElementById('champ-modif-apres-signature').checked
       })
     });
     if (!r || !r.ok) { afficherMessage('Erreur lors de l\'enregistrement.', 'erreur'); return; }

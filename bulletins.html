@@ -247,6 +247,7 @@
   const utilisateurConnecte = JSON.parse(obtenirDuStockage('ardoise_user') || 'null');
   const rolesConnecte = utilisateurConnecte?.roles || [];
   const estTitulaireSeul = rolesConnecte.includes('titulaire') && !rolesConnecte.some(r => ['directeur', 'prefet', 'secretaire'].includes(r));
+  let autoriserModifApresSignature = false;
 
   async function chargerSelecteurs() {
     const anneeActiveId = await obtenirAnneeActiveId();
@@ -316,10 +317,16 @@
         </td>
         <td>${estTitulaireSeul ? (e.conduite || '—') : `<input type="text" class="champ-appreciation" data-champ="conduite" value="${e.conduite || ''}" />`}</td>
         <td>${estTitulaireSeul ? (e.application || '—') : `<input type="text" class="champ-appreciation" data-champ="application" value="${e.application || ''}" />`}</td>
-        <td><input type="text" class="champ-appreciation" data-champ="observation" value="${e.observation || ''}" placeholder="Optionnel" /></td>
-        <td>${e.signe_at ? '<span class="badge-signe">✓ Signé</span>' : '<span class="badge-non-signe">Non signé</span>'}</td>
+        <td class="cellule-observation">
+          <span class="affichage-observation">${e.observation || '—'}</span>
+          <input type="text" class="champ-appreciation champ-observation-saisie" data-champ="observation" value="${e.observation || ''}" placeholder="Optionnel" style="display:none;" />
+        </td>
+        <td class="cellule-statut-signature">${e.signe_at ? '<span class="badge-signe">✓ Signé</span>' : '<span class="badge-non-signe">Non signé</span>'}</td>
         <td style="white-space:nowrap;">
-          <button class="bouton bouton-secondaire bouton-petit" data-action="modifier">Modifier</button>
+          ${(!e.signe_at || autoriserModifApresSignature || !estTitulaireSeul)
+            ? `<button class="bouton bouton-secondaire bouton-petit" data-action="modifier">Modifier</button>
+               <button class="bouton bouton-principal bouton-petit" data-action="enregistrer-obs" style="display:none;">Enregistrer</button>`
+            : ''}
           ${!e.signe_at ? '<button class="bouton bouton-secondaire bouton-petit" data-action="signer">Signer</button>' : ''}
         </td>
       </tr>
@@ -329,6 +336,14 @@
       const ligne = bouton.closest('tr');
       const eleveId = ligne.dataset.eleveId;
       if (bouton.dataset.action === 'modifier') {
+        bouton.addEventListener('click', (evt) => {
+          evt.stopPropagation();
+          ligne.querySelector('.affichage-observation').style.display = 'none';
+          ligne.querySelector('.champ-observation-saisie').style.display = 'inline-block';
+          bouton.style.display = 'none';
+          ligne.querySelector('[data-action="enregistrer-obs"]').style.display = 'inline-block';
+        });
+      } else if (bouton.dataset.action === 'enregistrer-obs') {
         bouton.addEventListener('click', (evt) => { evt.stopPropagation(); enregistrerAppreciations(eleveId, ligne, periodeId); });
       } else {
         bouton.addEventListener('click', (evt) => { evt.stopPropagation(); signerBulletin(eleveId, periodeId); });
@@ -353,10 +368,19 @@
     const donnees = await r.json();
     if (!r.ok) { afficherMessage(donnees.message || "Erreur lors de l'enregistrement.", 'erreur'); return; }
     afficherMessage('Appréciations enregistrées.', 'succes');
+
+    // Referme le champ observation et remet "Modifier"
+    const observationInput = ligne.querySelector('.champ-observation-saisie');
+    ligne.querySelector('.affichage-observation').textContent = observationInput.value.trim() || '—';
+    ligne.querySelector('.affichage-observation').style.display = 'inline';
+    observationInput.style.display = 'none';
+    ligne.querySelector('[data-action="enregistrer-obs"]').style.display = 'none';
+    const boutonModifier = ligne.querySelector('[data-action="modifier"]');
+    if (boutonModifier) boutonModifier.style.display = 'inline-block';
   }
 
   async function signerBulletin(eleveId, periodeId) {
-    if (!confirm('Signer ce bulletin ?')) return;
+    if (!confirm('Signer ce bulletin ? Une fois signé, il ne pourra généralement plus être modifié.')) return;
     const r = await appelApi(`/bulletins/${eleveId}/signer`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ periodeId }) });
     if (!r) return;
     const donnees = await r.json();
@@ -453,7 +477,14 @@
     window.open(url, '_blank');
   }
 
-  chargerSelecteurs();
+  (async () => {
+    const r = await appelApi('/ecole/moi');
+    if (r?.ok) {
+      const ecole = await r.json();
+      autoriserModifApresSignature = ecole.autoriser_modif_apres_signature || false;
+    }
+    chargerSelecteurs();
+  })();
 
   document.getElementById('bouton-deconnexion-nav')?.addEventListener('click', async () => {
     const { refreshToken } = obtenirTokens();

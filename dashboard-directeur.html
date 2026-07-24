@@ -160,11 +160,11 @@
   /* ---------- Cartes statistiques ---------- */
   .grille-stats {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
     gap: 18px;
     margin-bottom: 32px;
   }
-  @media (max-width: 640px) { .grille-stats { grid-template-columns: 1fr; } }
+  @media (max-width: 640px) { .grille-stats { grid-template-columns: 1fr 1fr; } }
 
   .carte-stat {
     background: var(--craie-2);
@@ -366,6 +366,24 @@
         <div class="valeur" id="stat-classes">–</div>
         <div class="etiquette">Classes</div>
       </div>
+      <div class="carte-stat">
+        <div class="valeur" id="stat-reussite">–</div>
+        <div class="etiquette">Taux de réussite global</div>
+      </div>
+      <div class="carte-stat" style="border: 1.5px solid var(--rouge);">
+        <div class="valeur" id="stat-impayes" style="color:var(--rouge);">–</div>
+        <div class="etiquette">Élèves en retard de paiement</div>
+      </div>
+    </div>
+
+    <div class="panneau" style="margin-bottom:24px;">
+      <h3>État des périodes par classe (<span id="libelle-annee-active">—</span>)</h3>
+      <div id="conteneur-etat-periodes" style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+          <thead id="entete-etat-periodes"></thead>
+          <tbody id="corps-etat-periodes"></tbody>
+        </table>
+      </div>
     </div>
 
     <div class="grille-basse">
@@ -460,6 +478,32 @@
     return new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
   }
 
+  function afficherEtatPeriodes(lignes) {
+    const entete = document.getElementById('entete-etat-periodes');
+    const corps = document.getElementById('corps-etat-periodes');
+
+    if (!lignes || lignes.length === 0) {
+      entete.innerHTML = '';
+      corps.innerHTML = '<tr><td style="padding:16px; color:var(--texte-att);">Aucune période créée pour l\'année active.</td></tr>';
+      return;
+    }
+
+    // Reconstruit une grille classe (lignes) x période (colonnes)
+    const classes = [...new Map(lignes.map(l => [l.classe_id, l.classe_nom])).entries()];
+    const periodes = [...new Map(lignes.map(l => [l.periode_id, l.periode_libelle])).entries()];
+
+    entete.innerHTML = `<tr><th style="text-align:left; padding:8px;">Classe</th>${periodes.map(([, libelle]) => `<th style="padding:8px; text-align:center;">${libelle}</th>`).join('')}</tr>`;
+
+    corps.innerHTML = classes.map(([classeId, classeNom]) => {
+      const cellules = periodes.map(([periodeId]) => {
+        const ligne = lignes.find(l => l.classe_id === classeId && l.periode_id === periodeId);
+        const soumis = ligne?.soumis;
+        return `<td style="padding:8px; text-align:center; color:${soumis ? 'var(--vert-ok)' : 'var(--texte-att)'};">${soumis ? '✓' : '—'}</td>`;
+      }).join('');
+      return `<tr><td style="padding:8px; border-top:1px solid var(--bordure);">${classeNom}</td>${cellules}</tr>`;
+    }).join('');
+  }
+
   async function chargerDashboard() {
     try {
       const donnees = await appelApi('/dashboard/directeur');
@@ -476,6 +520,11 @@
       document.getElementById('stat-eleves').textContent = donnees.effectifs.nb_eleves;
       document.getElementById('stat-profs').textContent = donnees.effectifs.nb_professeurs;
       document.getElementById('stat-classes').textContent = donnees.effectifs.nb_classes;
+      document.getElementById('stat-reussite').textContent = donnees.taux_reussite_global !== null ? `${donnees.taux_reussite_global}%` : '—';
+      document.getElementById('stat-impayes').textContent = donnees.impayes.nb_eleves_en_retard;
+
+      document.getElementById('libelle-annee-active').textContent = donnees.annee_active?.libelle || 'aucune année active';
+      afficherEtatPeriodes(donnees.etat_periodes_par_classe);
 
       const periode = donnees.periode_courante;
       document.getElementById('periode-courante').textContent = periode

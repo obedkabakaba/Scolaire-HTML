@@ -134,6 +134,21 @@
 
     <div class="message-flash" id="message-flash"></div>
 
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px,1fr)); gap:16px; margin-bottom:24px;">
+      <div style="background:var(--craie-2); border:1px solid var(--bordure); border-radius:10px; padding:18px;">
+        <div style="font-family:'Fraunces',serif; font-weight:600; font-size:1.5rem;" id="stat-encaisse">—</div>
+        <div style="font-size:0.8rem; color:var(--texte-att); margin-top:4px;">Total encaissé (année active)</div>
+      </div>
+      <div style="background:var(--craie-2); border:1.5px solid var(--rouge); border-radius:10px; padding:18px;">
+        <div style="font-family:'Fraunces',serif; font-weight:600; font-size:1.5rem; color:var(--rouge);" id="stat-du">—</div>
+        <div style="font-size:0.8rem; color:var(--texte-att); margin-top:4px;">Total encore dû</div>
+      </div>
+      <div style="background:var(--craie-2); border:1px solid var(--bordure); border-radius:10px; padding:18px;">
+        <div style="font-family:'Fraunces',serif; font-weight:600; font-size:1.5rem;" id="stat-retard">—</div>
+        <div style="font-size:0.8rem; color:var(--texte-att); margin-top:4px;">Élèves en retard de paiement</div>
+      </div>
+    </div>
+
     <div class="barre-onglets">
       <div class="onglet actif" data-onglet="paiements">Suivi des paiements</div>
       <div class="onglet" data-onglet="config">Montants attendus</div>
@@ -422,6 +437,15 @@
 
   chargerSelecteurs();
   chargerConfig();
+
+  (async () => {
+    const r = await appelApi('/frais/stats-globales');
+    if (!r || !r.ok) return;
+    const d = await r.json();
+    document.getElementById('stat-encaisse').textContent = `${d.montant_total_encaisse.toLocaleString('fr-FR')}`;
+    document.getElementById('stat-du').textContent = `${d.montant_total_du.toLocaleString('fr-FR')}`;
+    document.getElementById('stat-retard').textContent = d.nb_eleves_en_retard;
+  })();
 
   // ---------- Filtrage de la navigation selon le rôle connecté ----------
   (function gererAccesParRole() {

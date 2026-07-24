@@ -193,8 +193,8 @@
         <div>
           <label style="display:block; font-size:0.76rem; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; color:var(--texte-att); margin-bottom:8px;">Signature du titulaire (générique)</label>
           <img id="apercu-signature" src="" alt="Signature" style="display:none; width:64px; height:64px; object-fit:contain; border:1px solid var(--bordure); border-radius:8px; margin-bottom:8px;" />
-          <div><button type="button" class="bouton bouton-secondaire bouton-petit" id="bouton-changer-signature">Choisir une image</button></div>
-          <input type="file" id="input-signature" accept="image/*" />
+          <div><button type="button" class="bouton bouton-secondaire bouton-petit" id="bouton-changer-signature">Choisir une image ou un PDF</button></div>
+          <input type="file" id="input-signature" accept="image/*,application/pdf" />
         </div>
       </div>
       <p style="font-size:0.8rem; color:var(--texte-att); margin-top:-10px; margin-bottom:18px;">Ces images apparaîtront automatiquement sur les bulletins générés, à la place des cases vides.</p>
@@ -298,6 +298,23 @@
   </main>
 </div>
 
+<!-- Modale de rognage de la signature -->
+<div id="voile-rognage-signature" style="display:none; position:fixed; inset:0; background:rgba(31,43,36,0.6); align-items:center; justify-content:center; z-index:50; padding:20px;">
+  <div style="background:#FBF9F3; border-radius:12px; padding:24px; max-width:640px; width:100%; max-height:90vh; overflow-y:auto;">
+    <h3 style="font-family:'Fraunces',serif; margin:0 0 6px 0; font-size:1.15rem;">Rogner la signature</h3>
+    <p style="color:#6B7269; font-size:0.85rem; margin:0 0 14px 0;">Dessine un rectangle (clic-glisser) autour de la zone où se trouve uniquement la signature.</p>
+    <div style="max-width:100%; overflow:auto; border:1px solid #E4DFCF; border-radius:6px;">
+      <canvas id="canvas-rognage-signature" style="display:block; cursor:crosshair; max-width:100%;"></canvas>
+    </div>
+    <p id="rognage-message-erreur" style="color:#B23A2E; font-size:0.82rem; margin:10px 0 0 0; display:none;"></p>
+    <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px;">
+      <button type="button" class="bouton bouton-secondaire" id="bouton-annuler-rognage">Annuler</button>
+      <button type="button" class="bouton bouton-principal" id="bouton-confirmer-rognage">Rogner et enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>
   const API_BASE_URL = "https://scolaire-saas-backend.onrender.com";
 
@@ -533,19 +550,151 @@
   document.getElementById('input-signature').addEventListener('change', async (evt) => {
     const fichier = evt.target.files[0];
     if (!fichier) return;
-    const formData = new FormData();
-    formData.append('fichier', fichier);
-    formData.append('type', 'signature');
-    const r = await appelApi('/uploads/document', { method: 'POST', body: formData });
-    if (r && r.ok) {
-      const donnees = await r.json();
-      const img = document.getElementById('apercu-signature');
-      img.src = donnees.url; img.style.display = 'block';
-      afficherMessage('Signature mise à jour.', 'succes');
-    } else {
-      afficherMessage("Erreur lors de l'upload de la signature.", 'erreur');
-    }
+    evt.target.value = '';
+    await ouvrirOutilRognage(fichier);
   });
+
+  // ---------- Outil de rognage (image ou 1ère page d'un PDF) ----------
+  if (window.pdfjsLib) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+
+  let canvasBase = null;
+  let pointDebut = null;
+  let pointFin = null;
+  let enTrainDeDessiner = false;
+
+  async function ouvrirOutilRognage(fichier) {
+    const messageErreur = document.getElementById('rognage-message-erreur');
+    messageErreur.style.display = 'none';
+    const canvas = document.getElementById('canvas-rognage-signature');
+    const ctx = canvas.getContext('2d');
+
+    try {
+      if (fichier.type === 'application/pdf') {
+        const arrayBuffer = await fichier.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const page = await pdf.getPage(1);
+        const viewport = page.getViewport({ scale: 2 });
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        await page.render({ canvasContext: ctx, viewport }).promise;
+      } else {
+        const image = await new Promise((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => resolve(img);
+          img.onerror = reject;
+          img.src = URL.createObjectURL(fichier);
+        });
+        canvas.width = image.naturalWidth;
+        canvas.height = image.naturalHeight;
+        ctx.drawImage(image, 0, 0);
+      }
+    } catch (e) {
+      messageErreur.textContent = "Impossible de lire ce fichier. Essaie une image (JPG/PNG) ou un PDF simple.";
+      messageErreur.style.display = 'block';
+    }
+
+    canvasBase = document.createElement('canvas');
+    canvasBase.width = canvas.width;
+    canvasBase.height = canvas.height;
+    canvasBase.getContext('2d').drawImage(canvas, 0, 0);
+
+    pointDebut = null; pointFin = null;
+    document.getElementById('voile-rognage-signature').style.display = 'flex';
+  }
+
+  function coordonneesDepuisEvenement(evt, canvas) {
+    const rect = canvas.getBoundingClientRect();
+    const source = evt.touches ? evt.touches[0] : evt;
+    const echelleX = canvas.width / rect.width;
+    const echelleY = canvas.height / rect.height;
+    return { x: (source.clientX - rect.left) * echelleX, y: (source.clientY - rect.top) * echelleY };
+  }
+
+  function redessinerAvecRectangle() {
+    const canvas = document.getElementById('canvas-rognage-signature');
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(canvasBase, 0, 0);
+    if (pointDebut && pointFin) {
+      ctx.strokeStyle = '#C98A3E';
+      ctx.lineWidth = Math.max(2, canvas.width / 300);
+      ctx.setLineDash([8, 6]);
+      ctx.strokeRect(pointDebut.x, pointDebut.y, pointFin.x - pointDebut.x, pointFin.y - pointDebut.y);
+      ctx.fillStyle = 'rgba(201,138,62,0.12)';
+      ctx.fillRect(pointDebut.x, pointDebut.y, pointFin.x - pointDebut.x, pointFin.y - pointDebut.y);
+    }
+  }
+
+  const canvasInteractif = document.getElementById('canvas-rognage-signature');
+  function demarrerDessin(evt) {
+    evt.preventDefault();
+    enTrainDeDessiner = true;
+    pointDebut = coordonneesDepuisEvenement(evt, canvasInteractif);
+    pointFin = pointDebut;
+  }
+  function continuerDessin(evt) {
+    if (!enTrainDeDessiner) return;
+    evt.preventDefault();
+    pointFin = coordonneesDepuisEvenement(evt, canvasInteractif);
+    redessinerAvecRectangle();
+  }
+  function terminerDessin() { enTrainDeDessiner = false; }
+
+  canvasInteractif.addEventListener('mousedown', demarrerDessin);
+  canvasInteractif.addEventListener('mousemove', continuerDessin);
+  window.addEventListener('mouseup', terminerDessin);
+  canvasInteractif.addEventListener('touchstart', demarrerDessin, { passive: false });
+  canvasInteractif.addEventListener('touchmove', continuerDessin, { passive: false });
+  canvasInteractif.addEventListener('touchend', terminerDessin);
+
+  document.getElementById('bouton-annuler-rognage').addEventListener('click', () => {
+    document.getElementById('voile-rognage-signature').style.display = 'none';
+  });
+
+  document.getElementById('bouton-confirmer-rognage').addEventListener('click', async () => {
+    const messageErreur = document.getElementById('rognage-message-erreur');
+    if (!pointDebut || !pointFin || Math.abs(pointFin.x - pointDebut.x) < 10 || Math.abs(pointFin.y - pointDebut.y) < 10) {
+      messageErreur.textContent = "Dessine d'abord un rectangle assez grand autour de la signature.";
+      messageErreur.style.display = 'block';
+      return;
+    }
+    messageErreur.style.display = 'none';
+
+    const sx = Math.min(pointDebut.x, pointFin.x);
+    const sy = Math.min(pointDebut.y, pointFin.y);
+    const sw = Math.abs(pointFin.x - pointDebut.x);
+    const sh = Math.abs(pointFin.y - pointDebut.y);
+
+    const canvasRogne = document.createElement('canvas');
+    canvasRogne.width = sw;
+    canvasRogne.height = sh;
+    canvasRogne.getContext('2d').drawImage(canvasBase, sx, sy, sw, sh, 0, 0, sw, sh);
+
+    const bouton = document.getElementById('bouton-confirmer-rognage');
+    bouton.disabled = true; bouton.textContent = 'Enregistrement…';
+
+    canvasRogne.toBlob(async (blob) => {
+      const formData = new FormData();
+      formData.append('fichier', blob, 'signature-rognee.png');
+      formData.append('type', 'signature');
+      const r = await appelApi('/uploads/document', { method: 'POST', body: formData });
+
+      bouton.disabled = false; bouton.textContent = 'Rogner et enregistrer';
+
+      if (r && r.ok) {
+        const donnees = await r.json();
+        const img = document.getElementById('apercu-signature');
+        img.src = donnees.url; img.style.display = 'block';
+        document.getElementById('voile-rognage-signature').style.display = 'none';
+        afficherMessage('Signature mise à jour.', 'succes');
+      } else {
+        messageErreur.textContent = "Erreur lors de l'enregistrement.";
+        messageErreur.style.display = 'block';
+      }
+    }, 'image/png');
+  });
+
 
   async function chargerApercusDocuments() {
     const rCachet = await appelApi('/uploads/documents?type=cachet');

@@ -133,7 +133,7 @@
         <h1>Bulletins</h1>
         <p class="sous-titre">Résultats calculés, appréciations du titulaire, et génération du PDF.</p>
       </div>
-      <button class="bouton bouton-principal" id="bouton-generer-pdf">📄 Générer le PDF de la classe</button>
+      <button class="bouton bouton-principal" id="bouton-generer-pdf">📄 Générer les bulletins de la classe</button>
     </div>
 
     <div class="message-flash" id="message-flash"></div>
@@ -463,7 +463,7 @@
     bouton.disabled = true; bouton.textContent = 'Génération en cours…';
 
     const r = await appelApi(`/bulletins/classe/${classeId}/imprimer?periodeId=${periodeId}`);
-    bouton.disabled = false; bouton.textContent = '📄 Générer le PDF de la classe';
+    bouton.disabled = false; bouton.textContent = '📄 Générer les bulletins de la classe';
 
     if (!r || !r.ok) {
       let detail = '';
@@ -482,6 +482,11 @@
     if (r?.ok) {
       const ecole = await r.json();
       autoriserModifApresSignature = ecole.autoriser_modif_apres_signature || false;
+      if (!ecole.mes_droits_bulletins) {
+        document.getElementById('bouton-generer-pdf').style.display = 'none';
+        document.getElementById('bouton-apercu-impression').style.display = 'none';
+        document.getElementById('bouton-imprimer-classe').style.display = 'none';
+      }
     }
     chargerSelecteurs();
   })();

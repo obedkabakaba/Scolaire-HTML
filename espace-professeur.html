@@ -189,13 +189,29 @@
       return;
     }
 
-    grille.innerHTML = cours.map(c => `
+    grille.innerHTML = cours.map(c => {
+      const periodes = c.periodes || [];
+      const prochainePeriodeNonSoumise = periodes.find(p => !p.soumis);
+      const toutEstSoumis = periodes.length > 0 && !prochainePeriodeNonSoumise;
+
+      const listePeriodes = periodes.map(p => `
+        <div style="display:flex; justify-content:space-between; font-size:0.78rem; padding:3px 0; color:${p.soumis ? 'var(--vert-ok)' : 'var(--texte-att)'};">
+          <span>${p.libelle}</span><span>${p.soumis ? '✓ Clôturée' : 'À faire'}</span>
+        </div>
+      `).join('');
+
+      return `
       <div class="carte-cours">
         <div class="classe">${c.classe_nom}</div>
         <div class="cours">${c.cours_nom} — sur ${c.maximum}</div>
-        <a class="bouton bouton-principal" href="notes.html?classeId=${c.classe_id}&coursId=${c.cours_id}">Encoder les notes</a>
+        <div style="margin-bottom:14px; padding:8px 10px; background:var(--craie); border-radius:7px;">${listePeriodes || '<span style="font-size:0.78rem; color:var(--texte-att);">Aucune période créée pour cette année.</span>'}</div>
+        ${toutEstSoumis
+          ? `<p style="font-size:0.85rem; color:var(--texte-att); margin:0;">✓ Année clôturée pour ce cours — plus rien à modifier.</p>`
+          : `<a class="bouton bouton-principal" href="notes.html?classeId=${c.classe_id}&coursId=${c.cours_id}&periodeId=${prochainePeriodeNonSoumise?.periode_id || ''}">Encoder pour ${prochainePeriodeNonSoumise?.libelle || 'la prochaine période'}</a>`
+        }
       </div>
-    `).join('');
+    `;
+    }).join('');
   }
 
   async function chargerEvenements() {

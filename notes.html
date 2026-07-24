@@ -143,7 +143,7 @@
     </div>
 
     <div class="bandeau-verrouille" id="bandeau-verrouille">
-      🔒 Ces notes ont été validées et sont verrouillées.
+      🔒 Ces notes ont été validées et sont verrouillées. Seul le Directeur/Préfet peut les déverrouiller.
     </div>
 
     <div class="conteneur-tableau">
@@ -260,12 +260,14 @@
     // Pré-sélection depuis l'URL (ex: lien "Encoder les notes" depuis l'espace professeur)
     const classeIdUrl = parametresUrl.get('classeId');
     const coursIdUrl = parametresUrl.get('coursId');
+    const periodeIdUrl = parametresUrl.get('periodeId');
     if (classeIdUrl) {
       document.getElementById('select-classe').value = classeIdUrl;
       if (estProfesseurSeul) remplirCoursSelonClasse();
       else await remplirCoursDeLaClasseSelectionnee();
     }
     if (coursIdUrl) document.getElementById('select-cours').value = coursIdUrl;
+    if (periodeIdUrl) document.getElementById('select-periode').value = periodeIdUrl;
 
     // Filtre automatique : dès que les 3 sélecteurs ont une valeur, la grille se charge seule
     ['select-classe', 'select-cours', 'select-periode'].forEach((idSelect) => {
@@ -362,6 +364,7 @@
       document.getElementById('bouton-fiche-cotes').style.display = 'none';
       document.getElementById('bouton-valider-notes').style.display = 'none';
     } else {
+      document.getElementById('bouton-enregistrer-notes').style.display = 'inline-block';
       document.getElementById('bouton-fiche-cotes').style.display = 'inline-block';
       document.getElementById('bouton-valider-notes').style.display = 'inline-block';
       mettreAJourBoutonEnregistrer();

@@ -146,9 +146,25 @@
       🔒 Ces notes ont été validées et sont verrouillées. Seul le Directeur/Préfet peut les déverrouiller.
     </div>
 
+    <div id="section-travaux" style="display:none; background:var(--craie-2); border:1px solid var(--bordure); border-radius:10px; padding:16px 18px; margin-bottom:18px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; cursor:pointer;" id="entete-travaux">
+        <strong style="font-size:0.9rem;">Travaux (interros/devoirs) pour ce cours et cette période</strong>
+        <span id="fleche-travaux" style="font-size:0.8rem; color:var(--texte-att);">▾ afficher</span>
+      </div>
+      <div id="contenu-travaux" style="display:none;">
+        <div id="liste-travaux" style="margin-bottom:12px;"></div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end;">
+          <div><label style="display:block; font-size:0.75rem; color:var(--texte-att); margin-bottom:4px;">Nom</label><input type="text" id="champ-travail-nom" placeholder="ex. Interrogation 1" style="padding:7px 10px; border:1.5px solid var(--bordure); border-radius:6px; font-size:0.85rem;" /></div>
+          <div><label style="display:block; font-size:0.75rem; color:var(--texte-att); margin-bottom:4px;">Maximum</label><input type="number" id="champ-travail-max" placeholder="10" style="width:80px; padding:7px 10px; border:1.5px solid var(--bordure); border-radius:6px; font-size:0.85rem;" /></div>
+          <button class="bouton bouton-secondaire bouton-petit" id="bouton-ajouter-travail">+ Ajouter ce travail</button>
+        </div>
+        <p id="somme-travaux-info" style="font-size:0.8rem; color:var(--texte-att); margin:10px 0 0 0;"></p>
+      </div>
+    </div>
+
     <div class="conteneur-tableau">
       <table>
-        <thead><tr><th>Matricule</th><th>Élève</th><th>Note (sur <span id="max-affiche">—</span>)</th></tr></thead>
+        <thead id="entete-grille"><tr><th>Matricule</th><th>Élève</th><th>Note (sur <span id="max-affiche">—</span>)</th></tr></thead>
         <tbody id="corps-grille"><tr><td colspan="3" class="etat-vide-tableau">Choisis une classe, un cours et une période — la grille s'affiche automatiquement.</td></tr></tbody>
       </table>
     </div>
@@ -307,12 +323,29 @@
   let maximumActuel = null;
   let classeCoursVerrouille = false;
 
+  let travauxActuels = [];
+
   async function chargerGrille() {
     const classeId = document.getElementById('select-classe').value;
     const coursId = document.getElementById('select-cours').value;
     const periodeId = document.getElementById('select-periode').value;
 
     if (!classeId || !coursId || !periodeId) { afficherMessage('Choisis une classe, un cours et une période.', 'erreur'); return; }
+
+    document.getElementById('section-travaux').style.display = 'block';
+    await chargerListeTravaux();
+
+    if (travauxActuels.length > 0) {
+      await chargerGrilleTravaux();
+    } else {
+      await chargerGrilleSimple();
+    }
+  }
+
+  async function chargerGrilleSimple() {
+    const classeId = document.getElementById('select-classe').value;
+    const coursId = document.getElementById('select-cours').value;
+    const periodeId = document.getElementById('select-periode').value;
 
     const r = await appelApi(`/notes/grille?classeId=${classeId}&coursId=${coursId}&periodeId=${periodeId}`);
     if (!r) return;
@@ -326,7 +359,7 @@
     }
 
     maximumActuel = donnees.maximum;
-    document.getElementById('max-affiche').textContent = donnees.maximum;
+    document.getElementById('entete-grille').innerHTML = `<tr><th>Matricule</th><th>Élève</th><th>Note (sur <span id="max-affiche">${donnees.maximum}</span>)</th></tr>`;
 
     classeCoursVerrouille = donnees.eleves.length > 0 && donnees.eleves.every(e => e.points_obtenus === null || e.valide);
     const auMoinsUneNoteVerrouillee = donnees.eleves.some(e => e.valide);
@@ -377,32 +410,186 @@
     bouton.textContent = modeEdition ? 'Enregistrer les notes' : 'Modifier les notes';
   }
 
+  // ---------- Travaux multiples (interrogations/devoirs) ----------
+  document.getElementById('entete-travaux').addEventListener('click', () => {
+    const contenu = document.getElementById('contenu-travaux');
+    const ouvert = contenu.style.display === 'block';
+    contenu.style.display = ouvert ? 'none' : 'block';
+    document.getElementById('fleche-travaux').textContent = ouvert ? '▾ afficher' : '▴ masquer';
+  });
 
-  document.getElementById('bouton-enregistrer-notes').addEventListener('click', async () => {
-    if (!modeEdition) {
-      // "Modifier" : on rouvre simplement les champs, sans appel réseau.
-      modeEdition = true;
-      document.querySelectorAll('#corps-grille .champ-note').forEach(input => input.disabled = false);
-      mettreAJourBoutonEnregistrer();
-      return;
-    }
+  async function chargerListeTravaux() {
+    const classeCoursId = await obtenirClasseCoursIdCourant();
+    const periodeId = document.getElementById('select-periode').value;
+    if (!classeCoursId) { travauxActuels = []; return; }
 
+    const r = await appelApi(`/travaux?classeCoursId=${classeCoursId}&periodeId=${periodeId}`);
+    if (!r || !r.ok) { travauxActuels = []; return; }
+    const d = await r.json();
+    travauxActuels = d.travaux;
+
+    document.getElementById('liste-travaux').innerHTML = travauxActuels.length === 0
+      ? '<p style="font-size:0.85rem; color:var(--texte-att); margin:0;">Aucun travail créé — la note reste une saisie simple sur le maximum du cours.</p>'
+      : travauxActuels.map(t => `
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--bordure); font-size:0.85rem;">
+            <span>${t.nom} — sur ${t.maximum_points}</span>
+            <button class="lien-action" data-id="${t.id}" style="color:var(--rouge); background:none; border:none; cursor:pointer;">Supprimer</button>
+          </div>
+        `).join('');
+
+    document.getElementById('somme-travaux-info').textContent = travauxActuels.length > 0
+      ? `Somme des travaux : ${d.somme_maximums} / maximum du cours : ${d.maximum_cours}${d.somme_maximums !== d.maximum_cours ? ' ⚠️ ne correspond pas encore exactement' : ' ✓'}`
+      : '';
+
+    document.querySelectorAll('#liste-travaux button[data-id]').forEach(b => b.addEventListener('click', async () => {
+      if (!confirm('Supprimer ce travail ? Les points déjà saisis pour lui seront perdus.')) return;
+      const r = await appelApi(`/travaux/${b.dataset.id}`, { method: 'DELETE' });
+      if (r && r.ok) { afficherMessage('Travail supprimé.', 'succes'); chargerGrille(); }
+    }));
+  }
+
+  async function obtenirClasseCoursIdCourant() {
+    // On récupère l'id classe_cours via la grille simple (elle le résout déjà côté serveur) ;
+    // le plus simple ici est de passer par /classes/:id/cours pour retrouver l'association.
+    const classeId = document.getElementById('select-classe').value;
+    const coursId = document.getElementById('select-cours').value;
+    if (!classeId || !coursId) return null;
+    const r = await appelApi(`/classes/${classeId}/cours`);
+    if (!r || !r.ok) return null;
+    const liste = await r.json();
+    const trouve = liste.find(c => c.cours_id === coursId);
+    return trouve ? trouve.classe_cours_id : null;
+  }
+
+  document.getElementById('bouton-ajouter-travail').addEventListener('click', async () => {
+    const classeCoursId = await obtenirClasseCoursIdCourant();
+    const periodeId = document.getElementById('select-periode').value;
+    const nom = document.getElementById('champ-travail-nom').value.trim();
+    const maximum_points = parseFloat(document.getElementById('champ-travail-max').value);
+
+    if (!classeCoursId || !periodeId) { afficherMessage("Choisis d'abord une classe, un cours et une période.", 'erreur'); return; }
+    if (!nom || !maximum_points) { afficherMessage('Le nom et le maximum sont requis.', 'erreur'); return; }
+
+    const r = await appelApi('/travaux', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ classe_cours_id: classeCoursId, periode_id: periodeId, nom, maximum_points })
+    });
+    if (!r) return;
+    const d = await r.json();
+    if (!r.ok) { afficherMessage(d.message || "Erreur lors de l'ajout du travail.", 'erreur'); return; }
+
+    document.getElementById('champ-travail-nom').value = '';
+    document.getElementById('champ-travail-max').value = '';
+    afficherMessage('Travail ajouté.', 'succes');
+    chargerGrille();
+  });
+
+  async function chargerGrilleTravaux() {
     const classeId = document.getElementById('select-classe').value;
     const coursId = document.getElementById('select-cours').value;
     const periodeId = document.getElementById('select-periode').value;
 
-    const notes = Array.from(document.querySelectorAll('#corps-grille tr')).map(ligne => ({
-      eleve_id: ligne.dataset.eleveId,
-      points_obtenus: ligne.querySelector('.champ-note').value === '' ? null : parseFloat(ligne.querySelector('.champ-note').value)
-    }));
+    const r = await appelApi(`/notes/grille-travaux?classeId=${classeId}&coursId=${coursId}&periodeId=${periodeId}`);
+    if (!r) return;
+    const donnees = await r.json();
+    if (!r.ok) { afficherMessage(donnees.message || 'Erreur lors du chargement.', 'erreur'); return; }
+
+    maximumActuel = donnees.maximum;
+    const travaux = donnees.travaux;
+
+    document.getElementById('entete-grille').innerHTML = `
+      <tr><th>Matricule</th><th>Élève</th>${travaux.map(t => `<th>${t.nom}<br/><span style="font-weight:400; color:var(--texte-att);">/ ${t.maximum_points}</span></th>`).join('')}<th>Total (sur ${donnees.maximum})</th></tr>
+    `;
+
+    const auMoinsUneNoteVerrouillee = donnees.eleves.some(e => e.valide);
+    document.getElementById('bandeau-verrouille').classList.toggle('visible', auMoinsUneNoteVerrouillee);
+    const toutEstFerme = auMoinsUneNoteVerrouillee && !estDirecteurOuPrefet;
+    const desNotesExistentDeja = donnees.eleves.some(e => e.total !== null);
+    modeEdition = !desNotesExistentDeja || auMoinsUneNoteVerrouillee;
+
+    const corps = document.getElementById('corps-grille');
+    if (donnees.eleves.length === 0) {
+      corps.innerHTML = `<tr><td colspan="${travaux.length + 3}" class="etat-vide-tableau">Aucun élève actif dans cette classe.</td></tr>`;
+      document.getElementById('barre-actions').style.display = 'none';
+      return;
+    }
+
+    const disabled = (!modeEdition || auMoinsUneNoteVerrouillee) ? 'disabled' : '';
+    corps.innerHTML = donnees.eleves.map(e => `
+      <tr data-eleve-id="${e.eleve_id}">
+        <td class="matricule-cell">${e.matricule}</td>
+        <td>${e.nom} ${e.postnom || ''} ${e.prenom || ''}</td>
+        ${travaux.map(t => `<td><input type="number" class="champ-travail" data-travail-id="${t.id}" min="0" max="${t.maximum_points}" step="0.5" value="${e.points_travaux[t.id] ?? ''}" ${disabled} /></td>`).join('')}
+        <td style="font-weight:600;">${e.total ?? '—'}</td>
+      </tr>
+    `).join('');
+
+    document.getElementById('barre-actions').style.display = 'flex';
+
+    if (toutEstFerme) {
+      document.getElementById('bouton-enregistrer-notes').style.display = 'none';
+      document.getElementById('bouton-fiche-cotes').style.display = 'none';
+      document.getElementById('bouton-valider-notes').style.display = 'none';
+    } else {
+      document.getElementById('bouton-enregistrer-notes').style.display = 'inline-block';
+      document.getElementById('bouton-fiche-cotes').style.display = 'inline-block';
+      document.getElementById('bouton-valider-notes').style.display = 'inline-block';
+      mettreAJourBoutonEnregistrer();
+    }
+  }
+
+  async function enregistrerGrilleTravauxActuelle() {
+    const classeId = document.getElementById('select-classe').value;
+    const coursId = document.getElementById('select-cours').value;
+    const periodeId = document.getElementById('select-periode').value;
+
+    const notes = Array.from(document.querySelectorAll('#corps-grille tr')).map(ligne => {
+      const points_par_travail = {};
+      ligne.querySelectorAll('.champ-travail').forEach(input => {
+        points_par_travail[input.dataset.travailId] = input.value === '' ? null : parseFloat(input.value);
+      });
+      return { eleve_id: ligne.dataset.eleveId, points_par_travail };
+    });
+
+    const r = await appelApi('/notes/grille-travaux', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ classeId, coursId, periodeId, notes })
+    });
+    return r;
+  }
+
+
+  document.getElementById('bouton-enregistrer-notes').addEventListener('click', async () => {
+    const enModeTravaux = travauxActuels.length > 0;
+    const selecteurChamps = enModeTravaux ? '.champ-travail' : '.champ-note';
+
+    if (!modeEdition) {
+      // "Modifier" : on rouvre simplement les champs, sans appel réseau.
+      modeEdition = true;
+      document.querySelectorAll(`#corps-grille ${selecteurChamps}`).forEach(input => input.disabled = false);
+      mettreAJourBoutonEnregistrer();
+      return;
+    }
 
     const bouton = document.getElementById('bouton-enregistrer-notes');
     bouton.disabled = true; bouton.textContent = 'Enregistrement…';
 
-    const r = await appelApi('/notes/grille', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ classeId, coursId, periodeId, notes })
-    });
+    let r;
+    if (enModeTravaux) {
+      r = await enregistrerGrilleTravauxActuelle();
+    } else {
+      const classeId = document.getElementById('select-classe').value;
+      const coursId = document.getElementById('select-cours').value;
+      const periodeId = document.getElementById('select-periode').value;
+      const notes = Array.from(document.querySelectorAll('#corps-grille tr')).map(ligne => ({
+        eleve_id: ligne.dataset.eleveId,
+        points_obtenus: ligne.querySelector('.champ-note').value === '' ? null : parseFloat(ligne.querySelector('.champ-note').value)
+      }));
+      r = await appelApi('/notes/grille', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ classeId, coursId, periodeId, notes })
+      });
+    }
 
     bouton.disabled = false;
 
@@ -411,10 +598,14 @@
     if (!r.ok) { afficherMessage(donnees.message || "Erreur lors de l'enregistrement.", 'erreur'); mettreAJourBoutonEnregistrer(); return; }
 
     afficherMessage('Notes enregistrées.', 'succes');
-    // "Enregistrer" a réussi : on ferme les champs et on bascule sur "Modifier".
-    modeEdition = false;
-    document.querySelectorAll('#corps-grille .champ-note').forEach(input => input.disabled = true);
-    mettreAJourBoutonEnregistrer();
+    if (enModeTravaux) {
+      // On recharge entièrement pour afficher le total recalculé automatiquement.
+      chargerGrilleTravaux();
+    } else {
+      modeEdition = false;
+      document.querySelectorAll('#corps-grille .champ-note').forEach(input => input.disabled = true);
+      mettreAJourBoutonEnregistrer();
+    }
   });
 
   document.getElementById('bouton-valider-notes')?.addEventListener('click', async () => {

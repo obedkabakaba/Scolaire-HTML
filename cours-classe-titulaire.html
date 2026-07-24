@@ -116,6 +116,14 @@
         <tbody id="corps-tableau"><tr><td colspan="3" class="etat-vide-tableau">Choisis un cours et une période.</td></tr></tbody>
       </table>
     </div>
+
+    <div style="margin-top:28px; background:var(--craie-2); border:1px solid var(--bordure); border-radius:10px; padding:20px;">
+      <h3 style="font-family:'Fraunces',serif; font-size:1.05rem; margin:0 0 14px 0;">État des périodes de la classe</h3>
+      <div id="etat-periodes-classe" style="display:flex; gap:10px; flex-wrap:wrap;"><span style="color:var(--texte-att); font-size:0.85rem;">Chargement…</span></div>
+      <p id="message-annee-clôturee" style="display:none; margin-top:14px; padding:12px 14px; background:rgba(76,122,90,0.1); color:var(--vert-ok); border-radius:8px; font-size:0.88rem;">
+        ✓ Toutes les périodes de l'année sont clôturées pour cette classe — plus rien à modifier.
+      </p>
+    </div>
   </main>
 </div>
 
@@ -208,6 +216,29 @@
     document.getElementById('select-periode').addEventListener('change', () => { chargerMoyenneGenerale(); chargerRecap(); });
     chargerMoyenneGenerale();
     chargerRecap();
+    chargerEtatPeriodes();
+  }
+
+  async function chargerEtatPeriodes() {
+    const conteneur = document.getElementById('etat-periodes-classe');
+    if (!classeId) return;
+    const r = await appelApi(`/classes/${classeId}/etat-periodes`);
+    if (!r || !r.ok) { conteneur.innerHTML = '<span style="color:var(--texte-att); font-size:0.85rem;">Impossible de charger.</span>'; return; }
+    const d = await r.json();
+
+    if (d.periodes.length === 0) {
+      conteneur.innerHTML = '<span style="color:var(--texte-att); font-size:0.85rem;">Aucune période créée pour cette année.</span>';
+      return;
+    }
+
+    conteneur.innerHTML = d.periodes.map(p => `
+      <span style="display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:20px; font-size:0.82rem;
+        background:${p.soumis ? 'rgba(76,122,90,0.12)' : 'rgba(107,114,105,0.1)'}; color:${p.soumis ? 'var(--vert-ok)' : 'var(--texte-att)'};">
+        ${p.soumis ? '✓' : '○'} ${p.libelle}
+      </span>
+    `).join('');
+
+    document.getElementById('message-annee-clôturee').style.display = d.toutes_soumises ? 'block' : 'none';
   }
 
   async function chargerMoyenneGenerale() {

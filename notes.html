@@ -159,7 +159,7 @@
         <button class="bouton bouton-secondaire" id="bouton-fiche-cotes">📄 Fiche des cotes</button>
       </div>
       <div style="display:flex; gap:10px;">
-        <button class="bouton bouton-secondaire" id="bouton-valider-notes">Valider (verrouiller)</button>
+        <button class="bouton bouton-secondaire" id="bouton-valider-notes">Soumettre (verrouiller)</button>
         <button class="bouton bouton-danger" id="bouton-devalider-notes">Déverrouiller</button>
       </div>
     </div>
@@ -216,10 +216,8 @@
   const { user } = obtenirTokens();
   const estDirecteurOuPrefet = (user?.roles || []).some(r => ['directeur', 'prefet'].includes(r));
   const estProfesseurSeul = !estDirecteurOuPrefet && (user?.roles || []).includes('professeur');
-  if (!estDirecteurOuPrefet) {
-    document.getElementById('bouton-valider-notes').style.display = 'none';
-    document.getElementById('bouton-devalider-notes').style.display = 'none';
-  }
+  document.getElementById('bouton-devalider-notes').style.display = estDirecteurOuPrefet ? 'inline-block' : 'none';
+  if (estDirecteurOuPrefet) document.getElementById('bouton-valider-notes').textContent = 'Valider (verrouiller)';
 
   const parametresUrl = new URLSearchParams(window.location.search);
   let mesCoursCache = [];
@@ -339,20 +337,53 @@
       return;
     }
 
+    // Une fois soumis (verrouillé), plus aucune commande n'est disponible pour
+    // le professeur — seuls Directeur/Préfet gardent la main (Déverrouiller).
+    const toutEstFerme = auMoinsUneNoteVerrouillee && !estDirecteurOuPrefet;
+    // Sinon, tant que ce n'est pas soumis : la grille bascule "modifiable" / "enregistrée"
+    // (des notes existent déjà pour au moins un élève = on repart en mode "fermé/Modifier").
+    const desNotesExistentDeja = donnees.eleves.some(e => e.points_obtenus !== null);
+    modeEdition = !desNotesExistentDeja || auMoinsUneNoteVerrouillee; // vierge = déjà en mode édition
+
     corps.innerHTML = donnees.eleves.map(e => `
       <tr data-eleve-id="${e.eleve_id}">
         <td class="matricule-cell">${e.matricule}</td>
         <td>${e.nom} ${e.postnom || ''} ${e.prenom || ''}</td>
         <td><input type="number" class="champ-note" min="0" max="${donnees.maximum}" step="0.5"
-              value="${e.points_obtenus ?? ''}" ${auMoinsUneNoteVerrouillee && !estDirecteurOuPrefet ? 'disabled' : ''} /></td>
+              value="${e.points_obtenus ?? ''}" ${(!modeEdition || auMoinsUneNoteVerrouillee) ? 'disabled' : ''} /></td>
       </tr>
     `).join('');
 
     document.getElementById('barre-actions').style.display = 'flex';
+
+    if (toutEstFerme) {
+      // Soumis : plus rien n'est disponible, tout disparaît sauf les sélecteurs.
+      document.getElementById('bouton-enregistrer-notes').style.display = 'none';
+      document.getElementById('bouton-fiche-cotes').style.display = 'none';
+      document.getElementById('bouton-valider-notes').style.display = 'none';
+    } else {
+      document.getElementById('bouton-fiche-cotes').style.display = 'inline-block';
+      document.getElementById('bouton-valider-notes').style.display = 'inline-block';
+      mettreAJourBoutonEnregistrer();
+    }
+  }
+
+  let modeEdition = true;
+  function mettreAJourBoutonEnregistrer() {
+    const bouton = document.getElementById('bouton-enregistrer-notes');
+    bouton.textContent = modeEdition ? 'Enregistrer les notes' : 'Modifier les notes';
   }
 
 
   document.getElementById('bouton-enregistrer-notes').addEventListener('click', async () => {
+    if (!modeEdition) {
+      // "Modifier" : on rouvre simplement les champs, sans appel réseau.
+      modeEdition = true;
+      document.querySelectorAll('#corps-grille .champ-note').forEach(input => input.disabled = false);
+      mettreAJourBoutonEnregistrer();
+      return;
+    }
+
     const classeId = document.getElementById('select-classe').value;
     const coursId = document.getElementById('select-cours').value;
     const periodeId = document.getElementById('select-periode').value;
@@ -370,16 +401,24 @@
       body: JSON.stringify({ classeId, coursId, periodeId, notes })
     });
 
-    bouton.disabled = false; bouton.textContent = 'Enregistrer les notes';
+    bouton.disabled = false;
 
     if (!r) return;
     const donnees = await r.json();
-    if (!r.ok) { afficherMessage(donnees.message || "Erreur lors de l'enregistrement.", 'erreur'); return; }
+    if (!r.ok) { afficherMessage(donnees.message || "Erreur lors de l'enregistrement.", 'erreur'); mettreAJourBoutonEnregistrer(); return; }
+
     afficherMessage('Notes enregistrées.', 'succes');
+    // "Enregistrer" a réussi : on ferme les champs et on bascule sur "Modifier".
+    modeEdition = false;
+    document.querySelectorAll('#corps-grille .champ-note').forEach(input => input.disabled = true);
+    mettreAJourBoutonEnregistrer();
   });
 
   document.getElementById('bouton-valider-notes')?.addEventListener('click', async () => {
-    if (!confirm('Valider ces notes ? Elles seront verrouillées pour le professeur.')) return;
+    const message = estDirecteurOuPrefet
+      ? 'Valider ces notes ? Elles seront verrouillées.'
+      : 'Soumettre ces notes ? Une fois soumises, tu ne pourras plus les modifier toi-même — seul le Directeur/Préfet pourra les déverrouiller.';
+    if (!confirm(message)) return;
     const classeId = document.getElementById('select-classe').value;
     const coursId = document.getElementById('select-cours').value;
     const periodeId = document.getElementById('select-periode').value;
@@ -391,7 +430,7 @@
     if (!r) return;
     const donnees = await r.json();
     if (!r.ok) { afficherMessage(donnees.message || 'Erreur lors de la validation.', 'erreur'); return; }
-    afficherMessage('Notes validées et classement recalculé.', 'succes');
+    afficherMessage('Notes soumises et verrouillées.', 'succes');
     chargerGrille();
   });
 
@@ -419,7 +458,12 @@
     if (!classeId || !coursId || !periodeId) return;
 
     const r = await appelApi(`/notes/fiche-cotes?classeId=${classeId}&coursId=${coursId}&periodeId=${periodeId}`);
-    if (!r || !r.ok) { afficherMessage('Erreur lors de la génération de la fiche.', 'erreur'); return; }
+    if (!r || !r.ok) {
+      let detail = '';
+      try { const d = await r.json(); detail = d.message ? ` (${d.message})` : ''; } catch (e) {}
+      afficherMessage(`Erreur lors de la génération de la fiche${detail}.`, 'erreur');
+      return;
+    }
     const blob = await r.blob();
     const url = window.URL.createObjectURL(blob);
     window.open(url, '_blank');

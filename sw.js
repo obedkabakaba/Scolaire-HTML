@@ -13,7 +13,7 @@
    ils continueraient d'utiliser l'ancienne version des pages.
    ========================================================================== */
 
-const VERSION = 'ardoise-v4';
+const VERSION = 'ardoise-v5';
 const CACHE_COQUILLE = `${VERSION}-coquille`;
 const CACHE_DONNEES = `${VERSION}-donnees`;
 
@@ -42,6 +42,7 @@ const COQUILLE = [
   'generateur-modeles.html',
   'mon-profil.html',
   'site-public.html',
+  'discipline.html',
   'super-admin.html',
   'theme.css',
   'ui.css',

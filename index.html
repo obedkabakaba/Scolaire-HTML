@@ -22,7 +22,7 @@
 
   /* Barre supérieure */
   .entete-site {
-    position: sticky; top: 0; z-index: 20; background: var(--nav-texte-fort); backdrop-filter: blur(6px);
+    position: sticky; top: 0; z-index: 20; background: rgba(246,242,231,0.92); backdrop-filter: blur(6px);
     border-bottom: 1px solid var(--bordure);
   }
   .entete-site .conteneur { display: flex; align-items: center; justify-content: space-between; height: 68px; }
@@ -67,7 +67,7 @@
   .bandeau-stats .conteneur { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; text-align: center; }
   @media (max-width: 700px) { .bandeau-stats .conteneur { grid-template-columns: repeat(2, 1fr); } }
   .bandeau-stats .chiffre { font-family: var(--police-titre); font-weight: 700; font-size: 1.9rem; color: var(--ocre-clair); }
-  .bandeau-stats .libelle { font-size: 0.82rem; color: var(--nav-texte-fort); margin-top: 4px; }
+  .bandeau-stats .libelle { font-size: 0.82rem; color: rgba(246,242,231,0.65); margin-top: 4px; }
 
   /* Fonctionnalités */
   .section { padding: 76px 0; }
@@ -105,7 +105,7 @@
   /* CTA final */
   .cta-final { background: var(--ardoise); color: var(--craie); padding: 70px 0; text-align: center; }
   .cta-final h2 { font-family: var(--police-titre); font-weight: 600; font-size: 2rem; margin-bottom: 14px; }
-  .cta-final p { color: var(--nav-texte-fort); margin-bottom: 28px; }
+  .cta-final p { color: rgba(246,242,231,0.7); margin-bottom: 28px; }
 
   /* Pied de page */
   .pied-page { padding: 40px 0; border-top: 1px solid var(--bordure); }
@@ -116,8 +116,10 @@
 <script>
   /* Applique le thème AVANT le premier affichage, pour éviter tout clignotement.
      La liste doit rester alignée sur theme.css / theme.js. */
-  /* Page publique : identite de marque figee, volontairement non thematisee. */
-  document.documentElement.setAttribute('data-theme','ardoise');
+  /* Page publique : palette definie par cette page seule.
+     La valeur 'public' ne correspond a aucun bloc de theme.css : seuls les
+     jetons communs (polices, rayons) s'appliquent, jamais les couleurs. */
+  document.documentElement.setAttribute('data-theme','public');
 </script>
 <link rel="stylesheet" href="theme.css" />
 

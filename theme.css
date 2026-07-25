@@ -8,6 +8,12 @@
 
    AJOUTER UN NOUVEAU THÈME = ajouter un bloc ici, et une entrée dans la
    liste THEMES de theme.js. Aucune autre page n'est à modifier.
+
+   VALEUR PARTICULIÈRE data-theme="public" : utilisée par index.html et
+   connexion.html. Elle ne correspond à AUCUN bloc de couleurs ci-dessous,
+   volontairement — ces deux pages définissent leur propre palette et ne
+   doivent jamais être repeintes par un thème utilisateur. Seuls les jetons
+   communs (polices, rayons) leur sont appliqués.
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
@@ -237,12 +243,13 @@ html[data-theme="kivu"] h1 {
 .bouton { transition: background var(--transition-base), border-color var(--transition-base), transform var(--transition-base); }
 .bouton:active { transform: scale(0.985); }
 
-/* Apparition douce du contenu principal au chargement de chaque page. */
+/* Apparition douce du contenu principal au chargement de chaque page.
+   Exclut les pages publiques, qui ont leur propre mise en scene. */
 @keyframes ardoise-apparition {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: none; }
 }
-.contenu { animation: ardoise-apparition 0.3s ease both; }
+html:not([data-theme="public"]) .contenu { animation: ardoise-apparition 0.3s ease both; }
 
 /* Aucun masquage de secours ici : le thème est posé par un script synchrone
    dans le <head> de chaque page, donc avant le premier affichage. Masquer le

@@ -64,6 +64,15 @@
       var(--ligne) 47px, var(--ligne) 48px
     );
     pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Les lignes du tableau sont un calque absolu : sans cette regle, elles se
+     dessinent PAR-DESSUS le logo et le slogan, qui ne sont pas positionnes.
+     On remonte donc tout le contenu du panneau au-dessus du calque. */
+  .panneau-marque > * {
+    position: relative;
+    z-index: 1;
   }
 
   @media (max-width: 860px) {
@@ -236,8 +245,10 @@
 <script>
   /* Applique le thème AVANT le premier affichage, pour éviter tout clignotement.
      La liste doit rester alignée sur theme.css / theme.js. */
-  /* Page publique : identite de marque figee, volontairement non thematisee. */
-  document.documentElement.setAttribute('data-theme','ardoise');
+  /* Page publique : palette definie par cette page seule.
+     La valeur 'public' ne correspond a aucun bloc de theme.css : seuls les
+     jetons communs (polices, rayons) s'appliquent, jamais les couleurs. */
+  document.documentElement.setAttribute('data-theme','public');
 </script>
 <link rel="stylesheet" href="theme.css" />
 

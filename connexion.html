@@ -257,6 +257,14 @@
   <div class="panneau-form">
     <div class="carte">
 
+      <!-- Affiché uniquement au retour d'un utilisateur ayant coché "Se souvenir de moi" :
+           on rétablit sa session en arrière-plan au lieu de lui redemander son mot de passe. -->
+      <div id="bandeau-reconnexion" style="display:none; text-align:center; padding:40px 10px;">
+        <div style="display:inline-block; width:22px; height:22px; border:2.5px solid var(--bordure, #E4DFCF); border-top-color:var(--ocre, #C98A3E); border-radius:50%; animation:tourner-reconnexion 0.65s linear infinite;"></div>
+        <p style="margin-top:16px; color:var(--texte-att, #6B7269); font-size:0.92rem;">Reconnexion en cours…</p>
+      </div>
+      <style>@keyframes tourner-reconnexion { to { transform: rotate(360deg); } }</style>
+
       <form id="formulaire-connexion" novalidate>
         <h2>Connexion</h2>
         <p class="sous-titre">Entrez les identifiants fournis par votre école.</p>
@@ -291,11 +299,11 @@
 
       <div id="panneau-mdp-oublie" style="display:none;">
         <h2>Mot de passe oublié</h2>
-        <p class="sous-titre">Entre ton email (et le code école si tu n'es pas Super Admin), on t'enverra un lien pour en choisir un nouveau.</p>
+        <p class="sous-titre">Entrez votre email (et le code école si vous n'êtes pas Super Admin) : vous recevrez un lien pour en choisir un nouveau.</p>
         <div class="message-erreur" id="zone-erreur-mdp-oublie" role="alert"></div>
         <div class="message-succes visible" id="zone-succes-mdp-oublie" style="display:none;">
           <div class="coche">✓</div>
-          <p>Si un compte correspond, un email vient d'être envoyé avec un lien de réinitialisation (vérifie aussi tes spams).</p>
+          <p>Si un compte correspond, un email vient d'être envoyé avec un lien de réinitialisation (vérifiez aussi vos spams).</p>
         </div>
         <form id="formulaire-mdp-oublie">
           <div class="champ">
@@ -332,6 +340,59 @@
   const boutonConnexion = document.getElementById('bouton-connexion');
   const boutonOeil = document.getElementById('bouton-oeil');
   const champMotDePasse = document.getElementById('mot_de_passe');
+
+  /** Page d'accueil correspondant au rôle principal de l'utilisateur. */
+  function pageAtterrissagePourRoles(roles = []) {
+    if (roles.includes('directeur') || roles.includes('prefet')) return 'dashboard-directeur.html';
+    if (roles.includes('secretaire')) return 'espace-secretaire.html';
+    if (roles.includes('comptable')) return 'frais-scolaires.html';
+    if (roles.includes('professeur')) return 'espace-professeur.html';
+    if (roles.includes('titulaire')) return 'espace-titulaire.html';
+    return null;
+  }
+
+  // ---------- Reconnexion automatique ("Se souvenir de moi") ----------
+  // L'access token ne vit que 15 minutes : au retour de l'utilisateur il est
+  // toujours périmé. On repart donc du refresh token (valable 30 jours) pour
+  // obtenir un nouvel access token, puis on redirige directement.
+  // Sans ceci, la case "Se souvenir de moi" enregistrait bien la session…
+  // que plus personne ne relisait, et le mot de passe était redemandé.
+  (async function reconnexionAutomatique() {
+    const refreshTokenPersistant = localStorage.getItem('ardoise_refresh_token');
+    if (!refreshTokenPersistant) return; // pas de "se souvenir de moi" : formulaire normal
+
+    let utilisateur = null;
+    try { utilisateur = JSON.parse(localStorage.getItem('ardoise_user') || 'null'); } catch (e) {}
+    const destination = pageAtterrissagePourRoles(utilisateur?.roles || []);
+    if (!destination) return; // Super Admin ou rôle sans page dédiée : formulaire normal
+
+    // On masque le formulaire pendant la tentative pour éviter l'effet de clignotement
+    document.getElementById('bandeau-reconnexion').style.display = 'block';
+    formulaire.style.display = 'none';
+
+    function abandonner() {
+      ['ardoise_access_token', 'ardoise_refresh_token', 'ardoise_user'].forEach((cle) => localStorage.removeItem(cle));
+      document.getElementById('bandeau-reconnexion').style.display = 'none';
+      formulaire.style.display = '';
+    }
+
+    try {
+      const reponse = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: refreshTokenPersistant })
+      });
+      if (!reponse.ok) { abandonner(); return; } // session expirée ou révoquée
+      const donnees = await reponse.json();
+      localStorage.setItem('ardoise_access_token', donnees.access_token);
+      window.location.href = destination;
+    } catch (e) {
+      // Backend injoignable (Render en veille, coupure réseau) : on laisse la
+      // session en place et on affiche simplement le formulaire.
+      document.getElementById('bandeau-reconnexion').style.display = 'none';
+      formulaire.style.display = '';
+    }
+  })();
 
   boutonOeil.addEventListener('click', () => {
     const visible = champMotDePasse.type === 'text';
@@ -373,7 +434,7 @@
       const donnees = await reponse.json();
 
       if (!reponse.ok) {
-        afficherErreur(donnees.message || "Identifiants incorrects. Vérifie le code école, l'email et le mot de passe.");
+        afficherErreur(donnees.message || "Identifiants incorrects. Vérifiez le code école, l'email et le mot de passe.");
         boutonConnexion.disabled = false;
         boutonConnexion.textContent = 'Se connecter';
         return;
@@ -396,13 +457,7 @@
 
       const roles = donnees.user?.roles || [];
 
-      const pageAtterrissage =
-        (roles.includes('directeur') || roles.includes('prefet')) ? 'dashboard-directeur.html' :
-        roles.includes('secretaire') ? 'espace-secretaire.html' :
-        roles.includes('comptable') ? 'frais-scolaires.html' :
-        roles.includes('professeur') ? 'espace-professeur.html' :
-        roles.includes('titulaire') ? 'espace-titulaire.html' :
-        null;
+      const pageAtterrissage = pageAtterrissagePourRoles(roles);
 
       if (pageAtterrissage) {
         window.location.href = pageAtterrissage;
@@ -412,7 +467,7 @@
       formulaire.style.display = 'none';
       zoneSucces.classList.add('visible');
       document.getElementById('succes-detail').textContent = roles.includes('super_admin')
-        ? 'Bienvenue, Super Administrateur. Utilise le panneau Super Admin dédié pour gérer les écoles.'
+        ? 'Bienvenue, Super Administrateur. Utilisez le panneau Super Admin dédié pour gérer les écoles.'
         : 'Bienvenue. Aucun rôle reconnu sur ce compte — contacte ton administrateur.';
 
     } catch (err) {

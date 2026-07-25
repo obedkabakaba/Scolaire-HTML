@@ -13,7 +13,7 @@
    ils continueraient d'utiliser l'ancienne version des pages.
    ========================================================================== */
 
-const VERSION = 'ardoise-v7';
+const VERSION = 'ardoise-v8';
 const CACHE_COQUILLE = `${VERSION}-coquille`;
 const CACHE_DONNEES = `${VERSION}-donnees`;
 
@@ -45,6 +45,7 @@ const COQUILLE = [
   'discipline.html',
   'cours.html',
   'archives.html',
+  'rapports.html',
   'super-admin.html',
   'theme.css',
   'ui.css',

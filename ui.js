@@ -62,6 +62,8 @@
       '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M10 9v11"/>',
     'calendrier.html':
       '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4"/><path d="M16 3v4"/><rect x="7" y="13" width="4" height="4" rx="1"/>',
+    'rapports.html':
+      '<path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M22 20H2"/>',
     'archives.html':
       '<path d="M3 7h5l2 2.5h11V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 7V5a1 1 0 0 1 1-1h4l2 2.5"/><path d="M9 14h6"/>',
     'journal.html':

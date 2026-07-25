@@ -103,7 +103,10 @@
       <div class="nom" style="font-size:1rem;">Ma signature</div>
       <div class="details">Utilisée automatiquement sur les bulletins de tes classes, à la place d'une case vide.</div>
       <img id="apercu-signature" src="" alt="Signature" style="display:none; width:80px; height:80px; object-fit:contain; border:1px solid var(--bordure); border-radius:8px; margin-bottom:10px;" />
-      <div><button type="button" class="bouton bouton-secondaire" id="bouton-changer-signature">Uploader ma signature (image ou PDF)</button></div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button type="button" class="bouton bouton-secondaire" id="bouton-changer-signature">Uploader ma signature (image ou PDF)</button>
+        <button type="button" class="bouton bouton-secondaire" id="bouton-supprimer-signature" style="display:none; color:var(--rouge); border-color:var(--rouge);">Supprimer ma signature</button>
+      </div>
       <input type="file" id="input-signature" accept="image/*,application/pdf" style="display:none;" />
     </div>
 
@@ -378,9 +381,25 @@
     const r = await appelApi('/uploads/documents?type=signature&mine=true');
     if (r?.ok) {
       const doc = await r.json();
-      if (doc) { const img = document.getElementById('apercu-signature'); img.src = doc.url; img.style.display = 'block'; }
+      if (doc) {
+        const img = document.getElementById('apercu-signature');
+        img.src = doc.url; img.style.display = 'block';
+        document.getElementById('bouton-supprimer-signature').style.display = 'inline-block';
+      } else {
+        document.getElementById('bouton-supprimer-signature').style.display = 'none';
+      }
     }
   }
+
+  document.getElementById('bouton-supprimer-signature').addEventListener('click', async () => {
+    if (!confirm('Supprimer ta signature ? Les bulletins utiliseront la signature générique de l\'école à la place, si elle existe.')) return;
+    const r = await appelApi('/uploads/document?type=signature&mine=true', { method: 'DELETE' });
+    if (r && r.ok) {
+      document.getElementById('apercu-signature').style.display = 'none';
+      document.getElementById('apercu-signature').src = '';
+      document.getElementById('bouton-supprimer-signature').style.display = 'none';
+    }
+  });
 
   // Multi-rôles : si ce titulaire est AUSSI professeur, on lui ajoute le lien
   // vers son espace professeur, pour qu'il puisse basculer entre les deux.

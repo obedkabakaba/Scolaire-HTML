@@ -135,6 +135,7 @@
         <p class="sous-titre">Résultats calculés, appréciations du titulaire, et génération du PDF.</p>
       </div>
       <button class="bouton bouton-principal" id="bouton-generer-pdf">📄 Générer les bulletins de la classe</button>
+      <button class="bouton bouton-secondaire" id="bouton-signer-tout" style="display:none;">✍️ Tout signer</button>
     </div>
 
     <div class="message-flash" id="message-flash"></div>
@@ -306,8 +307,12 @@
     const corps = document.getElementById('corps-tableau');
     if (eleves.length === 0) {
       corps.innerHTML = '<tr><td colspan="8" class="etat-vide-tableau">Aucun élève actif dans cette classe.</td></tr>';
+      document.getElementById('bouton-signer-tout').style.display = 'none';
       return;
     }
+
+    const ilResteAsSigner = eleves.some(e => !e.signe_at);
+    document.getElementById('bouton-signer-tout').style.display = ilResteAsSigner ? 'inline-block' : 'none';
 
     corps.innerHTML = eleves.map(e => `
       <tr data-eleve-id="${e.eleve_id}" style="cursor:pointer;">
@@ -454,6 +459,25 @@
 
 
   document.getElementById('bouton-generer-pdf').addEventListener('click', () => genererPdf());
+
+  document.getElementById('bouton-signer-tout').addEventListener('click', async () => {
+    const classeId = document.getElementById('select-classe').value;
+    const periodeId = document.getElementById('select-periode').value;
+    if (!confirm('Signer tous les bulletins pas encore signés de cette classe, pour cette période ?')) return;
+
+    const bouton = document.getElementById('bouton-signer-tout');
+    bouton.disabled = true; bouton.textContent = 'Signature en cours…';
+
+    const r = await appelApi(`/bulletins/classe/${classeId}/signer-tout`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ periodeId })
+    });
+
+    bouton.disabled = false; bouton.textContent = '✍️ Tout signer';
+
+    if (!r || !r.ok) { afficherMessage('Erreur lors de la signature en masse.', 'erreur'); return; }
+    afficherMessage('Bulletins signés.', 'succes');
+    chargerBulletins(); // le bouton disparaîtra tout seul si plus rien à signer
+  });
 
   async function genererPdf() {
     const classeId = document.getElementById('select-classe').value;

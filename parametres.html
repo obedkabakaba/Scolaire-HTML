@@ -194,7 +194,10 @@
         <div>
           <label style="display:block; font-size:0.76rem; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; color:var(--texte-att); margin-bottom:8px;">Signature du titulaire (générique)</label>
           <img id="apercu-signature" src="" alt="Signature" style="display:none; width:64px; height:64px; object-fit:contain; border:1px solid var(--bordure); border-radius:8px; margin-bottom:8px;" />
-          <div><button type="button" class="bouton bouton-secondaire bouton-petit" id="bouton-changer-signature">Choisir une image ou un PDF</button></div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button type="button" class="bouton bouton-secondaire bouton-petit" id="bouton-changer-signature">Choisir une image ou un PDF</button>
+            <button type="button" class="bouton bouton-secondaire bouton-petit" id="bouton-supprimer-signature" style="display:none; color:var(--rouge); border-color:var(--rouge);">Supprimer</button>
+          </div>
           <input type="file" id="input-signature" accept="image/*,application/pdf" />
         </div>
       </div>
@@ -706,9 +709,24 @@
     const rSignature = await appelApi('/uploads/documents?type=signature');
     if (rSignature?.ok) {
       const doc = await rSignature.json();
-      if (doc) { const img = document.getElementById('apercu-signature'); img.src = doc.url; img.style.display = 'block'; }
+      if (doc) {
+        const img = document.getElementById('apercu-signature');
+        img.src = doc.url; img.style.display = 'block';
+        document.getElementById('bouton-supprimer-signature').style.display = 'inline-block';
+      }
     }
   }
+
+  document.getElementById('bouton-supprimer-signature').addEventListener('click', async () => {
+    if (!confirm('Supprimer cette signature générique ?')) return;
+    const r = await appelApi('/uploads/document?type=signature', { method: 'DELETE' });
+    if (r && r.ok) {
+      document.getElementById('apercu-signature').style.display = 'none';
+      document.getElementById('apercu-signature').src = '';
+      document.getElementById('bouton-supprimer-signature').style.display = 'none';
+      afficherMessage('Signature supprimée.', 'succes');
+    }
+  });
 
   // ---------- Paramètres pédagogiques (droits des titulaires) ----------
   function basculerBlocsTitulaires() {

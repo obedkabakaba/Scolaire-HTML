@@ -159,6 +159,9 @@
   .banniere-abonnement.info { background: rgba(201, 138, 62, 0.1); color: var(--ocre); border: 1px solid rgba(201, 138, 62, 0.28); }
 
   /* ---------- Cartes statistiques ---------- */
+  .conteneur-etat-periodes { }
+  @media (max-width: 700px) { .conteneur-etat-periodes { overflow-x: auto; } }
+
   .grille-stats {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -379,7 +382,7 @@
 
     <div class="panneau" style="margin-bottom:24px;">
       <h3>État des périodes par classe (<span id="libelle-annee-active">—</span>)</h3>
-      <div id="conteneur-etat-periodes" style="overflow-x:auto;">
+      <div id="conteneur-etat-periodes" class="conteneur-etat-periodes">
         <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
           <thead id="entete-etat-periodes"></thead>
           <tbody id="corps-etat-periodes"></tbody>

@@ -79,6 +79,7 @@
   .voile { position: fixed; inset: 0; background: rgba(31,43,36,0.45); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 10; }
   .voile.visible { display: flex; }
   .modale { background: var(--craie-2); border-radius: 12px; padding: 28px; max-width: 460px; width: 100%; max-height: 90vh; overflow-y: auto; }
+  .modale.modale-large { max-width: 720px; }
   .modale h2 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.3rem; margin: 0 0 18px 0; }
   .champ { margin-bottom: 14px; }
   .champ label { display: block; font-size: 0.76rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--texte-att); margin-bottom: 6px; }
@@ -219,7 +220,7 @@
 
 <!-- Modale Classe -->
 <div class="voile" id="voile-modale-classe">
-  <div class="modale">
+  <div class="modale modale-large">
     <h2 id="titre-modale-classe">Ajouter une classe</h2>
     <form id="formulaire-classe">
       <input type="hidden" id="classe-id" />

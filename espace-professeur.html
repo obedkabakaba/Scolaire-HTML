@@ -99,7 +99,7 @@
   <main class="contenu">
     <div class="entete-page">
       <h1 id="titre-bienvenue">Mes cours</h1>
-      <p class="sous-titre">Tes classes et cours assignés. Clique sur un cours pour encoder les notes directement.</p>
+      <p class="sous-titre">Vos classes et cours assignés. Cliquez sur un cours pour encoder les notes directement.</p>
     </div>
 
     <div class="grille-cours" id="grille-cours">
@@ -169,24 +169,18 @@
     retourConnexion();
   });
 
-  let utilisateur = null;
-  try { utilisateur = JSON.parse(obtenirDuStockage('ardoise_user') || 'null'); } catch (e) {}
-  if (utilisateur?.roles?.includes('titulaire')) {
-    document.getElementById('titre-bienvenue').textContent = 'Mes cours';
-  }
-
   async function chargerMesCours() {
     const r = await appelApi('/mes-cours');
     const grille = document.getElementById('grille-cours');
     if (!r) return;
     if (!r.ok) {
-      grille.innerHTML = '<p class="etat-vide" style="grid-column: 1 / -1;">Impossible de charger tes cours.</p>';
+      grille.innerHTML = '<p class="etat-vide" style="grid-column: 1 / -1;">Impossible de charger vos cours.</p>';
       return;
     }
     const cours = await r.json();
 
     if (cours.length === 0) {
-      grille.innerHTML = '<p class="etat-vide" style="grid-column: 1 / -1;">Aucun cours ne t\'est encore assigné. Demande au Directeur ou au Préfet de t\'assigner un cours dans une classe (écran Classes).</p>';
+      grille.innerHTML = '<p class="etat-vide" style="grid-column: 1 / -1;">Aucun cours ne vous est encore assigné. Demandez au Directeur ou au Préfet de vous assigner un cours dans une classe (écran Classes).</p>';
       return;
     }
 

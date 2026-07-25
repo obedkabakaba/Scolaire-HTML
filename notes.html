@@ -132,7 +132,7 @@
   <main class="contenu">
     <div class="entete-page">
       <h1>Notes</h1>
-      <p class="sous-titre">Choisis une classe, un cours et une période pour afficher la grille de saisie.</p>
+      <p class="sous-titre">Choisissez une classe, un cours et une période pour afficher la grille de saisie.</p>
     </div>
 
     <div class="message-flash" id="message-flash"></div>
@@ -166,7 +166,7 @@
     <div class="conteneur-tableau">
       <table>
         <thead id="entete-grille"><tr><th>Matricule</th><th>Élève</th><th>Note (sur <span id="max-affiche">—</span>)</th></tr></thead>
-        <tbody id="corps-grille"><tr><td colspan="3" class="etat-vide-tableau">Choisis une classe, un cours et une période — la grille s'affiche automatiquement.</td></tr></tbody>
+        <tbody id="corps-grille"><tr><td colspan="3" class="etat-vide-tableau">Choisissez une classe, un cours et une période — la grille s'affiche automatiquement.</td></tr></tbody>
       </table>
     </div>
 
@@ -331,7 +331,7 @@
     const coursId = document.getElementById('select-cours').value;
     const periodeId = document.getElementById('select-periode').value;
 
-    if (!classeId || !coursId || !periodeId) { afficherMessage('Choisis une classe, un cours et une période.', 'erreur'); return; }
+    if (!classeId || !coursId || !periodeId) { afficherMessage('Choisissez une classe, un cours et une période.', 'erreur'); return; }
 
     document.getElementById('section-travaux').style.display = 'block';
     await chargerListeTravaux();
@@ -460,11 +460,12 @@
   }
 
   async function obtenirClasseCoursIdCourant() {
-    // On récupère l'id classe_cours via la grille simple (elle le résout déjà côté serveur) ;
-    // le plus simple ici est de passer par /classes/:id/cours pour retrouver l'association.
     const classeId = document.getElementById('select-classe').value;
     const coursId = document.getElementById('select-cours').value;
     if (!classeId || !coursId) return null;
+    // Pour un professeur, /mes-cours contient déjà l'association : pas besoin d'un appel réseau supplémentaire.
+    const depuisCache = mesCoursCache.find(c => c.classe_id === classeId && c.cours_id === coursId);
+    if (depuisCache) return depuisCache.classe_cours_id;
     const r = await appelApi(`/classes/${classeId}/cours`);
     if (!r || !r.ok) return null;
     const liste = await r.json();
@@ -478,7 +479,7 @@
     const nom = document.getElementById('champ-travail-nom').value.trim();
     const maximum_points = parseFloat(document.getElementById('champ-travail-max').value);
 
-    if (!classeCoursId || !periodeId) { afficherMessage("Choisis d'abord une classe, un cours et une période.", 'erreur'); return; }
+    if (!classeCoursId || !periodeId) { afficherMessage("Choisissez d'abord une classe, un cours et une période.", 'erreur'); return; }
     if (!nom || !maximum_points) { afficherMessage('Le nom et le maximum sont requis.', 'erreur'); return; }
 
     const bouton = document.getElementById('bouton-ajouter-travail');
@@ -561,6 +562,28 @@
     const coursId = document.getElementById('select-cours').value;
     const periodeId = document.getElementById('select-periode').value;
 
+    // Validation AVANT envoi : chaque point est comparé au maximum de SON travail,
+    // avec surlignage de la cellule et nom de l'élève dans le message.
+    const maxParTravail = Object.fromEntries(travauxActuels.map(t => [String(t.id), { nom: t.nom, max: Number(t.maximum_points) }]));
+    const erreursTravaux = [];
+    document.querySelectorAll('#corps-grille tr').forEach(ligne => {
+      const nomEleve = ligne.children[1]?.textContent?.trim() || 'un élève';
+      ligne.querySelectorAll('.champ-travail').forEach(input => {
+        input.style.borderColor = '';
+        if (input.value === '') return;
+        const valeur = parseFloat(input.value);
+        const travail = maxParTravail[input.dataset.travailId];
+        if (Number.isNaN(valeur) || valeur < 0 || (travail && valeur > travail.max)) {
+          input.style.borderColor = 'var(--rouge)';
+          erreursTravaux.push(`${nomEleve} — ${travail ? travail.nom : 'travail'} (${input.value} / max ${travail ? travail.max : '?'})`);
+        }
+      });
+    });
+    if (erreursTravaux.length > 0) {
+      afficherMessage(`Point(s) hors limites : ${erreursTravaux.slice(0, 3).join(' ; ')}${erreursTravaux.length > 3 ? '…' : ''}`, 'erreur');
+      return null;
+    }
+
     const notes = Array.from(document.querySelectorAll('#corps-grille tr')).map(ligne => {
       const points_par_travail = {};
       ligne.querySelectorAll('.champ-travail').forEach(input => {
@@ -595,10 +618,34 @@
     let r;
     if (enModeTravaux) {
       r = await enregistrerGrilleTravauxActuelle();
+      if (r === null) { bouton.disabled = false; mettreAJourBoutonEnregistrer(); return; }
     } else {
       const classeId = document.getElementById('select-classe').value;
       const coursId = document.getElementById('select-cours').value;
       const periodeId = document.getElementById('select-periode').value;
+
+      // Validation AVANT envoi : chaque note doit être comprise entre 0 et le maximum
+      // du cours. La cellule fautive est surlignée et le message cite l'élève concerné
+      // — fini les envois rejetés en bloc par le serveur avec un message technique.
+      const lignesInvalides = [];
+      document.querySelectorAll('#corps-grille tr').forEach(ligne => {
+        const champ = ligne.querySelector('.champ-note');
+        if (!champ) return;
+        champ.style.borderColor = '';
+        if (champ.value === '') return;
+        const valeur = parseFloat(champ.value);
+        if (Number.isNaN(valeur) || valeur < 0 || valeur > Number(maximumActuel)) {
+          champ.style.borderColor = 'var(--rouge)';
+          const nomEleve = ligne.children[1]?.textContent?.trim() || 'un élève';
+          lignesInvalides.push(`${nomEleve} (${champ.value})`);
+        }
+      });
+      if (lignesInvalides.length > 0) {
+        afficherMessage(`Note(s) hors limites — chaque note doit être comprise entre 0 et ${maximumActuel} : ${lignesInvalides.slice(0, 3).join(', ')}${lignesInvalides.length > 3 ? '…' : ''}`, 'erreur');
+        bouton.disabled = false; mettreAJourBoutonEnregistrer();
+        return;
+      }
+
       const notes = Array.from(document.querySelectorAll('#corps-grille tr')).map(ligne => ({
         eleve_id: ligne.dataset.eleveId,
         points_obtenus: ligne.querySelector('.champ-note').value === '' ? null : parseFloat(ligne.querySelector('.champ-note').value)
@@ -629,7 +676,7 @@
   document.getElementById('bouton-valider-notes')?.addEventListener('click', async () => {
     const message = estDirecteurOuPrefet
       ? 'Valider ces notes ? Elles seront verrouillées.'
-      : 'Soumettre ces notes ? Une fois soumises, tu ne pourras plus les modifier toi-même — seul le Directeur/Préfet pourra les déverrouiller.';
+      : 'Soumettre ces notes ? Une fois soumises, vous ne pourrez plus les modifier vous-même — seul le Directeur ou le Préfet pourra les déverrouiller.';
     if (!confirm(message)) return;
     const classeId = document.getElementById('select-classe').value;
     const coursId = document.getElementById('select-cours').value;

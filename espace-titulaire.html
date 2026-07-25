@@ -96,12 +96,12 @@
   <main class="contenu">
     <div class="entete-page">
       <h1>Ma classe</h1>
-      <p class="sous-titre">Ta classe, tes élèves, et l'accès direct aux appréciations et signatures des bulletins.</p>
+      <p class="sous-titre">Votre classe, vos élèves, et l'accès direct aux appréciations et signatures des bulletins.</p>
     </div>
 
     <div class="carte-classe" style="margin-bottom:18px;">
       <div class="nom" style="font-size:1rem;">Ma signature</div>
-      <div class="details">Utilisée automatiquement sur les bulletins de tes classes, à la place d'une case vide.</div>
+      <div class="details">Utilisée automatiquement sur les bulletins de vos classes, à la place d'une case vide.</div>
       <img id="apercu-signature" src="" alt="Signature" style="display:none; width:80px; height:80px; object-fit:contain; border:1px solid var(--bordure); border-radius:8px; margin-bottom:10px;" />
       <div style="display:flex; gap:8px; flex-wrap:wrap;">
         <button type="button" class="bouton bouton-secondaire" id="bouton-changer-signature">Uploader ma signature (image ou PDF)</button>
@@ -187,11 +187,11 @@
     const r = await appelApi('/ma-classe');
     const conteneur = document.getElementById('conteneur-classes');
     if (!r) return;
-    if (!r.ok) { conteneur.innerHTML = '<p class="etat-vide">Impossible de charger ta classe.</p>'; return; }
+    if (!r.ok) { conteneur.innerHTML = '<p class="etat-vide">Impossible de charger votre classe.</p>'; return; }
 
     const classes = await r.json();
     if (classes.length === 0) {
-      conteneur.innerHTML = '<p class="etat-vide">Aucune classe ne t\'est encore assignée comme titulaire. Demande au Directeur de te l\'assigner (écran Classes).</p>';
+      conteneur.innerHTML = '<p class="etat-vide">Aucune classe ne vous est encore assignée comme titulaire. Demandez au Directeur de vous l\'assigner (écran Classes).</p>';
       return;
     }
 
@@ -272,7 +272,7 @@
         ctx.drawImage(image, 0, 0);
       }
     } catch (e) {
-      messageErreur.textContent = "Impossible de lire ce fichier. Essaie une image (JPG/PNG) ou un PDF simple.";
+      messageErreur.textContent = "Impossible de lire ce fichier. Essayez une image (JPG/PNG) ou un PDF simple.";
       messageErreur.style.display = 'block';
     }
 
@@ -392,7 +392,7 @@
   }
 
   document.getElementById('bouton-supprimer-signature').addEventListener('click', async () => {
-    if (!confirm('Supprimer ta signature ? Les bulletins utiliseront la signature générique de l\'école à la place, si elle existe.')) return;
+    if (!confirm('Supprimer votre signature ? Les bulletins utiliseront la signature générique de l\'école à la place, si elle existe.')) return;
     const r = await appelApi('/uploads/document?type=signature&mine=true', { method: 'DELETE' });
     if (r && r.ok) {
       document.getElementById('apercu-signature').style.display = 'none';

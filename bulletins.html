@@ -155,7 +155,7 @@
           </tr>
         </thead>
         <tbody id="corps-tableau">
-          <tr><td colspan="8" class="etat-vide-tableau">Choisis une classe et une période — la liste s'affiche automatiquement.</td></tr>
+          <tr><td colspan="8" class="etat-vide-tableau">Choisissez une classe et une période — la liste s'affiche automatiquement.</td></tr>
         </tbody>
       </table>
     </div>
@@ -256,14 +256,14 @@
     const anneeActiveId = await obtenirAnneeActiveId();
 
     if (estTitulaireSeul) {
-      // Un titulaire (sans autre rôle) n'a qu'une seule classe : pas besoin de sélecteur.
-      document.getElementById('conteneur-select-classe').style.display = 'none';
+      // Le titulaire ne voit que SES classes. S'il n'en a qu'une, le sélecteur est
+      // masqué ; s'il en a plusieurs (autorisé dans les paramètres de l'école), le
+      // sélecteur reste visible — avant, seule la première classe était accessible.
       const rMaClasse = await appelApi('/ma-classe');
       if (rMaClasse?.ok) {
         const classes = await rMaClasse.json();
-        if (classes.length > 0) {
-          document.getElementById('select-classe').innerHTML = `<option value="${classes[0].id}">${classes[0].nom}</option>`;
-        }
+        document.getElementById('select-classe').innerHTML = classes.map(c => `<option value="${c.id}">${c.nom}</option>`).join('');
+        if (classes.length <= 1) document.getElementById('conteneur-select-classe').style.display = 'none';
       }
     } else {
       const rClasses = await appelApi('/classes');
@@ -282,7 +282,11 @@
     // Pré-sélection depuis l'URL (ex: lien depuis l'espace titulaire)
     const parametresUrl = new URLSearchParams(window.location.search);
     const classeIdUrl = parametresUrl.get('classeId');
-    if (classeIdUrl && !estTitulaireSeul) document.getElementById('select-classe').value = classeIdUrl;
+    if (classeIdUrl) {
+      const select = document.getElementById('select-classe');
+      // On ne force la valeur que si elle existe dans les options (pour un titulaire, uniquement ses classes)
+      if ([...select.options].some(o => o.value === classeIdUrl)) select.value = classeIdUrl;
+    }
 
     // Filtre automatique : dès que les 2 sélecteurs ont une valeur, la liste se charge seule
     function verifierEtCharger() {
@@ -298,7 +302,7 @@
   async function chargerBulletins() {
     const classeId = document.getElementById('select-classe').value;
     const periodeId = document.getElementById('select-periode').value;
-    if (!classeId || !periodeId) { afficherMessage('Choisis une classe et une période.', 'erreur'); return; }
+    if (!classeId || !periodeId) { afficherMessage('Choisissez une classe et une période.', 'erreur'); return; }
 
     const r = await appelApi(`/bulletins/classe/${classeId}/liste?periodeId=${periodeId}`);
     if (!r) return;
@@ -485,7 +489,7 @@
   async function genererPdf() {
     const classeId = document.getElementById('select-classe').value;
     const periodeId = document.getElementById('select-periode').value;
-    if (!classeId || !periodeId) { afficherMessage('Choisis une classe et une période.', 'erreur'); return; }
+    if (!classeId || !periodeId) { afficherMessage('Choisissez une classe et une période.', 'erreur'); return; }
 
     const bouton = document.getElementById('bouton-generer-pdf');
     bouton.disabled = true; bouton.textContent = 'Génération en cours…';

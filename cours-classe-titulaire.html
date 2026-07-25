@@ -96,10 +96,11 @@
   <main class="contenu">
     <div class="entete-page">
       <h1>Cours de la classe</h1>
-      <p class="sous-titre" id="sous-titre-classe">Vue d'ensemble de tous les cours de ta classe (pas seulement les tiens).</p>
+      <p class="sous-titre" id="sous-titre-classe">Vue d'ensemble de tous les cours de votre classe (pas seulement les vôtres).</p>
     </div>
 
     <div class="barre-selecteurs">
+      <div class="champ-selecteur" id="conteneur-select-classe-titulaire" style="display:none;"><label for="select-classe-titulaire">Classe</label><select id="select-classe-titulaire"></select></div>
       <div class="champ-selecteur"><label for="select-cours">Cours</label><select id="select-cours"></select></div>
       <div class="champ-selecteur"><label for="select-periode">Période</label><select id="select-periode"></select></div>
     </div>
@@ -114,7 +115,7 @@
     <div class="conteneur-tableau">
       <table>
         <thead><tr><th>Élève</th><th>Points</th><th>Résultat</th></tr></thead>
-        <tbody id="corps-tableau"><tr><td colspan="3" class="etat-vide-tableau">Choisis un cours et une période.</td></tr></tbody>
+        <tbody id="corps-tableau"><tr><td colspan="3" class="etat-vide-tableau">Choisissez un cours et une période.</td></tr></tbody>
       </table>
     </div>
 
@@ -178,25 +179,45 @@
 
   let classeId = null;
   let anneeActiveId = null;
+  let mesClassesTitulaire = [];
 
-  async function initialiser() {
-    const rClasse = await appelApi('/ma-classe');
-    if (!rClasse || !rClasse.ok) {
-      document.getElementById('corps-tableau').innerHTML = '<tr><td colspan="3" class="etat-vide-tableau">Impossible de charger ta classe.</td></tr>';
-      return;
-    }
-    const classes = await rClasse.json();
-    if (classes.length === 0) {
-      document.getElementById('sous-titre-classe').textContent = "Aucune classe ne t'est encore assignée.";
-      return;
-    }
-    classeId = classes[0].id;
-    document.getElementById('sous-titre-classe').textContent = `Classe : ${classes[0].nom}`;
+  // Si le titulaire a plusieurs classes (autorisé dans les paramètres de l'école),
+  // un sélecteur de classe apparaît : avant, seule la première classe était visible
+  // et les autres restaient totalement inaccessibles.
+  async function changerDeClasse(nouvelleClasseId) {
+    classeId = nouvelleClasseId;
+    const classe = mesClassesTitulaire.find(c => c.id === classeId);
+    document.getElementById('sous-titre-classe').textContent = classe ? `Classe : ${classe.nom}` : '';
 
     const rCours = await appelApi(`/classes/${classeId}/cours`);
     if (rCours?.ok) {
       const cours = await rCours.json();
       document.getElementById('select-cours').innerHTML = cours.map(c => `<option value="${c.cours_id}">${c.nom}</option>`).join('') || '<option value="">Aucun cours</option>';
+    }
+    chargerMoyenneGenerale();
+    chargerRecap();
+    chargerEtatPeriodes();
+  }
+
+  async function initialiser() {
+    const rClasse = await appelApi('/ma-classe');
+    if (!rClasse || !rClasse.ok) {
+      document.getElementById('corps-tableau').innerHTML = '<tr><td colspan="3" class="etat-vide-tableau">Impossible de charger votre classe.</td></tr>';
+      return;
+    }
+    const classes = await rClasse.json();
+    if (classes.length === 0) {
+      document.getElementById('sous-titre-classe').textContent = "Aucune classe ne vous est encore assignée.";
+      return;
+    }
+    mesClassesTitulaire = classes;
+
+    if (classes.length > 1) {
+      const conteneur = document.getElementById('conteneur-select-classe-titulaire');
+      const select = document.getElementById('select-classe-titulaire');
+      conteneur.style.display = '';
+      select.innerHTML = classes.map(c => `<option value="${c.id}">${c.nom}</option>`).join('');
+      select.addEventListener('change', () => changerDeClasse(select.value));
     }
 
     const rAnnees = await appelApi('/annees-scolaires');
@@ -215,9 +236,8 @@
 
     document.getElementById('select-cours').addEventListener('change', chargerRecap);
     document.getElementById('select-periode').addEventListener('change', () => { chargerMoyenneGenerale(); chargerRecap(); });
-    chargerMoyenneGenerale();
-    chargerRecap();
-    chargerEtatPeriodes();
+
+    await changerDeClasse(classes[0].id);
   }
 
   async function chargerEtatPeriodes() {

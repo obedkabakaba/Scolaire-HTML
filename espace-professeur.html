@@ -94,6 +94,7 @@
         <li><a class="nav-item" href="utilisateurs.html">Utilisateurs</a></li>
         <li><a class="nav-item" href="classes.html">Classes</a></li>
         <li><a class="nav-item" href="presences.html">Présences</a></li>
+        <li><a class="nav-item" href="emploi-du-temps.html">Emploi du temps</a></li>
         <li><a class="nav-item" href="notes.html">Notes</a></li>
         <li><a class="nav-item" href="bulletins.html">Bulletins</a></li>
         <li><a class="nav-item" href="bulletin-annuel.html">Bulletin annuel</a></li>
@@ -111,6 +112,11 @@
     <div class="entete-page">
       <h1 id="titre-bienvenue">Mes cours</h1>
       <p class="sous-titre">Vos classes et cours assignés. Cliquez sur un cours pour encoder les notes directement.</p>
+    </div>
+
+    <div class="widget" id="carte-aujourdhui" style="display:none; margin-bottom:26px;">
+      <p class="widget-titre" id="titre-aujourdhui">Aujourd'hui</p>
+      <div id="liste-aujourdhui"></div>
     </div>
 
     <div class="grille-cours" id="grille-cours">
@@ -179,6 +185,37 @@
     } catch (e) {}
     retourConnexion();
   });
+
+  /**
+   * Séances du jour, tirées de l'emploi du temps. Chargée séparément : si le
+   * module n'est pas encore déployé ou si rien n'est placé, la carte reste
+   * masquée et l'écran fonctionne comme avant.
+   */
+  async function chargerAujourdhui() {
+    let r;
+    try { r = await appelApi('/emploi-du-temps/aujourdhui'); } catch (e) { return; }
+    if (!r || !r.ok) return;
+
+    const donnees = await r.json();
+    if (!donnees.seances || donnees.seances.length === 0) return;
+
+    document.getElementById('titre-aujourdhui').textContent =
+      `Aujourd'hui — ${donnees.jour_nom} · ${donnees.seances.length} cours`;
+
+    document.getElementById('liste-aujourdhui').innerHTML = donnees.seances.map((s) => `
+      <div style="display:flex; align-items:center; gap:14px; padding:11px 0; border-bottom:1px solid var(--bordure);">
+        <span style="font-family:var(--police-mono); font-size:0.82rem; color:var(--texte-att); white-space:nowrap;">
+          ${String(s.heure_debut).slice(0, 5)} – ${String(s.heure_fin).slice(0, 5)}
+        </span>
+        <span style="flex:1; min-width:0;">
+          <strong style="display:block; font-size:0.92rem;">${s.cours_nom}</strong>
+          <span style="font-size:0.8rem; color:var(--texte-att);">${s.classe_nom}</span>
+        </span>
+      </div>
+    `).join('');
+
+    document.getElementById('carte-aujourdhui').style.display = '';
+  }
 
   async function chargerMesCours() {
     const r = await appelApi('/mes-cours');
@@ -253,6 +290,7 @@
   }
 
   chargerMesCours();
+  chargerAujourdhui();
   chargerEvenements();
 
   (function gererAccesParRole() {
@@ -268,6 +306,7 @@
       'utilisateurs.html': ['directeur', 'prefet', 'secretaire'],
       'classes.html': ['directeur', 'prefet', 'secretaire'],
       'presences.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
+      'emploi-du-temps.html': ['directeur', 'prefet', 'secretaire', 'titulaire', 'professeur'],
       'notes.html': ['directeur', 'prefet', 'professeur'],
       'bulletins.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
       'bulletin-annuel.html': ['directeur', 'prefet'],

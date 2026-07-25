@@ -327,3 +327,54 @@ html[data-theme="kivu"] .mb-piste { height: 12px; }
 @media (prefers-reduced-motion: reduce) {
   .anneau-trait, .mb-remplissage { transition: none !important; }
 }
+
+/* ==========================================================================
+   10. Bandeau de fonctionnement hors ligne
+   Posé en bas d'écran pour ne jamais masquer la barre d'actions du haut.
+   ========================================================================== */
+#bandeau-hors-ligne {
+  position: fixed;
+  left: 16px; right: 16px; bottom: 16px;
+  z-index: 900;
+  display: none;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: var(--r-carte);
+  font-family: var(--police-corps);
+  font-size: 0.87rem;
+  box-shadow: var(--ombre-flottante);
+  animation: bhl-apparition 0.25s ease both;
+}
+#bandeau-hors-ligne.visible { display: flex; }
+#bandeau-hors-ligne .bhl-texte { flex: 1; min-width: 0; }
+#bandeau-hors-ligne .bhl-action {
+  border: 1px solid currentColor;
+  background: none;
+  color: inherit;
+  border-radius: var(--r-bouton);
+  padding: 6px 14px;
+  font-family: var(--police-corps);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  flex: none;
+}
+#bandeau-hors-ligne .bhl-action:hover { background: rgba(255, 255, 255, 0.14); }
+
+#bandeau-hors-ligne.hors-ligne { background: var(--ardoise); color: var(--craie); }
+#bandeau-hors-ligne.en-attente { background: var(--ocre); color: #fff; }
+#bandeau-hors-ligne.succes     { background: var(--vert-ok); color: #fff; }
+#bandeau-hors-ligne.erreur     { background: var(--rouge); color: #fff; }
+
+@keyframes bhl-apparition {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (min-width: 700px) {
+  #bandeau-hors-ligne { left: auto; right: 24px; bottom: 24px; max-width: 460px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #bandeau-hors-ligne { animation: none; }
+}

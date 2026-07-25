@@ -25,6 +25,7 @@
   .barre-laterale .marque { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.5rem; margin: 0 0 40px 0; }
   @media (max-width: 780px) { .barre-laterale .marque { margin: 0; } }
   .nav-liste { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
+  .nav-liste { visibility: hidden; }
   @media (max-width: 780px) { .nav-liste { display: none; } }
   .nav-item, .nav-item:visited { padding: 10px 12px; border-radius: 6px; font-size: 0.92rem; color: rgba(246,242,231,0.55); text-decoration: none; display: flex; justify-content: space-between; align-items: center; }
   .nav-item.actif { background: rgba(246,242,231,0.08); color: var(--craie); font-weight: 600; }
@@ -375,6 +376,7 @@
     // Une fois soumis (verrouillé), plus aucune commande n'est disponible pour
     // le professeur — seuls Directeur/Préfet gardent la main (Déverrouiller).
     const toutEstFerme = auMoinsUneNoteVerrouillee && !estDirecteurOuPrefet;
+    basculerFormulaireTravail(toutEstFerme);
     // Sinon, tant que ce n'est pas soumis : la grille bascule "modifiable" / "enregistrée"
     // (des notes existent déjà pour au moins un élève = on repart en mode "fermé/Modifier").
     const desNotesExistentDeja = donnees.eleves.some(e => e.points_obtenus !== null);
@@ -408,6 +410,15 @@
   function mettreAJourBoutonEnregistrer() {
     const bouton = document.getElementById('bouton-enregistrer-notes');
     bouton.textContent = modeEdition ? 'Enregistrer les notes' : 'Modifier les notes';
+  }
+
+  function basculerFormulaireTravail(toutEstFerme) {
+    const boutonAjout = document.getElementById('bouton-ajouter-travail');
+    const champNom = document.getElementById('champ-travail-nom');
+    const champMax = document.getElementById('champ-travail-max');
+    boutonAjout.style.display = toutEstFerme ? 'none' : 'inline-block';
+    champNom.style.display = toutEstFerme ? 'none' : 'inline-block';
+    champMax.style.display = toutEstFerme ? 'none' : 'inline-block';
   }
 
   // ---------- Travaux multiples (interrogations/devoirs) ----------
@@ -470,10 +481,16 @@
     if (!classeCoursId || !periodeId) { afficherMessage("Choisis d'abord une classe, un cours et une période.", 'erreur'); return; }
     if (!nom || !maximum_points) { afficherMessage('Le nom et le maximum sont requis.', 'erreur'); return; }
 
+    const bouton = document.getElementById('bouton-ajouter-travail');
+    bouton.disabled = true; bouton.textContent = 'Ajout en cours…';
+
     const r = await appelApi('/travaux', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ classe_cours_id: classeCoursId, periode_id: periodeId, nom, maximum_points })
     });
+
+    bouton.disabled = false; bouton.textContent = '+ Ajouter ce travail';
+
     if (!r) return;
     const d = await r.json();
     if (!r.ok) { afficherMessage(d.message || "Erreur lors de l'ajout du travail.", 'erreur'); return; }
@@ -504,6 +521,7 @@
     const auMoinsUneNoteVerrouillee = donnees.eleves.some(e => e.valide);
     document.getElementById('bandeau-verrouille').classList.toggle('visible', auMoinsUneNoteVerrouillee);
     const toutEstFerme = auMoinsUneNoteVerrouillee && !estDirecteurOuPrefet;
+    basculerFormulaireTravail(toutEstFerme);
     const desNotesExistentDeja = donnees.eleves.some(e => e.total !== null);
     modeEdition = !desNotesExistentDeja || auMoinsUneNoteVerrouillee;
 
@@ -723,8 +741,11 @@
       });
       if (pageDeRepli && pageDeRepli !== pageActuelle) {
         window.location.href = pageDeRepli;
+        return; // on quitte cette page, pas la peine d'afficher la barre ici
       }
     }
+
+    document.querySelector('.nav-liste').style.visibility = 'visible';
   })();
 </script>
 

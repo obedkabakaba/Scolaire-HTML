@@ -78,6 +78,7 @@
     flex-direction: column;
     gap: 4px;
   }
+  .nav-liste { visibility: hidden; }
   @media (max-width: 780px) { .nav-liste { display: none; } }
 
   .nav-item, .nav-item:visited {
@@ -692,8 +693,11 @@
       });
       if (pageDeRepli && pageDeRepli !== pageActuelle) {
         window.location.href = pageDeRepli;
+        return;
       }
     }
+
+    document.querySelector('.nav-liste').style.visibility = 'visible';
   })();
 </script>
 

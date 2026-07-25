@@ -24,6 +24,7 @@
   .barre-laterale .marque { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.5rem; margin: 0 0 40px 0; }
   @media (max-width: 780px) { .barre-laterale .marque { margin: 0; } }
   .nav-liste { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
+  .nav-liste { visibility: hidden; }
   @media (max-width: 780px) { .nav-liste { display: none; } }
   .nav-item, .nav-item:visited { padding: 10px 12px; border-radius: 6px; font-size: 0.92rem; color: rgba(246,242,231,0.55); text-decoration: none; display: flex; justify-content: space-between; align-items: center; }
   .nav-item.actif { background: rgba(246,242,231,0.08); color: var(--craie); font-weight: 600; }
@@ -585,8 +586,11 @@
       });
       if (pageDeRepli && pageDeRepli !== pageActuelle) {
         window.location.href = pageDeRepli;
+        return; // on quitte cette page, pas la peine d'afficher la barre ici
       }
     }
+
+    document.querySelector('.nav-liste').style.visibility = 'visible';
   })();
 </script>
 

@@ -438,8 +438,8 @@
         ${ICONES.classe}
         <div class="titre">${echapper(c.nom)}</div>
         <div class="detail">
-          ${echapper([c.section_nom, c.option_nom].filter(Boolean).join(' — ') || 'Sans section')}<br/>
-          ${c.nb_eleves} élève(s)${c.titulaire_nom ? ' · ' + echapper(c.titulaire_nom) : ''}
+          ${echapper([c.cycle, c.section_nom, c.option_nom].filter(Boolean).join(' — ') || 'Sans section')}<br/>
+          ${c.nb_eleves} élève(s)${c.titulaire_nom ? ' · ' + echapper(c.titulaire_nom) : ''}${c.vacation_nom ? ' · ' + echapper(c.vacation_nom) : ''}
         </div>
         ${c.nb_eleves === 0 ? '<span class="marqueur vide">aucune inscription figée</span>' : ''}
       </button>

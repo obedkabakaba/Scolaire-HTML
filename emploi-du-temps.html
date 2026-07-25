@@ -310,6 +310,7 @@
   let brouillonJours = [];
   let brouillonCreneaux = [];
   let vacations = [];
+  let creneauxClasse = null;   // grille de la classe consultée, distincte de la grille personnelle
   let vacationChoisie = null;   // grille en cours d'édition
 
   const utilisateur = (() => {
@@ -399,8 +400,14 @@
    * Dessine une grille jours × heures. `contenuCase` reçoit (jour, creneau)
    * et renvoie le HTML interne de la case, ou une chaîne vide.
    */
-  function dessinerGrille(hote, contenuCase, modifiable) {
-    if (config.creneaux.length === 0) {
+  /**
+   * @param {Array} creneaux  grille à utiliser. On la passe explicitement :
+   *   écraser config.creneaux avec celle de la dernière classe consultée
+   *   faisait afficher « Mon emploi du temps » sur la mauvaise vacation.
+   */
+  function dessinerGrille(hote, contenuCase, modifiable, creneaux) {
+    const grille = creneaux || config.creneaux || [];
+    if (grille.length === 0) {
       grilleVide(hote, peutModifier
         ? "Aucune heure de cours définie. Ouvrez l'onglet « Grille horaire » pour créer la grille de l'école."
         : "La grille horaire de l'école n'a pas encore été définie.");
@@ -415,7 +422,7 @@
     html += '<div class="cellule-entete"></div>';
     config.jours.forEach(j => { html += `<div class="cellule-entete">${j.nom}</div>`; });
 
-    config.creneaux.forEach(cr => {
+    grille.forEach(cr => {
       html += `<div class="cellule-heure"><strong>${cr.libelle}</strong>${heureCourte(cr.heure_debut)} – ${heureCourte(cr.heure_fin)}</div>`;
       config.jours.forEach(j => {
         const contenu = contenuCase(j.numero, cr) || '';
@@ -451,7 +458,7 @@
 
     // La grille affichée est celle de la vacation de la classe : une classe
     // du matin ne doit pas voir les créneaux de l'après-midi.
-    if (Array.isArray(donnees.creneaux)) config.creneaux = donnees.creneaux;
+    creneauxClasse = Array.isArray(donnees.creneaux) ? donnees.creneaux : config.creneaux;
     document.getElementById('sous-titre-page').textContent = config.annee_active
       ? `Grille hebdomadaire — ${config.annee_active.libelle}${donnees.vacation ? ' · ' + donnees.vacation.nom : ''}`
       : "Aucune année scolaire active.";
@@ -468,7 +475,7 @@
       if (!s) return '';
       return `<span class="nom-cours">${s.cours_nom}</span>` +
              (s.professeurs ? `<span class="prof">${s.professeurs}</span>` : '');
-    }, peutModifier);
+    }, peutModifier, creneauxClasse);
 
     if (!peutModifier) return;
     document.querySelectorAll('#grille-classe .case').forEach(case_ => {
@@ -551,13 +558,16 @@
       return;
     }
 
+    const toutesGrilles = (config.vacations || []).flatMap(v => v.creneaux || []);
+    const grillePerso = toutesGrilles.length ? toutesGrilles : config.creneaux;
+
     dessinerGrille(hote, (jour, creneau) => {
       const miennes = donnees.seances.filter(x => x.jour === jour && x.creneau_id === creneau.id);
       if (miennes.length === 0) return '';
       return miennes.map(s =>
         `<span class="nom-cours">${s.cours_nom}</span><span class="classe">${s.classe_nom}</span>`
       ).join('<hr style="border:none; border-top:1px solid var(--bordure); margin:6px 0;">');
-    }, false);
+    }, false, grillePerso);
   }
 
   // ============================================================

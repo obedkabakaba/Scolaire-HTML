@@ -406,6 +406,17 @@
       </div>
     </div>
 
+    <div class="grille-widgets">
+      <div class="widget">
+        <p class="widget-titre">Appel du jour</p>
+        <div id="widget-appel-jour"></div>
+      </div>
+      <div class="widget" style="grid-column: span 2;">
+        <p class="widget-titre" id="titre-absences-jour">Absences du jour, par classe</p>
+        <div id="widget-absences-jour"></div>
+      </div>
+    </div>
+
     <div class="panneau" style="margin-bottom:24px;">
       <h3>État des périodes par classe (<span id="libelle-annee-active">—</span>)</h3>
       <div id="conteneur-etat-periodes" class="conteneur-etat-periodes">
@@ -534,6 +545,65 @@
     }).join('');
   }
 
+  /**
+   * Résumé de l'appel du jour, chargé séparément du tableau de bord : si le
+   * module Présences n'est pas encore déployé côté serveur, la requête échoue
+   * seule et le reste de l'écran s'affiche normalement.
+   */
+  async function chargerAppelDuJour() {
+    if (!window.ArdoiseUI) return;
+
+    const d = new Date();
+    const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+    let reponse;
+    try { reponse = await appelApi(`/presences/resume-jour?date=${date}`); } catch (e) { return; }
+    if (!reponse || !reponse.ok) return;
+
+    const donnees = await reponse.json();
+
+    const complet = donnees.nb_classes_appelees >= donnees.nb_classes && donnees.nb_classes > 0;
+    ArdoiseUI.anneau('widget-appel-jour', {
+      valeur: donnees.nb_classes_appelees,
+      max: donnees.nb_classes,
+      affichage: `${donnees.nb_classes_appelees}/${donnees.nb_classes}`,
+      couleur: complet ? 'var(--vert-ok)' : 'var(--ocre)',
+      detail: donnees.nb_classes === 0
+        ? "Aucune classe créée"
+        : `classe(s) ayant fait l'appel<br/><strong>${donnees.total_absents}</strong> absent(s) · ${donnees.total_retards} retard(s)`
+    });
+
+    // Les classes qui n'ont pas encore fait l'appel sont l'information la plus
+    // actionnable pour un directeur : on les met en tête, avant les absences.
+    const sansAppel = donnees.classes.filter((c) => !c.appel_fait);
+    const titre = document.getElementById('titre-absences-jour');
+
+    if (sansAppel.length > 0) {
+      titre.textContent = `Classes sans appel aujourd'hui (${sansAppel.length})`;
+      ArdoiseUI.barres('widget-absences-jour',
+        sansAppel.slice(0, 8).map((c) => ({
+          libelle: c.classe_nom, valeur: c.nb_eleves, max: c.nb_eleves,
+          affichage: `${c.nb_eleves} él.`
+        })),
+        { messageVide: 'Toutes les classes ont fait l\'appel.' }
+      );
+      return;
+    }
+
+    titre.textContent = "Absences du jour, par classe";
+    const avecAbsents = donnees.classes
+      .filter((c) => c.nb_absents > 0)
+      .sort((a, b) => b.nb_absents - a.nb_absents)
+      .slice(0, 8)
+      .map((c) => ({ libelle: c.classe_nom, valeur: c.nb_absents, max: c.nb_eleves || 1 }));
+
+    ArdoiseUI.barres('widget-absences-jour', avecAbsents, {
+      messageVide: donnees.nb_classes_appelees > 0
+        ? 'Aucune absence signalée aujourd\'hui.'
+        : "L'appel n'a pas encore été fait."
+    });
+  }
+
   async function chargerDashboard() {
     try {
       const donnees = await appelApi('/dashboard/directeur');
@@ -541,6 +611,10 @@
 
       document.getElementById('ecran-chargement').style.display = 'none';
       document.getElementById('mise-en-page').style.display = 'grid';
+
+      // Volontairement sans await : l'appel du jour se remplit dès qu'il arrive,
+      // sans retarder l'affichage du tableau de bord.
+      chargerAppelDuJour();
 
       const { user } = obtenirTokens();
       if (user) {

@@ -1,0 +1,222 @@
+/* ==========================================================================
+   Ardoise — Couche de composants visuels (étape B)
+   --------------------------------------------------------------------------
+   Se charge APRÈS theme.css. Ce fichier ajoute la personnalité visuelle :
+   icônes de navigation, illustrations d'état vide, squelettes de chargement,
+   animations et différences de mise en page entre thèmes.
+
+   Principe identique à l'étape A : tout est ici, jamais dans les 21 pages.
+   ========================================================================== */
+
+/* ==========================================================================
+   1. Icônes de navigation
+   Les icônes sont injectées par ui.js ; ce bloc ne fait que les mettre en page.
+   ========================================================================== */
+.nav-item {
+  justify-content: flex-start;
+  gap: 11px;
+}
+.nav-libelle {
+  flex: 1;
+  min-width: 0;
+}
+.nav-icone {
+  width: 19px;
+  height: 19px;
+  flex: none;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.75;
+  transition: opacity var(--transition-base), transform var(--transition-base);
+}
+.nav-item:hover .nav-icone { opacity: 1; }
+.nav-item.actif .nav-icone { opacity: 1; color: var(--ocre); }
+
+/* ==========================================================================
+   2. Illustrations d'état vide
+   Technique du masque : une seule illustration prend automatiquement la
+   couleur du thème actif, au lieu d'en stocker une version par thème.
+   ========================================================================== */
+.etat-vide::before,
+.etat-vide-tableau::before {
+  content: '';
+  display: block;
+  height: 84px;
+  margin: 0 auto 16px auto;
+  background-color: var(--texte-att);
+  opacity: 0.3;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-image: var(--illustration-vide);
+  mask-image: var(--illustration-vide);
+}
+.etat-vide-tableau::before { height: 64px; margin-bottom: 12px; }
+
+/* Illustration par défaut : une feuille de classeur vide, trait souple. */
+:root {
+  --illustration-vide: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M16 8h20l12 12v36H16z'/%3E%3Cpath d='M36 8v12h12'/%3E%3Cpath d='M24 34h16'/%3E%3Cpath d='M24 43h10'/%3E%3C/svg%3E");
+}
+
+/* Pure : marque géométrique, aucune rondeur, cohérente avec ses angles nets. */
+html[data-theme="pure"] {
+  --illustration-vide: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='square'%3E%3Crect x='12' y='12' width='40' height='40'/%3E%3Cpath d='M12 26h40'/%3E%3Cpath d='M26 26v26'/%3E%3C/svg%3E");
+}
+html[data-theme="pure"] .etat-vide::before,
+html[data-theme="pure"] .etat-vide-tableau::before { opacity: 0.22; }
+
+/* Kivu : illustration plus généreuse et plus ronde, à l'image du thème. */
+html[data-theme="kivu"] {
+  --illustration-vide: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='10' y='18' width='44' height='32' rx='7'/%3E%3Cpath d='M10 30h44'/%3E%3Cpath d='M24 18v-4a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v4'/%3E%3Ccircle cx='32' cy='40' r='4'/%3E%3C/svg%3E");
+  --illustration-taille: 96px;
+}
+html[data-theme="kivu"] .etat-vide::before { height: 96px; opacity: 0.34; }
+
+html[data-theme="nuit"] .etat-vide::before,
+html[data-theme="nuit"] .etat-vide-tableau::before { opacity: 0.42; }
+
+/* ==========================================================================
+   3. Chargement : le squelette remplace l'attente vide
+   ========================================================================== */
+.squelette {
+  display: block;
+  height: 11px;
+  border-radius: var(--r-petit);
+  background: linear-gradient(90deg, var(--bordure) 25%, var(--craie-2) 50%, var(--bordure) 75%);
+  background-size: 200% 100%;
+  animation: squelette-onde 1.3s ease-in-out infinite;
+}
+@keyframes squelette-onde {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+.ligne-squelette td { padding-top: 14px; padding-bottom: 14px; }
+
+/* Le rythme du chargement change selon le thème : Pure reste sec,
+   Kivu respire davantage. */
+html[data-theme="pure"] .squelette { animation-duration: 1s; border-radius: 1px; }
+html[data-theme="kivu"] .squelette { animation-duration: 1.7s; height: 13px; }
+
+/* ==========================================================================
+   4. Cartes statistiques
+   Un filet d'accent et un chiffre qui s'anime : le tableau de bord cesse
+   d'être une liste de nombres posés à plat.
+   ========================================================================== */
+.carte-stat, .carte-recap {
+  position: relative;
+  overflow: hidden;
+  transition: transform var(--transition-base), border-color var(--transition-base);
+}
+.carte-stat::after, .carte-recap::after {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--ocre);
+  opacity: 0;
+  transition: opacity var(--transition-base);
+}
+.carte-stat:hover::after, .carte-recap:hover::after { opacity: 1; }
+.carte-stat .valeur, .carte-recap .valeur { font-variant-numeric: tabular-nums; }
+
+html[data-theme="pure"] .carte-stat::after,
+html[data-theme="pure"] .carte-recap::after { opacity: 1; width: 2px; background: var(--bordure); }
+html[data-theme="pure"] .carte-stat:hover::after,
+html[data-theme="pure"] .carte-recap:hover::after { background: var(--ocre); }
+
+html[data-theme="kivu"] .carte-stat:hover,
+html[data-theme="kivu"] .carte-recap:hover { transform: translateY(-3px); }
+
+html[data-theme="nuit"] .carte-stat:hover,
+html[data-theme="nuit"] .carte-recap:hover { border-color: var(--ocre); }
+
+/* ==========================================================================
+   5. Tableaux : apparition échelonnée des lignes
+   Les douze premières lignes arrivent en cascade ; au-delà, l'effet
+   s'arrête pour ne pas retarder l'affichage d'une longue liste.
+   ========================================================================== */
+@keyframes ligne-apparition {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+.conteneur-tableau tbody tr { animation: ligne-apparition 0.26s ease both; }
+.conteneur-tableau tbody tr:nth-child(1) { animation-delay: 0.00s; }
+.conteneur-tableau tbody tr:nth-child(2) { animation-delay: 0.03s; }
+.conteneur-tableau tbody tr:nth-child(3) { animation-delay: 0.06s; }
+.conteneur-tableau tbody tr:nth-child(4) { animation-delay: 0.09s; }
+.conteneur-tableau tbody tr:nth-child(5) { animation-delay: 0.12s; }
+.conteneur-tableau tbody tr:nth-child(6) { animation-delay: 0.15s; }
+.conteneur-tableau tbody tr:nth-child(7) { animation-delay: 0.18s; }
+.conteneur-tableau tbody tr:nth-child(8) { animation-delay: 0.21s; }
+.conteneur-tableau tbody tr:nth-child(9) { animation-delay: 0.24s; }
+.conteneur-tableau tbody tr:nth-child(10) { animation-delay: 0.27s; }
+.conteneur-tableau tbody tr:nth-child(11) { animation-delay: 0.30s; }
+.conteneur-tableau tbody tr:nth-child(n+12) { animation-delay: 0.33s; }
+
+.conteneur-tableau tbody tr { transition: background var(--transition-base); }
+
+/* ==========================================================================
+   6. Personnalité de mise en page, thème par thème
+   C'est ici que les thèmes cessent d'être quatre palettes pour devenir
+   quatre présentations distinctes.
+   ========================================================================== */
+
+/* ---- Pure : densité administrative, en-têtes en petites capitales ---- */
+html[data-theme="pure"] .conteneur-tableau th {
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--texte-att);
+}
+html[data-theme="pure"] .conteneur-tableau td,
+html[data-theme="pure"] .conteneur-tableau th { padding-top: 9px; padding-bottom: 9px; }
+html[data-theme="pure"] .conteneur-tableau tbody tr:hover { background: #F7F8FA; }
+html[data-theme="pure"] .entete-page h1 { font-size: 1.55rem; }
+html[data-theme="pure"] .carte-section,
+html[data-theme="pure"] .carte-cours { border-width: 1px; }
+
+/* ---- Ardoise : le comportement d'origine, simplement fluidifié ---- */
+html[data-theme="ardoise"] .conteneur-tableau tbody tr:hover { background: rgba(201, 138, 62, 0.05); }
+
+/* ---- Nuit : les surfaces se détachent par la lumière, pas par l'ombre ---- */
+html[data-theme="nuit"] .conteneur-tableau tbody tr:hover { background: rgba(95, 176, 140, 0.07); }
+html[data-theme="nuit"] .carte-section,
+html[data-theme="nuit"] .carte-cours,
+html[data-theme="nuit"] .carte-stat { border-color: #2A3439; }
+html[data-theme="nuit"] .bouton-principal { color: #0C1013; font-weight: 600; }
+
+/* ---- Kivu : tout respire, tout s'arrondit, tout réagit ---- */
+html[data-theme="kivu"] .conteneur-tableau { overflow: hidden; }
+html[data-theme="kivu"] .conteneur-tableau tbody tr:hover { background: rgba(194, 84, 47, 0.05); }
+html[data-theme="kivu"] .conteneur-tableau td,
+html[data-theme="kivu"] .conteneur-tableau th { padding-top: 14px; padding-bottom: 14px; }
+html[data-theme="kivu"] .entete-page h1 { font-size: 2.1rem; }
+html[data-theme="kivu"] .carte-cours { transition: transform var(--transition-base), box-shadow var(--transition-base); }
+html[data-theme="kivu"] .carte-cours:hover { transform: translateY(-3px); box-shadow: var(--ombre-flottante); }
+html[data-theme="kivu"] .bouton { font-weight: 600; }
+
+/* ==========================================================================
+   7. Boutons : retour tactile commun
+   ========================================================================== */
+.bouton-principal { position: relative; overflow: hidden; }
+.bouton:focus-visible {
+  outline: 2px solid var(--ocre);
+  outline-offset: 2px;
+}
+
+/* ==========================================================================
+   8. Respect du réglage système « réduire les animations »
+   Rappelé ici car ce fichier introduit l'essentiel des animations.
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  .conteneur-tableau tbody tr,
+  .squelette { animation: none !important; }
+  .carte-stat:hover, .carte-recap:hover, .carte-cours:hover { transform: none !important; }
+}

@@ -475,7 +475,9 @@
 
     bouton.disabled = false; bouton.textContent = '✍️ Tout signer';
 
-    if (!r || !r.ok) { afficherMessage('Erreur lors de la signature en masse.', 'erreur'); return; }
+    if (!r) return;
+    const donnees = await r.json();
+    if (!r.ok) { afficherMessage(donnees.message || 'Erreur lors de la signature en masse.', 'erreur'); return; }
     afficherMessage('Bulletins signés.', 'succes');
     chargerBulletins(); // le bouton disparaîtra tout seul si plus rien à signer
   });

@@ -89,6 +89,11 @@
   .etiquette-traduire { font-size: 0.84rem; color: var(--texte-att); }
   .barre-ia select { border: 1px solid var(--bordure); border-radius: var(--r-petit); padding: 6px 9px; font-family: var(--police-corps); font-size: 0.84rem; background: var(--craie); color: var(--texte-sombre); }
   .quota-ia { font-size: 0.78rem; color: var(--texte-att); margin-left: auto; }
+  .liste-capacites { margin: 0; padding-left: 20px; font-size: 0.88rem; line-height: 1.8; color: var(--texte-sombre); }
+  .extrait-message { max-width: 320px; font-size: 0.84rem; line-height: 1.5; }
+  .extrait-message .recu { color: var(--texte-sombre); }
+  .extrait-message .envoye { color: var(--texte-att); }
+  .numero-masque { font-family: var(--police-mono); font-size: 0.8rem; }
   .etiquette-canal { font-size: 0.72rem; padding: 2px 9px; border-radius: 20px; background: rgba(107,114,105,0.13); color: var(--texte-att); margin-right: 5px; }
   .contenu { padding: 36px 44px 60px 44px; }
   @media (max-width: 780px) { .contenu { padding: 24px 20px 48px 20px; } }
@@ -177,6 +182,7 @@
       <button class="onglet actif" data-vue="reception">Réception <span class="pastille" id="pastille-non-lus" style="display:none;">0</span></button>
       <button class="onglet" data-vue="envoyer" id="onglet-envoyer" style="display:none;">Nouveau message</button>
       <button class="onglet" data-vue="historique" id="onglet-historique" style="display:none;">Envois</button>
+      <button class="onglet" data-vue="whatsapp" id="onglet-whatsapp" style="display:none;">WhatsApp</button>
     </div>
 
     <div id="message-flash" class="message-flash"></div>
@@ -256,6 +262,40 @@
           <span class="aide" id="avertissement-canal"></span>
           <button class="bouton bouton-principal" id="bouton-envoyer">Envoyer</button>
         </div>
+      </div>
+    </section>
+
+    <!-- ===================== WhatsApp ===================== -->
+    <section id="vue-whatsapp" style="display:none;">
+      <div class="carte-config">
+        <h3>Assistant WhatsApp</h3>
+        <p class="aide">
+          Les parents et le personnel dont le numéro est enregistré peuvent interroger l'école directement sur WhatsApp :
+          résultats, absences, frais, annonces, calendrier. L'assistant ne répond jamais à un numéro inconnu.
+        </p>
+        <div class="grille-widgets" style="margin-bottom:0;">
+          <div class="widget">
+            <p class="widget-titre">Numéros de parents enregistrés</p>
+            <div id="widget-numeros"></div>
+          </div>
+          <div class="widget" style="grid-column: span 2;">
+            <p class="widget-titre">Ce que l'assistant peut faire</p>
+            <ul class="liste-capacites">
+              <li>Communiquer les résultats des bulletins <strong>déjà signés</strong></li>
+              <li>Indiquer les absences des 30 derniers jours</li>
+              <li>Donner le solde des frais scolaires</li>
+              <li>Relayer les annonces et le calendrier</li>
+              <li>Pour le personnel : cours du jour et effectifs</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="conteneur-tableau">
+        <table>
+          <thead><tr><th>Date</th><th>Numéro</th><th>Question</th><th>Réponse</th></tr></thead>
+          <tbody id="corps-whatsapp"><tr><td colspan="4" class="etat-vide-tableau">Chargement…</td></tr></tbody>
+        </table>
       </div>
     </section>
 
@@ -366,6 +406,7 @@
     if (peutDiffuser) {
       document.getElementById('onglet-envoyer').style.display = '';
       document.getElementById('onglet-historique').style.display = '';
+      document.getElementById('onglet-whatsapp').style.display = '';
       document.getElementById('sous-titre-messages').textContent =
         "Votre boîte de réception, et la diffusion de messages au personnel et aux parents.";
     }
@@ -397,8 +438,10 @@
     document.getElementById('vue-reception').style.display = vue === 'reception' ? '' : 'none';
     document.getElementById('vue-envoyer').style.display = vue === 'envoyer' ? '' : 'none';
     document.getElementById('vue-historique').style.display = vue === 'historique' ? '' : 'none';
+    document.getElementById('vue-whatsapp').style.display = vue === 'whatsapp' ? '' : 'none';
     if (vue === 'reception') chargerReception();
     if (vue === 'historique') chargerHistorique();
+    if (vue === 'whatsapp') chargerWhatsapp();
   }
 
   // ============================================================
@@ -605,6 +648,51 @@
         <td style="font-size:0.84rem;">${echapper(e.expediteur || '—')}</td>
       </tr>
     `).join('');
+  }
+
+  // ============================================================
+  //  Échanges WhatsApp
+  // ============================================================
+  async function chargerWhatsapp() {
+    const corps = document.getElementById('corps-whatsapp');
+    corps.innerHTML = '<tr><td colspan="4" class="etat-vide-tableau"><span class="spinner"></span>Chargement…</td></tr>';
+
+    // Combien de familles sont réellement joignables : c'est le premier
+    // frein à l'adoption, et il est invisible sans ce chiffre.
+    const rDest = await appelApi('/communication/destinataires');
+    if (rDest?.ok && window.ArdoiseUI) {
+      const d = await rDest.json();
+      const total = d.classes.reduce((a, c) => a + c.nb_eleves, 0);
+      const avecEmail = d.classes.reduce((a, c) => a + c.nb_parents_email, 0);
+      ArdoiseUI.anneau('widget-numeros', {
+        valeur: avecEmail, max: total || 1,
+        affichage: String(total),
+        detail: `élève(s) inscrit(s)<br/>Vérifiez que le téléphone du responsable<br/>est renseigné sur chaque fiche.`
+      });
+    }
+
+    const r = await appelApi('/whatsapp/journal');
+    if (!r || !r.ok) {
+      corps.innerHTML = '<tr><td colspan="4" class="etat-vide-tableau">Échanges indisponibles.</td></tr>';
+      return;
+    }
+    const lignes = await r.json();
+    if (lignes.length === 0) {
+      corps.innerHTML = `<tr><td colspan="4" class="etat-vide-tableau">
+        Aucun échange pour le moment. Les parents doivent d'abord écrire au numéro WhatsApp de la plateforme.
+      </td></tr>`;
+      return;
+    }
+
+    corps.innerHTML = lignes.map(l => `
+      <tr>
+        <td style="white-space:nowrap;">${formaterDate(l.created_at)}</td>
+        <td><span class="numero-masque">${echapper(l.telephone || '—')}</span>
+            <div style="font-size:0.76rem; color:var(--texte-att);">${echapper(l.type_expediteur)}</div></td>
+        <td class="extrait-message"><span class="recu">${echapper(l.message_recu)}</span></td>
+        <td class="extrait-message"><span class="envoye">${echapper(l.message_envoye)}</span>
+            ${l.outils_utilises ? `<div style="font-size:0.72rem; color:var(--texte-att); margin-top:4px;">${echapper(l.outils_utilises)}</div>` : ''}</td>
+      </tr>`).join('');
   }
 
   // ============================================================

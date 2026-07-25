@@ -73,6 +73,17 @@
   .badge-non-signe { font-size: 0.75rem; color: var(--texte-att); white-space: nowrap; }
   .etat-vide-tableau { padding: 50px 20px; text-align: center; color: var(--texte-att); }
 
+  .barre-ia { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; background: rgba(60,90,98,0.08); border-radius: var(--r-carte); padding: 14px 18px; margin-bottom: 18px; }
+  .barre-ia .texte-ia { flex: 1; min-width: 220px; font-size: 0.87rem; color: var(--texte-att); }
+  .barre-ia .quota-ia { font-size: 0.79rem; color: var(--texte-att); }
+  .barre-ia .bouton { margin-left: auto; }
+  .puce-ia { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.06em; background: var(--ocre); color: #fff; padding: 1px 6px; border-radius: 20px; margin-left: 5px; }
+  .ligne-proposition { border-bottom: 1px solid var(--bordure); padding: 14px 0; }
+  .ligne-proposition:last-child { border-bottom: none; }
+  .ligne-proposition .entete { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 7px; }
+  .ligne-proposition .nom { font-weight: 600; font-size: 0.94rem; }
+  .ligne-proposition .chiffres { font-size: 0.79rem; color: var(--texte-att); }
+  .ligne-proposition textarea { width: 100%; border: 1px solid var(--bordure); border-radius: var(--r-petit); padding: 9px 11px; font-family: var(--police-corps); font-size: 0.88rem; background: var(--craie); color: var(--texte-sombre); resize: vertical; }
   .message-flash { display: none; padding: 12px 16px; border-radius:  var(--r-bouton); font-size: 0.88rem; margin-bottom: 20px; }
   .message-flash.visible { display: block; }
   .message-flash.succes { background: rgba(76,122,90,0.1); color: var(--vert-ok); }
@@ -172,6 +183,12 @@
       <div class="champ-selecteur"><label for="select-periode">Période</label><select id="select-periode"></select></div>
     </div>
 
+    <div class="barre-ia" id="barre-ia" style="display:none;">
+      <span class="texte-ia">Rédiger les observations pour toute la classe à partir des résultats et de la progression.</span>
+      <span class="quota-ia" id="quota-ia"></span>
+      <button class="bouton bouton-secondaire" id="bouton-appreciations">Proposer les observations <span class="puce-ia">IA</span></button>
+    </div>
+
     <div class="conteneur-tableau">
       <table>
         <thead>
@@ -186,6 +203,22 @@
       </table>
     </div>
   </main>
+</div>
+
+<!-- Modale des observations proposées par l'assistant -->
+<div class="voile" id="voile-appreciations" style="display:none; position:fixed; inset:0; background:rgba(31,43,36,0.45); align-items:center; justify-content:center; padding:20px; z-index:60;">
+  <div style="background:var(--craie-2); border-radius: var(--r-carte); padding:26px; max-width:780px; width:100%; max-height:90vh; overflow-y:auto;">
+    <h2 style="font-family:var(--police-titre); font-weight:600; font-size:1.25rem; margin:0 0 4px 0;">Observations proposées</h2>
+    <p id="appreciations-sous-titre" style="color:var(--texte-att); font-size:0.85rem; margin:0 0 6px 0;"></p>
+    <p style="color:var(--texte-att); font-size:0.82rem; margin:0 0 18px 0;">
+      Rien n'est enregistré tant que vous n'avez pas validé. Chaque texte reste modifiable, et vider un champ écarte l'élève de l'enregistrement.
+    </p>
+    <div id="liste-propositions"></div>
+    <div style="display:flex; gap:12px; justify-content:flex-end; margin-top:22px; flex-wrap:wrap;">
+      <button class="bouton bouton-secondaire" id="bouton-annuler-appreciations">Annuler</button>
+      <button class="bouton bouton-principal" id="bouton-valider-appreciations">Enregistrer les observations</button>
+    </div>
+  </div>
 </div>
 
 <!-- Modale détail élève (façon bulletin) -->
@@ -562,6 +595,121 @@
   });
 
   // ---------- Filtrage de la navigation selon le rôle connecté ----------
+  // ============================================================
+  //  Observations proposées par l'assistant
+  //  Un seul appel couvre toute la classe : à 40 élèves, c'est une
+  //  génération au lieu de quarante.
+  // ============================================================
+  (function activerAppreciations() {
+    let utilisateurCourant = null;
+    try { utilisateurCourant = JSON.parse(obtenirDuStockage('ardoise_user') || 'null'); } catch (e) {}
+    const rolesCourants = (utilisateurCourant && utilisateurCourant.roles) || [];
+    const peutRediger = rolesCourants.some(r => ['directeur', 'prefet', 'titulaire', 'super_admin'].includes(r));
+    if (!peutRediger) return;
+
+    const barre = document.getElementById('barre-ia');
+    barre.style.display = '';
+    let propositionsCourantes = [];
+
+    appelApi('/ia/quota').then(async (r) => {
+      if (!r || !r.ok) return;
+      const q = await r.json();
+      document.getElementById('quota-ia').textContent = `${q.restant} génération(s) restante(s) ce mois-ci`;
+    }).catch(() => {});
+
+    function echapperTexte(t) {
+      const d = document.createElement('div');
+      d.textContent = t == null ? '' : String(t);
+      return d.innerHTML;
+    }
+
+    document.getElementById('bouton-appreciations').addEventListener('click', async () => {
+      const classeId = document.getElementById('select-classe').value;
+      const periodeId = document.getElementById('select-periode').value;
+      if (!classeId || !periodeId) {
+        afficherMessage('Choisissez une classe et une période.', 'erreur'); return;
+      }
+
+      const bouton = document.getElementById('bouton-appreciations');
+      bouton.disabled = true; bouton.textContent = 'Rédaction en cours…';
+
+      const r = await appelApi(`/ia/appreciations?classeId=${classeId}&periodeId=${periodeId}`);
+      bouton.disabled = false;
+      bouton.innerHTML = 'Proposer les observations <span class="puce-ia">IA</span>';
+      if (!r) return;
+
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { afficherMessage(d.message || 'Génération impossible.', 'erreur'); return; }
+
+      propositionsCourantes = d.propositions || [];
+      if (propositionsCourantes.length === 0) {
+        afficherMessage('Aucun bulletin modifiable pour cette sélection.', 'erreur'); return;
+      }
+
+      document.getElementById('appreciations-sous-titre').textContent =
+        `${d.classe_nom} — ${d.periode_libelle || ''} · ${propositionsCourantes.length} élève(s)`
+        + (d.nb_signes_ignores > 0 ? ` · ${d.nb_signes_ignores} bulletin(s) signé(s) ignoré(s)` : '');
+
+      if (d.quota) {
+        document.getElementById('quota-ia').textContent =
+          `${d.quota.restant} génération(s) restante(s) ce mois-ci`;
+      }
+
+      document.getElementById('liste-propositions').innerHTML = propositionsCourantes.map((p, i) => `
+        <div class="ligne-proposition">
+          <div class="entete">
+            <span class="nom">${echapperTexte(p.nom_complet)}</span>
+            <span class="chiffres">${p.pourcentage}%${p.evolution != null ? (p.evolution >= 0 ? ` · +${p.evolution} pts` : ` · ${p.evolution} pts`) : ''}</span>
+          </div>
+          <textarea rows="2" maxlength="500" data-index="${i}">${echapperTexte(p.appreciation)}</textarea>
+        </div>
+      `).join('');
+
+      document.querySelectorAll('#liste-propositions textarea').forEach(champ => {
+        champ.addEventListener('input', () => {
+          propositionsCourantes[Number(champ.dataset.index)].appreciation = champ.value;
+        });
+      });
+
+      document.getElementById('voile-appreciations').style.display = 'flex';
+    });
+
+    document.getElementById('bouton-annuler-appreciations').addEventListener('click', () => {
+      document.getElementById('voile-appreciations').style.display = 'none';
+    });
+
+    document.getElementById('bouton-valider-appreciations').addEventListener('click', async () => {
+      const retenues = propositionsCourantes
+        .filter(p => p.appreciation && p.appreciation.trim())
+        .map(p => ({ eleve_id: p.eleve_id, appreciation: p.appreciation.trim() }));
+
+      if (retenues.length === 0) {
+        afficherMessage('Aucune observation à enregistrer.', 'erreur'); return;
+      }
+
+      const bouton = document.getElementById('bouton-valider-appreciations');
+      bouton.disabled = true; bouton.textContent = 'Enregistrement…';
+
+      const r = await appelApi('/ia/appreciations/appliquer', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          classe_id: document.getElementById('select-classe').value,
+          periode_id: document.getElementById('select-periode').value,
+          appreciations: retenues
+        })
+      });
+
+      bouton.disabled = false; bouton.textContent = 'Enregistrer les observations';
+      if (!r) return;
+      const rep = await r.json().catch(() => ({}));
+      if (!r.ok) { afficherMessage(rep.message || 'Enregistrement impossible.', 'erreur'); return; }
+
+      document.getElementById('voile-appreciations').style.display = 'none';
+      afficherMessage(rep.message, 'succes');
+      if (typeof chargerBulletins === 'function') chargerBulletins();
+    });
+  })();
+
   (function gererAccesParRole() {
     const permissions = {
       'dashboard-directeur.html': ['directeur', 'prefet'],

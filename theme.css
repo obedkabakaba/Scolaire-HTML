@@ -1,0 +1,249 @@
+/* ==========================================================================
+   Ardoise — Thèmes visuels
+   --------------------------------------------------------------------------
+   Un seul fichier pilote l'apparence des 21 pages de la plateforme.
+   Chaque page conserve son bloc <style> d'origine (qui définit les valeurs
+   par défaut) ; ce fichier les remplace grâce à une spécificité supérieure
+   (html[data-theme="…"] l'emporte sur :root).
+
+   AJOUTER UN NOUVEAU THÈME = ajouter un bloc ici, et une entrée dans la
+   liste THEMES de theme.js. Aucune autre page n'est à modifier.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Jetons communs à tous les thèmes
+   -------------------------------------------------------------------------- */
+:root {
+  --police-titre: 'Fraunces', Georgia, serif;
+  --police-corps: 'Inter', system-ui, sans-serif;
+  --police-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  --r-carte: 10px;
+  --r-bouton: 7px;
+  --r-petit: 6px;
+  --r-pilule: 20px;
+
+  --ombre-carte: none;
+  --ombre-flottante: 0 10px 30px rgba(31, 43, 36, 0.14);
+
+  --bordure-epaisseur: 1px;
+  --transition-base: 0.18s ease;
+
+  /* Barre latérale — découplée des couleurs de contenu pour qu'un thème
+     clair puisse avoir une barre claire sans rendre le texte illisible. */
+  --nav-fond: #1F2B24;
+  --nav-texte-fort: #F6F2E7;
+  --nav-texte: rgba(246, 242, 231, 0.55);
+  --nav-texte-faible: rgba(246, 242, 231, 0.35);
+  --nav-actif-fond: rgba(246, 242, 231, 0.08);
+  --nav-separateur: rgba(246, 242, 231, 0.12);
+}
+
+/* Respecte le réglage système « réduire les animations ». */
+@media (prefers-reduced-motion: reduce) {
+  :root { --transition-base: 0s; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+/* ==========================================================================
+   1. ARDOISE — thème par défaut (craie et ocre, chaleureux)
+   ========================================================================== */
+html[data-theme="ardoise"] {
+  --ardoise: #1F2B24;
+  --ardoise-2: #2A3830;
+  --craie: #F6F2E7;
+  --craie-2: #FBF9F3;
+  --ocre: #C98A3E;
+  --ocre-dark: #A96F2E;
+  --ocre-clair: #E0AE6B;
+  --encre: #3C5A62;
+  --rouge: #B23A2E;
+  --vert-ok: #4C7A5A;
+  --texte-sombre: #1F2B24;
+  --texte-att: #6B7269;
+  --bordure: #E4DFCF;
+  --ligne: #E4DFCF;
+}
+
+/* ==========================================================================
+   2. PURE — fond blanc, angles nets, aucune ombre, un seul accent sobre.
+      Densité administrative : la donnée avant la décoration.
+   ========================================================================== */
+html[data-theme="pure"] {
+  --ardoise: #14171A;
+  --ardoise-2: #22262B;
+  --craie: #FFFFFF;
+  --craie-2: #FFFFFF;
+  --ocre: #2563A8;
+  --ocre-dark: #1B4C84;
+  --ocre-clair: #6BA3DC;
+  --encre: #2563A8;
+  --rouge: #C0392B;
+  --vert-ok: #1E7A4D;
+  --texte-sombre: #14171A;
+  --texte-att: #6A7078;
+  --bordure: #E6E7E9;
+  --ligne: #EFEFF1;
+
+  --police-titre: 'Inter', system-ui, sans-serif;
+  --police-corps: 'Inter', system-ui, sans-serif;
+
+  --r-carte: 3px;
+  --r-bouton: 3px;
+  --r-petit: 2px;
+  --r-pilule: 3px;
+
+  --ombre-carte: none;
+  --ombre-flottante: 0 4px 20px rgba(20, 23, 26, 0.10);
+
+  /* Barre latérale claire : c'est ce qui donne au thème son côté « page blanche ». */
+  --nav-fond: #FAFAFA;
+  --nav-texte-fort: #14171A;
+  --nav-texte: #6A7078;
+  --nav-texte-faible: #A3A8AE;
+  --nav-actif-fond: #ECEFF3;
+  --nav-separateur: #E6E7E9;
+}
+
+/* La barre latérale de Pure étant claire, elle a besoin d'un filet de séparation. */
+html[data-theme="pure"] .barre-laterale {
+  border-right: 1px solid var(--nav-separateur);
+}
+html[data-theme="pure"] .nav-item.actif {
+  box-shadow: inset 2px 0 0 var(--ocre);
+}
+/* Titres en sans-serif : on rétablit une graisse lisible sans le serif. */
+html[data-theme="pure"] h1,
+html[data-theme="pure"] h2,
+html[data-theme="pure"] h3 {
+  letter-spacing: -0.015em;
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   3. NUIT — thème sombre. Utile en fin de journée et sur écran OLED.
+   ========================================================================== */
+html[data-theme="nuit"] {
+  --ardoise: #0C1013;
+  --ardoise-2: #1B2226;
+  --craie: #12171A;
+  --craie-2: #1B2226;
+  --ocre: #5FB08C;
+  --ocre-dark: #4A9273;
+  --ocre-clair: #86C9AB;
+  --encre: #7FB4C4;
+  --rouge: #E07A6E;
+  --vert-ok: #5FB08C;
+  --texte-sombre: #E8EDE9;
+  --texte-att: #94A29C;
+  --bordure: #2A3439;
+  --ligne: #2A3439;
+
+  --r-carte: 8px;
+  --r-bouton: 8px;
+  --r-petit: 6px;
+  --r-pilule: 20px;
+
+  --ombre-carte: none;
+  --ombre-flottante: 0 12px 36px rgba(0, 0, 0, 0.55);
+
+  --nav-fond: #0C1013;
+  --nav-texte-fort: #E8EDE9;
+  --nav-texte: #7C8A85;
+  --nav-texte-faible: #5A6863;
+  --nav-actif-fond: rgba(95, 176, 140, 0.14);
+  --nav-separateur: #222B30;
+}
+
+/* En thème sombre, un texte blanc pur sur fond noir fatigue : on adoucit. */
+html[data-theme="nuit"] body {
+  -webkit-font-smoothing: antialiased;
+}
+html[data-theme="nuit"] .nav-item.actif {
+  box-shadow: inset 2px 0 0 var(--ocre);
+}
+/* Les champs de formulaire natifs doivent suivre le thème sombre,
+   sinon le navigateur les affiche en blanc éclatant. */
+html[data-theme="nuit"] input,
+html[data-theme="nuit"] select,
+html[data-theme="nuit"] textarea {
+  background: #0F1417;
+  color: var(--texte-sombre);
+  border-color: var(--bordure);
+}
+html[data-theme="nuit"] input::placeholder,
+html[data-theme="nuit"] textarea::placeholder {
+  color: var(--texte-att);
+}
+/* Indique au navigateur que la page est sombre (barres de défilement, etc.). */
+html[data-theme="nuit"] { color-scheme: dark; }
+
+/* ==========================================================================
+   4. KIVU — expressif. Terracotta et vert profond, grands rayons,
+      typographie généreuse. Le thème qui accueille les illustrations.
+   ========================================================================== */
+html[data-theme="kivu"] {
+  --ardoise: #1E5B4F;
+  --ardoise-2: #17483F;
+  --craie: #FDF6EE;
+  --craie-2: #FFFFFF;
+  --ocre: #C2542F;
+  --ocre-dark: #A34324;
+  --ocre-clair: #E08B66;
+  --encre: #1E5B4F;
+  --rouge: #B3392C;
+  --vert-ok: #1E5B4F;
+  --texte-sombre: #26201B;
+  --texte-att: #8A7A6B;
+  --bordure: #EFE1D3;
+  --ligne: #EFE1D3;
+
+  --police-titre: 'Fraunces', Georgia, serif;
+
+  --r-carte: 16px;
+  --r-bouton: 14px;
+  --r-petit: 10px;
+  --r-pilule: 24px;
+
+  --ombre-carte: 0 2px 10px rgba(38, 32, 27, 0.05);
+  --ombre-flottante: 0 16px 44px rgba(38, 32, 27, 0.16);
+
+  --nav-fond: #1E5B4F;
+  --nav-texte-fort: #FDF6EE;
+  --nav-texte: rgba(253, 246, 238, 0.62);
+  --nav-texte-faible: rgba(253, 246, 238, 0.38);
+  --nav-actif-fond: rgba(253, 246, 238, 0.13);
+  --nav-separateur: rgba(253, 246, 238, 0.16);
+}
+
+/* Kivu respire davantage : barre latérale détachée du bord, coins arrondis. */
+html[data-theme="kivu"] .barre-laterale {
+  border-radius: 0 var(--r-carte) var(--r-carte) 0;
+}
+html[data-theme="kivu"] .carte-cours,
+html[data-theme="kivu"] .carte-recap,
+html[data-theme="kivu"] .carte-evenements,
+html[data-theme="kivu"] .conteneur-tableau {
+  box-shadow: var(--ombre-carte);
+}
+html[data-theme="kivu"] h1 {
+  letter-spacing: -0.01em;
+}
+
+/* ==========================================================================
+   Micro-animations communes (désactivées si le système le demande)
+   ========================================================================== */
+.nav-item { transition: background var(--transition-base), color var(--transition-base); }
+.bouton { transition: background var(--transition-base), border-color var(--transition-base), transform var(--transition-base); }
+.bouton:active { transform: scale(0.985); }
+
+/* Apparition douce du contenu principal au chargement de chaque page. */
+@keyframes ardoise-apparition {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+.contenu { animation: ardoise-apparition 0.3s ease both; }
+
+/* Aucun masquage de secours ici : le thème est posé par un script synchrone
+   dans le <head> de chaque page, donc avant le premier affichage. Masquer le
+   corps rendrait la plateforme invisible si ce fichier se chargeait seul. */

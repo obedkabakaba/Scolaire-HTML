@@ -16,51 +16,74 @@
     --texte-sombre: #1F2B24; --texte-att: #6B7269; --bordure: #E4DFCF;
   }
   * { box-sizing: border-box; }
-  body { margin: 0; font-family: 'Inter', sans-serif; color: var(--texte-sombre); background: var(--craie); }
+  body { margin: 0; font-family: var(--police-corps); color: var(--texte-sombre); background: var(--craie); }
   .mise-en-page { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
   @media (max-width: 780px) { .mise-en-page { grid-template-columns: 1fr; } }
-  .barre-laterale { background: var(--ardoise); color: var(--craie); padding: 32px 22px; position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; justify-content: space-between; }
+  .barre-laterale { background: var(--nav-fond); color: var(--nav-texte-fort); padding: 32px 22px; position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; justify-content: space-between; }
   @media (max-width: 780px) { .barre-laterale { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px; height: auto; z-index: 5; } }
-  .barre-laterale .marque { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.5rem; margin: 0 0 40px 0; }
+  .barre-laterale .marque { font-family: var(--police-titre); font-weight: 600; font-size: 1.5rem; margin: 0 0 40px 0; }
   @media (max-width: 780px) { .barre-laterale .marque { margin: 0; } }
   .nav-liste { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
   .nav-liste { visibility: hidden; }
   @media (max-width: 780px) { .nav-liste { display: none; } }
-  .nav-item, .nav-item:visited { padding: 10px 12px; border-radius: 6px; font-size: 0.92rem; color: rgba(246,242,231,0.55); text-decoration: none; display: flex; justify-content: space-between; align-items: center; }
-  .nav-item.actif { background: rgba(246,242,231,0.08); color: var(--craie); font-weight: 600; }
+  .nav-item, .nav-item:visited { padding: 10px 12px; border-radius:  var(--r-petit); font-size: 0.92rem; color: var(--nav-texte); text-decoration: none; display: flex; justify-content: space-between; align-items: center; }
+  .nav-item.actif { background: var(--nav-actif-fond); color: var(--nav-texte-fort); font-weight: 600; }
   .lettre-i { position: relative; display: inline-block; line-height: 1; }
   .point-i-marque { position: absolute; width: 0.13em; height: 0.13em; border-radius: 50%; background: var(--ocre); left: 50%; top: 0.16em; transform: translateX(-50%); }
-  .nav-deconnexion { background: none; border: none; border-top: 1px solid rgba(246,242,231,0.12); color: rgba(246,242,231,0.55); text-align: left; padding: 14px 12px 4px 12px; font-size: 0.86rem; font-family: 'Inter', sans-serif; cursor: pointer; }
-  .nav-deconnexion:hover { color: var(--craie); }
+  .nav-deconnexion { background: none; border: none; border-top: 1px solid var(--nav-separateur); color: var(--nav-texte); text-align: left; padding: 14px 12px 4px 12px; font-size: 0.86rem; font-family: var(--police-corps); cursor: pointer; }
+  .nav-deconnexion:hover { color: var(--nav-texte-fort); }
   @media (max-width: 780px) { .nav-deconnexion { border-top: none; padding: 8px 12px; } }
 
   .contenu { padding: 36px 44px 60px 44px; max-width: 640px; }
   @media (max-width: 780px) { .contenu { padding: 24px 20px 48px 20px; } }
-  .entete-page h1 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.9rem; margin: 0 0 4px 0; }
+  .entete-page h1 { font-family: var(--police-titre); font-weight: 600; font-size: 1.9rem; margin: 0 0 4px 0; }
   .entete-page .sous-titre { color: var(--texte-att); font-size: 0.95rem; margin: 0 0 28px 0; }
 
-  .carte-section { background: var(--craie-2); border: 1px solid var(--bordure); border-radius: 10px; padding: 26px; margin-bottom: 22px; }
-  .carte-section h2 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.15rem; margin: 0 0 18px 0; }
+  .carte-section { background: var(--craie-2); border: 1px solid var(--bordure); border-radius:  var(--r-carte); padding: 26px; margin-bottom: 22px; }
+  .carte-section h2 { font-family: var(--police-titre); font-weight: 600; font-size: 1.15rem; margin: 0 0 18px 0; }
+  .grille-themes { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; }
+  .carte-theme { border: 2px solid var(--bordure); border-radius: var(--r-carte); padding: 0; background: none; cursor: pointer; text-align: left; overflow: hidden; font-family: var(--police-corps); transition: border-color 0.18s ease, transform 0.18s ease; }
+  .carte-theme:hover { border-color: var(--texte-att); transform: translateY(-2px); }
+  .carte-theme.actif { border-color: var(--ocre); }
+  .carte-theme .apercu { height: 74px; display: flex; }
+  .carte-theme .apercu .bande { width: 26px; }
+  .carte-theme .apercu .corps { flex: 1; padding: 9px 10px; }
+  .carte-theme .apercu .ligne-1 { height: 7px; border-radius: 3px; width: 62%; margin-bottom: 6px; }
+  .carte-theme .apercu .ligne-2 { height: 7px; border-radius: 3px; width: 84%; opacity: 0.45; margin-bottom: 9px; }
+  .carte-theme .apercu .pastille { height: 14px; width: 46px; border-radius: 4px; }
+  .carte-theme .pied { padding: 11px 12px; background: var(--craie-2); border-top: 1px solid var(--bordure); }
+  .carte-theme .pied .nom { font-weight: 600; font-size: 0.93rem; color: var(--texte-sombre); display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+  .carte-theme .pied .desc { font-size: 0.76rem; color: var(--texte-att); margin-top: 3px; line-height: 1.35; }
+  .carte-theme .coche { color: var(--ocre); font-size: 0.95rem; }
 
   .champ { margin-bottom: 16px; }
   .champ label { display: block; font-size: 0.76rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--texte-att); margin-bottom: 6px; }
-  .champ input { width: 100%; padding: 10px 12px; font-size: 0.9rem; border: 1.5px solid var(--bordure); border-radius: 7px; background: #fff; }
+  .champ input { width: 100%; padding: 10px 12px; font-size: 0.9rem; border: 1.5px solid var(--bordure); border-radius:  var(--r-bouton); background: #fff; }
   .champ input:focus { outline: none; border-color: var(--encre); }
   .champ input:disabled { background: #eee; color: var(--texte-att); }
   .ligne-champs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 
-  .badge-role { display: inline-block; padding: 3px 9px; border-radius: 20px; font-size: 0.72rem; font-weight: 600; background: rgba(60,90,98,0.1); color: var(--encre); margin-right: 4px; }
+  .badge-role { display: inline-block; padding: 3px 9px; border-radius:  var(--r-pilule); font-size: 0.72rem; font-weight: 600; background: rgba(60,90,98,0.1); color: var(--encre); margin-right: 4px; }
 
-  .bouton { padding: 10px 16px; border-radius: 7px; font-family: 'Inter', sans-serif; font-size: 0.88rem; font-weight: 600; cursor: pointer; border: 1.5px solid transparent; }
+  .bouton { padding: 10px 16px; border-radius:  var(--r-bouton); font-family: var(--police-corps); font-size: 0.88rem; font-weight: 600; cursor: pointer; border: 1.5px solid transparent; }
   .bouton-principal { background: var(--ocre); color: var(--craie-2); }
   .bouton-principal:hover { background: var(--ocre-dark); }
   .bouton:disabled { opacity: 0.55; cursor: not-allowed; }
 
-  .message-flash { display: none; padding: 12px 16px; border-radius: 8px; font-size: 0.88rem; margin-bottom: 20px; }
+  .message-flash { display: none; padding: 12px 16px; border-radius:  var(--r-bouton); font-size: 0.88rem; margin-bottom: 20px; }
   .message-flash.visible { display: block; }
   .message-flash.succes { background: rgba(76,122,90,0.1); color: var(--vert-ok); }
   .message-flash.erreur { background: rgba(178,58,46,0.08); color: var(--rouge); }
 </style>
+<script>
+  /* Applique le thème AVANT le premier affichage, pour éviter tout clignotement.
+     La liste doit rester alignée sur theme.css / theme.js. */
+  (function(){var v=['ardoise','pure','nuit','kivu'];var t;
+   try{t=localStorage.getItem('ardoise_theme')||sessionStorage.getItem('ardoise_theme');}catch(e){}
+   document.documentElement.setAttribute('data-theme', v.indexOf(t)!==-1?t:'ardoise');})();
+</script>
+<link rel="stylesheet" href="theme.css" />
+
 </head>
 <body>
 
@@ -121,6 +144,14 @@
         <button type="button" class="bouton bouton-secondaire" id="bouton-activer-modif-profil">Modifier</button>
         <button type="submit" class="bouton bouton-principal" id="bouton-enregistrer-profil" style="display:none;">Enregistrer</button>
       </form>
+    </div>
+
+    <div class="carte-section">
+      <h2>Apparence</h2>
+      <p style="color:var(--texte-att); font-size:0.88rem; margin:-10px 0 18px 0;">
+        Ce choix ne concerne que votre compte : il vous suit sur vos autres appareils et ne change rien pour vos collègues.
+      </p>
+      <div id="grille-themes" class="grille-themes"></div>
     </div>
 
     <div class="carte-section">
@@ -196,6 +227,45 @@
     } catch (e) {}
     retourConnexion();
   });
+
+  // ---------- Choix du thème visuel ----------
+  // Les thèmes disponibles sont décrits dans theme.js : pour en ajouter un,
+  // il suffit de compléter ce fichier et theme.css, pas cette page.
+  function dessinerGrilleThemes() {
+    const grille = document.getElementById('grille-themes');
+    if (!grille || !window.ArdoiseTheme) return;
+    const actuel = window.ArdoiseTheme.actuel();
+
+    grille.innerHTML = window.ArdoiseTheme.liste.map((t) => `
+      <button type="button" class="carte-theme ${t.cle === actuel ? 'actif' : ''}" data-theme="${t.cle}"
+              aria-pressed="${t.cle === actuel}">
+        <div class="apercu" style="background:${t.apercu.fond};">
+          <div class="bande" style="background:${t.apercu.barre};"></div>
+          <div class="corps">
+            <div class="ligne-1" style="background:${t.apercu.texte};"></div>
+            <div class="ligne-2" style="background:${t.apercu.texte};"></div>
+            <div class="pastille" style="background:${t.apercu.accent};"></div>
+          </div>
+        </div>
+        <div class="pied">
+          <div class="nom">${t.nom}<span class="coche">${t.cle === actuel ? '✓' : ''}</span></div>
+          <div class="desc">${t.description}</div>
+        </div>
+      </button>
+    `).join('');
+
+    grille.querySelectorAll('.carte-theme').forEach((bouton) => {
+      bouton.addEventListener('click', () => {
+        window.ArdoiseTheme.appliquer(bouton.dataset.theme);
+        dessinerGrilleThemes();
+        afficherMessage('Thème appliqué.', 'succes');
+      });
+    });
+  }
+
+  // theme.js est chargé en fin de page : on attend qu'il soit prêt.
+  if (window.ArdoiseTheme) dessinerGrilleThemes();
+  else window.addEventListener('load', dessinerGrilleThemes);
 
   // ---------- Filtrage de la navigation selon le rôle connecté ----------
   (function gererAccesParRole() {
@@ -346,5 +416,6 @@
   chargerProfil();
 </script>
 
+<script src="theme.js"></script>
 </body>
 </html>

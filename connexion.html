@@ -27,7 +27,7 @@
 
   body {
     margin: 0;
-    font-family: 'Inter', sans-serif;
+    font-family: var(--police-corps);
     color: var(--texte-sombre);
     background: var(--craie);
   }
@@ -89,7 +89,7 @@
   .marque-pied {
     position: relative;
     margin-top: 56px;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--police-mono);
     font-size: 0.72rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -112,7 +112,7 @@
   }
 
   .carte h2 {
-    font-family: 'Fraunces', serif;
+    font-family: var(--police-titre);
     font-weight: 600;
     font-size: 1.7rem;
     margin: 0 0 6px 0;
@@ -140,16 +140,16 @@
     width: 100%;
     padding: 12px 14px;
     font-size: 0.98rem;
-    font-family: 'Inter', sans-serif;
+    font-family: var(--police-corps);
     border: 1.5px solid #DDD6C5;
-    border-radius: 7px;
+    border-radius:  var(--r-bouton);
     background: var(--craie-2);
     color: var(--texte-sombre);
     transition: border-color 0.15s ease;
   }
 
   .champ input#code_ecole {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--police-mono);
     letter-spacing: 0.02em;
   }
 
@@ -168,12 +168,12 @@
     border: none;
     cursor: pointer;
     font-size: 0.78rem;
-    font-family: 'Inter', sans-serif;
+    font-family: var(--police-corps);
     color: var(--encre);
     font-weight: 500;
     padding: 4px 6px;
   }
-  .bouton-oeil:focus-visible { outline: 2px solid var(--encre); outline-offset: 2px; border-radius: 4px; }
+  .bouton-oeil:focus-visible { outline: 2px solid var(--encre); outline-offset: 2px; border-radius:  var(--r-petit); }
 
   .bouton-connexion {
     width: 100%;
@@ -182,8 +182,8 @@
     background: var(--ocre);
     color: var(--craie-2);
     border: none;
-    border-radius: 7px;
-    font-family: 'Inter', sans-serif;
+    border-radius:  var(--r-bouton);
+    font-family: var(--police-corps);
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
@@ -233,6 +233,14 @@
     }
   }
 </style>
+<script>
+  /* Applique le thème AVANT le premier affichage, pour éviter tout clignotement.
+     La liste doit rester alignée sur theme.css / theme.js. */
+  /* Page publique : identite de marque figee, volontairement non thematisee. */
+  document.documentElement.setAttribute('data-theme','ardoise');
+</script>
+<link rel="stylesheet" href="theme.css" />
+
 </head>
 <body>
 

@@ -16,19 +16,19 @@
     --encre: #3C5A62; --texte-sombre: #1F2B24; --texte-att: #6B7269; --bordure: #E4DFCF;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Inter', sans-serif; color: var(--texte-sombre); background: var(--craie); line-height: 1.5; }
+  body { font-family: var(--police-corps); color: var(--texte-sombre); background: var(--craie); line-height: 1.5; }
   a { color: inherit; }
   .conteneur { max-width: 1080px; margin: 0 auto; padding: 0 28px; }
 
   /* Barre supérieure */
   .entete-site {
-    position: sticky; top: 0; z-index: 20; background: rgba(246,242,231,0.92); backdrop-filter: blur(6px);
+    position: sticky; top: 0; z-index: 20; background: var(--nav-texte-fort); backdrop-filter: blur(6px);
     border-bottom: 1px solid var(--bordure);
   }
   .entete-site .conteneur { display: flex; align-items: center; justify-content: space-between; height: 68px; }
-  .marque-site { font-family: 'Fraunces', serif; font-weight: 700; font-size: 1.4rem; }
+  .marque-site { font-family: var(--police-titre); font-weight: 700; font-size: 1.4rem; }
   .lien-connexion {
-    background: var(--ardoise); color: var(--craie); padding: 9px 20px; border-radius: 7px;
+    background: var(--ardoise); color: var(--craie); padding: 9px 20px; border-radius:  var(--r-bouton);
     text-decoration: none; font-size: 0.9rem; font-weight: 600;
   }
   .lien-connexion:hover { background: var(--ardoise-2); }
@@ -43,14 +43,14 @@
   .hero .conteneur { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 50px; align-items: center; position: relative; }
   @media (max-width: 860px) { .hero .conteneur { grid-template-columns: 1fr; } .hero { padding: 50px 0 40px 0; } }
   .hero h1 {
-    font-family: 'Fraunces', serif; font-weight: 700; font-size: clamp(2.2rem, 4.5vw, 3.4rem);
+    font-family: var(--police-titre); font-weight: 700; font-size: clamp(2.2rem, 4.5vw, 3.4rem);
     line-height: 1.08; margin-bottom: 20px; letter-spacing: -0.01em;
   }
   .hero h1 .accent { color: var(--ocre); }
   .hero p.lead { font-size: 1.1rem; color: var(--texte-att); max-width: 46ch; margin-bottom: 30px; }
   .groupe-cta { display: flex; gap: 14px; flex-wrap: wrap; }
   .bouton-cta {
-    padding: 14px 26px; border-radius: 8px; font-weight: 600; font-size: 0.98rem; text-decoration: none;
+    padding: 14px 26px; border-radius:  var(--r-bouton); font-weight: 600; font-size: 0.98rem; text-decoration: none;
     display: inline-block;
   }
   .bouton-cta.principal { background: var(--ocre); color: var(--craie-2); }
@@ -66,30 +66,30 @@
   }
   .bandeau-stats .conteneur { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; text-align: center; }
   @media (max-width: 700px) { .bandeau-stats .conteneur { grid-template-columns: repeat(2, 1fr); } }
-  .bandeau-stats .chiffre { font-family: 'Fraunces', serif; font-weight: 700; font-size: 1.9rem; color: var(--ocre-clair); }
-  .bandeau-stats .libelle { font-size: 0.82rem; color: rgba(246,242,231,0.65); margin-top: 4px; }
+  .bandeau-stats .chiffre { font-family: var(--police-titre); font-weight: 700; font-size: 1.9rem; color: var(--ocre-clair); }
+  .bandeau-stats .libelle { font-size: 0.82rem; color: var(--nav-texte-fort); margin-top: 4px; }
 
   /* Fonctionnalités */
   .section { padding: 76px 0; }
   .section-titre { text-align: center; margin-bottom: 46px; }
   .section-titre .etiquette {
-    font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.09em;
+    font-family: var(--police-mono); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.09em;
     color: var(--ocre-dark); font-weight: 600;
   }
-  .section-titre h2 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 2rem; margin-top: 8px; }
+  .section-titre h2 { font-family: var(--police-titre); font-weight: 600; font-size: 2rem; margin-top: 8px; }
   .section-titre p { color: var(--texte-att); max-width: 52ch; margin: 12px auto 0 auto; }
 
   .grille-fonctionnalites { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
   @media (max-width: 860px) { .grille-fonctionnalites { grid-template-columns: repeat(2, 1fr); } }
   @media (max-width: 600px) { .grille-fonctionnalites { grid-template-columns: 1fr; } }
   .carte-fonctionnalite {
-    background: var(--craie-2); border: 1px solid var(--bordure); border-radius: 12px; padding: 26px;
+    background: var(--craie-2); border: 1px solid var(--bordure); border-radius:  var(--r-carte); padding: 26px;
   }
   .carte-fonctionnalite .icone {
-    width: 42px; height: 42px; border-radius: 9px; background: var(--ardoise); color: var(--ocre-clair);
+    width: 42px; height: 42px; border-radius:  var(--r-bouton); background: var(--ardoise); color: var(--ocre-clair);
     display: flex; align-items: center; justify-content: center; font-size: 1.2rem; margin-bottom: 16px;
   }
-  .carte-fonctionnalite h3 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.1rem; margin-bottom: 8px; }
+  .carte-fonctionnalite h3 { font-family: var(--police-titre); font-weight: 600; font-size: 1.1rem; margin-bottom: 8px; }
   .carte-fonctionnalite p { color: var(--texte-att); font-size: 0.92rem; }
 
   /* Rôles */
@@ -97,15 +97,15 @@
   .grille-roles { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
   @media (max-width: 860px) { .grille-roles { grid-template-columns: repeat(2, 1fr); } }
   .carte-role {
-    background: var(--craie); border: 1px solid var(--bordure); border-radius: 10px; padding: 20px 16px; text-align: center;
+    background: var(--craie); border: 1px solid var(--bordure); border-radius:  var(--r-carte); padding: 20px 16px; text-align: center;
   }
   .carte-role .nom { font-weight: 700; font-size: 0.95rem; margin-bottom: 6px; }
   .carte-role .desc { font-size: 0.8rem; color: var(--texte-att); }
 
   /* CTA final */
   .cta-final { background: var(--ardoise); color: var(--craie); padding: 70px 0; text-align: center; }
-  .cta-final h2 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 2rem; margin-bottom: 14px; }
-  .cta-final p { color: rgba(246,242,231,0.7); margin-bottom: 28px; }
+  .cta-final h2 { font-family: var(--police-titre); font-weight: 600; font-size: 2rem; margin-bottom: 14px; }
+  .cta-final p { color: var(--nav-texte-fort); margin-bottom: 28px; }
 
   /* Pied de page */
   .pied-page { padding: 40px 0; border-top: 1px solid var(--bordure); }
@@ -113,6 +113,14 @@
   .pied-page .marque-site { font-size: 1.1rem; }
   .pied-page .mentions { font-size: 0.82rem; color: var(--texte-att); }
 </style>
+<script>
+  /* Applique le thème AVANT le premier affichage, pour éviter tout clignotement.
+     La liste doit rester alignée sur theme.css / theme.js. */
+  /* Page publique : identite de marque figee, volontairement non thematisee. */
+  document.documentElement.setAttribute('data-theme','ardoise');
+</script>
+<link rel="stylesheet" href="theme.css" />
+
 </head>
 <body>
 
@@ -216,7 +224,7 @@
 
 <footer class="pied-page">
   <div class="conteneur">
-    <div class="marque-site" style="font-family:'Fraunces',serif; font-weight:700;">Ardoise</div>
+    <div class="marque-site" style="font-family:var(--police-titre); font-weight:700;">Ardoise</div>
     <div class="mentions">© 2026 Ardoise — La gestion scolaire simplifiée.</div>
   </div>
 </footer>

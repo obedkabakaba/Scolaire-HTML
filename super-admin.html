@@ -25,23 +25,23 @@
     --texte-sombre: #1F2B24; --texte-att: #6B7269; --bordure: #E4DFCF;
   }
   * { box-sizing: border-box; }
-  body { margin: 0; font-family: 'Inter', sans-serif; color: var(--texte-sombre); background: var(--craie); }
+  body { margin: 0; font-family: var(--police-corps); color: var(--texte-sombre); background: var(--craie); }
 
   /* ---------- Écran de connexion Super Admin ---------- */
   .ecran-connexion { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
-  .carte-connexion { background: var(--craie-2); border: 1px solid var(--bordure); border-radius: 12px; padding: 36px; max-width: 380px; width: 100%; }
-  .carte-connexion h1 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.6rem; margin: 0 0 4px 0; }
+  .carte-connexion { background: var(--craie-2); border: 1px solid var(--bordure); border-radius:  var(--r-carte); padding: 36px; max-width: 380px; width: 100%; }
+  .carte-connexion h1 { font-family: var(--police-titre); font-weight: 600; font-size: 1.6rem; margin: 0 0 4px 0; }
   .carte-connexion .sous-titre { color: var(--texte-att); font-size: 0.9rem; margin: 0 0 28px 0; }
 
   .champ { margin-bottom: 16px; }
   .champ label { display: block; font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--texte-att); margin-bottom: 6px; }
   .champ input, .champ select {
-    width: 100%; padding: 11px 13px; font-size: 0.92rem; font-family: 'Inter', sans-serif;
-    border: 1.5px solid var(--bordure); border-radius: 7px; background: #fff; color: var(--texte-sombre);
+    width: 100%; padding: 11px 13px; font-size: 0.92rem; font-family: var(--police-corps);
+    border: 1.5px solid var(--bordure); border-radius:  var(--r-bouton); background: #fff; color: var(--texte-sombre);
   }
   .champ input:focus, .champ select:focus { outline: none; border-color: var(--encre); }
 
-  .bouton { padding: 11px 18px; border-radius: 7px; font-family: 'Inter', sans-serif; font-size: 0.9rem; font-weight: 600; cursor: pointer; border: 1.5px solid transparent; }
+  .bouton { padding: 11px 18px; border-radius:  var(--r-bouton); font-family: var(--police-corps); font-size: 0.9rem; font-weight: 600; cursor: pointer; border: 1.5px solid transparent; }
   .bouton-principal { background: var(--ocre); color: var(--craie-2); width: 100%; }
   .bouton-principal:hover { background: var(--ocre-dark); }
   .bouton-secondaire { background: none; border-color: var(--bordure); color: var(--texte-sombre); }
@@ -54,16 +54,16 @@
   /* ---------- Panneau principal ---------- */
   .panneau-principal { display: none; padding: 36px 44px 60px 44px; max-width: 1000px; margin: 0 auto; }
   .entete-page { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px; flex-wrap: wrap; gap: 16px; }
-  .entete-page h1 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.9rem; margin: 0 0 4px 0; }
+  .entete-page h1 { font-family: var(--police-titre); font-weight: 600; font-size: 1.9rem; margin: 0 0 4px 0; }
   .entete-page .sous-titre { color: var(--texte-att); font-size: 0.95rem; margin: 0; }
-  .bouton-deconnexion { background: none; border: 1.5px solid var(--bordure); color: var(--texte-sombre); padding: 9px 16px; border-radius: 7px; font-size: 0.86rem; font-weight: 500; cursor: pointer; }
+  .bouton-deconnexion { background: none; border: 1.5px solid var(--bordure); color: var(--texte-sombre); padding: 9px 16px; border-radius:  var(--r-bouton); font-size: 0.86rem; font-weight: 500; cursor: pointer; }
 
-  .conteneur-tableau { background: var(--craie-2); border: 1px solid var(--bordure); border-radius: 10px; overflow: hidden; margin-bottom: 24px; }
+  .conteneur-tableau { background: var(--craie-2); border: 1px solid var(--bordure); border-radius:  var(--r-carte); overflow: hidden; margin-bottom: 24px; }
   table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
   th { text-align: left; padding: 13px 16px; background: rgba(31,43,36,0.03); color: var(--texte-att); font-size: 0.78rem; text-transform: uppercase; font-weight: 600; }
   td { padding: 13px 16px; border-top: 1px solid var(--bordure); }
-  .matricule-cell { font-family: 'IBM Plex Mono', monospace; font-size: 0.82rem; color: var(--encre); }
-  .badge-statut { display: inline-block; padding: 3px 9px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+  .matricule-cell { font-family: var(--police-mono); font-size: 0.82rem; color: var(--encre); }
+  .badge-statut { display: inline-block; padding: 3px 9px; border-radius:  var(--r-pilule); font-size: 0.75rem; font-weight: 600; }
   .badge-statut.actif { background: rgba(76,122,90,0.12); color: var(--vert-ok); }
   .badge-statut.autre { background: rgba(178,58,46,0.1); color: var(--rouge); }
   .etat-vide-tableau { padding: 40px 20px; text-align: center; color: var(--texte-att); }
@@ -71,39 +71,48 @@
   /* Modale création école */
   .voile { position: fixed; inset: 0; background: rgba(31,43,36,0.45); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 10; }
   .voile.visible { display: flex; }
-  .modale { background: var(--craie-2); border-radius: 12px; padding: 30px; max-width: 520px; width: 100%; max-height: 90vh; overflow-y: auto; }
-  .modale h2 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.4rem; margin: 0 0 6px 0; }
+  .modale { background: var(--craie-2); border-radius:  var(--r-carte); padding: 30px; max-width: 520px; width: 100%; max-height: 90vh; overflow-y: auto; }
+  .modale h2 { font-family: var(--police-titre); font-weight: 600; font-size: 1.4rem; margin: 0 0 6px 0; }
   .modale .separation { border: none; border-top: 1px solid var(--bordure); margin: 20px 0; }
   .modale .sous-section { font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--texte-att); margin-bottom: 12px; }
   .ligne-champs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
   .actions-modale { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; }
 
-  .message-flash { display: none; padding: 12px 16px; border-radius: 8px; font-size: 0.88rem; margin-bottom: 20px; }
+  .message-flash { display: none; padding: 12px 16px; border-radius:  var(--r-bouton); font-size: 0.88rem; margin-bottom: 20px; }
   .message-flash.visible { display: block; }
   .message-flash.succes { background: rgba(76,122,90,0.1); color: var(--vert-ok); }
   .message-flash.erreur { background: rgba(178,58,46,0.08); color: var(--rouge); }
 
   .grille-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 26px; }
   @media (max-width: 900px) { .grille-stats { grid-template-columns: repeat(2, 1fr); } }
-  .carte-stat { background: var(--craie-2); border: 1px solid var(--bordure); border-radius: 10px; padding: 16px; }
-  .carte-stat .valeur { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.6rem; line-height: 1; }
+  .carte-stat { background: var(--craie-2); border: 1px solid var(--bordure); border-radius:  var(--r-carte); padding: 16px; }
+  .carte-stat .valeur { font-family: var(--police-titre); font-weight: 600; font-size: 1.6rem; line-height: 1; }
   .carte-stat .etiquette { font-size: 0.74rem; color: var(--texte-att); margin-top: 4px; }
 
   .barre-recherche { margin-bottom: 16px; }
-  .barre-recherche input { width: 100%; max-width: 360px; padding: 9px 12px; border: 1.5px solid var(--bordure); border-radius: 7px; font-size: 0.9rem; font-family: 'Inter', sans-serif; }
+  .barre-recherche input { width: 100%; max-width: 360px; padding: 9px 12px; border: 1.5px solid var(--bordure); border-radius:  var(--r-bouton); font-size: 0.9rem; font-family: var(--police-corps); }
   tr.ligne-ecole { cursor: pointer; }
   tr.ligne-ecole:hover { background: rgba(31,43,36,0.03); }
 
   .modale-large { max-width: 720px; }
   .section-detail { margin-bottom: 22px; }
-  .section-detail h3 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1rem; margin: 0 0 12px 0; display: flex; justify-content: space-between; align-items: center; }
+  .section-detail h3 { font-family: var(--police-titre); font-weight: 600; font-size: 1rem; margin: 0 0 12px 0; display: flex; justify-content: space-between; align-items: center; }
   .ligne-info { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--bordure); font-size: 0.88rem; }
   .ligne-info:last-child { border-bottom: none; }
   .ligne-info span:first-child { color: var(--texte-att); }
   .grille-stats-mini { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
   .grille-stats-mini .carte-stat { text-align: center; padding: 12px; }
-  .mot-de-passe-affiche { background: rgba(201,138,62,0.1); border: 1px dashed var(--ocre); border-radius: 7px; padding: 10px 12px; font-family: 'IBM Plex Mono', monospace; font-size: 0.95rem; margin-top: 10px; }
+  .mot-de-passe-affiche { background: rgba(201,138,62,0.1); border: 1px dashed var(--ocre); border-radius:  var(--r-bouton); padding: 10px 12px; font-family: var(--police-mono); font-size: 0.95rem; margin-top: 10px; }
 </style>
+<script>
+  /* Applique le thème AVANT le premier affichage, pour éviter tout clignotement.
+     La liste doit rester alignée sur theme.css / theme.js. */
+  (function(){var v=['ardoise','pure','nuit','kivu'];var t;
+   try{t=localStorage.getItem('ardoise_theme')||sessionStorage.getItem('ardoise_theme');}catch(e){}
+   document.documentElement.setAttribute('data-theme', v.indexOf(t)!==-1?t:'ardoise');})();
+</script>
+<link rel="stylesheet" href="theme.css" />
+
 </head>
 <body>
 
@@ -644,5 +653,6 @@
   }
 </script>
 
+<script src="theme.js"></script>
 </body>
 </html>

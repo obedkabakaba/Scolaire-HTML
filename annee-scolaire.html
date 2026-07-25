@@ -16,27 +16,27 @@
     --texte-sombre: #1F2B24; --texte-att: #6B7269; --bordure: #E4DFCF;
   }
   * { box-sizing: border-box; }
-  body { margin: 0; font-family: 'Inter', sans-serif; color: var(--texte-sombre); background: var(--craie); }
+  body { margin: 0; font-family: var(--police-corps); color: var(--texte-sombre); background: var(--craie); }
   .mise-en-page { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
   @media (max-width: 780px) { .mise-en-page { grid-template-columns: 1fr; } }
-  .barre-laterale { background: var(--ardoise); color: var(--craie); padding: 32px 22px; position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; justify-content: space-between; }
+  .barre-laterale { background: var(--nav-fond); color: var(--nav-texte-fort); padding: 32px 22px; position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; justify-content: space-between; }
   @media (max-width: 780px) { .barre-laterale { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px; height: auto; z-index: 5; } }
-  .barre-laterale .marque { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.5rem; margin: 0 0 40px 0; }
+  .barre-laterale .marque { font-family: var(--police-titre); font-weight: 600; font-size: 1.5rem; margin: 0 0 40px 0; }
   @media (max-width: 780px) { .barre-laterale .marque { margin: 0; } }
   .nav-liste { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
   .nav-liste { visibility: hidden; }
   @media (max-width: 780px) { .nav-liste { display: none; } }
-  .nav-item, .nav-item:visited { padding: 10px 12px; border-radius: 6px; font-size: 0.92rem; color: rgba(246,242,231,0.55); text-decoration: none; display: flex; justify-content: space-between; align-items: center; }
-  .nav-item.actif { background: rgba(246,242,231,0.08); color: var(--craie); font-weight: 600; }
+  .nav-item, .nav-item:visited { padding: 10px 12px; border-radius:  var(--r-petit); font-size: 0.92rem; color: var(--nav-texte); text-decoration: none; display: flex; justify-content: space-between; align-items: center; }
+  .nav-item.actif { background: var(--nav-actif-fond); color: var(--nav-texte-fort); font-weight: 600; }
   .lettre-i { position: relative; display: inline-block; line-height: 1; }
   .point-i-marque { position: absolute; width: 0.13em; height: 0.13em; border-radius: 50%; background: var(--ocre); left: 50%; top: 0.16em; transform: translateX(-50%); }
-  .nav-deconnexion { background: none; border: none; border-top: 1px solid rgba(246,242,231,0.12); color: rgba(246,242,231,0.55); text-align: left; padding: 14px 12px 4px 12px; font-size: 0.86rem; font-family: 'Inter', sans-serif; cursor: pointer; }
-  .nav-deconnexion:hover { color: var(--craie); }
+  .nav-deconnexion { background: none; border: none; border-top: 1px solid var(--nav-separateur); color: var(--nav-texte); text-align: left; padding: 14px 12px 4px 12px; font-size: 0.86rem; font-family: var(--police-corps); cursor: pointer; }
+  .nav-deconnexion:hover { color: var(--nav-texte-fort); }
   @media (max-width: 780px) { .nav-deconnexion { border-top: none; padding: 8px 12px; } }
 
   .contenu { padding: 36px 44px 60px 44px; }
   @media (max-width: 780px) { .contenu { padding: 24px 20px 48px 20px; } }
-  .entete-page h1 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.9rem; margin: 0 0 4px 0; }
+  .entete-page h1 { font-family: var(--police-titre); font-weight: 600; font-size: 1.9rem; margin: 0 0 4px 0; }
   .entete-page .sous-titre { color: var(--texte-att); font-size: 0.95rem; margin: 0 0 24px 0; }
 
   .barre-onglets { display: flex; gap: 6px; border-bottom: 1.5px solid var(--bordure); margin-bottom: 24px; flex-wrap: wrap; }
@@ -45,7 +45,7 @@
   .panneau-onglet { display: none; }
   .panneau-onglet.visible { display: block; }
 
-  .bouton { padding: 9px 15px; border-radius: 7px; font-family: 'Inter', sans-serif; font-size: 0.86rem; font-weight: 600; cursor: pointer; border: 1.5px solid transparent; }
+  .bouton { padding: 9px 15px; border-radius:  var(--r-bouton); font-family: var(--police-corps); font-size: 0.86rem; font-weight: 600; cursor: pointer; border: 1.5px solid transparent; }
   .bouton-principal { background: var(--ocre); color: var(--craie-2); }
   .bouton-principal:hover { background: var(--ocre-dark); }
   .bouton-secondaire { background: none; border-color: var(--bordure); color: var(--texte-sombre); }
@@ -55,38 +55,38 @@
   .bouton:disabled { opacity: 0.55; cursor: not-allowed; }
 
   .carte-annee {
-    background: var(--craie-2); border: 1px solid var(--bordure); border-radius: 10px; padding: 20px;
+    background: var(--craie-2); border: 1px solid var(--bordure); border-radius:  var(--r-carte); padding: 20px;
     display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 12px;
   }
-  .carte-annee .libelle { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.1rem; }
-  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.74rem; font-weight: 600; margin-left: 8px; }
+  .carte-annee .libelle { font-family: var(--police-titre); font-weight: 600; font-size: 1.1rem; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius:  var(--r-pilule); font-size: 0.74rem; font-weight: 600; margin-left: 8px; }
   .badge.actif { background: rgba(76,122,90,0.12); color: var(--vert-ok); }
   .badge.cloturee { background: rgba(107,114,105,0.12); color: var(--texte-att); }
   .actions-annee { display: flex; gap: 8px; flex-wrap: wrap; }
 
   .form-inline { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 24px; }
-  .form-inline input, .form-inline select { padding: 9px 12px; border: 1.5px solid var(--bordure); border-radius: 7px; font-size: 0.88rem; }
+  .form-inline input, .form-inline select { padding: 9px 12px; border: 1.5px solid var(--bordure); border-radius:  var(--r-bouton); font-size: 0.88rem; }
 
   .grille-2col { display: grid; grid-template-columns: 1fr 1.4fr; gap: 24px; }
   @media (max-width: 900px) { .grille-2col { grid-template-columns: 1fr; } }
-  .panneau { background: var(--craie-2); border: 1px solid var(--bordure); border-radius: 10px; padding: 20px; }
-  .panneau h3 { font-family: 'Fraunces', serif; font-size: 1.05rem; margin: 0 0 14px 0; }
+  .panneau { background: var(--craie-2); border: 1px solid var(--bordure); border-radius:  var(--r-carte); padding: 20px; }
+  .panneau h3 { font-family: var(--police-titre); font-size: 1.05rem; margin: 0 0 14px 0; }
 
-  .bloc-semestre { border: 1.5px solid var(--bordure); border-radius: 8px; padding: 14px; margin-bottom: 14px; }
+  .bloc-semestre { border: 1.5px solid var(--bordure); border-radius:  var(--r-bouton); padding: 14px; margin-bottom: 14px; }
   .bloc-semestre .titre-semestre { font-weight: 700; margin-bottom: 8px; }
   .liste-simple { list-style: none; margin: 0; padding: 0; }
   .liste-simple li { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--bordure); font-size: 0.88rem; }
   .liste-simple li:last-child { border-bottom: none; }
   .lien-action { background: none; border: none; color: var(--rouge); cursor: pointer; font-size: 0.8rem; }
 
-  .conteneur-tableau { background: var(--craie-2); border: 1px solid var(--bordure); border-radius: 10px; overflow: hidden; }
+  .conteneur-tableau { background: var(--craie-2); border: 1px solid var(--bordure); border-radius:  var(--r-carte); overflow: hidden; }
   table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
   th { text-align: left; padding: 11px 14px; background: rgba(31,43,36,0.03); color: var(--texte-att); font-size: 0.74rem; text-transform: uppercase; font-weight: 600; }
   td { padding: 10px 14px; border-top: 1px solid var(--bordure); }
-  select.select-decision { padding: 5px 8px; border: 1.5px solid var(--bordure); border-radius: 6px; font-size: 0.82rem; }
+  select.select-decision { padding: 5px 8px; border: 1.5px solid var(--bordure); border-radius:  var(--r-petit); font-size: 0.82rem; }
   .etat-vide-tableau { padding: 40px 20px; text-align: center; color: var(--texte-att); }
 
-  .message-flash { display: none; padding: 12px 16px; border-radius: 8px; font-size: 0.88rem; margin-bottom: 20px; }
+  .message-flash { display: none; padding: 12px 16px; border-radius:  var(--r-bouton); font-size: 0.88rem; margin-bottom: 20px; }
   .message-flash.visible { display: block; }
   .message-flash.succes { background: rgba(76,122,90,0.1); color: var(--vert-ok); }
   .message-flash.erreur { background: rgba(178,58,46,0.08); color: var(--rouge); }
@@ -95,6 +95,15 @@
   .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--bordure); border-top-color: var(--ocre); border-radius: 50%; animation: tourner 0.65s linear infinite; vertical-align: middle; margin-right: 8px; }
   @keyframes tourner { to { transform: rotate(360deg); } }
 </style>
+<script>
+  /* Applique le thème AVANT le premier affichage, pour éviter tout clignotement.
+     La liste doit rester alignée sur theme.css / theme.js. */
+  (function(){var v=['ardoise','pure','nuit','kivu'];var t;
+   try{t=localStorage.getItem('ardoise_theme')||sessionStorage.getItem('ardoise_theme');}catch(e){}
+   document.documentElement.setAttribute('data-theme', v.indexOf(t)!==-1?t:'ardoise');})();
+</script>
+<link rel="stylesheet" href="theme.css" />
+
 </head>
 <body>
 
@@ -389,7 +398,7 @@
               <li>
                 <span>${e.libelle}</span>
                 <span style="display:flex; gap:8px; align-items:center;">
-                  <select class="select-rattacher" data-id="${e.id}" style="padding:4px 8px; border:1.5px solid var(--bordure); border-radius:6px; font-size:0.8rem;">${optionsSemestres}</select>
+                  <select class="select-rattacher" data-id="${e.id}" style="padding:4px 8px; border:1.5px solid var(--bordure); border-radius: var(--r-petit); font-size:0.8rem;">${optionsSemestres}</select>
                   <button class="lien-action" style="color:var(--vert-ok);" data-action="rattacher" data-id="${e.id}">Rattacher</button>
                   <button class="lien-action" data-action="supprimer" data-id="${e.id}">Supprimer</button>
                 </span>
@@ -594,5 +603,6 @@
   })();
 </script>
 
+<script src="theme.js"></script>
 </body>
 </html>

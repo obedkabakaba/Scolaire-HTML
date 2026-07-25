@@ -147,6 +147,7 @@
       <p class="sous-titre" id="compteur-ecoles">Chargement…</p>
     </div>
     <div style="display:flex; gap:10px;">
+      <button class="bouton bouton-secondaire" id="bouton-journal-ia" title="Registre des recherches produites par l'assistant">Journal IA</button>
       <button class="bouton bouton-secondaire" id="bouton-deconnexion-admin">Se déconnecter</button>
       <button class="bouton bouton-principal" id="bouton-nouvelle-ecole">+ Nouvelle école</button>
     </div>
@@ -663,6 +664,98 @@
 </script>
 
 <script src="theme.js"></script>
+<!-- Registre des recherches produites par l'assistant — diagnostic interne -->
+<div class="voile" id="voile-journal-ia" style="display:none; position:fixed; inset:0; background:rgba(31,43,36,0.5); align-items:center; justify-content:center; padding:20px; z-index:80;">
+  <div style="background:var(--craie-2); border-radius:12px; padding:26px; max-width:1000px; width:100%; max-height:90vh; overflow-y:auto;">
+    <h2 style="font-family:var(--police-titre); font-weight:600; font-size:1.25rem; margin:0 0 4px 0;">Journal des recherches assistées</h2>
+    <p style="color:var(--texte-att); font-size:0.84rem; margin:0 0 16px 0;">
+      Toutes les requêtes produites par l'assistant, exécutées ou refusées. Une requête récurrente et fiable mérite de devenir une recherche préécrite ; une requête fausse indique un modèle à corriger.
+    </p>
+
+    <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items:center;">
+      <select id="filtre-statut-journal" style="border:1px solid var(--bordure); border-radius:6px; padding:8px 11px; font-family:var(--police-corps); background:var(--craie); color:var(--texte-sombre);">
+        <option value="">Tous les statuts</option>
+        <option value="preecrite">Recherches préécrites</option>
+        <option value="executee">Requêtes générées</option>
+        <option value="refusee">Refusées par le garde-fou</option>
+        <option value="erreur">Erreurs d'exécution</option>
+        <option value="sans_reponse">Sans réponse</option>
+      </select>
+      <button class="bouton bouton-secondaire" id="bouton-fermer-journal" style="margin-left:auto;">Fermer</button>
+    </div>
+
+    <div id="liste-journal"></div>
+  </div>
+</div>
+
+<script>
+  // ============================================================
+  //  Registre des recherches assistées
+  //  Volontairement discret : c'est un outil de diagnostic, sans intérêt
+  //  pour une école cliente.
+  // ============================================================
+  (function activerJournalIA() {
+    const voile = document.getElementById('voile-journal-ia');
+
+    function echapperJ(t) {
+      const d = document.createElement('div');
+      d.textContent = t == null ? '' : String(t);
+      return d.innerHTML;
+    }
+
+    const COULEURS = {
+      preecrite: 'var(--vert-ok)', executee: 'var(--encre)',
+      refusee: 'var(--rouge)', erreur: 'var(--rouge)', sans_reponse: 'var(--texte-att)'
+    };
+
+    async function charger() {
+      const zone = document.getElementById('liste-journal');
+      zone.innerHTML = '<p style="color:var(--texte-att); padding:24px 0; text-align:center;">Chargement…</p>';
+
+      const statut = document.getElementById('filtre-statut-journal').value;
+      const r = await appelApi(`/ia/journal${statut ? '?statut=' + statut : ''}`);
+      if (!r || !r.ok) {
+        zone.innerHTML = '<p style="color:var(--texte-att); padding:24px 0; text-align:center;">Registre indisponible.</p>';
+        return;
+      }
+      const lignes = await r.json();
+      if (lignes.length === 0) {
+        zone.innerHTML = '<p style="color:var(--texte-att); padding:24px 0; text-align:center;">Aucune recherche enregistrée.</p>';
+        return;
+      }
+
+      zone.innerHTML = lignes.map(l => `
+        <div style="border:1px solid var(--bordure); border-left:3px solid ${COULEURS[l.statut] || 'var(--bordure)'}; border-radius:0 8px 8px 0; padding:14px 16px; margin-bottom:10px;">
+          <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:baseline;">
+            <strong style="font-size:0.94rem;">${echapperJ(l.question)}</strong>
+            <span style="font-size:0.76rem; color:var(--texte-att); white-space:nowrap;">
+              ${new Date(l.created_at).toLocaleString('fr-FR')}
+            </span>
+          </div>
+          <div style="font-size:0.78rem; color:var(--texte-att); margin-top:5px;">
+            ${echapperJ(l.ecole_nom || '—')} · ${echapperJ(l.utilisateur || '—')} ·
+            <span style="color:${COULEURS[l.statut] || 'inherit'}; font-weight:600;">${echapperJ(l.statut)}</span>
+            ${l.modele ? ` · modèle « ${echapperJ(l.modele)} »` : ''}
+            ${l.nb_lignes !== null ? ` · ${l.nb_lignes} ligne(s)` : ''}
+            ${l.duree_ms !== null ? ` · ${l.duree_ms} ms` : ''}
+          </div>
+          ${l.sql_genere ? `<pre style="margin:10px 0 0 0; background:var(--ardoise); color:rgba(246,242,231,0.9); border-radius:6px; padding:11px 13px; font-family:var(--police-mono); font-size:0.76rem; white-space:pre-wrap; word-break:break-word; line-height:1.5;">${echapperJ(l.sql_genere)}</pre>` : ''}
+          ${l.detail ? `<div style="margin-top:8px; font-size:0.79rem; color:var(--rouge);">${echapperJ(l.detail)}</div>` : ''}
+        </div>
+      `).join('');
+    }
+
+    document.getElementById('bouton-journal-ia').addEventListener('click', () => {
+      voile.style.display = 'flex';
+      charger();
+    });
+    document.getElementById('bouton-fermer-journal').addEventListener('click', () => {
+      voile.style.display = 'none';
+    });
+    document.getElementById('filtre-statut-journal').addEventListener('change', charger);
+  })();
+</script>
+
 <script src="ui.js"></script>
 <script src="hors-ligne.js"></script>
 </body>

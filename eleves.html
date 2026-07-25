@@ -41,6 +41,12 @@
   .nav-item.actif { background: var(--nav-actif-fond); color: var(--nav-texte-fort); font-weight: 600; }
   .nav-item .etiquette-bientot { font-family: var(--police-mono); font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--nav-texte-faible); }
 
+  .puce-ia { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.06em; background: var(--ocre); color: #fff; padding: 1px 6px; border-radius: 20px; margin-left: 4px; }
+  .grille-correspondance { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
+  .champ-correspondance label { display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 5px; }
+  .champ-correspondance select { width: 100%; border: 1px solid var(--bordure); border-radius: var(--r-petit); padding: 8px 10px; font-family: var(--police-corps); font-size: 0.86rem; background: var(--craie); color: var(--texte-sombre); }
+  .champ-correspondance.obligatoire label::after { content: ' *'; color: var(--rouge); }
+  .remarque-import { background: rgba(201,138,62,0.12); border-radius: var(--r-petit); padding: 10px 13px; font-size: 0.85rem; color: var(--ocre-dark); margin-bottom: 10px; }
   .contenu { padding: 36px 44px 60px 44px; }
   @media (max-width: 780px) { .contenu { padding: 24px 20px 48px 20px; } }
 
@@ -197,6 +203,8 @@
       <div class="groupe-boutons">
         <button class="bouton bouton-secondaire" id="bouton-importer">Importer Excel</button>
         <input type="file" id="input-fichier-import" accept=".xlsx,.xls" />
+        <button class="bouton bouton-secondaire" id="bouton-import-assiste">Importer un fichier libre <span class="puce-ia">IA</span></button>
+        <input type="file" id="input-fichier-assiste" accept=".xlsx,.xls,.csv" style="display:none;" />
         <button class="bouton bouton-secondaire" id="bouton-exporter">Exporter Excel</button>
         <button class="bouton bouton-principal" id="bouton-ajouter">+ Ajouter un élève</button>
       </div>
@@ -228,6 +236,30 @@
       </table>
     </div>
   </main>
+</div>
+
+<!-- Correspondance des colonnes proposée par l'assistant -->
+<div class="voile" id="voile-import" style="display:none; position:fixed; inset:0; background:rgba(31,43,36,0.45); align-items:center; justify-content:center; padding:20px; z-index:70;">
+  <div style="background:var(--craie-2); border-radius: var(--r-carte); padding:26px; max-width:860px; width:100%; max-height:90vh; overflow-y:auto;">
+    <h2 style="font-family:var(--police-titre); font-weight:600; font-size:1.25rem; margin:0 0 4px 0;">Correspondance des colonnes</h2>
+    <p id="import-sous-titre" style="color:var(--texte-att); font-size:0.85rem; margin:0 0 6px 0;"></p>
+    <p style="color:var(--texte-att); font-size:0.82rem; margin:0 0 18px 0;">
+      L'assistant a proposé une correspondance à partir des en-têtes et de trois lignes d'exemple. Corrigez ce qui ne va pas avant d'importer.
+    </p>
+
+    <div id="import-remarques"></div>
+    <div id="import-correspondance" class="grille-correspondance"></div>
+
+    <h3 style="font-family:var(--police-titre); font-size:1rem; margin:22px 0 10px 0;">Aperçu des cinq premières lignes</h3>
+    <div class="conteneur-tableau" style="overflow-x:auto;">
+      <table style="min-width:640px;"><thead id="import-apercu-entete"></thead><tbody id="import-apercu-corps"></tbody></table>
+    </div>
+
+    <div style="display:flex; gap:12px; justify-content:flex-end; margin-top:22px; flex-wrap:wrap;">
+      <button class="bouton bouton-secondaire" id="bouton-annuler-import">Annuler</button>
+      <button class="bouton bouton-principal" id="bouton-valider-import">Importer</button>
+    </div>
+  </div>
 </div>
 
 <!-- Modale ajout/modification -->
@@ -534,6 +566,125 @@
     let minuteur;
     return (...args) => { clearTimeout(minuteur); minuteur = setTimeout(() => fn(...args), delai); };
   }
+
+  // ============================================================
+  //  Import assisté — l'assistant devine la correspondance, l'utilisateur
+  //  la corrige, et l'écriture passe par le même code que l'import normal.
+  // ============================================================
+  (function activerImportAssiste() {
+    let fichierCourant = null;
+    let analyse = null;
+
+    function echapperTexte(t) {
+      const d = document.createElement('div');
+      d.textContent = t == null ? '' : String(t);
+      return d.innerHTML;
+    }
+
+    document.getElementById('bouton-import-assiste').addEventListener('click', () => {
+      document.getElementById('input-fichier-assiste').click();
+    });
+
+    document.getElementById('input-fichier-assiste').addEventListener('change', async (evt) => {
+      fichierCourant = evt.target.files[0];
+      evt.target.value = '';
+      if (!fichierCourant) return;
+
+      const bouton = document.getElementById('bouton-import-assiste');
+      bouton.disabled = true; bouton.textContent = 'Lecture du fichier…';
+
+      const donneesForm = new FormData();
+      donneesForm.append('fichier', fichierCourant);
+      const r = await appelApi('/ia/import/analyser', { method: 'POST', body: donneesForm });
+
+      bouton.disabled = false;
+      bouton.innerHTML = 'Importer un fichier libre <span class="puce-ia">IA</span>';
+      if (!r) return;
+
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { afficherMessage(d.message || 'Analyse impossible.', 'erreur'); return; }
+      analyse = d;
+
+      document.getElementById('import-sous-titre').textContent =
+        `${fichierCourant.name} — ${d.nb_lignes} ligne(s), ${d.colonnes.length} colonne(s)`;
+
+      document.getElementById('import-remarques').innerHTML =
+        (d.remarques || []).map(m => `<div class="remarque-import">${echapperTexte(m)}</div>`).join('');
+
+      document.getElementById('import-correspondance').innerHTML = d.champs_cibles.map(champ => `
+        <div class="champ-correspondance ${champ === 'Nom' ? 'obligatoire' : ''}">
+          <label for="corr-${champ}">${echapperTexte(champ)}</label>
+          <select id="corr-${champ}" data-champ="${champ}">
+            <option value="">— aucune —</option>
+            ${d.colonnes.map(c => `<option value="${echapperTexte(c)}" ${d.correspondance[champ] === c ? 'selected' : ''}>${echapperTexte(c)}</option>`).join('')}
+          </select>
+        </div>
+      `).join('');
+
+      dessinerApercu();
+      document.querySelectorAll('#import-correspondance select')
+        .forEach(sel => sel.addEventListener('change', dessinerApercu));
+
+      document.getElementById('voile-import').style.display = 'flex';
+    });
+
+    function correspondanceCourante() {
+      const corr = {};
+      document.querySelectorAll('#import-correspondance select').forEach(sel => {
+        corr[sel.dataset.champ] = sel.value || null;
+      });
+      return corr;
+    }
+
+    function dessinerApercu() {
+      const corr = correspondanceCourante();
+      const retenus = analyse.champs_cibles.filter(c => corr[c]);
+      document.getElementById('import-apercu-entete').innerHTML =
+        `<tr>${retenus.map(c => `<th>${echapperTexte(c)}</th>`).join('')}</tr>`;
+
+      // L'aperçu est reconstruit depuis les lignes brutes du serveur, donc il
+      // reflète immédiatement toute correction de correspondance.
+      document.getElementById('import-apercu-corps').innerHTML = analyse.apercu.map((ligne, i) => `
+        <tr>${retenus.map(c => {
+          const colonne = corr[c];
+          const origine = analyse.correspondance[c];
+          const valeur = colonne === origine ? ligne[c] : '(après validation)';
+          return `<td>${echapperTexte(valeur === null || valeur === undefined ? '' : valeur)}</td>`;
+        }).join('')}</tr>
+      `).join('');
+    }
+
+    document.getElementById('bouton-annuler-import').addEventListener('click', () => {
+      document.getElementById('voile-import').style.display = 'none';
+      fichierCourant = null; analyse = null;
+    });
+
+    document.getElementById('bouton-valider-import').addEventListener('click', async () => {
+      const corr = correspondanceCourante();
+      if (!corr.Nom) { afficherMessage('La colonne du nom est obligatoire.', 'erreur'); return; }
+      if (!fichierCourant) { afficherMessage('Fichier introuvable, recommencez.', 'erreur'); return; }
+
+      const bouton = document.getElementById('bouton-valider-import');
+      bouton.disabled = true; bouton.textContent = 'Import en cours…';
+
+      const donneesForm = new FormData();
+      donneesForm.append('fichier', fichierCourant);
+      donneesForm.append('correspondance', JSON.stringify(corr));
+      const r = await appelApi('/ia/import/appliquer', { method: 'POST', body: donneesForm });
+
+      bouton.disabled = false; bouton.textContent = 'Importer';
+      if (!r) return;
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { afficherMessage(d.message || 'Import impossible.', 'erreur'); return; }
+
+      document.getElementById('voile-import').style.display = 'none';
+      const b = d.bilan;
+      let message = `${b.crees} élève(s) créé(s), ${b.mis_a_jour} mis à jour.`;
+      if (b.erreurs && b.erreurs.length) message += ` ${b.erreurs.length} ligne(s) en anomalie.`;
+      afficherMessage(message, 'succes');
+      if (typeof chargerEleves === 'function') chargerEleves();
+    });
+  })();
 
   // Import Excel
   document.getElementById('bouton-importer').addEventListener('click', () => {

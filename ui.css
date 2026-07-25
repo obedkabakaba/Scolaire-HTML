@@ -378,3 +378,112 @@ html[data-theme="kivu"] .mb-piste { height: 12px; }
 @media (prefers-reduced-motion: reduce) {
   #bandeau-hors-ligne { animation: none; }
 }
+
+/* ==========================================================================
+   11. Navigation mobile
+   Sur téléphone, la barre latérale se réduisait à un bandeau où la liste des
+   menus était purement et simplement masquée : la navigation devenait
+   impossible sans basculer en paysage. Un bouton à trois traits ouvre
+   désormais le menu en panneau déroulant.
+   ========================================================================== */
+.bouton-menu {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 42px;
+  height: 38px;
+  padding: 0 9px;
+  background: none;
+  border: 1px solid var(--nav-separateur);
+  border-radius: var(--r-petit);
+  cursor: pointer;
+}
+.bouton-menu span {
+  display: block;
+  height: 2px;
+  width: 100%;
+  background: var(--nav-texte-fort);
+  border-radius: 2px;
+  transition: transform var(--transition-base), opacity var(--transition-base);
+}
+/* Les trois traits se transforment en croix quand le menu est ouvert. */
+.barre-laterale.nav-ouverte .bouton-menu span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.barre-laterale.nav-ouverte .bouton-menu span:nth-child(2) { opacity: 0; }
+.barre-laterale.nav-ouverte .bouton-menu span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+@media (max-width: 780px) {
+  .bouton-menu { display: flex; }
+
+  .barre-laterale { flex-wrap: wrap; align-items: center; row-gap: 0; }
+  /* Le conteneur intermédiaire est dissous : le titre et la liste deviennent
+     des enfants directs de la barre, ce qui permet de les ordonner librement. */
+  .barre-laterale > div { display: contents; }
+
+  .barre-laterale .marque { order: 1; }
+  .bouton-menu { order: 2; margin-left: auto; }
+  .nav-liste { order: 3; }
+  .nav-deconnexion { order: 4; }
+
+  .nav-liste { display: none; }
+  .nav-deconnexion { display: none; }
+
+  .barre-laterale.nav-ouverte .nav-liste {
+    display: flex;
+    width: 100%;
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid var(--nav-separateur);
+    animation: menu-deroule 0.22s ease both;
+  }
+  .barre-laterale.nav-ouverte .nav-deconnexion {
+    display: block;
+    width: 100%;
+    margin-top: 6px;
+    border-top: 1px solid var(--nav-separateur);
+  }
+  /* Cibles tactiles plus généreuses au doigt. */
+  .barre-laterale.nav-ouverte .nav-item { padding: 13px 12px; font-size: 0.95rem; }
+}
+
+@keyframes menu-deroule {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ==========================================================================
+   12. Lisibilité générale sur téléphone
+   Les tableaux étaient posés dans un conteneur en overflow:hidden : au lieu
+   de défiler, les colonnes de droite étaient tout simplement coupées.
+   ========================================================================== */
+@media (max-width: 780px) {
+  .conteneur-tableau {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .conteneur-tableau table { min-width: 560px; }
+
+  .barre-selecteurs { flex-direction: column; align-items: stretch; gap: 12px; }
+  .barre-selecteurs .champ-selecteur { width: 100%; }
+  .barre-selecteurs select,
+  .barre-selecteurs input { width: 100%; }
+
+  .grille-stats,
+  .grille-recap,
+  .grille-widgets { grid-template-columns: 1fr !important; }
+  .widget { grid-column: auto !important; }
+
+  .barre-actions { flex-direction: column; align-items: stretch; }
+  .barre-actions .bouton { width: 100%; margin-left: 0 !important; }
+
+  .entete-page h1 { font-size: 1.5rem; }
+  .conteneur-grille { -webkit-overflow-scrolling: touch; }
+
+  /* Le bandeau hors ligne ne doit pas recouvrir le dernier bouton de la page. */
+  body { padding-bottom: 68px; }
+}
+
+@media (max-width: 480px) {
+  .contenu { padding: 20px 14px 44px 14px; }
+  .conteneur-tableau table { min-width: 480px; }
+}

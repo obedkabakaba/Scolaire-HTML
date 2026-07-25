@@ -13,7 +13,7 @@
    ils continueraient d'utiliser l'ancienne version des pages.
    ========================================================================== */
 
-const VERSION = 'ardoise-v1';
+const VERSION = 'ardoise-v2';
 const CACHE_COQUILLE = `${VERSION}-coquille`;
 const CACHE_DONNEES = `${VERSION}-donnees`;
 
@@ -47,9 +47,10 @@ const COQUILLE = [
   'theme.js',
   'ui.js',
   'hors-ligne.js',
-  'manifest.webmanifest',
+  'manifest.json',
   'icone-192.png',
-  'icone-512.png'
+  'icone-512.png',
+  'icone-ios-180.png'
 ];
 
 // Jamais mis en cache : la sécurité ne doit pas dépendre d'une copie locale.

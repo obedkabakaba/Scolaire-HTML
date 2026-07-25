@@ -306,11 +306,64 @@
 
   window.ArdoiseUI = { anneau: anneau, anneauCompact: anneauCompact, barres: barres };
 
+
+  /* ------------------------------------------------------------------
+     5. Menu mobile
+     Le bouton est injecté ici plutôt que dans les 22 pages : ajouter une
+     page plus tard lui donnera automatiquement sa navigation mobile.
+     ------------------------------------------------------------------ */
+  function installerMenuMobile() {
+    var barre = document.querySelector('.barre-laterale');
+    if (!barre || barre.querySelector('.bouton-menu')) return;
+
+    var bouton = document.createElement('button');
+    bouton.type = 'button';
+    bouton.className = 'bouton-menu';
+    bouton.setAttribute('aria-label', 'Ouvrir le menu');
+    bouton.setAttribute('aria-expanded', 'false');
+    bouton.innerHTML = '<span></span><span></span><span></span>';
+
+    // Placé après le conteneur du titre : sur mobile, la règle CSS
+    // « display: contents » le remet à sa place à droite de la barre.
+    barre.appendChild(bouton);
+
+    function basculer(ouvrir) {
+      var ouvert = ouvrir !== undefined ? ouvrir : !barre.classList.contains('nav-ouverte');
+      barre.classList.toggle('nav-ouverte', ouvert);
+      bouton.setAttribute('aria-expanded', ouvert ? 'true' : 'false');
+      bouton.setAttribute('aria-label', ouvert ? 'Fermer le menu' : 'Ouvrir le menu');
+
+      // La liste est masquée au chargement par les pages, le temps que le
+      // filtrage par rôle s'applique. On la révèle à l'ouverture au cas où
+      // ce filtrage n'aurait pas encore eu lieu.
+      var liste = barre.querySelector('.nav-liste');
+      if (ouvert && liste) liste.style.visibility = 'visible';
+    }
+
+    bouton.addEventListener('click', function () { basculer(); });
+
+    // Le menu se referme après un choix : sur une page déjà ouverte, le lien
+    // ne provoque aucune navigation et le panneau resterait déployé.
+    barre.querySelectorAll('.nav-item').forEach(function (lien) {
+      lien.addEventListener('click', function () { basculer(false); });
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') basculer(false);
+    });
+
+    // Retour en paysage ou sur grand écran : on repart d'un état propre.
+    window.addEventListener('resize', function () {
+      if (window.innerWidth > 780) basculer(false);
+    });
+  }
+
   /* ------------------------------------------------------------------
      Démarrage
      ------------------------------------------------------------------ */
   function demarrer() {
     try { injecterIcones(); } catch (e) { /* la navigation reste utilisable sans icônes */ }
+    try { installerMenuMobile(); } catch (e) { /* la barre reste affichée sans bouton */ }
     try { surveillerValeurs(); } catch (e) { /* les chiffres restent affichés sans animation */ }
     if (!animationsReduites) {
       try { poserSquelettes(); } catch (e) { /* le texte « Chargement… » reste affiché */ }

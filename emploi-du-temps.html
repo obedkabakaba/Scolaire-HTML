@@ -78,6 +78,14 @@
   .choix-jours { display: flex; flex-wrap: wrap; gap: 8px; }
   .puce-jour { border: 1px solid var(--bordure); background: var(--craie); border-radius: var(--r-pilule); padding: 8px 16px; font-size: 0.86rem; font-family: var(--police-corps); cursor: pointer; color: var(--texte-att); }
   .puce-jour.actif { background: var(--vert-ok); border-color: var(--vert-ok); color: #fff; font-weight: 600; }
+  .liste-vacations { display: flex; flex-direction: column; gap: 9px; margin-bottom: 16px; }
+  .ligne-vacation { display: flex; align-items: center; gap: 12px; background: var(--craie); border: 1px solid var(--bordure); border-radius: var(--r-petit); padding: 11px 14px; flex-wrap: wrap; }
+  .ligne-vacation .nom { font-weight: 600; font-size: 0.92rem; }
+  .ligne-vacation .meta { font-size: 0.79rem; color: var(--texte-att); }
+  .puce-cycle { font-size: 0.72rem; padding: 2px 9px; border-radius: 20px; background: rgba(60,90,98,0.14); color: var(--encre); font-weight: 600; }
+  .barre-actions input, .barre-actions select { border: 1px solid var(--bordure); border-radius: var(--r-petit); padding: 9px 11px; font-family: var(--police-corps); font-size: 0.88rem; background: var(--craie); color: var(--texte-sombre); }
+  .champ-form label { display: block; font-size: 0.84rem; font-weight: 600; margin-bottom: 6px; }
+  .champ-form select { width: 100%; border: 1px solid var(--bordure); border-radius: var(--r-petit); padding: 9px 11px; font-family: var(--police-corps); font-size: 0.88rem; background: var(--craie); color: var(--texte-sombre); }
   .tableau-creneaux { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
   .tableau-creneaux th { text-align: left; font-size: 0.76rem; color: var(--texte-att); text-transform: uppercase; letter-spacing: 0.05em; padding: 0 8px 8px 0; font-weight: 600; }
   .tableau-creneaux td { padding: 5px 8px 5px 0; }
@@ -199,6 +207,24 @@
     <!-- ============ Vue : grille horaire de l'école ============ -->
     <section id="vue-config" style="display:none;">
       <div class="carte-config">
+        <h3>Vacations</h3>
+        <p class="aide">
+          Une vacation est un régime horaire : avant-midi, deux gongs, après-midi.
+          Chacune a sa propre grille d'heures, et chaque classe en dépend d'une seule.
+        </p>
+        <div id="liste-vacations" class="liste-vacations"></div>
+        <div class="barre-actions">
+          <input type="text" id="champ-nouvelle-vacation" placeholder="ex. Avant-midi" maxlength="60" />
+          <select id="select-cycle-vacation">
+            <option value="">Les deux cycles</option>
+            <option value="primaire">Primaire seulement</option>
+            <option value="secondaire">Secondaire seulement</option>
+          </select>
+          <button class="bouton bouton-secondaire" id="bouton-ajouter-vacation">+ Ajouter</button>
+        </div>
+      </div>
+
+      <div class="carte-config">
         <h3>Jours de cours</h3>
         <p class="aide">Les jours décochés n'apparaîtront plus dans aucun emploi du temps.</p>
         <div id="choix-jours" class="choix-jours"></div>
@@ -207,6 +233,10 @@
       <div class="carte-config">
         <h3>Heures de cours</h3>
         <p class="aide">L'ordre des lignes détermine l'ordre d'affichage dans la grille.</p>
+        <div class="champ-form" id="conteneur-vacation-horaires" style="max-width:300px; margin-bottom:16px;">
+          <label for="select-vacation-horaires">Grille de la vacation</label>
+          <select id="select-vacation-horaires"></select>
+        </div>
         <table class="tableau-creneaux">
           <thead><tr><th>Libellé</th><th>Début</th><th>Fin</th><th></th></tr></thead>
           <tbody id="corps-creneaux"></tbody>
@@ -279,6 +309,8 @@
   let vueCourante = 'classe';
   let brouillonJours = [];
   let brouillonCreneaux = [];
+  let vacations = [];
+  let vacationChoisie = null;   // grille en cours d'édition
 
   const utilisateur = (() => {
     try { return JSON.parse(obtenirDuStockage('ardoise_user') || 'null'); } catch (e) { return null; }
@@ -329,6 +361,13 @@
       o.addEventListener('click', () => basculerVue(o.dataset.vue));
     });
     document.getElementById('bouton-ajouter-creneau').addEventListener('click', ajouterLigneCreneau);
+    if (peutModifier) {
+      document.getElementById('bouton-ajouter-vacation').addEventListener('click', ajouterVacation);
+      document.getElementById('select-vacation-horaires').addEventListener('change', (e) => {
+        vacationChoisie = e.target.value || null;
+        chargerCreneauxVacation();
+      });
+    }
     document.getElementById('bouton-enregistrer-config').addEventListener('click', enregistrerConfiguration);
 
     // Un professeur non gestionnaire arrive directement sur son propre emploi du temps.
@@ -409,6 +448,13 @@
     const donnees = await r.json();
     seances = donnees.seances;
     coursClasse = donnees.cours;
+
+    // La grille affichée est celle de la vacation de la classe : une classe
+    // du matin ne doit pas voir les créneaux de l'après-midi.
+    if (Array.isArray(donnees.creneaux)) config.creneaux = donnees.creneaux;
+    document.getElementById('sous-titre-page').textContent = config.annee_active
+      ? `Grille hebdomadaire — ${config.annee_active.libelle}${donnees.vacation ? ' · ' + donnees.vacation.nom : ''}`
+      : "Aucune année scolaire active.";
 
     document.getElementById('zone-edition').style.display = peutModifier ? '' : 'none';
     if (peutModifier) dessinerBandeauCours();
@@ -523,14 +569,103 @@
     { numero: 7, nom: 'dimanche' }
   ];
 
-  function dessinerConfiguration() {
-    brouillonJours = config.jours.map(j => j.numero);
-    brouillonCreneaux = config.creneaux.map(c => ({
+  // ============================================================
+  //  Vacations
+  // ============================================================
+  const LIBELLE_CYCLE = { primaire: 'Primaire', secondaire: 'Secondaire' };
+
+  async function chargerVacations() {
+    const r = await appelApi('/vacations');
+    if (!r || !r.ok) return;
+    vacations = await r.json();
+    dessinerVacations();
+    remplirSelecteurVacation();
+  }
+
+  function dessinerVacations() {
+    const zone = document.getElementById('liste-vacations');
+    if (vacations.length === 0) {
+      zone.innerHTML = '<p class="aide" style="margin:0;">Aucune vacation. Créez-en une pour définir vos heures de cours.</p>';
+      return;
+    }
+    zone.innerHTML = vacations.map(v => `
+      <div class="ligne-vacation">
+        <span class="nom">${echapper(v.nom)}</span>
+        ${v.cycle ? `<span class="puce-cycle">${echapper(LIBELLE_CYCLE[v.cycle] || v.cycle)}</span>` : ''}
+        <span class="meta">${v.nb_creneaux} heure(s) · ${v.nb_classes} classe(s)</span>
+        ${peutModifier ? `<button type="button" class="bouton-retirer" data-supprimer-vacation="${v.id}" style="margin-left:auto;">Supprimer</button>` : ''}
+      </div>`).join('');
+
+    zone.querySelectorAll('[data-supprimer-vacation]').forEach(b => {
+      b.addEventListener('click', () => supprimerVacation(b.dataset.supprimerVacation));
+    });
+  }
+
+  function remplirSelecteurVacation() {
+    const select = document.getElementById('select-vacation-horaires');
+    if (!select) return;
+    select.innerHTML = vacations.length
+      ? vacations.map(v => `<option value="${v.id}">${echapper(v.nom)}${v.cycle ? ' — ' + echapper(LIBELLE_CYCLE[v.cycle]) : ''}</option>`).join('')
+      : '<option value="">Créez d\'abord une vacation</option>';
+
+    if (!vacationChoisie && vacations.length) vacationChoisie = vacations[0].id;
+    if (vacationChoisie) select.value = vacationChoisie;
+    document.getElementById('conteneur-vacation-horaires').style.display = vacations.length > 1 ? '' : 'none';
+  }
+
+  /** Charge dans l'éditeur les créneaux de la vacation sélectionnée. */
+  function chargerCreneauxVacation() {
+    const tous = config.vacations
+      ? (config.vacations.find(v => v.id === vacationChoisie)?.creneaux || [])
+      : [];
+    brouillonCreneaux = tous.map(c => ({
       id: c.id, libelle: c.libelle,
       heure_debut: heureCourte(c.heure_debut), heure_fin: heureCourte(c.heure_fin)
     }));
-    dessinerJours();
     dessinerCreneaux();
+  }
+
+  async function ajouterVacation() {
+    const nom = document.getElementById('champ-nouvelle-vacation').value.trim();
+    if (!nom) { afficherMessage('Donnez un nom à la vacation.', 'erreur'); return; }
+    const cycle = document.getElementById('select-cycle-vacation').value || null;
+
+    const r = await appelApi('/vacations', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nom, cycle })
+    });
+    if (!r) return;
+    const rep = await r.json().catch(() => ({}));
+    if (!r.ok) { afficherMessage(rep.message || 'Création impossible.', 'erreur'); return; }
+
+    document.getElementById('champ-nouvelle-vacation').value = '';
+    afficherMessage(rep.message || 'Vacation créée.', 'succes');
+    await rechargerConfiguration();
+  }
+
+  async function supprimerVacation(id) {
+    const v = vacations.find(x => x.id === id);
+    if (!confirm(`Supprimer la vacation « ${v ? v.nom : ''} » et ses heures de cours ?`)) return;
+    const r = await appelApi(`/vacations/${id}`, { method: 'DELETE' });
+    if (!r) return;
+    const rep = await r.json().catch(() => ({}));
+    if (!r.ok) { afficherMessage(rep.message || 'Suppression impossible.', 'erreur'); return; }
+    if (vacationChoisie === id) vacationChoisie = null;
+    afficherMessage('Vacation supprimée.', 'succes');
+    await rechargerConfiguration();
+  }
+
+  async function rechargerConfiguration() {
+    const rConfig = await appelApi('/emploi-du-temps/configuration');
+    if (rConfig?.ok) config = await rConfig.json();
+    await chargerVacations();
+    chargerCreneauxVacation();
+  }
+
+  function dessinerConfiguration() {
+    brouillonJours = config.jours.map(j => j.numero);
+    dessinerJours();
+    chargerVacations().then(chargerCreneauxVacation);
   }
 
   function dessinerJours() {
@@ -603,7 +738,7 @@
 
     const r = await appelApi('/emploi-du-temps/configuration', {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ jours: brouillonJours, creneaux: brouillonCreneaux })
+      body: JSON.stringify({ jours: brouillonJours, creneaux: brouillonCreneaux, vacation_id: vacationChoisie })
     });
 
     bouton.disabled = false; bouton.textContent = 'Enregistrer la grille horaire';
@@ -613,8 +748,7 @@
 
     afficherMessage(rep.message || 'Grille horaire enregistrée.', 'succes');
 
-    const rConfig = await appelApi('/emploi-du-temps/configuration');
-    if (rConfig?.ok) { config = await rConfig.json(); dessinerConfiguration(); }
+    await rechargerConfiguration();
   }
 
   initialiser();

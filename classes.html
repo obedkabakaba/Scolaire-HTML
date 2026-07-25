@@ -252,6 +252,18 @@
       <input type="hidden" id="classe-id" />
       <div class="champ"><label for="champ-classe-nom">Nom de la classe</label><input type="text" id="champ-classe-nom" placeholder="ex. 3ème Scientifique A" required /></div>
       <div class="ligne-champs">
+        <div class="champ">
+          <label for="champ-classe-cycle">Cycle</label>
+          <select id="champ-classe-cycle">
+            <option value="">— Non précisé —</option>
+            <option value="primaire">Primaire</option>
+            <option value="secondaire">Secondaire / Humanités</option>
+          </select>
+        </div>
+        <div class="champ">
+          <label for="champ-classe-vacation">Vacation</label>
+          <select id="champ-classe-vacation"><option value="">— Aucune —</option></select>
+        </div>
         <div class="champ"><label for="champ-classe-section">Section</label><select id="champ-classe-section"></select></div>
         <div class="champ"><label for="champ-classe-option">Option</label><select id="champ-classe-option"></select></div>
       </div>
@@ -429,10 +441,52 @@
     });
   }
 
+  // ============================================================
+  //  Cycle et vacation
+  // ============================================================
+  let vacationsCache = [];
+
+  async function chargerVacations() {
+    const r = await appelApi('/vacations');
+    if (r?.ok) vacationsCache = await r.json();
+  }
+
+  function remplirVacations(selection) {
+    const select = document.getElementById('champ-classe-vacation');
+    const cycle = document.getElementById('champ-classe-cycle').value || null;
+
+    // Une vacation réservée à l'autre cycle n'est pas proposée : le serveur
+    // la refuserait, autant ne pas la montrer.
+    const compatibles = vacationsCache.filter(v => !v.cycle || !cycle || v.cycle === cycle);
+    select.innerHTML = '<option value="">— Aucune —</option>' + compatibles
+      .map(v => `<option value="${v.id}">${v.nom}${v.cycle ? ' — ' + v.cycle : ''}</option>`).join('');
+    select.value = selection || '';
+  }
+
+  /** Le primaire n'a ni section ni option : on masque plutôt que d'égarer. */
+  function majChampsSelonCycle() {
+    const cycle = document.getElementById('champ-classe-cycle').value;
+    const primaire = cycle === 'primaire';
+    ['champ-classe-section', 'champ-classe-option'].forEach(id => {
+      const champ = document.getElementById(id);
+      const conteneur = champ.closest('.champ') || champ.parentElement;
+      conteneur.style.display = primaire ? 'none' : '';
+      if (primaire) champ.value = '';
+    });
+  }
+
+  document.getElementById('champ-classe-cycle').addEventListener('change', () => {
+    remplirVacations(document.getElementById('champ-classe-vacation').value);
+    majChampsSelonCycle();
+  });
+
   async function ouvrirModaleClasse(classe) {
     document.getElementById('titre-modale-classe').textContent = classe ? 'Modifier la classe' : 'Ajouter une classe';
     document.getElementById('classe-id').value = classe?.id || '';
     document.getElementById('champ-classe-nom').value = classe?.nom || '';
+    document.getElementById('champ-classe-cycle').value = classe?.cycle || '';
+    remplirVacations(classe?.vacation_id || '');
+    majChampsSelonCycle();
     document.getElementById('champ-classe-section').value = classe?.section_id || '';
     document.getElementById('champ-classe-option').value = classe?.option_id || '';
     document.getElementById('champ-classe-titulaire').value = classe?.titulaire_id || '';
@@ -464,6 +518,8 @@
     const id = document.getElementById('classe-id').value;
     const corpsRequete = {
       nom: document.getElementById('champ-classe-nom').value.trim(),
+      cycle: document.getElementById('champ-classe-cycle').value || null,
+      vacation_id: document.getElementById('champ-classe-vacation').value || null,
       section_id: document.getElementById('champ-classe-section').value || null,
       option_id: document.getElementById('champ-classe-option').value || null,
       titulaire_id: document.getElementById('champ-classe-titulaire').value || null,
@@ -586,6 +642,7 @@
   // ---------- Initialisation ----------
   async function initialiser() {
     await Promise.all([chargerAnnees(), chargerSections(), chargerOptions(), chargerUtilisateurs()]);
+    chargerVacations();
     chargerClasses();
   }
   initialiser();

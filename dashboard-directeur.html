@@ -390,6 +390,21 @@
       </div>
     </div>
 
+    <div class="grille-widgets">
+      <div class="widget">
+        <p class="widget-titre">Encodage de la période en cours</p>
+        <div id="widget-encodage"></div>
+      </div>
+      <div class="widget">
+        <p class="widget-titre">Taux de réussite global</p>
+        <div id="widget-reussite"></div>
+      </div>
+      <div class="widget">
+        <p class="widget-titre">Avancement par période</p>
+        <div id="widget-avancement"></div>
+      </div>
+    </div>
+
     <div class="panneau" style="margin-bottom:24px;">
       <h3>État des périodes par classe (<span id="libelle-annee-active">—</span>)</h3>
       <div id="conteneur-etat-periodes" class="conteneur-etat-periodes">
@@ -550,6 +565,52 @@
       document.getElementById('barre-notes-remplissage').style.width = pourcentage + '%';
       document.getElementById('notes-encodees-texte').textContent = `${encodees} encodées`;
       document.getElementById('notes-restantes-texte').textContent = `${restantes} restantes`;
+
+      // ---------- Widgets ----------
+      // Les composants viennent de ui.js ; si ce fichier n'est pas chargé,
+      // le tableau de bord reste complet, simplement sans les anneaux.
+      if (window.ArdoiseUI) {
+        ArdoiseUI.anneau('widget-encodage', {
+          valeur: encodees, max: attendues,
+          detail: `<strong>${encodees}</strong> note(s) encodée(s)<br/>sur ${attendues} attendue(s)<br/>${restantes} restante(s)`
+        });
+
+        ArdoiseUI.anneau('widget-reussite', {
+          valeur: donnees.taux_reussite_global, max: 100,
+          affichage: donnees.taux_reussite_global !== null ? `${donnees.taux_reussite_global}%` : '—',
+          couleur: donnees.taux_reussite_global === null ? 'var(--bordure)'
+                 : (donnees.taux_reussite_global >= 50 ? 'var(--vert-ok)' : 'var(--rouge)'),
+          detail: donnees.taux_reussite_global !== null
+            ? `Moyenne de tous les bulletins<br/>de l'année en cours`
+            : `Aucun bulletin calculé<br/>pour le moment`
+        });
+
+        // Chaque période est ramenée à une seule ligne : combien de classes
+        // ont réellement terminé de soumettre tous leurs cours.
+        const parPeriode = new Map();
+        (donnees.etat_periodes_par_classe || []).forEach((ligne) => {
+          if (!parPeriode.has(ligne.periode_id)) {
+            parPeriode.set(ligne.periode_id, {
+              libelle: ligne.periode_libelle || `Période ${ligne.numero}`,
+              numero: ligne.numero, total: 0, soumises: 0
+            });
+          }
+          const entree = parPeriode.get(ligne.periode_id);
+          entree.total += 1;
+          if (ligne.soumis) entree.soumises += 1;
+        });
+
+        const lignesAvancement = [...parPeriode.values()]
+          .sort((a, b) => (a.numero || 0) - (b.numero || 0))
+          .map((p) => ({
+            libelle: p.libelle, valeur: p.soumises, max: p.total,
+            affichage: `${p.soumises}/${p.total}`
+          }));
+
+        ArdoiseUI.barres('widget-avancement', lignesAvancement, {
+          messageVide: "Aucune période créée pour l'année active."
+        });
+      }
 
       const listeEvenements = document.getElementById('liste-evenements');
       if (donnees.evenements_a_venir.length > 0) {

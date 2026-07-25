@@ -182,6 +182,126 @@
     }
   }
 
+
+  /* ------------------------------------------------------------------
+     4. Fabrique de widgets
+     Les pages fournissent des données, jamais du dessin. Chaque widget
+     est autonome : s'il reçoit des données absentes, il affiche un tiret
+     plutôt que de casser la page.
+     ------------------------------------------------------------------ */
+  var RAYON = 42;
+  var CIRCONFERENCE = 2 * Math.PI * RAYON;
+
+  function nombreOuNul(valeur) {
+    var n = Number(valeur);
+    return isNaN(n) ? null : n;
+  }
+
+  /**
+   * Anneau de progression.
+   * @param {Element|string} cible  élément ou identifiant
+   * @param {object} donnees { valeur, max, unite, detail }
+   */
+  function anneau(cible, donnees) {
+    var hote = typeof cible === 'string' ? document.getElementById(cible) : cible;
+    if (!hote) return;
+
+    var valeur = nombreOuNul(donnees.valeur);
+    var max = nombreOuNul(donnees.max);
+    var pourcentage = (valeur !== null && max) ? Math.max(0, Math.min(100, (valeur / max) * 100)) : 0;
+    var affichage = donnees.affichage !== undefined
+      ? donnees.affichage
+      : (valeur === null ? '—' : Math.round(pourcentage) + '%');
+
+    hote.innerHTML =
+      '<div class="widget-anneau">' +
+        '<div class="anneau-graphe">' +
+          '<svg viewBox="0 0 100 100" aria-hidden="true">' +
+            '<circle class="anneau-fond" cx="50" cy="50" r="' + RAYON + '"></circle>' +
+            '<circle class="anneau-trait" cx="50" cy="50" r="' + RAYON + '" ' +
+              'stroke-dasharray="' + CIRCONFERENCE.toFixed(2) + '" ' +
+              'stroke-dashoffset="' + CIRCONFERENCE.toFixed(2) + '"></circle>' +
+          '</svg>' +
+          '<div class="anneau-centre"><span class="anneau-valeur">' + affichage + '</span></div>' +
+        '</div>' +
+        '<div class="anneau-detail">' + (donnees.detail || '') + '</div>' +
+      '</div>';
+
+    // Le décalage est appliqué après un cycle d'affichage : sans cela, le
+    // navigateur dessine directement l'état final et l'animation est perdue.
+    var trait = hote.querySelector('.anneau-trait');
+    if (donnees.couleur) trait.style.stroke = donnees.couleur;
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        trait.setAttribute('stroke-dashoffset',
+          (CIRCONFERENCE * (1 - pourcentage / 100)).toFixed(2));
+      });
+    });
+  }
+
+  /** Anneau réduit, destiné à s'insérer dans une carte existante. */
+  function anneauCompact(donnees) {
+    var valeur = nombreOuNul(donnees.valeur);
+    var max = nombreOuNul(donnees.max);
+    var pourcentage = (valeur !== null && max) ? Math.max(0, Math.min(100, (valeur / max) * 100)) : 0;
+    var decalage = (CIRCONFERENCE * (1 - pourcentage / 100)).toFixed(2);
+    var couleur = pourcentage >= 100 ? 'var(--vert-ok)' : 'var(--ocre)';
+
+    return '<div class="anneau-compact" title="' + (donnees.titre || '') + '">' +
+      '<svg viewBox="0 0 100 100" aria-hidden="true">' +
+        '<circle class="anneau-fond" cx="50" cy="50" r="' + RAYON + '"></circle>' +
+        '<circle class="anneau-trait" cx="50" cy="50" r="' + RAYON + '" stroke="' + couleur + '" ' +
+          'stroke-dasharray="' + CIRCONFERENCE.toFixed(2) + '" stroke-dashoffset="' + decalage + '"></circle>' +
+      '</svg>' +
+      '<span class="etiquette-centre">' + (donnees.affichage || '') + '</span>' +
+    '</div>';
+  }
+
+  /**
+   * Barres comparatives.
+   * @param {Element|string} cible
+   * @param {Array} lignes  [{ libelle, valeur, max }]
+   */
+  function barres(cible, lignes, options) {
+    var hote = typeof cible === 'string' ? document.getElementById(cible) : cible;
+    if (!hote) return;
+    var reglages = options || {};
+
+    if (!lignes || !lignes.length) {
+      hote.innerHTML = '<p style="font-size:0.85rem; color:var(--texte-att); margin:0;">' +
+        (reglages.messageVide || 'Aucune donnée à afficher.') + '</p>';
+      return;
+    }
+
+    var maxGlobal = reglages.max || Math.max.apply(null, lignes.map(function (l) {
+      return nombreOuNul(l.max) || nombreOuNul(l.valeur) || 0;
+    })) || 1;
+
+    hote.innerHTML = '<div class="mini-barres">' + lignes.map(function (ligne) {
+      var valeur = nombreOuNul(ligne.valeur) || 0;
+      var max = nombreOuNul(ligne.max) || maxGlobal;
+      var part = max ? Math.max(0, Math.min(100, (valeur / max) * 100)) : 0;
+      var complet = part >= 100 ? ' complet' : '';
+      var affichage = ligne.affichage !== undefined ? ligne.affichage : valeur;
+      return '<div class="mini-barre">' +
+          '<span class="mb-libelle" title="' + ligne.libelle + '">' + ligne.libelle + '</span>' +
+          '<span class="mb-piste"><span class="mb-remplissage' + complet + '" data-part="' + part.toFixed(1) + '"></span></span>' +
+          '<span class="mb-valeur">' + affichage + '</span>' +
+        '</div>';
+    }).join('') + '</div>';
+
+    var remplissages = hote.querySelectorAll('.mb-remplissage');
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        for (var i = 0; i < remplissages.length; i++) {
+          remplissages[i].style.width = remplissages[i].dataset.part + '%';
+        }
+      });
+    });
+  }
+
+  window.ArdoiseUI = { anneau: anneau, anneauCompact: anneauCompact, barres: barres };
+
   /* ------------------------------------------------------------------
      Démarrage
      ------------------------------------------------------------------ */

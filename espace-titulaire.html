@@ -210,8 +210,13 @@
       const bloc = document.createElement('div');
       bloc.innerHTML = `
         <div class="carte-classe">
-          <div class="nom">${classe.nom}</div>
-          <div class="details">${classe.section_nom ? classe.section_nom + ' — ' : ''}${classe.option_nom || ''} · ${classe.nb_eleves} élève${classe.nb_eleves !== 1 ? 's' : ''}</div>
+          <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:14px;">
+            <div style="min-width:0;">
+              <div class="nom">${classe.nom}</div>
+              <div class="details">${classe.section_nom ? classe.section_nom + ' — ' : ''}${classe.option_nom || ''} · ${classe.nb_eleves} élève${classe.nb_eleves !== 1 ? 's' : ''}</div>
+            </div>
+            <div id="anneau-classe-${classe.id}"></div>
+          </div>
           <a class="bouton bouton-principal" href="bulletins.html?classeId=${classe.id}">Appréciations & signatures des bulletins</a>
           <a class="bouton bouton-secondaire" href="cours-classe-titulaire.html">Voir les cours de la classe</a>
         </div>
@@ -224,7 +229,29 @@
       `;
       conteneur.appendChild(bloc);
       chargerElevesDeClasse(classe.id);
+      chargerAvancementClasse(classe.id);
     }
+  }
+
+  /**
+   * Avancement de la classe : combien de périodes ont été entièrement
+   * soumises par tous les professeurs. Le titulaire voit ainsi d'un coup
+   * d'œil ce qu'il reste à attendre avant de pouvoir clôturer.
+   */
+  async function chargerAvancementClasse(classeId) {
+    const hote = document.getElementById(`anneau-classe-${classeId}`);
+    if (!hote || !window.ArdoiseUI) return;
+    const r = await appelApi(`/classes/${classeId}/etat-periodes`);
+    if (!r || !r.ok) return;
+    const d = await r.json();
+    const total = (d.periodes || []).length;
+    if (total === 0) return;
+    const soumises = d.periodes.filter(p => p.soumis).length;
+    hote.innerHTML = ArdoiseUI.anneauCompact({
+      valeur: soumises, max: total,
+      affichage: `${soumises}/${total}`,
+      titre: `${soumises} période(s) clôturée(s) sur ${total}`
+    });
   }
 
   async function chargerElevesDeClasse(classeId) {

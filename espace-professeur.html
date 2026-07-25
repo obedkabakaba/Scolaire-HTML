@@ -205,10 +205,26 @@
         </div>
       `).join('');
 
+      const nbSoumises = periodes.filter(p => p.soumis).length;
+      // Anneau compact : l'avancement du cours se lit d'un coup d'œil,
+      // sans avoir à parcourir la liste des périodes.
+      const anneau = (window.ArdoiseUI && periodes.length > 0)
+        ? ArdoiseUI.anneauCompact({
+            valeur: nbSoumises, max: periodes.length,
+            affichage: `${nbSoumises}/${periodes.length}`,
+            titre: `${nbSoumises} période(s) soumise(s) sur ${periodes.length}`
+          })
+        : '';
+
       return `
       <div class="carte-cours">
-        <div class="classe">${c.classe_nom}</div>
-        <div class="cours">${c.cours_nom} — sur ${c.maximum}</div>
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px;">
+          <div style="min-width:0;">
+            <div class="classe">${c.classe_nom}</div>
+            <div class="cours">${c.cours_nom} — sur ${c.maximum}</div>
+          </div>
+          ${anneau}
+        </div>
         <div style="margin-bottom:14px; padding:8px 10px; background:var(--craie); border-radius: var(--r-bouton);">${listePeriodes || '<span style="font-size:0.78rem; color:var(--texte-att);">Aucune période créée pour cette année.</span>'}</div>
         ${toutEstSoumis
           ? `<p style="font-size:0.85rem; color:var(--texte-att); margin:0;">✓ Année clôturée pour ce cours — plus rien à modifier.</p>`

@@ -220,3 +220,110 @@ html[data-theme="kivu"] .bouton { font-weight: 600; }
   .squelette { animation: none !important; }
   .carte-stat:hover, .carte-recap:hover, .carte-cours:hover { transform: none !important; }
 }
+
+/* ==========================================================================
+   9. Widgets — anneaux de progression et barres comparatives
+   Composants réutilisables : les pages ne décrivent que leurs données,
+   jamais leur dessin.
+   ========================================================================== */
+
+.grille-widgets {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.widget {
+  background: var(--craie-2);
+  border: 1px solid var(--bordure);
+  border-radius: var(--r-carte);
+  padding: 20px;
+  box-shadow: var(--ombre-carte);
+}
+.widget .widget-titre {
+  font-size: 0.78rem;
+  color: var(--texte-att);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 16px 0;
+  font-weight: 600;
+}
+
+/* ---- Anneau de progression ---- */
+.widget-anneau { display: flex; align-items: center; gap: 18px; }
+.anneau-graphe { position: relative; width: 104px; height: 104px; flex: none; }
+.anneau-graphe svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.anneau-fond { fill: none; stroke: var(--bordure); stroke-width: 9; }
+.anneau-trait {
+  fill: none;
+  stroke: var(--ocre);
+  stroke-width: 9;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.anneau-centre {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center;
+}
+.anneau-valeur {
+  font-family: var(--police-titre);
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--texte-sombre);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.anneau-detail { font-size: 0.82rem; color: var(--texte-att); line-height: 1.45; }
+.anneau-detail strong { color: var(--texte-sombre); font-weight: 600; }
+
+/* Pure : l'anneau devient un arc net, sans extrémité arrondie. */
+html[data-theme="pure"] .anneau-trait { stroke-linecap: butt; stroke-width: 7; }
+html[data-theme="pure"] .anneau-fond { stroke-width: 7; }
+html[data-theme="pure"] .anneau-valeur { font-weight: 600; letter-spacing: -0.02em; }
+/* Kivu : trait plus épais, plus généreux. */
+html[data-theme="kivu"] .anneau-trait,
+html[data-theme="kivu"] .anneau-fond { stroke-width: 11; }
+
+/* ---- Barres comparatives ---- */
+.mini-barres { display: flex; flex-direction: column; gap: 11px; }
+.mini-barre { display: grid; grid-template-columns: minmax(64px, 30%) 1fr auto; align-items: center; gap: 11px; }
+.mb-libelle {
+  font-size: 0.83rem; color: var(--texte-att);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mb-piste { height: 9px; background: var(--bordure); border-radius: var(--r-pilule); overflow: hidden; }
+.mb-remplissage {
+  display: block; height: 100%;
+  background: var(--ocre);
+  border-radius: var(--r-pilule);
+  width: 0;
+  transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.mb-remplissage.complet { background: var(--vert-ok); }
+.mb-valeur {
+  font-size: 0.83rem; font-weight: 600; color: var(--texte-sombre);
+  font-variant-numeric: tabular-nums; min-width: 30px; text-align: right;
+}
+
+html[data-theme="pure"] .mb-piste,
+html[data-theme="pure"] .mb-remplissage { border-radius: 0; }
+html[data-theme="kivu"] .mb-piste { height: 12px; }
+
+/* ---- Anneau compact, posé dans une carte existante ---- */
+.anneau-compact { width: 46px; height: 46px; flex: none; position: relative; }
+.anneau-compact svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.anneau-compact .anneau-fond,
+.anneau-compact .anneau-trait { stroke-width: 7; }
+.anneau-compact .etiquette-centre {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.66rem; font-weight: 600; color: var(--texte-sombre);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anneau-trait, .mb-remplissage { transition: none !important; }
+}

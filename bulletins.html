@@ -73,6 +73,16 @@
   .badge-non-signe { font-size: 0.75rem; color: var(--texte-att); white-space: nowrap; }
   .etat-vide-tableau { padding: 50px 20px; text-align: center; color: var(--texte-att); }
 
+  .coin-ia { background: rgba(60,90,98,0.07); border-radius: var(--r-carte); padding: 16px 18px; margin-bottom: 18px; }
+  .coin-ia-entete { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+  .coin-ia-titre { font-weight: 600; font-size: 0.92rem; }
+  .suggestions-ia { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 12px; }
+  .suggestion { background: var(--craie-2); border: 1px solid var(--bordure); border-radius: var(--r-pilule); padding: 6px 13px; font-family: var(--police-corps); font-size: 0.82rem; color: var(--texte-sombre); cursor: pointer; }
+  .suggestion:hover { border-color: var(--ocre); }
+  .ligne-question { display: flex; gap: 9px; flex-wrap: wrap; }
+  .ligne-question input { flex: 1; min-width: 200px; border: 1px solid var(--bordure); border-radius: var(--r-petit); padding: 9px 12px; font-family: var(--police-corps); font-size: 0.88rem; background: var(--craie-2); color: var(--texte-sombre); }
+  .reponse-ia { margin-top: 14px; background: var(--craie-2); border-radius: var(--r-petit); padding: 14px 16px; font-size: 0.9rem; line-height: 1.6; white-space: pre-wrap; }
+  .reponse-ia .note-bas-ia { display: block; margin-top: 12px; font-size: 0.76rem; color: var(--texte-att); white-space: normal; }
   .barre-ia { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; background: rgba(60,90,98,0.08); border-radius: var(--r-carte); padding: 14px 18px; margin-bottom: 18px; }
   .barre-ia .texte-ia { flex: 1; min-width: 220px; font-size: 0.87rem; color: var(--texte-att); }
   .barre-ia .quota-ia { font-size: 0.79rem; color: var(--texte-att); }
@@ -241,6 +251,23 @@
       <div style="display:flex; justify-content:space-between; padding:5px 0; font-size:0.9rem;"><span>Place (classement)</span><strong id="detail-classement">—</strong></div>
       <div style="display:flex; justify-content:space-between; padding:5px 0; font-size:0.9rem;"><span>Application</span><strong id="detail-application">—</strong></div>
       <div style="display:flex; justify-content:space-between; padding:5px 0; font-size:0.9rem;"><span>Conduite</span><strong id="detail-conduite">—</strong></div>
+    </div>
+
+    <div class="coin-ia" id="coin-ia" style="display:none;">
+      <div class="coin-ia-entete">
+        <span class="coin-ia-titre">Demander à l'assistant <span class="puce-ia">IA</span></span>
+        <span class="quota-ia" id="quota-ia-eleve"></span>
+      </div>
+      <div class="suggestions-ia">
+        <button type="button" class="suggestion" data-q="Compare sa progression entre les périodes et dis-moi si la tendance est bonne.">Analyser sa progression</button>
+        <button type="button" class="suggestion" data-q="Dans quels cours est-il le plus en difficulté, et lesquels sont ses points forts ?">Points forts et faiblesses</button>
+        <button type="button" class="suggestion" data-q="Que puis-je dire à son responsable lors de la remise du bulletin ?">Préparer l'entretien parent</button>
+      </div>
+      <div class="ligne-question">
+        <input type="text" id="question-ia" maxlength="400" placeholder="Ou posez votre propre question sur cet élève…" />
+        <button type="button" class="bouton bouton-secondaire" id="bouton-demander-ia">Demander</button>
+      </div>
+      <div id="reponse-ia" class="reponse-ia" style="display:none;"></div>
     </div>
 
     <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
@@ -462,7 +489,10 @@
   // ---------- Fenêtre de détail élève (façon bulletin) ----------
   let classeCourante = null;
 
+  let eleveDetailCourant = null;
+
   async function ouvrirDetailEleve(eleveId, periodeId) {
+    eleveDetailCourant = eleveId;
     classeCourante = document.getElementById('select-classe').value;
     const r = await appelApi(`/bulletins/${eleveId}/detail?periodeId=${periodeId}`);
     if (!r || !r.ok) { afficherMessage('Erreur lors du chargement du détail.', 'erreur'); return; }
@@ -512,6 +542,8 @@
       });
     });
 
+    document.getElementById('reponse-ia').style.display = 'none';
+    document.getElementById('question-ia').value = '';
     document.getElementById('voile-detail-eleve').style.display = 'flex';
   }
 
@@ -707,6 +739,67 @@
       document.getElementById('voile-appreciations').style.display = 'none';
       afficherMessage(rep.message, 'succes');
       if (typeof chargerBulletins === 'function') chargerBulletins();
+    });
+  })();
+
+  // ============================================================
+  //  Coin IA contextuel — limité au dossier de l'élève ouvert
+  // ============================================================
+  (function activerCoinIA() {
+    let u = null;
+    try { u = JSON.parse(obtenirDuStockage('ardoise_user') || 'null'); } catch (e) {}
+    const rolesIA = (u && u.roles) || [];
+    if (!rolesIA.some(r => ['directeur', 'prefet', 'titulaire', 'super_admin'].includes(r))) return;
+
+    document.getElementById('coin-ia').style.display = '';
+
+    appelApi('/ia/quota').then(async (r) => {
+      if (!r || !r.ok) return;
+      const q = await r.json();
+      document.getElementById('quota-ia-eleve').textContent = `${q.restant} question(s) restante(s)`;
+    }).catch(() => {});
+
+    async function poser(question) {
+      if (!eleveDetailCourant) return;
+      if (!question || !question.trim()) {
+        afficherMessage('Posez une question.', 'erreur'); return;
+      }
+
+      const zone = document.getElementById('reponse-ia');
+      const bouton = document.getElementById('bouton-demander-ia');
+      bouton.disabled = true; bouton.textContent = 'Analyse…';
+      zone.style.display = 'block';
+      zone.textContent = 'L\'assistant consulte le dossier…';
+
+      const r = await appelApi('/ia/question-eleve', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eleve_id: eleveDetailCourant, question: question.trim() })
+      });
+
+      bouton.disabled = false; bouton.textContent = 'Demander';
+      if (!r) return;
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { zone.textContent = d.message || 'Analyse impossible.'; return; }
+
+      zone.textContent = d.reponse;
+      const note = document.createElement('span');
+      note.className = 'note-bas-ia';
+      note.textContent = "Analyse produite à partir des seules données de ce dossier. Relisez avant de la reprendre auprès d'un parent.";
+      zone.appendChild(note);
+
+      if (d.quota) {
+        document.getElementById('quota-ia-eleve').textContent = `${d.quota.restant} question(s) restante(s)`;
+      }
+    }
+
+    document.querySelectorAll('#coin-ia .suggestion').forEach(b => {
+      b.addEventListener('click', () => poser(b.dataset.q));
+    });
+    document.getElementById('bouton-demander-ia').addEventListener('click', () => {
+      poser(document.getElementById('question-ia').value);
+    });
+    document.getElementById('question-ia').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') poser(e.target.value);
     });
   })();
 

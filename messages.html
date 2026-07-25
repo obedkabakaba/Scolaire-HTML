@@ -80,6 +80,15 @@
   .message-recu .corps { white-space: pre-wrap; margin-top: 9px; font-size: 0.92rem; line-height: 1.55; }
   .message-recu .pied { margin-top: 12px; }
   .lien-action { background: none; border: none; color: var(--encre); cursor: pointer; font-size: 0.84rem; font-family: var(--police-corps); padding: 3px 0; }
+  .barre-ia { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: rgba(60,90,98,0.08); border-radius: var(--r-petit); padding: 11px 14px; margin-top: 26px; }
+  .lien-ia { background: none; border: 1px solid var(--bordure); border-radius: var(--r-bouton); padding: 6px 13px; font-family: var(--police-corps); font-size: 0.84rem; color: var(--texte-sombre); cursor: pointer; }
+  .lien-ia:hover { border-color: var(--ocre); }
+  .lien-ia:disabled { opacity: 0.5; cursor: default; }
+  .puce-ia { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.06em; background: var(--ocre); color: #fff; padding: 1px 6px; border-radius: 20px; margin-left: 4px; }
+  .separateur-ia { color: var(--texte-att); }
+  .etiquette-traduire { font-size: 0.84rem; color: var(--texte-att); }
+  .barre-ia select { border: 1px solid var(--bordure); border-radius: var(--r-petit); padding: 6px 9px; font-family: var(--police-corps); font-size: 0.84rem; background: var(--craie); color: var(--texte-sombre); }
+  .quota-ia { font-size: 0.78rem; color: var(--texte-att); margin-left: auto; }
   .etiquette-canal { font-size: 0.72rem; padding: 2px 9px; border-radius: 20px; background: rgba(107,114,105,0.13); color: var(--texte-att); margin-right: 5px; }
   .contenu { padding: 36px 44px 60px 44px; }
   @media (max-width: 780px) { .contenu { padding: 24px 20px 48px 20px; } }
@@ -220,6 +229,22 @@
           <label for="champ-contenu">Contenu</label>
           <textarea id="champ-contenu" rows="8" maxlength="5000"></textarea>
           <span class="compteur" id="compteur-contenu">0 / 5000</span>
+        </div>
+
+        <div class="barre-ia" id="barre-ia" style="display:none;">
+          <button class="lien-ia" id="ia-rediger">Rédiger pour moi <span class="puce-ia">IA</span></button>
+          <button class="lien-ia" id="ia-reformuler">Reformuler</button>
+          <span class="separateur-ia">·</span>
+          <span class="etiquette-traduire">Traduire en</span>
+          <select id="ia-langue">
+            <option value="lingala">lingala</option>
+            <option value="swahili">swahili</option>
+            <option value="kikongo">kikongo</option>
+            <option value="tshiluba">tshiluba</option>
+            <option value="francais">français</option>
+          </select>
+          <button class="lien-ia" id="ia-traduire">Traduire</button>
+          <span class="quota-ia" id="quota-ia"></span>
         </div>
 
         <div style="margin-top:20px;">
@@ -581,6 +606,66 @@
       </tr>
     `).join('');
   }
+
+  // ============================================================
+  //  Assistant de rédaction
+  //  Rien ne part automatiquement : l'assistant remplit les champs,
+  //  l'expéditeur relit et décide.
+  // ============================================================
+  (function activerAssistantRedaction() {
+    if (!peutDiffuser) return;
+    document.getElementById('barre-ia').style.display = '';
+
+    appelApi('/ia/quota').then(async (r) => {
+      if (!r || !r.ok) return;
+      const q = await r.json();
+      document.getElementById('quota-ia').textContent = `${q.restant} restante(s) ce mois-ci`;
+    }).catch(() => {});
+
+    async function demander(mode, bouton, corps) {
+      const texteOrigine = bouton.innerHTML;
+      bouton.disabled = true; bouton.textContent = 'En cours…';
+
+      const r = await appelApi('/ia/redaction', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode, ...corps })
+      });
+
+      bouton.disabled = false; bouton.innerHTML = texteOrigine;
+      if (!r) return;
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { afficherMessage(d.message || 'Génération impossible.', 'erreur'); return; }
+
+      if (d.objet) document.getElementById('champ-sujet').value = d.objet;
+      if (d.message) {
+        const champ = document.getElementById('champ-contenu');
+        champ.value = d.message;
+        document.getElementById('compteur-contenu').textContent = `${champ.value.length} / 5000`;
+      }
+      if (d.quota) {
+        document.getElementById('quota-ia').textContent = `${d.quota.restant} restante(s) ce mois-ci`;
+      }
+      afficherMessage('Proposition insérée — relisez avant d\'envoyer.', 'succes');
+    }
+
+    document.getElementById('ia-rediger').addEventListener('click', function () {
+      const intention = prompt("Que doit dire ce message ?\n\nExemple : convoquer les parents de 4e A le 12 octobre à 9h pour la remise des bulletins.");
+      if (!intention || !intention.trim()) return;
+      demander('rediger', this, { intention: intention.trim() });
+    });
+
+    document.getElementById('ia-reformuler').addEventListener('click', function () {
+      const texte = document.getElementById('champ-contenu').value.trim();
+      if (!texte) { afficherMessage('Écrivez d\'abord un message à reformuler.', 'erreur'); return; }
+      demander('reformuler', this, { texte });
+    });
+
+    document.getElementById('ia-traduire').addEventListener('click', function () {
+      const texte = document.getElementById('champ-contenu').value.trim();
+      if (!texte) { afficherMessage('Écrivez d\'abord un message à traduire.', 'erreur'); return; }
+      demander('traduire', this, { texte, langue: document.getElementById('ia-langue').value });
+    });
+  })();
 
   initialiser();
 

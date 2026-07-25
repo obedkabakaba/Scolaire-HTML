@@ -42,6 +42,21 @@
   .nav-deconnexion:hover { color: var(--nav-texte-fort); }
   @media (max-width: 780px) { .nav-deconnexion { border-top: none; padding: 8px 12px; } }
 
+  .bloc-conseil { margin-top: 28px; background: rgba(60,90,98,0.07); border-radius: var(--r-carte); padding: 20px; }
+  .conseil-entete { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .conseil-entete h3 { font-family: var(--police-titre); font-size: 1.05rem; margin: 0; }
+  .puce-ia { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.06em; background: var(--ocre); color: #fff; padding: 1px 6px; border-radius: 20px; margin-left: 4px; }
+  .quota-ia { font-size: 0.78rem; color: var(--texte-att); }
+  .conseil-aide { font-size: 0.85rem; color: var(--texte-att); margin: 7px 0 15px 0; }
+  .carte-conseil { background: var(--craie-2); border-radius: var(--r-petit); padding: 17px 19px; margin-top: 16px; }
+  .carte-conseil h4 { font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--texte-att); margin: 0 0 9px 0; font-weight: 600; }
+  .carte-conseil p { margin: 0; font-size: 0.92rem; line-height: 1.6; }
+  .liste-attention { margin: 0; padding-left: 20px; font-size: 0.9rem; line-height: 1.7; }
+  .eleve-evoquer { padding: 10px 0; border-bottom: 1px solid var(--bordure); font-size: 0.9rem; }
+  .eleve-evoquer:last-child { border-bottom: none; }
+  .eleve-evoquer strong { display: block; margin-bottom: 3px; }
+  .chiffres-conseil { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 14px; font-size: 0.85rem; color: var(--texte-att); }
+  .chiffres-conseil strong { color: var(--texte-sombre); }
   .contenu { padding: 36px 44px 60px 44px; }
   @media (max-width: 780px) { .contenu { padding: 24px 20px 48px 20px; } }
   .entete-page h1 { font-family: var(--police-titre); font-weight: 600; font-size: 1.9rem; margin: 0 0 4px 0; }
@@ -143,6 +158,16 @@
         <thead><tr><th>Élève</th><th>Points</th><th>Résultat</th></tr></thead>
         <tbody id="corps-tableau"><tr><td colspan="3" class="etat-vide-tableau">Choisissez un cours et une période.</td></tr></tbody>
       </table>
+    </div>
+
+    <div class="bloc-conseil" id="bloc-conseil" style="display:none;">
+      <div class="conseil-entete">
+        <h3>Préparer le conseil de classe <span class="puce-ia">IA</span></h3>
+        <span class="quota-ia" id="quota-ia-conseil"></span>
+      </div>
+      <p class="conseil-aide">Synthèse de la classe, points d'attention et élèves à évoquer, pour la période sélectionnée ci-dessus.</p>
+      <button class="bouton bouton-secondaire" id="bouton-conseil">Préparer la note de synthèse</button>
+      <div id="zone-conseil"></div>
     </div>
 
     <div style="margin-top:28px; background:var(--craie-2); border:1px solid var(--bordure); border-radius: var(--r-carte); padding:20px;">
@@ -333,6 +358,85 @@
   }
 
   initialiser();
+
+  // ============================================================
+  //  Note de synthèse pour le conseil de classe
+  // ============================================================
+  (function activerConseilClasse() {
+    let u = null;
+    try { u = JSON.parse(obtenirDuStockage('ardoise_user') || 'null'); } catch (e) {}
+    const rolesIA = (u && u.roles) || [];
+    if (!rolesIA.some(r => ['directeur', 'prefet', 'titulaire', 'super_admin'].includes(r))) return;
+
+    document.getElementById('bloc-conseil').style.display = '';
+
+    function echapperTexte(t) {
+      const d = document.createElement('div');
+      d.textContent = t == null ? '' : String(t);
+      return d.innerHTML;
+    }
+
+    appelApi('/ia/quota').then(async (r) => {
+      if (!r || !r.ok) return;
+      const q = await r.json();
+      document.getElementById('quota-ia-conseil').textContent = `${q.restant} génération(s) restante(s)`;
+    }).catch(() => {});
+
+    document.getElementById('bouton-conseil').addEventListener('click', async function () {
+      const periodeId = document.getElementById('select-periode').value;
+      const zone = document.getElementById('zone-conseil');
+      if (!classeId || !periodeId) {
+        zone.innerHTML = '<p class="conseil-aide">Choisissez une période ci-dessus.</p>'; return;
+      }
+
+      this.disabled = true; this.textContent = 'Préparation…';
+      zone.innerHTML = '<p class="conseil-aide"><span class="spinner"></span>Lecture des bulletins de la classe…</p>';
+
+      const r = await appelApi(`/ia/conseil-classe?classeId=${classeId}&periodeId=${periodeId}`);
+      this.disabled = false; this.textContent = 'Préparer la note de synthèse';
+      if (!r) return;
+
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        zone.innerHTML = `<p class="conseil-aide">${echapperTexte(d.message || 'Préparation impossible.')}</p>`;
+        return;
+      }
+
+      if (d.quota) {
+        document.getElementById('quota-ia-conseil').textContent = `${d.quota.restant} génération(s) restante(s)`;
+      }
+
+      zone.innerHTML = `
+        <div class="chiffres-conseil">
+          <span>Effectif : <strong>${d.effectif}</strong></span>
+          <span>Moyenne : <strong>${d.moyenne} %</strong></span>
+          <span>Réussite : <strong>${d.taux_reussite} %</strong> (seuil ${d.seuil} %)</span>
+        </div>
+
+        <div class="carte-conseil">
+          <h4>Physionomie de la classe</h4>
+          <p>${echapperTexte(d.synthese)}</p>
+        </div>
+
+        ${d.points_attention.length ? `
+        <div class="carte-conseil">
+          <h4>Points d'attention</h4>
+          <ul class="liste-attention">${d.points_attention.map(p => `<li>${echapperTexte(p)}</li>`).join('')}</ul>
+        </div>` : ''}
+
+        ${d.eleves_a_evoquer.length ? `
+        <div class="carte-conseil">
+          <h4>Élèves à évoquer</h4>
+          ${d.eleves_a_evoquer.map(e => `
+            <div class="eleve-evoquer"><strong>${echapperTexte(e.nom_complet)}</strong>${echapperTexte(e.note)}</div>
+          `).join('')}
+        </div>` : ''}
+
+        <p class="conseil-aide" style="margin-top:14px;">
+          Document de travail : les chiffres viennent de la plateforme, les commentaires sont des propositions à discuter en conseil.
+        </p>`;
+    });
+  })();
 
   (function gererAccesParRole() {
     const permissions = {

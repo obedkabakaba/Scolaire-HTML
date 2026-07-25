@@ -8,90 +8,144 @@
 <meta name="theme-color" content="#111A19" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
+  /* ======================================================================
+     Vitrine publique — trois habillages
+     L'école choisit un thème et une couleur d'accent depuis son espace ;
+     les blocs affichés et leurs contenus viennent de sa configuration.
+     ====================================================================== */
   :root {
-    --ardoise: #1F2B24; --craie: #F6F2E7; --craie-2: #FBF9F3;
-    --ocre: #C98A3E; --ocre-dark: #A96F2E; --encre: #3C5A62;
-    --rouge: #B23A2E; --vert-ok: #4C7A5A;
-    --texte-sombre: #1F2B24; --texte-att: #6B7269; --bordure: #E4DFCF;
+    --accent: #C98A3E;
     --police-titre: 'Fraunces', Georgia, serif;
     --police-corps: 'Inter', system-ui, sans-serif;
     --police-mono: 'IBM Plex Mono', ui-monospace, monospace;
-    --r-carte: 12px; --r-bouton: 8px; --r-petit: 6px;
+    --fond: #F6F2E7;
+    --surface: #FBF9F3;
+    --texte: #1F2B24;
+    --texte-doux: #6B7269;
+    --bordure: #E4DFCF;
+    --sombre: #1F2B24;
+    --r-bloc: 12px;
+    --r-bouton: 8px;
+    --hero-min: 300px;
   }
+
+  /* ---- Moderne : blanc, sans-serif, angles nets, grande couverture ---- */
+  html[data-vitrine="moderne"] {
+    --police-titre: 'Inter', system-ui, sans-serif;
+    --fond: #FFFFFF; --surface: #FFFFFF;
+    --texte: #14171A; --texte-doux: #6A7078;
+    --bordure: #E6E7E9; --sombre: #14171A;
+    --r-bloc: 4px; --r-bouton: 4px; --hero-min: 420px;
+  }
+  /* ---- Chaleureux : crème, très arrondi, généreux ---- */
+  html[data-vitrine="chaleureux"] {
+    --fond: #FDF6EE; --surface: #FFFFFF;
+    --texte: #26201B; --texte-doux: #8A7A6B;
+    --bordure: #EFE1D3; --sombre: #1E5B4F;
+    --r-bloc: 20px; --r-bouton: 16px; --hero-min: 340px;
+  }
+
   * { box-sizing: border-box; }
-  body { margin: 0; font-family: var(--police-corps); color: var(--texte-sombre); background: var(--craie); line-height: 1.55; }
+  body { margin: 0; font-family: var(--police-corps); color: var(--texte); background: var(--fond); line-height: 1.6; }
+  .contenant { max-width: 940px; margin: 0 auto; padding: 0 22px; }
 
-  .banniere { background: var(--ardoise); color: var(--craie); padding: 40px 24px 46px 24px; }
-  .contenant { max-width: 900px; margin: 0 auto; }
-  .banniere .identite { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
-  .banniere .logo { width: 78px; height: 78px; border-radius: var(--r-carte); object-fit: cover; background: rgba(246,242,231,0.08); flex: none; }
-  .banniere h1 { font-family: var(--police-titre); font-weight: 600; font-size: 2rem; margin: 0 0 4px 0; }
-  .banniere .lieu { color: rgba(246,242,231,0.66); font-size: 0.95rem; margin: 0; }
-  .banniere .annee { display: inline-block; margin-top: 14px; background: rgba(201,138,62,0.22); color: #E8B978; padding: 5px 13px; border-radius: 20px; font-size: 0.82rem; font-weight: 600; }
-  .accueil { margin: 22px 0 0 0; color: rgba(246,242,231,0.86); font-size: 1.02rem; max-width: 640px; }
+  .heros { position: relative; background: var(--sombre); color: #fff; overflow: hidden; }
+  .heros .image { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0.42; }
+  html[data-vitrine="moderne"] .heros .image { opacity: 0.55; }
+  .heros .voile { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.15), rgba(0,0,0,0.55)); }
+  .heros .dedans { position: relative; min-height: var(--hero-min); display: flex; flex-direction: column; justify-content: flex-end; padding: 48px 0 44px 0; }
+  .heros.sans-image .voile { display: none; }
 
-  main { padding: 34px 24px 70px 24px; }
-  .carte { background: var(--craie-2); border: 1px solid var(--bordure); border-radius: var(--r-carte); padding: 26px; margin-bottom: 22px; }
-  .carte h2 { font-family: var(--police-titre); font-weight: 600; font-size: 1.25rem; margin: 0 0 14px 0; }
-  .carte p { margin: 0 0 12px 0; }
-  .carte p:last-child { margin-bottom: 0; }
+  .identite { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+  .identite .logo { width: 82px; height: 82px; border-radius: var(--r-bloc); object-fit: cover; background: rgba(255,255,255,0.12); flex: none; }
+  .heros h1 { font-family: var(--police-titre); font-weight: 600; font-size: 2.3rem; margin: 0 0 4px 0; line-height: 1.15; }
+  html[data-vitrine="moderne"] .heros h1 { font-weight: 700; letter-spacing: -0.02em; font-size: 2.6rem; }
+  .heros .lieu { color: rgba(255,255,255,0.78); font-size: 0.98rem; margin: 0; }
+  .heros .slogan { margin: 20px 0 0 0; font-size: 1.15rem; color: rgba(255,255,255,0.92); max-width: 620px; }
+  html[data-vitrine="chaleureux"] .heros .slogan { font-family: var(--police-titre); font-size: 1.35rem; }
+  .badge-annee { display: inline-block; margin-top: 16px; background: var(--accent); color: #fff; padding: 6px 15px; border-radius: 20px; font-size: 0.83rem; font-weight: 600; }
 
-  .grille-contact { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; }
-  .contact-item .etiquette { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--texte-att); font-weight: 600; margin-bottom: 3px; }
-  .contact-item .valeur { font-size: 0.98rem; }
-  .contact-item a { color: var(--encre); }
+  main { padding: 40px 0 70px 0; }
+  section.bloc { background: var(--surface); border: 1px solid var(--bordure); border-radius: var(--r-bloc); padding: 30px; margin-bottom: 22px; }
+  html[data-vitrine="chaleureux"] section.bloc { border: none; box-shadow: 0 2px 14px rgba(38,32,27,0.06); }
+  section.bloc h2 { font-family: var(--police-titre); font-weight: 600; font-size: 1.35rem; margin: 0 0 16px 0; }
+  section.bloc h2::after { content: ''; display: block; width: 42px; height: 3px; background: var(--accent); margin-top: 9px; border-radius: 2px; }
+  html[data-vitrine="moderne"] section.bloc h2::after { border-radius: 0; }
+  .texte-libre { white-space: pre-wrap; margin: 0; }
 
-  .section-bloc { padding: 13px 0; border-bottom: 1px solid var(--bordure); }
-  .section-bloc:last-child { border-bottom: none; }
-  .section-bloc .nom { font-weight: 600; }
-  .section-bloc .options { color: var(--texte-att); font-size: 0.9rem; margin-top: 3px; }
-
-  .annonce { padding: 16px 0; border-bottom: 1px solid var(--bordure); }
-  .annonce:last-child { border-bottom: none; }
-  .annonce .titre { font-weight: 600; font-size: 1.02rem; }
-  .annonce .date { font-size: 0.78rem; color: var(--texte-att); margin: 3px 0 7px 0; }
-  .annonce .texte { white-space: pre-wrap; color: var(--texte-sombre); }
-
-  .carte-resultats { border: 2px solid var(--ocre); }
+  .bloc-resultats { border: 2px solid var(--accent); }
   .champ { margin-bottom: 15px; }
-  .champ label { display: block; font-size: 0.86rem; font-weight: 600; margin-bottom: 6px; }
-  .champ input { width: 100%; border: 1px solid var(--bordure); border-radius: var(--r-bouton); padding: 12px 14px; font-family: var(--police-corps); font-size: 1rem; background: var(--craie); color: var(--texte-sombre); }
-  .champ input:focus { outline: 2px solid var(--ocre); outline-offset: 1px; }
-  .champ .aide { font-size: 0.79rem; color: var(--texte-att); margin-top: 5px; }
-  .bouton { background: var(--ocre); color: #fff; border: none; border-radius: var(--r-bouton); padding: 13px 22px; font-family: var(--police-corps); font-size: 0.97rem; font-weight: 600; cursor: pointer; width: 100%; }
-  .bouton:hover { background: var(--ocre-dark); }
+  .champ label { display: block; font-size: 0.87rem; font-weight: 600; margin-bottom: 6px; }
+  .champ input { width: 100%; border: 1px solid var(--bordure); border-radius: var(--r-bouton); padding: 13px 15px; font-family: var(--police-corps); font-size: 1rem; background: var(--fond); color: var(--texte); }
+  .champ input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .champ .aide { font-size: 0.8rem; color: var(--texte-doux); margin-top: 5px; }
+  .bouton { background: var(--accent); color: #fff; border: none; border-radius: var(--r-bouton); padding: 14px 24px; font-family: var(--police-corps); font-size: 1rem; font-weight: 600; cursor: pointer; width: 100%; }
+  .bouton:hover { filter: brightness(0.93); }
   .bouton:disabled { opacity: 0.6; cursor: default; }
-
-  .message { display: none; padding: 12px 15px; border-radius: var(--r-petit); margin-bottom: 15px; font-size: 0.9rem; }
+  .message { display: none; padding: 12px 15px; border-radius: var(--r-bouton); margin-bottom: 15px; font-size: 0.9rem; }
   .message.visible { display: block; }
-  .message.erreur { background: rgba(178,58,46,0.12); color: var(--rouge); }
+  .message.erreur { background: rgba(178,58,46,0.12); color: #B23A2E; }
 
-  .resultats { display: none; margin-top: 22px; }
+  .resultats { display: none; margin-top: 24px; }
   .resultats.visible { display: block; }
-  .bandeau-eleve { background: var(--ardoise); color: var(--craie); border-radius: var(--r-carte); padding: 18px 20px; margin-bottom: 16px; }
-  .bandeau-eleve .nom { font-family: var(--police-titre); font-size: 1.25rem; }
-  .bandeau-eleve .meta { color: rgba(246,242,231,0.68); font-size: 0.87rem; margin-top: 3px; }
+  .bandeau-eleve { background: var(--sombre); color: #fff; border-radius: var(--r-bloc); padding: 19px 22px; margin-bottom: 16px; }
+  .bandeau-eleve .nom { font-family: var(--police-titre); font-size: 1.3rem; }
+  .bandeau-eleve .meta { color: rgba(255,255,255,0.7); font-size: 0.88rem; margin-top: 3px; }
   .bandeau-eleve .matricule { font-family: var(--police-mono); font-size: 0.82rem; }
 
   table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-  th { text-align: left; font-size: 0.73rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--texte-att); font-weight: 600; padding: 9px 10px; border-bottom: 1px solid var(--bordure); }
+  th { text-align: left; font-size: 0.73rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--texte-doux); font-weight: 600; padding: 9px 10px; border-bottom: 1px solid var(--bordure); }
   td { padding: 11px 10px; border-bottom: 1px solid var(--bordure); }
   tr:last-child td { border-bottom: none; }
   .pourcentage { font-weight: 600; font-variant-numeric: tabular-nums; }
   .conteneur-tableau { overflow-x: auto; }
   .conteneur-tableau table { min-width: 480px; }
 
-  .etat { text-align: center; padding: 60px 20px; color: var(--texte-att); }
-  .pied { text-align: center; padding: 26px 24px 40px 24px; color: var(--texte-att); font-size: 0.84rem; }
-  .pied a { color: var(--encre); }
+  .liste-sections .item { padding: 14px 0; border-bottom: 1px solid var(--bordure); }
+  .liste-sections .item:last-child { border-bottom: none; }
+  .liste-sections .nom { font-weight: 600; }
+  .liste-sections .options { color: var(--texte-doux); font-size: 0.9rem; margin-top: 3px; }
 
-  @media (max-width: 600px) {
-    .banniere { padding: 28px 18px 32px 18px; }
-    .banniere h1 { font-size: 1.55rem; }
-    main { padding: 24px 16px 50px 16px; }
-    .carte { padding: 20px; }
+  .grille-equipe { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 20px; }
+  .membre { text-align: center; }
+  .membre img, .membre .initiales { width: 92px; height: 92px; border-radius: 50%; object-fit: cover; margin: 0 auto 11px auto; display: flex; align-items: center; justify-content: center; background: var(--accent); color: #fff; font-family: var(--police-titre); font-size: 1.5rem; }
+  .membre .nom { font-weight: 600; font-size: 0.93rem; }
+  .membre .fonction { color: var(--texte-doux); font-size: 0.82rem; margin-top: 2px; }
+
+  .grille-galerie { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+  .photo { border-radius: var(--r-bloc); overflow: hidden; background: var(--fond); }
+  .photo img { width: 100%; height: 150px; object-fit: cover; display: block; }
+  .photo .legende { font-size: 0.79rem; color: var(--texte-doux); padding: 8px 10px; }
+
+  .valeurs { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 14px; }
+  .valeur { background: var(--fond); border: 1px solid var(--bordure); border-radius: 20px; padding: 6px 15px; font-size: 0.87rem; }
+
+  .annonce { padding: 17px 0; border-bottom: 1px solid var(--bordure); }
+  .annonce:last-child { border-bottom: none; }
+  .annonce .titre { font-weight: 600; font-size: 1.03rem; }
+  .annonce .date { font-size: 0.78rem; color: var(--texte-doux); margin: 3px 0 8px 0; }
+  .annonce .texte { white-space: pre-wrap; }
+
+  .grille-contact { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 18px; }
+  .contact-item .etiquette { font-size: 0.73rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--texte-doux); font-weight: 600; margin-bottom: 3px; }
+  .contact-item a { color: var(--accent); text-decoration: none; }
+  .contact-item a:hover { text-decoration: underline; }
+  .reseaux { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
+  .reseau { border: 1px solid var(--bordure); border-radius: var(--r-bouton); padding: 9px 16px; font-size: 0.88rem; color: var(--texte); text-decoration: none; }
+  .reseau:hover { border-color: var(--accent); }
+
+  .etat { text-align: center; padding: 70px 22px; color: var(--texte-doux); }
+  .pied { text-align: center; padding: 26px 22px 44px 22px; color: var(--texte-doux); font-size: 0.83rem; }
+
+  @media (max-width: 640px) {
+    .heros .dedans { padding: 34px 0 30px 0; }
+    .heros h1 { font-size: 1.65rem; }
+    html[data-vitrine="moderne"] .heros h1 { font-size: 1.8rem; }
+    .identite .logo { width: 62px; height: 62px; }
+    section.bloc { padding: 22px; }
+    main { padding: 26px 0 50px 0; }
   }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 </style>
@@ -102,78 +156,23 @@
 <div id="ecran-erreur" class="etat" style="display:none;"></div>
 
 <div id="page" style="display:none;">
-  <header class="banniere">
-    <div class="contenant">
+  <header class="heros" id="heros">
+    <div class="image" id="heros-image"></div>
+    <div class="voile" id="heros-voile"></div>
+    <div class="dedans contenant">
       <div class="identite">
         <img id="logo-ecole" class="logo" alt="" style="display:none;" />
         <div>
           <h1 id="nom-ecole"></h1>
           <p class="lieu" id="lieu-ecole"></p>
-          <span class="annee" id="annee-active" style="display:none;"></span>
+          <span class="badge-annee" id="annee-active" style="display:none;"></span>
         </div>
       </div>
-      <p class="accueil" id="message-accueil" style="display:none;"></p>
+      <p class="slogan" id="slogan" style="display:none;"></p>
     </div>
   </header>
 
-  <main class="contenant">
-
-    <!-- Consultation des résultats : placée en tête, c'est la raison
-         première pour laquelle un parent ouvre cette page. -->
-    <section class="carte carte-resultats">
-      <h2>Consulter les résultats de votre enfant</h2>
-      <p style="color:var(--texte-att); font-size:0.9rem;">
-        Munissez-vous du matricule et du code d'accès remis par l'école.
-      </p>
-
-      <div class="message" id="message-resultats"></div>
-
-      <div class="champ">
-        <label for="champ-matricule">Matricule de l'élève</label>
-        <input type="text" id="champ-matricule" placeholder="ELV-0001" autocomplete="off" />
-      </div>
-      <div class="champ">
-        <label for="champ-code">Code d'accès</label>
-        <input type="text" id="champ-code" placeholder="XXXXXX" autocomplete="off" maxlength="12" style="text-transform:uppercase;" />
-        <p class="aide">Ce code figure sur le document remis par le secrétariat.</p>
-      </div>
-      <button class="bouton" id="bouton-consulter">Afficher les résultats</button>
-
-      <div class="resultats" id="zone-resultats">
-        <div class="bandeau-eleve">
-          <div class="nom" id="res-nom"></div>
-          <div class="meta"><span id="res-classe"></span> · <span class="matricule" id="res-matricule"></span></div>
-        </div>
-        <div class="conteneur-tableau">
-          <table>
-            <thead><tr><th>Période</th><th>Total</th><th>Pourcentage</th><th>Place</th><th>Mention</th></tr></thead>
-            <tbody id="res-corps"></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <section class="carte" id="carte-presentation" style="display:none;">
-      <h2>Présentation de l'établissement</h2>
-      <p id="description-ecole" style="white-space:pre-wrap;"></p>
-    </section>
-
-    <section class="carte" id="carte-sections" style="display:none;">
-      <h2>Sections et options</h2>
-      <div id="liste-sections"></div>
-    </section>
-
-    <section class="carte" id="carte-annonces" style="display:none;">
-      <h2>Annonces</h2>
-      <div id="liste-annonces"></div>
-    </section>
-
-    <section class="carte">
-      <h2>Nous contacter</h2>
-      <div class="grille-contact" id="grille-contact"></div>
-    </section>
-
-  </main>
+  <main class="contenant" id="blocs"></main>
 
   <footer class="pied">
     Espace public propulsé par <strong>Ardoise</strong> — la gestion scolaire simplifiée.
@@ -183,21 +182,31 @@
 <script>
   const API_BASE_URL = "https://scolaire-saas-backend.onrender.com";
 
-  // Le code de l'école arrive par l'adresse : ecole.html?code=MONECOLE
   const parametres = new URLSearchParams(window.location.search);
   const codeEcole = (parametres.get('code') || '').trim();
 
-  function afficherErreurGlobale(texte) {
-    document.getElementById('ecran-chargement').style.display = 'none';
-    const zone = document.getElementById('ecran-erreur');
-    zone.textContent = texte;
-    zone.style.display = '';
-  }
+  // Une école qui n'a rien personnalisé doit obtenir une page complète et
+  // présentable, jamais une page vide.
+  const CONFIG_DEFAUT = {
+    theme: 'classique', couleur: '#C98A3E', couverture_url: null, slogan: '',
+    blocs: { resultats: true, presentation: true, sections: true, annonces: true,
+             equipe: false, galerie: false, infos: false, contact: true },
+    mission: '', valeurs: [], horaires: '', admission: '',
+    equipe: [], galerie: [], reseaux: {}
+  };
 
   function echapper(texte) {
     const d = document.createElement('div');
     d.textContent = texte == null ? '' : String(texte);
     return d.innerHTML;
+  }
+
+  // Seules les adresses http(s) sont posées dans un href ou un src : sans ce
+  // filtre, un « javascript: » saisi dans un lien de réseau social deviendrait
+  // une faille sur une page ouverte à tous.
+  function urlSure(valeur) {
+    if (typeof valeur !== 'string') return null;
+    return /^https?:\/\//i.test(valeur.trim()) ? valeur.trim() : null;
   }
 
   function formaterDate(valeur) {
@@ -207,98 +216,234 @@
     } catch (e) { return ''; }
   }
 
+  function afficherErreurGlobale(texte) {
+    document.getElementById('ecran-chargement').style.display = 'none';
+    const zone = document.getElementById('ecran-erreur');
+    zone.textContent = texte;
+    zone.style.display = '';
+  }
+
+  function initiales(nom) {
+    return String(nom || '').trim().split(/\s+/).slice(0, 2).map(m => m[0] || '').join('').toUpperCase();
+  }
+
   async function chargerEcole() {
-    if (!codeEcole) {
-      afficherErreurGlobale("Adresse incomplète : le code de l'école est manquant.");
-      return;
-    }
+    if (!codeEcole) { afficherErreurGlobale("Adresse incomplète : le code de l'école est manquant."); return; }
 
     let reponse;
     try {
       reponse = await fetch(`${API_BASE_URL}/public/ecole/${encodeURIComponent(codeEcole)}`);
     } catch (e) {
-      afficherErreurGlobale("Impossible de joindre le serveur. Vérifiez votre connexion et réessayez.");
+      afficherErreurGlobale('Impossible de joindre le serveur. Vérifiez votre connexion et réessayez.');
       return;
     }
-
-    if (reponse.status === 404) {
-      afficherErreurGlobale("Aucune école publiée ne correspond à ce code.");
-      return;
-    }
-    if (!reponse.ok) {
-      afficherErreurGlobale("Une erreur est survenue. Réessayez dans quelques instants.");
-      return;
-    }
+    if (reponse.status === 404) { afficherErreurGlobale('Aucune école publiée ne correspond à ce code.'); return; }
+    if (!reponse.ok) { afficherErreurGlobale('Une erreur est survenue. Réessayez dans quelques instants.'); return; }
 
     const donnees = await reponse.json();
     const ecole = donnees.ecole;
+    const config = Object.assign({}, CONFIG_DEFAUT, ecole.site_config || {});
+    config.blocs = Object.assign({}, CONFIG_DEFAUT.blocs, (ecole.site_config || {}).blocs || {});
+
+    document.documentElement.setAttribute('data-vitrine', config.theme || 'classique');
+    if (/^#[0-9A-Fa-f]{6}$/.test(config.couleur || '')) {
+      document.documentElement.style.setProperty('--accent', config.couleur);
+      document.querySelector('meta[name="theme-color"]').setAttribute('content', config.couleur);
+    }
 
     document.title = `${ecole.nom} — Espace public`;
     document.getElementById('nom-ecole').textContent = ecole.nom;
-    document.getElementById('lieu-ecole').textContent =
-      [ecole.ville, ecole.province].filter(Boolean).join(', ');
+    document.getElementById('lieu-ecole').textContent = [ecole.ville, ecole.province].filter(Boolean).join(', ');
 
-    if (ecole.logo_url) {
-      const logo = document.getElementById('logo-ecole');
-      logo.src = ecole.logo_url;
-      logo.alt = `Logo de ${ecole.nom}`;
-      logo.style.display = '';
+    const couverture = urlSure(config.couverture_url);
+    if (couverture) {
+      document.getElementById('heros-image').style.backgroundImage = `url("${couverture.replace(/"/g, '%22')}")`;
+    } else {
+      document.getElementById('heros').classList.add('sans-image');
+    }
+
+    const logo = urlSure(ecole.logo_url);
+    if (logo) {
+      const balise = document.getElementById('logo-ecole');
+      balise.src = logo; balise.alt = `Logo de ${ecole.nom}`; balise.style.display = '';
     }
     if (donnees.annee_active) {
       const badge = document.getElementById('annee-active');
       badge.textContent = `Année scolaire ${donnees.annee_active}`;
       badge.style.display = '';
     }
-    if (ecole.site_message_accueil) {
-      const accueil = document.getElementById('message-accueil');
-      accueil.textContent = ecole.site_message_accueil;
-      accueil.style.display = '';
-    }
-    if (ecole.site_description) {
-      document.getElementById('description-ecole').textContent = ecole.site_description;
-      document.getElementById('carte-presentation').style.display = '';
+    const slogan = config.slogan || ecole.site_message_accueil;
+    if (slogan) {
+      const p = document.getElementById('slogan');
+      p.textContent = slogan; p.style.display = '';
     }
 
-    if (donnees.sections.length > 0) {
-      document.getElementById('liste-sections').innerHTML = donnees.sections.map((s) => `
-        <div class="section-bloc">
-          <div class="nom">${echapper(s.section)}</div>
-          ${s.options && s.options.length
-            ? `<div class="options">${s.options.map(echapper).join(' · ')}</div>`
-            : ''}
-        </div>
-      `).join('');
-      document.getElementById('carte-sections').style.display = '';
-    }
-
-    if (donnees.annonces.length > 0) {
-      document.getElementById('liste-annonces').innerHTML = donnees.annonces.map((a) => `
-        <div class="annonce">
-          <div class="titre">${echapper(a.titre)}</div>
-          <div class="date">${formaterDate(a.date_publication)}</div>
-          <div class="texte">${echapper(a.contenu)}</div>
-        </div>
-      `).join('');
-      document.getElementById('carte-annonces').style.display = '';
-    }
-
-    const contacts = [
-      { etiquette: 'Adresse', valeur: ecole.adresse },
-      { etiquette: 'Téléphone', valeur: ecole.telephone, lien: ecole.telephone ? `tel:${ecole.telephone}` : null },
-      { etiquette: 'Courriel', valeur: ecole.email, lien: ecole.email ? `mailto:${ecole.email}` : null }
-    ].filter((c) => c.valeur);
-
-    document.getElementById('grille-contact').innerHTML = contacts.length
-      ? contacts.map((c) => `
-          <div class="contact-item">
-            <div class="etiquette">${c.etiquette}</div>
-            <div class="valeur">${c.lien ? `<a href="${echapper(c.lien)}">${echapper(c.valeur)}</a>` : echapper(c.valeur)}</div>
-          </div>
-        `).join('')
-      : '<p style="color:var(--texte-att); margin:0;">Aucune coordonnée publiée pour le moment.</p>';
+    dessinerBlocs(ecole, config, donnees);
 
     document.getElementById('ecran-chargement').style.display = 'none';
     document.getElementById('page').style.display = '';
+  }
+
+  function dessinerBlocs(ecole, config, donnees) {
+    const morceaux = [];
+
+    if (config.blocs.resultats) morceaux.push(blocResultats());
+
+    if (config.blocs.presentation && (ecole.site_description || config.mission || config.valeurs.length)) {
+      morceaux.push(`
+        <section class="bloc">
+          <h2>L'établissement</h2>
+          ${ecole.site_description ? `<p class="texte-libre">${echapper(ecole.site_description)}</p>` : ''}
+          ${config.mission ? `<p class="texte-libre" style="margin-top:16px;"><strong>Notre mission.</strong> ${echapper(config.mission)}</p>` : ''}
+          ${config.valeurs.length ? `<div class="valeurs">${config.valeurs.map(v => `<span class="valeur">${echapper(v)}</span>`).join('')}</div>` : ''}
+        </section>`);
+    }
+
+    if (config.blocs.sections && donnees.sections.length) {
+      morceaux.push(`
+        <section class="bloc">
+          <h2>Sections et options</h2>
+          <div class="liste-sections">
+            ${donnees.sections.map(s => `
+              <div class="item">
+                <div class="nom">${echapper(s.section)}</div>
+                ${s.options && s.options.length ? `<div class="options">${s.options.map(echapper).join(' · ')}</div>` : ''}
+              </div>`).join('')}
+          </div>
+        </section>`);
+    }
+
+    if (config.blocs.infos && (config.horaires || config.admission)) {
+      morceaux.push(`
+        <section class="bloc">
+          <h2>Informations pratiques</h2>
+          ${config.horaires ? `<p class="texte-libre"><strong>Horaires.</strong> ${echapper(config.horaires)}</p>` : ''}
+          ${config.admission ? `<p class="texte-libre" style="margin-top:14px;"><strong>Inscriptions.</strong> ${echapper(config.admission)}</p>` : ''}
+        </section>`);
+    }
+
+    if (config.blocs.equipe && config.equipe.length) {
+      morceaux.push(`
+        <section class="bloc">
+          <h2>L'équipe de direction</h2>
+          <div class="grille-equipe">
+            ${config.equipe.map(m => {
+              const photo = urlSure(m.photo_url);
+              return `<div class="membre">
+                ${photo
+                  ? `<img src="${echapper(photo)}" alt="${echapper(m.nom)}" />`
+                  : `<div class="initiales">${echapper(initiales(m.nom))}</div>`}
+                <div class="nom">${echapper(m.nom)}</div>
+                ${m.fonction ? `<div class="fonction">${echapper(m.fonction)}</div>` : ''}
+              </div>`;
+            }).join('')}
+          </div>
+        </section>`);
+    }
+
+    if (config.blocs.galerie && config.galerie.length) {
+      morceaux.push(`
+        <section class="bloc">
+          <h2>En images</h2>
+          <div class="grille-galerie">
+            ${config.galerie.map(g => {
+              const src = urlSure(g.url);
+              if (!src) return '';
+              return `<div class="photo">
+                <img src="${echapper(src)}" alt="${echapper(g.legende || '')}" loading="lazy" />
+                ${g.legende ? `<div class="legende">${echapper(g.legende)}</div>` : ''}
+              </div>`;
+            }).join('')}
+          </div>
+        </section>`);
+    }
+
+    if (config.blocs.annonces && donnees.annonces.length) {
+      morceaux.push(`
+        <section class="bloc">
+          <h2>Annonces</h2>
+          ${donnees.annonces.map(a => `
+            <div class="annonce">
+              <div class="titre">${echapper(a.titre)}</div>
+              <div class="date">${formaterDate(a.date_publication)}</div>
+              <div class="texte">${echapper(a.contenu)}</div>
+            </div>`).join('')}
+        </section>`);
+    }
+
+    if (config.blocs.contact) {
+      const contacts = [
+        { etiquette: 'Adresse', valeur: ecole.adresse },
+        { etiquette: 'Téléphone', valeur: ecole.telephone, lien: ecole.telephone ? `tel:${ecole.telephone}` : null },
+        { etiquette: 'Courriel', valeur: ecole.email, lien: ecole.email ? `mailto:${ecole.email}` : null }
+      ].filter(c => c.valeur);
+
+      const reseaux = [];
+      if (urlSure(config.reseaux.facebook)) reseaux.push(`<a class="reseau" href="${echapper(config.reseaux.facebook)}" target="_blank" rel="noopener">Facebook</a>`);
+      if (config.reseaux.whatsapp) {
+        const numero = String(config.reseaux.whatsapp).replace(/[^0-9]/g, '');
+        if (numero) reseaux.push(`<a class="reseau" href="https://wa.me/${numero}" target="_blank" rel="noopener">WhatsApp</a>`);
+      }
+      if (urlSure(config.reseaux.site)) reseaux.push(`<a class="reseau" href="${echapper(config.reseaux.site)}" target="_blank" rel="noopener">Site web</a>`);
+
+      morceaux.push(`
+        <section class="bloc">
+          <h2>Nous contacter</h2>
+          <div class="grille-contact">
+            ${contacts.length
+              ? contacts.map(c => `
+                <div class="contact-item">
+                  <div class="etiquette">${c.etiquette}</div>
+                  <div>${c.lien ? `<a href="${echapper(c.lien)}">${echapper(c.valeur)}</a>` : echapper(c.valeur)}</div>
+                </div>`).join('')
+              : '<p style="color:var(--texte-doux); margin:0;">Aucune coordonnée publiée pour le moment.</p>'}
+          </div>
+          ${reseaux.length ? `<div class="reseaux">${reseaux.join('')}</div>` : ''}
+        </section>`);
+    }
+
+    document.getElementById('blocs').innerHTML = morceaux.join('');
+    if (config.blocs.resultats) brancherResultats();
+  }
+
+  function blocResultats() {
+    return `
+      <section class="bloc bloc-resultats">
+        <h2>Consulter les résultats de votre enfant</h2>
+        <p style="color:var(--texte-doux); font-size:0.92rem;">
+          Munissez-vous du matricule et du code d'accès remis par l'école.
+        </p>
+        <div class="message" id="message-resultats"></div>
+        <div class="champ">
+          <label for="champ-matricule">Matricule de l'élève</label>
+          <input type="text" id="champ-matricule" placeholder="ELV-0001" autocomplete="off" />
+        </div>
+        <div class="champ">
+          <label for="champ-code">Code d'accès</label>
+          <input type="text" id="champ-code" placeholder="XXXXXX" autocomplete="off" maxlength="12" style="text-transform:uppercase;" />
+          <p class="aide">Ce code figure sur le document remis par le secrétariat.</p>
+        </div>
+        <button class="bouton" id="bouton-consulter">Afficher les résultats</button>
+        <div class="resultats" id="zone-resultats">
+          <div class="bandeau-eleve">
+            <div class="nom" id="res-nom"></div>
+            <div class="meta"><span id="res-classe"></span> · <span class="matricule" id="res-matricule"></span></div>
+          </div>
+          <div class="conteneur-tableau">
+            <table>
+              <thead><tr><th>Période</th><th>Total</th><th>Pourcentage</th><th>Place</th><th>Mention</th></tr></thead>
+              <tbody id="res-corps"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>`;
+  }
+
+  function brancherResultats() {
+    document.getElementById('bouton-consulter').addEventListener('click', consulterResultats);
+    document.getElementById('champ-code').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') consulterResultats();
+    });
   }
 
   async function consulterResultats() {
@@ -317,14 +462,12 @@
       return;
     }
 
-    bouton.disabled = true;
-    bouton.textContent = 'Recherche…';
+    bouton.disabled = true; bouton.textContent = 'Recherche…';
 
     let reponse;
     try {
       reponse = await fetch(`${API_BASE_URL}/public/resultats`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code_ecole: codeEcole, matricule, code_acces: code })
       });
     } catch (e) {
@@ -334,8 +477,7 @@
       return;
     }
 
-    bouton.disabled = false;
-    bouton.textContent = 'Afficher les résultats';
+    bouton.disabled = false; bouton.textContent = 'Afficher les résultats';
 
     const donnees = await reponse.json().catch(() => ({}));
     if (!reponse.ok) {
@@ -350,28 +492,21 @@
 
     const corps = document.getElementById('res-corps');
     if (donnees.bulletins.length === 0) {
-      corps.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--texte-att); padding:24px;">
-        Aucun bulletin n'a encore été publié pour cet élève.
-      </td></tr>`;
+      corps.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--texte-doux); padding:24px;">
+        Aucun bulletin n'a encore été publié pour cet élève.</td></tr>`;
     } else {
-      corps.innerHTML = donnees.bulletins.map((b) => `
+      corps.innerHTML = donnees.bulletins.map(b => `
         <tr>
           <td>${echapper(b.periode)}</td>
           <td>${b.total != null ? echapper(b.total) : '—'}</td>
           <td class="pourcentage">${b.pourcentage != null ? echapper(b.pourcentage) + '%' : '—'}</td>
           <td>${b.classement != null ? echapper(b.classement) + '/' + donnees.effectif_classe : '—'}</td>
           <td>${b.mention ? echapper(b.mention) : '—'}</td>
-        </tr>
-      `).join('');
+        </tr>`).join('');
     }
     zone.classList.add('visible');
     zone.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
-
-  document.getElementById('bouton-consulter').addEventListener('click', consulterResultats);
-  document.getElementById('champ-code').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') consulterResultats();
-  });
 
   chargerEcole();
 </script>

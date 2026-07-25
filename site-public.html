@@ -57,6 +57,42 @@
   .bloc-lien { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .bloc-lien code { flex: 1; min-width: 220px; font-family: var(--police-mono); font-size: 0.84rem; background: var(--craie); border: 1px solid var(--bordure); border-radius: var(--r-petit); padding: 11px 13px; overflow-x: auto; white-space: nowrap; }
 
+  .grille-themes-site { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .carte-theme-site { border: 2px solid var(--bordure); border-radius: var(--r-carte); padding: 0; background: none; cursor: pointer; overflow: hidden; text-align: left; font-family: var(--police-corps); }
+  .carte-theme-site.actif { border-color: var(--ocre); }
+  .carte-theme-site .apercu { height: 62px; display: flex; }
+  .carte-theme-site .apercu .barre { width: 100%; }
+  .carte-theme-site .pied { padding: 10px 12px; background: var(--craie-2); border-top: 1px solid var(--bordure); }
+  .carte-theme-site .nom { font-weight: 600; font-size: 0.9rem; color: var(--texte-sombre); }
+  .carte-theme-site .desc { font-size: 0.75rem; color: var(--texte-att); margin-top: 2px; }
+
+  .ligne-couleur { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .ligne-couleur label { font-size: 0.86rem; font-weight: 600; }
+  .ligne-couleur input[type="color"] { width: 46px; height: 34px; border: 1px solid var(--bordure); border-radius: var(--r-petit); background: none; cursor: pointer; padding: 2px; }
+  .palette { display: flex; gap: 6px; flex-wrap: wrap; }
+  .pastille-couleur { width: 26px; height: 26px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; }
+  .pastille-couleur.actif { border-color: var(--texte-sombre); }
+
+  .zone-couverture { border: 1px dashed var(--bordure); border-radius: var(--r-carte); padding: 14px; }
+  .apercu-couverture { height: 120px; border-radius: var(--r-petit); background: var(--craie) center/cover no-repeat; display: flex; align-items: center; justify-content: center; color: var(--texte-att); font-size: 0.85rem; }
+  .actions-couverture { display: flex; gap: 10px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
+
+  .grille-blocs { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+  .bloc-choix { display: flex; align-items: center; gap: 10px; background: var(--craie); border: 1px solid var(--bordure); border-radius: var(--r-petit); padding: 11px 13px; font-size: 0.88rem; cursor: pointer; }
+  .bloc-choix input { width: 17px; height: 17px; accent-color: var(--ocre); cursor: pointer; }
+
+  .ligne-membre { display: grid; grid-template-columns: 54px 1fr 1fr auto; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--bordure); }
+  .ligne-membre:last-child { border-bottom: none; }
+  .ligne-membre .portrait { width: 54px; height: 54px; border-radius: 50%; background: var(--craie) center/cover no-repeat; border: 1px solid var(--bordure); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.68rem; color: var(--texte-att); text-align: center; }
+  .ligne-membre input { border: 1px solid var(--bordure); border-radius: var(--r-petit); padding: 8px 10px; font-family: var(--police-corps); font-size: 0.87rem; background: var(--craie); color: var(--texte-sombre); width: 100%; }
+
+  .grille-galerie-edition { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+  .vignette { border: 1px solid var(--bordure); border-radius: var(--r-petit); overflow: hidden; background: var(--craie); }
+  .vignette .img { height: 92px; background: center/cover no-repeat; }
+  .vignette input { width: 100%; border: none; border-top: 1px solid var(--bordure); padding: 7px 9px; font-family: var(--police-corps); font-size: 0.78rem; background: var(--craie-2); color: var(--texte-sombre); }
+  .vignette .retirer { width: 100%; border: none; border-top: 1px solid var(--bordure); background: none; color: var(--rouge); font-family: var(--police-corps); font-size: 0.78rem; padding: 6px; cursor: pointer; }
+
+  .grille-reseaux { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
   .interrupteur { display: flex; align-items: center; gap: 10px; font-size: 0.92rem; cursor: pointer; }
   .interrupteur input { width: 18px; height: 18px; accent-color: var(--ocre); cursor: pointer; }
 
@@ -194,18 +230,97 @@
       </div>
 
       <div class="carte-config">
+        <h3>Apparence</h3>
+        <p class="aide">Le thème change la mise en page complète ; la couleur donne son identité à l'école.</p>
+        <div id="choix-themes" class="grille-themes-site"></div>
+
+        <div class="ligne-couleur">
+          <label for="champ-couleur">Couleur d'accent</label>
+          <input type="color" id="champ-couleur" value="#C98A3E" />
+          <div class="palette" id="palette"></div>
+        </div>
+
+        <div class="champ-long" style="margin-top:20px;">
+          <label>Image de couverture</label>
+          <div class="zone-couverture" id="zone-couverture">
+            <div class="apercu-couverture" id="apercu-couverture"></div>
+            <div class="actions-couverture">
+              <button class="bouton bouton-secondaire" id="bouton-couverture">Choisir une image</button>
+              <button class="lien-action danger" id="bouton-retirer-couverture" style="display:none;">Retirer</button>
+              <input type="file" id="input-couverture" accept="image/*" style="display:none;" />
+            </div>
+          </div>
+          <p class="aide" style="margin-top:8px;">Une photo large de l'établissement fonctionne mieux qu'un portrait. 5 Mo maximum.</p>
+        </div>
+      </div>
+
+      <div class="carte-config">
+        <h3>Blocs affichés</h3>
+        <p class="aide">Décochez ce que vous ne souhaitez pas montrer. Un bloc sans contenu reste masqué de toute façon.</p>
+        <div id="choix-blocs" class="grille-blocs"></div>
+      </div>
+
+      <div class="carte-config">
         <h3>Contenu de la page</h3>
         <div class="champ-long">
+          <label for="champ-slogan">Phrase d'accroche</label>
+          <input type="text" id="champ-slogan" maxlength="160" placeholder="ex. Former les bâtisseurs de demain, depuis 1998." />
+        </div>
+        <div class="champ-long">
           <label for="champ-accueil">Message d'accueil</label>
-          <textarea id="champ-accueil" rows="2" maxlength="300" placeholder="Une phrase affichée en haut de la page."></textarea>
+          <textarea id="champ-accueil" rows="2" maxlength="300" placeholder="Utilisé si aucune phrase d'accroche n'est renseignée."></textarea>
         </div>
         <div class="champ-long">
           <label for="champ-description">Présentation de l'établissement</label>
-          <textarea id="champ-description" rows="8" maxlength="4000" placeholder="Historique, valeurs, encadrement, activités…"></textarea>
+          <textarea id="champ-description" rows="7" maxlength="4000" placeholder="Historique, encadrement, activités…"></textarea>
           <span class="compteur" id="compteur-description">0 / 4000</span>
         </div>
+        <div class="champ-long">
+          <label for="champ-mission">Notre mission</label>
+          <textarea id="champ-mission" rows="3" maxlength="1500"></textarea>
+        </div>
+        <div class="champ-long">
+          <label for="champ-valeurs">Valeurs (une par ligne, 8 maximum)</label>
+          <textarea id="champ-valeurs" rows="4" placeholder="Discipline&#10;Excellence&#10;Solidarité"></textarea>
+        </div>
+        <div class="champ-long">
+          <label for="champ-horaires">Horaires</label>
+          <textarea id="champ-horaires" rows="2" maxlength="600" placeholder="ex. Lundi au vendredi, 7h30 – 13h00. Samedi, 7h30 – 11h00."></textarea>
+        </div>
+        <div class="champ-long">
+          <label for="champ-admission">Inscriptions</label>
+          <textarea id="champ-admission" rows="3" maxlength="1500" placeholder="Période, pièces à fournir, personne à contacter…"></textarea>
+        </div>
+      </div>
+
+      <div class="carte-config">
+        <h3>Équipe de direction</h3>
+        <p class="aide">Ne publiez que des personnes qui acceptent d'apparaître. 12 membres au maximum.</p>
+        <div id="liste-equipe"></div>
         <div class="barre-actions">
-          <button class="bouton bouton-principal" id="bouton-enregistrer-vitrine">Enregistrer</button>
+          <button class="bouton bouton-secondaire" id="bouton-ajouter-membre">+ Ajouter un membre</button>
+        </div>
+      </div>
+
+      <div class="carte-config">
+        <h3>Galerie</h3>
+        <p class="aide">16 photos au maximum. Évitez les portraits d'élèves identifiables sans accord des parents.</p>
+        <div id="liste-galerie" class="grille-galerie-edition"></div>
+        <div class="barre-actions">
+          <button class="bouton bouton-secondaire" id="bouton-ajouter-photo">+ Ajouter une photo</button>
+          <input type="file" id="input-photo" accept="image/*" style="display:none;" />
+        </div>
+      </div>
+
+      <div class="carte-config">
+        <h3>Réseaux et liens</h3>
+        <div class="grille-reseaux">
+          <div class="champ-long"><label for="champ-facebook">Page Facebook</label><input type="url" id="champ-facebook" placeholder="https://facebook.com/…" /></div>
+          <div class="champ-long"><label for="champ-whatsapp">Numéro WhatsApp</label><input type="text" id="champ-whatsapp" placeholder="243900000000" /></div>
+          <div class="champ-long"><label for="champ-site">Autre site</label><input type="url" id="champ-site" placeholder="https://…" /></div>
+        </div>
+        <div class="barre-actions">
+          <button class="bouton bouton-principal" id="bouton-enregistrer-vitrine">Enregistrer la vitrine</button>
         </div>
       </div>
     </section>
@@ -371,6 +486,7 @@
       document.getElementById('bouton-creer-annonce').addEventListener('click', creerAnnonce);
       document.getElementById('bouton-copier').addEventListener('click', copierLien);
       document.getElementById('champ-description').addEventListener('input', majCompteur);
+      brancherEditeur();
     }
     document.getElementById('bouton-generer-codes').addEventListener('click', genererCodes);
     document.getElementById('bouton-imprimer-codes').addEventListener('click', () => window.print());
@@ -404,6 +520,262 @@
   }
 
   // ============================================================
+  //  Éditeur de vitrine
+  // ============================================================
+  const THEMES_SITE = [
+    { cle: 'classique', nom: 'Classique', desc: 'Sobre et institutionnel', fond: '#F6F2E7', barre: '#1F2B24' },
+    { cle: 'moderne', nom: 'Moderne', desc: 'Blanc, épuré, grande photo', fond: '#FFFFFF', barre: '#14171A' },
+    { cle: 'chaleureux', nom: 'Chaleureux', desc: 'Crème, arrondi, accueillant', fond: '#FDF6EE', barre: '#1E5B4F' }
+  ];
+  const PALETTE = ['#C98A3E', '#1E5B4F', '#2563A8', '#B23A2E', '#6B4E9E', '#0F766E', '#B45309', '#1F2B24'];
+  const BLOCS = [
+    { cle: 'resultats', nom: 'Consultation des résultats' },
+    { cle: 'presentation', nom: "Présentation de l'établissement" },
+    { cle: 'sections', nom: 'Sections et options' },
+    { cle: 'infos', nom: 'Informations pratiques' },
+    { cle: 'equipe', nom: 'Équipe de direction' },
+    { cle: 'galerie', nom: 'Galerie photos' },
+    { cle: 'annonces', nom: 'Annonces' },
+    { cle: 'contact', nom: 'Contact' }
+  ];
+
+  const CONFIG_VIDE = {
+    theme: 'classique', couleur: '#C98A3E', couverture_url: null, slogan: '',
+    blocs: { resultats: true, presentation: true, sections: true, annonces: true,
+             equipe: false, galerie: false, infos: false, contact: true },
+    mission: '', valeurs: [], horaires: '', admission: '',
+    equipe: [], galerie: [], reseaux: { facebook: null, whatsapp: '', site: null }
+  };
+
+  let config = JSON.parse(JSON.stringify(CONFIG_VIDE));
+  let cibleUploadPortrait = null;   // index du membre dont on change la photo
+
+  function dessinerThemes() {
+    document.getElementById('choix-themes').innerHTML = THEMES_SITE.map(t => `
+      <button type="button" class="carte-theme-site ${config.theme === t.cle ? 'actif' : ''}" data-theme="${t.cle}">
+        <div class="apercu" style="background:${t.fond};">
+          <div class="barre" style="background:${t.barre}; height:26px;"></div>
+        </div>
+        <div class="pied">
+          <div class="nom">${echapper(t.nom)}</div>
+          <div class="desc">${echapper(t.desc)}</div>
+        </div>
+      </button>`).join('');
+
+    document.querySelectorAll('[data-theme]').forEach(b => {
+      b.addEventListener('click', () => { config.theme = b.dataset.theme; dessinerThemes(); });
+    });
+  }
+
+  function dessinerPalette() {
+    document.getElementById('palette').innerHTML = PALETTE.map(c => `
+      <button type="button" class="pastille-couleur ${config.couleur.toLowerCase() === c.toLowerCase() ? 'actif' : ''}"
+              style="background:${c};" data-couleur="${c}" title="${c}"></button>`).join('');
+    document.querySelectorAll('[data-couleur]').forEach(b => {
+      b.addEventListener('click', () => {
+        config.couleur = b.dataset.couleur;
+        document.getElementById('champ-couleur').value = config.couleur;
+        dessinerPalette();
+      });
+    });
+  }
+
+  function dessinerBlocs() {
+    document.getElementById('choix-blocs').innerHTML = BLOCS.map(b => `
+      <label class="bloc-choix">
+        <input type="checkbox" data-bloc="${b.cle}" ${config.blocs[b.cle] !== false ? 'checked' : ''} />
+        <span>${echapper(b.nom)}</span>
+      </label>`).join('');
+    document.querySelectorAll('[data-bloc]').forEach(c => {
+      c.addEventListener('change', () => { config.blocs[c.dataset.bloc] = c.checked; });
+    });
+  }
+
+  function dessinerCouverture() {
+    const apercu = document.getElementById('apercu-couverture');
+    if (config.couverture_url) {
+      apercu.style.backgroundImage = `url("${config.couverture_url.replace(/"/g, '%22')}")`;
+      apercu.textContent = '';
+      document.getElementById('bouton-retirer-couverture').style.display = '';
+    } else {
+      apercu.style.backgroundImage = 'none';
+      apercu.textContent = 'Aucune image — la page affichera un fond uni';
+      document.getElementById('bouton-retirer-couverture').style.display = 'none';
+    }
+  }
+
+  function dessinerEquipe() {
+    const zone = document.getElementById('liste-equipe');
+    if (config.equipe.length === 0) {
+      zone.innerHTML = '<p class="aide" style="margin:0;">Aucun membre pour le moment.</p>';
+      return;
+    }
+    zone.innerHTML = config.equipe.map((m, i) => `
+      <div class="ligne-membre">
+        <div class="portrait" data-portrait="${i}"
+             style="${m.photo_url ? `background-image:url('${m.photo_url.replace(/'/g, '%27')}')` : ''}">
+          ${m.photo_url ? '' : 'photo'}
+        </div>
+        <input type="text" data-membre="${i}" data-champ="nom" value="${echapper(m.nom || '')}" placeholder="Nom complet" />
+        <input type="text" data-membre="${i}" data-champ="fonction" value="${echapper(m.fonction || '')}" placeholder="Fonction" />
+        <button type="button" class="lien-action danger" data-retirer-membre="${i}">Retirer</button>
+      </div>`).join('');
+
+    zone.querySelectorAll('[data-membre]').forEach(champ => {
+      champ.addEventListener('input', () => {
+        config.equipe[Number(champ.dataset.membre)][champ.dataset.champ] = champ.value;
+      });
+    });
+    zone.querySelectorAll('[data-retirer-membre]').forEach(b => {
+      b.addEventListener('click', () => {
+        config.equipe.splice(Number(b.dataset.retirerMembre), 1);
+        dessinerEquipe();
+      });
+    });
+    zone.querySelectorAll('[data-portrait]').forEach(p => {
+      p.addEventListener('click', () => {
+        cibleUploadPortrait = Number(p.dataset.portrait);
+        document.getElementById('input-photo').click();
+      });
+    });
+  }
+
+  function dessinerGalerie() {
+    const zone = document.getElementById('liste-galerie');
+    if (config.galerie.length === 0) {
+      zone.innerHTML = '<p class="aide" style="margin:0;">Aucune photo pour le moment.</p>';
+      return;
+    }
+    zone.innerHTML = config.galerie.map((g, i) => `
+      <div class="vignette">
+        <div class="img" style="background-image:url('${g.url.replace(/'/g, '%27')}')"></div>
+        <input type="text" data-legende="${i}" value="${echapper(g.legende || '')}" placeholder="Légende" maxlength="120" />
+        <button type="button" class="retirer" data-retirer-photo="${i}">Retirer</button>
+      </div>`).join('');
+
+    zone.querySelectorAll('[data-legende]').forEach(champ => {
+      champ.addEventListener('input', () => {
+        config.galerie[Number(champ.dataset.legende)].legende = champ.value;
+      });
+    });
+    zone.querySelectorAll('[data-retirer-photo]').forEach(b => {
+      b.addEventListener('click', () => {
+        config.galerie.splice(Number(b.dataset.retirerPhoto), 1);
+        dessinerGalerie();
+      });
+    });
+  }
+
+  /** Envoie une image vers le stockage et renvoie son URL publique. */
+  async function televerserImage(fichier) {
+    if (!fichier) return null;
+    if (fichier.size > 5 * 1024 * 1024) {
+      afficherMessage('Image trop lourde : 5 Mo au maximum.', 'erreur');
+      return null;
+    }
+    const formulaire = new FormData();
+    formulaire.append('fichier', fichier);
+    const r = await appelApi('/uploads/image-site', { method: 'POST', body: formulaire });
+    if (!r || !r.ok) {
+      const d = r ? await r.json().catch(() => ({})) : {};
+      afficherMessage(d.message || "Envoi de l'image impossible.", 'erreur');
+      return null;
+    }
+    const d = await r.json();
+    return d.url || null;
+  }
+
+  function brancherEditeur() {
+    dessinerThemes(); dessinerPalette(); dessinerBlocs();
+    dessinerCouverture(); dessinerEquipe(); dessinerGalerie();
+
+    document.getElementById('champ-couleur').addEventListener('input', (e) => {
+      config.couleur = e.target.value; dessinerPalette();
+    });
+
+    document.getElementById('bouton-couverture').addEventListener('click',
+      () => document.getElementById('input-couverture').click());
+
+    document.getElementById('input-couverture').addEventListener('change', async (e) => {
+      const fichier = e.target.files[0]; e.target.value = '';
+      const bouton = document.getElementById('bouton-couverture');
+      bouton.disabled = true; bouton.textContent = 'Envoi…';
+      const url = await televerserImage(fichier);
+      bouton.disabled = false; bouton.textContent = 'Choisir une image';
+      if (url) { config.couverture_url = url; dessinerCouverture(); }
+    });
+
+    document.getElementById('bouton-retirer-couverture').addEventListener('click', () => {
+      config.couverture_url = null; dessinerCouverture();
+    });
+
+    document.getElementById('bouton-ajouter-membre').addEventListener('click', () => {
+      if (config.equipe.length >= 12) { afficherMessage('12 membres au maximum.', 'erreur'); return; }
+      config.equipe.push({ nom: '', fonction: '', photo_url: null });
+      dessinerEquipe();
+    });
+
+    document.getElementById('bouton-ajouter-photo').addEventListener('click', () => {
+      if (config.galerie.length >= 16) { afficherMessage('16 photos au maximum.', 'erreur'); return; }
+      cibleUploadPortrait = null;
+      document.getElementById('input-photo').click();
+    });
+
+    // Un seul sélecteur de fichier sert à la galerie et aux portraits :
+    // la cible est mémorisée juste avant l'ouverture.
+    document.getElementById('input-photo').addEventListener('change', async (e) => {
+      const fichier = e.target.files[0]; e.target.value = '';
+      const url = await televerserImage(fichier);
+      if (!url) return;
+      if (cibleUploadPortrait !== null && config.equipe[cibleUploadPortrait]) {
+        config.equipe[cibleUploadPortrait].photo_url = url;
+        cibleUploadPortrait = null;
+        dessinerEquipe();
+      } else {
+        config.galerie.push({ url, legende: '' });
+        dessinerGalerie();
+      }
+    });
+  }
+
+  function remplirEditeur(depuis) {
+    config = Object.assign(JSON.parse(JSON.stringify(CONFIG_VIDE)), depuis || {});
+    config.blocs = Object.assign({}, CONFIG_VIDE.blocs, (depuis || {}).blocs || {});
+    config.reseaux = Object.assign({}, CONFIG_VIDE.reseaux, (depuis || {}).reseaux || {});
+    config.equipe = Array.isArray(config.equipe) ? config.equipe : [];
+    config.galerie = Array.isArray(config.galerie) ? config.galerie : [];
+
+    document.getElementById('champ-slogan').value = config.slogan || '';
+    document.getElementById('champ-couleur').value = config.couleur || '#C98A3E';
+    document.getElementById('champ-mission').value = config.mission || '';
+    document.getElementById('champ-valeurs').value = (config.valeurs || []).join('\n');
+    document.getElementById('champ-horaires').value = config.horaires || '';
+    document.getElementById('champ-admission').value = config.admission || '';
+    document.getElementById('champ-facebook').value = config.reseaux.facebook || '';
+    document.getElementById('champ-whatsapp').value = config.reseaux.whatsapp || '';
+    document.getElementById('champ-site').value = config.reseaux.site || '';
+
+    dessinerThemes(); dessinerPalette(); dessinerBlocs();
+    dessinerCouverture(); dessinerEquipe(); dessinerGalerie();
+  }
+
+  function configCourante() {
+    return Object.assign({}, config, {
+      slogan: document.getElementById('champ-slogan').value.trim(),
+      mission: document.getElementById('champ-mission').value.trim(),
+      valeurs: document.getElementById('champ-valeurs').value
+        .split('\n').map(v => v.trim()).filter(Boolean).slice(0, 8),
+      horaires: document.getElementById('champ-horaires').value.trim(),
+      admission: document.getElementById('champ-admission').value.trim(),
+      reseaux: {
+        facebook: document.getElementById('champ-facebook').value.trim() || null,
+        whatsapp: document.getElementById('champ-whatsapp').value.trim(),
+        site: document.getElementById('champ-site').value.trim() || null
+      }
+    });
+  }
+
+  // ============================================================
   //  Vitrine
   // ============================================================
   async function chargerParametres() {
@@ -420,6 +792,7 @@
     document.getElementById('champ-accueil').value = parametres.site_message_accueil || '';
     document.getElementById('champ-description').value = parametres.site_description || '';
     majCompteur();
+    remplirEditeur(parametres.site_config);
 
     document.getElementById('etat-publication').textContent = parametres.site_public_actif
       ? 'La page est en ligne : toute personne disposant de ce lien peut la consulter.'
@@ -439,7 +812,8 @@
       body: JSON.stringify({
         site_public_actif: document.getElementById('case-actif').checked,
         site_message_accueil: document.getElementById('champ-accueil').value.trim(),
-        site_description: document.getElementById('champ-description').value.trim()
+        site_description: document.getElementById('champ-description').value.trim(),
+        site_config: configCourante()
       })
     });
 

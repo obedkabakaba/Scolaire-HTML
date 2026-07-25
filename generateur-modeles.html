@@ -200,6 +200,7 @@
 
         <div class="panneau-zones">
           <h3>Ajouter une zone</h3>
+          <button type="button" class="bouton bouton-secondaire" id="bouton-suggerer-zones-ia" style="width:100%; margin-bottom:16px;">🪄 Suggérer les zones automatiquement (IA)</button>
           <div class="liste-cles-rapides" id="liste-cles-rapides"></div>
           <div class="champ-cle-perso">
             <input type="text" id="champ-cle-perso" placeholder="ou clé personnalisée…" />
@@ -442,6 +443,25 @@
     if (!cle) return;
     creerZone(cle);
     champ.value = '';
+  });
+
+  document.getElementById('bouton-suggerer-zones-ia').addEventListener('click', async () => {
+    if (!modeleCourantId) { afficherMessage("Importe d'abord un fichier de modèle.", 'erreur'); return; }
+    if (!confirm("L'IA va analyser l'image de ton modèle et proposer un premier placement des zones. Tu pourras ensuite tout ajuster ou supprimer. Continuer ?")) return;
+
+    const bouton = document.getElementById('bouton-suggerer-zones-ia');
+    bouton.disabled = true; bouton.textContent = 'Analyse en cours… (peut prendre 15-20 secondes)';
+
+    const r = await appelApi(`/modeles-bulletins/${modeleCourantId}/suggerer-zones`, { method: 'POST' });
+
+    bouton.disabled = false; bouton.textContent = '🪄 Suggérer les zones automatiquement (IA)';
+
+    if (!r) return;
+    const donnees = await r.json();
+    if (!r.ok) { afficherMessage(donnees.message || "Erreur lors de la suggestion.", 'erreur'); return; }
+
+    afficherMessage(donnees.message, donnees.nb > 0 ? 'succes' : 'erreur');
+    if (donnees.nb > 0) { await chargerZones(); }
   });
 
   async function chargerZones() {

@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ardoise — Espace public de l'école</title>
+<meta name="description" content="Présentation de l'établissement et consultation des résultats scolaires en ligne." />
+<meta name="theme-color" content="#111A19" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ardoise: #1F2B24; --craie: #F6F2E7; --craie-2: #FBF9F3;
+    --ocre: #C98A3E; --ocre-dark: #A96F2E; --encre: #3C5A62;
+    --rouge: #B23A2E; --vert-ok: #4C7A5A;
+    --texte-sombre: #1F2B24; --texte-att: #6B7269; --bordure: #E4DFCF;
+    --police-titre: 'Fraunces', Georgia, serif;
+    --police-corps: 'Inter', system-ui, sans-serif;
+    --police-mono: 'IBM Plex Mono', ui-monospace, monospace;
+    --r-carte: 12px; --r-bouton: 8px; --r-petit: 6px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: var(--police-corps); color: var(--texte-sombre); background: var(--craie); line-height: 1.55; }
+
+  .banniere { background: var(--ardoise); color: var(--craie); padding: 40px 24px 46px 24px; }
+  .contenant { max-width: 900px; margin: 0 auto; }
+  .banniere .identite { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+  .banniere .logo { width: 78px; height: 78px; border-radius: var(--r-carte); object-fit: cover; background: rgba(246,242,231,0.08); flex: none; }
+  .banniere h1 { font-family: var(--police-titre); font-weight: 600; font-size: 2rem; margin: 0 0 4px 0; }
+  .banniere .lieu { color: rgba(246,242,231,0.66); font-size: 0.95rem; margin: 0; }
+  .banniere .annee { display: inline-block; margin-top: 14px; background: rgba(201,138,62,0.22); color: #E8B978; padding: 5px 13px; border-radius: 20px; font-size: 0.82rem; font-weight: 600; }
+  .accueil { margin: 22px 0 0 0; color: rgba(246,242,231,0.86); font-size: 1.02rem; max-width: 640px; }
+
+  main { padding: 34px 24px 70px 24px; }
+  .carte { background: var(--craie-2); border: 1px solid var(--bordure); border-radius: var(--r-carte); padding: 26px; margin-bottom: 22px; }
+  .carte h2 { font-family: var(--police-titre); font-weight: 600; font-size: 1.25rem; margin: 0 0 14px 0; }
+  .carte p { margin: 0 0 12px 0; }
+  .carte p:last-child { margin-bottom: 0; }
+
+  .grille-contact { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; }
+  .contact-item .etiquette { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--texte-att); font-weight: 600; margin-bottom: 3px; }
+  .contact-item .valeur { font-size: 0.98rem; }
+  .contact-item a { color: var(--encre); }
+
+  .section-bloc { padding: 13px 0; border-bottom: 1px solid var(--bordure); }
+  .section-bloc:last-child { border-bottom: none; }
+  .section-bloc .nom { font-weight: 600; }
+  .section-bloc .options { color: var(--texte-att); font-size: 0.9rem; margin-top: 3px; }
+
+  .annonce { padding: 16px 0; border-bottom: 1px solid var(--bordure); }
+  .annonce:last-child { border-bottom: none; }
+  .annonce .titre { font-weight: 600; font-size: 1.02rem; }
+  .annonce .date { font-size: 0.78rem; color: var(--texte-att); margin: 3px 0 7px 0; }
+  .annonce .texte { white-space: pre-wrap; color: var(--texte-sombre); }
+
+  .carte-resultats { border: 2px solid var(--ocre); }
+  .champ { margin-bottom: 15px; }
+  .champ label { display: block; font-size: 0.86rem; font-weight: 600; margin-bottom: 6px; }
+  .champ input { width: 100%; border: 1px solid var(--bordure); border-radius: var(--r-bouton); padding: 12px 14px; font-family: var(--police-corps); font-size: 1rem; background: var(--craie); color: var(--texte-sombre); }
+  .champ input:focus { outline: 2px solid var(--ocre); outline-offset: 1px; }
+  .champ .aide { font-size: 0.79rem; color: var(--texte-att); margin-top: 5px; }
+  .bouton { background: var(--ocre); color: #fff; border: none; border-radius: var(--r-bouton); padding: 13px 22px; font-family: var(--police-corps); font-size: 0.97rem; font-weight: 600; cursor: pointer; width: 100%; }
+  .bouton:hover { background: var(--ocre-dark); }
+  .bouton:disabled { opacity: 0.6; cursor: default; }
+
+  .message { display: none; padding: 12px 15px; border-radius: var(--r-petit); margin-bottom: 15px; font-size: 0.9rem; }
+  .message.visible { display: block; }
+  .message.erreur { background: rgba(178,58,46,0.12); color: var(--rouge); }
+
+  .resultats { display: none; margin-top: 22px; }
+  .resultats.visible { display: block; }
+  .bandeau-eleve { background: var(--ardoise); color: var(--craie); border-radius: var(--r-carte); padding: 18px 20px; margin-bottom: 16px; }
+  .bandeau-eleve .nom { font-family: var(--police-titre); font-size: 1.25rem; }
+  .bandeau-eleve .meta { color: rgba(246,242,231,0.68); font-size: 0.87rem; margin-top: 3px; }
+  .bandeau-eleve .matricule { font-family: var(--police-mono); font-size: 0.82rem; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th { text-align: left; font-size: 0.73rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--texte-att); font-weight: 600; padding: 9px 10px; border-bottom: 1px solid var(--bordure); }
+  td { padding: 11px 10px; border-bottom: 1px solid var(--bordure); }
+  tr:last-child td { border-bottom: none; }
+  .pourcentage { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .conteneur-tableau { overflow-x: auto; }
+  .conteneur-tableau table { min-width: 480px; }
+
+  .etat { text-align: center; padding: 60px 20px; color: var(--texte-att); }
+  .pied { text-align: center; padding: 26px 24px 40px 24px; color: var(--texte-att); font-size: 0.84rem; }
+  .pied a { color: var(--encre); }
+
+  @media (max-width: 600px) {
+    .banniere { padding: 28px 18px 32px 18px; }
+    .banniere h1 { font-size: 1.55rem; }
+    main { padding: 24px 16px 50px 16px; }
+    .carte { padding: 20px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+
+<div id="ecran-chargement" class="etat">Chargement…</div>
+<div id="ecran-erreur" class="etat" style="display:none;"></div>
+
+<div id="page" style="display:none;">
+  <header class="banniere">
+    <div class="contenant">
+      <div class="identite">
+        <img id="logo-ecole" class="logo" alt="" style="display:none;" />
+        <div>
+          <h1 id="nom-ecole"></h1>
+          <p class="lieu" id="lieu-ecole"></p>
+          <span class="annee" id="annee-active" style="display:none;"></span>
+        </div>
+      </div>
+      <p class="accueil" id="message-accueil" style="display:none;"></p>
+    </div>
+  </header>
+
+  <main class="contenant">
+
+    <!-- Consultation des résultats : placée en tête, c'est la raison
+         première pour laquelle un parent ouvre cette page. -->
+    <section class="carte carte-resultats">
+      <h2>Consulter les résultats de votre enfant</h2>
+      <p style="color:var(--texte-att); font-size:0.9rem;">
+        Munissez-vous du matricule et du code d'accès remis par l'école.
+      </p>
+
+      <div class="message" id="message-resultats"></div>
+
+      <div class="champ">
+        <label for="champ-matricule">Matricule de l'élève</label>
+        <input type="text" id="champ-matricule" placeholder="ELV-0001" autocomplete="off" />
+      </div>
+      <div class="champ">
+        <label for="champ-code">Code d'accès</label>
+        <input type="text" id="champ-code" placeholder="XXXXXX" autocomplete="off" maxlength="12" style="text-transform:uppercase;" />
+        <p class="aide">Ce code figure sur le document remis par le secrétariat.</p>
+      </div>
+      <button class="bouton" id="bouton-consulter">Afficher les résultats</button>
+
+      <div class="resultats" id="zone-resultats">
+        <div class="bandeau-eleve">
+          <div class="nom" id="res-nom"></div>
+          <div class="meta"><span id="res-classe"></span> · <span class="matricule" id="res-matricule"></span></div>
+        </div>
+        <div class="conteneur-tableau">
+          <table>
+            <thead><tr><th>Période</th><th>Total</th><th>Pourcentage</th><th>Place</th><th>Mention</th></tr></thead>
+            <tbody id="res-corps"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="carte" id="carte-presentation" style="display:none;">
+      <h2>Présentation de l'établissement</h2>
+      <p id="description-ecole" style="white-space:pre-wrap;"></p>
+    </section>
+
+    <section class="carte" id="carte-sections" style="display:none;">
+      <h2>Sections et options</h2>
+      <div id="liste-sections"></div>
+    </section>
+
+    <section class="carte" id="carte-annonces" style="display:none;">
+      <h2>Annonces</h2>
+      <div id="liste-annonces"></div>
+    </section>
+
+    <section class="carte">
+      <h2>Nous contacter</h2>
+      <div class="grille-contact" id="grille-contact"></div>
+    </section>
+
+  </main>
+
+  <footer class="pied">
+    Espace public propulsé par <strong>Ardoise</strong> — la gestion scolaire simplifiée.
+  </footer>
+</div>
+
+<script>
+  const API_BASE_URL = "https://scolaire-saas-backend.onrender.com";
+
+  // Le code de l'école arrive par l'adresse : ecole.html?code=MONECOLE
+  const parametres = new URLSearchParams(window.location.search);
+  const codeEcole = (parametres.get('code') || '').trim();
+
+  function afficherErreurGlobale(texte) {
+    document.getElementById('ecran-chargement').style.display = 'none';
+    const zone = document.getElementById('ecran-erreur');
+    zone.textContent = texte;
+    zone.style.display = '';
+  }
+
+  function echapper(texte) {
+    const d = document.createElement('div');
+    d.textContent = texte == null ? '' : String(texte);
+    return d.innerHTML;
+  }
+
+  function formaterDate(valeur) {
+    if (!valeur) return '';
+    try {
+      return new Date(valeur).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+    } catch (e) { return ''; }
+  }
+
+  async function chargerEcole() {
+    if (!codeEcole) {
+      afficherErreurGlobale("Adresse incomplète : le code de l'école est manquant.");
+      return;
+    }
+
+    let reponse;
+    try {
+      reponse = await fetch(`${API_BASE_URL}/public/ecole/${encodeURIComponent(codeEcole)}`);
+    } catch (e) {
+      afficherErreurGlobale("Impossible de joindre le serveur. Vérifiez votre connexion et réessayez.");
+      return;
+    }
+
+    if (reponse.status === 404) {
+      afficherErreurGlobale("Aucune école publiée ne correspond à ce code.");
+      return;
+    }
+    if (!reponse.ok) {
+      afficherErreurGlobale("Une erreur est survenue. Réessayez dans quelques instants.");
+      return;
+    }
+
+    const donnees = await reponse.json();
+    const ecole = donnees.ecole;
+
+    document.title = `${ecole.nom} — Espace public`;
+    document.getElementById('nom-ecole').textContent = ecole.nom;
+    document.getElementById('lieu-ecole').textContent =
+      [ecole.ville, ecole.province].filter(Boolean).join(', ');
+
+    if (ecole.logo_url) {
+      const logo = document.getElementById('logo-ecole');
+      logo.src = ecole.logo_url;
+      logo.alt = `Logo de ${ecole.nom}`;
+      logo.style.display = '';
+    }
+    if (donnees.annee_active) {
+      const badge = document.getElementById('annee-active');
+      badge.textContent = `Année scolaire ${donnees.annee_active}`;
+      badge.style.display = '';
+    }
+    if (ecole.site_message_accueil) {
+      const accueil = document.getElementById('message-accueil');
+      accueil.textContent = ecole.site_message_accueil;
+      accueil.style.display = '';
+    }
+    if (ecole.site_description) {
+      document.getElementById('description-ecole').textContent = ecole.site_description;
+      document.getElementById('carte-presentation').style.display = '';
+    }
+
+    if (donnees.sections.length > 0) {
+      document.getElementById('liste-sections').innerHTML = donnees.sections.map((s) => `
+        <div class="section-bloc">
+          <div class="nom">${echapper(s.section)}</div>
+          ${s.options && s.options.length
+            ? `<div class="options">${s.options.map(echapper).join(' · ')}</div>`
+            : ''}
+        </div>
+      `).join('');
+      document.getElementById('carte-sections').style.display = '';
+    }
+
+    if (donnees.annonces.length > 0) {
+      document.getElementById('liste-annonces').innerHTML = donnees.annonces.map((a) => `
+        <div class="annonce">
+          <div class="titre">${echapper(a.titre)}</div>
+          <div class="date">${formaterDate(a.date_publication)}</div>
+          <div class="texte">${echapper(a.contenu)}</div>
+        </div>
+      `).join('');
+      document.getElementById('carte-annonces').style.display = '';
+    }
+
+    const contacts = [
+      { etiquette: 'Adresse', valeur: ecole.adresse },
+      { etiquette: 'Téléphone', valeur: ecole.telephone, lien: ecole.telephone ? `tel:${ecole.telephone}` : null },
+      { etiquette: 'Courriel', valeur: ecole.email, lien: ecole.email ? `mailto:${ecole.email}` : null }
+    ].filter((c) => c.valeur);
+
+    document.getElementById('grille-contact').innerHTML = contacts.length
+      ? contacts.map((c) => `
+          <div class="contact-item">
+            <div class="etiquette">${c.etiquette}</div>
+            <div class="valeur">${c.lien ? `<a href="${echapper(c.lien)}">${echapper(c.valeur)}</a>` : echapper(c.valeur)}</div>
+          </div>
+        `).join('')
+      : '<p style="color:var(--texte-att); margin:0;">Aucune coordonnée publiée pour le moment.</p>';
+
+    document.getElementById('ecran-chargement').style.display = 'none';
+    document.getElementById('page').style.display = '';
+  }
+
+  async function consulterResultats() {
+    const matricule = document.getElementById('champ-matricule').value.trim();
+    const code = document.getElementById('champ-code').value.trim().toUpperCase();
+    const message = document.getElementById('message-resultats');
+    const zone = document.getElementById('zone-resultats');
+    const bouton = document.getElementById('bouton-consulter');
+
+    message.className = 'message';
+    zone.classList.remove('visible');
+
+    if (!matricule || !code) {
+      message.textContent = "Renseignez le matricule et le code d'accès.";
+      message.className = 'message visible erreur';
+      return;
+    }
+
+    bouton.disabled = true;
+    bouton.textContent = 'Recherche…';
+
+    let reponse;
+    try {
+      reponse = await fetch(`${API_BASE_URL}/public/resultats`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code_ecole: codeEcole, matricule, code_acces: code })
+      });
+    } catch (e) {
+      bouton.disabled = false; bouton.textContent = 'Afficher les résultats';
+      message.textContent = 'Impossible de joindre le serveur. Réessayez.';
+      message.className = 'message visible erreur';
+      return;
+    }
+
+    bouton.disabled = false;
+    bouton.textContent = 'Afficher les résultats';
+
+    const donnees = await reponse.json().catch(() => ({}));
+    if (!reponse.ok) {
+      message.textContent = donnees.message || 'Consultation impossible.';
+      message.className = 'message visible erreur';
+      return;
+    }
+
+    document.getElementById('res-nom').textContent = donnees.eleve.nom_complet;
+    document.getElementById('res-classe').textContent = donnees.eleve.classe || 'Classe non renseignée';
+    document.getElementById('res-matricule').textContent = donnees.eleve.matricule;
+
+    const corps = document.getElementById('res-corps');
+    if (donnees.bulletins.length === 0) {
+      corps.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--texte-att); padding:24px;">
+        Aucun bulletin n'a encore été publié pour cet élève.
+      </td></tr>`;
+    } else {
+      corps.innerHTML = donnees.bulletins.map((b) => `
+        <tr>
+          <td>${echapper(b.periode)}</td>
+          <td>${b.total != null ? echapper(b.total) : '—'}</td>
+          <td class="pourcentage">${b.pourcentage != null ? echapper(b.pourcentage) + '%' : '—'}</td>
+          <td>${b.classement != null ? echapper(b.classement) + '/' + donnees.effectif_classe : '—'}</td>
+          <td>${b.mention ? echapper(b.mention) : '—'}</td>
+        </tr>
+      `).join('');
+    }
+    zone.classList.add('visible');
+    zone.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  document.getElementById('bouton-consulter').addEventListener('click', consulterResultats);
+  document.getElementById('champ-code').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') consulterResultats();
+  });
+
+  chargerEcole();
+</script>
+
+</body>
+</html>

@@ -449,7 +449,7 @@
         `).join('');
 
     document.getElementById('somme-travaux-info').textContent = travauxActuels.length > 0
-      ? `Somme des travaux : ${d.somme_maximums} / maximum du cours : ${d.maximum_cours}${d.somme_maximums !== d.maximum_cours ? ' ⚠️ ne correspond pas encore exactement' : ' ✓'}`
+      ? `Total brut des travaux : sur ${d.somme_maximums} — sera automatiquement ramené sur ${d.maximum_cours} (maximum du cours) au moment du calcul.`
       : '';
 
     document.querySelectorAll('#liste-travaux button[data-id]').forEach(b => b.addEventListener('click', async () => {

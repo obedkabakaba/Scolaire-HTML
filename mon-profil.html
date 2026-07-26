@@ -65,6 +65,16 @@
   .interrupteur-disposition { display: flex; align-items: flex-start; gap: 11px; cursor: pointer; font-size: 0.9rem; }
   .interrupteur-disposition input { width: 17px; height: 17px; accent-color: var(--ocre); cursor: pointer; margin-top: 3px; flex: none; }
   .aide-disposition { display: block; font-size: 0.81rem; color: var(--texte-att); margin-top: 3px; font-weight: 400; }
+  .confirmation-disposition {
+    margin: 16px 0 0 0; padding: 10px 14px;
+    border-radius: var(--r-petit);
+    background: rgba(76,122,90,0.12); color: var(--vert-ok);
+    font-size: 0.86rem;
+    opacity: 0; transform: translateY(-3px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    min-height: 0; visibility: hidden;
+  }
+  .confirmation-disposition.visible { opacity: 1; transform: none; visibility: visible; }
   .barre-disposition { margin-top: 20px; }
   .grille-themes { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; }
   .carte-theme { border: 2px solid var(--bordure); border-radius: var(--r-carte); padding: 0; background: none; cursor: pointer; text-align: left; overflow: hidden; font-family: var(--police-corps); transition: border-color 0.18s ease, transform 0.18s ease; }
@@ -218,6 +228,8 @@
         </span>
       </label>
 
+      <p class="confirmation-disposition" id="confirmation-disposition" aria-live="polite"></p>
+
       <div class="barre-disposition">
         <button class="bouton bouton-secondaire" id="bouton-tous-menus">Choisir les écrans du menu</button>
       </div>
@@ -319,18 +331,55 @@
           </button>`;
         }).join('');
 
-      document.getElementById('case-compact').checked = etat.compact;
+      const caseCompact = document.getElementById('case-compact');
+      caseCompact.checked = etat.compact;
+
+      /**
+       * Le mode compact n'a de sens qu'avec un rail vertical : en barre
+       * horizontale, élargir au survol ferait sauter toute la ligne. Plutôt
+       * que de laisser cocher une case sans effet, on la désactive et on
+       * explique pourquoi — une case qui ne fait rien passe pour un bug.
+       */
+      function majDisponibiliteCompact(position) {
+        const vertical = position === 'gauche' || position === 'droite';
+        caseCompact.disabled = !vertical;
+        const bloc = caseCompact.closest('.interrupteur-disposition');
+        bloc.style.opacity = vertical ? '' : '0.5';
+        bloc.style.cursor = vertical ? 'pointer' : 'default';
+        bloc.querySelector('.aide-disposition').textContent = vertical
+          ? "N'affiche que les icônes ; les libellés apparaissent au survol du menu."
+          : "Disponible uniquement lorsque le menu est placé à gauche ou à droite.";
+      }
+      majDisponibiliteCompact(etat.position);
+
+      let minuterieConfirmation = null;
+      function confirmer(texte) {
+        const zone = document.getElementById('confirmation-disposition');
+        zone.textContent = texte;
+        zone.classList.add('visible');
+        clearTimeout(minuterieConfirmation);
+        minuterieConfirmation = setTimeout(() => zone.classList.remove('visible'), 4500);
+      }
+
+      const LIBELLES_CONFIRMATION = {
+        gauche: 'à gauche', droite: 'à droite', haut: 'en haut', bas: 'en bas'
+      };
 
       document.querySelectorAll('[data-position]').forEach(b => {
         b.addEventListener('click', () => {
           ArdoiseDisposition.definir(b.dataset.position, null);
           document.querySelectorAll('[data-position]').forEach(x => x.classList.remove('actif'));
           b.classList.add('actif');
+          majDisponibiliteCompact(b.dataset.position);
+          confirmer(`Menu placé ${LIBELLES_CONFIRMATION[b.dataset.position]}. Ce réglage ne concerne que cet appareil.`);
         });
       });
 
-      document.getElementById('case-compact').addEventListener('change', (e) => {
+      caseCompact.addEventListener('change', (e) => {
         ArdoiseDisposition.definir(null, e.target.checked);
+        confirmer(e.target.checked
+          ? 'Menu compact activé : survolez-le pour voir les libellés.'
+          : 'Menu compact désactivé : les libellés restent affichés.');
       });
 
       document.getElementById('bouton-tous-menus').addEventListener('click', () => {

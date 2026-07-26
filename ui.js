@@ -320,7 +320,7 @@
     });
   }
 
-  window.ArdoiseUI = { anneau: anneau, anneauCompact: anneauCompact, barres: barres };
+  window.ArdoiseUI = { anneau: anneau, anneauCompact: anneauCompact, barres: barres, marquerTuile: marquerTuile };
 
 
   /* ------------------------------------------------------------------
@@ -374,12 +374,166 @@
     });
   }
 
+
+  /* ------------------------------------------------------------------
+     6. Lanceur d'actions rapides
+     Le lanceur est construit à partir des liens de navigation RÉELLEMENT
+     présents dans la page. Comme ceux-ci sont déjà filtrés par rôle, le
+     lanceur est automatiquement juste pour chaque utilisateur — et il le
+     restera quand de nouvelles pages seront ajoutées.
+     ------------------------------------------------------------------ */
+  var GROUPES = [
+    { titre: 'Élèves et parcours', pages: ['eleves.html', 'inscriptions.html', 'orientation.html', 'presences.html'] },
+    { titre: 'Pédagogie', pages: ['classes.html', 'cours.html', 'emploi-du-temps.html', 'notes.html', 'cours-classe-titulaire.html'] },
+    { titre: 'Bulletins', pages: ['bulletins.html', 'bulletin-annuel.html', 'generateur-modeles.html'] },
+    { titre: 'Vie scolaire', pages: ['discipline.html', 'calendrier.html', 'messages.html'] },
+    { titre: 'Finances', pages: ['frais-scolaires.html'] },
+    { titre: 'Pilotage', pages: ['rapports.html', 'archives.html', 'journal.html'] },
+    { titre: 'Administration', pages: ['annee-scolaire.html', 'utilisateurs.html', 'site-public.html', 'parametres.html', 'mon-profil.html'] }
+  ];
+
+  var DESCRIPTIONS = {
+    'eleves.html': 'Registre et fiches',
+    'inscriptions.html': "Concours et admissions",
+    'orientation.html': "Vœux d'option",
+    'presences.html': "Feuille d'appel",
+    'classes.html': 'Classes et sections',
+    'cours.html': "Catalogue des cours",
+    'emploi-du-temps.html': 'Grille hebdomadaire',
+    'notes.html': 'Saisie des cotes',
+    'cours-classe-titulaire.html': 'Suivi de ma classe',
+    'bulletins.html': 'Périodes et signatures',
+    'bulletin-annuel.html': 'Résultats annuels',
+    'generateur-modeles.html': 'Mise en page',
+    'discipline.html': 'Faits et conduite',
+    'calendrier.html': 'Événements',
+    'messages.html': 'Réception et diffusion',
+    'frais-scolaires.html': 'Frais et paiements',
+    'rapports.html': 'Statistiques et exports',
+    'archives.html': 'Années clôturées',
+    'journal.html': 'Traçabilité',
+    'annee-scolaire.html': 'Périodes et clôture',
+    'utilisateurs.html': 'Comptes et rôles',
+    'site-public.html': "Vitrine de l'école",
+    'parametres.html': "Réglages de l'école",
+    'mon-profil.html': 'Compte et apparence'
+  };
+
+  var CLE_USAGE = 'ardoise_usage_lanceur';
+
+  function lireUsage() {
+    try { return JSON.parse(localStorage.getItem(CLE_USAGE) || '{}'); }
+    catch (e) { return {}; }
+  }
+
+  function noterUsage(page) {
+    try {
+      var usage = lireUsage();
+      usage[page] = (usage[page] || 0) + 1;
+      localStorage.setItem(CLE_USAGE, JSON.stringify(usage));
+    } catch (e) { /* navigation privée */ }
+  }
+
+  function construireLanceur() {
+    var hote = document.getElementById('lanceur');
+    if (!hote || hote.dataset.construit === 'oui') return;
+
+    // Les liens visibles font foi : ce sont ceux que le filtrage par rôle
+    // a laissés en place. Une page interdite n'apparaît donc jamais ici.
+    var disponibles = {};
+    var liens = document.querySelectorAll('.nav-liste .nav-item[href]');
+    for (var i = 0; i < liens.length; i++) {
+      var lien = liens[i];
+      var parent = lien.closest('li');
+      if (parent && parent.style.display === 'none') continue;
+      var href = lien.getAttribute('href');
+      var libelle = (lien.querySelector('.nav-libelle') || lien).textContent.trim();
+      if (href && libelle) disponibles[href] = libelle;
+    }
+    if (Object.keys(disponibles).length === 0) return;
+
+    var usage = lireUsage();
+    var frequents = Object.keys(disponibles)
+      .filter(function (p) { return usage[p] > 0; })
+      .sort(function (a, b) { return usage[b] - usage[a]; })
+      .slice(0, 5);
+
+    function tuile(page) {
+      var icone = ICONES[page] || '';
+      return '<a class="tuile" href="' + page + '" data-page="' + page + '"'
+        + ' data-recherche="' + (disponibles[page] + ' ' + (DESCRIPTIONS[page] || '')).toLowerCase() + '">'
+        + '<span class="jeton"><svg viewBox="0 0 24 24" aria-hidden="true">' + icone + '</svg></span>'
+        + '<span class="nom">' + disponibles[page] + '</span>'
+        + '<span class="desc">' + (DESCRIPTIONS[page] || '') + '</span>'
+        + '</a>';
+    }
+
+    var html = '<div class="lanceur-entete">'
+      + '<h2>Actions rapides</h2>'
+      + '<input type="search" class="lanceur-recherche" id="lanceur-recherche" placeholder="Rechercher un écran…" aria-label="Rechercher un écran" />'
+      + '</div>';
+
+    if (frequents.length >= 3) {
+      html += '<div class="lanceur-groupe" data-groupe><div class="titre">Vos raccourcis</div>'
+        + '<div class="lanceur-grille">' + frequents.map(tuile).join('') + '</div></div>';
+    }
+
+    for (var g = 0; g < GROUPES.length; g++) {
+      var pages = GROUPES[g].pages.filter(function (p) { return disponibles[p]; });
+      if (pages.length === 0) continue;
+      html += '<div class="lanceur-groupe" data-groupe>'
+        + '<div class="titre">' + GROUPES[g].titre + '</div>'
+        + '<div class="lanceur-grille">' + pages.map(tuile).join('') + '</div></div>';
+    }
+
+    hote.className = 'lanceur';
+    hote.innerHTML = html;
+    hote.dataset.construit = 'oui';
+
+    hote.querySelectorAll('[data-page]').forEach(function (t) {
+      t.addEventListener('click', function () { noterUsage(t.dataset.page); });
+    });
+
+    var champ = document.getElementById('lanceur-recherche');
+    champ.addEventListener('input', function () {
+      var q = champ.value.trim().toLowerCase();
+      hote.querySelectorAll('[data-groupe]').forEach(function (groupe) {
+        var visibles = 0;
+        groupe.querySelectorAll('.tuile').forEach(function (t) {
+          var correspond = !q || (t.dataset.recherche || '').indexOf(q) !== -1;
+          t.style.display = correspond ? '' : 'none';
+          if (correspond) visibles++;
+        });
+        groupe.style.display = visibles > 0 ? '' : 'none';
+      });
+    });
+  }
+
+  /**
+   * Pose un compteur vivant sur une tuile.
+   * @param {string} page   ex. « presences.html »
+   * @param {string} texte  ex. « 3 sans appel »
+   * @param {boolean} calme vert plutôt que rouge
+   */
+  function marquerTuile(page, texte, calme) {
+    var tuile = document.querySelector('.tuile[data-page="' + page + '"]');
+    if (!tuile || !texte) return;
+    var existante = tuile.querySelector('.pastille-vive');
+    if (existante) existante.remove();
+    var pastille = document.createElement('span');
+    pastille.className = 'pastille-vive' + (calme ? ' calme' : '');
+    pastille.textContent = texte;
+    tuile.appendChild(pastille);
+  }
+
   /* ------------------------------------------------------------------
      Démarrage
      ------------------------------------------------------------------ */
   function demarrer() {
     try { injecterIcones(); } catch (e) { /* la navigation reste utilisable sans icônes */ }
     try { installerMenuMobile(); } catch (e) { /* la barre reste affichée sans bouton */ }
+    // Le lanceur attend le filtrage par rôle des pages, qui s'exécute juste après.
+    setTimeout(function () { try { construireLanceur(); } catch (e) {} }, 60);
     try { surveillerValeurs(); } catch (e) { /* les chiffres restent affichés sans animation */ }
     if (!animationsReduites) {
       try { poserSquelettes(); } catch (e) { /* le texte « Chargement… » reste affiché */ }

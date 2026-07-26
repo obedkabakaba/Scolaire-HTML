@@ -369,6 +369,8 @@
         <h1>Tableau de bord</h1>
         <p class="sous-titre" id="texte-bienvenue">Vue d'ensemble de votre école.</p>
       </div>
+
+    <div id="lanceur"></div>
       <div style="position:relative;">
         <button id="bouton-cloche" style="background:none; border:1.5px solid var(--bordure); border-radius: var(--r-bouton); padding:9px 13px; cursor:pointer; font-size:1.1rem; position:relative;">
           🔔<span id="badge-notif" style="display:none; position:absolute; top:-4px; right:-4px; background:var(--rouge); color:#fff; font-size:0.62rem; font-weight:700; border-radius: var(--r-carte); padding:1px 5px; min-width:16px; text-align:center;"></span>
@@ -567,6 +569,31 @@
    * module Présences n'est pas encore déployé côté serveur, la requête échoue
    * seule et le reste de l'écran s'affiche normalement.
    */
+  /**
+   * Pose des compteurs sur les tuiles du lanceur. C'est ce qui transforme un
+   * menu en tableau de bord : le directeur voit ce qui réclame son attention
+   * sans ouvrir un seul écran.
+   */
+  function marquerLesTuiles(d) {
+    if (!window.ArdoiseUI || !ArdoiseUI.marquerTuile) return;
+
+    if (d.notes && d.notes.restantes > 0) {
+      ArdoiseUI.marquerTuile('notes.html', `${d.notes.restantes} à saisir`);
+    }
+    if (d.impayes && d.impayes.nb_eleves_en_retard > 0) {
+      ArdoiseUI.marquerTuile('frais-scolaires.html', `${d.impayes.nb_eleves_en_retard} en retard`);
+    }
+
+    // L'appel du jour arrive par un autre appel : on le traite quand il est là.
+    appelApi(`/presences/resume-jour`).then(async (r) => {
+      if (!r || !r.ok) return;
+      const p = await r.json();
+      const sansAppel = p.nb_classes - p.nb_classes_appelees;
+      if (sansAppel > 0) ArdoiseUI.marquerTuile('presences.html', `${sansAppel} sans appel`);
+      else if (p.nb_classes > 0) ArdoiseUI.marquerTuile('presences.html', 'à jour', true);
+    }).catch(() => {});
+  }
+
   async function chargerAppelDuJour() {
     if (!window.ArdoiseUI) return;
 
@@ -632,6 +659,7 @@
       // Volontairement sans await : l'appel du jour se remplit dès qu'il arrive,
       // sans retarder l'affichage du tableau de bord.
       chargerAppelDuJour();
+      marquerLesTuiles(donnees);
 
       const { user } = obtenirTokens();
       if (user) {

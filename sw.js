@@ -13,7 +13,7 @@
    ils continueraient d'utiliser l'ancienne version des pages.
    ========================================================================== */
 
-const VERSION = 'ardoise-v17';
+const VERSION = 'ardoise-v18';
 const CACHE_COQUILLE = `${VERSION}-coquille`;
 const CACHE_DONNEES = `${VERSION}-donnees`;
 
@@ -32,6 +32,7 @@ const COQUILLE = [
   'bulletin-annuel.html',
   'cours-classe-titulaire.html',
   'eleves.html',
+  'inscriptions.html',
   'classes.html',
   'utilisateurs.html',
   'annee-scolaire.html',

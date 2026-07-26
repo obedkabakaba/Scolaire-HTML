@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ardoise — Inscriptions</title>
+<link rel="icon" type="image/png" href="data:image/png;base64,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">
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" type="image/png" sizes="192x192" href="icone-192.png" />
+<meta name="theme-color" content="#111A19" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Ardoise" />
+<link rel="apple-touch-icon" sizes="180x180" href="icone-ios-180.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ardoise: #1F2B24; --craie: #F6F2E7; --craie-2: #FBF9F3;
+    --ocre: #C98A3E; --ocre-dark: #A96F2E; --encre: #3C5A62;
+    --rouge: #B23A2E; --vert-ok: #4C7A5A;
+    --texte-sombre: #1F2B24; --texte-att: #6B7269; --bordure: #E4DFCF;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: var(--police-corps); color: var(--texte-sombre); background: var(--craie); }
+  .mise-en-page { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+  @media (max-width: 780px) { .mise-en-page { grid-template-columns: 1fr; } }
+  .barre-laterale { background: var(--nav-fond); color: var(--nav-texte-fort); padding: 32px 22px; position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; justify-content: space-between; }
+  @media (max-width: 780px) { .barre-laterale { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px; height: auto; z-index: 5; } }
+  .barre-laterale .marque { font-family: var(--police-titre); font-weight: 600; font-size: 1.5rem; margin: 0 0 40px 0; }
+  @media (max-width: 780px) { .barre-laterale .marque { margin: 0; } }
+  .nav-liste { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
+  .nav-liste { visibility: hidden; }
+  @media (max-width: 780px) { .nav-liste { display: none; } }
+  .nav-item, .nav-item:visited { padding: 10px 12px; border-radius:  var(--r-petit); font-size: 0.92rem; color: var(--nav-texte); text-decoration: none; display: flex; justify-content: space-between; align-items: center; }
+  .nav-item.actif { background: var(--nav-actif-fond); color: var(--nav-texte-fort); font-weight: 600; }
+  .lettre-i { position: relative; display: inline-block; line-height: 1; }
+  .point-i-marque { position: absolute; width: 0.13em; height: 0.13em; border-radius: 50%; background: var(--ocre); left: 50%; top: 0.16em; transform: translateX(-50%); }
+  .nav-deconnexion { background: none; border: none; border-top: 1px solid var(--nav-separateur); color: var(--nav-texte); text-align: left; padding: 14px 12px 4px 12px; font-size: 0.86rem; font-family: var(--police-corps); cursor: pointer; }
+  .nav-deconnexion:hover { color: var(--nav-texte-fort); }
+  @media (max-width: 780px) { .nav-deconnexion { border-top: none; padding: 8px 12px; } }
+
+  .onglets { display: flex; gap: 4px; margin-bottom: 22px; border-bottom: 1px solid var(--bordure); flex-wrap: wrap; }
+  .onglet { background: none; border: none; border-bottom: 2px solid transparent; padding: 10px 16px; font-family: var(--police-corps); font-size: 0.92rem; color: var(--texte-att); cursor: pointer; }
+  .onglet.actif { color: var(--texte-sombre); border-bottom-color: var(--ocre); font-weight: 600; }
+  .onglets-secondaires { display: flex; gap: 4px; margin: 20px 0 18px 0; }
+  .onglet-sec { background: none; border: 1px solid var(--bordure); border-radius: var(--r-pilule); padding: 7px 16px; font-family: var(--police-corps); font-size: 0.86rem; color: var(--texte-att); cursor: pointer; }
+  .onglet-sec.actif { background: var(--ocre); border-color: var(--ocre); color: #fff; font-weight: 600; }
+  .message-flash { display: none; padding: 12px 16px; border-radius: var(--r-petit); margin-bottom: 18px; font-size: 0.9rem; }
+  .message-flash.visible { display: block; }
+  .message-flash.succes { background: rgba(76,122,90,0.12); color: var(--vert-ok); }
+  .message-flash.erreur { background: rgba(178,58,46,0.12); color: var(--rouge); }
+
+  .carte-config { background: var(--craie-2); border: 1px solid var(--bordure); border-radius: var(--r-carte); padding: 22px; margin-bottom: 20px; }
+  .carte-config h3 { font-family: var(--police-titre); font-size: 1.05rem; margin: 0 0 6px 0; }
+  .carte-config .aide { font-size: 0.84rem; color: var(--texte-att); margin: 0 0 14px 0; }
+  .grille-formulaire { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+  .champ-form label { display: block; font-size: 0.83rem; font-weight: 600; margin-bottom: 5px; }
+  .champ-form input, .champ-form select { width: 100%; border: 1px solid var(--bordure); border-radius: var(--r-petit); padding: 9px 11px; font-family: var(--police-corps); font-size: 0.88rem; background: var(--craie); color: var(--texte-sombre); }
+  .barre-actions { display: flex; align-items: center; gap: 12px; margin-top: 18px; flex-wrap: wrap; }
+  .barre-actions .bouton-principal { margin-left: auto; }
+  .aide { font-size: 0.84rem; color: var(--texte-att); }
+
+  .lien-retour { background: none; border: none; color: var(--encre); cursor: pointer; font-family: var(--police-corps); font-size: 0.88rem; padding: 4px 0; margin-bottom: 14px; }
+  .entete-session { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 8px; }
+  .entete-session h2 { font-family: var(--police-titre); font-size: 1.35rem; margin: 0; }
+  .meta-session { font-size: 0.86rem; color: var(--texte-att); margin: 5px 0 0 0; }
+  .actions-session { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  .etiquette-etat { font-size: 0.75rem; padding: 3px 10px; border-radius: 20px; font-weight: 600; white-space: nowrap; }
+  .etat-ouverte { background: rgba(60,90,98,0.14); color: var(--encre); }
+  .etat-publiee { background: rgba(76,122,90,0.14); color: var(--vert-ok); }
+  .etat-fermee { background: rgba(107,114,105,0.14); color: var(--texte-att); }
+
+  .statut-candidat { font-size: 0.75rem; padding: 3px 10px; border-radius: 20px; font-weight: 600; white-space: nowrap; }
+  .st-admis { background: rgba(76,122,90,0.14); color: var(--vert-ok); }
+  .st-liste_attente { background: rgba(201,138,62,0.16); color: var(--ocre-dark); }
+  .st-refuse, .st-absent { background: rgba(178,58,46,0.13); color: var(--rouge); }
+  .st-desiste, .st-inscrit { background: rgba(107,114,105,0.13); color: var(--texte-att); }
+  .st-converti { background: rgba(60,90,98,0.14); color: var(--encre); }
+  .puce-reco { font-size: 0.7rem; padding: 2px 8px; border-radius: 20px; background: rgba(201,138,62,0.18); color: var(--ocre-dark); font-weight: 600; margin-left: 6px; }
+
+  .bandeau-scelle { background: rgba(60,90,98,0.1); border-left: 3px solid var(--encre); border-radius: 0 var(--r-petit) var(--r-petit) 0; padding: 13px 16px; font-size: 0.88rem; color: var(--texte-att); margin-bottom: 18px; }
+  .bandeau-anonyme { background: rgba(201,138,62,0.12); border-radius: var(--r-petit); padding: 12px 15px; font-size: 0.87rem; color: var(--ocre-dark); margin-bottom: 18px; }
+  .numero-copie { font-family: var(--police-mono); font-size: 0.9rem; font-weight: 600; }
+  .champ-points { width: 100%; border: 1px solid var(--bordure); border-radius: var(--r-petit); padding: 8px 10px; font-family: var(--police-corps); font-size: 0.9rem; background: var(--craie); color: var(--texte-sombre); }
+  .lien-action { background: none; border: none; color: var(--encre); cursor: pointer; font-family: var(--police-corps); font-size: 0.84rem; padding: 4px 6px; }
+  .lien-action.danger { color: var(--rouge); }
+  .total-candidat { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .rang-candidat { font-weight: 600; width: 46px; }
+  .contenu { padding: 36px 44px 60px 44px; }
+  @media (max-width: 780px) { .contenu { padding: 24px 20px 48px 20px; } }
+  .entete-page h1 { font-family: var(--police-titre); font-weight: 600; font-size: 1.9rem; margin: 0 0 4px 0; }
+  .entete-page .sous-titre { color: var(--texte-att); font-size: 0.95rem; margin: 0 0 24px 0; }
+
+  .barre-selecteurs { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; align-items: flex-end; }
+  .champ-selecteur { display: flex; flex-direction: column; gap: 6px; }
+  .champ-selecteur label { font-size: 0.76rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--texte-att); }
+  .champ-selecteur select { padding: 9px 12px; border: 1.5px solid var(--bordure); border-radius:  var(--r-bouton); font-family: var(--police-corps); font-size: 0.9rem; background: var(--craie-2); min-width: 200px; }
+
+  .grille-recap { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 28px; }
+  @media (max-width: 700px) { .grille-recap { grid-template-columns: 1fr; } }
+  .carte-recap { background: var(--craie-2); border: 1px solid var(--bordure); border-radius:  var(--r-carte); padding: 22px; text-align: center; }
+  .carte-recap .valeur { font-family: var(--police-titre); font-weight: 600; font-size: 2.1rem; line-height: 1; }
+  .carte-recap.echec .valeur { color: var(--rouge); }
+  .carte-recap.reussite .valeur { color: var(--vert-ok); }
+  .carte-recap.moyenne .valeur { color: var(--encre); }
+  .carte-recap .etiquette { font-size: 0.82rem; color: var(--texte-att); margin-top: 6px; }
+
+  .conteneur-tableau { background: var(--craie-2); border: 1px solid var(--bordure); border-radius:  var(--r-carte); overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th { text-align: left; padding: 12px 16px; background: rgba(31,43,36,0.03); color: var(--texte-att); font-size: 0.76rem; text-transform: uppercase; font-weight: 600; }
+  td { padding: 11px 16px; border-top: 1px solid var(--bordure); }
+  .badge-resultat { display: inline-block; padding: 3px 10px; border-radius:  var(--r-pilule); font-size: 0.78rem; font-weight: 600; }
+  .badge-resultat.reussite { background: rgba(76,122,90,0.12); color: var(--vert-ok); }
+  .badge-resultat.echec { background: rgba(178,58,46,0.1); color: var(--rouge); }
+  .etat-vide-tableau { padding: 50px 20px; text-align: center; color: var(--texte-att); }
+</style>
+<script>
+  /* Applique le thème AVANT le premier affichage, pour éviter tout clignotement.
+     La liste doit rester alignée sur theme.css / theme.js. */
+  (function(){var v=['ardoise','pure','nuit','kivu'];var t;
+   try{t=localStorage.getItem('ardoise_theme')||sessionStorage.getItem('ardoise_theme');}catch(e){}
+   document.documentElement.setAttribute('data-theme', v.indexOf(t)!==-1?t:'ardoise');})();
+</script>
+<link rel="stylesheet" href="theme.css" />
+<link rel="stylesheet" href="ui.css" />
+
+</head>
+<body>
+
+<div class="mise-en-page">
+  <nav class="barre-laterale">
+    <div>
+      <div class="marque">Ardo<span class="lettre-i">ı<span class="point-i-marque"></span></span>se</div>
+      <ul class="nav-liste">
+        <li><a class="nav-item" href="dashboard-directeur.html">Tableau de bord</a></li>
+        <li><a class="nav-item" href="annee-scolaire.html">Année scolaire</a></li>
+        <li><a class="nav-item" href="espace-secretaire.html">Accueil Secrétariat</a></li>
+        <li><a class="nav-item" href="espace-professeur.html">Mes cours</a></li>
+        <li><a class="nav-item" href="espace-titulaire.html">Ma classe</a></li>
+        <li><a class="nav-item" href="cours-classe-titulaire.html">Cours de la classe</a></li>
+        <li><a class="nav-item" href="eleves.html">Élèves</a></li>
+        <li><a class="nav-item actif" href="inscriptions.html">Inscriptions</a></li>
+        <li><a class="nav-item" href="frais-scolaires.html">Frais scolaires</a></li>
+        <li><a class="nav-item" href="utilisateurs.html">Utilisateurs</a></li>
+        <li><a class="nav-item" href="classes.html">Classes</a></li>
+        <li><a class="nav-item" href="cours.html">Cours</a></li>
+        <li><a class="nav-item" href="presences.html">Présences</a></li>
+        <li><a class="nav-item" href="emploi-du-temps.html">Emploi du temps</a></li>
+        <li><a class="nav-item" href="discipline.html">Discipline</a></li>
+        <li><a class="nav-item" href="site-public.html">Site public</a></li>
+        <li><a class="nav-item" href="notes.html">Notes</a></li>
+        <li><a class="nav-item" href="bulletins.html">Bulletins</a></li>
+        <li><a class="nav-item" href="bulletin-annuel.html">Bulletin annuel</a></li>
+        <li><a class="nav-item" href="generateur-modeles.html">Modèles de bulletins</a></li>
+        <li><a class="nav-item" href="calendrier.html">Calendrier</a></li>
+        <li><a class="nav-item" href="rapports.html">Rapports</a></li>
+        <li><a class="nav-item" href="archives.html">Archives</a></li>
+        <li><a class="nav-item" href="journal.html">Journal d'activité</a></li>
+        <li><a class="nav-item" href="parametres.html">Paramètres</a></li>
+        <li><a class="nav-item" href="messages.html">Messages</a></li>
+        <li><a class="nav-item" href="mon-profil.html">Mon profil</a></li>
+      </ul>
+    </div>
+    <button class="nav-deconnexion" id="bouton-deconnexion-nav">↩ Se déconnecter</button>
+  </nav>
+
+  <main class="contenu">
+    <div class="entete-page">
+      <h1>Inscriptions</h1>
+      <p class="sous-titre" id="sous-titre-page">Sessions d'admission, concours et affectation des nouveaux élèves.</p>
+    </div>
+
+    <div class="onglets" id="onglets">
+      <button class="onglet actif" data-vue="sessions" id="onglet-sessions">Sessions</button>
+      <button class="onglet" data-vue="correction" id="onglet-correction" style="display:none;">Mes corrections</button>
+    </div>
+
+    <div id="message-flash" class="message-flash"></div>
+
+    <!-- ===================== Sessions ===================== -->
+    <section id="vue-sessions">
+      <div id="zone-liste-sessions">
+        <div class="carte-config">
+          <h3>Nouvelle session</h3>
+          <div class="grille-formulaire">
+            <div class="champ-form">
+              <label for="champ-libelle">Libellé</label>
+              <input type="text" id="champ-libelle" maxlength="120" placeholder="ex. Admission 7e année 2026-2027" />
+            </div>
+            <div class="champ-form">
+              <label for="select-classe-cible">Classe de destination</label>
+              <select id="select-classe-cible"><option value="">— À définir plus tard —</option></select>
+            </div>
+            <div class="champ-form">
+              <label for="champ-places">Places disponibles</label>
+              <input type="number" id="champ-places" min="1" max="5000" value="50" />
+            </div>
+            <div class="champ-form">
+              <label for="select-mode">Mode d'admission</label>
+              <select id="select-mode">
+                <option value="test">Concours — classement sur test</option>
+                <option value="direct">Direct — premier arrivé, premier servi</option>
+              </select>
+            </div>
+            <div class="champ-form">
+              <label for="champ-date-test">Date du test</label>
+              <input type="date" id="champ-date-test" />
+            </div>
+          </div>
+          <div class="barre-actions">
+            <button class="bouton bouton-principal" id="bouton-creer-session">Créer la session</button>
+          </div>
+        </div>
+
+        <div class="conteneur-tableau">
+          <table>
+            <thead><tr><th>Session</th><th>Classe</th><th>Mode</th><th>Candidats</th><th>Places</th><th>État</th><th></th></tr></thead>
+            <tbody id="corps-sessions"><tr><td colspan="7" class="etat-vide-tableau">Chargement…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Détail d'une session -->
+      <div id="zone-detail-session" style="display:none;">
+        <button class="lien-retour" id="bouton-retour-sessions">← Toutes les sessions</button>
+
+        <div class="entete-session">
+          <div>
+            <h2 id="titre-session"></h2>
+            <p class="meta-session" id="meta-session"></p>
+          </div>
+          <div class="actions-session" id="actions-session"></div>
+        </div>
+
+        <div class="onglets-secondaires">
+          <button class="onglet-sec actif" data-sous-vue="candidats">Candidats</button>
+          <button class="onglet-sec" data-sous-vue="epreuves" id="onglet-epreuves">Épreuves</button>
+        </div>
+
+        <!-- Candidats -->
+        <div id="sous-vue-candidats">
+          <div class="carte-config" id="carte-inscription">
+            <h3>Inscrire un candidat</h3>
+            <div class="grille-formulaire">
+              <div class="champ-form"><label for="c-nom">Nom</label><input type="text" id="c-nom" maxlength="80" /></div>
+              <div class="champ-form"><label for="c-postnom">Postnom</label><input type="text" id="c-postnom" maxlength="80" /></div>
+              <div class="champ-form"><label for="c-prenom">Prénom</label><input type="text" id="c-prenom" maxlength="80" /></div>
+              <div class="champ-form"><label for="c-sexe">Sexe</label><select id="c-sexe"><option value="">—</option><option value="M">M</option><option value="F">F</option></select></div>
+              <div class="champ-form"><label for="c-naissance">Date de naissance</label><input type="date" id="c-naissance" /></div>
+              <div class="champ-form"><label for="c-responsable">Responsable</label><input type="text" id="c-responsable" maxlength="90" /></div>
+              <div class="champ-form"><label for="c-telephone">Téléphone</label><input type="text" id="c-telephone" maxlength="30" /></div>
+              <div class="champ-form"><label for="c-provenance">École de provenance</label><input type="text" id="c-provenance" maxlength="120" /></div>
+            </div>
+            <div class="barre-actions">
+              <button class="bouton bouton-principal" id="bouton-inscrire">Inscrire</button>
+            </div>
+          </div>
+
+          <div class="bandeau-scelle" id="bandeau-scelle" style="display:none;"></div>
+
+          <div class="conteneur-tableau">
+            <table>
+              <thead><tr id="entete-candidats"></tr></thead>
+              <tbody id="corps-candidats"><tr><td colspan="6" class="etat-vide-tableau">Chargement…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Épreuves -->
+        <div id="sous-vue-epreuves" style="display:none;">
+          <div class="carte-config">
+            <h3>Épreuves du test</h3>
+            <p class="aide">Chaque épreuve est confiée à un correcteur, qui reçoit une demande dans sa messagerie. Les copies lui sont présentées de façon anonyme.</p>
+            <div class="grille-formulaire">
+              <div class="champ-form"><label for="e-nom">Nom de l'épreuve</label><input type="text" id="e-nom" maxlength="80" placeholder="ex. Français" /></div>
+              <div class="champ-form"><label for="e-maximum">Maximum</label><input type="number" id="e-maximum" min="1" max="1000" value="20" /></div>
+            </div>
+            <div class="barre-actions">
+              <button class="bouton bouton-secondaire" id="bouton-ajouter-epreuve">+ Ajouter l'épreuve</button>
+            </div>
+          </div>
+
+          <div class="conteneur-tableau">
+            <table>
+              <thead><tr><th>Épreuve</th><th>Maximum</th><th>Correcteur</th><th>Correction</th><th></th></tr></thead>
+              <tbody id="corps-epreuves"><tr><td colspan="5" class="etat-vide-tableau">Aucune épreuve.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== Mes corrections ===================== -->
+    <section id="vue-correction" style="display:none;">
+      <div id="zone-liste-corrections">
+        <div class="conteneur-tableau">
+          <table>
+            <thead><tr><th>Épreuve</th><th>Session</th><th>Avancement</th><th></th></tr></thead>
+            <tbody id="corps-corrections"><tr><td colspan="4" class="etat-vide-tableau">Chargement…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="zone-saisie-copies" style="display:none;">
+        <button class="lien-retour" id="bouton-retour-corrections">← Mes corrections</button>
+        <div class="bandeau-anonyme">
+          Correction anonyme : les copies sont identifiées par un numéro. Aucun nom de candidat ne vous est communiqué.
+        </div>
+        <h2 id="titre-epreuve"></h2>
+        <div class="conteneur-tableau">
+          <table>
+            <thead><tr><th>Numéro de copie</th><th style="width:180px;">Points</th></tr></thead>
+            <tbody id="corps-copies"></tbody>
+          </table>
+        </div>
+        <div class="barre-actions">
+          <span class="aide" id="etat-saisie"></span>
+          <button class="bouton bouton-principal" id="bouton-enregistrer-notes">Enregistrer les points</button>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+  const API_BASE_URL = "https://scolaire-saas-backend.onrender.com";
+
+
+  // Session par défaut = sessionStorage (effacée à la fermeture du navigateur),
+  // sauf si "Se souvenir de moi" a été coché à la connexion (alors localStorage).
+  function obtenirDuStockage(cle) {
+    return sessionStorage.getItem(cle) || localStorage.getItem(cle);
+  }
+  function definirDansStockage(cle, valeur) {
+    if (sessionStorage.getItem('ardoise_refresh_token')) sessionStorage.setItem(cle, valeur);
+    else localStorage.setItem(cle, valeur);
+  }
+
+  function obtenirTokens() {
+    return { accessToken: obtenirDuStockage('ardoise_access_token'), refreshToken: obtenirDuStockage('ardoise_refresh_token'), user: JSON.parse(obtenirDuStockage('ardoise_user') || 'null') };
+  }
+  function retourConnexion() {
+    ['ardoise_access_token','ardoise_refresh_token','ardoise_user'].forEach(cle => { localStorage.removeItem(cle); sessionStorage.removeItem(cle); });
+    window.location.href = 'connexion.html';
+  }
+  async function rafraichirToken(refreshToken) {
+    const reponse = await fetch(`${API_BASE_URL}/auth/refresh`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refresh_token: refreshToken }) });
+    if (!reponse.ok) return null;
+    const donnees = await reponse.json();
+    definirDansStockage('ardoise_access_token', donnees.access_token);
+    return donnees.access_token;
+  }
+  async function appelApi(chemin, options = {}) {
+    let { accessToken, refreshToken } = obtenirTokens();
+    if (!accessToken) { retourConnexion(); return null; }
+    const executer = (token) => fetch(`${API_BASE_URL}${chemin}`, { ...options, headers: { ...(options.headers || {}), Authorization: `Bearer ${token}` } });
+    let reponse = await executer(accessToken);
+    if (reponse.status === 401 && refreshToken) {
+      const nouveauToken = await rafraichirToken(refreshToken);
+      if (!nouveauToken) { retourConnexion(); return null; }
+      reponse = await executer(nouveauToken);
+    }
+    if (reponse.status === 401) { retourConnexion(); return null; }
+    return reponse;
+  }
+
+  document.getElementById('bouton-deconnexion-nav').addEventListener('click', async () => {
+    const { refreshToken } = obtenirTokens();
+    try { await fetch(`${API_BASE_URL}/auth/logout`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refresh_token: refreshToken }) }); } catch (e) {}
+    retourConnexion();
+  });
+
+  // ============================================================
+  //  État de la page
+  // ============================================================
+  let sessions = [];
+  let sessionCourante = null;
+  let candidatsCourants = [];
+  let epreuveCourante = null;
+  let copiesCourantes = [];
+  let enseignants = [];
+
+  const utilisateur = (() => {
+    try { return JSON.parse(obtenirDuStockage('ardoise_user') || 'null'); } catch (e) { return null; }
+  })();
+  const roles = (utilisateur && utilisateur.roles) || [];
+  const estDirection = roles.some(r => ['directeur', 'prefet', 'super_admin'].includes(r));
+  const estSecretariat = estDirection || roles.includes('secretaire');
+  const estCorrecteur = roles.some(r => ['professeur', 'titulaire'].includes(r)) || estDirection;
+
+  const LIBELLE_STATUT = {
+    inscrit: 'Inscrit', admis: 'Admis', liste_attente: "Liste d'attente",
+    refuse: 'Écarté', absent: 'Absent', desiste: 'Désisté', converti: 'Élève inscrit'
+  };
+
+  function afficherMessage(texte, type) {
+    const zone = document.getElementById('message-flash');
+    zone.textContent = texte;
+    zone.className = `message-flash visible ${type}`;
+    zone.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    setTimeout(() => zone.classList.remove('visible'), 9000);
+  }
+
+  function echapper(t) {
+    const d = document.createElement('div');
+    d.textContent = t == null ? '' : String(t);
+    return d.innerHTML;
+  }
+
+  function formaterDate(v) {
+    if (!v) return '—';
+    try { return new Date(v).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }); }
+    catch (e) { return '—'; }
+  }
+
+  // ============================================================
+  //  Initialisation
+  // ============================================================
+  async function initialiser() {
+    if (!estSecretariat) {
+      document.getElementById('onglet-sessions').style.display = 'none';
+    }
+    if (estCorrecteur) {
+      document.getElementById('onglet-correction').style.display = '';
+    }
+
+    document.querySelectorAll('.onglet').forEach(o => {
+      o.addEventListener('click', () => basculerVue(o.dataset.vue));
+    });
+    document.querySelectorAll('.onglet-sec').forEach(o => {
+      o.addEventListener('click', () => basculerSousVue(o.dataset.sousVue));
+    });
+
+    if (estSecretariat) {
+      document.getElementById('bouton-creer-session').addEventListener('click', creerSession);
+      document.getElementById('bouton-retour-sessions').addEventListener('click', () => {
+        sessionCourante = null;
+        document.getElementById('zone-detail-session').style.display = 'none';
+        document.getElementById('zone-liste-sessions').style.display = '';
+        chargerSessions();
+      });
+      document.getElementById('bouton-inscrire').addEventListener('click', inscrireCandidat);
+      document.getElementById('bouton-ajouter-epreuve').addEventListener('click', ajouterEpreuve);
+
+      const rClasses = await appelApi('/classes');
+      if (rClasses?.ok) {
+        const classes = await rClasses.json();
+        document.getElementById('select-classe-cible').innerHTML =
+          '<option value="">— À définir plus tard —</option>' +
+          classes.map(c => `<option value="${c.id}">${echapper(c.nom)}</option>`).join('');
+      }
+      const rUtil = await appelApi('/utilisateurs');
+      if (rUtil?.ok) {
+        const tous = await rUtil.json();
+        enseignants = tous.filter(u => (u.roles || []).some(r => ['professeur', 'titulaire', 'prefet', 'directeur'].includes(r)));
+      }
+    }
+
+    document.getElementById('bouton-retour-corrections').addEventListener('click', () => {
+      epreuveCourante = null;
+      document.getElementById('zone-saisie-copies').style.display = 'none';
+      document.getElementById('zone-liste-corrections').style.display = '';
+      chargerMesCorrections();
+    });
+    document.getElementById('bouton-enregistrer-notes').addEventListener('click', enregistrerNotes);
+
+    // Un enseignant sans rôle administratif arrive directement sur ses copies.
+    if (!estSecretariat && estCorrecteur) basculerVue('correction');
+    else chargerSessions();
+  }
+
+  function basculerVue(vue) {
+    document.querySelectorAll('.onglet').forEach(o => o.classList.toggle('actif', o.dataset.vue === vue));
+    document.getElementById('vue-sessions').style.display = vue === 'sessions' ? '' : 'none';
+    document.getElementById('vue-correction').style.display = vue === 'correction' ? '' : 'none';
+    if (vue === 'sessions') chargerSessions();
+    if (vue === 'correction') chargerMesCorrections();
+  }
+
+  function basculerSousVue(sousVue) {
+    document.querySelectorAll('.onglet-sec').forEach(o => o.classList.toggle('actif', o.dataset.sousVue === sousVue));
+    document.getElementById('sous-vue-candidats').style.display = sousVue === 'candidats' ? '' : 'none';
+    document.getElementById('sous-vue-epreuves').style.display = sousVue === 'epreuves' ? '' : 'none';
+    if (sousVue === 'epreuves') chargerEpreuves();
+  }
+
+  // ============================================================
+  //  Sessions
+  // ============================================================
+  async function chargerSessions() {
+    const corps = document.getElementById('corps-sessions');
+    const r = await appelApi('/inscriptions/sessions');
+    if (!r || !r.ok) {
+      corps.innerHTML = '<tr><td colspan="7" class="etat-vide-tableau">Chargement impossible.</td></tr>';
+      return;
+    }
+    sessions = await r.json();
+    if (sessions.length === 0) {
+      corps.innerHTML = '<tr><td colspan="7" class="etat-vide-tableau">Aucune session. Créez-en une ci-dessus.</td></tr>';
+      return;
+    }
+
+    corps.innerHTML = sessions.map(s => `
+      <tr>
+        <td><strong>${echapper(s.libelle)}</strong>${s.date_test ? `<div style="font-size:0.78rem; color:var(--texte-att);">Test le ${formaterDate(s.date_test)}</div>` : ''}</td>
+        <td>${echapper(s.classe_nom || '—')}</td>
+        <td>${s.mode === 'test' ? 'Concours' : 'Direct'}</td>
+        <td>${s.nb_candidats}</td>
+        <td>${s.nb_admis} / ${s.places}</td>
+        <td><span class="etiquette-etat etat-${s.statut === 'publiee' ? 'publiee' : (s.statut === 'ouverte' ? 'ouverte' : 'fermee')}">${echapper(s.statut)}</span></td>
+        <td><button class="lien-action" data-ouvrir="${s.id}">Ouvrir</button></td>
+      </tr>`).join('');
+
+    corps.querySelectorAll('[data-ouvrir]').forEach(b => {
+      b.addEventListener('click', () => ouvrirSession(b.dataset.ouvrir));
+    });
+  }
+
+  async function creerSession() {
+    const libelle = document.getElementById('champ-libelle').value.trim();
+    if (!libelle) { afficherMessage('Donnez un libellé à la session.', 'erreur'); return; }
+
+    const bouton = document.getElementById('bouton-creer-session');
+    bouton.disabled = true; bouton.textContent = 'Création…';
+
+    const r = await appelApi('/inscriptions/sessions', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        libelle,
+        classe_cible_id: document.getElementById('select-classe-cible').value || null,
+        places: Number(document.getElementById('champ-places').value),
+        mode: document.getElementById('select-mode').value,
+        date_test: document.getElementById('champ-date-test').value || null
+      })
+    });
+
+    bouton.disabled = false; bouton.textContent = 'Créer la session';
+    if (!r) return;
+    const rep = await r.json().catch(() => ({}));
+    if (!r.ok) { afficherMessage(rep.message || 'Création impossible.', 'erreur'); return; }
+
+    document.getElementById('champ-libelle').value = '';
+    afficherMessage(rep.message, 'succes');
+    chargerSessions();
+  }
+
+  async function ouvrirSession(id) {
+    sessionCourante = sessions.find(s => s.id === id) || { id };
+    document.getElementById('zone-liste-sessions').style.display = 'none';
+    document.getElementById('zone-detail-session').style.display = '';
+    basculerSousVue('candidats');
+    await chargerCandidats();
+  }
+
+  function dessinerActionsSession(session) {
+    const zone = document.getElementById('actions-session');
+    const boutons = [];
+
+    if (estDirection && session.statut !== 'publiee') {
+      boutons.push('<button class="bouton bouton-principal" id="bouton-publier">Publier les résultats</button>');
+    }
+    if (estDirection && session.statut === 'publiee') {
+      boutons.push('<button class="bouton bouton-secondaire" id="bouton-depublier">Dépublier</button>');
+    }
+    if (estSecretariat && session.statut === 'publiee') {
+      boutons.push('<button class="bouton bouton-secondaire" id="bouton-convertir">Inscrire les admis</button>');
+    }
+    zone.innerHTML = boutons.join('');
+
+    document.getElementById('bouton-publier')?.addEventListener('click', publierSession);
+    document.getElementById('bouton-depublier')?.addEventListener('click', depublierSession);
+    document.getElementById('bouton-convertir')?.addEventListener('click', convertirAdmis);
+  }
+
+  // ============================================================
+  //  Candidats
+  // ============================================================
+  async function chargerCandidats() {
+    const corps = document.getElementById('corps-candidats');
+    corps.innerHTML = '<tr><td colspan="7" class="etat-vide-tableau"><span class="spinner"></span>Chargement…</td></tr>';
+
+    const r = await appelApi(`/inscriptions/sessions/${sessionCourante.id}/candidats`);
+    if (!r || !r.ok) {
+      corps.innerHTML = '<tr><td colspan="7" class="etat-vide-tableau">Chargement impossible.</td></tr>';
+      return;
+    }
+    const d = await r.json();
+    sessionCourante = { ...sessionCourante, ...d.session };
+    candidatsCourants = d.candidats;
+
+    document.getElementById('titre-session').textContent = d.session.libelle;
+    document.getElementById('meta-session').textContent =
+      `${d.session.mode === 'test' ? 'Concours' : 'Admission directe'} · ${d.session.places} place(s)`
+      + `${d.session.classe_nom ? ' · ' + d.session.classe_nom : ''}`
+      + `${d.session.publie_at ? ' · publié le ' + formaterDate(d.session.publie_at) : ''}`;
+    dessinerActionsSession(d.session);
+
+    document.getElementById('carte-inscription').style.display =
+      (estSecretariat && ['ouverte', 'brouillon'].includes(d.session.statut)) ? '' : 'none';
+    document.getElementById('onglet-epreuves').style.display = d.session.mode === 'test' ? '' : 'none';
+
+    // Tant que les résultats ne sont pas publiés, aucun total ni rang n'est
+    // affiché — le serveur ne les envoie même pas.
+    const bandeau = document.getElementById('bandeau-scelle');
+    if (!d.publiee) {
+      bandeau.style.display = '';
+      bandeau.textContent = "Résultats sous scellé : totaux, rangs et décisions ne seront visibles qu'après publication par la direction.";
+    } else {
+      bandeau.style.display = 'none';
+    }
+
+    const entetes = d.publiee
+      ? ['Rang', 'Candidat', 'Numéro', 'Total', 'Statut', 'Décision', '']
+      : ['Candidat', 'Numéro', 'Sexe', 'Responsable', 'Provenance', ''];
+    document.getElementById('entete-candidats').innerHTML =
+      entetes.map(e => `<th>${echapper(e)}</th>`).join('');
+
+    if (candidatsCourants.length === 0) {
+      corps.innerHTML = `<tr><td colspan="${entetes.length}" class="etat-vide-tableau">Aucun candidat inscrit.</td></tr>`;
+      return;
+    }
+
+    corps.innerHTML = candidatsCourants.map(c => d.publiee ? `
+      <tr>
+        <td class="rang-candidat">${c.rang ?? '—'}</td>
+        <td><strong>${echapper(c.nom_complet)}</strong>${c.recommande ? '<span class="puce-reco">recommandé</span>' : ''}</td>
+        <td class="numero-copie">${echapper(c.numero_candidat)}</td>
+        <td class="total-candidat">${c.total ?? '—'}</td>
+        <td><span class="statut-candidat st-${c.statut}">${echapper(LIBELLE_STATUT[c.statut] || c.statut)}</span></td>
+        <td style="font-size:0.8rem; color:var(--texte-att);">${echapper(c.motif_recommandation || '')}${c.decide_par_nom ? `<div>${echapper(c.decide_par_nom)}</div>` : ''}</td>
+        <td>${actionsCandidat(c)}</td>
+      </tr>` : `
+      <tr>
+        <td><strong>${echapper(c.nom_complet)}</strong></td>
+        <td class="numero-copie">${echapper(c.numero_candidat)}</td>
+        <td>${echapper(c.sexe || '—')}</td>
+        <td>${echapper(c.responsable_nom || '—')}${c.responsable_telephone ? `<div style="font-size:0.78rem; color:var(--texte-att);">${echapper(c.responsable_telephone)}</div>` : ''}</td>
+        <td>${echapper(c.ecole_provenance || '—')}</td>
+        <td></td>
+      </tr>`).join('');
+
+    corps.querySelectorAll('[data-decision]').forEach(b => {
+      b.addEventListener('click', () => deciderCandidat(b.dataset.decision, b.dataset.action));
+    });
+    corps.querySelectorAll('[data-desister]').forEach(b => {
+      b.addEventListener('click', () => desisterCandidat(b.dataset.desister));
+    });
+  }
+
+  function actionsCandidat(c) {
+    if (!estDirection && !estSecretariat) return '';
+    const actions = [];
+    if (estDirection && c.statut !== 'converti') {
+      if (!c.recommande && ['liste_attente', 'refuse', 'absent'].includes(c.statut)) {
+        actions.push(`<button class="lien-action" data-decision="${c.id}" data-action="recommander">Recommander</button>`);
+      }
+      if (c.recommande) {
+        actions.push(`<button class="lien-action" data-decision="${c.id}" data-action="retirer_recommandation">Retirer la reco.</button>`);
+      }
+      if (c.statut !== 'refuse') {
+        actions.push(`<button class="lien-action danger" data-decision="${c.id}" data-action="refuser">Écarter</button>`);
+      }
+    }
+    if (estSecretariat && c.statut === 'admis') {
+      actions.push(`<button class="lien-action" data-desister="${c.id}">Désistement</button>`);
+    }
+    return actions.join(' ');
+  }
+
+  async function inscrireCandidat() {
+    const nom = document.getElementById('c-nom').value.trim();
+    if (!nom) { afficherMessage('Le nom du candidat est requis.', 'erreur'); return; }
+
+    const bouton = document.getElementById('bouton-inscrire');
+    bouton.disabled = true; bouton.textContent = 'Inscription…';
+
+    const r = await appelApi(`/inscriptions/sessions/${sessionCourante.id}/candidats`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nom,
+        postnom: document.getElementById('c-postnom').value.trim() || null,
+        prenom: document.getElementById('c-prenom').value.trim() || null,
+        sexe: document.getElementById('c-sexe').value || null,
+        date_naissance: document.getElementById('c-naissance').value || null,
+        responsable_nom: document.getElementById('c-responsable').value.trim() || null,
+        responsable_telephone: document.getElementById('c-telephone').value.trim() || null,
+        ecole_provenance: document.getElementById('c-provenance').value.trim() || null
+      })
+    });
+
+    bouton.disabled = false; bouton.textContent = 'Inscrire';
+    if (!r) return;
+    const rep = await r.json().catch(() => ({}));
+    if (!r.ok) { afficherMessage(rep.message || 'Inscription impossible.', 'erreur'); return; }
+
+    ['c-nom', 'c-postnom', 'c-prenom', 'c-responsable', 'c-telephone', 'c-provenance']
+      .forEach(id => { document.getElementById(id).value = ''; });
+    afficherMessage(rep.message, 'succes');
+    chargerCandidats();
+  }
+
+  async function deciderCandidat(id, action) {
+    let motif = null;
+    if (action === 'recommander') {
+      motif = prompt("Motif de la recommandation ?\n\nIl sera enregistré à votre nom dans le registre de la session.");
+      if (!motif || !motif.trim()) return;
+    }
+    if (action === 'refuser' && !confirm("Écarter ce candidat ?\n\nLe serveur refusera si ce candidat est admis de droit.")) return;
+
+    const r = await appelApi(`/inscriptions/candidats/${id}/decision`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, motif })
+    });
+    if (!r) return;
+    const rep = await r.json().catch(() => ({}));
+    if (!r.ok) { afficherMessage(rep.message || 'Décision impossible.', 'erreur'); return; }
+    afficherMessage(rep.message, 'succes');
+    chargerCandidats();
+  }
+
+  async function desisterCandidat(id) {
+    if (!confirm("Enregistrer le désistement ?\n\nLa place sera automatiquement attribuée au premier de la liste d'attente.")) return;
+    const r = await appelApi(`/inscriptions/candidats/${id}/desister`, { method: 'POST' });
+    if (!r) return;
+    const rep = await r.json().catch(() => ({}));
+    if (!r.ok) { afficherMessage(rep.message || 'Action impossible.', 'erreur'); return; }
+    afficherMessage(rep.message, 'succes');
+    chargerCandidats();
+  }
+
+  async function publierSession() {
+    if (!confirm("Publier les résultats ?\n\nLe classement sera calculé et figé. Les candidats admis de droit ne pourront plus être écartés.")) return;
+    const bouton = document.getElementById('bouton-publier');
+    bouton.disabled = true; bouton.textContent = 'Publication…';
+
+    const r = await appelApi(`/inscriptions/sessions/${sessionCourante.id}/publier`, { method: 'POST' });
+    bouton.disabled = false; bouton.textContent = 'Publier les résultats';
+    if (!r) return;
+    const rep = await r.json().catch(() => ({}));
+    if (!r.ok) { afficherMessage(rep.message || 'Publication impossible.', 'erreur'); return; }
+    afficherMessage(rep.message, 'succes');
+    chargerCandidats();
+  }
+
+  async function depublierSession() {
+    if (!confirm("Dépublier cette session ?\n\nCette action est tracée. Elle n'est justifiée que pour corriger une erreur de saisie.")) return;
+    const r = await appelApi(`/inscriptions/sessions/${sessionCourante.id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ statut: 'corrigee' })
+    });
+    if (!r) return;
+    const rep = await r.json().catch(() => ({}));
+    if (!r.ok) { afficherMessage(rep.message || 'Action impossible.', 'erreur'); return; }
+    afficherMessage('Session dépubliée. Les résultats sont de nouveau sous scellé.', 'succes');
+    chargerCandidats();
+  }
+
+  async function convertirAdmis() {
+    if (!confirm("Inscrire tous les admis comme élèves ?\n\nChacun recevra un matricule et sera affecté à la classe de destination.")) return;
+    const bouton = document.getElementById('bouton-convertir');
+    bouton.disabled = true; bouton.textContent = 'Inscription…';
+
+    const r = await appelApi(`/inscriptions/sessions/${sessionCourante.id}/convertir`, { method: 'POST' });
+    bouton.disabled = false; bouton.textContent = 'Inscrire les admis';
+    if (!r) return;
+    const rep = await r.json().catch(() => ({}));
+    if (!r.ok) { afficherMessage(rep.message || 'Conversion impossible.', 'erreur'); return; }
+    afficherMessage(rep.message, 'succes');
+    chargerCandidats();
+  }
+
+  // ============================================================
+  //  Épreuves
+  // ============================================================
+  async function chargerEpreuves() {
+    const corps = document.getElementById('corps-epreuves');
+    const r = await appelApi(`/inscriptions/sessions/${sessionCourante.id}/epreuves`);
+    if (!r || !r.ok) { corps.innerHTML = '<tr><td colspan="5" class="etat-vide-tableau">Chargement impossible.</td></tr>'; return; }
+    const epreuves = await r.json();
+
+    if (epreuves.length === 0) {
+      corps.innerHTML = '<tr><td colspan="5" class="etat-vide-tableau">Aucune épreuve définie.</td></tr>';
+      return;
+    }
+
+    corps.innerHTML = epreuves.map(e => `
+      <tr>
+        <td><strong>${echapper(e.nom)}</strong></td>
+        <td>${e.maximum}</td>
+        <td>${e.correcteur_nom ? echapper(e.correcteur_nom) : '<span style="color:var(--texte-att);">non confiée</span>'}</td>
+        <td>${e.nb_notes} copie(s) saisie(s)</td>
+        <td>
+          <select class="champ-points" data-correcteur="${e.id}" style="min-width:170px;">
+            <option value="">— Confier à —</option>
+            ${enseignants.map(u => `<option value="${u.id}" ${u.id === e.correcteur_id ? 'selected' : ''}>${echapper([u.prenom, u.nom].filter(Boolean).join(' '))}</option>`).join('')}
+          </select>
+        </td>
+      </tr>`).join('');
+
+    corps.querySelectorAll('[data-correcteur]').forEach(sel => {
+      sel.addEventListener('change', () => assignerCorrecteur(sel.dataset.correcteur, sel.value));
+    });
+  }
+
+  async function ajouterEpreuve() {
+    const nom = document.getElementById('e-nom').value.trim();
+    if (!nom) { afficherMessage("Nommez l'épreuve.", 'erreur'); return; }
+
+    const r = await appelApi(`/inscriptions/sessions/${sessionCourante.id}/epreuves`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nom, maximum: Number(document.getElementById('e-maximum').value) })
+    });
+    if (!r) return;
+    const rep = await r.json().catch(() => ({}));
+    if (!r.ok) { afficherMessage(rep.message || 'Ajout impossible.', 'erreur'); return; }
+    document.getElementById('e-nom').value = '';
+    afficherMessage(rep.message, 'succes');
+    chargerEpreuves();
+  }
+
+  async function assignerCorrecteur(epreuveId, correcteurId) {
+    if (!correcteurId) return;
+    const r = await appelApi(`/inscriptions/epreuves/${epreuveId}/correcteur`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ correcteur_id: correcteurId })
+    });
+    if (!r) return;
+    const rep = await r.json().catch(() => ({}));
+    if (!r.ok) { afficherMessage(rep.message || 'Assignation impossible.', 'erreur'); return; }
+    afficherMessage(rep.message, 'succes');
+    chargerEpreuves();
+  }
+
+  // ============================================================
+  //  Correction anonyme
+  // ============================================================
+  async function chargerMesCorrections() {
+    const corps = document.getElementById('corps-corrections');
+    const r = await appelApi('/inscriptions/mes-corrections');
+    if (!r || !r.ok) { corps.innerHTML = '<tr><td colspan="4" class="etat-vide-tableau">Chargement impossible.</td></tr>'; return; }
+    const epreuves = await r.json();
+
+    if (epreuves.length === 0) {
+      corps.innerHTML = '<tr><td colspan="4" class="etat-vide-tableau">Aucune épreuve ne vous est confiée.</td></tr>';
+      return;
+    }
+
+    corps.innerHTML = epreuves.map(e => `
+      <tr>
+        <td><strong>${echapper(e.nom)}</strong><div style="font-size:0.78rem; color:var(--texte-att);">sur ${e.maximum}</div></td>
+        <td>${echapper(e.session_libelle)}${e.date_test ? `<div style="font-size:0.78rem; color:var(--texte-att);">${formaterDate(e.date_test)}</div>` : ''}</td>
+        <td>${e.nb_saisies} / ${e.nb_copies}</td>
+        <td>${e.session_statut === 'publiee'
+          ? '<span style="color:var(--texte-att); font-size:0.84rem;">clôturée</span>'
+          : `<button class="lien-action" data-corriger="${e.id}">Saisir les points</button>`}</td>
+      </tr>`).join('');
+
+    corps.querySelectorAll('[data-corriger]').forEach(b => {
+      b.addEventListener('click', () => ouvrirCopies(b.dataset.corriger));
+    });
+  }
+
+  async function ouvrirCopies(epreuveId) {
+    const r = await appelApi(`/inscriptions/epreuves/${epreuveId}/copies`);
+    if (!r || !r.ok) {
+      const err = r ? await r.json().catch(() => ({})) : {};
+      afficherMessage(err.message || 'Ouverture impossible.', 'erreur');
+      return;
+    }
+    const d = await r.json();
+    epreuveCourante = d.epreuve;
+    copiesCourantes = d.copies;
+
+    document.getElementById('zone-liste-corrections').style.display = 'none';
+    document.getElementById('zone-saisie-copies').style.display = '';
+    document.getElementById('titre-epreuve').textContent = `${d.epreuve.nom} — sur ${d.epreuve.maximum}`;
+
+    document.getElementById('corps-copies').innerHTML = copiesCourantes.map((c, i) => `
+      <tr>
+        <td class="numero-copie">${echapper(c.numero_candidat)}</td>
+        <td><input type="number" class="champ-points" data-index="${i}" min="0" max="${d.epreuve.maximum}" step="0.5" value="${c.points ?? ''}" /></td>
+      </tr>`).join('');
+
+    document.querySelectorAll('#corps-copies input').forEach(champ => {
+      champ.addEventListener('input', () => {
+        copiesCourantes[Number(champ.dataset.index)].points = champ.value;
+        majEtatSaisie();
+      });
+    });
+    majEtatSaisie();
+  }
+
+  function majEtatSaisie() {
+    const saisies = copiesCourantes.filter(c => c.points !== null && c.points !== '').length;
+    document.getElementById('etat-saisie').textContent =
+      `${saisies} / ${copiesCourantes.length} copie(s) saisie(s)`;
+  }
+
+  async function enregistrerNotes() {
+    // Validation avant envoi : la cellule fautive est surlignée et la copie
+    // nommée, comme partout ailleurs dans la plateforme.
+    const invalides = [];
+    document.querySelectorAll('#corps-copies input').forEach(champ => {
+      champ.style.borderColor = '';
+      if (champ.value === '') return;
+      const v = Number(champ.value);
+      if (!Number.isFinite(v) || v < 0 || v > epreuveCourante.maximum) {
+        champ.style.borderColor = 'var(--rouge)';
+        invalides.push(copiesCourantes[Number(champ.dataset.index)].numero_candidat);
+      }
+    });
+    if (invalides.length > 0) {
+      afficherMessage(`Points hors limites (0 à ${epreuveCourante.maximum}) : ${invalides.slice(0, 3).join(', ')}${invalides.length > 3 ? '…' : ''}`, 'erreur');
+      return;
+    }
+
+    const bouton = document.getElementById('bouton-enregistrer-notes');
+    bouton.disabled = true; bouton.textContent = 'Enregistrement…';
+
+    const r = await appelApi(`/inscriptions/epreuves/${epreuveCourante.id}/notes`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        notes: copiesCourantes.map(c => ({ candidat_id: c.candidat_id, points: c.points }))
+      })
+    });
+
+    bouton.disabled = false; bouton.textContent = 'Enregistrer les points';
+    if (!r) return;
+    const rep = await r.json().catch(() => ({}));
+    if (!r.ok) { afficherMessage(rep.message || 'Enregistrement impossible.', 'erreur'); return; }
+    afficherMessage(rep.message, 'succes');
+  }
+
+  initialiser();
+
+  (function gererAccesParRole() {
+    const permissions = {
+      'dashboard-directeur.html': ['directeur', 'prefet'],
+      'annee-scolaire.html': ['directeur', 'prefet'],
+      'espace-secretaire.html': ['secretaire'],
+      'espace-professeur.html': ['professeur'],
+      'espace-titulaire.html': ['titulaire'],
+      'cours-classe-titulaire.html': ['titulaire'],
+      'eleves.html': ['directeur', 'prefet', 'secretaire'],
+      'inscriptions.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire'],
+      'frais-scolaires.html': ['directeur', 'comptable', 'secretaire'],
+      'utilisateurs.html': ['directeur', 'prefet', 'secretaire'],
+      'classes.html': ['directeur', 'prefet', 'secretaire'],
+      'cours.html': ['directeur', 'prefet', 'secretaire'],
+      'presences.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
+      'emploi-du-temps.html': ['directeur', 'prefet', 'secretaire', 'titulaire', 'professeur'],
+      'discipline.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
+      'site-public.html': ['directeur', 'prefet', 'secretaire'],
+      'notes.html': ['directeur', 'prefet', 'professeur'],
+      'bulletins.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
+      'bulletin-annuel.html': ['directeur', 'prefet'],
+      'generateur-modeles.html': ['directeur'],
+      'calendrier.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire'],
+      'rapports.html': ['directeur', 'prefet', 'secretaire', 'comptable'],
+      'archives.html': ['directeur', 'prefet', 'secretaire'],
+      'journal.html': ['directeur', 'prefet'],
+      'messages.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire', 'comptable'],
+      'parametres.html': ['directeur']
+    };
+    const ordrePriorite = ['dashboard-directeur.html', 'espace-secretaire.html', 'espace-professeur.html', 'espace-titulaire.html', 'frais-scolaires.html', 'eleves.html'];
+
+    let utilisateur = null;
+    try { utilisateur = JSON.parse(obtenirDuStockage('ardoise_user') || 'null'); } catch (e) {}
+    const roles = (utilisateur && utilisateur.roles) || [];
+    const estSuperAdmin = roles.includes('super_admin');
+
+    document.querySelectorAll('.nav-item[href]').forEach((lien) => {
+      const page = lien.getAttribute('href');
+      const rolesAutorises = permissions[page];
+      if (rolesAutorises && !estSuperAdmin && !roles.some((r) => rolesAutorises.includes(r))) {
+        const li = lien.closest('li');
+        if (li) li.style.display = 'none';
+      }
+    });
+
+    const pageActuelle = 'inscriptions.html';
+    const rolesPourCettePage = permissions[pageActuelle];
+    if (rolesPourCettePage && !estSuperAdmin && !roles.some((r) => rolesPourCettePage.includes(r))) {
+      const pageDeRepli = ordrePriorite.find((p) => {
+        const r = permissions[p];
+        return !r || roles.some((role) => r.includes(role));
+      });
+      if (pageDeRepli && pageDeRepli !== pageActuelle) {
+        window.location.href = pageDeRepli;
+        return; // on quitte cette page, pas la peine d'afficher la barre ici
+      }
+    }
+
+    document.querySelector('.nav-liste').style.visibility = 'visible';
+  })();
+</script>
+
+<script src="theme.js"></script>
+<script src="ui.js"></script>
+<script src="hors-ligne.js"></script>
+</body>
+</html>

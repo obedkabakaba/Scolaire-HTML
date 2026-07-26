@@ -127,6 +127,8 @@
         <li><a class="nav-item" href="espace-titulaire.html">Ma classe</a></li>
         <li><a class="nav-item" href="cours-classe-titulaire.html">Cours de la classe</a></li>
         <li><a class="nav-item" href="eleves.html">Élèves</a></li>
+        <li><a class="nav-item" href="inscriptions.html">Inscriptions</a></li>
+        <li><a class="nav-item" href="orientation.html">Orientation</a></li>
         <li><a class="nav-item" href="frais-scolaires.html">Frais scolaires</a></li>
         <li><a class="nav-item" href="utilisateurs.html">Utilisateurs</a></li>
         <li><a class="nav-item" href="classes.html">Classes</a></li>
@@ -320,8 +322,14 @@
   const LIBELLES_TYPE = {
     retard: 'Retard', absence_injustifiee: 'Absence injustifiée', indiscipline: 'Indiscipline',
     bagarre: 'Bagarre', tricherie: 'Tricherie', degradation: 'Dégradation',
-    tenue: 'Tenue non conforme', autre: 'Autre fait'
+    tenue: 'Tenue non conforme', autre: 'Autre fait',
+    entraide: 'Entraide', effort: 'Effort remarqué', exemplarite: 'Exemplarité',
+    service_rendu: 'Service rendu', distinction: 'Distinction'
   };
+  // Les faits positifs ajoutent des points au lieu d'en retirer : une école
+  // qui ne sait que sanctionner passe à côté de la moitié de son rôle.
+  const TYPES_POSITIFS = ['entraide', 'effort', 'exemplarite', 'service_rendu', 'distinction'];
+  const estPositif = (t) => TYPES_POSITIFS.includes(t);
   const LIBELLES_MESURE = {
     aucune: 'Aucune', avertissement: 'Avertissement', convocation_parent: 'Convocation des parents',
     travail_supplementaire: 'Travail supplémentaire', exclusion_temporaire: 'Exclusion temporaire',
@@ -386,8 +394,15 @@
     if (!rConfig || !rConfig.ok) { afficherMessage('Impossible de charger le barème.', 'erreur'); return; }
     config = await rConfig.json();
 
-    document.getElementById('select-type').innerHTML = config.types
-      .map(t => `<option value="${t}">${echapper(LIBELLES_TYPE[t] || t)}</option>`).join('');
+    const negatifs = config.types.filter(t => !estPositif(t));
+    const positifs = (config.types_positifs || TYPES_POSITIFS).filter(t => config.types.includes(t));
+    document.getElementById('select-type').innerHTML =
+      `<optgroup label="Faits à sanctionner">`
+      + negatifs.map(t => `<option value="${t}">${echapper(LIBELLES_TYPE[t] || t)}</option>`).join('')
+      + `</optgroup>`
+      + (positifs.length ? `<optgroup label="Faits à valoriser">`
+          + positifs.map(t => `<option value="${t}">${echapper(LIBELLES_TYPE[t] || t)}</option>`).join('')
+          + `</optgroup>` : '');
     document.getElementById('select-mesure').innerHTML = config.mesures
       .map(m => `<option value="${m}">${echapper(LIBELLES_MESURE[m] || m)}</option>`).join('');
     document.getElementById('champ-capital').value = config.capital_conduite;
@@ -424,6 +439,8 @@
 
   function majPointsParDefaut() {
     const type = document.getElementById('select-type').value;
+    const etiquette = document.querySelector('label[for="champ-points"]');
+    if (etiquette) etiquette.textContent = estPositif(type) ? 'Points gagnés' : 'Points retirés';
     document.getElementById('champ-points').value = config.points_par_defaut[type] ?? 0;
     document.getElementById('champ-points').max = config.capital_conduite;
   }
@@ -493,7 +510,7 @@
         <td>${formaterDate(i.date_incident)}</td>
         <td>${echapper(nomComplet(i))}</td>
         <td>${echapper(LIBELLES_TYPE[i.type] || i.type)}${i.description ? `<div style="font-size:0.78rem; color:var(--texte-att); margin-top:3px;">${echapper(i.description)}</div>` : ''}</td>
-        <td style="color:var(--rouge); font-weight:600;">−${i.points}</td>
+        <td style="color:${estPositif(i.type) ? 'var(--vert-ok)' : 'var(--rouge)'}; font-weight:600;">${estPositif(i.type) ? '+' : '−'}${i.points}</td>
         <td>${echapper(LIBELLES_MESURE[i.mesure] || '—')}</td>
         <td style="font-size:0.82rem; color:var(--texte-att);">${echapper(i.signale_par_nom || '—')}</td>
         <td>${estAutorite ? `<button class="lien-action" data-supprimer="${i.id}">Supprimer</button>` : ''}</td>
@@ -568,8 +585,8 @@
       const faible = e.points_restants < capital * 0.5 ? ' capital-faible' : '';
       return `<tr>
         <td>${echapper(nomComplet(e))}</td>
-        <td>${e.nb_incidents}</td>
-        <td style="color:${e.points_perdus > 0 ? 'var(--rouge)' : 'var(--texte-att)'};">${e.points_perdus > 0 ? '−' + e.points_perdus : '—'}</td>
+        <td>${e.nb_incidents}${e.nb_positifs > 0 ? ` <span style="color:var(--vert-ok);">+${e.nb_positifs}</span>` : ''}</td>
+        <td style="color:${e.points_perdus > 0 ? 'var(--rouge)' : 'var(--texte-att)'};">${e.points_perdus > 0 ? '−' + e.points_perdus : '—'}${e.points_gagnes > 0 ? ` <span style="color:var(--vert-ok);">+${e.points_gagnes}</span>` : ''}</td>
         <td class="capital-restant${faible}">${e.points_restants} / ${capital}</td>
         <td>${echapper(e.conduite_suggeree || '—')}</td>
       </tr>`;
@@ -658,6 +675,8 @@
       'espace-titulaire.html': ['titulaire'],
       'cours-classe-titulaire.html': ['titulaire'],
       'eleves.html': ['directeur', 'prefet', 'secretaire'],
+      'inscriptions.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire'],
+      'orientation.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
       'frais-scolaires.html': ['directeur', 'comptable', 'secretaire'],
       'utilisateurs.html': ['directeur', 'prefet', 'secretaire'],
       'classes.html': ['directeur', 'prefet', 'secretaire'],

@@ -72,6 +72,23 @@
   th { text-align: left; padding: 12px 16px; background: rgba(31,43,36,0.03); color: var(--texte-att); font-size: 0.76rem; text-transform: uppercase; font-weight: 600; }
   td { padding: 11px 16px; border-top: 1px solid var(--bordure); }
   .matricule-cell { font-family: var(--police-mono); font-size: 0.8rem; color: var(--encre); }
+  .carte-controle { background: var(--craie-2); border: 1px solid var(--bordure); border-radius: var(--r-carte); padding: 20px; margin-bottom: 20px; }
+  .controle-entete { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .controle-entete h3 { font-family: var(--police-titre); font-size: 1.05rem; margin: 0; }
+  .etat-controle { font-size: 0.75rem; padding: 3px 11px; border-radius: 20px; font-weight: 600; }
+  .etat-controle.on { background: rgba(178,58,46,0.13); color: var(--rouge); }
+  .etat-controle.off { background: rgba(107,114,105,0.13); color: var(--texte-att); }
+  .aide-controle { font-size: 0.84rem; color: var(--texte-att); margin: 8px 0 16px 0; }
+  .ligne-controle { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  .interrupteur-controle { display: flex; align-items: center; gap: 9px; font-size: 0.9rem; cursor: pointer; }
+  .interrupteur-controle input { width: 17px; height: 17px; accent-color: var(--ocre); cursor: pointer; }
+  .champ-tolerance { display: flex; align-items: center; gap: 7px; font-size: 0.85rem; color: var(--texte-att); }
+  .champ-tolerance input { width: 62px; border: 1px solid var(--bordure); border-radius: var(--r-petit); padding: 6px 8px; font-family: var(--police-corps); background: var(--craie); color: var(--texte-sombre); }
+  .ligne-controle .bouton { margin-left: auto; }
+  .etat-bulletin { font-size: 0.74rem; padding: 3px 10px; border-radius: 20px; font-weight: 600; white-space: nowrap; }
+  .eb-delivrable { background: rgba(76,122,90,0.14); color: var(--vert-ok); }
+  .eb-bloque { background: rgba(178,58,46,0.13); color: var(--rouge); }
+  .eb-derogation { background: rgba(201,138,62,0.16); color: var(--ocre-dark); }
   .badge-solde { display: inline-block; padding: 3px 9px; border-radius:  var(--r-pilule); font-size: 0.78rem; font-weight: 600; }
   .badge-solde.solde-nul { background: rgba(76,122,90,0.12); color: var(--vert-ok); }
   .badge-solde.solde-restant { background: rgba(178,58,46,0.1); color: var(--rouge); }
@@ -127,6 +144,8 @@
         <li><a class="nav-item" href="espace-titulaire.html">Ma classe</a></li>
         <li><a class="nav-item" href="cours-classe-titulaire.html">Cours de la classe</a></li>
         <li><a class="nav-item" href="eleves.html">Élèves</a></li>
+        <li><a class="nav-item" href="inscriptions.html">Inscriptions</a></li>
+        <li><a class="nav-item" href="orientation.html">Orientation</a></li>
         <li><a class="nav-item actif" href="frais-scolaires.html">Frais scolaires</a></li>
         <li><a class="nav-item" href="utilisateurs.html">Utilisateurs</a></li>
         <li><a class="nav-item" href="classes.html">Classes</a></li>
@@ -183,6 +202,30 @@
 
     <!-- Onglet Paiements -->
     <div class="panneau-onglet visible" id="onglet-paiements">
+      <div class="carte-controle" id="carte-controle" style="display:none;">
+        <div class="controle-entete">
+          <h3>Délivrance des bulletins</h3>
+          <span class="etat-controle" id="etat-controle"></span>
+        </div>
+        <p class="aide-controle">
+          Lorsque le contrôle est actif, le bulletin d'un élève dont les frais ne sont pas réglés
+          n'est ni imprimé, ni consultable par sa famille sur la page publique. La direction peut
+          accorder une dérogation, qui reste enregistrée à son nom.
+        </p>
+        <div class="ligne-controle">
+          <label class="interrupteur-controle">
+            <input type="checkbox" id="case-controle" />
+            <span>Bloquer les bulletins en cas d'impayé</span>
+          </label>
+          <label class="champ-tolerance">
+            <span>Tolérance</span>
+            <input type="number" id="champ-tolerance" min="0" max="100" step="5" value="0" />
+            <span>% du montant peut rester dû</span>
+          </label>
+          <button class="bouton bouton-secondaire" id="bouton-enregistrer-controle">Enregistrer</button>
+        </div>
+      </div>
+
       <div class="barre-selecteurs">
         <div class="champ-selecteur"><label for="select-classe">Classe</label><select id="select-classe"></select></div>
         <div class="champ-selecteur"><label for="select-annee">Année scolaire</label><select id="select-annee"></select></div>
@@ -191,7 +234,7 @@
 
       <div class="conteneur-tableau">
         <table>
-          <thead><tr><th>Matricule</th><th>Élève</th><th>Attendu</th><th>Payé</th><th>Solde</th><th></th></tr></thead>
+          <thead><tr><th>Matricule</th><th>Élève</th><th>Attendu</th><th>Payé</th><th>Solde</th><th>Bulletin</th><th></th></tr></thead>
           <tbody id="corps-tableau">
             <tr><td colspan="6" class="etat-vide-tableau">Choisis une classe et une année, puis clique "Afficher".</td></tr>
           </tbody>
@@ -338,6 +381,84 @@
     }
   }
 
+  // ============================================================
+  //  Contrôle financier de la délivrance des bulletins
+  // ============================================================
+  let controleActif = false;
+  let toleranceCourante = 0;
+
+  const utilisateurFrais = (() => {
+    try { return JSON.parse(obtenirDuStockage('ardoise_user') || 'null'); } catch (e) { return null; }
+  })();
+  const peutDeroger = ((utilisateurFrais && utilisateurFrais.roles) || [])
+    .some(r => ['directeur', 'prefet', 'super_admin'].includes(r));
+
+  async function chargerControle() {
+    const r = await appelApi('/frais/controle');
+    if (!r || !r.ok) return;
+    const d = await r.json();
+    controleActif = d.actif === true;
+    toleranceCourante = Number(d.tolerance || 0);
+
+    document.getElementById('carte-controle').style.display = peutDeroger ? '' : 'none';
+    document.getElementById('case-controle').checked = controleActif;
+    document.getElementById('champ-tolerance').value = toleranceCourante;
+
+    const etat = document.getElementById('etat-controle');
+    etat.className = 'etat-controle ' + (controleActif ? 'on' : 'off');
+    etat.textContent = controleActif
+      ? `${d.bloques} bulletin(s) bloqué(s) · ${d.derogations} dérogation(s)`
+      : 'Inactif — tous les bulletins sont délivrables';
+  }
+
+  async function enregistrerControle() {
+    const bouton = document.getElementById('bouton-enregistrer-controle');
+    const actif = document.getElementById('case-controle').checked;
+
+    if (actif && !confirm(
+      "Activer le blocage des bulletins ?\n\n"
+      + "Les élèves dont les frais ne sont pas réglés ne pourront plus recevoir leur bulletin, "
+      + "ni le consulter en ligne. Vous pourrez accorder des dérogations au cas par cas."
+    )) { document.getElementById('case-controle').checked = false; return; }
+
+    bouton.disabled = true; bouton.textContent = 'Enregistrement…';
+    const r = await appelApi('/frais/controle', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ actif, tolerance: Number(document.getElementById('champ-tolerance').value) })
+    });
+    bouton.disabled = false; bouton.textContent = 'Enregistrer';
+    if (!r) return;
+    const rep = await r.json().catch(() => ({}));
+    if (!r.ok) { afficherMessage(rep.message || 'Enregistrement impossible.', 'erreur'); return; }
+    afficherMessage(rep.message, 'succes');
+    await chargerControle();
+    if (document.getElementById('select-classe').value) chargerEleves();
+  }
+
+  async function basculerDerogation(eleveId, actuelle, nom) {
+    let motif = null;
+    if (!actuelle) {
+      motif = prompt(`Motif de la dérogation pour ${nom} ?\n\nIl sera conservé à votre nom.`);
+      if (!motif || !motif.trim()) return;
+    } else if (!confirm(`Retirer la dérogation de ${nom} ? Son bulletin redeviendra bloqué.`)) {
+      return;
+    }
+
+    const r = await appelApi('/frais/derogation', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ eleve_id: eleveId, accorder: !actuelle, motif })
+    });
+    if (!r) return;
+    const rep = await r.json().catch(() => ({}));
+    if (!r.ok) { afficherMessage(rep.message || 'Action impossible.', 'erreur'); return; }
+    afficherMessage(rep.message, 'succes');
+    await chargerControle();
+    chargerEleves();
+  }
+
+  document.getElementById('bouton-enregistrer-controle').addEventListener('click', enregistrerControle);
+  chargerControle();
+
   async function chargerEleves() {
     const classeId = document.getElementById('select-classe').value;
     const anneeScolaireId = document.getElementById('select-annee').value;
@@ -345,24 +466,44 @@
 
     const r = await appelApi(`/frais/eleves?classeId=${classeId}&anneeScolaireId=${anneeScolaireId}`);
     const corps = document.getElementById('corps-tableau');
-    if (!r || !r.ok) { corps.innerHTML = '<tr><td colspan="6" class="etat-vide-tableau">Erreur de chargement.</td></tr>'; return; }
+    if (!r || !r.ok) { corps.innerHTML = '<tr><td colspan="7" class="etat-vide-tableau">Erreur de chargement.</td></tr>'; return; }
 
     const eleves = await r.json();
-    if (eleves.length === 0) { corps.innerHTML = '<tr><td colspan="6" class="etat-vide-tableau">Aucun élève actif dans cette classe.</td></tr>'; return; }
+    if (eleves.length === 0) { corps.innerHTML = '<tr><td colspan="7" class="etat-vide-tableau">Aucun élève actif dans cette classe.</td></tr>'; return; }
 
-    corps.innerHTML = eleves.map(e => `
-      <tr>
+    corps.innerHTML = eleves.map(e => {
+      // L'état du bulletin se calcule ici avec la même règle que le serveur :
+      // solde couvert compte tenu de la tolérance, ou dérogation accordée.
+      const seuil = Number(e.montant_attendu) * (1 - toleranceCourante / 100);
+      const aJour = Number(e.montant_attendu) === 0 || Number(e.montant_paye) >= seuil;
+      let etat = '<span class="etat-bulletin eb-delivrable">délivrable</span>';
+      if (controleActif && !aJour) {
+        etat = e.derogation_financiere
+          ? '<span class="etat-bulletin eb-derogation">dérogation</span>'
+          : '<span class="etat-bulletin eb-bloque">bloqué</span>';
+      }
+
+      return `<tr>
         <td class="matricule-cell">${e.matricule}</td>
         <td>${e.nom} ${e.postnom || ''} ${e.prenom || ''}</td>
         <td>${Number(e.montant_attendu).toLocaleString('fr-FR')}</td>
         <td>${Number(e.montant_paye).toLocaleString('fr-FR')}</td>
         <td><span class="badge-solde ${e.solde <= 0 ? 'solde-nul' : 'solde-restant'}">${Number(e.solde).toLocaleString('fr-FR')}</span></td>
-        <td><button class="lien-action" data-id="${e.id}" data-nom="${e.nom} ${e.postnom || ''}">Paiements</button></td>
-      </tr>
-    `).join('');
+        <td>${etat}</td>
+        <td>
+          <button class="lien-action" data-id="${e.id}" data-nom="${e.nom} ${e.postnom || ''}">Paiements</button>
+          ${(controleActif && !aJour && peutDeroger)
+            ? `<button class="lien-action" data-deroger="${e.id}" data-actuel="${e.derogation_financiere ? '1' : '0'}" data-nom="${e.nom} ${e.postnom || ''}">${e.derogation_financiere ? 'Retirer la dérog.' : 'Déroger'}</button>`
+            : ''}
+        </td>
+      </tr>`;
+    }).join('');
 
     corps.querySelectorAll('button[data-id]').forEach(bouton => {
       bouton.addEventListener('click', () => ouvrirPaiements(bouton.dataset.id, bouton.dataset.nom));
+    });
+    corps.querySelectorAll('button[data-deroger]').forEach(bouton => {
+      bouton.addEventListener('click', () => basculerDerogation(bouton.dataset.deroger, bouton.dataset.actuel === '1', bouton.dataset.nom));
     });
   }
 
@@ -388,9 +529,29 @@
       : paiements.map(p => `
           <li>
             <span>${new Date(p.date_paiement).toLocaleDateString('fr-FR')} — ${p.methode || '—'}${p.notes ? ' (' + p.notes + ')' : ''}</span>
-            <strong>${Number(p.montant).toLocaleString('fr-FR')}</strong>
+            <span style="display:flex; align-items:center; gap:12px;">
+              <strong>${Number(p.montant).toLocaleString('fr-FR')}</strong>
+              <button class="lien-action" data-recu="${p.id}">Reçu</button>
+            </span>
           </li>
         `).join('');
+
+    liste.querySelectorAll('[data-recu]').forEach(b => {
+      b.addEventListener('click', () => imprimerRecu(b.dataset.recu));
+    });
+  }
+
+  /**
+   * Ouvre le reçu dans un nouvel onglet. On passe par appelApi plutôt que par
+   * un lien direct : sans le jeton, le serveur renverrait une page vide.
+   */
+  async function imprimerRecu(paiementId) {
+    const r = await appelApi(`/frais/paiements/${paiementId}/recu`);
+    if (!r || !r.ok) { afficherMessage('Impression du reçu impossible.', 'erreur'); return; }
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
   }
 
   document.getElementById('bouton-fermer-paiement').addEventListener('click', () => {
@@ -484,6 +645,8 @@
       'espace-titulaire.html': ['titulaire'],
       'cours-classe-titulaire.html': ['titulaire'],
       'eleves.html': ['directeur', 'prefet', 'secretaire'],
+      'inscriptions.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire'],
+      'orientation.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
       'frais-scolaires.html': ['directeur', 'comptable', 'secretaire'],
       'utilisateurs.html': ['directeur', 'prefet', 'secretaire'],
       'classes.html': ['directeur', 'prefet', 'secretaire'],

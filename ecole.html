@@ -486,6 +486,23 @@
       return;
     }
 
+    // Bulletin retenu pour solde impayé : on l'explique clairement plutôt
+    // que d'afficher un tableau vide qui laisserait croire à une panne.
+    if (donnees.bloque) {
+      document.getElementById('res-nom').textContent = donnees.eleve.nom_complet;
+      document.getElementById('res-classe').textContent = donnees.eleve.classe || '';
+      document.getElementById('res-matricule').textContent = donnees.eleve.matricule;
+      document.getElementById('res-corps').innerHTML = `
+        <tr><td colspan="5" style="padding:26px; text-align:center; line-height:1.7;">
+          <strong>Les résultats ne sont pas encore consultables.</strong><br/>
+          Un solde de <strong>${echapper(new Intl.NumberFormat('fr-FR').format(donnees.reste_du))}</strong> reste dû sur les frais scolaires.<br/>
+          <span style="color:var(--texte-doux); font-size:0.9rem;">Rapprochez-vous du secrétariat de l'établissement.</span>
+        </td></tr>`;
+      zone.classList.add('visible');
+      zone.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      return;
+    }
+
     document.getElementById('res-nom').textContent = donnees.eleve.nom_complet;
     document.getElementById('res-classe').textContent = donnees.eleve.classe || 'Classe non renseignée';
     document.getElementById('res-matricule').textContent = donnees.eleve.matricule;

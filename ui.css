@@ -639,32 +639,40 @@ html[data-theme="nuit"] .tuile .jeton { background: rgba(95, 176, 140, 0.16); }
   color: var(--texte-att); font-weight: 600; margin-bottom: 9px;
 }
 .tiroir-grille {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(258px, 1fr)); gap: 14px;
 }
 .tiroir-groupe > .titre { font-size: 0.76rem; margin-bottom: 12px; }
 
 .tiroir-ligne {
-  display: flex; align-items: center; gap: 10px;
-  border: 1px solid var(--bordure); border-radius: var(--r-bouton);
-  padding: 10px 12px; background: var(--craie);
-  transition: border-color var(--transition-base);
+  display: flex; align-items: center; gap: 13px;
+  border: 1px solid var(--bordure); border-radius: var(--r-carte);
+  padding: 16px 16px; background: var(--craie-2);
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
 }
+.tiroir-ligne:hover { box-shadow: var(--ombre-carte); }
 .tiroir-ligne:hover { border-color: var(--ocre); }
 .tiroir-ligne .lien {
   flex: 1; text-decoration: none; color: var(--texte-sombre);
-  font-size: 0.89rem; font-weight: 500;
-  display: flex; align-items: center; gap: 9px; min-width: 0;
+  font-size: 0.95rem; font-weight: 500;
+  display: flex; align-items: center; gap: 12px; min-width: 0;
 }
-.tiroir-ligne .lien svg { width: 17px; height: 17px; flex: none; stroke: var(--ocre); fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+/* Le pictogramme reçoit son propre jeton coloré, comme sur les tuiles du
+   lanceur : les deux surfaces appartiennent au même produit. */
+.tiroir-ligne .lien .jeton-menu {
+  width: 36px; height: 36px; border-radius: var(--r-bouton); flex: none;
+  background: rgba(201, 138, 62, 0.13);
+  display: flex; align-items: center; justify-content: center;
+}
+.tiroir-ligne .lien svg { width: 19px; height: 19px; flex: none; stroke: var(--ocre); fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .tiroir-ligne .lien .texte { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* Épingle : c'est elle qui fait entrer ou sortir un écran du rail. */
 .epingle {
   background: none; border: none; cursor: pointer;
-  padding: 4px; border-radius: var(--r-petit);
+  padding: 7px; border-radius: var(--r-petit);
   color: var(--texte-att); flex: none; line-height: 0;
 }
-.epingle svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.epingle svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .epingle:hover { background: rgba(201, 138, 62, 0.14); color: var(--ocre-dark); }
 .epingle.active { color: var(--ocre); }
 .epingle.active svg { fill: currentColor; fill-opacity: 0.18; }
@@ -777,6 +785,7 @@ html[data-theme="nuit"] .tuile .jeton { background: rgba(95, 176, 140, 0.16); }
 .badge-info    { background: rgba(76, 95, 213, 0.12); color: #4C5FD5; }
 .badge.sans-point::before { display: none; }
 
+html[data-theme="pure"] .tiroir-ligne .lien .jeton-menu { border-radius: 3px; }
 html[data-theme="pure"] .badge { border-radius: 3px; }
 html[data-theme="pure"] .carte-stat .pictogramme { border-radius: 3px; }
 html[data-theme="nuit"] .cellule-personne .sous-nom { color: var(--texte-att); }

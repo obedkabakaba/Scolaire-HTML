@@ -670,7 +670,8 @@
       var actif = epingles.indexOf(e.page) !== -1;
       return '<div class="tiroir-ligne">'
         + '<a class="lien" href="' + e.page + '">'
-        + '<svg viewBox="0 0 24 24" aria-hidden="true">' + (ICONES[e.page] || '') + '</svg>'
+        + '<span class="jeton-menu"><svg viewBox="0 0 24 24" aria-hidden="true">'
+        + (ICONES[e.page] || '') + '</svg></span>'
         + '<span class="texte">' + e.libelle + '</span></a>'
         + '<button type="button" class="epingle' + (actif ? ' active' : '') + '"'
         + ' data-page="' + e.page + '" title="' + (actif ? 'Retirer du menu' : 'Ajouter au menu') + '"'

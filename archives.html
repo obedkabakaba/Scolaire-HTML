@@ -143,6 +143,8 @@
         <li><a class="nav-item" href="espace-titulaire.html">Ma classe</a></li>
         <li><a class="nav-item" href="cours-classe-titulaire.html">Cours de la classe</a></li>
         <li><a class="nav-item" href="eleves.html">Élèves</a></li>
+        <li><a class="nav-item" href="inscriptions.html">Inscriptions</a></li>
+        <li><a class="nav-item" href="orientation.html">Orientation</a></li>
         <li><a class="nav-item" href="frais-scolaires.html">Frais scolaires</a></li>
         <li><a class="nav-item" href="utilisateurs.html">Utilisateurs</a></li>
         <li><a class="nav-item" href="classes.html">Classes</a></li>
@@ -427,6 +429,19 @@
     boutonExport.textContent = "Exporter toute l'année";
     boutonExport.onclick = () => telecharger(`/archives/export/annee/${contexte.annee}`);
 
+    // L'anonymisation des candidats non admis relève de la direction seule.
+    if (peutAnonymiser) {
+      const conteneur = document.getElementById('barre-outils');
+      if (!document.getElementById('bouton-anonymiser')) {
+        const bouton = document.createElement('button');
+        bouton.className = 'bouton bouton-secondaire';
+        bouton.id = 'bouton-anonymiser';
+        bouton.textContent = 'Anonymiser les candidats non admis';
+        conteneur.appendChild(bouton);
+      }
+      document.getElementById('bouton-anonymiser').onclick = anonymiserCandidats;
+    }
+
     if (donnees.classes.length === 0) {
       zone.innerHTML = '<div class="vide-doux">Aucune classe enregistrée pour cette année.</div>';
       return;
@@ -619,6 +634,36 @@
         </div>
       </div>
 
+      ${d.origine ? `
+      <div class="fiche">
+        <h3>Origine — admission par concours</h3>
+        <div class="grille-identite">
+          <div class="champ-lecture"><div class="etiquette">Session</div><div class="valeur">${echapper(d.origine.session)}</div></div>
+          <div class="champ-lecture"><div class="etiquette">Numéro de candidat</div><div class="valeur" style="font-family:var(--police-mono);">${echapper(d.origine.numero_candidat)}</div></div>
+          <div class="champ-lecture"><div class="etiquette">Total au test</div><div class="valeur">${d.origine.total ?? '—'}</div></div>
+          <div class="champ-lecture"><div class="etiquette">Rang</div><div class="valeur">${d.origine.rang ?? '—'} / ${d.origine.places} place(s)</div></div>
+        </div>
+        ${d.origine.recommande ? `<p style="margin:14px 0 0 0; font-size:0.87rem; color:var(--ocre-dark);">
+          Admis par recommandation${d.origine.motif_recommandation ? ' — ' + echapper(d.origine.motif_recommandation) : ''}.
+        </p>` : ''}
+      </div>` : ''}
+
+      ${d.orientation ? `
+      <div class="fiche">
+        <h3>Orientation</h3>
+        <div class="grille-identite">
+          <div class="champ-lecture"><div class="etiquette">Premier vœu</div><div class="valeur">${echapper(d.orientation.voeu || '—')}</div></div>
+          <div class="champ-lecture"><div class="etiquette">Repli</div><div class="valeur">${echapper(d.orientation.repli || '—')}</div></div>
+          <div class="champ-lecture"><div class="etiquette">Option obtenue</div><div class="valeur">${echapper(d.orientation.obtenue || '—')}</div></div>
+          <div class="champ-lecture"><div class="etiquette">Classe d'accueil</div><div class="valeur">${echapper(d.orientation.classe_affectee || '—')}</div></div>
+        </div>
+        <p style="margin:14px 0 0 0; font-size:0.86rem; color:var(--texte-att);">
+          ${d.orientation.attribue_au_merite
+            ? 'Attribution au mérite, selon la moyenne annuelle.'
+            : `Affectation décidée à la main${d.orientation.decide_par_nom ? ' par ' + echapper(d.orientation.decide_par_nom) : ''}${d.orientation.motif ? ' — ' + echapper(d.orientation.motif) : ''}.`}
+        </p>
+      </div>` : ''}
+
       ${d.assiduite ? `
       <div class="fiche">
         <h3>Assiduité</h3>
@@ -680,12 +725,14 @@
   // ============================================================
   let peutChercher = false;
   let estSuperAdmin = false;
+  let peutAnonymiser = false;
   (function activerRechercheIA() {
     let u = null;
     try { u = JSON.parse(obtenirDuStockage('ardoise_user') || 'null'); } catch (e) {}
     const rolesIA = (u && u.roles) || [];
     peutChercher = rolesIA.some(r => ['directeur', 'prefet', 'secretaire', 'super_admin'].includes(r));
     estSuperAdmin = rolesIA.includes('super_admin');
+    peutAnonymiser = rolesIA.some(r => ['directeur', 'prefet', 'super_admin'].includes(r));
     if (!peutChercher) return;
 
     async function chercher(question) {
@@ -756,6 +803,32 @@
     });
   })();
 
+  /**
+   * Efface l'identité des candidats jamais devenus élèves. Les statistiques
+   * de la session sont préservées : on retire les noms, pas les lignes.
+   */
+  async function anonymiserCandidats() {
+    if (!confirm(
+      "Anonymiser les candidats non admis de cette année ?\n\n"
+      + "Leurs noms et coordonnées seront définitivement effacés. Les élèves admis ne sont pas concernés, "
+      + "et le nombre de candidats du concours reste intact.\n\nCette action est irréversible."
+    )) return;
+
+    const bouton = document.getElementById('bouton-anonymiser');
+    bouton.disabled = true; bouton.textContent = 'Anonymisation…';
+
+    const r = await appelApi('/archives/purger-candidats', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ anneeId: contexte.annee })
+    });
+
+    bouton.disabled = false; bouton.textContent = 'Anonymiser les candidats non admis';
+    if (!r) return;
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { afficherMessage(d.message || 'Anonymisation impossible.', 'erreur'); return; }
+    afficherMessage(d.message, 'succes');
+  }
+
   window.addEventListener('popstate', () => { lireAdresse(); dessiner(); });
 
   lireAdresse();
@@ -770,6 +843,8 @@
       'espace-titulaire.html': ['titulaire'],
       'cours-classe-titulaire.html': ['titulaire'],
       'eleves.html': ['directeur', 'prefet', 'secretaire'],
+      'inscriptions.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire'],
+      'orientation.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
       'frais-scolaires.html': ['directeur', 'comptable', 'secretaire'],
       'utilisateurs.html': ['directeur', 'prefet', 'secretaire'],
       'classes.html': ['directeur', 'prefet', 'secretaire'],

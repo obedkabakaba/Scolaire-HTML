@@ -465,17 +465,18 @@ html[data-nav-compact="oui"]:not([data-nav-position]) .barre-laterale .marque {
   overflow: hidden;
   margin-bottom: 26px;
   text-align: center;
-  transition: font-size 0.22s cubic-bezier(0.22, 0.61, 0.36, 1);
+  /* La taille anime le texte ET le point, ce dernier étant exprimé en em. */
+  transition: font-size 0.22s cubic-bezier(0.22, 0.61, 0.36, 1),
+              margin-bottom 0.22s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 html[data-nav-compact="oui"] .barre-laterale:hover .marque,
 html[data-nav-compact="oui"] .barre-laterale:focus-within .marque {
   font-size: 1.5rem;
   text-align: left;
 }
-/* Le point du « i » suit la taille du texte plutôt que de rester figé. */
-html[data-nav-compact="oui"] .barre-laterale .point-i-marque { transform: scale(0.62); }
-html[data-nav-compact="oui"] .barre-laterale:hover .point-i-marque,
-html[data-nav-compact="oui"] .barre-laterale:focus-within .point-i-marque { transform: none; }
+/* Aucune règle sur le point du « i » : il est dimensionné en « em » et
+   centré par translateX(-50%). Il suit donc déjà la taille du texte, et
+   toute transform ajoutée ici écraserait ce centrage. */
 
 /* Déconnexion : réduite à une porte de sortie, sans texte. */
 html[data-nav-compact="oui"][data-nav-position="gauche"] .nav-deconnexion,

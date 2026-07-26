@@ -388,23 +388,23 @@
     <div class="banniere-abonnement" id="banniere-abonnement"></div>
 
     <div class="grille-stats">
-      <div class="carte-stat">
+      <div class="carte-stat" id="carte-eleves">
         <div class="valeur" id="stat-eleves">–</div>
         <div class="etiquette">Élèves actifs</div>
       </div>
-      <div class="carte-stat">
+      <div class="carte-stat" id="carte-profs">
         <div class="valeur" id="stat-profs">–</div>
         <div class="etiquette">Professeurs</div>
       </div>
-      <div class="carte-stat">
+      <div class="carte-stat" id="carte-classes">
         <div class="valeur" id="stat-classes">–</div>
         <div class="etiquette">Classes</div>
       </div>
-      <div class="carte-stat">
+      <div class="carte-stat" id="carte-reussite">
         <div class="valeur" id="stat-reussite">–</div>
         <div class="etiquette">Taux de réussite global</div>
       </div>
-      <div class="carte-stat" style="border: 1.5px solid var(--rouge);">
+      <div class="carte-stat" id="carte-impayes" style="border: 1.5px solid var(--rouge);">
         <div class="valeur" id="stat-impayes" style="color:var(--rouge);">–</div>
         <div class="etiquette">Élèves en retard de paiement</div>
       </div>
@@ -660,6 +660,17 @@
       // sans retarder l'affichage du tableau de bord.
       chargerAppelDuJour();
       marquerLesTuiles(donnees);
+
+      // Pictogrammes colorés : on reconnaît la carte avant d'en lire le libellé.
+      if (window.ArdoiseUI && ArdoiseUI.decorerCartes) {
+        ArdoiseUI.decorerCartes([
+          ['#carte-eleves', 'eleves', 'bleu'],
+          ['#carte-profs', 'enseignants', 'violet'],
+          ['#carte-classes', 'classes', 'ocre'],
+          ['#carte-reussite', 'reussite', 'vert'],
+          ['#carte-impayes', 'argent', 'rouge']
+        ]);
+      }
 
       const { user } = obtenirTokens();
       if (user) {

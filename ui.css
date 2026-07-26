@@ -504,6 +504,12 @@ html[data-theme="kivu"] .mb-piste { height: 12px; }
   font-family: var(--police-titre); font-weight: 600;
   font-size: 1.2rem; margin: 0;
 }
+.lanceur-tout {
+  background: none; border: 1px solid var(--bordure); border-radius: var(--r-bouton);
+  padding: 8px 15px; font-family: var(--police-corps); font-size: 0.86rem;
+  color: var(--texte-sombre); cursor: pointer;
+}
+.lanceur-tout:hover { border-color: var(--ocre); }
 .lanceur-recherche {
   border: 1px solid var(--bordure); border-radius: var(--r-bouton);
   padding: 9px 14px; font-family: var(--police-corps); font-size: 0.9rem;
@@ -563,4 +569,212 @@ html[data-theme="nuit"] .tuile .jeton { background: rgba(95, 176, 140, 0.16); }
   .lanceur-grille { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
   .tuile { padding: 13px; }
   .tuile .desc { display: none; }
+}
+
+/* ==========================================================================
+   14. Rail réduit et tiroir « Tous les menus »
+   Vingt-huit entrées dans une barre latérale, personne ne s'y retrouve. Le
+   rail n'affiche que les écrans épinglés par l'utilisateur ; le reste vit
+   dans un tiroir, groupé par domaine et cherchable.
+   ========================================================================== */
+.nav-item.nav-tiroir {
+  width: 100%; text-align: left; cursor: pointer;
+  background: none; border: none; font-family: inherit;
+  display: flex; align-items: center; gap: 11px;
+}
+.nav-item.nav-tiroir .chevron { margin-left: auto; opacity: 0.55; font-size: 0.8rem; }
+
+.voile-tiroir {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(16, 24, 40, 0.42);
+  display: none; align-items: flex-start; justify-content: center;
+  padding: 6vh 20px 20px 20px;
+  backdrop-filter: blur(2px);
+}
+.voile-tiroir.ouvert { display: flex; }
+
+.tiroir {
+  background: var(--craie-2);
+  border-radius: var(--r-carte);
+  width: 100%; max-width: 760px; max-height: 84vh;
+  overflow-y: auto; padding: 24px;
+  box-shadow: 0 24px 64px rgba(16, 24, 40, 0.28);
+}
+.tiroir-entete {
+  display: flex; align-items: center; gap: 14px;
+  flex-wrap: wrap; margin-bottom: 18px;
+}
+.tiroir-entete h2 {
+  font-family: var(--police-titre); font-weight: 600;
+  font-size: 1.2rem; margin: 0;
+}
+.tiroir-recherche {
+  flex: 1; min-width: 200px;
+  border: 1px solid var(--bordure); border-radius: var(--r-bouton);
+  padding: 9px 13px; font-family: var(--police-corps); font-size: 0.9rem;
+  background: var(--craie); color: var(--texte-sombre);
+}
+.tiroir-recherche:focus { outline: 2px solid var(--ocre); outline-offset: 1px; }
+.tiroir-fermer {
+  background: none; border: 1px solid var(--bordure);
+  border-radius: var(--r-bouton); padding: 8px 13px;
+  font-family: var(--police-corps); font-size: 0.85rem;
+  color: var(--texte-att); cursor: pointer;
+}
+.tiroir-aide { font-size: 0.83rem; color: var(--texte-att); margin: 0 0 18px 0; }
+
+.tiroir-groupe { margin-bottom: 20px; }
+.tiroir-groupe > .titre {
+  font-size: 0.71rem; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--texte-att); font-weight: 600; margin-bottom: 9px;
+}
+.tiroir-grille {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px;
+}
+
+.tiroir-ligne {
+  display: flex; align-items: center; gap: 10px;
+  border: 1px solid var(--bordure); border-radius: var(--r-bouton);
+  padding: 10px 12px; background: var(--craie);
+  transition: border-color var(--transition-base);
+}
+.tiroir-ligne:hover { border-color: var(--ocre); }
+.tiroir-ligne .lien {
+  flex: 1; text-decoration: none; color: var(--texte-sombre);
+  font-size: 0.89rem; font-weight: 500;
+  display: flex; align-items: center; gap: 9px; min-width: 0;
+}
+.tiroir-ligne .lien svg { width: 17px; height: 17px; flex: none; stroke: var(--ocre); fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.tiroir-ligne .lien .texte { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Épingle : c'est elle qui fait entrer ou sortir un écran du rail. */
+.epingle {
+  background: none; border: none; cursor: pointer;
+  padding: 4px; border-radius: var(--r-petit);
+  color: var(--texte-att); flex: none; line-height: 0;
+}
+.epingle svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.epingle:hover { background: rgba(201, 138, 62, 0.14); color: var(--ocre-dark); }
+.epingle.active { color: var(--ocre); }
+.epingle.active svg { fill: currentColor; fill-opacity: 0.18; }
+
+.tiroir-pied {
+  border-top: 1px solid var(--bordure); padding-top: 14px; margin-top: 6px;
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  font-size: 0.83rem; color: var(--texte-att);
+}
+.tiroir-pied .lien-reinit {
+  background: none; border: none; color: var(--encre);
+  cursor: pointer; font-family: var(--police-corps); font-size: 0.84rem;
+  margin-left: auto;
+}
+
+@media (max-width: 640px) {
+  .tiroir { padding: 18px; max-height: 90vh; }
+  .voile-tiroir { padding: 3vh 12px 12px 12px; }
+  .tiroir-grille { grid-template-columns: 1fr; }
+}
+
+/* ==========================================================================
+   15. Composants de densité — Studio
+   Trois éléments qui séparent une interface correcte d'un produit : le
+   pictogramme coloré sur les cartes de chiffres, l'avatar dans les listes,
+   et le badge d'état dans les tableaux.
+   ========================================================================== */
+
+/* ---------- Carte de chiffre avec pictogramme ---------- */
+.carte-stat { position: relative; }
+.carte-stat .pictogramme {
+  position: absolute; top: 18px; right: 18px;
+  width: 42px; height: 42px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+}
+.carte-stat .pictogramme svg {
+  width: 21px; height: 21px; fill: none;
+  stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+}
+/* Chaque famille de chiffre a sa teinte : on reconnaît la carte avant de
+   lire son libellé. Les couleurs restent tirées du thème actif. */
+.pictogramme.pict-bleu    { background: rgba(76, 95, 213, 0.12); }
+.pictogramme.pict-bleu svg    { stroke: #4C5FD5; }
+.pictogramme.pict-vert    { background: rgba(18, 183, 106, 0.12); }
+.pictogramme.pict-vert svg    { stroke: var(--vert-ok); }
+.pictogramme.pict-ocre    { background: rgba(201, 138, 62, 0.14); }
+.pictogramme.pict-ocre svg    { stroke: var(--ocre); }
+.pictogramme.pict-rouge   { background: rgba(240, 68, 56, 0.11); }
+.pictogramme.pict-rouge svg   { stroke: var(--rouge); }
+.pictogramme.pict-violet  { background: rgba(126, 86, 212, 0.12); }
+.pictogramme.pict-violet svg  { stroke: #7E56D4; }
+
+.carte-stat .valeur { padding-right: 52px; }
+.carte-stat .variation {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 0.78rem; font-weight: 600; margin-top: 7px;
+}
+.carte-stat .variation.hausse { color: var(--vert-ok); }
+.carte-stat .variation.baisse { color: var(--rouge); }
+
+/* ---------- Avatars ---------- */
+.avatar {
+  width: 34px; height: 34px; border-radius: 50%;
+  object-fit: cover; flex: none;
+  background: var(--bordure);
+}
+.avatar-initiales {
+  width: 34px; height: 34px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.78rem; font-weight: 600; color: #fff;
+  flex: none; letter-spacing: 0.02em;
+}
+.cellule-personne { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.cellule-personne .identite { min-width: 0; }
+.cellule-personne .nom-personne {
+  font-weight: 500; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap;
+}
+.cellule-personne .sous-nom { font-size: 0.77rem; color: var(--texte-att); }
+
+/* Pile d'avatars : montre une équipe sans occuper une ligne par personne. */
+.pile-avatars { display: flex; }
+.pile-avatars .avatar,
+.pile-avatars .avatar-initiales {
+  width: 28px; height: 28px; margin-left: -9px;
+  border: 2px solid var(--craie-2); font-size: 0.68rem;
+}
+.pile-avatars > :first-child { margin-left: 0; }
+.pile-avatars .reste {
+  width: 28px; height: 28px; border-radius: 50%; margin-left: -9px;
+  border: 2px solid var(--craie-2); background: var(--bordure);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.68rem; font-weight: 600; color: var(--texte-att);
+}
+
+/* ---------- Badges d'état ---------- */
+.badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 0.74rem; font-weight: 600;
+  padding: 3px 10px; border-radius: 999px; white-space: nowrap;
+}
+.badge::before {
+  content: ''; width: 6px; height: 6px;
+  border-radius: 50%; background: currentColor; flex: none;
+}
+.badge-succes  { background: rgba(18, 183, 106, 0.12); color: var(--vert-ok); }
+.badge-alerte  { background: rgba(201, 138, 62, 0.15); color: var(--ocre-dark); }
+.badge-danger  { background: rgba(240, 68, 56, 0.11); color: var(--rouge); }
+.badge-neutre  { background: rgba(102, 112, 133, 0.12); color: var(--texte-att); }
+.badge-info    { background: rgba(76, 95, 213, 0.12); color: #4C5FD5; }
+.badge.sans-point::before { display: none; }
+
+html[data-theme="pure"] .badge { border-radius: 3px; }
+html[data-theme="pure"] .carte-stat .pictogramme { border-radius: 3px; }
+html[data-theme="nuit"] .cellule-personne .sous-nom { color: var(--texte-att); }
+html[data-theme="nuit"] .pile-avatars .avatar,
+html[data-theme="nuit"] .pile-avatars .avatar-initiales,
+html[data-theme="nuit"] .pile-avatars .reste { border-color: var(--craie-2); }
+
+@media (max-width: 640px) {
+  .carte-stat .pictogramme { width: 34px; height: 34px; top: 14px; right: 14px; }
+  .carte-stat .valeur { padding-right: 42px; }
+  .avatar, .avatar-initiales { width: 30px; height: 30px; }
 }

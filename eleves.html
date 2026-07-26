@@ -429,10 +429,16 @@
     corps.innerHTML = eleves.map((e) => `
       <tr data-id="${e.id}">
         <td class="matricule-cell">${e.matricule}</td>
-        <td>${e.nom} ${e.postnom || ''} ${e.prenom || ''}</td>
+        <td>${window.ArdoiseUI && ArdoiseUI.cellulePersonne
+              ? ArdoiseUI.cellulePersonne(
+                  [e.nom, e.postnom, e.prenom].filter(Boolean).join(' '),
+                  e.classe_nom || null, e.photo_url)
+              : `${e.nom} ${e.postnom || ''} ${e.prenom || ''}`}</td>
         <td>${e.sexe || '—'}</td>
         <td>${e.classe_nom || '—'}</td>
-        <td><span class="badge-statut ${e.statut === 'actif' ? 'actif' : 'autre'}">${LIBELLES_STATUT[e.statut] || e.statut}</span></td>
+        <td>${window.ArdoiseUI && ArdoiseUI.badge
+              ? ArdoiseUI.badge(LIBELLES_STATUT[e.statut] || e.statut, e.statut === 'actif' ? 'succes' : 'neutre')
+              : `<span class="badge-statut ${e.statut === 'actif' ? 'actif' : 'autre'}">${LIBELLES_STATUT[e.statut] || e.statut}</span>`}</td>
         <td>
           <button class="lien-action" data-action="modifier">Modifier</button>
           <button class="lien-action" data-action="historique">Historique</button>

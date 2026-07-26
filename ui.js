@@ -320,8 +320,13 @@
     });
   }
 
-  window.ArdoiseUI = { anneau: anneau, anneauCompact: anneauCompact, barres: barres, marquerTuile: marquerTuile,
-    ouvrirTousLesMenus: function () { if (window.ArdoiseRail) window.ArdoiseRail.ouvrir(); } };
+  window.ArdoiseUI = {
+    anneau: anneau, anneauCompact: anneauCompact, barres: barres,
+    marquerTuile: marquerTuile,
+    ouvrirTousLesMenus: function () { if (window.ArdoiseRail) window.ArdoiseRail.ouvrir(); },
+    avatar: avatar, cellulePersonne: cellulePersonne, pileAvatars: pileAvatars,
+    badge: badge, decorerCarte: decorerCarte, decorerCartes: decorerCartes
+  };
 
 
   /* ------------------------------------------------------------------
@@ -772,6 +777,117 @@
       li.style.display = restants > 0 ? '' : 'none';
       bouton.querySelector('.chevron').textContent = restants;
     }
+  }
+
+
+  /* ------------------------------------------------------------------
+     8. Composants de densité
+     Fonctions publiques appelées par les pages. Elles produisent du HTML
+     plutôt que des nœuds : c'est ce dont les pages ont besoin, puisqu'elles
+     assemblent leurs tableaux par chaînes.
+     ------------------------------------------------------------------ */
+
+  // Teintes d'avatar : dérivées du nom, donc STABLES d'un écran à l'autre.
+  // Une couleur tirée au hasard changerait à chaque rechargement et
+  // empêcherait de reconnaître quelqu'un du coin de l'œil.
+  var TEINTES_AVATAR = ['#4C5FD5', '#12B76A', '#C98A3E', '#7E56D4', '#0E9384', '#B23A2E', '#3C5A62'];
+
+  function teintePour(nom) {
+    var somme = 0;
+    var texte = String(nom || '?');
+    for (var i = 0; i < texte.length; i++) somme = (somme + texte.charCodeAt(i)) % 9973;
+    return TEINTES_AVATAR[somme % TEINTES_AVATAR.length];
+  }
+
+  function initialesDe(nom) {
+    return String(nom || '?').trim().split(/\s+/).slice(0, 2)
+      .map(function (m) { return (m[0] || '').toUpperCase(); }).join('') || '?';
+  }
+
+  function proteger(t) {
+    var d = document.createElement('div');
+    d.textContent = t == null ? '' : String(t);
+    return d.innerHTML;
+  }
+
+  function urlImage(v) {
+    return (typeof v === 'string' && /^https?:\/\//i.test(v.trim())) ? v.trim() : null;
+  }
+
+  /**
+   * Avatar seul.
+   * @param {string} nom
+   * @param {string} [photoUrl] ignorée si ce n'est pas une adresse http(s)
+   */
+  function avatar(nom, photoUrl) {
+    var src = urlImage(photoUrl);
+    if (src) {
+      return '<img class="avatar" src="' + proteger(src) + '" alt="" loading="lazy" />';
+    }
+    return '<span class="avatar-initiales" style="background:' + teintePour(nom) + '" aria-hidden="true">'
+      + proteger(initialesDe(nom)) + '</span>';
+  }
+
+  /** Cellule de tableau : avatar, nom, et une ligne secondaire facultative. */
+  function cellulePersonne(nom, sousTitre, photoUrl) {
+    return '<div class="cellule-personne">' + avatar(nom, photoUrl)
+      + '<div class="identite"><div class="nom-personne">' + proteger(nom) + '</div>'
+      + (sousTitre ? '<div class="sous-nom">' + proteger(sousTitre) + '</div>' : '')
+      + '</div></div>';
+  }
+
+  /** Pile compacte. @param {Array} personnes  [{ nom, photo_url }] */
+  function pileAvatars(personnes, maximum) {
+    var max = maximum || 4;
+    var liste = (personnes || []).slice(0, max);
+    var reste = (personnes || []).length - liste.length;
+    return '<div class="pile-avatars">'
+      + liste.map(function (p) { return avatar(p.nom, p.photo_url); }).join('')
+      + (reste > 0 ? '<span class="reste">+' + reste + '</span>' : '')
+      + '</div>';
+  }
+
+  /**
+   * Badge d'état.
+   * @param {string} texte
+   * @param {'succes'|'alerte'|'danger'|'neutre'|'info'} ton
+   */
+  function badge(texte, ton) {
+    var tons = { succes: 1, alerte: 1, danger: 1, neutre: 1, info: 1 };
+    var retenu = tons[ton] ? ton : 'neutre';
+    return '<span class="badge badge-' + retenu + '">' + proteger(texte) + '</span>';
+  }
+
+  var PICTOGRAMMES = {
+    eleves: '<path d="M12 3 2 8l10 5 10-5z"/><path d="M6 10.5V16c0 1.7 2.7 3 6 3s6-1.3 6-3v-5.5"/>',
+    enseignants: '<circle cx="12" cy="8" r="3.2"/><path d="M5 20a7 7 0 0 1 14 0"/>',
+    classes: '<rect x="3" y="4" width="18" height="14" rx="2"/><path d="M7 20h10"/><path d="M7 9h7"/>',
+    argent: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7v10"/><path d="M14.5 9.5A2.5 2.5 0 0 0 12 8.5h-.5a2 2 0 0 0 0 4h1a2 2 0 0 1 0 4H12a2.5 2.5 0 0 1-2.5-1"/>',
+    presence: '<rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M8 2.5v4"/><path d="M16 2.5v4"/><path d="m9 13.5 2 2 4-4"/>',
+    alerte: '<path d="M12 3.5 2.5 20h19z"/><path d="M12 10v4"/><path d="M12 17h.01"/>',
+    reussite: '<path d="m4 13 5 5L20 7"/>',
+    temps: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/>'
+  };
+
+  /**
+   * Pose un pictogramme coloré sur une carte de chiffre.
+   * @param {string} selecteur  ex. « #carte-eleves » ou « .carte-stat:nth-child(1) »
+   * @param {string} type       clé de PICTOGRAMMES
+   * @param {string} teinte     bleu | vert | ocre | rouge | violet
+   */
+  function decorerCarte(selecteur, type, teinte) {
+    var carte = document.querySelector(selecteur);
+    if (!carte || !PICTOGRAMMES[type]) return;
+    if (carte.querySelector('.pictogramme')) return;
+    var span = document.createElement('span');
+    span.className = 'pictogramme pict-' + (teinte || 'bleu');
+    span.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + PICTOGRAMMES[type] + '</svg>';
+    carte.appendChild(span);
+  }
+
+  /** Décore plusieurs cartes d'un coup. @param {Array} plan [[sel, type, teinte]] */
+  function decorerCartes(plan) {
+    (plan || []).forEach(function (p) { decorerCarte(p[0], p[1], p[2]); });
   }
 
   /* ------------------------------------------------------------------

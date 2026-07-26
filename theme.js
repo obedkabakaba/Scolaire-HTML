@@ -59,8 +59,8 @@
 
 window.ARDOISE_THEMES = [
   {
-    cle: 'apple',
-    nom: 'Apple',
+    cle: 'studio',
+    nom: 'Studio',
     description: 'Rail sombre déplaçable, accent indigo, cartes sans bordure. Le plus proche des outils professionnels actuels.',
     apercu: { fond: '#F4F6FB', surface: '#FFFFFF', accent: '#4C5FD5', barre: '#1B2559', texte: '#101828' }
   },

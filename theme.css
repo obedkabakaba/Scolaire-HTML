@@ -256,13 +256,13 @@ html:not([data-theme="public"]) .contenu { animation: ardoise-apparition 0.3s ea
    corps rendrait la plateforme invisible si ce fichier se chargeait seul. */
 
 /* ==========================================================================
-   THÈME « APPLE »
+   THÈME « STUDIO »
    Inspiration : les produits SaaS de bureau contemporains — fond très clair,
    rail d'icônes sombre, accent indigo, cartes largement arrondies et ombres
    diffuses plutôt que des bordures.
    Particularité : le rail est déplaçable sur les quatre côtés de l'écran.
    ========================================================================== */
-html[data-theme="apple"] {
+html[data-theme="studio"] {
   --craie: #F4F6FB;
   --craie-2: #FFFFFF;
   --ardoise: #1B2559;
@@ -293,25 +293,25 @@ html[data-theme="apple"] {
   color-scheme: light;
 }
 
-html[data-theme="apple"] h1,
-html[data-theme="apple"] h2,
-html[data-theme="apple"] h3 { letter-spacing: -0.02em; font-weight: 600; }
+html[data-theme="studio"] h1,
+html[data-theme="studio"] h2,
+html[data-theme="studio"] h3 { letter-spacing: -0.02em; font-weight: 600; }
 
 /* Cartes sans bordure : la profondeur vient de l'ombre, pas du trait. */
-html[data-theme="apple"] .carte-stat,
-html[data-theme="apple"] .widget,
-html[data-theme="apple"] .carte-config,
-html[data-theme="apple"] .conteneur-tableau,
-html[data-theme="apple"] .tuile,
-html[data-theme="apple"] .fiche {
+html[data-theme="studio"] .carte-stat,
+html[data-theme="studio"] .widget,
+html[data-theme="studio"] .carte-config,
+html[data-theme="studio"] .conteneur-tableau,
+html[data-theme="studio"] .tuile,
+html[data-theme="studio"] .fiche {
   border-color: transparent;
   box-shadow: var(--ombre-carte);
 }
 
-html[data-theme="apple"] .barre-laterale { border: none; }
-html[data-theme="apple"] .nav-item { border-radius: 10px; }
-html[data-theme="apple"] .bouton-principal { box-shadow: 0 1px 2px rgba(16, 24, 40, 0.08); }
-html[data-theme="apple"] th {
+html[data-theme="studio"] .barre-laterale { border: none; }
+html[data-theme="studio"] .nav-item { border-radius: 10px; }
+html[data-theme="studio"] .bouton-principal { box-shadow: 0 1px 2px rgba(16, 24, 40, 0.08); }
+html[data-theme="studio"] th {
   background: #F9FAFB;
   font-size: 0.72rem;
   letter-spacing: 0.04em;

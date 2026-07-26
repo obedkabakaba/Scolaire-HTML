@@ -170,14 +170,23 @@ window.ARDOISE_THEME_DEFAUT = 'ardoise';
    */
   function synchroniserDepuisServeur() {
     if (typeof appelApi !== 'function') return;
+
+    // Un thème déjà mémorisé sur cet appareil FAIT FOI. Appliquer la valeur
+    // du serveur par-dessus provoquerait un changement d'apparence en cours
+    // de page, plusieurs centaines de millisecondes après l'affichage : c'est
+    // exactement le clignotement qu'on cherche à supprimer. Le serveur ne
+    // sert donc qu'à équiper un appareil qui n'a encore aucun réglage.
+    var dejaChoisiIci = false;
+    try {
+      dejaChoisiIci = !!(localStorage.getItem(CLE_STOCKAGE) || sessionStorage.getItem(CLE_STOCKAGE));
+    } catch (e) { /* navigation privée */ }
+    if (dejaChoisiIci) return;
+
     appelApi('/utilisateurs/moi')
       .then(function (r) { return r && r.ok ? r.json() : null; })
       .then(function (profil) {
         if (!profil || !profil.theme) return;
-        var distant = normaliser(profil.theme);
-        if (distant !== themeActuel()) {
-          appliquerTheme(distant, { synchroniserServeur: false });
-        }
+        appliquerTheme(normaliser(profil.theme), { synchroniserServeur: false });
       })
       .catch(function () { /* sans conséquence */ });
   }
@@ -191,6 +200,9 @@ window.ARDOISE_THEME_DEFAUT = 'ardoise';
 
   // Le thème est déjà posé par le script du <head> ; on se contente de vérifier
   // qu'il est valide, puis de récupérer le réglage du compte en arrière-plan.
+  // Le script du <head> ne valide que la forme de la valeur ; c'est ici, une
+  // fois la vraie liste connue, qu'un thème inconnu est ramené au défaut.
+  // Immédiat et sans appel réseau : aucun clignotement possible.
   appliquerTheme(themeActuel(), { synchroniserServeur: false });
   synchroniserDepuisServeur();
 })();

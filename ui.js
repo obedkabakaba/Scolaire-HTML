@@ -485,9 +485,10 @@
       return '<a class="tuile" href="' + page + '" data-page="' + page + '"'
         + ' data-recherche="' + (disponibles[page] + ' ' + (DESCRIPTIONS[page] || '')).toLowerCase() + '">'
         + '<span class="jeton"><svg viewBox="0 0 24 24" aria-hidden="true">' + icone + '</svg></span>'
+        + '<span class="textes">'
         + '<span class="nom">' + disponibles[page] + '</span>'
         + '<span class="desc">' + (DESCRIPTIONS[page] || '') + '</span>'
-        + '</a>';
+        + '</span></a>';
     }
 
     var html = '<div class="lanceur-entete">'
@@ -657,11 +658,8 @@
       voile.className = 'voile-tiroir';
       voile.innerHTML = '<div class="tiroir" role="dialog" aria-label="Tous les menus"></div>';
       document.body.appendChild(voile);
-      voile.addEventListener('click', function (e) {
-        if (e.target === voile) voile.classList.remove('ouvert');
-      });
       document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') voile.classList.remove('ouvert');
+        if (e.key === 'Escape' && voile.classList.contains('ouvert')) fermerTiroir();
       });
     }
 
@@ -684,7 +682,7 @@
     var html = '<div class="tiroir-entete">'
       + '<h2>Tous les menus</h2>'
       + '<input type="search" class="tiroir-recherche" id="tiroir-recherche" placeholder="Rechercher un écran…" aria-label="Rechercher un écran" />'
-      + '<button type="button" class="tiroir-fermer" id="tiroir-fermer">Fermer</button>'
+      + '<button type="button" class="tiroir-fermer" id="tiroir-fermer">← Retour</button>'
       + '</div>'
       + '<p class="tiroir-aide">Épinglez les écrans que vous utilisez le plus : ils apparaîtront directement dans le menu de gauche.</p>';
 
@@ -711,6 +709,7 @@
 
     boite.innerHTML = html;
     voile.classList.add('ouvert');
+    document.body.style.overflow = 'hidden';
 
     function majCompte() {
       var n = lireEpingles(disponibles).length;
@@ -734,12 +733,10 @@
       });
     });
 
-    document.getElementById('tiroir-fermer').addEventListener('click', function () {
-      voile.classList.remove('ouvert');
-    });
+    document.getElementById('tiroir-fermer').addEventListener('click', fermerTiroir);
     document.getElementById('tiroir-reinit').addEventListener('click', function () {
       try { localStorage.removeItem(CLE_EPINGLES); } catch (e) {}
-      voile.classList.remove('ouvert');
+      fermerTiroir();
       window.location.reload();
     });
 
@@ -757,6 +754,12 @@
       });
     });
     champ.focus();
+  }
+
+  function fermerTiroir() {
+    var voile = document.getElementById('voile-tiroir');
+    if (voile) voile.classList.remove('ouvert');
+    document.body.style.overflow = '';
   }
 
   /** Met le rail à jour sans recharger la page. */

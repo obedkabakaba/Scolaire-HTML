@@ -524,14 +524,19 @@ html[data-theme="kivu"] .mb-piste { height: 12px; }
   color: var(--texte-att); font-weight: 600; margin-bottom: 11px;
 }
 
+/* Cinq tuiles sur une seule ligne : une grille qui descend gaspillerait la
+   hauteur, qui est la ressource rare sur un écran de travail. */
 .lanceur-grille {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  display: flex;
   gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
 }
+.lanceur-grille > .tuile { flex: 1 1 0; min-width: 150px; }
 
 .tuile {
-  display: flex; flex-direction: column; gap: 4px;
+  display: flex; flex-direction: row; align-items: center; gap: 12px;
   background: var(--craie-2); border: 1px solid var(--bordure);
   border-radius: var(--r-carte); padding: 16px;
   text-decoration: none; color: inherit;
@@ -546,8 +551,9 @@ html[data-theme="kivu"] .mb-piste { height: 12px; }
   width: 38px; height: 38px; border-radius: var(--r-bouton);
   background: rgba(201, 138, 62, 0.14);
   display: flex; align-items: center; justify-content: center;
-  margin-bottom: 8px;
+  flex: none;
 }
+.tuile .textes { min-width: 0; }
 .tuile .jeton svg { width: 20px; height: 20px; stroke: var(--ocre); fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .tuile .nom { font-weight: 600; font-size: 0.93rem; color: var(--texte-sombre); line-height: 1.3; }
 .tuile .desc { font-size: 0.78rem; color: var(--texte-att); line-height: 1.4; }
@@ -566,8 +572,9 @@ html[data-theme="kivu"] .tuile:hover { transform: translateY(-3px); }
 html[data-theme="nuit"] .tuile .jeton { background: rgba(95, 176, 140, 0.16); }
 
 @media (max-width: 640px) {
-  .lanceur-grille { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
-  .tuile { padding: 13px; }
+  .lanceur-grille { gap: 10px; }
+  .lanceur-grille > .tuile { min-width: 128px; flex: 0 0 auto; }
+  .tuile { padding: 12px; }
   .tuile .desc { display: none; }
 }
 
@@ -584,29 +591,32 @@ html[data-theme="nuit"] .tuile .jeton { background: rgba(95, 176, 140, 0.16); }
 }
 .nav-item.nav-tiroir .chevron { margin-left: auto; opacity: 0.55; font-size: 0.8rem; }
 
+/* Page pleine plutôt que fenêtre : « Tous les menus » EST un écran de
+   navigation, pas une boîte de dialogue. Une modale étroite donnerait
+   l'impression d'un réglage annexe. */
 .voile-tiroir {
   position: fixed; inset: 0; z-index: 200;
-  background: rgba(16, 24, 40, 0.42);
-  display: none; align-items: flex-start; justify-content: center;
-  padding: 6vh 20px 20px 20px;
-  backdrop-filter: blur(2px);
+  background: var(--craie);
+  display: none;
+  overflow-y: auto;
 }
-.voile-tiroir.ouvert { display: flex; }
+.voile-tiroir.ouvert { display: block; }
 
 .tiroir {
-  background: var(--craie-2);
-  border-radius: var(--r-carte);
-  width: 100%; max-width: 760px; max-height: 84vh;
-  overflow-y: auto; padding: 24px;
-  box-shadow: 0 24px 64px rgba(16, 24, 40, 0.28);
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 40px 32px 60px 32px;
 }
 .tiroir-entete {
   display: flex; align-items: center; gap: 14px;
-  flex-wrap: wrap; margin-bottom: 18px;
+  flex-wrap: wrap; margin-bottom: 8px;
+  position: sticky; top: 0; z-index: 2;
+  background: var(--craie);
+  padding: 16px 0;
 }
 .tiroir-entete h2 {
   font-family: var(--police-titre); font-weight: 600;
-  font-size: 1.2rem; margin: 0;
+  font-size: 1.6rem; margin: 0;
 }
 .tiroir-recherche {
   flex: 1; min-width: 200px;
@@ -629,8 +639,9 @@ html[data-theme="nuit"] .tuile .jeton { background: rgba(95, 176, 140, 0.16); }
   color: var(--texte-att); font-weight: 600; margin-bottom: 9px;
 }
 .tiroir-grille {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px;
 }
+.tiroir-groupe > .titre { font-size: 0.76rem; margin-bottom: 12px; }
 
 .tiroir-ligne {
   display: flex; align-items: center; gap: 10px;
@@ -670,8 +681,8 @@ html[data-theme="nuit"] .tuile .jeton { background: rgba(95, 176, 140, 0.16); }
 }
 
 @media (max-width: 640px) {
-  .tiroir { padding: 18px; max-height: 90vh; }
-  .voile-tiroir { padding: 3vh 12px 12px 12px; }
+  .tiroir { padding: 16px 16px 40px 16px; }
+  .tiroir-entete h2 { font-size: 1.3rem; }
   .tiroir-grille { grid-template-columns: 1fr; }
 }
 

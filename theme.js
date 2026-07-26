@@ -132,6 +132,15 @@ window.ARDOISE_THEME_DEFAUT = 'ardoise';
       }
     } catch (e) { /* navigation privée : on continue sans mémoriser */ }
 
+    // Studio suppose un rail compact. On ne l'impose qu'une fois : dès que
+    // l'utilisateur touche au réglage, son choix prime définitivement.
+    try {
+      if (theme === 'studio' && !localStorage.getItem('ardoise_nav_compact')) {
+        localStorage.setItem('ardoise_nav_compact', 'oui');
+      }
+      if (window.ArdoiseDisposition) ArdoiseDisposition.appliquer();
+    } catch (e) { /* navigation privée */ }
+
     document.dispatchEvent(new CustomEvent('ardoise:theme-change', { detail: { theme: theme } }));
 
     if (reglages.synchroniserServeur !== false) {

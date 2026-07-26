@@ -73,9 +73,17 @@
 <script>
   /* Applique le thème AVANT le premier affichage, pour éviter tout clignotement.
      La liste doit rester alignée sur theme.css / theme.js. */
-  (function(){var v=['ardoise','pure','nuit','kivu'];var t;
+  (function(){var v=['ardoise','pure','nuit','kivu','studio'];var t;
    try{t=localStorage.getItem('ardoise_theme')||sessionStorage.getItem('ardoise_theme');}catch(e){}
-   document.documentElement.setAttribute('data-theme', v.indexOf(t)!==-1?t:'ardoise');})();
+   var th=v.indexOf(t)!==-1?t:'ardoise';
+   document.documentElement.setAttribute('data-theme', th);
+   var p,c;
+   try{p=localStorage.getItem('ardoise_nav_position');c=localStorage.getItem('ardoise_nav_compact');}catch(e){}
+   /* Studio est pensé pour le rail compact : c'est son réglage par défaut,
+      tant que l'utilisateur n'a pas exprimé de choix contraire. */
+   if(!c&&th==='studio')c='oui';
+   document.documentElement.setAttribute('data-nav-position',['gauche','droite','haut','bas'].indexOf(p)!==-1?p:'gauche');
+   document.documentElement.setAttribute('data-nav-compact',c==='oui'?'oui':'non');})();
 </script>
 <link rel="stylesheet" href="theme.css" />
 <link rel="stylesheet" href="ui.css" />

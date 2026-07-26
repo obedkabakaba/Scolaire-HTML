@@ -254,3 +254,205 @@ html:not([data-theme="public"]) .contenu { animation: ardoise-apparition 0.3s ea
 /* Aucun masquage de secours ici : le thème est posé par un script synchrone
    dans le <head> de chaque page, donc avant le premier affichage. Masquer le
    corps rendrait la plateforme invisible si ce fichier se chargeait seul. */
+
+/* ==========================================================================
+   THÈME « APPLE »
+   Inspiration : les produits SaaS de bureau contemporains — fond très clair,
+   rail d'icônes sombre, accent indigo, cartes largement arrondies et ombres
+   diffuses plutôt que des bordures.
+   Particularité : le rail est déplaçable sur les quatre côtés de l'écran.
+   ========================================================================== */
+html[data-theme="apple"] {
+  --craie: #F4F6FB;
+  --craie-2: #FFFFFF;
+  --ardoise: #1B2559;
+  --ocre: #4C5FD5;
+  --ocre-dark: #3A4BB8;
+  --encre: #4C5FD5;
+  --vert-ok: #12B76A;
+  --rouge: #F04438;
+  --texte-sombre: #101828;
+  --texte-att: #667085;
+  --bordure: #EAECF0;
+
+  --police-titre: 'Inter', system-ui, -apple-system, sans-serif;
+  --police-corps: 'Inter', system-ui, -apple-system, sans-serif;
+
+  --r-carte: 16px;
+  --r-bouton: 10px;
+  --r-petit: 8px;
+  --r-pilule: 999px;
+
+  --nav-fond: #1B2559;
+  --nav-texte: rgba(255, 255, 255, 0.62);
+  --nav-texte-fort: #FFFFFF;
+  --nav-actif-fond: rgba(255, 255, 255, 0.12);
+  --nav-actif-texte: #FFFFFF;
+
+  --ombre-carte: 0 1px 3px rgba(16, 24, 40, 0.06), 0 8px 24px rgba(16, 24, 40, 0.06);
+  color-scheme: light;
+}
+
+html[data-theme="apple"] h1,
+html[data-theme="apple"] h2,
+html[data-theme="apple"] h3 { letter-spacing: -0.02em; font-weight: 600; }
+
+/* Cartes sans bordure : la profondeur vient de l'ombre, pas du trait. */
+html[data-theme="apple"] .carte-stat,
+html[data-theme="apple"] .widget,
+html[data-theme="apple"] .carte-config,
+html[data-theme="apple"] .conteneur-tableau,
+html[data-theme="apple"] .tuile,
+html[data-theme="apple"] .fiche {
+  border-color: transparent;
+  box-shadow: var(--ombre-carte);
+}
+
+html[data-theme="apple"] .barre-laterale { border: none; }
+html[data-theme="apple"] .nav-item { border-radius: 10px; }
+html[data-theme="apple"] .bouton-principal { box-shadow: 0 1px 2px rgba(16, 24, 40, 0.08); }
+html[data-theme="apple"] th {
+  background: #F9FAFB;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+}
+
+/* --------------------------------------------------------------------------
+   Rail déplaçable — disponible sur TOUS les thèmes, réglé depuis Mon profil.
+   La règle prime sur la mise en page définie dans chaque page grâce au
+   sélecteur html[data-nav-*], plus spécifique qu'une simple classe.
+   -------------------------------------------------------------------------- */
+html[data-nav-position="droite"] .mise-en-page {
+  grid-template-columns: 1fr 240px;
+}
+html[data-nav-position="droite"] .barre-laterale { order: 2; }
+html[data-nav-position="droite"] .contenu { order: 1; }
+
+/* Haut et bas : le rail devient une barre horizontale pleine largeur. */
+html[data-nav-position="haut"] .mise-en-page,
+html[data-nav-position="bas"] .mise-en-page {
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr;
+}
+html[data-nav-position="bas"] .mise-en-page {
+  grid-template-rows: 1fr auto;
+}
+html[data-nav-position="bas"] .barre-laterale { order: 2; }
+html[data-nav-position="bas"] .contenu { order: 1; }
+
+html[data-nav-position="haut"] .barre-laterale,
+html[data-nav-position="bas"] .barre-laterale {
+  height: auto;
+  position: sticky;
+  top: 0;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+html[data-nav-position="bas"] .barre-laterale { top: auto; bottom: 0; }
+
+html[data-nav-position="haut"] .barre-laterale .marque,
+html[data-nav-position="bas"] .barre-laterale .marque {
+  margin: 0;
+  font-size: 1.15rem;
+  white-space: nowrap;
+  flex: none;
+}
+html[data-nav-position="haut"] .nav-liste,
+html[data-nav-position="bas"] .nav-liste {
+  flex-direction: row;
+  gap: 4px;
+  flex-wrap: nowrap;
+}
+html[data-nav-position="haut"] .nav-item,
+html[data-nav-position="bas"] .nav-item {
+  white-space: nowrap;
+  padding: 8px 13px;
+}
+html[data-nav-position="haut"] .pied-nav,
+html[data-nav-position="bas"] .pied-nav {
+  margin: 0 0 0 auto;
+  border: none;
+  padding: 0;
+  flex: none;
+}
+
+/* --------------------------------------------------------------------------
+   Rail compact : icônes seules, le libellé apparaît au survol.
+   C'est le comportement du rail sombre de la maquette. Réservé aux positions
+   latérales : en barre horizontale, un élargissement au survol ferait sauter
+   toute la ligne.
+   -------------------------------------------------------------------------- */
+html[data-nav-compact="oui"][data-nav-position="gauche"] .mise-en-page,
+html[data-nav-compact="oui"]:not([data-nav-position]) .mise-en-page {
+  grid-template-columns: 72px 1fr;
+}
+html[data-nav-compact="oui"][data-nav-position="droite"] .mise-en-page {
+  grid-template-columns: 1fr 72px;
+}
+
+html[data-nav-compact="oui"][data-nav-position="gauche"] .barre-laterale,
+html[data-nav-compact="oui"][data-nav-position="droite"] .barre-laterale,
+html[data-nav-compact="oui"]:not([data-nav-position]) .barre-laterale {
+  width: 72px;
+  padding: 24px 12px;
+  z-index: 40;
+  transition: width 0.22s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+html[data-nav-compact="oui"][data-nav-position="gauche"] .barre-laterale:hover,
+html[data-nav-compact="oui"][data-nav-position="gauche"] .barre-laterale:focus-within,
+html[data-nav-compact="oui"]:not([data-nav-position]) .barre-laterale:hover,
+html[data-nav-compact="oui"]:not([data-nav-position]) .barre-laterale:focus-within {
+  width: 240px;
+  box-shadow: 8px 0 32px rgba(16, 24, 40, 0.14);
+}
+html[data-nav-compact="oui"][data-nav-position="droite"] .barre-laterale:hover,
+html[data-nav-compact="oui"][data-nav-position="droite"] .barre-laterale:focus-within {
+  width: 240px;
+  margin-left: -168px;
+  box-shadow: -8px 0 32px rgba(16, 24, 40, 0.14);
+}
+
+/* Le libellé s'efface mais reste dans le flux : sans cela, chaque survol
+   provoquerait un recalcul de largeur et un tremblement du texte. */
+html[data-nav-compact="oui"] .nav-libelle,
+html[data-nav-compact="oui"] .barre-laterale .marque .marque-texte {
+  opacity: 0;
+  transition: opacity 0.16s ease;
+  white-space: nowrap;
+}
+html[data-nav-compact="oui"] .barre-laterale:hover .nav-libelle,
+html[data-nav-compact="oui"] .barre-laterale:focus-within .nav-libelle,
+html[data-nav-compact="oui"] .barre-laterale:hover .marque-texte,
+html[data-nav-compact="oui"] .barre-laterale:focus-within .marque-texte { opacity: 1; }
+
+html[data-nav-compact="oui"] .nav-item { overflow: hidden; }
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-nav-compact="oui"] .barre-laterale,
+  html[data-nav-compact="oui"] .nav-libelle { transition: none; }
+}
+
+/* Sous 780 px, la barre repasse en bandeau supérieur quelle que soit la
+   position choisie : un rail latéral n'a pas de sens sur un téléphone. */
+@media (max-width: 780px) {
+  html[data-nav-position] .mise-en-page,
+  html[data-nav-compact] .mise-en-page {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+  html[data-nav-position] .barre-laterale,
+  html[data-nav-compact="oui"] .barre-laterale {
+    width: auto;
+    height: auto;
+    order: 0;
+    margin-left: 0;
+    padding: 18px 22px;
+  }
+  html[data-nav-position] .contenu { order: 1; }
+  html[data-nav-compact="oui"] .nav-libelle,
+  html[data-nav-compact="oui"] .marque-texte { opacity: 1; }
+}

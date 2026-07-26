@@ -9,7 +9,61 @@
    theme.css. Rien d'autre à modifier dans les 21 pages.
    ========================================================================== */
 
+/* ==========================================================================
+   Disposition du rail de navigation
+   Position et compacité sont des préférences d'AFFICHAGE, conservées dans le
+   navigateur : elles suivent l'écran plutôt que le compte. Un même directeur
+   veut souvent un rail latéral sur son bureau et une barre haute sur son
+   portable.
+   ========================================================================== */
+(function appliquerDisposition() {
+  var POSITIONS = ['gauche', 'droite', 'haut', 'bas'];
+  var CLE_POS = 'ardoise_nav_position';
+  var CLE_COMPACT = 'ardoise_nav_compact';
+
+  function lire(cle, defaut) {
+    try { return localStorage.getItem(cle) || defaut; } catch (e) { return defaut; }
+  }
+
+  window.ArdoiseDisposition = {
+    positions: POSITIONS,
+    obtenir: function () {
+      return {
+        position: lire(CLE_POS, 'gauche'),
+        compact: lire(CLE_COMPACT, 'non') === 'oui'
+      };
+    },
+    definir: function (position, compact) {
+      if (position && POSITIONS.indexOf(position) !== -1) {
+        try { localStorage.setItem(CLE_POS, position); } catch (e) {}
+        document.documentElement.setAttribute('data-nav-position', position);
+      }
+      if (typeof compact === 'boolean') {
+        try { localStorage.setItem(CLE_COMPACT, compact ? 'oui' : 'non'); } catch (e) {}
+        document.documentElement.setAttribute('data-nav-compact', compact ? 'oui' : 'non');
+      }
+    },
+    appliquer: function () {
+      var etat = window.ArdoiseDisposition.obtenir();
+      document.documentElement.setAttribute('data-nav-position', etat.position);
+      document.documentElement.setAttribute('data-nav-compact', etat.compact ? 'oui' : 'non');
+    }
+  };
+
+  // Appliqué immédiatement, avant le premier rendu : sinon la page
+  // s'afficherait un instant avec le rail au mauvais endroit.
+  if (document.documentElement.getAttribute('data-theme') !== 'public') {
+    window.ArdoiseDisposition.appliquer();
+  }
+})();
+
 window.ARDOISE_THEMES = [
+  {
+    cle: 'apple',
+    nom: 'Apple',
+    description: 'Rail sombre déplaçable, accent indigo, cartes sans bordure. Le plus proche des outils professionnels actuels.',
+    apercu: { fond: '#F4F6FB', surface: '#FFFFFF', accent: '#4C5FD5', barre: '#1B2559', texte: '#101828' }
+  },
   {
     cle: 'ardoise',
     nom: 'Ardoise',

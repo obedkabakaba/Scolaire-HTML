@@ -320,7 +320,8 @@
     });
   }
 
-  window.ArdoiseUI = { anneau: anneau, anneauCompact: anneauCompact, barres: barres, marquerTuile: marquerTuile };
+  window.ArdoiseUI = { anneau: anneau, anneauCompact: anneauCompact, barres: barres, marquerTuile: marquerTuile,
+    ouvrirTousLesMenus: function () { if (window.ArdoiseRail) window.ArdoiseRail.ouvrir(); } };
 
 
   /* ------------------------------------------------------------------
@@ -452,11 +453,27 @@
     }
     if (Object.keys(disponibles).length === 0) return;
 
+    // Cinq raccourcis, pas davantage : une grille de vingt tuiles n'aide
+    // personne. Les plus ouverts remontent ; s'il n'y a pas encore assez
+    // d'historique, on complète avec les écrans épinglés au rail.
     var usage = lireUsage();
     var frequents = Object.keys(disponibles)
       .filter(function (p) { return usage[p] > 0; })
-      .sort(function (a, b) { return usage[b] - usage[a]; })
-      .slice(0, 5);
+      .sort(function (a, b) { return usage[b] - usage[a]; });
+
+    if (frequents.length < 5) {
+      var complement = [];
+      try {
+        complement = JSON.parse(localStorage.getItem('ardoise_menus_epingles') || '[]');
+      } catch (e) {}
+      complement.forEach(function (p) {
+        if (disponibles[p] && frequents.indexOf(p) === -1) frequents.push(p);
+      });
+      Object.keys(disponibles).forEach(function (p) {
+        if (frequents.length < 5 && frequents.indexOf(p) === -1) frequents.push(p);
+      });
+    }
+    frequents = frequents.slice(0, 5);
 
     function tuile(page) {
       var icone = ICONES[page] || '';
@@ -470,21 +487,11 @@
 
     var html = '<div class="lanceur-entete">'
       + '<h2>Actions rapides</h2>'
-      + '<input type="search" class="lanceur-recherche" id="lanceur-recherche" placeholder="Rechercher un écran…" aria-label="Rechercher un écran" />'
+      + '<button type="button" class="lanceur-tout" id="lanceur-tout">Tous les écrans</button>'
       + '</div>';
 
-    if (frequents.length >= 3) {
-      html += '<div class="lanceur-groupe" data-groupe><div class="titre">Vos raccourcis</div>'
-        + '<div class="lanceur-grille">' + frequents.map(tuile).join('') + '</div></div>';
-    }
-
-    for (var g = 0; g < GROUPES.length; g++) {
-      var pages = GROUPES[g].pages.filter(function (p) { return disponibles[p]; });
-      if (pages.length === 0) continue;
-      html += '<div class="lanceur-groupe" data-groupe>'
-        + '<div class="titre">' + GROUPES[g].titre + '</div>'
-        + '<div class="lanceur-grille">' + pages.map(tuile).join('') + '</div></div>';
-    }
+    html += '<div class="lanceur-groupe" data-groupe>'
+      + '<div class="lanceur-grille">' + frequents.map(tuile).join('') + '</div></div>';
 
     hote.className = 'lanceur';
     hote.innerHTML = html;
@@ -494,18 +501,8 @@
       t.addEventListener('click', function () { noterUsage(t.dataset.page); });
     });
 
-    var champ = document.getElementById('lanceur-recherche');
-    champ.addEventListener('input', function () {
-      var q = champ.value.trim().toLowerCase();
-      hote.querySelectorAll('[data-groupe]').forEach(function (groupe) {
-        var visibles = 0;
-        groupe.querySelectorAll('.tuile').forEach(function (t) {
-          var correspond = !q || (t.dataset.recherche || '').indexOf(q) !== -1;
-          t.style.display = correspond ? '' : 'none';
-          if (correspond) visibles++;
-        });
-        groupe.style.display = visibles > 0 ? '' : 'none';
-      });
+    document.getElementById('lanceur-tout').addEventListener('click', function () {
+      if (window.ArdoiseRail) window.ArdoiseRail.ouvrir();
     });
   }
 
@@ -526,6 +523,257 @@
     tuile.appendChild(pastille);
   }
 
+
+  /* ------------------------------------------------------------------
+     7. Rail réduit et tiroir « Tous les menus »
+
+     Le rail n'affiche que les écrans ÉPINGLÉS, quatre par défaut. Le reste
+     vit dans un tiroir. Trois principes :
+
+       · la page courante reste toujours visible dans le rail, même non
+         épinglée — sinon l'utilisateur perd son repère de position ;
+       · les épingles sont propres à chaque personne, conservées dans le
+         navigateur ;
+       · si tout est épinglé, « Tous les menus » disparaît : un tiroir vide
+         n'aurait aucune raison d'exister.
+     ------------------------------------------------------------------ */
+  var CLE_EPINGLES = 'ardoise_menus_epingles';
+  var EPINGLES_DEFAUT = {
+    directeur: ['dashboard-directeur.html', 'eleves.html', 'bulletins.html', 'rapports.html'],
+    prefet: ['dashboard-directeur.html', 'classes.html', 'emploi-du-temps.html', 'discipline.html'],
+    secretaire: ['espace-secretaire.html', 'eleves.html', 'inscriptions.html', 'frais-scolaires.html'],
+    professeur: ['espace-professeur.html', 'notes.html', 'presences.html', 'emploi-du-temps.html'],
+    titulaire: ['espace-titulaire.html', 'notes.html', 'presences.html', 'bulletins.html'],
+    comptable: ['frais-scolaires.html', 'rapports.html', 'messages.html', 'mon-profil.html']
+  };
+
+  function rolesCourants() {
+    try {
+      var u = JSON.parse(localStorage.getItem('ardoise_user') || sessionStorage.getItem('ardoise_user') || 'null');
+      return (u && u.roles) || [];
+    } catch (e) { return []; }
+  }
+
+  function epinglesParDefaut(disponibles) {
+    var roles = rolesCourants();
+    for (var i = 0; i < roles.length; i++) {
+      if (EPINGLES_DEFAUT[roles[i]]) {
+        var choix = EPINGLES_DEFAUT[roles[i]].filter(function (p) { return disponibles[p]; });
+        if (choix.length) return choix;
+      }
+    }
+    // Rôle inattendu : on prend les quatre premiers écrans accessibles.
+    return Object.keys(disponibles).slice(0, 4);
+  }
+
+  function lireEpingles(disponibles) {
+    try {
+      var brut = JSON.parse(localStorage.getItem(CLE_EPINGLES) || 'null');
+      if (Array.isArray(brut)) {
+        var valides = brut.filter(function (p) { return disponibles[p]; });
+        if (valides.length) return valides;
+      }
+    } catch (e) {}
+    return epinglesParDefaut(disponibles);
+  }
+
+  function ecrireEpingles(liste) {
+    try { localStorage.setItem(CLE_EPINGLES, JSON.stringify(liste)); } catch (e) {}
+  }
+
+  function pageCourante() {
+    var p = window.location.pathname.split('/').pop();
+    return p || 'dashboard-directeur.html';
+  }
+
+  function reduireRail() {
+    var liste = document.querySelector('.nav-liste');
+    if (!liste || liste.dataset.reduit === 'oui') return;
+
+    var elements = [];
+    var lis = liste.querySelectorAll('li');
+    for (var i = 0; i < lis.length; i++) {
+      var li = lis[i];
+      if (li.style.display === 'none') continue;      // écarté par le rôle
+      var lien = li.querySelector('.nav-item[href]');
+      if (!lien) continue;
+      elements.push({
+        li: li,
+        page: lien.getAttribute('href'),
+        libelle: (lien.querySelector('.nav-libelle') || lien).textContent.trim()
+      });
+    }
+    if (elements.length <= 5) { liste.dataset.reduit = 'oui'; return; }
+
+    var disponibles = {};
+    elements.forEach(function (e) { disponibles[e.page] = e.libelle; });
+
+    var epingles = lireEpingles(disponibles);
+    var courante = pageCourante();
+
+    elements.forEach(function (e) {
+      var visible = epingles.indexOf(e.page) !== -1 || e.page === courante;
+      e.li.style.display = visible ? '' : 'none';
+      e.li.dataset.epingle = epingles.indexOf(e.page) !== -1 ? 'oui' : 'non';
+    });
+
+    // « Tous les menus » n'apparaît que s'il reste quelque chose à y montrer.
+    var restants = elements.length - epingles.length;
+    var ancien = liste.querySelector('.nav-tiroir');
+    if (ancien) ancien.closest('li').remove();
+
+    if (restants > 0) {
+      var li = document.createElement('li');
+      li.innerHTML = '<button type="button" class="nav-item nav-tiroir">'
+        + '<svg class="nav-icone" viewBox="0 0 24 24" aria-hidden="true">'
+        + '<circle cx="5" cy="6" r="1.4"/><circle cx="5" cy="12" r="1.4"/><circle cx="5" cy="18" r="1.4"/>'
+        + '<path d="M10 6h10"/><path d="M10 12h10"/><path d="M10 18h10"/></svg>'
+        + '<span class="nav-libelle">Tous les menus</span>'
+        + '<span class="chevron">' + restants + '</span></button>';
+      liste.appendChild(li);
+      li.querySelector('.nav-tiroir').addEventListener('click', function () {
+        ouvrirTiroir(elements, disponibles);
+      });
+    }
+
+    liste.dataset.reduit = 'oui';
+    window.ArdoiseRail = {
+      elements: elements,
+      disponibles: disponibles,
+      ouvrir: function () { ouvrirTiroir(elements, disponibles); }
+    };
+  }
+
+  function ouvrirTiroir(elements, disponibles) {
+    var voile = document.getElementById('voile-tiroir');
+    if (!voile) {
+      voile = document.createElement('div');
+      voile.id = 'voile-tiroir';
+      voile.className = 'voile-tiroir';
+      voile.innerHTML = '<div class="tiroir" role="dialog" aria-label="Tous les menus"></div>';
+      document.body.appendChild(voile);
+      voile.addEventListener('click', function (e) {
+        if (e.target === voile) voile.classList.remove('ouvert');
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') voile.classList.remove('ouvert');
+      });
+    }
+
+    var epingles = lireEpingles(disponibles);
+    var boite = voile.querySelector('.tiroir');
+
+    function ligne(e) {
+      var actif = epingles.indexOf(e.page) !== -1;
+      return '<div class="tiroir-ligne">'
+        + '<a class="lien" href="' + e.page + '">'
+        + '<svg viewBox="0 0 24 24" aria-hidden="true">' + (ICONES[e.page] || '') + '</svg>'
+        + '<span class="texte">' + e.libelle + '</span></a>'
+        + '<button type="button" class="epingle' + (actif ? ' active' : '') + '"'
+        + ' data-page="' + e.page + '" title="' + (actif ? 'Retirer du menu' : 'Ajouter au menu') + '"'
+        + ' aria-pressed="' + actif + '">'
+        + '<svg viewBox="0 0 24 24"><path d="M12 17v5"/><path d="M9 3h6l-1 6 3 3v2H7v-2l3-3z"/></svg>'
+        + '</button></div>';
+    }
+
+    var html = '<div class="tiroir-entete">'
+      + '<h2>Tous les menus</h2>'
+      + '<input type="search" class="tiroir-recherche" id="tiroir-recherche" placeholder="Rechercher un écran…" aria-label="Rechercher un écran" />'
+      + '<button type="button" class="tiroir-fermer" id="tiroir-fermer">Fermer</button>'
+      + '</div>'
+      + '<p class="tiroir-aide">Épinglez les écrans que vous utilisez le plus : ils apparaîtront directement dans le menu de gauche.</p>';
+
+    var placees = {};
+    for (var g = 0; g < GROUPES.length; g++) {
+      var dedans = elements.filter(function (e) { return GROUPES[g].pages.indexOf(e.page) !== -1; });
+      if (!dedans.length) continue;
+      dedans.forEach(function (e) { placees[e.page] = true; });
+      html += '<div class="tiroir-groupe" data-groupe><div class="titre">' + GROUPES[g].titre + '</div>'
+        + '<div class="tiroir-grille">' + dedans.map(ligne).join('') + '</div></div>';
+    }
+    // Les écrans hors catalogue restent accessibles : une page ajoutée
+    // demain ne doit pas disparaître faute d'avoir été classée.
+    var orphelines = elements.filter(function (e) { return !placees[e.page]; });
+    if (orphelines.length) {
+      html += '<div class="tiroir-groupe" data-groupe><div class="titre">Autres</div>'
+        + '<div class="tiroir-grille">' + orphelines.map(ligne).join('') + '</div></div>';
+    }
+
+    html += '<div class="tiroir-pied">'
+      + '<span id="tiroir-compte"></span>'
+      + '<button type="button" class="lien-reinit" id="tiroir-reinit">Rétablir le menu par défaut</button>'
+      + '</div>';
+
+    boite.innerHTML = html;
+    voile.classList.add('ouvert');
+
+    function majCompte() {
+      var n = lireEpingles(disponibles).length;
+      document.getElementById('tiroir-compte').textContent =
+        n + ' écran(s) épinglé(s) sur ' + elements.length;
+    }
+    majCompte();
+
+    boite.querySelectorAll('.epingle').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var liste = lireEpingles(disponibles);
+        var i = liste.indexOf(b.dataset.page);
+        if (i === -1) liste.push(b.dataset.page);
+        else if (liste.length > 1) liste.splice(i, 1);
+        else return;   // on ne vide jamais complètement le rail
+        ecrireEpingles(liste);
+        b.classList.toggle('active', liste.indexOf(b.dataset.page) !== -1);
+        b.setAttribute('aria-pressed', liste.indexOf(b.dataset.page) !== -1);
+        majCompte();
+        appliquerEpingles(liste);
+      });
+    });
+
+    document.getElementById('tiroir-fermer').addEventListener('click', function () {
+      voile.classList.remove('ouvert');
+    });
+    document.getElementById('tiroir-reinit').addEventListener('click', function () {
+      try { localStorage.removeItem(CLE_EPINGLES); } catch (e) {}
+      voile.classList.remove('ouvert');
+      window.location.reload();
+    });
+
+    var champ = document.getElementById('tiroir-recherche');
+    champ.addEventListener('input', function () {
+      var q = champ.value.trim().toLowerCase();
+      boite.querySelectorAll('[data-groupe]').forEach(function (groupe) {
+        var visibles = 0;
+        groupe.querySelectorAll('.tiroir-ligne').forEach(function (l) {
+          var ok = !q || l.textContent.toLowerCase().indexOf(q) !== -1;
+          l.style.display = ok ? '' : 'none';
+          if (ok) visibles++;
+        });
+        groupe.style.display = visibles ? '' : 'none';
+      });
+    });
+    champ.focus();
+  }
+
+  /** Met le rail à jour sans recharger la page. */
+  function appliquerEpingles(epingles) {
+    if (!window.ArdoiseRail) return;
+    var courante = pageCourante();
+    var restants = 0;
+    window.ArdoiseRail.elements.forEach(function (e) {
+      var epingle = epingles.indexOf(e.page) !== -1;
+      e.li.style.display = (epingle || e.page === courante) ? '' : 'none';
+      e.li.dataset.epingle = epingle ? 'oui' : 'non';
+      if (!epingle) restants++;
+    });
+    var bouton = document.querySelector('.nav-tiroir');
+    if (bouton) {
+      var li = bouton.closest('li');
+      // Tout est épinglé : le tiroir n'a plus de raison d'être.
+      li.style.display = restants > 0 ? '' : 'none';
+      bouton.querySelector('.chevron').textContent = restants;
+    }
+  }
+
   /* ------------------------------------------------------------------
      Démarrage
      ------------------------------------------------------------------ */
@@ -533,7 +781,10 @@
     try { injecterIcones(); } catch (e) { /* la navigation reste utilisable sans icônes */ }
     try { installerMenuMobile(); } catch (e) { /* la barre reste affichée sans bouton */ }
     // Le lanceur attend le filtrage par rôle des pages, qui s'exécute juste après.
-    setTimeout(function () { try { construireLanceur(); } catch (e) {} }, 60);
+    setTimeout(function () {
+      try { reduireRail(); } catch (e) { /* le rail complet reste utilisable */ }
+      try { construireLanceur(); } catch (e) {}
+    }, 60);
     try { surveillerValeurs(); } catch (e) { /* les chiffres restent affichés sans animation */ }
     if (!animationsReduites) {
       try { poserSquelettes(); } catch (e) { /* le texte « Chargement… » reste affiché */ }

@@ -49,6 +49,23 @@
 
   .carte-section { background: var(--craie-2); border: 1px solid var(--bordure); border-radius:  var(--r-carte); padding: 26px; margin-bottom: 22px; }
   .carte-section h2 { font-family: var(--police-titre); font-weight: 600; font-size: 1.15rem; margin: 0 0 18px 0; }
+  .champ-disposition { margin-bottom: 4px; }
+  .etiquette-disposition { display: block; font-size: 0.84rem; font-weight: 600; margin-bottom: 9px; }
+  .choix-position { display: flex; gap: 10px; flex-wrap: wrap; }
+  .carte-position { border: 2px solid var(--bordure); border-radius: var(--r-carte); background: var(--craie-2); padding: 0; cursor: pointer; overflow: hidden; width: 108px; font-family: var(--police-corps); }
+  .carte-position.actif { border-color: var(--ocre); }
+  .carte-position .schema { height: 58px; background: var(--craie); display: flex; }
+  .carte-position .schema.vertical { flex-direction: row; }
+  .carte-position .schema.horizontal { flex-direction: column; }
+  .carte-position .rail { background: var(--nav-fond); }
+  .carte-position .schema.vertical .rail { width: 24px; }
+  .carte-position .schema.horizontal .rail { height: 16px; }
+  .carte-position .zone { flex: 1; }
+  .carte-position .nom-position { display: block; padding: 7px 4px; font-size: 0.78rem; color: var(--texte-sombre); text-align: center; }
+  .interrupteur-disposition { display: flex; align-items: flex-start; gap: 11px; cursor: pointer; font-size: 0.9rem; }
+  .interrupteur-disposition input { width: 17px; height: 17px; accent-color: var(--ocre); cursor: pointer; margin-top: 3px; flex: none; }
+  .aide-disposition { display: block; font-size: 0.81rem; color: var(--texte-att); margin-top: 3px; font-weight: 400; }
+  .barre-disposition { margin-top: 20px; }
   .grille-themes { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; }
   .carte-theme { border: 2px solid var(--bordure); border-radius: var(--r-carte); padding: 0; background: none; cursor: pointer; text-align: left; overflow: hidden; font-family: var(--police-corps); transition: border-color 0.18s ease, transform 0.18s ease; }
   .carte-theme:hover { border-color: var(--texte-att); transform: translateY(-2px); }
@@ -108,6 +125,8 @@
         <li><a class="nav-item" href="espace-titulaire.html">Ma classe</a></li>
         <li><a class="nav-item" href="cours-classe-titulaire.html">Cours de la classe</a></li>
         <li><a class="nav-item" href="eleves.html">Élèves</a></li>
+        <li><a class="nav-item" href="inscriptions.html">Inscriptions</a></li>
+        <li><a class="nav-item" href="orientation.html">Orientation</a></li>
         <li><a class="nav-item" href="frais-scolaires.html">Frais scolaires</a></li>
         <li><a class="nav-item" href="utilisateurs.html">Utilisateurs</a></li>
         <li><a class="nav-item" href="classes.html">Classes</a></li>
@@ -169,6 +188,31 @@
         Ce choix ne concerne que votre compte : il vous suit sur vos autres appareils et ne change rien pour vos collègues.
       </p>
       <div id="grille-themes" class="grille-themes"></div>
+    </div>
+
+    <div class="carte-section">
+      <h2>Disposition du menu</h2>
+      <p style="color:var(--texte-att); font-size:0.88rem; margin:-10px 0 18px 0;">
+        Contrairement au thème, ces réglages restent propres à cet appareil : un rail latéral
+        sur un grand écran, une barre haute sur un portable.
+      </p>
+
+      <div class="champ-disposition">
+        <span class="etiquette-disposition">Position du menu</span>
+        <div class="choix-position" id="choix-position"></div>
+      </div>
+
+      <label class="interrupteur-disposition" style="margin-top:18px;">
+        <input type="checkbox" id="case-compact" />
+        <span>
+          <strong>Menu compact</strong>
+          <span class="aide-disposition">N'affiche que les icônes ; les libellés apparaissent au survol. Sans effet sur une barre horizontale.</span>
+        </span>
+      </label>
+
+      <div class="barre-disposition">
+        <button class="bouton bouton-secondaire" id="bouton-tous-menus">Choisir les écrans du menu</button>
+      </div>
     </div>
 
     <div class="carte-section">
@@ -249,6 +293,43 @@
   // Les thèmes disponibles sont décrits dans theme.js : pour en ajouter un,
   // il suffit de compléter ce fichier et theme.css, pas cette page.
   function dessinerGrilleThemes() {
+    // ---------- Disposition du menu ----------
+    (function reglerDisposition() {
+      const LIBELLES = { gauche: 'À gauche', droite: 'À droite', haut: 'En haut', bas: 'En bas' };
+      const etat = window.ArdoiseDisposition
+        ? ArdoiseDisposition.obtenir() : { position: 'gauche', compact: false };
+
+      document.getElementById('choix-position').innerHTML =
+        ['gauche', 'droite', 'haut', 'bas'].map(pos => {
+          const vertical = pos === 'gauche' || pos === 'droite';
+          const rail = '<span class="rail"></span>';
+          const zone = '<span class="zone"></span>';
+          const contenu = (pos === 'gauche' || pos === 'haut') ? rail + zone : zone + rail;
+          return `<button type="button" class="carte-position ${etat.position === pos ? 'actif' : ''}" data-position="${pos}">
+            <span class="schema ${vertical ? 'vertical' : 'horizontal'}">${contenu}</span>
+            <span class="nom-position">${LIBELLES[pos]}</span>
+          </button>`;
+        }).join('');
+
+      document.getElementById('case-compact').checked = etat.compact;
+
+      document.querySelectorAll('[data-position]').forEach(b => {
+        b.addEventListener('click', () => {
+          ArdoiseDisposition.definir(b.dataset.position, null);
+          document.querySelectorAll('[data-position]').forEach(x => x.classList.remove('actif'));
+          b.classList.add('actif');
+        });
+      });
+
+      document.getElementById('case-compact').addEventListener('change', (e) => {
+        ArdoiseDisposition.definir(null, e.target.checked);
+      });
+
+      document.getElementById('bouton-tous-menus').addEventListener('click', () => {
+        if (window.ArdoiseUI && ArdoiseUI.ouvrirTousLesMenus) ArdoiseUI.ouvrirTousLesMenus();
+      });
+    })();
+
     const grille = document.getElementById('grille-themes');
     if (!grille || !window.ArdoiseTheme) return;
     const actuel = window.ArdoiseTheme.actuel();
@@ -294,6 +375,8 @@
       'espace-titulaire.html': ['titulaire'],
       'cours-classe-titulaire.html': ['titulaire'],
       'eleves.html': ['directeur', 'prefet', 'secretaire'],
+      'inscriptions.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire'],
+      'orientation.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
       'frais-scolaires.html': ['directeur', 'comptable', 'secretaire'],
       'utilisateurs.html': ['directeur', 'prefet', 'secretaire'],
       'classes.html': ['directeur', 'prefet', 'secretaire'],

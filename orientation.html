@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ardoise — Orientation</title>
+<link rel="icon" type="image/png" href="data:image/png;base64,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">
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" type="image/png" sizes="192x192" href="icone-192.png" />
+<meta name="theme-color" content="#111A19" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Ardoise" />
+<link rel="apple-touch-icon" sizes="180x180" href="icone-ios-180.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ardoise: #1F2B24; --craie: #F6F2E7; --craie-2: #FBF9F3;
+    --ocre: #C98A3E; --ocre-dark: #A96F2E; --encre: #3C5A62;
+    --rouge: #B23A2E; --vert-ok: #4C7A5A;
+    --texte-sombre: #1F2B24; --texte-att: #6B7269; --bordure: #E4DFCF;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: var(--police-corps); color: var(--texte-sombre); background: var(--craie); }
+  .mise-en-page { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+  @media (max-width: 780px) { .mise-en-page { grid-template-columns: 1fr; } }
+  .barre-laterale { background: var(--nav-fond); color: var(--nav-texte-fort); padding: 32px 22px; position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; justify-content: space-between; }
+  @media (max-width: 780px) { .barre-laterale { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px; height: auto; z-index: 5; } }
+  .barre-laterale .marque { font-family: var(--police-titre); font-weight: 600; font-size: 1.5rem; margin: 0 0 40px 0; }
+  @media (max-width: 780px) { .barre-laterale .marque { margin: 0; } }
+  .nav-liste { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
+  .nav-liste { visibility: hidden; }
+  @media (max-width: 780px) { .nav-liste { display: none; } }
+  .nav-item, .nav-item:visited { padding: 10px 12px; border-radius:  var(--r-petit); font-size: 0.92rem; color: var(--nav-texte); text-decoration: none; display: flex; justify-content: space-between; align-items: center; }
+  .nav-item.actif { background: var(--nav-actif-fond); color: var(--nav-texte-fort); font-weight: 600; }
+  .lettre-i { position: relative; display: inline-block; line-height: 1; }
+  .point-i-marque { position: absolute; width: 0.13em; height: 0.13em; border-radius: 50%; background: var(--ocre); left: 50%; top: 0.16em; transform: translateX(-50%); }
+  .nav-deconnexion { background: none; border: none; border-top: 1px solid var(--nav-separateur); color: var(--nav-texte); text-align: left; padding: 14px 12px 4px 12px; font-size: 0.86rem; font-family: var(--police-corps); cursor: pointer; }
+  .nav-deconnexion:hover { color: var(--nav-texte-fort); }
+  @media (max-width: 780px) { .nav-deconnexion { border-top: none; padding: 8px 12px; } }
+
+  .message-flash { display: none; padding: 12px 16px; border-radius: var(--r-petit); margin-bottom: 18px; font-size: 0.9rem; }
+  .message-flash.visible { display: block; }
+  .message-flash.succes { background: rgba(76,122,90,0.12); color: var(--vert-ok); }
+  .message-flash.erreur { background: rgba(178,58,46,0.12); color: var(--rouge); }
+  .carte-config { background: var(--craie-2); border: 1px solid var(--bordure); border-radius: var(--r-carte); padding: 22px; margin-bottom: 20px; }
+  .carte-config h3 { font-family: var(--police-titre); font-size: 1.05rem; margin: 0 0 6px 0; }
+  .carte-config .aide { font-size: 0.84rem; color: var(--texte-att); margin: 0 0 14px 0; }
+  .aide { font-size: 0.84rem; color: var(--texte-att); }
+  .barre-actions { display: flex; align-items: center; gap: 12px; margin-top: 18px; flex-wrap: wrap; }
+  .barre-actions .bouton-principal { margin-left: auto; }
+  .champ-voeu { width: 100%; border: 1px solid var(--bordure); border-radius: var(--r-petit); padding: 7px 9px; font-family: var(--police-corps); font-size: 0.85rem; background: var(--craie); color: var(--texte-sombre); }
+  .moyenne { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .moyenne.faible { color: var(--rouge); }
+  .etat-orientation { font-size: 0.74rem; padding: 3px 10px; border-radius: 20px; font-weight: 600; white-space: nowrap; }
+  .eo-accordee_voeu { background: rgba(76,122,90,0.14); color: var(--vert-ok); }
+  .eo-accordee_repli { background: rgba(201,138,62,0.16); color: var(--ocre-dark); }
+  .eo-sans_place { background: rgba(178,58,46,0.13); color: var(--rouge); }
+  .eo-non_promu, .eo-voeu_exprime { background: rgba(107,114,105,0.13); color: var(--texte-att); }
+  .puce-manuelle { font-size: 0.7rem; padding: 2px 8px; border-radius: 20px; background: rgba(60,90,98,0.14); color: var(--encre); font-weight: 600; margin-left: 5px; }
+  .lien-action { background: none; border: none; color: var(--encre); cursor: pointer; font-family: var(--police-corps); font-size: 0.84rem; padding: 4px 6px; }
+  .note-bas { font-size: 0.85rem; color: var(--texte-att); margin-top: 18px; }
+  .note-bas a { color: var(--encre); }
+  .contenu { padding: 36px 44px 60px 44px; }
+  @media (max-width: 780px) { .contenu { padding: 24px 20px 48px 20px; } }
+  .entete-page h1 { font-family: var(--police-titre); font-weight: 600; font-size: 1.9rem; margin: 0 0 4px 0; }
+  .entete-page .sous-titre { color: var(--texte-att); font-size: 0.95rem; margin: 0 0 24px 0; }
+
+  .barre-selecteurs { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; align-items: flex-end; }
+  .champ-selecteur { display: flex; flex-direction: column; gap: 6px; }
+  .champ-selecteur label { font-size: 0.76rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--texte-att); }
+  .champ-selecteur select { padding: 9px 12px; border: 1.5px solid var(--bordure); border-radius:  var(--r-bouton); font-family: var(--police-corps); font-size: 0.9rem; background: var(--craie-2); min-width: 200px; }
+
+  .grille-recap { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 28px; }
+  @media (max-width: 700px) { .grille-recap { grid-template-columns: 1fr; } }
+  .carte-recap { background: var(--craie-2); border: 1px solid var(--bordure); border-radius:  var(--r-carte); padding: 22px; text-align: center; }
+  .carte-recap .valeur { font-family: var(--police-titre); font-weight: 600; font-size: 2.1rem; line-height: 1; }
+  .carte-recap.echec .valeur { color: var(--rouge); }
+  .carte-recap.reussite .valeur { color: var(--vert-ok); }
+  .carte-recap.moyenne .valeur { color: var(--encre); }
+  .carte-recap .etiquette { font-size: 0.82rem; color: var(--texte-att); margin-top: 6px; }
+
+  .conteneur-tableau { background: var(--craie-2); border: 1px solid var(--bordure); border-radius:  var(--r-carte); overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th { text-align: left; padding: 12px 16px; background: rgba(31,43,36,0.03); color: var(--texte-att); font-size: 0.76rem; text-transform: uppercase; font-weight: 600; }
+  td { padding: 11px 16px; border-top: 1px solid var(--bordure); }
+  .badge-resultat { display: inline-block; padding: 3px 10px; border-radius:  var(--r-pilule); font-size: 0.78rem; font-weight: 600; }
+  .badge-resultat.reussite { background: rgba(76,122,90,0.12); color: var(--vert-ok); }
+  .badge-resultat.echec { background: rgba(178,58,46,0.1); color: var(--rouge); }
+  .etat-vide-tableau { padding: 50px 20px; text-align: center; color: var(--texte-att); }
+</style>
+<script>
+  /* Applique le thème AVANT le premier affichage, pour éviter tout clignotement.
+     La liste doit rester alignée sur theme.css / theme.js. */
+  (function(){var v=['ardoise','pure','nuit','kivu'];var t;
+   try{t=localStorage.getItem('ardoise_theme')||sessionStorage.getItem('ardoise_theme');}catch(e){}
+   document.documentElement.setAttribute('data-theme', v.indexOf(t)!==-1?t:'ardoise');})();
+</script>
+<link rel="stylesheet" href="theme.css" />
+<link rel="stylesheet" href="ui.css" />
+
+</head>
+<body>
+
+<div class="mise-en-page">
+  <nav class="barre-laterale">
+    <div>
+      <div class="marque">Ardo<span class="lettre-i">ı<span class="point-i-marque"></span></span>se</div>
+      <ul class="nav-liste">
+        <li><a class="nav-item" href="dashboard-directeur.html">Tableau de bord</a></li>
+        <li><a class="nav-item" href="annee-scolaire.html">Année scolaire</a></li>
+        <li><a class="nav-item" href="espace-secretaire.html">Accueil Secrétariat</a></li>
+        <li><a class="nav-item" href="espace-professeur.html">Mes cours</a></li>
+        <li><a class="nav-item" href="espace-titulaire.html">Ma classe</a></li>
+        <li><a class="nav-item" href="cours-classe-titulaire.html">Cours de la classe</a></li>
+        <li><a class="nav-item" href="eleves.html">Élèves</a></li>
+        <li><a class="nav-item" href="inscriptions.html">Inscriptions</a></li>
+        <li><a class="nav-item actif" href="orientation.html">Orientation</a></li>
+        <li><a class="nav-item" href="frais-scolaires.html">Frais scolaires</a></li>
+        <li><a class="nav-item" href="utilisateurs.html">Utilisateurs</a></li>
+        <li><a class="nav-item" href="classes.html">Classes</a></li>
+        <li><a class="nav-item" href="cours.html">Cours</a></li>
+        <li><a class="nav-item" href="presences.html">Présences</a></li>
+        <li><a class="nav-item" href="emploi-du-temps.html">Emploi du temps</a></li>
+        <li><a class="nav-item" href="discipline.html">Discipline</a></li>
+        <li><a class="nav-item" href="site-public.html">Site public</a></li>
+        <li><a class="nav-item" href="notes.html">Notes</a></li>
+        <li><a class="nav-item" href="bulletins.html">Bulletins</a></li>
+        <li><a class="nav-item" href="bulletin-annuel.html">Bulletin annuel</a></li>
+        <li><a class="nav-item" href="generateur-modeles.html">Modèles de bulletins</a></li>
+        <li><a class="nav-item" href="calendrier.html">Calendrier</a></li>
+        <li><a class="nav-item" href="rapports.html">Rapports</a></li>
+        <li><a class="nav-item" href="archives.html">Archives</a></li>
+        <li><a class="nav-item" href="journal.html">Journal d'activité</a></li>
+        <li><a class="nav-item" href="parametres.html">Paramètres</a></li>
+        <li><a class="nav-item" href="messages.html">Messages</a></li>
+        <li><a class="nav-item" href="mon-profil.html">Mon profil</a></li>
+      </ul>
+    </div>
+    <button class="nav-deconnexion" id="bouton-deconnexion-nav">↩ Se déconnecter</button>
+  </nav>
+
+  <main class="contenu">
+    <div class="entete-page">
+      <h1>Orientation</h1>
+      <p class="sous-titre">Vœux d'option des élèves de fin de cycle et affectation vers les humanités.</p>
+    </div>
+
+    <div class="barre-selecteurs">
+      <div class="champ-selecteur"><label for="select-annee">Année en cours</label><select id="select-annee"></select></div>
+      <div class="champ-selecteur"><label for="select-annee-cible">Année d'accueil</label><select id="select-annee-cible"></select></div>
+    </div>
+
+    <div id="message-flash" class="message-flash"></div>
+
+    <div class="carte-config" id="carte-repartition" style="display:none;">
+      <h3>Répartition au mérite</h3>
+      <p class="aide">
+        Chaque élève promu obtient son premier vœu si une place existe, sinon son repli. La moyenne annuelle
+        départage quand une option est pleine. Les affectations posées à la main sont conservées.
+      </p>
+      <div class="barre-actions">
+        <span class="aide" id="etat-places"></span>
+        <button class="bouton bouton-principal" id="bouton-repartir">Lancer la répartition</button>
+      </div>
+    </div>
+
+    <div class="grille-widgets" id="grille-places"></div>
+
+    <div class="conteneur-tableau">
+      <table>
+        <thead>
+          <tr><th>Élève</th><th>Moyenne</th><th>Premier vœu</th><th>Repli</th><th>Affectation</th><th>État</th><th></th></tr>
+        </thead>
+        <tbody id="corps-orientation"><tr><td colspan="7" class="etat-vide-tableau">Chargement…</td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="barre-actions" id="barre-voeux" style="display:none;">
+      <span class="aide">Les vœux se saisissent directement dans le tableau.</span>
+      <button class="bouton bouton-principal" id="bouton-enregistrer-voeux">Enregistrer les vœux</button>
+    </div>
+
+    <p class="note-bas">
+      Les classes concernées sont celles marquées « classe d'orientation » dans l'écran
+      <a href="classes.html">Classes</a>. Les classes d'accueil sont celles de l'année suivante portant une option.
+    </p>
+  </main>
+</div>
+
+<script>
+  const API_BASE_URL = "https://scolaire-saas-backend.onrender.com";
+
+
+  // Session par défaut = sessionStorage (effacée à la fermeture du navigateur),
+  // sauf si "Se souvenir de moi" a été coché à la connexion (alors localStorage).
+  function obtenirDuStockage(cle) {
+    return sessionStorage.getItem(cle) || localStorage.getItem(cle);
+  }
+  function definirDansStockage(cle, valeur) {
+    if (sessionStorage.getItem('ardoise_refresh_token')) sessionStorage.setItem(cle, valeur);
+    else localStorage.setItem(cle, valeur);
+  }
+
+  function obtenirTokens() {
+    return { accessToken: obtenirDuStockage('ardoise_access_token'), refreshToken: obtenirDuStockage('ardoise_refresh_token'), user: JSON.parse(obtenirDuStockage('ardoise_user') || 'null') };
+  }
+  function retourConnexion() {
+    ['ardoise_access_token','ardoise_refresh_token','ardoise_user'].forEach(cle => { localStorage.removeItem(cle); sessionStorage.removeItem(cle); });
+    window.location.href = 'connexion.html';
+  }
+  async function rafraichirToken(refreshToken) {
+    const reponse = await fetch(`${API_BASE_URL}/auth/refresh`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refresh_token: refreshToken }) });
+    if (!reponse.ok) return null;
+    const donnees = await reponse.json();
+    definirDansStockage('ardoise_access_token', donnees.access_token);
+    return donnees.access_token;
+  }
+  async function appelApi(chemin, options = {}) {
+    let { accessToken, refreshToken } = obtenirTokens();
+    if (!accessToken) { retourConnexion(); return null; }
+    const executer = (token) => fetch(`${API_BASE_URL}${chemin}`, { ...options, headers: { ...(options.headers || {}), Authorization: `Bearer ${token}` } });
+    let reponse = await executer(accessToken);
+    if (reponse.status === 401 && refreshToken) {
+      const nouveauToken = await rafraichirToken(refreshToken);
+      if (!nouveauToken) { retourConnexion(); return null; }
+      reponse = await executer(nouveauToken);
+    }
+    if (reponse.status === 401) { retourConnexion(); return null; }
+    return reponse;
+  }
+
+  document.getElementById('bouton-deconnexion-nav').addEventListener('click', async () => {
+    const { refreshToken } = obtenirTokens();
+    try { await fetch(`${API_BASE_URL}/auth/logout`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refresh_token: refreshToken }) }); } catch (e) {}
+    retourConnexion();
+  });
+
+  // ============================================================
+  //  État de la page
+  // ============================================================
+  let annees = [];
+  let donnees = { eleves: [], options: [], classes_cibles: [], seuil: 50 };
+  let brouillonVoeux = {};   // eleve_id -> { option_voeu_id, option_repli_id }
+
+  const utilisateur = (() => {
+    try { return JSON.parse(obtenirDuStockage('ardoise_user') || 'null'); } catch (e) { return null; }
+  })();
+  const roles = (utilisateur && utilisateur.roles) || [];
+  const estDirection = roles.some(r => ['directeur', 'prefet', 'super_admin'].includes(r));
+
+  const LIBELLE_ETAT = {
+    voeu_exprime: 'Vœu exprimé', accordee_voeu: 'Premier vœu', accordee_repli: 'Repli',
+    sans_place: 'Sans place', non_promu: 'Non promu'
+  };
+
+  function afficherMessage(texte, type) {
+    const zone = document.getElementById('message-flash');
+    zone.textContent = texte;
+    zone.className = `message-flash visible ${type}`;
+    zone.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    setTimeout(() => zone.classList.remove('visible'), 9000);
+  }
+
+  function echapper(t) {
+    const d = document.createElement('div');
+    d.textContent = t == null ? '' : String(t);
+    return d.innerHTML;
+  }
+
+  // ============================================================
+  //  Initialisation
+  // ============================================================
+  async function initialiser() {
+    if (estDirection) document.getElementById('carte-repartition').style.display = '';
+
+    const r = await appelApi('/annees-scolaires');
+    if (r?.ok) annees = await r.json();
+    if (annees.length === 0) {
+      document.getElementById('corps-orientation').innerHTML =
+        '<tr><td colspan="7" class="etat-vide-tableau">Aucune année scolaire.</td></tr>';
+      return;
+    }
+
+    const active = annees.find(a => a.active) || annees[0];
+    const selAnnee = document.getElementById('select-annee');
+    const selCible = document.getElementById('select-annee-cible');
+    selAnnee.innerHTML = annees.map(a => `<option value="${a.id}">${echapper(a.libelle)}</option>`).join('');
+    selAnnee.value = active.id;
+
+    // L'année d'accueil est proposée par défaut à la suivante dans la liste,
+    // celle qui n'est pas encore active.
+    const autres = annees.filter(a => a.id !== active.id);
+    selCible.innerHTML = '<option value="">— Choisir —</option>' +
+      autres.map(a => `<option value="${a.id}">${echapper(a.libelle)}</option>`).join('');
+    if (autres.length) selCible.value = autres[0].id;
+
+    selAnnee.addEventListener('change', charger);
+    selCible.addEventListener('change', charger);
+    document.getElementById('bouton-enregistrer-voeux').addEventListener('click', enregistrerVoeux);
+    if (estDirection) document.getElementById('bouton-repartir').addEventListener('click', repartir);
+
+    charger();
+  }
+
+  // ============================================================
+  //  Chargement
+  // ============================================================
+  async function charger() {
+    const anneeId = document.getElementById('select-annee').value;
+    const cibleId = document.getElementById('select-annee-cible').value;
+    const corps = document.getElementById('corps-orientation');
+    corps.innerHTML = '<tr><td colspan="7" class="etat-vide-tableau"><span class="spinner"></span>Chargement…</td></tr>';
+
+    const r = await appelApi(`/orientation?anneeScolaireId=${anneeId}${cibleId ? '&anneeCibleId=' + cibleId : ''}`);
+    if (!r || !r.ok) {
+      corps.innerHTML = '<tr><td colspan="7" class="etat-vide-tableau">Chargement impossible.</td></tr>';
+      return;
+    }
+    donnees = await r.json();
+    brouillonVoeux = {};
+
+    dessinerPlaces();
+    dessinerTableau();
+  }
+
+  function dessinerPlaces() {
+    const zone = document.getElementById('grille-places');
+    if (donnees.classes_cibles.length === 0) {
+      zone.innerHTML = '';
+      document.getElementById('etat-places').textContent =
+        "Choisissez l'année d'accueil pour voir les places disponibles.";
+      return;
+    }
+
+    // Regroupement par option : c'est le niveau auquel se joue le choix,
+    // la classe n'étant qu'un contenant.
+    const parOption = new Map();
+    donnees.classes_cibles.forEach(c => {
+      if (!parOption.has(c.option_nom)) parOption.set(c.option_nom, { capacite: 0, occupe: 0, illimite: false });
+      const o = parOption.get(c.option_nom);
+      if (c.capacite === null) o.illimite = true; else o.capacite += c.capacite;
+      o.occupe += c.nb_affectes;
+    });
+
+    zone.innerHTML = `<div class="widget" style="grid-column: 1 / -1;">
+      <p class="widget-titre">Places par option</p>
+      <div id="widget-options"></div>
+    </div>`;
+
+    if (window.ArdoiseUI) {
+      ArdoiseUI.barres('widget-options',
+        [...parOption.entries()].map(([nom, o]) => ({
+          libelle: nom,
+          valeur: o.occupe,
+          max: o.illimite ? Math.max(o.occupe, 1) : Math.max(o.capacite, 1),
+          affichage: o.illimite ? `${o.occupe} (sans limite)` : `${o.occupe}/${o.capacite}`
+        })),
+        { messageVide: "Aucune classe d'accueil avec option." }
+      );
+    }
+
+    const totalPlaces = donnees.classes_cibles.reduce((a, c) => a + (c.capacite ?? 0), 0);
+    document.getElementById('etat-places').textContent =
+      `${donnees.classes_cibles.length} classe(s) d'accueil${totalPlaces ? ` · ${totalPlaces} place(s) déclarée(s)` : ''}`;
+  }
+
+  function dessinerTableau() {
+    const corps = document.getElementById('corps-orientation');
+    if (donnees.eleves.length === 0) {
+      corps.innerHTML = `<tr><td colspan="7" class="etat-vide-tableau">
+        Aucun élève en classe d'orientation.<br/>
+        <span style="font-size:0.86rem;">Marquez les classes concernées comme « classe d'orientation » dans l'écran Classes.</span>
+      </td></tr>`;
+      document.getElementById('barre-voeux').style.display = 'none';
+      return;
+    }
+    document.getElementById('barre-voeux').style.display = '';
+
+    const optionsHtml = (selection) => '<option value="">—</option>' +
+      donnees.options.map(o => `<option value="${o.id}" ${o.id === selection ? 'selected' : ''}>${echapper(o.nom)}${o.section_nom ? ' — ' + echapper(o.section_nom) : ''}</option>`).join('');
+
+    corps.innerHTML = donnees.eleves.map(e => {
+      const faible = e.moyenne !== null && e.moyenne < donnees.seuil;
+      return `<tr>
+        <td><strong>${echapper(e.nom_complet)}</strong><div style="font-size:0.76rem; color:var(--texte-att); font-family:var(--police-mono);">${echapper(e.matricule)}</div></td>
+        <td class="moyenne ${faible ? 'faible' : ''}">${e.moyenne !== null ? e.moyenne + '%' : '—'}</td>
+        <td><select class="champ-voeu" data-eleve="${e.eleve_id}" data-champ="option_voeu_id">${optionsHtml(e.option_voeu_id)}</select></td>
+        <td><select class="champ-voeu" data-eleve="${e.eleve_id}" data-champ="option_repli_id">${optionsHtml(e.option_repli_id)}</select></td>
+        <td>${e.classe_affectee_nom ? echapper(e.classe_affectee_nom) : '<span style="color:var(--texte-att);">—</span>'}${e.attribue_au_merite === false && e.classe_affectee_id ? '<span class="puce-manuelle">manuelle</span>' : ''}</td>
+        <td>${e.statut_orientation ? `<span class="etat-orientation eo-${e.statut_orientation}">${echapper(LIBELLE_ETAT[e.statut_orientation] || e.statut_orientation)}</span>` : '<span style="color:var(--texte-att); font-size:0.8rem;">—</span>'}
+            ${e.motif ? `<div style="font-size:0.74rem; color:var(--texte-att); margin-top:3px;">${echapper(e.motif)}</div>` : ''}</td>
+        <td>${estDirection ? `<button class="lien-action" data-affecter="${e.eleve_id}">Affecter</button>` : ''}</td>
+      </tr>`;
+    }).join('');
+
+    corps.querySelectorAll('.champ-voeu').forEach(sel => {
+      sel.addEventListener('change', () => {
+        const id = sel.dataset.eleve;
+        if (!brouillonVoeux[id]) {
+          const e = donnees.eleves.find(x => x.eleve_id === id);
+          brouillonVoeux[id] = { option_voeu_id: e.option_voeu_id, option_repli_id: e.option_repli_id };
+        }
+        brouillonVoeux[id][sel.dataset.champ] = sel.value || null;
+      });
+    });
+
+    corps.querySelectorAll('[data-affecter]').forEach(b => {
+      b.addEventListener('click', () => affecterManuellement(b.dataset.affecter));
+    });
+  }
+
+  // ============================================================
+  //  Actions
+  // ============================================================
+  async function enregistrerVoeux() {
+    const voeux = Object.entries(brouillonVoeux).map(([eleve_id, v]) => ({ eleve_id, ...v }));
+    if (voeux.length === 0) { afficherMessage('Aucun vœu modifié.', 'erreur'); return; }
+
+    const doublon = voeux.find(v => v.option_voeu_id && v.option_voeu_id === v.option_repli_id);
+    if (doublon) {
+      afficherMessage('Le repli doit être différent du premier vœu.', 'erreur'); return;
+    }
+
+    const bouton = document.getElementById('bouton-enregistrer-voeux');
+    bouton.disabled = true; bouton.textContent = 'Enregistrement…';
+
+    const r = await appelApi('/orientation/voeux', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ annee_scolaire_id: document.getElementById('select-annee').value, voeux })
+    });
+
+    bouton.disabled = false; bouton.textContent = 'Enregistrer les vœux';
+    if (!r) return;
+    const rep = await r.json().catch(() => ({}));
+    if (!r.ok) { afficherMessage(rep.message || 'Enregistrement impossible.', 'erreur'); return; }
+    afficherMessage(rep.message, 'succes');
+    charger();
+  }
+
+  async function repartir() {
+    const cibleId = document.getElementById('select-annee-cible').value;
+    if (!cibleId) { afficherMessage("Choisissez l'année d'accueil.", 'erreur'); return; }
+    if (!confirm("Lancer la répartition au mérite ?\n\nLes affectations automatiques précédentes seront recalculées. Les affectations manuelles sont conservées.")) return;
+
+    const bouton = document.getElementById('bouton-repartir');
+    bouton.disabled = true; bouton.textContent = 'Répartition…';
+
+    const r = await appelApi('/orientation/repartir', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        annee_scolaire_id: document.getElementById('select-annee').value,
+        annee_cible_id: cibleId
+      })
+    });
+
+    bouton.disabled = false; bouton.textContent = 'Lancer la répartition';
+    if (!r) return;
+    const rep = await r.json().catch(() => ({}));
+    if (!r.ok) { afficherMessage(rep.message || 'Répartition impossible.', 'erreur'); return; }
+    afficherMessage(rep.message, 'succes');
+    charger();
+  }
+
+  async function affecterManuellement(eleveId) {
+    if (donnees.classes_cibles.length === 0) {
+      afficherMessage("Choisissez d'abord l'année d'accueil.", 'erreur'); return;
+    }
+    const eleve = donnees.eleves.find(e => e.eleve_id === eleveId);
+
+    const liste = donnees.classes_cibles
+      .map((c, i) => `${i + 1}. ${c.nom} — ${c.option_nom}${c.capacite !== null ? ` (${c.nb_affectes}/${c.capacite})` : ''}`)
+      .join('\n');
+    const choix = prompt(`Affecter ${eleve.nom_complet} à quelle classe ?\n\n${liste}\n\nEntrez le numéro, ou 0 pour retirer l'affectation.`);
+    if (choix === null) return;
+
+    const index = Number(choix);
+    if (!Number.isInteger(index) || index < 0 || index > donnees.classes_cibles.length) {
+      afficherMessage('Numéro invalide.', 'erreur'); return;
+    }
+    const classe = index === 0 ? null : donnees.classes_cibles[index - 1];
+
+    const motif = prompt("Motif de cette affectation manuelle ?\n\nIl sera enregistré à votre nom et distinguera cette décision d'une attribution au mérite.");
+    if (!motif || !motif.trim()) return;
+
+    const r = await appelApi(`/orientation/${eleveId}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        annee_scolaire_id: document.getElementById('select-annee').value,
+        classe_affectee_id: classe ? classe.id : null,
+        motif: motif.trim()
+      })
+    });
+    if (!r) return;
+    const rep = await r.json().catch(() => ({}));
+    if (!r.ok) { afficherMessage(rep.message || 'Affectation impossible.', 'erreur'); return; }
+    afficherMessage(rep.message, 'succes');
+    charger();
+  }
+
+  initialiser();
+
+  (function gererAccesParRole() {
+    const permissions = {
+      'dashboard-directeur.html': ['directeur', 'prefet'],
+      'annee-scolaire.html': ['directeur', 'prefet'],
+      'espace-secretaire.html': ['secretaire'],
+      'espace-professeur.html': ['professeur'],
+      'espace-titulaire.html': ['titulaire'],
+      'cours-classe-titulaire.html': ['titulaire'],
+      'eleves.html': ['directeur', 'prefet', 'secretaire'],
+      'inscriptions.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire'],
+      'orientation.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
+      'frais-scolaires.html': ['directeur', 'comptable', 'secretaire'],
+      'utilisateurs.html': ['directeur', 'prefet', 'secretaire'],
+      'classes.html': ['directeur', 'prefet', 'secretaire'],
+      'cours.html': ['directeur', 'prefet', 'secretaire'],
+      'presences.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
+      'emploi-du-temps.html': ['directeur', 'prefet', 'secretaire', 'titulaire', 'professeur'],
+      'discipline.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
+      'site-public.html': ['directeur', 'prefet', 'secretaire'],
+      'notes.html': ['directeur', 'prefet', 'professeur'],
+      'bulletins.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
+      'bulletin-annuel.html': ['directeur', 'prefet'],
+      'generateur-modeles.html': ['directeur'],
+      'calendrier.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire'],
+      'rapports.html': ['directeur', 'prefet', 'secretaire', 'comptable'],
+      'archives.html': ['directeur', 'prefet', 'secretaire'],
+      'journal.html': ['directeur', 'prefet'],
+      'messages.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire', 'comptable'],
+      'parametres.html': ['directeur']
+    };
+    const ordrePriorite = ['dashboard-directeur.html', 'espace-secretaire.html', 'espace-professeur.html', 'espace-titulaire.html', 'frais-scolaires.html', 'eleves.html'];
+
+    let utilisateur = null;
+    try { utilisateur = JSON.parse(obtenirDuStockage('ardoise_user') || 'null'); } catch (e) {}
+    const roles = (utilisateur && utilisateur.roles) || [];
+    const estSuperAdmin = roles.includes('super_admin');
+
+    document.querySelectorAll('.nav-item[href]').forEach((lien) => {
+      const page = lien.getAttribute('href');
+      const rolesAutorises = permissions[page];
+      if (rolesAutorises && !estSuperAdmin && !roles.some((r) => rolesAutorises.includes(r))) {
+        const li = lien.closest('li');
+        if (li) li.style.display = 'none';
+      }
+    });
+
+    const pageActuelle = 'orientation.html';
+    const rolesPourCettePage = permissions[pageActuelle];
+    if (rolesPourCettePage && !estSuperAdmin && !roles.some((r) => rolesPourCettePage.includes(r))) {
+      const pageDeRepli = ordrePriorite.find((p) => {
+        const r = permissions[p];
+        return !r || roles.some((role) => r.includes(role));
+      });
+      if (pageDeRepli && pageDeRepli !== pageActuelle) {
+        window.location.href = pageDeRepli;
+        return; // on quitte cette page, pas la peine d'afficher la barre ici
+      }
+    }
+
+    document.querySelector('.nav-liste').style.visibility = 'visible';
+  })();
+</script>
+
+<script src="theme.js"></script>
+<script src="ui.js"></script>
+<script src="hors-ligne.js"></script>
+</body>
+</html>

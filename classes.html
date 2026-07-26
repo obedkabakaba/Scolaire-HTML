@@ -40,6 +40,8 @@
   .nav-item.actif { background: var(--nav-actif-fond); color: var(--nav-texte-fort); font-weight: 600; }
   .nav-item .etiquette-bientot { font-family: var(--police-mono); font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--nav-texte-faible); }
 
+  .interrupteur-classe { display: flex; align-items: flex-start; gap: 9px; font-size: 0.85rem; cursor: pointer; font-weight: 400; }
+  .interrupteur-classe input { width: 17px; height: 17px; accent-color: var(--ocre); cursor: pointer; margin-top: 2px; flex: none; }
   .contenu { padding: 36px 44px 60px 44px; }
   @media (max-width: 780px) { .contenu { padding: 24px 20px 48px 20px; } }
 
@@ -164,6 +166,7 @@
         <li><a class="nav-item" href="cours-classe-titulaire.html">Cours de la classe</a></li>
         <li><a class="nav-item" href="eleves.html">Élèves</a></li>
         <li><a class="nav-item" href="inscriptions.html">Inscriptions</a></li>
+        <li><a class="nav-item" href="orientation.html">Orientation</a></li>
         <li><a class="nav-item" href="frais-scolaires.html">Frais scolaires</a></li>
         <li><a class="nav-item" href="utilisateurs.html">Utilisateurs</a></li>
         <li><a class="nav-item actif" href="classes.html">Classes</a></li>
@@ -260,6 +263,16 @@
             <option value="primaire">Primaire</option>
             <option value="secondaire">Secondaire / Humanités</option>
           </select>
+        </div>
+        <div class="champ">
+          <label class="interrupteur-classe">
+            <input type="checkbox" id="champ-classe-orientation" />
+            <span>Classe d'orientation — les élèves y choisissent leur option pour l'an prochain</span>
+          </label>
+        </div>
+        <div class="champ">
+          <label for="champ-classe-capacite">Capacité (places)</label>
+          <input type="number" id="champ-classe-capacite" min="1" max="500" placeholder="sans limite" />
         </div>
         <div class="champ">
           <label for="champ-classe-vacation">Vacation</label>
@@ -486,6 +499,8 @@
     document.getElementById('classe-id').value = classe?.id || '';
     document.getElementById('champ-classe-nom').value = classe?.nom || '';
     document.getElementById('champ-classe-cycle').value = classe?.cycle || '';
+    document.getElementById('champ-classe-orientation').checked = classe?.classe_orientation === true;
+    document.getElementById('champ-classe-capacite').value = classe?.capacite ?? '';
     remplirVacations(classe?.vacation_id || '');
     majChampsSelonCycle();
     document.getElementById('champ-classe-section').value = classe?.section_id || '';
@@ -520,6 +535,8 @@
     const corpsRequete = {
       nom: document.getElementById('champ-classe-nom').value.trim(),
       cycle: document.getElementById('champ-classe-cycle').value || null,
+      classe_orientation: document.getElementById('champ-classe-orientation').checked,
+      capacite: document.getElementById('champ-classe-capacite').value || null,
       vacation_id: document.getElementById('champ-classe-vacation').value || null,
       section_id: document.getElementById('champ-classe-section').value || null,
       option_id: document.getElementById('champ-classe-option').value || null,
@@ -671,6 +688,7 @@
       'cours-classe-titulaire.html': ['titulaire'],
       'eleves.html': ['directeur', 'prefet', 'secretaire'],
       'inscriptions.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire'],
+      'orientation.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
       'frais-scolaires.html': ['directeur', 'comptable', 'secretaire'],
       'utilisateurs.html': ['directeur', 'prefet', 'secretaire'],
       'classes.html': ['directeur', 'prefet', 'secretaire'],

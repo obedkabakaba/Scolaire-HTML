@@ -34,6 +34,8 @@
       '<circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M16 5a3 3 0 0 1 0 6"/><path d="M18 20a5 5 0 0 0-3-4.6"/>',
     'cours-classe-titulaire.html':
       '<path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3.5 6h.01"/><path d="M3.5 12h.01"/><path d="M3.5 18h.01"/>',
+    'orientation.html':
+      '<path d="M12 3v6"/><path d="M12 9 6 21"/><path d="m12 9 6 12"/><circle cx="12" cy="6" r="2.5"/>',
     'inscriptions.html':
       '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M9 13h4"/><path d="m15.5 15.5 1.5 1.5 3-3"/>',
     'eleves.html':

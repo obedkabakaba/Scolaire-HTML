@@ -63,6 +63,12 @@
   .barre-actions .bouton-principal { margin-left: auto; }
   .aide { font-size: 0.84rem; color: var(--texte-att); }
 
+  .choix-classes { display: flex; flex-wrap: wrap; gap: 8px; }
+  .puce-classe-cible { display: flex; align-items: center; gap: 7px; border: 1px solid var(--bordure); background: var(--craie); border-radius: var(--r-pilule); padding: 7px 13px; font-size: 0.85rem; cursor: pointer; }
+  .puce-classe-cible input { width: 15px; height: 15px; accent-color: var(--ocre); cursor: pointer; }
+  .puce-classe-cible .capacite { font-size: 0.76rem; color: var(--texte-att); }
+  .bandeau-fenetre { background: rgba(60,90,98,0.1); border-radius: var(--r-petit); padding: 11px 15px; font-size: 0.86rem; color: var(--texte-att); margin-bottom: 16px; }
+  .bandeau-fenetre.close { background: rgba(178,58,46,0.12); color: var(--rouge); }
   .lien-retour { background: none; border: none; color: var(--encre); cursor: pointer; font-family: var(--police-corps); font-size: 0.88rem; padding: 4px 0; margin-bottom: 14px; }
   .entete-session { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 8px; }
   .entete-session h2 { font-family: var(--police-titre); font-size: 1.35rem; margin: 0; }
@@ -192,9 +198,18 @@
               <label for="champ-libelle">Libellé</label>
               <input type="text" id="champ-libelle" maxlength="120" placeholder="ex. Admission 7e année 2026-2027" />
             </div>
+            <div class="champ-form" style="grid-column: span 2;">
+              <label>Promotion qui recrute</label>
+              <div id="choix-classes-cibles" class="choix-classes"></div>
+              <p class="aide" style="margin:7px 0 0 0;">Cochez toutes les classes du niveau. Les admis y seront répartis automatiquement.</p>
+            </div>
             <div class="champ-form">
-              <label for="select-classe-cible">Classe de destination</label>
-              <select id="select-classe-cible"><option value="">— À définir plus tard —</option></select>
+              <label for="champ-ouverture">Inscriptions du</label>
+              <input type="date" id="champ-ouverture" />
+            </div>
+            <div class="champ-form">
+              <label for="champ-cloture">au</label>
+              <input type="date" id="champ-cloture" />
             </div>
             <div class="champ-form">
               <label for="champ-places">Places disponibles</label>
@@ -244,6 +259,8 @@
 
         <!-- Candidats -->
         <div id="sous-vue-candidats">
+          <div class="bandeau-fenetre" id="bandeau-fenetre" style="display:none;"></div>
+
           <div class="carte-config" id="carte-inscription">
             <h3>Inscrire un candidat</h3>
             <div class="grille-formulaire">
@@ -384,6 +401,7 @@
   let epreuveCourante = null;
   let copiesCourantes = [];
   let enseignants = [];
+  let classesEcole = [];
 
   const utilisateur = (() => {
     try { return JSON.parse(obtenirDuStockage('ardoise_user') || 'null'); } catch (e) { return null; }
@@ -449,10 +467,15 @@
 
       const rClasses = await appelApi('/classes');
       if (rClasses?.ok) {
-        const classes = await rClasses.json();
-        document.getElementById('select-classe-cible').innerHTML =
-          '<option value="">— À définir plus tard —</option>' +
-          classes.map(c => `<option value="${c.id}">${echapper(c.nom)}</option>`).join('');
+        classesEcole = await rClasses.json();
+        document.getElementById('choix-classes-cibles').innerHTML = classesEcole.length
+          ? classesEcole.map(c => `
+              <label class="puce-classe-cible">
+                <input type="checkbox" value="${c.id}" />
+                <span>${echapper(c.nom)}</span>
+                ${c.capacite ? `<span class="capacite">${c.nb_eleves}/${c.capacite}</span>` : `<span class="capacite">${c.nb_eleves} él.</span>`}
+              </label>`).join('')
+          : '<span class="aide">Aucune classe. Créez-les d\'abord.</span>';
       }
       const rUtil = await appelApi('/utilisateurs');
       if (rUtil?.ok) {
@@ -532,10 +555,12 @@
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         libelle,
-        classe_cible_id: document.getElementById('select-classe-cible').value || null,
+        classes_cibles: [...document.querySelectorAll('#choix-classes-cibles input:checked')].map(c => c.value),
         places: Number(document.getElementById('champ-places').value),
         mode: document.getElementById('select-mode').value,
-        date_test: document.getElementById('champ-date-test').value || null
+        date_test: document.getElementById('champ-date-test').value || null,
+        date_ouverture: document.getElementById('champ-ouverture').value || null,
+        date_cloture: document.getElementById('champ-cloture').value || null
       })
     });
 
@@ -545,6 +570,7 @@
     if (!r.ok) { afficherMessage(rep.message || 'Création impossible.', 'erreur'); return; }
 
     document.getElementById('champ-libelle').value = '';
+    document.querySelectorAll('#choix-classes-cibles input:checked').forEach(c => { c.checked = false; });
     afficherMessage(rep.message, 'succes');
     chargerSessions();
   }
@@ -594,14 +620,37 @@
     candidatsCourants = d.candidats;
 
     document.getElementById('titre-session').textContent = d.session.libelle;
+    const capacites = (d.session.classes_cibles || []).reduce((a, c) => a + (c.capacite ?? 0), 0);
     document.getElementById('meta-session').textContent =
       `${d.session.mode === 'test' ? 'Concours' : 'Admission directe'} · ${d.session.places} place(s)`
-      + `${d.session.classe_nom ? ' · ' + d.session.classe_nom : ''}`
+      + `${d.session.classe_nom ? ' · ' + d.session.classe_nom : ' · aucune classe d\'accueil'}`
+      + `${capacites ? ` (${capacites} place(s) déclarée(s))` : ''}`
       + `${d.session.publie_at ? ' · publié le ' + formaterDate(d.session.publie_at) : ''}`;
     dessinerActionsSession(d.session);
 
+    // La fenêtre d'inscription est annoncée avant toute saisie : inutile de
+    // remplir un formulaire pour se voir refuser à l'envoi.
+    const bandeauFenetre = document.getElementById('bandeau-fenetre');
+    const jour = new Date().toISOString().slice(0, 10);
+    const debut = d.session.date_ouverture ? String(d.session.date_ouverture).slice(0, 10) : null;
+    const fin = d.session.date_cloture ? String(d.session.date_cloture).slice(0, 10) : null;
+    const horsFenetre = (debut && jour < debut) || (fin && jour > fin);
+
+    bandeauFenetre.style.display = '';
+    if (debut || fin) {
+      bandeauFenetre.className = 'bandeau-fenetre' + (horsFenetre ? ' close' : '');
+      bandeauFenetre.textContent = horsFenetre
+        ? (debut && jour < debut
+            ? `Les inscriptions n'ouvrent que le ${debut}.`
+            : `Les inscriptions sont closes depuis le ${fin}.`)
+        : `Inscriptions ouvertes${debut ? ' depuis le ' + debut : ''}${fin ? ` jusqu'au ${fin}` : ''}.`;
+    } else {
+      bandeauFenetre.className = 'bandeau-fenetre';
+      bandeauFenetre.textContent = "Aucune période d'inscription définie : les candidatures sont acceptées sans limite de date.";
+    }
+
     document.getElementById('carte-inscription').style.display =
-      (estSecretariat && ['ouverte', 'brouillon'].includes(d.session.statut)) ? '' : 'none';
+      (estSecretariat && ['ouverte', 'brouillon'].includes(d.session.statut) && !horsFenetre) ? '' : 'none';
     document.getElementById('onglet-epreuves').style.display = d.session.mode === 'test' ? '' : 'none';
 
     // Tant que les résultats ne sont pas publiés, aucun total ni rang n'est

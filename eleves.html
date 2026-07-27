@@ -146,12 +146,26 @@
   }
   @keyframes tourner { to { transform: rotate(360deg); } }
 
-  /* styles pour l'assignation */
+  /* --- Styles pour l'assignation --- */
   .bouton-assignation { margin-left: auto; }
   .compteur-selection { font-weight: normal; font-size: 0.85rem; color: var(--texte-att); margin-left: 6px; }
   .bouton-annuler { display: none; }
-  .case-selection-eleve { display: none; } /* caché par défaut, affiché en mode sélection */
-  .th-selection { display: none; }
+
+  /* Colonne de sélection : cachée par défaut */
+  .col-selection {
+    display: none;
+    width: 40px;
+  }
+  /* Quand le mode sélection est actif, on affiche la colonne et les cases */
+  .mode-selection .col-selection {
+    display: table-cell;
+  }
+  .mode-selection .case-selection-eleve {
+    display: inline-block;
+  }
+  .mode-selection .bouton-annuler {
+    display: inline-block;
+  }
 
   .tooltip-trigger {
     position: relative;
@@ -255,7 +269,6 @@
         <p class="sous-titre" id="compteur-eleves"><span class="spinner"></span>Chargement…</p>
       </div>
       <div class="groupe-boutons">
-        <!-- Bouton Assigner (avec tooltip) -->
         <div class="tooltip-trigger" id="conteneur-bouton-assigner" style="display:none;">
           <button class="bouton bouton-principal bouton-assignation" id="bouton-assigner-classe">
             Assigner à une classe <span class="compteur-selection"></span>
@@ -263,7 +276,6 @@
           <span class="tooltip-text" id="tooltip-assigner">Élèves sans classe : <span id="nb-sans-classe">0</span></span>
         </div>
         <button class="bouton bouton-secondaire bouton-annuler" id="bouton-annuler-mode">Annuler</button>
-
         <button class="bouton bouton-secondaire" id="bouton-importer">Importer Excel</button>
         <input type="file" id="input-fichier-import" accept=".xlsx,.xls" />
         <button class="bouton bouton-secondaire" id="bouton-import-assiste">Importer un fichier libre <span class="puce-ia">IA</span></button>
@@ -289,12 +301,10 @@
     </div>
 
     <div class="conteneur-tableau">
-      <table>
+      <table id="table-eleves">
         <thead>
           <tr>
-            <th style="width:40px;" class="th-selection">
-              <input type="checkbox" id="selecteur-tous" />
-            </th>
+            <th class="col-selection"><input type="checkbox" id="selecteur-tous" /></th>
             <th>Matricule</th>
             <th>Nom</th>
             <th>Sexe</th>
@@ -496,6 +506,10 @@
     document.getElementById('filtre-classe').value = '';
     modeAssignation = true;
     selection.clear();
+    // Ajouter la classe au tableau pour afficher les cases
+    document.getElementById('table-eleves').classList.add('mode-selection');
+    // Mettre à jour le bouton
+    mettreAJourBoutonAssignation();
     chargerEleves(); // recharge avec les cases
   }
 
@@ -503,7 +517,10 @@
     if (!modeAssignation) return;
     modeAssignation = false;
     selection.clear();
-    chargerEleves(); // recharge sans les cases
+    document.getElementById('table-eleves').classList.remove('mode-selection');
+    document.querySelector('.compteur-selection').textContent = '';
+    document.getElementById('bouton-assigner-classe').disabled = false;
+    chargerEleves();
   }
 
   function mettreAJourBoutonAssignation() {
@@ -566,13 +583,20 @@
       document.getElementById('nb-sans-classe').textContent = nbSansClasse;
     } else {
       conteneur.style.display = 'none';
+      // Si en mode sélection mais plus de sans-classe, on désactive le mode
+      if (modeAssignation) {
+        desactiverModeAssignation();
+        return;
+      }
     }
 
-    // Gérer le bouton Annuler
-    document.getElementById('bouton-annuler-mode').style.display = (modeAssignation && peutAssigner) ? 'inline-block' : 'none';
+    // Le bouton Annuler est déjà géré par CSS via .mode-selection
 
-    // Décider si on affiche les cases
-    const afficherCases = modeAssignation && peutAssigner;
+    // Si mode sélection mais aucun élève sans classe, on désactive
+    if (modeAssignation && elevesAffiches.length === 0) {
+      desactiverModeAssignation();
+      return;
+    }
 
     // Construction du tableau
     const corps = document.getElementById('corps-tableau');
@@ -580,11 +604,6 @@
       corps.innerHTML = `<tr><td colspan="7" class="etat-vide-tableau">
         ${modeAssignation ? 'Aucun élève sans classe à assigner.' : 'Aucun élève ne correspond.'}
       </td></tr>`;
-      // Si mode assignation et aucun élève sans classe, on désactive le mode
-      if (modeAssignation && elevesAffiches.length === 0) {
-        desactiverModeAssignation(); // cela recharge, mais on peut le faire proprement
-        return;
-      }
       return;
     }
 
@@ -596,12 +615,12 @@
       }
     }
 
-    // Générer les lignes
+    // Générer les lignes (on inclut toujours la colonne de sélection, elle sera masquée par CSS si pas en mode)
     corps.innerHTML = elevesAffiches.map((e) => {
       const checked = selection.has(e.id) ? 'checked' : '';
       return `
         <tr data-id="${e.id}">
-          ${afficherCases ? `<td><input type="checkbox" class="case-selection-eleve" data-id="${e.id}" ${checked} /></td>` : ''}
+          <td class="col-selection"><input type="checkbox" class="case-selection-eleve" data-id="${e.id}" ${checked} /></td>
           <td class="matricule-cell">${e.matricule}</td>
           <td>${window.ArdoiseUI && ArdoiseUI.cellulePersonne
                 ? ArdoiseUI.cellulePersonne(
@@ -622,8 +641,8 @@
       `;
     }).join('');
 
-    // Écouter les cases à cocher
-    if (afficherCases) {
+    // Écouter les cases à cocher (si en mode sélection)
+    if (modeAssignation) {
       document.querySelectorAll('.case-selection-eleve').forEach(cb => {
         cb.addEventListener('change', (evt) => {
           const id = evt.target.dataset.id;
@@ -647,10 +666,10 @@
         });
         mettreAJourBoutonAssignation();
       });
-    }
 
-    // Mettre à jour le bouton principal
-    mettreAJourBoutonAssignation();
+      // Mettre à jour le bouton
+      mettreAJourBoutonAssignation();
+    }
 
     // Écouteurs pour les actions (modifier, historique, supprimer)
     corps.querySelectorAll('button[data-action]').forEach((bouton) => {

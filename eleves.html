@@ -54,13 +54,14 @@
   .entete-page h1 { font-family: var(--police-titre); font-weight: 600; font-size: 1.9rem; margin: 0 0 4px 0; }
   .entete-page .sous-titre { color: var(--texte-att); font-size: 0.95rem; margin: 0; }
 
-  .groupe-boutons { display: flex; gap: 10px; flex-wrap: wrap; }
+  .groupe-boutons { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
   .bouton {
     padding: 10px 16px; border-radius:  var(--r-bouton); font-family: var(--police-corps); font-size: 0.88rem;
     font-weight: 600; cursor: pointer; border: 1.5px solid transparent;
   }
   .bouton-principal { background: var(--ocre); color: var(--craie-2); }
   .bouton-principal:hover { background: var(--ocre-dark); }
+  .bouton-principal:disabled { opacity: 0.55; cursor: not-allowed; }
   .bouton-secondaire { background: none; border-color: var(--bordure); color: var(--texte-sombre); }
   .bouton-secondaire:hover { border-color: var(--ardoise); }
   .bouton:disabled { opacity: 0.55; cursor: not-allowed; }
@@ -145,14 +146,55 @@
   }
   @keyframes tourner { to { transform: rotate(360deg); } }
 
-  /* Nouveau style pour le bouton d'assignation groupée */
+  /* Nouveaux styles pour l'assignation */
   .bouton-assignation { margin-left: auto; }
   .compteur-selection { font-weight: normal; font-size: 0.85rem; color: var(--texte-att); margin-left: 6px; }
+  .bouton-annuler { display: none; }
+  .case-selection-eleve { display: none; } /* caché par défaut, affiché en mode sélection */
+  .th-selection { display: none; } /* caché par défaut */
+
+  /* Tooltip personnalisé */
+  .tooltip-trigger {
+    position: relative;
+    cursor: help;
+  }
+  .tooltip-trigger .tooltip-text {
+    visibility: hidden;
+    opacity: 0;
+    width: 260px;
+    background: var(--ardoise);
+    color: var(--craie-2);
+    text-align: center;
+    padding: 8px 12px;
+    border-radius: var(--r-petit);
+    font-size: 0.8rem;
+    font-weight: 400;
+    position: absolute;
+    z-index: 20;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  .tooltip-trigger:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+  }
+  .tooltip-trigger .tooltip-text::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -6px;
+    border-width: 6px;
+    border-style: solid;
+    border-color: var(--ardoise) transparent transparent transparent;
+  }
 </style>
 <script>
-  /* Applique le thème AVANT le premier affichage, pour éviter tout clignotement.
-     Aucune liste ici : elle divergerait à chaque nouveau thème. theme.js
-     valide la valeur juste après, et le serveur fait foi. */
+  /* Applique le thème AVANT le premier affichage */
   (function(){var t;
    try{t=localStorage.getItem('ardoise_theme')||sessionStorage.getItem('ardoise_theme');}catch(e){}
    var th=(t&&/^[a-z][a-z0-9-]{1,19}$/.test(t))?t:'ardoise';
@@ -214,10 +256,16 @@
         <p class="sous-titre" id="compteur-eleves"><span class="spinner"></span>Chargement…</p>
       </div>
       <div class="groupe-boutons">
-        <!-- Bouton Assignation groupée (visible uniquement pour les rôles autorisés) -->
-        <button class="bouton bouton-principal bouton-assignation" id="bouton-assigner-classe" style="display:none;" disabled>
-          Assigner à une classe <span class="compteur-selection"></span>
-        </button>
+        <!-- Bouton Assignation groupée (visible seulement si des élèves sans classe) -->
+        <div class="tooltip-trigger" id="conteneur-bouton-assigner" style="display:none;">
+          <button class="bouton bouton-principal bouton-assignation" id="bouton-assigner-classe">
+            Assigner à une classe <span class="compteur-selection"></span>
+          </button>
+          <span class="tooltip-text" id="tooltip-assigner">Élèves sans classe : <span id="nb-sans-classe">0</span></span>
+        </div>
+        <!-- Bouton Annuler (mode sélection) -->
+        <button class="bouton bouton-secondaire bouton-annuler" id="bouton-annuler-mode">Annuler</button>
+
         <button class="bouton bouton-secondaire" id="bouton-importer">Importer Excel</button>
         <input type="file" id="input-fichier-import" accept=".xlsx,.xls" />
         <button class="bouton bouton-secondaire" id="bouton-import-assiste">Importer un fichier libre <span class="puce-ia">IA</span></button>
@@ -246,8 +294,7 @@
       <table>
         <thead>
           <tr>
-            <!-- Colonne de sélection (cachée par défaut) -->
-            <th style="width:40px; display:none;" id="th-selection">
+            <th style="width:40px;" class="th-selection">
               <input type="checkbox" id="selecteur-tous" />
             </th>
             <th>Matricule</th>
@@ -367,9 +414,11 @@
     actif: 'Actif', renvoye: 'Renvoyé', transfere: 'Transféré', abandon: 'Abandon', diplome: 'Diplômé'
   };
 
+  // --- État de l'assignation ---
+  let modeAssignation = false; // true quand on est en mode sélection
+  let selection = new Set(); // ids des élèves sélectionnés
 
-  // Session par défaut = sessionStorage (effacée à la fermeture du navigateur),
-  // sauf si "Se souvenir de moi" a été coché à la connexion (alors localStorage).
+  // --- Fonctions d'authentification ---
   function obtenirDuStockage(cle) {
     return sessionStorage.getItem(cle) || localStorage.getItem(cle);
   }
@@ -439,32 +488,83 @@
     const options = classesCache.map((c) => `<option value="${c.id}">${c.nom}</option>`).join('');
     document.getElementById('filtre-classe').innerHTML = '<option value="">Toutes les classes</option>' + options;
     document.getElementById('champ-classe').innerHTML = '<option value="">— Aucune —</option>' + options;
-    // Remplir aussi le select de la modale d'assignation
     document.getElementById('assigner-classe').innerHTML = '<option value="">— Choisir —</option>' + options;
   }
 
-  // --- Sélection groupée ---
-  let selection = new Set(); // contient les id des élèves sélectionnés
+  // --- Gestion de l'interface d'assignation ---
+  function activerModeAssignation() {
+    modeAssignation = true;
+    // Afficher les cases à cocher
+    document.querySelectorAll('.th-selection').forEach(el => el.style.display = 'table-cell');
+    document.querySelectorAll('.case-selection-eleve').forEach(el => el.style.display = 'inline-block');
+    // Changer le bouton principal
+    const bouton = document.getElementById('bouton-assigner-classe');
+    bouton.textContent = 'Assigner à une classe';
+    bouton.disabled = true;
+    // Afficher le bouton annuler
+    document.getElementById('bouton-annuler-mode').style.display = 'inline-block';
+    // Mettre à jour le compteur
+    mettreAJourBoutonAssignation();
+    // Cacher le tooltip ?
+    // On peut le laisser mais il n'est plus pertinent
+  }
+
+  function desactiverModeAssignation() {
+    modeAssignation = false;
+    selection.clear();
+    // Cacher les cases à cocher
+    document.querySelectorAll('.th-selection').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.case-selection-eleve').forEach(el => el.style.display = 'none');
+    document.getElementById('selecteur-tous').checked = false;
+    // Remettre le bouton à son état initial (avec tooltip)
+    const bouton = document.getElementById('bouton-assigner-classe');
+    bouton.textContent = 'Assigner à une classe';
+    bouton.disabled = false; // on le réactive pour pouvoir recliquer
+    // Cacher le bouton annuler
+    document.getElementById('bouton-annuler-mode').style.display = 'none';
+    // Mettre à jour le compteur (le cacher)
+    document.querySelector('.compteur-selection').textContent = '';
+    // Recalculer la visibilité du bouton principal (selon élèves sans classe)
+    // On va le faire dans chargerEleves
+  }
 
   function mettreAJourBoutonAssignation() {
     const bouton = document.getElementById('bouton-assigner-classe');
     const compteur = document.querySelector('.compteur-selection');
-    const nb = selection.size;
-    if (nb === 0) {
-      bouton.disabled = true;
-      compteur.textContent = '';
-    } else {
-      bouton.disabled = false;
-      compteur.textContent = `(${nb})`;
+    if (modeAssignation) {
+      const nb = selection.size;
+      if (nb === 0) {
+        bouton.disabled = true;
+        compteur.textContent = '';
+      } else {
+        bouton.disabled = false;
+        compteur.textContent = `(${nb})`;
+      }
     }
   }
 
-  function viderSelection() {
-    selection.clear();
-    document.querySelectorAll('.case-selection-eleve').forEach(cb => cb.checked = false);
-    document.getElementById('selecteur-tous').checked = false;
-    mettreAJourBoutonAssignation();
-  }
+  // Gestion du bouton "Assigner" pour entrer en mode sélection
+  document.getElementById('bouton-assigner-classe').addEventListener('click', () => {
+    if (modeAssignation) {
+      // Si déjà en mode sélection, cela déclenchera l'assignation (si des élèves sont sélectionnés)
+      // Mais on a prévu que le bouton est désactivé si 0 sélection, donc on ne peut pas cliquer.
+      // On va donc utiliser le même bouton pour déclencher l'assignation (via la modale)
+      // On ouvre la modale si des élèves sont sélectionnés.
+      if (selection.size > 0) {
+        ouvrirModaleAssignation();
+      }
+    } else {
+      // Entrer en mode sélection
+      activerModeAssignation();
+    }
+  });
+
+  // Bouton Annuler
+  document.getElementById('bouton-annuler-mode').addEventListener('click', () => {
+    desactiverModeAssignation();
+    // On recharge la liste pour remettre à jour l'affichage (les cases disparaissent)
+    chargerEleves();
+  });
 
   // --- Chargement des élèves ---
   async function chargerEleves() {
@@ -488,70 +588,86 @@
     const eleves = await reponse.json();
     document.getElementById('compteur-eleves').textContent = `${eleves.length} élève${eleves.length !== 1 ? 's' : ''}`;
 
-    const corps = document.getElementById('corps-tableau');
-    if (eleves.length === 0) {
-      corps.innerHTML = '<tr><td colspan="7" class="etat-vide-tableau">Aucun élève ne correspond. Ajoute-en un ou modifie ta recherche.</td></tr>';
-      return;
-    }
-
-    // Vérifier si l'utilisateur a le droit d'assigner
+    // Vérifier les droits
     const utilisateur = JSON.parse(obtenirDuStockage('ardoise_user') || 'null');
     const roles = (utilisateur && utilisateur.roles) || [];
     const peutAssigner = roles.some(r => ['directeur', 'prefet', 'super_admin'].includes(r));
 
-    // Afficher ou cacher la colonne de sélection
-    const thSelection = document.getElementById('th-selection');
-    if (peutAssigner) {
-      thSelection.style.display = 'table-cell';
-      document.getElementById('bouton-assigner-classe').style.display = 'inline-block';
-    } else {
-      thSelection.style.display = 'none';
-      document.getElementById('bouton-assigner-classe').style.display = 'none';
-    }
+    // Compter les élèves sans classe
+    const sansClasse = eleves.filter(e => !e.classe_id);
+    const nbSansClasse = sansClasse.length;
 
-    // Réinitialiser la sélection si la colonne est cachée
-    if (!peutAssigner) {
-      viderSelection();
-    } else {
-      // On retire les ids qui ne sont plus dans la liste
-      const idsVisibles = new Set(eleves.map(e => e.id));
-      for (let id of selection) {
-        if (!idsVisibles.has(id)) selection.delete(id);
+    // Afficher ou cacher le bouton principal (et son tooltip)
+    const conteneur = document.getElementById('conteneur-bouton-assigner');
+    if (peutAssigner && nbSansClasse > 0) {
+      conteneur.style.display = 'inline-block';
+      document.getElementById('nb-sans-classe').textContent = nbSansClasse;
+      // Si on n'est pas en mode sélection, le bouton est actif
+      if (!modeAssignation) {
+        document.getElementById('bouton-assigner-classe').disabled = false;
       }
-      mettreAJourBoutonAssignation();
+    } else {
+      conteneur.style.display = 'none';
+      // Si on est en mode sélection et qu'il n'y a plus d'élèves sans classe, on désactive le mode
+      if (modeAssignation) {
+        desactiverModeAssignation();
+      }
     }
 
-    corps.innerHTML = eleves.map((e) => `
-      <tr data-id="${e.id}">
-        ${peutAssigner ? `<td><input type="checkbox" class="case-selection-eleve" data-id="${e.id}" ${selection.has(e.id) ? 'checked' : ''} /></td>` : ''}
-        <td class="matricule-cell">${e.matricule}</td>
-        <td>${window.ArdoiseUI && ArdoiseUI.cellulePersonne
-              ? ArdoiseUI.cellulePersonne(
-                  [e.nom, e.postnom, e.prenom].filter(Boolean).join(' '),
-                  e.classe_nom || null, e.photo_url)
-              : `${e.nom} ${e.postnom || ''} ${e.prenom || ''}`}</td>
-        <td>${e.sexe || '—'}</td>
-        <td>${e.classe_nom || '—'}</td>
-        <td>${window.ArdoiseUI && ArdoiseUI.badge
-              ? ArdoiseUI.badge(LIBELLES_STATUT[e.statut] || e.statut, e.statut === 'actif' ? 'succes' : 'neutre')
-              : `<span class="badge-statut ${e.statut === 'actif' ? 'actif' : 'autre'}">${LIBELLES_STATUT[e.statut] || e.statut}</span>`}</td>
-        <td>
-          <button class="lien-action" data-action="modifier">Modifier</button>
-          <button class="lien-action" data-action="historique">Historique</button>
-          <button class="lien-action suppr" data-action="supprimer">Supprimer</button>
-        </td>
-      </tr>
-    `).join('');
+    // Si on est en mode sélection, on garde les cases à cocher visibles, sinon on les cache
+    const afficherCases = modeAssignation && peutAssigner;
+    document.querySelectorAll('.th-selection').forEach(el => el.style.display = afficherCases ? 'table-cell' : 'none');
+    // Les cases seront gérées dans le rendu
 
-    // Écouter les cases à cocher
-    if (peutAssigner) {
+    // Réinitialiser la sélection si on n'est pas en mode
+    if (!modeAssignation) {
+      selection.clear();
+    } else {
+      // Filtrer la sélection pour ne garder que les élèves encore présents et sans classe ? 
+      // On garde la sélection telle quelle, mais on pourrait aussi restreindre aux élèves sans classe.
+      // On va garder la sélection sur tous les élèves affichés.
+    }
+
+    const corps = document.getElementById('corps-tableau');
+    if (eleves.length === 0) {
+      corps.innerHTML = '<tr><td colspan="7" class="etat-vide-tableau">Aucun élève ne correspond.</td></tr>';
+      return;
+    }
+
+    corps.innerHTML = eleves.map((e) => {
+      const checked = selection.has(e.id) ? 'checked' : '';
+      return `
+        <tr data-id="${e.id}">
+          ${afficherCases ? `<td><input type="checkbox" class="case-selection-eleve" data-id="${e.id}" ${checked} /></td>` : ''}
+          <td class="matricule-cell">${e.matricule}</td>
+          <td>${window.ArdoiseUI && ArdoiseUI.cellulePersonne
+                ? ArdoiseUI.cellulePersonne(
+                    [e.nom, e.postnom, e.prenom].filter(Boolean).join(' '),
+                    e.classe_nom || null, e.photo_url)
+                : `${e.nom} ${e.postnom || ''} ${e.prenom || ''}`}</td>
+          <td>${e.sexe || '—'}</td>
+          <td>${e.classe_nom || '—'}</td>
+          <td>${window.ArdoiseUI && ArdoiseUI.badge
+                ? ArdoiseUI.badge(LIBELLES_STATUT[e.statut] || e.statut, e.statut === 'actif' ? 'succes' : 'neutre')
+                : `<span class="badge-statut ${e.statut === 'actif' ? 'actif' : 'autre'}">${LIBELLES_STATUT[e.statut] || e.statut}</span>`}</td>
+          <td>
+            <button class="lien-action" data-action="modifier">Modifier</button>
+            <button class="lien-action" data-action="historique">Historique</button>
+            <button class="lien-action suppr" data-action="supprimer">Supprimer</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    // Écouter les cases à cocher si affichées
+    if (afficherCases) {
       document.querySelectorAll('.case-selection-eleve').forEach(cb => {
         cb.addEventListener('change', (evt) => {
           const id = evt.target.dataset.id;
           if (evt.target.checked) selection.add(id);
           else selection.delete(id);
           mettreAJourBoutonAssignation();
-          // Mettre à jour le "tout sélectionner" (si tous sont cochés)
+          // Mettre à jour le "tout sélectionner"
           const toutes = document.querySelectorAll('.case-selection-eleve');
           const toutesCochees = Array.from(toutes).every(c => c.checked);
           document.getElementById('selecteur-tous').checked = toutesCochees;
@@ -587,14 +703,12 @@
     });
   }
 
-  // --- Assignation groupée ---
-  document.getElementById('bouton-assigner-classe').addEventListener('click', () => {
+  // --- Ouvrir la modale d'assignation ---
+  function ouvrirModaleAssignation() {
     if (selection.size === 0) return;
     document.getElementById('assigner-info').innerHTML = `Vous allez assigner <strong>${selection.size}</strong> élève(s) à une nouvelle classe.`;
-    // Charger les classes si pas déjà fait
-    if (classesCache.length === 0) chargerClasses();
     document.getElementById('voile-assigner').classList.add('visible');
-  });
+  }
 
   document.getElementById('bouton-annuler-assigner').addEventListener('click', () => {
     document.getElementById('voile-assigner').classList.remove('visible');
@@ -635,11 +749,12 @@
       afficherMessage(`${reussites} élève(s) assigné(s), ${echecs} échec(s). Vérifiez les logs.`, 'erreur');
     }
 
-    // Recharger la liste et vider la sélection
-    viderSelection();
+    // Recharger la liste et désactiver le mode
+    desactiverModeAssignation();
     await chargerEleves();
   });
 
+  // --- Fonctions existantes ---
   function ouvrirModale(eleve) {
     document.getElementById('titre-modale').textContent = eleve ? 'Modifier un élève' : 'Ajouter un élève';
     document.getElementById('eleve-id').value = eleve?.id || '';
@@ -705,6 +820,8 @@
 
     fermerModale();
     afficherMessage(id ? 'Élève mis à jour.' : `Élève ajouté (matricule : ${donnees.matricule}).`, 'succes');
+    // Si on était en mode sélection, on le désactive ?
+    if (modeAssignation) desactiverModeAssignation();
     chargerEleves();
   });
 
@@ -718,6 +835,7 @@
       return;
     }
     afficherMessage('Élève supprimé.', 'succes');
+    if (modeAssignation) desactiverModeAssignation();
     chargerEleves();
   }
 
@@ -753,10 +871,7 @@
     return (...args) => { clearTimeout(minuteur); minuteur = setTimeout(() => fn(...args), delai); };
   }
 
-  // ============================================================
-  //  Import assisté — l'assistant devine la correspondance, l'utilisateur
-  //  la corrige, et l'écriture passe par le même code que l'import normal.
-  // ============================================================
+  // --- Import assisté (inchangé) ---
   (function activerImportAssiste() {
     let fichierCourant = null;
     let analyse = null;
@@ -870,7 +985,7 @@
     });
   })();
 
-  // Import Excel
+  // --- Import Excel ---
   document.getElementById('bouton-importer').addEventListener('click', () => {
     document.getElementById('input-fichier-import').click();
   });
@@ -899,10 +1014,11 @@
       `Import terminé : ${crees} créé(s), ${mis_a_jour} mis à jour${erreurs.length ? `, ${erreurs.length} avertissement(s)` : ''}.`,
       erreurs.length ? 'erreur' : 'succes'
     );
+    if (modeAssignation) desactiverModeAssignation();
     chargerEleves();
   });
 
-  // Export Excel
+  // --- Export Excel ---
   document.getElementById('bouton-exporter').addEventListener('click', async () => {
     const classeId = document.getElementById('filtre-classe').value;
     const params = classeId ? `?classeId=${classeId}` : '';
@@ -918,6 +1034,7 @@
     window.URL.revokeObjectURL(url);
   });
 
+  // --- Initialisation ---
   chargerClasses().then(chargerEleves);
 
   document.getElementById('bouton-deconnexion-nav')?.addEventListener('click', async () => {
@@ -932,7 +1049,7 @@
     retourConnexion();
   });
 
-  // ---------- Filtrage de la navigation selon le rôle connecté ----------
+  // Filtrage de la navigation selon le rôle
   (function gererAccesParRole() {
     const permissions = {
       'dashboard-directeur.html': ['directeur', 'prefet'],

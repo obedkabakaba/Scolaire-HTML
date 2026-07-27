@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="public">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ardoise — Choisir votre mot de passe</title>
+<meta name="theme-color" content="#111A19" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --craie: #F6F2E7; --craie-2: #FBF9F3; --ardoise: #1F2B24;
+    --ocre: #C98A3E; --ocre-dark: #A96F2E;
+    --vert-ok: #4C7A5A; --rouge: #B23A2E;
+    --texte: #1F2B24; --texte-att: #6B7269; --bordure: #E4DFCF;
+    --police-titre: 'Fraunces', Georgia, serif;
+    --police-corps: 'Inter', system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: var(--police-corps); color: var(--texte);
+    background: var(--ardoise); line-height: 1.6;
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  .carte {
+    background: var(--craie-2); border-radius: 14px;
+    max-width: 460px; width: 100%; padding: 36px;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.3);
+  }
+  h1 { font-family: var(--police-titre); font-weight: 600; font-size: 1.5rem; margin: 0 0 6px 0; }
+  .intro { color: var(--texte-att); font-size: 0.92rem; margin: 0 0 24px 0; }
+  .champ { margin-bottom: 16px; }
+  .champ label { display: block; font-size: 0.87rem; font-weight: 600; margin-bottom: 6px; }
+  .champ input {
+    width: 100%; border: 1px solid var(--bordure); border-radius: 8px;
+    padding: 12px 14px; font-family: var(--police-corps); font-size: 1rem;
+    background: var(--craie); color: var(--texte);
+  }
+  .champ input:focus { outline: 2px solid var(--ocre); outline-offset: 1px; }
+
+  .exigences { list-style: none; padding: 0; margin: 10px 0 0 0; }
+  .exigences li {
+    font-size: 0.83rem; color: var(--texte-att);
+    display: flex; align-items: center; gap: 8px; padding: 2px 0;
+  }
+  .exigences li::before { content: '○'; font-size: 0.9rem; }
+  .exigences li.remplie { color: var(--vert-ok); }
+  .exigences li.remplie::before { content: '●'; }
+
+  .bouton {
+    background: var(--ocre); color: #fff; border: none; border-radius: 8px;
+    padding: 13px 22px; font-family: var(--police-corps); font-size: 1rem;
+    font-weight: 600; cursor: pointer; width: 100%; margin-top: 8px;
+  }
+  .bouton:hover { background: var(--ocre-dark); }
+  .bouton:disabled { opacity: 0.55; cursor: default; }
+
+  .message { display: none; padding: 12px 15px; border-radius: 8px; margin-bottom: 16px; font-size: 0.9rem; }
+  .message.visible { display: block; }
+  .message.erreur { background: rgba(178,58,46,0.12); color: var(--rouge); }
+  .message.succes { background: rgba(76,122,90,0.12); color: var(--vert-ok); }
+  .pied { text-align: center; margin-top: 20px; }
+  .pied button {
+    background: none; border: none; color: var(--texte-att);
+    font-family: var(--police-corps); font-size: 0.85rem; cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<div class="carte">
+  <h1>Choisissez votre mot de passe</h1>
+  <p class="intro">
+    Votre compte a été créé avec un mot de passe provisoire, connu de la personne
+    qui vous l'a communiqué. Remplacez-le pour accéder à la plateforme.
+  </p>
+
+  <div class="message" id="message"></div>
+
+  <div class="champ">
+    <label for="ancien">Mot de passe provisoire</label>
+    <input type="password" id="ancien" autocomplete="current-password" />
+  </div>
+
+  <div class="champ">
+    <label for="nouveau">Nouveau mot de passe</label>
+    <input type="password" id="nouveau" autocomplete="new-password" />
+    <ul class="exigences" id="exigences">
+      <li data-regle="longueur">Au moins 8 caractères</li>
+      <li data-regle="chiffre">Au moins un chiffre</li>
+      <li data-regle="different">Différent du mot de passe provisoire</li>
+    </ul>
+  </div>
+
+  <div class="champ">
+    <label for="confirmation">Confirmez le nouveau mot de passe</label>
+    <input type="password" id="confirmation" autocomplete="new-password" />
+  </div>
+
+  <button class="bouton" id="bouton-valider">Enregistrer et continuer</button>
+
+  <div class="pied">
+    <button type="button" id="bouton-quitter">Se déconnecter</button>
+  </div>
+</div>
+
+<script>
+  const API_BASE_URL = "https://scolaire-saas-backend.onrender.com";
+
+  const stockage = localStorage.getItem('ardoise_access_token') ? localStorage : sessionStorage;
+  const jeton = stockage.getItem('ardoise_access_token');
+
+  // Sans jeton, cette page n'a pas de sens : on renvoie à la connexion.
+  if (!jeton) window.location.href = 'connexion.html';
+
+  const champNouveau = document.getElementById('nouveau');
+  const champAncien = document.getElementById('ancien');
+  const champConfirmation = document.getElementById('confirmation');
+
+  function afficher(texte, type) {
+    const zone = document.getElementById('message');
+    zone.textContent = texte;
+    zone.className = 'message visible ' + type;
+  }
+
+  /** Les exigences s'allument à la frappe : on sait où l'on en est. */
+  function verifierExigences() {
+    const v = champNouveau.value;
+    const regles = {
+      longueur: v.length >= 8,
+      chiffre: /[0-9]/.test(v),
+      different: v.length > 0 && v !== champAncien.value
+    };
+    Object.keys(regles).forEach(function (cle) {
+      const li = document.querySelector('[data-regle="' + cle + '"]');
+      li.classList.toggle('remplie', regles[cle]);
+    });
+    return Object.values(regles).every(Boolean);
+  }
+
+  champNouveau.addEventListener('input', verifierExigences);
+  champAncien.addEventListener('input', verifierExigences);
+
+  document.getElementById('bouton-valider').addEventListener('click', async () => {
+    const ancien = champAncien.value;
+    const nouveau = champNouveau.value;
+
+    if (!ancien) { afficher('Saisissez votre mot de passe provisoire.', 'erreur'); return; }
+    if (!verifierExigences()) {
+      afficher('Le nouveau mot de passe ne remplit pas toutes les conditions.', 'erreur'); return;
+    }
+    if (nouveau !== champConfirmation.value) {
+      afficher('Les deux saisies ne correspondent pas.', 'erreur'); return;
+    }
+
+    const bouton = document.getElementById('bouton-valider');
+    bouton.disabled = true; bouton.textContent = 'Enregistrement…';
+
+    try {
+      const reponse = await fetch(`${API_BASE_URL}/utilisateurs/moi/changer-mot-de-passe`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + jeton },
+        body: JSON.stringify({ ancien_mot_de_passe: ancien, nouveau_mot_de_passe: nouveau })
+      });
+      const donnees = await reponse.json().catch(() => ({}));
+
+      bouton.disabled = false; bouton.textContent = 'Enregistrer et continuer';
+
+      if (!reponse.ok) {
+        afficher(donnees.message || 'Changement impossible.', 'erreur');
+        return;
+      }
+
+      // Le drapeau local est levé pour que les pages n'y renvoient plus.
+      try {
+        const u = JSON.parse(stockage.getItem('ardoise_user') || 'null');
+        if (u) { u.doit_changer_mot_de_passe = false; stockage.setItem('ardoise_user', JSON.stringify(u)); }
+      } catch (e) {}
+
+      afficher('Mot de passe enregistré. Redirection en cours…', 'succes');
+      setTimeout(() => { window.location.href = 'connexion.html'; }, 1400);
+    } catch (e) {
+      bouton.disabled = false; bouton.textContent = 'Enregistrer et continuer';
+      afficher('Impossible de joindre le serveur. Réessayez.', 'erreur');
+    }
+  });
+
+  document.getElementById('bouton-quitter').addEventListener('click', () => {
+    ['ardoise_access_token', 'ardoise_refresh_token', 'ardoise_user'].forEach((cle) => {
+      localStorage.removeItem(cle); sessionStorage.removeItem(cle);
+    });
+    window.location.href = 'connexion.html';
+  });
+</script>
+
+</body>
+</html>

@@ -482,6 +482,14 @@
       stockage.setItem('ardoise_refresh_token', donnees.refresh_token);
       stockage.setItem('ardoise_user', JSON.stringify(donnees.user));
 
+      // Mot de passe provisoire : on n'entre pas dans la plateforme tant
+      // qu'il n'a pas été remplacé. Le serveur refuse de toute façon toute
+      // autre requête, cette redirection évite simplement une page d'erreur.
+      if (donnees.doit_changer_mot_de_passe === true) {
+        window.location.href = 'changer-mot-de-passe.html';
+        return;
+      }
+
       const roles = donnees.user?.roles || [];
 
       const pageAtterrissage = pageAtterrissagePourRoles(roles);

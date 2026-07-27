@@ -146,14 +146,13 @@
   }
   @keyframes tourner { to { transform: rotate(360deg); } }
 
-  /* Nouveaux styles pour l'assignation */
+  /* styles pour l'assignation */
   .bouton-assignation { margin-left: auto; }
   .compteur-selection { font-weight: normal; font-size: 0.85rem; color: var(--texte-att); margin-left: 6px; }
   .bouton-annuler { display: none; }
   .case-selection-eleve { display: none; } /* caché par défaut, affiché en mode sélection */
-  .th-selection { display: none; } /* caché par défaut */
+  .th-selection { display: none; }
 
-  /* Tooltip personnalisé */
   .tooltip-trigger {
     position: relative;
     cursor: help;
@@ -256,16 +255,13 @@
         <p class="sous-titre" id="compteur-eleves"><span class="spinner"></span>Chargement…</p>
       </div>
       <div class="groupe-boutons">
-        <!-- Bouton Assignation groupée (visible seulement si des élèves sans classe) -->
         <div class="tooltip-trigger" id="conteneur-bouton-assigner" style="display:none;">
           <button class="bouton bouton-principal bouton-assignation" id="bouton-assigner-classe">
             Assigner à une classe <span class="compteur-selection"></span>
           </button>
           <span class="tooltip-text" id="tooltip-assigner">Élèves sans classe : <span id="nb-sans-classe">0</span></span>
         </div>
-        <!-- Bouton Annuler (mode sélection) -->
         <button class="bouton bouton-secondaire bouton-annuler" id="bouton-annuler-mode">Annuler</button>
-
         <button class="bouton bouton-secondaire" id="bouton-importer">Importer Excel</button>
         <input type="file" id="input-fichier-import" accept=".xlsx,.xls" />
         <button class="bouton bouton-secondaire" id="bouton-import-assiste">Importer un fichier libre <span class="puce-ia">IA</span></button>
@@ -415,8 +411,8 @@
   };
 
   // --- État de l'assignation ---
-  let modeAssignation = false; // true quand on est en mode sélection
-  let selection = new Set(); // ids des élèves sélectionnés
+  let modeAssignation = false;
+  let selection = new Set();
 
   // --- Fonctions d'authentification ---
   function obtenirDuStockage(cle) {
@@ -491,41 +487,20 @@
     document.getElementById('assigner-classe').innerHTML = '<option value="">— Choisir —</option>' + options;
   }
 
-  // --- Gestion de l'interface d'assignation ---
+  // --- Gestion du mode sélection ---
   function activerModeAssignation() {
+    if (modeAssignation) return;
     modeAssignation = true;
-    // Afficher les cases à cocher
-    document.querySelectorAll('.th-selection').forEach(el => el.style.display = 'table-cell');
-    document.querySelectorAll('.case-selection-eleve').forEach(el => el.style.display = 'inline-block');
-    // Changer le bouton principal
-    const bouton = document.getElementById('bouton-assigner-classe');
-    bouton.textContent = 'Assigner à une classe';
-    bouton.disabled = true;
-    // Afficher le bouton annuler
-    document.getElementById('bouton-annuler-mode').style.display = 'inline-block';
-    // Mettre à jour le compteur
-    mettreAJourBoutonAssignation();
-    // Cacher le tooltip ?
-    // On peut le laisser mais il n'est plus pertinent
+    selection.clear();
+    // On recharge la liste pour générer les cases
+    chargerEleves();
   }
 
   function desactiverModeAssignation() {
+    if (!modeAssignation) return;
     modeAssignation = false;
     selection.clear();
-    // Cacher les cases à cocher
-    document.querySelectorAll('.th-selection').forEach(el => el.style.display = 'none');
-    document.querySelectorAll('.case-selection-eleve').forEach(el => el.style.display = 'none');
-    document.getElementById('selecteur-tous').checked = false;
-    // Remettre le bouton à son état initial (avec tooltip)
-    const bouton = document.getElementById('bouton-assigner-classe');
-    bouton.textContent = 'Assigner à une classe';
-    bouton.disabled = false; // on le réactive pour pouvoir recliquer
-    // Cacher le bouton annuler
-    document.getElementById('bouton-annuler-mode').style.display = 'none';
-    // Mettre à jour le compteur (le cacher)
-    document.querySelector('.compteur-selection').textContent = '';
-    // Recalculer la visibilité du bouton principal (selon élèves sans classe)
-    // On va le faire dans chargerEleves
+    chargerEleves();
   }
 
   function mettreAJourBoutonAssignation() {
@@ -540,31 +515,11 @@
         bouton.disabled = false;
         compteur.textContent = `(${nb})`;
       }
+    } else {
+      // Hors mode, on cache le compteur
+      compteur.textContent = '';
     }
   }
-
-  // Gestion du bouton "Assigner" pour entrer en mode sélection
-  document.getElementById('bouton-assigner-classe').addEventListener('click', () => {
-    if (modeAssignation) {
-      // Si déjà en mode sélection, cela déclenchera l'assignation (si des élèves sont sélectionnés)
-      // Mais on a prévu que le bouton est désactivé si 0 sélection, donc on ne peut pas cliquer.
-      // On va donc utiliser le même bouton pour déclencher l'assignation (via la modale)
-      // On ouvre la modale si des élèves sont sélectionnés.
-      if (selection.size > 0) {
-        ouvrirModaleAssignation();
-      }
-    } else {
-      // Entrer en mode sélection
-      activerModeAssignation();
-    }
-  });
-
-  // Bouton Annuler
-  document.getElementById('bouton-annuler-mode').addEventListener('click', () => {
-    desactiverModeAssignation();
-    // On recharge la liste pour remettre à jour l'affichage (les cases disparaissent)
-    chargerEleves();
-  });
 
   // --- Chargement des élèves ---
   async function chargerEleves() {
@@ -597,41 +552,41 @@
     const sansClasse = eleves.filter(e => !e.classe_id);
     const nbSansClasse = sansClasse.length;
 
+    // Si on est en mode sélection mais qu'il n'y a plus d'élèves sans classe, on désactive
+    if (modeAssignation && nbSansClasse === 0) {
+      modeAssignation = false;
+      selection.clear();
+      // On continue, le reste du code utilisera modeAssignation = false
+    }
+
     // Afficher ou cacher le bouton principal (et son tooltip)
     const conteneur = document.getElementById('conteneur-bouton-assigner');
     if (peutAssigner && nbSansClasse > 0) {
       conteneur.style.display = 'inline-block';
       document.getElementById('nb-sans-classe').textContent = nbSansClasse;
-      // Si on n'est pas en mode sélection, le bouton est actif
-      if (!modeAssignation) {
-        document.getElementById('bouton-assigner-classe').disabled = false;
-      }
     } else {
       conteneur.style.display = 'none';
-      // Si on est en mode sélection et qu'il n'y a plus d'élèves sans classe, on désactive le mode
-      if (modeAssignation) {
-        desactiverModeAssignation();
-      }
     }
 
-    // Si on est en mode sélection, on garde les cases à cocher visibles, sinon on les cache
+    // Gérer l'affichage du bouton Annuler
+    document.getElementById('bouton-annuler-mode').style.display = (modeAssignation && peutAssigner) ? 'inline-block' : 'none';
+
+    // Déterminer si on affiche les cases
     const afficherCases = modeAssignation && peutAssigner;
-    document.querySelectorAll('.th-selection').forEach(el => el.style.display = afficherCases ? 'table-cell' : 'none');
-    // Les cases seront gérées dans le rendu
 
-    // Réinitialiser la sélection si on n'est pas en mode
-    if (!modeAssignation) {
-      selection.clear();
-    } else {
-      // Filtrer la sélection pour ne garder que les élèves encore présents et sans classe ? 
-      // On garde la sélection telle quelle, mais on pourrait aussi restreindre aux élèves sans classe.
-      // On va garder la sélection sur tous les élèves affichés.
-    }
-
+    // Construction du tableau
     const corps = document.getElementById('corps-tableau');
     if (eleves.length === 0) {
       corps.innerHTML = '<tr><td colspan="7" class="etat-vide-tableau">Aucun élève ne correspond.</td></tr>';
       return;
+    }
+
+    // Garder la sélection cohérente (supprimer les ids qui ne sont plus dans la liste)
+    if (modeAssignation) {
+      const ids = new Set(eleves.map(e => e.id));
+      for (let id of selection) {
+        if (!ids.has(id)) selection.delete(id);
+      }
     }
 
     corps.innerHTML = eleves.map((e) => {
@@ -687,6 +642,16 @@
       });
     }
 
+    // Mettre à jour l'état du bouton principal (si mode sélection)
+    if (modeAssignation) {
+      mettreAJourBoutonAssignation();
+    } else {
+      // Hors mode, on s'assure que le bouton est actif (si visible) et sans compteur
+      const bouton = document.getElementById('bouton-assigner-classe');
+      bouton.disabled = false;
+      document.querySelector('.compteur-selection').textContent = '';
+    }
+
     // Écouteurs pour les actions (modifier, historique, supprimer)
     corps.querySelectorAll('button[data-action]').forEach((bouton) => {
       const ligne = bouton.closest('tr');
@@ -703,10 +668,30 @@
     });
   }
 
+  // --- Bouton "Assigner" (clic principal) ---
+  document.getElementById('bouton-assigner-classe').addEventListener('click', () => {
+    if (modeAssignation) {
+      // Si en mode sélection, on ouvre la modale si des élèves sont sélectionnés
+      if (selection.size > 0) {
+        ouvrirModaleAssignation();
+      }
+    } else {
+      // Sinon on active le mode
+      activerModeAssignation();
+    }
+  });
+
+  // --- Bouton Annuler (mode) ---
+  document.getElementById('bouton-annuler-mode').addEventListener('click', () => {
+    desactiverModeAssignation();
+  });
+
   // --- Ouvrir la modale d'assignation ---
   function ouvrirModaleAssignation() {
     if (selection.size === 0) return;
     document.getElementById('assigner-info').innerHTML = `Vous allez assigner <strong>${selection.size}</strong> élève(s) à une nouvelle classe.`;
+    // S'assurer que la liste des classes est chargée
+    if (classesCache.length === 0) chargerClasses();
     document.getElementById('voile-assigner').classList.add('visible');
   }
 
@@ -749,12 +734,11 @@
       afficherMessage(`${reussites} élève(s) assigné(s), ${echecs} échec(s). Vérifiez les logs.`, 'erreur');
     }
 
-    // Recharger la liste et désactiver le mode
-    desactiverModeAssignation();
-    await chargerEleves();
+    // Désactiver le mode et recharger
+    desactiverModeAssignation(); // Appelle chargerEleves
   });
 
-  // --- Fonctions existantes ---
+  // --- Fonctions existantes (modale, suppression, historique) ---
   function ouvrirModale(eleve) {
     document.getElementById('titre-modale').textContent = eleve ? 'Modifier un élève' : 'Ajouter un élève';
     document.getElementById('eleve-id').value = eleve?.id || '';
@@ -820,9 +804,9 @@
 
     fermerModale();
     afficherMessage(id ? 'Élève mis à jour.' : `Élève ajouté (matricule : ${donnees.matricule}).`, 'succes');
-    // Si on était en mode sélection, on le désactive ?
+    // Si on était en mode sélection, on le désactive
     if (modeAssignation) desactiverModeAssignation();
-    chargerEleves();
+    else chargerEleves();
   });
 
   async function supprimerEleve(id, nom) {
@@ -836,7 +820,7 @@
     }
     afficherMessage('Élève supprimé.', 'succes');
     if (modeAssignation) desactiverModeAssignation();
-    chargerEleves();
+    else chargerEleves();
   }
 
   async function ouvrirHistorique(eleve) {
@@ -1015,7 +999,7 @@
       erreurs.length ? 'erreur' : 'succes'
     );
     if (modeAssignation) desactiverModeAssignation();
-    chargerEleves();
+    else chargerEleves();
   });
 
   // --- Export Excel ---

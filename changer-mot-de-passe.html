@@ -136,7 +136,7 @@
   <script>
     const API_BASE_URL = "https://scolaire-saas-backend.onrender.com";
 
-    // ---------- FONCTION OBTENIR TOKENS (modifiée pour prioriser Super Admin) ----------
+    // ---------- FONCTION OBTENIR TOKENS ----------
     function obtenirTokens() {
       // Essayer d'abord les tokens Super Admin (ardoise_admin_*)
       const adminToken = localStorage.getItem('ardoise_admin_access_token');
@@ -159,8 +159,7 @@
       });
       if (!reponse.ok) return null;
       const donnees = await reponse.json();
-      // On stocke dans le même type de token qu'on a reçu (admin ou normal)
-      // On ne peut pas savoir, on stocke dans les deux pour sécurité
+      // On stocke dans les deux endroits pour être sûr
       localStorage.setItem('ardoise_access_token', donnees.access_token);
       localStorage.setItem('ardoise_refresh_token', donnees.refresh_token);
       localStorage.setItem('ardoise_admin_access_token', donnees.access_token);
@@ -168,14 +167,13 @@
       return donnees.access_token;
     }
 
-    // ---------- APPEL API AVEC GESTION 428 ----------
+    // ---------- APPEL API AVEC GESTION 401 ----------
     async function appelApi(chemin, options = {}) {
       let { accessToken, refreshToken } = obtenirTokens();
       if (!accessToken) {
-        // Pas de token du tout : on redirige vers la connexion appropriée
-        // Mais ici on ne redirige pas automatiquement pour laisser le formulaire s'afficher
-        // On va juste lancer une erreur
-        throw new Error('Aucun token trouvé. Veuillez vous connecter.');
+        // Pas de token du tout : on redirige vers la connexion
+        window.location.href = 'super-admin.html';
+        throw new Error('Aucun token trouvé.');
       }
 
       const executer = (token) => fetch(`${API_BASE_URL}${chemin}`, {
@@ -189,17 +187,31 @@
       if (reponse.status === 401 && refreshToken) {
         const nouveauToken = await rafraichirToken(refreshToken);
         if (!nouveauToken) {
+          // Le refresh a échoué : on nettoie et on redirige
+          localStorage.removeItem('ardoise_admin_access_token');
+          localStorage.removeItem('ardoise_admin_refresh_token');
+          localStorage.removeItem('ardoise_access_token');
+          localStorage.removeItem('ardoise_refresh_token');
+          window.location.href = 'super-admin.html';
           throw new Error('Session expirée, veuillez vous reconnecter.');
         }
         reponse = await executer(nouveauToken);
       }
 
-      // Si 428 (mot de passe provisoire) : on autorise quand même la requête si c'est le changement de mot de passe
+      // Si encore 401 (ou 403) après refresh, on redirige
+      if (reponse.status === 401 || reponse.status === 403) {
+        localStorage.removeItem('ardoise_admin_access_token');
+        localStorage.removeItem('ardoise_admin_refresh_token');
+        localStorage.removeItem('ardoise_access_token');
+        localStorage.removeItem('ardoise_refresh_token');
+        window.location.href = 'super-admin.html';
+        throw new Error('Accès refusé. Veuillez vous reconnecter.');
+      }
+
+      // Si 428 (mot de passe provisoire) : on autorise la requête car c'est le but de la page
       // Le middleware devrait déjà laisser passer, mais on gère au cas où
       if (reponse.status === 428 && chemin === '/utilisateurs/moi/changer-mot-de-passe' && options.method === 'POST') {
         // On laisse passer, car c'est le but de la page
-        // Mais on va tout de même réessayer sans redirection
-        // Ici on considère que le serveur devrait accepter, mais on peut essayer de rafraîchir
         // On ne fait rien, on laisse la réponse être traitée par le formulaire
       }
 
@@ -267,18 +279,16 @@
       }
     });
 
-    // ---------- VÉRIFICATION INITIALE : si aucun token, on redirige vers la connexion ----------
-    // Mais on ne le fait que si on a vraiment aucun token (pour ne pas interrompre le Super Admin)
+    // ---------- VÉRIFICATION INITIALE ----------
     (function verifierToken() {
       const tokens = obtenirTokens();
       if (!tokens.accessToken) {
-        // On ne redirige pas immédiatement, on laisse le formulaire mais on affiche un message
-        // Pour le Super Admin, cela n'arrive pas car il a un token.
-        // On peut juste afficher un message.
         const zone = document.getElementById('message-flash');
         zone.textContent = '⚠ Aucune session active. Veuillez vous connecter.';
         zone.className = 'message visible erreur';
         document.getElementById('bouton-envoyer').disabled = true;
+        // On peut rediriger automatiquement après un court délai
+        setTimeout(() => { window.location.href = 'super-admin.html'; }, 2000);
       }
     })();
   </script>

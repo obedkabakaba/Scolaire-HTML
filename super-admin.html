@@ -379,12 +379,12 @@
       throw new Error('Vous devez changer votre mot de passe provisoire avant d\'accéder à cette section.');
     }
 
-    if (reponse.status === 401 && refreshToken) {
-      const nouveauToken = await rafraichirToken(refreshToken);
-      if (!nouveauToken) {
-        reinitialiserEcranConnexion();
-        throw new Error('Session expirée, veuillez vous reconnecter.');
-      }
+    // Gestion du statut 428 : mot de passe provisoire à changer
+    if (reponse.status === 428) {
+  // NE PAS SUPPRIMER LES TOKENS ! On les garde pour que la page de changement puisse les utiliser.
+  window.location.href = 'changer-mot-de-passe.html';
+  throw new Error('Vous devez changer votre mot de passe provisoire avant d\'accéder à cette section.');
+    }
       reponse = await executer(nouveauToken);
     }
 

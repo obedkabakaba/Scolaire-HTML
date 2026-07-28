@@ -171,7 +171,7 @@
     async function appelApi(chemin, options = {}) {
       let { accessToken, refreshToken } = obtenirTokens();
       if (!accessToken) {
-        // Pas de token du tout : on redirige vers la connexion
+        // Pas de token du tout : on redirige vers la connexion Super Admin
         window.location.href = 'super-admin.html';
         throw new Error('Aucun token trouvé.');
       }
@@ -187,11 +187,8 @@
       if (reponse.status === 401 && refreshToken) {
         const nouveauToken = await rafraichirToken(refreshToken);
         if (!nouveauToken) {
-          // Le refresh a échoué : on nettoie et on redirige
-          localStorage.removeItem('ardoise_admin_access_token');
-          localStorage.removeItem('ardoise_admin_refresh_token');
-          localStorage.removeItem('ardoise_access_token');
-          localStorage.removeItem('ardoise_refresh_token');
+          // Le refresh a échoué : on redirige vers super-admin.html pour se reconnecter
+          // On ne supprime pas les tokens ici, car la page de connexion les écrasera.
           window.location.href = 'super-admin.html';
           throw new Error('Session expirée, veuillez vous reconnecter.');
         }
@@ -200,19 +197,13 @@
 
       // Si encore 401 (ou 403) après refresh, on redirige
       if (reponse.status === 401 || reponse.status === 403) {
-        localStorage.removeItem('ardoise_admin_access_token');
-        localStorage.removeItem('ardoise_admin_refresh_token');
-        localStorage.removeItem('ardoise_access_token');
-        localStorage.removeItem('ardoise_refresh_token');
         window.location.href = 'super-admin.html';
         throw new Error('Accès refusé. Veuillez vous reconnecter.');
       }
 
-      // Si 428 (mot de passe provisoire) : on autorise la requête car c'est le but de la page
-      // Le middleware devrait déjà laisser passer, mais on gère au cas où
+      // Si 428, on laisse passer car c'est le but de la page
       if (reponse.status === 428 && chemin === '/utilisateurs/moi/changer-mot-de-passe' && options.method === 'POST') {
-        // On laisse passer, car c'est le but de la page
-        // On ne fait rien, on laisse la réponse être traitée par le formulaire
+        // On laisse la réponse être traitée par le formulaire
       }
 
       if (!reponse.ok && reponse.status !== 428) {
@@ -287,7 +278,6 @@
         zone.textContent = '⚠ Aucune session active. Veuillez vous connecter.';
         zone.className = 'message visible erreur';
         document.getElementById('bouton-envoyer').disabled = true;
-        // On peut rediriger automatiquement après un court délai
         setTimeout(() => { window.location.href = 'super-admin.html'; }, 2000);
       }
     })();

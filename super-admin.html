@@ -65,7 +65,7 @@
   .entete-page h1 { font-family: var(--police-titre); font-weight: 600; font-size: 1.9rem; margin: 0 0 4px 0; }
   .entete-page .sous-titre { color: var(--texte-att); font-size: 0.95rem; margin: 0; }
   .bouton-deconnexion { background: none; border: 1.5px solid var(--bordure); color: var(--texte-sombre); padding: 9px 16px; border-radius:  var(--r-bouton); font-size: 0.86rem; font-weight: 500; cursor: pointer; }
-  .bouton-reessayer { background: var(--encre); color: var(--craie-2); border: none; padding: 9px 16px; border-radius: var(--r-bouton); font-size: 0.86rem; font-weight: 500; cursor: pointer; }
+  .bouton-reessayer { background: var(--encre); color: var(--craie-2); border: none; padding: 9px 16px; border-radius: var(--r-bouton); font-size: 0.86rem; font-weight: 500; cursor: pointer; display: none; }
   .bouton-reessayer:hover { opacity: 0.85; }
 
   .conteneur-tableau { background: var(--craie-2); border: 1px solid var(--bordure); border-radius:  var(--r-carte); overflow: hidden; margin-bottom: 24px; }
@@ -331,7 +331,7 @@
 
   // Redirection vers la page de changement de mot de passe (pour le 428)
   function redirigerChangerMotDePasse() {
-    window.location.href = 'changer-mot-de-passe.html';
+    window.location.href = 'changer-mot-de-passe-sa.html';
   }
 
   async function rafraichirToken(refreshToken) {
@@ -484,6 +484,8 @@
   async function chargerStats() {
     const statElements = ['stat-nb-ecoles', 'stat-nb-actives', 'stat-nb-suspendues', 'stat-nb-eleves', 'stat-revenu'];
     statElements.forEach(id => document.getElementById(id).textContent = '⏳');
+    // Cacher le bouton réessayer pendant le chargement
+    document.getElementById('bouton-reessayer').style.display = 'none';
 
     try {
       const reponse = await appelApi('/admin/ecoles/stats/globales');
@@ -493,9 +495,11 @@
       document.getElementById('stat-nb-suspendues').textContent = s.nb_ecoles_suspendues ?? '0';
       document.getElementById('stat-nb-eleves').textContent = s.nb_eleves_total ?? '0';
       document.getElementById('stat-revenu').textContent = s.revenu_total_confirme ? `${Number(s.revenu_total_confirme).toLocaleString('fr-FR')} $` : '0 $';
+      // Succès : bouton réessayer reste caché
     } catch (err) {
       console.error('Erreur stats:', err);
-      // Ne pas afficher d'erreur si c'est un 428, car on redirige déjà
+      // Afficher le bouton réessayer en cas d'erreur
+      document.getElementById('bouton-reessayer').style.display = 'inline-block';
       if (!err.message.includes('mot de passe provisoire')) {
         afficherMessage('Impossible de charger les statistiques : ' + err.message, 'erreur');
         statElements.forEach(id => afficherErreurChargement(id, '⚠'));
@@ -507,12 +511,17 @@
   let ecolesCache = [];
 
   async function chargerEcoles() {
+    // Cacher le bouton réessayer pendant le chargement
+    document.getElementById('bouton-reessayer').style.display = 'none';
     try {
       const reponse = await appelApi('/admin/ecoles');
       ecolesCache = await reponse.json();
       afficherEcoles(ecolesCache);
+      // Succès : bouton réessayer reste caché
     } catch (err) {
       console.error('Erreur chargement écoles:', err);
+      // Afficher le bouton réessayer en cas d'erreur
+      document.getElementById('bouton-reessayer').style.display = 'inline-block';
       if (!err.message.includes('mot de passe provisoire')) {
         afficherMessage('Impossible de charger la liste des écoles : ' + err.message, 'erreur');
         afficherErreurChargement('compteur-ecoles', '⚠ Erreur');

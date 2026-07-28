@@ -4,9 +4,6 @@
   - Aucune classe partagée (.nav-liste, .nav-item, gererAccesParRole) avec les autres pages.
   - Clés de connexion dédiées (ardoise_admin_access_token / ardoise_admin_refresh_token),
     jamais les mêmes que ardoise_access_token / ardoise_refresh_token utilisées ailleurs.
-  - Ne JAMAIS appliquer ici les scripts de mise à jour groupée destinés aux 17 pages
-    applicatives normales (barre latérale, permissions par rôle, etc.) — ce panneau a
-    son propre système de connexion et son propre système de navigation, à part entière.
 -->
 <html lang="fr">
 <head>
@@ -115,9 +112,7 @@
   .mot-de-passe-affiche { background: rgba(201,138,62,0.1); border: 1px dashed var(--ocre); border-radius:  var(--r-bouton); padding: 10px 12px; font-family: var(--police-mono); font-size: 0.95rem; margin-top: 10px; }
 </style>
 <script>
-  /* Applique le thème AVANT le premier affichage, pour éviter tout clignotement.
-     Aucune liste ici : elle divergerait à chaque nouveau thème. theme.js
-     valide la valeur juste après, et le serveur fait foi. */
+  /* Applique le thème AVANT le premier affichage */
   (function(){var t;
    try{t=localStorage.getItem('ardoise_theme')||sessionStorage.getItem('ardoise_theme');}catch(e){}
    var th=(t&&/^[a-z][a-z0-9-]{1,19}$/.test(t))?t:'ardoise';
@@ -331,7 +326,7 @@
 
   // Redirection vers la page de changement de mot de passe (pour le 428)
   function redirigerChangerMotDePasse() {
-    window.location.href = 'changer-mot-de-passe-sa.html';
+    window.location.href = 'changer-mot-de-passe.html';
   }
 
   async function rafraichirToken(refreshToken) {
@@ -374,15 +369,7 @@
       }
       throw err;
     }
-   
-    // === AJOUT : Gérer le statut 428 (mot de passe provisoire) ===
-    if (reponse.status === 428) {
-      localStorage.removeItem('ardoise_admin_access_token');
-      localStorage.removeItem('ardoise_admin_refresh_token');
-      window.location.href = 'changer-mot-de-passe.html';
-      throw new Error('Veuillez changer votre mot de passe provisoire.');
-    }
-    
+
     // Gestion du statut 428 : mot de passe provisoire à changer
     if (reponse.status === 428) {
       // Nettoyer les tokens pour éviter de boucler
@@ -810,97 +797,6 @@
 </script>
 
 <script src="theme.js"></script>
-<!-- Registre des recherches produites par l'assistant — diagnostic interne -->
-<div class="voile" id="voile-journal-ia" style="display:none; position:fixed; inset:0; background:rgba(31,43,36,0.5); align-items:center; justify-content:center; padding:20px; z-index:80;">
-  <div style="background:var(--craie-2); border-radius:12px; padding:26px; max-width:1000px; width:100%; max-height:90vh; overflow-y:auto;">
-    <h2 style="font-family:var(--police-titre); font-weight:600; font-size:1.25rem; margin:0 0 4px 0;">Journal des recherches assistées</h2>
-    <p style="color:var(--texte-att); font-size:0.84rem; margin:0 0 16px 0;">
-      Toutes les requêtes produites par l'assistant, exécutées ou refusées. Une requête récurrente et fiable mérite de devenir une recherche préécrite ; une requête fausse indique un modèle à corriger.
-    </p>
-
-    <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items:center;">
-      <select id="filtre-statut-journal" style="border:1px solid var(--bordure); border-radius:6px; padding:8px 11px; font-family:var(--police-corps); background:var(--craie); color:var(--texte-sombre);">
-        <option value="">Tous les statuts</option>
-        <option value="preecrite">Recherches préécrites</option>
-        <option value="executee">Requêtes générées</option>
-        <option value="refusee">Refusées par le garde-fou</option>
-        <option value="erreur">Erreurs d'exécution</option>
-        <option value="sans_reponse">Sans réponse</option>
-      </select>
-      <button class="bouton bouton-secondaire" id="bouton-fermer-journal" style="margin-left:auto;">Fermer</button>
-    </div>
-
-    <div id="liste-journal"></div>
-  </div>
-</div>
-
-<script>
-  // ============================================================
-  //  Registre des recherches assistées
-  // ============================================================
-  (function activerJournalIA() {
-    const voile = document.getElementById('voile-journal-ia');
-
-    function echapperJ(t) {
-      const d = document.createElement('div');
-      d.textContent = t == null ? '' : String(t);
-      return d.innerHTML;
-    }
-
-    const COULEURS = {
-      preecrite: 'var(--vert-ok)', executee: 'var(--encre)',
-      refusee: 'var(--rouge)', erreur: 'var(--rouge)', sans_reponse: 'var(--texte-att)'
-    };
-
-    async function charger() {
-      const zone = document.getElementById('liste-journal');
-      zone.innerHTML = '<p style="color:var(--texte-att); padding:24px 0; text-align:center;">Chargement…</p>';
-
-      const statut = document.getElementById('filtre-statut-journal').value;
-      try {
-        const r = await appelApi(`/ia/journal${statut ? '?statut=' + statut : ''}`);
-        if (!r) return;
-        const lignes = await r.json();
-        if (lignes.length === 0) {
-          zone.innerHTML = '<p style="color:var(--texte-att); padding:24px 0; text-align:center;">Aucune recherche enregistrée.</p>';
-          return;
-        }
-        zone.innerHTML = lignes.map(l => `
-          <div style="border:1px solid var(--bordure); border-left:3px solid ${COULEURS[l.statut] || 'var(--bordure)'}; border-radius:0 8px 8px 0; padding:14px 16px; margin-bottom:10px;">
-            <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:baseline;">
-              <strong style="font-size:0.94rem;">${echapperJ(l.question)}</strong>
-              <span style="font-size:0.76rem; color:var(--texte-att); white-space:nowrap;">
-                ${new Date(l.created_at).toLocaleString('fr-FR')}
-              </span>
-            </div>
-            <div style="font-size:0.78rem; color:var(--texte-att); margin-top:5px;">
-              ${echapperJ(l.ecole_nom || '—')} · ${echapperJ(l.utilisateur || '—')} ·
-              <span style="color:${COULEURS[l.statut] || 'inherit'}; font-weight:600;">${echapperJ(l.statut)}</span>
-              ${l.modele ? ` · modèle « ${echapperJ(l.modele)} »` : ''}
-              ${l.nb_lignes !== null ? ` · ${l.nb_lignes} ligne(s)` : ''}
-              ${l.duree_ms !== null ? ` · ${l.duree_ms} ms` : ''}
-            </div>
-            ${l.sql_genere ? `<pre style="margin:10px 0 0 0; background:var(--ardoise); color:rgba(246,242,231,0.9); border-radius:6px; padding:11px 13px; font-family:var(--police-mono); font-size:0.76rem; white-space:pre-wrap; word-break:break-word; line-height:1.5;">${echapperJ(l.sql_genere)}</pre>` : ''}
-            ${l.detail ? `<div style="margin-top:8px; font-size:0.79rem; color:var(--rouge);">${echapperJ(l.detail)}</div>` : ''}
-          </div>
-        `).join('');
-      } catch (err) {
-        if (!err.message.includes('mot de passe provisoire'))
-          zone.innerHTML = `<p style="color:var(--rouge); padding:24px 0; text-align:center;">Erreur : ${err.message}</p>`;
-      }
-    }
-
-    document.getElementById('bouton-journal-ia').addEventListener('click', () => {
-      voile.style.display = 'flex';
-      charger();
-    });
-    document.getElementById('bouton-fermer-journal').addEventListener('click', () => {
-      voile.style.display = 'none';
-    });
-    document.getElementById('filtre-statut-journal').addEventListener('change', charger);
-  })();
-</script>
-
 <script src="ui.js"></script>
 <script src="hors-ligne.js"></script>
 </body>

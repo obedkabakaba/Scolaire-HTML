@@ -72,7 +72,7 @@
 
 <div class="carte">
   <h1>Choisissez votre mot de passe</h1>
-  <p class="intro" id="intro-message">
+  <p class="intro">
     Votre compte a été créé avec un mot de passe provisoire, connu de la personne
     qui vous l'a communiqué. Remplacez-le pour accéder à la plateforme.
   </p>
@@ -109,29 +109,11 @@
 <script>
   const API_BASE_URL = "https://scolaire-saas-backend.onrender.com";
 
-  // Détecter si on vient de l'interface Super Admin
-  const urlParams = new URLSearchParams(window.location.search);
-  const isAdmin = urlParams.get('admin') === '1';
+  const stockage = localStorage.getItem('ardoise_access_token') ? localStorage : sessionStorage;
+  const jeton = stockage.getItem('ardoise_access_token');
 
-  // Choix du stockage : pour le Super Admin, on utilise les clés admin
-  const cleAccess = isAdmin ? 'ardoise_admin_access_token' : 'ardoise_access_token';
-  const cleRefresh = isAdmin ? 'ardoise_admin_refresh_token' : 'ardoise_refresh_token';
-  const cleUser = isAdmin ? 'ardoise_admin_user' : 'ardoise_user';
-
-  // Récupérer le token
-  const stockage = localStorage.getItem(cleAccess) ? localStorage : sessionStorage;
-  const jeton = stockage.getItem(cleAccess);
-
-  if (!jeton) {
-    // Rediriger vers la page de connexion appropriée
-    window.location.href = isAdmin ? 'super-admin.html' : 'connexion.html';
-  }
-
-  // Adapter le message d'intro pour Super Admin
-  if (isAdmin) {
-    document.getElementById('intro-message').textContent = 
-      'Vous êtes connecté en tant que Super Administrateur. Vous devez changer votre mot de passe provisoire pour accéder au panneau d\'administration.';
-  }
+  // Sans jeton, cette page n'a pas de sens : on renvoie à la connexion.
+  if (!jeton) window.location.href = 'connexion.html';
 
   const champNouveau = document.getElementById('nouveau');
   const champAncien = document.getElementById('ancien');
@@ -143,6 +125,7 @@
     zone.className = 'message visible ' + type;
   }
 
+  /** Les exigences s'allument à la frappe : on sait où l'on en est. */
   function verifierExigences() {
     const v = champNouveau.value;
     const regles = {
@@ -190,17 +173,14 @@
         return;
       }
 
-      // Mettre à jour le drapeau dans l'objet utilisateur stocké
+      // Le drapeau local est levé pour que les pages n'y renvoient plus.
       try {
-        const u = JSON.parse(stockage.getItem(cleUser) || 'null');
-        if (u) { u.doit_changer_mot_de_passe = false; stockage.setItem(cleUser, JSON.stringify(u)); }
+        const u = JSON.parse(stockage.getItem('ardoise_user') || 'null');
+        if (u) { u.doit_changer_mot_de_passe = false; stockage.setItem('ardoise_user', JSON.stringify(u)); }
       } catch (e) {}
 
       afficher('Mot de passe enregistré. Redirection en cours…', 'succes');
-      setTimeout(() => {
-        // Rediriger vers la page appropriée
-        window.location.href = isAdmin ? 'super-admin.html' : 'connexion.html';
-      }, 1400);
+      setTimeout(() => { window.location.href = 'connexion.html'; }, 1400);
     } catch (e) {
       bouton.disabled = false; bouton.textContent = 'Enregistrer et continuer';
       afficher('Impossible de joindre le serveur. Réessayez.', 'erreur');
@@ -208,10 +188,10 @@
   });
 
   document.getElementById('bouton-quitter').addEventListener('click', () => {
-    [cleAccess, cleRefresh, cleUser].forEach((cle) => {
+    ['ardoise_access_token', 'ardoise_refresh_token', 'ardoise_user'].forEach((cle) => {
       localStorage.removeItem(cle); sessionStorage.removeItem(cle);
     });
-    window.location.href = isAdmin ? 'super-admin.html' : 'connexion.html';
+    window.location.href = 'connexion.html';
   });
 </script>
 

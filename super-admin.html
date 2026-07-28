@@ -395,21 +395,9 @@
         return;
       }
 
-       // ============================================================
-    //  AJOUT ICI : Stockage des tokens
-    // ============================================================
-    localStorage.setItem('ardoise_admin_access_token', donnees.access_token);
-    localStorage.setItem('ardoise_admin_refresh_token', donnees.refresh_token);
+      localStorage.setItem('ardoise_admin_access_token', donnees.access_token);
+      localStorage.setItem('ardoise_admin_refresh_token', donnees.refresh_token);
 
-    // ============================================================
-    //  AJOUT ICI : Vérification du mot de passe provisoire
-    // ============================================================
-    if (donnees.doit_changer_mot_de_passe === true) {
-      // Rediriger vers la page de changement de mot de passe
-      // (les tokens restent dans localStorage pour que la page puisse les utiliser)
-      window.location.href = 'changer-mot-de-passe.html';
-      return;
-    }
       document.getElementById('ecran-connexion').style.display = 'none';
       document.getElementById('panneau-principal').style.display = 'block';
       chargerPlans();

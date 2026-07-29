@@ -256,7 +256,7 @@
       </div>
       <div class="conteneur-tableau">
         <table>
-          <thead><tr><th>Année scolaire</th><th>Classe</th><th>Montant</th><th></th></tr></thead>
+          <thead><tr><th>Année scolaire</th><th>Classe</th><th>Libellé</th><th>Montant</th><th></th></tr></thead>
           <tbody id="corps-tableau-config"><tr><td colspan="4" class="etat-vide-tableau"><span class="spinner"></span>Chargement…</td></tr></tbody>
         </table>
       </div>
@@ -271,35 +271,18 @@
     <ul class="liste-paiements" id="liste-paiements-eleve"></ul>
     <form id="formulaire-paiement">
       <input type="hidden" id="paiement-eleve-id" />
-     <div class="ligne-champs">
-  <div class="champ">
-    <label for="champ-montant-paiement">Montant</label>
-    <input type="number" step="0.01" id="champ-montant-paiement" required />
-  </div>
-  <div class="champ">
-    <label for="champ-methode-paiement">Méthode</label>
-    <select id="champ-methode-paiement">
-      <option value="cash">Espèces</option>
-      <option value="orange_money">Orange Money</option>
-      <option value="airtel_money">Airtel Money</option>
-      <option value="mpesa">M-Pesa</option>
-      <option value="virement">Virement</option>
-    </select>
-  </div>
-</div>
-<div class="ligne-champs">
-  <div class="champ">
-    <label for="champ-devise-paiement">Devise</label>
-    <select id="champ-devise-paiement">
-      <option value="FC">FC</option>
-      <option value="USD">USD</option>
-    </select>
-  </div>
-  <div class="champ">
-    <label for="champ-notes-paiement">Note (optionnel)</label>
-    <input type="text" id="champ-notes-paiement" />
-  </div>
-</div>
+      <div class="ligne-champs">
+        <div class="champ"><label for="champ-montant-paiement">Montant</label><input type="number" step="0.01" id="champ-montant-paiement" required /></div>
+        <div class="champ"><label for="champ-methode-paiement">Méthode</label>
+          <select id="champ-methode-paiement">
+            <option value="cash">Espèces</option>
+            <option value="orange_money">Orange Money</option>
+            <option value="airtel_money">Airtel Money</option>
+            <option value="mpesa">M-Pesa</option>
+            <option value="virement">Virement</option>
+          </select>
+        </div>
+      </div>
       <div class="champ"><label for="champ-notes-paiement">Note (optionnel)</label><input type="text" id="champ-notes-paiement" /></div>
       <div class="actions-modale">
         <button type="button" class="bouton bouton-secondaire" id="bouton-fermer-paiement">Fermer</button>
@@ -316,6 +299,7 @@
     <form id="formulaire-config">
       <div class="champ"><label for="config-annee">Année scolaire</label><select id="config-annee"></select></div>
       <div class="champ"><label for="config-classe">Classe (laisser vide = toutes les classes)</label><select id="config-classe"><option value="">— Toutes les classes —</option></select></div>
+      <div class="champ"><label for="config-libelle">Libellé (apparaît sur les reçus)</label><input type="text" id="config-libelle" placeholder="Frais scolaires" /></div>
       <div class="champ"><label for="config-montant">Montant</label><input type="number" step="0.01" id="config-montant" required /></div>
       <div class="actions-modale">
         <button type="button" class="bouton bouton-secondaire" id="bouton-annuler-config">Annuler</button>
@@ -559,7 +543,7 @@
       ? '<li style="color:var(--texte-att); border:none;">Aucun paiement enregistré.</li>'
       : paiements.map(p => `
           <li>
-            <span>${new Date(p.date_paiement).toLocaleDateString('fr-FR')} — ${p.methode || '—'}${p.notes ? ' (' + p.notes + ')' : ''}</span>
+            <span>${new Date(p.date_paiement).toLocaleDateString('fr-FR')} — ${p.methode || '—'}${p.reference ? ' · ' + p.reference : ''}${p.notes ? ' (' + p.notes + ')' : ''}</span>
             <span style="display:flex; align-items:center; gap:12px;">
               <strong>${Number(p.montant).toLocaleString('fr-FR')}</strong>
               <button class="lien-action" data-recu="${p.id}">Reçu</button>
@@ -598,7 +582,6 @@
         eleve_id: eleveCourantPaiement,
         montant: parseFloat(document.getElementById('champ-montant-paiement').value),
         methode: document.getElementById('champ-methode-paiement').value,
-        devise: document.getElementById('champ-devise-paiement').value,  // ← NOUVEAU CHAMP
         notes: document.getElementById('champ-notes-paiement').value.trim()
       })
     });
@@ -616,11 +599,12 @@
     if (!r || !r.ok) { corps.innerHTML = '<tr><td colspan="4" class="etat-vide-tableau">Erreur de chargement.</td></tr>'; return; }
     const config = await r.json();
     corps.innerHTML = config.length === 0
-      ? '<tr><td colspan="4" class="etat-vide-tableau">Aucun montant configuré.</td></tr>'
+      ? '<tr><td colspan="5" class="etat-vide-tableau">Aucun montant configuré.</td></tr>'
       : config.map(c => `
           <tr>
             <td>${c.annee_libelle}</td>
             <td>${c.classe_nom || 'Toutes les classes'}</td>
+            <td>${c.libelle || 'Frais scolaires'}</td>
             <td>${Number(c.montant).toLocaleString('fr-FR')}</td>
             <td><button class="lien-action" data-id="${c.id}" style="color:var(--rouge);">Supprimer</button></td>
           </tr>
@@ -645,6 +629,7 @@
       body: JSON.stringify({
         annee_scolaire_id: document.getElementById('config-annee').value,
         classe_id: document.getElementById('config-classe').value || null,
+        libelle: document.getElementById('config-libelle').value.trim(),
         montant: parseFloat(document.getElementById('config-montant').value)
       })
     });

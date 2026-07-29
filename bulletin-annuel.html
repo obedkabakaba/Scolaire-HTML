@@ -238,7 +238,9 @@
     }
     if (rAnnees?.ok) {
       const annees = await rAnnees.json();
+      const active = annees.find(a => a.active);
       document.getElementById('select-annee').innerHTML = annees.map(a => `<option value="${a.id}">${a.libelle}</option>`).join('') || '<option value="">Aucune année créée</option>';
+      if (active) document.getElementById('select-annee').value = active.id;
     }
   }
 

@@ -390,9 +390,16 @@
     }
     if (rAnnees?.ok) {
       const annees = await rAnnees.json();
+      const active = annees.find(a => a.active);
       const options = annees.map(a => `<option value="${a.id}">${a.libelle}</option>`).join('') || '<option value="">Aucune année créée</option>';
       document.getElementById('select-annee').innerHTML = options;
       document.getElementById('config-annee').innerHTML = options;
+      // Année active par défaut : le comptable garde la main pour consulter
+      // les frais et dettes des années antérieures via ce même sélecteur.
+      if (active) {
+        document.getElementById('select-annee').value = active.id;
+        document.getElementById('config-annee').value = active.id;
+      }
     }
   }
 

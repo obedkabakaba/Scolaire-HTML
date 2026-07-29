@@ -481,7 +481,7 @@
     majChampsSelonCycle();
     document.getElementById('champ-classe-option').value = classe?.option_id || '';
     document.getElementById('champ-classe-titulaire').value = classe?.titulaire_id || '';
-    document.getElementById('champ-classe-annee').value = classe?.annee_scolaire_id || '';
+    document.getElementById('champ-classe-annee').value = classe?.annee_scolaire_id || (anneesCache.find(a => a.active)?.id || '');
 
     const optionsClasseSuivante = classesCache
       .filter(c => c.id !== classe?.id)

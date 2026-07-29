@@ -463,11 +463,11 @@
 
     zone.innerHTML = grilleDossiers(donnees.classes.map(c => `
       <button type="button" class="dossier" data-classe="${c.id}" data-libelle="${echapper(c.nom)}"
-              data-recherche="${echapper((c.nom + ' ' + (c.section_nom||'') + ' ' + (c.option_nom||'')).toLowerCase())}">
+              data-recherche="${echapper((c.nom + ' ' + (c.option_nom||'')).toLowerCase())}">
         ${ICONES.classe}
         <div class="titre">${echapper(c.nom)}</div>
         <div class="detail">
-          ${echapper([c.cycle, c.section_nom, c.option_nom].filter(Boolean).join(' — ') || 'Sans section')}<br/>
+          ${echapper([c.cycle, c.option_nom].filter(Boolean).join(' — ') || 'Sans option')}<br/>
           ${c.nb_eleves} élève(s)${c.titulaire_nom ? ' · ' + echapper(c.titulaire_nom) : ''}${c.vacation_nom ? ' · ' + echapper(c.vacation_nom) : ''}
         </div>
         ${c.nb_eleves === 0 ? '<span class="marqueur vide">aucune inscription figée</span>' : ''}

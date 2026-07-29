@@ -395,7 +395,7 @@
     document.getElementById('barre-voeux').style.display = '';
 
     const optionsHtml = (selection) => '<option value="">—</option>' +
-      donnees.options.map(o => `<option value="${o.id}" ${o.id === selection ? 'selected' : ''}>${echapper(o.nom)}${o.section_nom ? ' — ' + echapper(o.section_nom) : ''}</option>`).join('');
+      donnees.options.map(o => `<option value="${o.id}" ${o.id === selection ? 'selected' : ''}>${echapper(o.nom)}</option>`).join('');
 
     corps.innerHTML = donnees.eleves.map(e => {
       const faible = e.moyenne !== null && e.moyenne < donnees.seuil;

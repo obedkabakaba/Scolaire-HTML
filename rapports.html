@@ -407,10 +407,9 @@
     zone.innerHTML = widgets(
       widget('Répartition garçons / filles', 'w-sexe') + widget('Effectif par classe', 'w-classes', true)
     ) + tableau(
-      ['Classe', 'Section', 'Option', 'Effectif', 'Garçons', 'Filles'],
+      ['Classe', 'Option', 'Effectif', 'Garçons', 'Filles'],
       d.classes.map(c => `<tr>
         <td><strong>${echapper(c.nom)}</strong></td>
-        <td>${echapper(c.section_nom || '—')}</td>
         <td>${echapper(c.option_nom || '—')}</td>
         <td class="valeur-forte">${c.nb_actifs}</td>
         <td>${c.nb_garcons}</td>

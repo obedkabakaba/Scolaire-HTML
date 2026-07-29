@@ -299,16 +299,12 @@
         </section>`);
     }
 
-    if (config.blocs.sections && donnees.sections.length) {
+    if (config.blocs.sections && donnees.options && donnees.options.length) {
       morceaux.push(`
         <section class="bloc">
-          <h2>Sections et options</h2>
+          <h2>Options proposées</h2>
           <div class="liste-sections">
-            ${donnees.sections.map(s => `
-              <div class="item">
-                <div class="nom">${echapper(s.section)}</div>
-                ${s.options && s.options.length ? `<div class="options">${s.options.map(echapper).join(' · ')}</div>` : ''}
-              </div>`).join('')}
+            <div class="options">${donnees.options.map(echapper).join(' · ')}</div>
           </div>
         </section>`);
     }

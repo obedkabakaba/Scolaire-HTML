@@ -227,7 +227,7 @@
           <input type="file" id="input-cachet" accept="image/*" />
         </div>
         <div>
-          <label style="display:block; font-size:0.76rem; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; color:var(--texte-att); margin-bottom:8px;">Signature du titulaire (générique)</label>
+          <label style="display:block; font-size:0.76rem; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; color:var(--texte-att); margin-bottom:8px;">Ma signature (Directeur)</label>
           <img id="apercu-signature" src="" alt="Signature" style="display:none; width:64px; height:64px; object-fit:contain; border:1px solid var(--bordure); border-radius: var(--r-bouton); margin-bottom:8px;" />
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
             <button type="button" class="bouton bouton-secondaire bouton-petit" id="bouton-changer-signature">Choisir une image ou un PDF</button>
@@ -236,7 +236,7 @@
           <input type="file" id="input-signature" accept="image/*,application/pdf" />
         </div>
       </div>
-      <p style="font-size:0.8rem; color:var(--texte-att); margin-top:-10px; margin-bottom:18px;">Ces images apparaîtront automatiquement sur les bulletins générés, à la place des cases vides.</p>
+      <p style="font-size:0.8rem; color:var(--texte-att); margin-top:-10px; margin-bottom:18px;">Le cachet apparaît automatiquement sur les bulletins. Votre signature n'est utilisée que si le titulaire de la classe n'a pas encore ajouté la sienne (dans son propre espace) — chaque professeur configure sa signature lui-même.</p>
       <form id="formulaire-ecole">
         <div class="champ"><label for="champ-nom">Nom de l'école</label><input type="text" id="champ-nom" /></div>
         <div class="ligne-champs">
@@ -760,7 +760,7 @@
   }
 
   document.getElementById('bouton-supprimer-signature').addEventListener('click', async () => {
-    if (!confirm('Supprimer cette signature générique ?')) return;
+    if (!confirm('Supprimer votre signature de directeur ?')) return;
     const r = await appelApi('/uploads/document?type=signature', { method: 'DELETE' });
     if (r && r.ok) {
       document.getElementById('apercu-signature').style.display = 'none';

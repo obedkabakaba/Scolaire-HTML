@@ -271,18 +271,35 @@
     <ul class="liste-paiements" id="liste-paiements-eleve"></ul>
     <form id="formulaire-paiement">
       <input type="hidden" id="paiement-eleve-id" />
-      <div class="ligne-champs">
-        <div class="champ"><label for="champ-montant-paiement">Montant</label><input type="number" step="0.01" id="champ-montant-paiement" required /></div>
-        <div class="champ"><label for="champ-methode-paiement">Méthode</label>
-          <select id="champ-methode-paiement">
-            <option value="cash">Espèces</option>
-            <option value="orange_money">Orange Money</option>
-            <option value="airtel_money">Airtel Money</option>
-            <option value="mpesa">M-Pesa</option>
-            <option value="virement">Virement</option>
-          </select>
-        </div>
-      </div>
+     <div class="ligne-champs">
+  <div class="champ">
+    <label for="champ-montant-paiement">Montant</label>
+    <input type="number" step="0.01" id="champ-montant-paiement" required />
+  </div>
+  <div class="champ">
+    <label for="champ-methode-paiement">Méthode</label>
+    <select id="champ-methode-paiement">
+      <option value="cash">Espèces</option>
+      <option value="orange_money">Orange Money</option>
+      <option value="airtel_money">Airtel Money</option>
+      <option value="mpesa">M-Pesa</option>
+      <option value="virement">Virement</option>
+    </select>
+  </div>
+</div>
+<div class="ligne-champs">
+  <div class="champ">
+    <label for="champ-devise-paiement">Devise</label>
+    <select id="champ-devise-paiement">
+      <option value="FC">FC</option>
+      <option value="USD">USD</option>
+    </select>
+  </div>
+  <div class="champ">
+    <label for="champ-notes-paiement">Note (optionnel)</label>
+    <input type="text" id="champ-notes-paiement" />
+  </div>
+</div>
       <div class="champ"><label for="champ-notes-paiement">Note (optionnel)</label><input type="text" id="champ-notes-paiement" /></div>
       <div class="actions-modale">
         <button type="button" class="bouton bouton-secondaire" id="bouton-fermer-paiement">Fermer</button>

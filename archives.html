@@ -538,7 +538,24 @@
       </tr>
     `).join('');
 
+    // Duplicatas. L'impression d'une période n'a de sens qu'une fois la période
+    // choisie : sans sélection, le bouton dirait "imprimer" sans savoir quoi.
+    const barreImpression = `
+      <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:18px;
+                  padding:12px 14px; border:1px solid var(--bordure); border-radius:var(--r-carte);
+                  background:var(--craie-2);">
+        <span style="font-size:0.85rem; color:var(--texte-att); flex:1; min-width:200px;">
+          Duplicatas — réédition des bulletins figés à la clôture, avec la mention « duplicata » et la date du jour.
+        </span>
+        <button class="bouton bouton-secondaire bouton-petit" id="bouton-imprimer-periode"
+                ${contexte.periode ? '' : 'disabled title="Choisis d\'abord une période ci-dessous"'}>
+          Bulletins${contexte.periode && etiquettes.periode ? ' — ' + echapper(etiquettes.periode) : ' de la période'}
+        </button>
+        <button class="bouton bouton-secondaire bouton-petit" id="bouton-imprimer-annuel">Bulletin annuel</button>
+      </div>`;
+
     zone.innerHTML = `
+      ${barreImpression}
       <h3 style="font-family:var(--police-titre); font-size:1.05rem; margin:0 0 14px 0;">Périodes</h3>
       ${periodes.periodes.length ? grilleDossiers(dossiersPeriodes) : '<div class="vide-doux">Aucune période enregistrée.</div>'}
       <h3 style="font-family:var(--police-titre); font-size:1.05rem; margin:28px 0 14px 0;">
@@ -552,6 +569,19 @@
       </div>`;
 
     activerRecherche('#corps-eleves tr[data-eleve]');
+
+    const boutonPeriode = document.getElementById('bouton-imprimer-periode');
+    if (boutonPeriode && contexte.periode) {
+      boutonPeriode.addEventListener('click', () => ouvrirPdf(
+        `/archives/annees/${contexte.annee}/classes/${contexte.classe}/bulletins/imprimer?periodeId=${contexte.periode}`,
+        boutonPeriode
+      ));
+    }
+    const boutonAnnuel = document.getElementById('bouton-imprimer-annuel');
+    boutonAnnuel.addEventListener('click', () => ouvrirPdf(
+      `/archives/annees/${contexte.annee}/classes/${contexte.classe}/bulletin-annuel/imprimer`,
+      boutonAnnuel
+    ));
 
     zone.querySelectorAll('[data-periode]').forEach(b => {
       b.addEventListener('click', () => {
@@ -591,6 +621,9 @@
         <td>${echapper(b.mention || '—')}</td>
         <td>${echapper(b.conduite || '—')}</td>
         <td>${b.signe_at ? 'Signé' : '<span style="color:var(--texte-att);">non signé</span>'}</td>
+        <td>${b.total != null || b.pourcentage != null
+              ? `<button type="button" class="lien-action" data-duplicata="${b.periode_id}">Duplicata</button>`
+              : '<span style="color:var(--texte-att);">—</span>'}</td>
       </tr>`).join('');
 
     const notes = d.notes.map(n => `
@@ -629,11 +662,16 @@
       </div>
 
       <div class="fiche">
-        <h3>Bulletins par période</h3>
+        <h3 style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+          <span style="flex:1;">Bulletins par période</span>
+          <button type="button" class="bouton bouton-secondaire bouton-petit" id="bouton-duplicata-annuel">
+            Duplicata du bulletin annuel
+          </button>
+        </h3>
         <div class="conteneur-tableau" style="border:none;">
           <table>
-            <thead><tr><th>Période</th><th>Total</th><th>Pourcentage</th><th>Place</th><th>Mention</th><th>Conduite</th><th>État</th></tr></thead>
-            <tbody>${bulletins || '<tr><td colspan="7" class="etat-vide-tableau">Aucun bulletin conservé.</td></tr>'}</tbody>
+            <thead><tr><th>Période</th><th>Total</th><th>Pourcentage</th><th>Place</th><th>Mention</th><th>Conduite</th><th>État</th><th></th></tr></thead>
+            <tbody>${bulletins || '<tr><td colspan="8" class="etat-vide-tableau">Aucun bulletin conservé.</td></tr>'}</tbody>
           </table>
         </div>
       </div>
@@ -700,6 +738,29 @@
         </div>
       </div>` : ''}
     `;
+
+    // ---------- Duplicatas ----------
+    // La classe vient du dossier lui-même (classe occupée CETTE année-là) et non
+    // du contexte de navigation : on peut arriver sur un dossier élève depuis la
+    // recherche globale, sans être passé par la classe.
+    const classeDuDossier = d.eleve.classe_id;
+
+    zone.querySelectorAll('[data-duplicata]').forEach(bouton => {
+      bouton.addEventListener('click', () => ouvrirPdf(
+        `/archives/annees/${contexte.annee}/classes/${classeDuDossier}/bulletins/imprimer`
+          + `?periodeId=${bouton.dataset.duplicata}&eleveId=${contexte.eleve}`,
+        bouton
+      ));
+    });
+
+    const boutonAnnuel = document.getElementById('bouton-duplicata-annuel');
+    if (boutonAnnuel) {
+      boutonAnnuel.addEventListener('click', () => ouvrirPdf(
+        `/archives/annees/${contexte.annee}/classes/${classeDuDossier}/bulletin-annuel/imprimer`
+          + `?eleveId=${contexte.eleve}`,
+        boutonAnnuel
+      ));
+    }
   }
 
   // ============================================================
@@ -707,6 +768,49 @@
   //  Une balise <a href> n'emporterait pas le jeton : on récupère donc
   //  le fichier via appelApi, puis on déclenche l'enregistrement.
   // ============================================================
+  /**
+   * Ouvre un PDF dans un nouvel onglet.
+   *
+   * On ne peut pas pointer un <a href> directement sur l'API : la requête a
+   * besoin du jeton d'authentification, qui ne voyage pas dans une navigation
+   * classique. On récupère donc le PDF en mémoire puis on l'affiche.
+   *
+   * L'onglet est ouvert AVANT l'attente réseau : ouvert après, il serait bloqué
+   * comme popup par le navigateur, le clic n'étant plus considéré comme à
+   * l'origine de l'ouverture.
+   */
+  async function ouvrirPdf(chemin, bouton) {
+    const onglet = window.open('', '_blank');
+    const texte = bouton ? bouton.textContent : null;
+    if (bouton) { bouton.disabled = true; bouton.textContent = 'Préparation…'; }
+
+    try {
+      const r = await appelApi(chemin);
+      if (!r || !r.ok) {
+        if (onglet) onglet.close();
+        const err = r ? await r.json().catch(() => ({})) : {};
+        afficherMessage(err.message || 'Impression impossible.', 'erreur');
+        return;
+      }
+      const url = URL.createObjectURL(await r.blob());
+      if (onglet) {
+        onglet.location = url;
+      } else {
+        // Onglet bloqué : on retombe sur un téléchargement, plutôt que de
+        // laisser l'utilisateur devant un bouton qui ne fait rien.
+        const lien = document.createElement('a');
+        lien.href = url; lien.download = 'duplicata.pdf';
+        document.body.appendChild(lien); lien.click(); document.body.removeChild(lien);
+      }
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (e) {
+      if (onglet) onglet.close();
+      afficherMessage('Impression impossible.', 'erreur');
+    } finally {
+      if (bouton) { bouton.disabled = false; bouton.textContent = texte; }
+    }
+  }
+
   async function telecharger(chemin) {
     const bouton = document.getElementById('bouton-exporter');
     const texte = bouton.textContent;

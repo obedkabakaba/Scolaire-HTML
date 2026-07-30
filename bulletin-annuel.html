@@ -156,6 +156,10 @@
       </div>
       <button class="bouton bouton-secondaire" id="bouton-afficher">Afficher le récapitulatif</button>
     </div>
+    <p id="aide-annees-cloturees" style="display:none; font-size:0.82rem; color:var(--texte-att); margin:-8px 0 16px 0;">
+      Les années clôturées ne figurent pas dans cette liste : leurs bulletins sont définitifs.
+      Pour en rééditer un, passez par <strong>Archives</strong> — le document y est délivré en duplicata.
+    </p>
 
     <div class="conteneur-tableau">
       <table>
@@ -239,8 +243,19 @@
     if (rAnnees?.ok) {
       const annees = await rAnnees.json();
       const active = annees.find(a => a.active);
-      document.getElementById('select-annee').innerHTML = annees.map(a => `<option value="${a.id}">${a.libelle}</option>`).join('') || '<option value="">Aucune année créée</option>';
+
+      // Les années clôturées sont retirées du choix : leurs bulletins ne se
+      // régénèrent plus ici. Une année clôturée est définitive, et ses pièces se
+      // rééditent en duplicata depuis Archives — les proposer ici ne mènerait
+      // qu'à un refus du serveur.
+      const ouvertes = annees.filter(a => !a.cloturee);
+      document.getElementById('select-annee').innerHTML =
+        ouvertes.map(a => `<option value="${a.id}">${a.libelle}</option>`).join('')
+        || '<option value="">Aucune année ouverte</option>';
       if (active) document.getElementById('select-annee').value = active.id;
+
+      const aide = document.getElementById('aide-annees-cloturees');
+      if (aide) aide.style.display = annees.length > ouvertes.length ? '' : 'none';
     }
   }
 

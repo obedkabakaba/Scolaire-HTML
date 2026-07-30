@@ -299,15 +299,25 @@
       return;
     }
 
-    const active = annees.find(a => a.active) || annees[0];
+    // Une année clôturée n'a plus sa place ici, ni comme année en cours ni
+    // surtout comme année d'accueil : affecter un élève dans un exercice déjà
+    // arrêté n'a aucun sens. Le serveur le refuse désormais aussi.
+    const ouvertes = annees.filter(a => !a.cloturee);
+    const active = ouvertes.find(a => a.active) || ouvertes[0];
+    if (!active) {
+      document.getElementById('corps-orientation').innerHTML =
+        '<tr><td colspan="7" class="etat-vide-tableau">Aucune année scolaire ouverte. Le Directeur doit en activer une.</td></tr>';
+      return;
+    }
+
     const selAnnee = document.getElementById('select-annee');
     const selCible = document.getElementById('select-annee-cible');
-    selAnnee.innerHTML = annees.map(a => `<option value="${a.id}">${echapper(a.libelle)}</option>`).join('');
+    selAnnee.innerHTML = ouvertes.map(a => `<option value="${a.id}">${echapper(a.libelle)}</option>`).join('');
     selAnnee.value = active.id;
 
     // L'année d'accueil est proposée par défaut à la suivante dans la liste,
     // celle qui n'est pas encore active.
-    const autres = annees.filter(a => a.id !== active.id);
+    const autres = ouvertes.filter(a => a.id !== active.id);
     selCible.innerHTML = '<option value="">— Choisir —</option>' +
       autres.map(a => `<option value="${a.id}">${echapper(a.libelle)}</option>`).join('');
     if (autres.length) selCible.value = autres[0].id;

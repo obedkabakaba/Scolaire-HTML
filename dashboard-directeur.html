@@ -413,7 +413,7 @@
       </div>
       <div class="carte-stat" id="carte-impayes" style="border: 1.5px solid var(--rouge);">
         <div class="valeur" id="stat-impayes" style="color:var(--rouge);">–</div>
-        <div class="etiquette">Élèves en retard de paiement</div>
+        <div class="etiquette" id="etiquette-impayes">Élèves en retard de paiement</div>
       </div>
     </div>
 
@@ -587,7 +587,7 @@
     if (d.notes && d.notes.restantes > 0) {
       ArdoiseUI.marquerTuile('notes.html', `${d.notes.restantes} à saisir`);
     }
-    if (d.impayes && d.impayes.nb_eleves_en_retard > 0) {
+    if (d.impayes && !d.impayes.indisponible && d.impayes.nb_eleves_en_retard > 0) {
       ArdoiseUI.marquerTuile('frais-scolaires.html', `${d.impayes.nb_eleves_en_retard} en retard`);
     }
 
@@ -688,7 +688,21 @@
       document.getElementById('stat-profs').textContent = donnees.effectifs.nb_professeurs;
       document.getElementById('stat-classes').textContent = donnees.effectifs.nb_classes;
       document.getElementById('stat-reussite').textContent = donnees.taux_reussite_global !== null ? `${donnees.taux_reussite_global}%` : '—';
-      document.getElementById('stat-impayes').textContent = donnees.impayes.nb_eleves_en_retard;
+      // « 0 en retard » et « impayés indisponibles » ne veulent pas dire la même
+      // chose : afficher zéro quand le calcul a échoué ferait croire au Directeur
+      // que toutes les familles sont à jour. On distingue explicitement.
+      const impayes = donnees.impayes || {};
+      const carteImpayes = document.getElementById('carte-impayes');
+      if (impayes.indisponible) {
+        document.getElementById('stat-impayes').textContent = '—';
+        document.getElementById('etiquette-impayes').textContent = 'Impayés indisponibles';
+        carteImpayes.title = impayes.raison || '';
+        carteImpayes.style.borderColor = 'var(--bordure)';
+        document.getElementById('stat-impayes').style.color = 'var(--texte-att)';
+      } else {
+        document.getElementById('stat-impayes').textContent = impayes.nb_eleves_en_retard ?? '—';
+        document.getElementById('etiquette-impayes').textContent = 'Élèves en retard de paiement';
+      }
 
       document.getElementById('libelle-annee-active').textContent = donnees.annee_active?.libelle || 'aucune année active';
       afficherEtatPeriodes(donnees.etat_periodes_par_classe);

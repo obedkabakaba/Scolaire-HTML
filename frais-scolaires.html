@@ -205,6 +205,7 @@
     <div class="barre-onglets">
       <div class="onglet actif" data-onglet="paiements">Suivi des paiements</div>
       <div class="onglet" data-onglet="config">Montants attendus</div>
+      <div class="onglet" data-onglet="dettes" id="onglet-lien-dettes" style="display:none;">Dettes antérieures</div>
     </div>
 
     <!-- Onglet Paiements -->
@@ -251,13 +252,69 @@
 
     <!-- Onglet Config -->
     <div class="panneau-onglet" id="onglet-config">
+
+      <!-- Taux de change. Il n'est volontairement pas récupéré d'un service
+           extérieur : c'est l'école qui décide du taux auquel elle accepte les
+           règlements, et le comptable qui l'ajuste. -->
+      <div class="panneau-controle">
+        <div class="titre-controle">
+          <h3>Taux de change</h3>
+          <span class="etat-controle" id="etat-taux"></span>
+        </div>
+        <p class="aide-controle">
+          Nombre de francs congolais pour 1 dollar. Il sert à afficher les équivalents et à
+          calculer un solde quand une famille règle dans une autre devise que celle du minerval.
+          Le changer n'est <strong>pas rétroactif</strong> : les paiements déjà encaissés
+          conservent le taux qui leur a été appliqué, et les montants attendus déjà
+          enregistrés gardent le leur.
+        </p>
+        <div class="ligne-controle">
+          <label class="champ-tolerance">
+            <span>1 USD =</span>
+            <input type="number" id="champ-taux" min="0" step="0.01" style="width:120px;" />
+            <span>FC</span>
+          </label>
+          <label class="champ-tolerance">
+            <span>Devise d'affichage des totaux</span>
+            <select id="champ-devise-principale">
+              <option value="FC">Franc congolais (FC)</option>
+              <option value="USD">Dollar américain (USD)</option>
+            </select>
+          </label>
+          <button class="bouton bouton-secondaire" id="bouton-enregistrer-taux">Enregistrer</button>
+        </div>
+      </div>
+
       <div style="display:flex; justify-content:flex-end; margin-bottom:14px;">
         <button class="bouton bouton-principal" id="bouton-ajouter-config">+ Ajouter un montant</button>
       </div>
       <div class="conteneur-tableau">
         <table>
-          <thead><tr><th>Année scolaire</th><th>Classe</th><th>Libellé</th><th>Montant</th><th></th></tr></thead>
-          <tbody id="corps-tableau-config"><tr><td colspan="4" class="etat-vide-tableau"><span class="spinner"></span>Chargement…</td></tr></tbody>
+          <thead><tr><th>Année scolaire</th><th>Classe</th><th>Libellé</th><th>Montant</th><th>Équivalent</th><th></th></tr></thead>
+          <tbody id="corps-tableau-config"><tr><td colspan="6" class="etat-vide-tableau"><span class="spinner"></span>Chargement…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Onglet Dettes antérieures (comptable uniquement) -->
+    <div class="panneau-onglet" id="onglet-dettes">
+      <p class="aide-controle">
+        Ce qui reste dû sur les <strong>années scolaires antérieures</strong>. Une dette ne
+        s'efface pas au changement d'année : c'est la seule donnée financière que le comptable
+        consulte en dehors de l'année active. Un trop-perçu sur une année ne vient jamais
+        compenser une dette sur une autre — chaque exercice est lu séparément.
+      </p>
+      <div class="barre-selecteurs">
+        <div class="champ-selecteur"><label for="select-classe-dettes">Classe</label><select id="select-classe-dettes"></select></div>
+        <button class="bouton bouton-secondaire" id="bouton-afficher-dettes">Afficher</button>
+      </div>
+      <div id="resume-dettes" style="margin-bottom:16px;"></div>
+      <div class="conteneur-tableau">
+        <table>
+          <thead><tr><th>Matricule</th><th>Élève</th><th>Détail par année</th><th>Dette totale</th></tr></thead>
+          <tbody id="corps-tableau-dettes">
+            <tr><td colspan="4" class="etat-vide-tableau">Choisis une classe puis clique "Afficher".</td></tr>
+          </tbody>
         </table>
       </div>
     </div>
@@ -272,7 +329,13 @@
     <form id="formulaire-paiement">
       <input type="hidden" id="paiement-eleve-id" />
       <div class="ligne-champs">
-        <div class="champ"><label for="champ-montant-paiement">Montant</label><input type="number" step="0.01" id="champ-montant-paiement" required /></div>
+        <div class="champ"><label for="champ-montant-paiement">Montant</label><input type="number" step="0.01" min="0" id="champ-montant-paiement" required /></div>
+        <div class="champ"><label for="champ-devise-paiement">Devise</label>
+          <select id="champ-devise-paiement">
+            <option value="FC">FC — Franc congolais</option>
+            <option value="USD">USD — Dollar américain</option>
+          </select>
+        </div>
         <div class="champ"><label for="champ-methode-paiement">Méthode</label>
           <select id="champ-methode-paiement">
             <option value="cash">Espèces</option>
@@ -283,6 +346,7 @@
           </select>
         </div>
       </div>
+      <p id="aide-devise-paiement" style="font-size:0.8rem; color:var(--texte-att); margin:-4px 0 10px;"></p>
       <div class="champ"><label for="champ-notes-paiement">Note (optionnel)</label><input type="text" id="champ-notes-paiement" /></div>
       <div class="actions-modale">
         <button type="button" class="bouton bouton-secondaire" id="bouton-fermer-paiement">Fermer</button>
@@ -300,7 +364,16 @@
       <div class="champ"><label for="config-annee">Année scolaire</label><select id="config-annee"></select></div>
       <div class="champ"><label for="config-classe">Classe (laisser vide = toutes les classes)</label><select id="config-classe"><option value="">— Toutes les classes —</option></select></div>
       <div class="champ"><label for="config-libelle">Libellé (apparaît sur les reçus)</label><input type="text" id="config-libelle" placeholder="Frais scolaires" /></div>
-      <div class="champ"><label for="config-montant">Montant</label><input type="number" step="0.01" id="config-montant" required /></div>
+      <div class="ligne-champs">
+        <div class="champ"><label for="config-montant">Montant</label><input type="number" step="0.01" min="0" id="config-montant" required /></div>
+        <div class="champ"><label for="config-devise">Devise</label>
+          <select id="config-devise">
+            <option value="FC">FC — Franc congolais</option>
+            <option value="USD">USD — Dollar américain</option>
+          </select>
+        </div>
+      </div>
+      <p id="aide-devise-config" style="font-size:0.8rem; color:var(--texte-att); margin:-4px 0 10px;"></p>
       <div class="actions-modale">
         <button type="button" class="bouton bouton-secondaire" id="bouton-annuler-config">Annuler</button>
         <button type="submit" class="bouton bouton-principal">Enregistrer</button>
@@ -386,6 +459,7 @@
       const classes = await rClasses.json();
       const options = classes.map(c => `<option value="${c.id}">${c.nom}</option>`).join('');
       document.getElementById('select-classe').innerHTML = options;
+      document.getElementById('select-classe-dettes').innerHTML = options;
       document.getElementById('config-classe').innerHTML = '<option value="">— Toutes les classes —</option>' + options;
     }
     if (rAnnees?.ok) {
@@ -408,6 +482,52 @@
   // ============================================================
   let controleActif = false;
   let toleranceCourante = 0;
+
+  // ============================================================
+  //  Devises et taux de change
+  //  Les montants ne sont JAMAIS affichés sans leur devise : un « 300 » nu
+  //  peut valoir 300 FC ou 300 USD, soit un facteur de plus de deux mille.
+  // ============================================================
+  let configMonetaire = { devise_principale: 'FC', taux_change_usd_fc: null };
+
+  function formaterMontant(valeur, devise) {
+    const d = devise || configMonetaire.devise_principale || 'FC';
+    const decimales = d === 'USD' ? 2 : 0;
+    return Number(valeur || 0).toLocaleString('fr-FR', {
+      minimumFractionDigits: decimales, maximumFractionDigits: decimales
+    }) + ' ' + d;
+  }
+
+  /** Équivalent dans l'autre devise, ou null si le taux n'est pas configuré. */
+  function equivalent(valeur, devise) {
+    const taux = Number(configMonetaire.taux_change_usd_fc);
+    if (!taux || taux <= 0) return null;
+    return devise === 'USD'
+      ? { valeur: Number(valeur) * taux, devise: 'FC' }
+      : { valeur: Number(valeur) / taux, devise: 'USD' };
+  }
+
+  async function chargerTauxChange() {
+    const r = await appelApi('/frais/taux-change');
+    if (!r || !r.ok) return;
+    configMonetaire = await r.json();
+
+    const champTaux = document.getElementById('champ-taux');
+    if (champTaux) {
+      champTaux.value = configMonetaire.taux_change_usd_fc ?? '';
+      document.getElementById('champ-devise-principale').value = configMonetaire.devise_principale || 'FC';
+      const etat = document.getElementById('etat-taux');
+      if (configMonetaire.taux_change_usd_fc) {
+        etat.textContent = `1 USD = ${formaterMontant(configMonetaire.taux_change_usd_fc, 'FC')}`
+          + (configMonetaire.taux_change_maj_at
+              ? ` · mis à jour le ${new Date(configMonetaire.taux_change_maj_at).toLocaleDateString('fr-FR')}`
+              : '')
+          + (configMonetaire.maj_par ? ` par ${configMonetaire.maj_par}` : '');
+      } else {
+        etat.textContent = 'non configuré';
+      }
+    }
+  }
 
   const utilisateurFrais = (() => {
     try { return JSON.parse(obtenirDuStockage('ardoise_user') || 'null'); } catch (e) { return null; }
@@ -508,9 +628,9 @@
       return `<tr>
         <td class="matricule-cell">${e.matricule}</td>
         <td>${e.nom} ${e.postnom || ''} ${e.prenom || ''}</td>
-        <td>${Number(e.montant_attendu).toLocaleString('fr-FR')}</td>
-        <td>${Number(e.montant_paye).toLocaleString('fr-FR')}</td>
-        <td><span class="badge-solde ${e.solde <= 0 ? 'solde-nul' : 'solde-restant'}">${Number(e.solde).toLocaleString('fr-FR')}</span></td>
+        <td>${formaterMontant(e.montant_attendu, e.devise)}</td>
+        <td>${formaterMontant(e.montant_paye, e.devise)}</td>
+        <td><span class="badge-solde ${e.solde <= 0 ? 'solde-nul' : 'solde-restant'}">${formaterMontant(e.solde, e.devise)}</span></td>
         <td>${etat}</td>
         <td>
           <button class="lien-action" data-id="${e.id}" data-nom="${e.nom} ${e.postnom || ''}">Paiements</button>
@@ -552,7 +672,7 @@
           <li>
             <span>${new Date(p.date_paiement).toLocaleDateString('fr-FR')} — ${p.methode || '—'}${p.reference ? ' · ' + p.reference : ''}${p.notes ? ' (' + p.notes + ')' : ''}</span>
             <span style="display:flex; align-items:center; gap:12px;">
-              <strong>${Number(p.montant).toLocaleString('fr-FR')}</strong>
+              <strong>${formaterMontant(p.montant, p.devise)}</strong>
               <button class="lien-action" data-recu="${p.id}">Reçu</button>
             </span>
           </li>
@@ -576,6 +696,26 @@
     setTimeout(() => URL.revokeObjectURL(url), 30000);
   }
 
+  // Aperçu de l'équivalent pendant la saisie : le comptable voit tout de suite
+  // ce que représentent 280 000 FC face à un minerval libellé en dollars.
+  function rafraichirAideDevise(idMontant, idDevise, idAide) {
+    const montant = parseFloat(document.getElementById(idMontant).value);
+    const devise = document.getElementById(idDevise).value;
+    const aide = document.getElementById(idAide);
+    if (!montant || Number.isNaN(montant)) { aide.textContent = ''; return; }
+    const eq = equivalent(montant, devise);
+    aide.textContent = eq
+      ? `≈ ${formaterMontant(eq.valeur, eq.devise)} au taux actuel.`
+      : "Aucun taux de change configuré : l'équivalent ne peut pas être calculé.";
+  }
+
+  ['champ-montant-paiement', 'champ-devise-paiement'].forEach(id =>
+    document.getElementById(id).addEventListener('input', () =>
+      rafraichirAideDevise('champ-montant-paiement', 'champ-devise-paiement', 'aide-devise-paiement')));
+  ['config-montant', 'config-devise'].forEach(id =>
+    document.getElementById(id).addEventListener('input', () =>
+      rafraichirAideDevise('config-montant', 'config-devise', 'aide-devise-config')));
+
   document.getElementById('bouton-fermer-paiement').addEventListener('click', () => {
     document.getElementById('voile-paiement').classList.remove('visible');
     document.getElementById('formulaire-paiement').reset();
@@ -588,12 +728,18 @@
       body: JSON.stringify({
         eleve_id: eleveCourantPaiement,
         montant: parseFloat(document.getElementById('champ-montant-paiement').value),
+        devise: document.getElementById('champ-devise-paiement').value,
         methode: document.getElementById('champ-methode-paiement').value,
         notes: document.getElementById('champ-notes-paiement').value.trim()
       })
     });
-    if (!r || !r.ok) { afficherMessage("Erreur lors de l'enregistrement.", 'erreur'); return; }
-    afficherMessage('Paiement enregistré.', 'succes');
+    const d = r ? await r.json().catch(() => ({})) : {};
+    if (!r || !r.ok) { afficherMessage(d.message || "Erreur lors de l'enregistrement.", 'erreur'); return; }
+    afficherMessage(
+      `Paiement de ${formaterMontant(d.montant, d.devise)} enregistré (${d.reference})`
+      + (d.equivalent !== null && d.equivalent !== undefined
+          ? ` — soit ${formaterMontant(d.equivalent, d.devise_attendue)}.` : '.'),
+      'succes');
     document.getElementById('formulaire-paiement').reset();
     await chargerHistoriquePaiements(eleveCourantPaiement);
     chargerEleves();
@@ -612,7 +758,12 @@
             <td>${c.annee_libelle}</td>
             <td>${c.classe_nom || 'Toutes les classes'}</td>
             <td>${c.libelle || 'Frais scolaires'}</td>
-            <td>${Number(c.montant).toLocaleString('fr-FR')}</td>
+            <td>${formaterMontant(c.montant, c.devise)}</td>
+            <td style="color:var(--texte-att); font-size:0.85rem;">${
+              c.devise === 'USD'
+                ? (c.montant_fc ? formaterMontant(c.montant_fc, 'FC') : '—')
+                : (c.montant_usd ? formaterMontant(c.montant_usd, 'USD') : '—')
+            }${c.taux_change ? `<br/><span style="font-size:0.78rem;">taux figé : ${Number(c.taux_change).toLocaleString('fr-FR')}</span>` : ''}</td>
             <td><button class="lien-action" data-id="${c.id}" style="color:var(--rouge);">Supprimer</button></td>
           </tr>
         `).join('');
@@ -637,25 +788,98 @@
         annee_scolaire_id: document.getElementById('config-annee').value,
         classe_id: document.getElementById('config-classe').value || null,
         libelle: document.getElementById('config-libelle').value.trim(),
-        montant: parseFloat(document.getElementById('config-montant').value)
+        montant: parseFloat(document.getElementById('config-montant').value),
+        devise: document.getElementById('config-devise').value
       })
     });
-    if (!r || !r.ok) { afficherMessage("Erreur lors de l'enregistrement.", 'erreur'); return; }
+    const dConfig = r ? await r.json().catch(() => ({})) : {};
+    if (!r || !r.ok) { afficherMessage(dConfig.message || "Erreur lors de l'enregistrement.", 'erreur'); return; }
     document.getElementById('voile-config').classList.remove('visible');
     document.getElementById('formulaire-config').reset();
     afficherMessage('Configuration ajoutée.', 'succes');
     chargerConfig();
   });
 
-  chargerSelecteurs();
-  chargerConfig();
+  // ---------- Taux de change ----------
+  document.getElementById('bouton-enregistrer-taux').addEventListener('click', async () => {
+    const taux = parseFloat(document.getElementById('champ-taux').value);
+    if (!taux || taux <= 0) { afficherMessage('Saisis un taux strictement positif.', 'erreur'); return; }
+
+    const bouton = document.getElementById('bouton-enregistrer-taux');
+    bouton.disabled = true;
+    const r = await appelApi('/frais/taux-change', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        taux_change_usd_fc: taux,
+        devise_principale: document.getElementById('champ-devise-principale').value
+      })
+    });
+    bouton.disabled = false;
+    const d = r ? await r.json().catch(() => ({})) : {};
+    if (!r || !r.ok) { afficherMessage(d.message || "Erreur lors de l'enregistrement du taux.", 'erreur'); return; }
+    afficherMessage(d.message, 'succes');
+    await chargerTauxChange();
+    chargerConfig();
+  });
+
+  // ---------- Dettes des années antérieures ----------
+  document.getElementById('bouton-afficher-dettes').addEventListener('click', chargerDettes);
+
+  async function chargerDettes() {
+    const classeId = document.getElementById('select-classe-dettes').value;
+    if (!classeId) { afficherMessage('Choisis une classe.', 'erreur'); return; }
+
+    const corps = document.getElementById('corps-tableau-dettes');
+    const resume = document.getElementById('resume-dettes');
+    corps.innerHTML = '<tr><td colspan="4" class="etat-vide-tableau"><span class="spinner"></span>Calcul…</td></tr>';
+
+    const r = await appelApi(`/frais/dettes-anterieures?classeId=${classeId}`);
+    const d = r ? await r.json().catch(() => ({})) : {};
+    if (!r || !r.ok) {
+      resume.innerHTML = '';
+      corps.innerHTML = `<tr><td colspan="4" class="etat-vide-tableau">${d.message || 'Erreur de chargement.'}</td></tr>`;
+      return;
+    }
+
+    resume.innerHTML = d.nb_debiteurs === 0
+      ? ''
+      : `<strong>${d.nb_debiteurs}</strong> élève(s) avec une dette antérieure, pour un total de
+         <strong>${formaterMontant(d.dette_totale, d.devise)}</strong>
+         (hors année en cours${d.annee_active ? ' — ' + d.annee_active : ''}).`;
+
+    corps.innerHTML = d.eleves.length === 0
+      ? '<tr><td colspan="4" class="etat-vide-tableau">Aucune dette antérieure dans cette classe.</td></tr>'
+      : d.eleves.map(e => `
+          <tr>
+            <td class="matricule-cell">${e.matricule}</td>
+            <td>${e.nom} ${e.postnom || ''} ${e.prenom || ''}</td>
+            <td style="font-size:0.85rem;">${e.annees.map(a =>
+                `${a.annee_libelle}${a.classe_nom ? ' (' + a.classe_nom + ')' : ''} : ${formaterMontant(a.solde, d.devise)}`
+              ).join('<br/>')}</td>
+            <td><span class="badge-solde solde-restant">${formaterMontant(e.dette_totale, d.devise)}</span></td>
+          </tr>`).join('');
+  }
+
+  // L'onglet des dettes n'apparaît que pour ceux qui y ont réellement accès :
+  // l'API le réserve au comptable, autant ne pas afficher un onglet qui
+  // renverrait un refus.
+  (function afficherOngletDettes() {
+    const roles = (utilisateurFrais && utilisateurFrais.roles) || [];
+    if (roles.some(r => ['comptable', 'super_admin'].includes(r))) {
+      document.getElementById('onglet-lien-dettes').style.display = '';
+    }
+  })();
 
   (async () => {
+    await chargerTauxChange();
+    chargerSelecteurs();
+    chargerConfig();
+
     const r = await appelApi('/frais/stats-globales');
     if (!r || !r.ok) return;
     const d = await r.json();
-    document.getElementById('stat-encaisse').textContent = `${d.montant_total_encaisse.toLocaleString('fr-FR')}`;
-    document.getElementById('stat-du').textContent = `${d.montant_total_du.toLocaleString('fr-FR')}`;
+    document.getElementById('stat-encaisse').textContent = formaterMontant(d.montant_total_encaisse, d.devise);
+    document.getElementById('stat-du').textContent = formaterMontant(d.montant_total_du, d.devise);
     document.getElementById('stat-retard').textContent = d.nb_eleves_en_retard;
   })();
 

@@ -70,6 +70,24 @@
   .badge { display: inline-block; padding: 3px 10px; border-radius:  var(--r-pilule); font-size: 0.74rem; font-weight: 600; margin-left: 8px; }
   .badge.actif { background: rgba(76,122,90,0.12); color: var(--vert-ok); }
   .badge.cloturee { background: rgba(107,114,105,0.12); color: var(--texte-att); }
+
+  /* Bandeau de proposition de l'année suivante : il apparaît dès qu'une année
+     peut logiquement en appeler une autre, pour éviter que le Directeur ait à
+     retaper « 2026-2027 » à la main et se trompe d'un an. */
+  .bandeau-proposition {
+    display: none; align-items: center; gap: 14px; flex-wrap: wrap;
+    background: rgba(198,150,74,0.10); border: 1px solid rgba(198,150,74,0.38);
+    border-radius: var(--r-carte); padding: 14px 16px; margin-bottom: 18px; font-size: 0.9rem;
+  }
+  .bandeau-proposition.visible { display: flex; }
+  .bandeau-proposition .texte { flex: 1; min-width: 220px; }
+  .bandeau-proposition strong { font-family: var(--police-titre); }
+
+  .etape { background: var(--craie-2); border: 1px solid var(--bordure); border-radius: var(--r-carte); padding: 18px; margin-bottom: 18px; }
+  .etape h3 { margin: 0 0 4px; }
+  .etape .aide { font-size: 0.82rem; color: var(--texte-att); margin: 0 0 14px; line-height: 1.5; }
+  .bilan-report { font-size: 0.85rem; margin-top: 12px; padding: 12px 14px; border-radius: var(--r-carte); background: rgba(76,122,90,0.10); display: none; }
+  .bilan-report.visible { display: block; }
   .actions-annee { display: flex; gap: 8px; flex-wrap: wrap; }
 
   .form-inline { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 24px; }
@@ -177,6 +195,12 @@
 
     <!-- ===== Onglet Années ===== -->
     <div class="panneau-onglet visible" id="onglet-annees">
+      <div class="bandeau-proposition" id="bandeau-proposition">
+        <div class="texte" id="texte-proposition"></div>
+        <button class="bouton bouton-principal bouton-petit" id="bouton-creer-proposition">Créer cette année</button>
+        <button class="bouton bouton-secondaire bouton-petit" id="bouton-ignorer-proposition">Plus tard</button>
+      </div>
+
       <form class="form-inline" id="form-annee">
         <input type="text" id="champ-annee-libelle" placeholder="ex. 2026-2027" required />
         <input type="date" id="champ-annee-debut" title="Date de début" />
@@ -221,24 +245,56 @@
 
     <!-- ===== Onglet Promotion ===== -->
     <div class="panneau-onglet" id="onglet-promotion">
-      <div class="form-inline">
-        <label style="font-size:0.85rem; color:var(--texte-att);">Année qui se termine :</label>
-        <select id="select-annee-source"></select>
-        <button class="bouton bouton-secondaire" id="bouton-calculer-apercu">Calculer l'aperçu</button>
-      </div>
-      <p style="font-size:0.82rem; color:var(--texte-att); margin-top:-10px;">
-        Seuil de promotion actuel : <strong id="seuil-actuel">—</strong>% (modifiable dans Paramètres). Ajuste chaque décision avant de valider.
-      </p>
 
-      <div class="conteneur-tableau" style="margin-top:18px;">
-        <table>
-          <thead><tr><th>Élève</th><th>Classe actuelle</th><th>Moyenne annuelle</th><th>Décision</th><th>Classe cible</th></tr></thead>
-          <tbody id="corps-tableau-promotion"><tr><td colspan="5" class="etat-vide-tableau">Choisis une année puis clique "Calculer l'aperçu".</td></tr></tbody>
-        </table>
+      <!-- Étape 1 : la structure. Elle doit exister AVANT de promouvoir des
+           élèves, sinon il n'y a aucune classe cible où les envoyer. -->
+      <div class="etape">
+        <h3>Étape 1 — Reporter la structure vers la nouvelle année</h3>
+        <p class="aide">
+          Les classes, les cours de chaque classe et les affectations des professeurs
+          n'ont pas à être ressaisis chaque rentrée : ils sont recopiés d'une année sur
+          l'autre. Chaque année garde ensuite ses propres données — modifier une classe
+          de la nouvelle année ne touche jamais les années antérieures.<br />
+          Restent à créer manuellement, parce qu'ils changent réellement chaque année :
+          <strong>les périodes et examens</strong>, <strong>le calendrier scolaire</strong>
+          et <strong>les montants des frais</strong>.
+        </p>
+        <div class="form-inline">
+          <label style="font-size:0.85rem; color:var(--texte-att);">Copier depuis :</label>
+          <select id="select-report-source"></select>
+          <label style="font-size:0.85rem; color:var(--texte-att);">vers :</label>
+          <select id="select-report-cible"></select>
+          <button class="bouton bouton-secondaire" id="bouton-reporter-structure">Reporter la structure</button>
+        </div>
+        <div class="bilan-report" id="bilan-report"></div>
       </div>
 
-      <div style="margin-top:18px; display:flex; justify-content:flex-end;">
-        <button class="bouton bouton-principal" id="bouton-executer-promotion" style="display:none;">Valider et appliquer la promotion</button>
+      <!-- Étape 2 : les élèves. -->
+      <div class="etape">
+        <h3>Étape 2 — Promouvoir les élèves</h3>
+        <p class="aide">
+          Chaque décision est ajustable avant validation. Les élèves rejoignent les
+          classes de la nouvelle année créées à l'étape 1.
+        </p>
+        <div class="form-inline">
+          <label style="font-size:0.85rem; color:var(--texte-att);">Année qui se termine :</label>
+          <select id="select-annee-source"></select>
+          <button class="bouton bouton-secondaire" id="bouton-calculer-apercu">Calculer l'aperçu</button>
+        </div>
+        <p style="font-size:0.82rem; color:var(--texte-att); margin-top:4px;">
+          Seuil de promotion actuel : <strong id="seuil-actuel">—</strong>% (modifiable dans Paramètres).
+        </p>
+
+        <div class="conteneur-tableau" style="margin-top:18px;">
+          <table>
+            <thead><tr><th>Élève</th><th>Classe actuelle</th><th>Moyenne annuelle</th><th>Décision</th><th>Classe cible</th></tr></thead>
+            <tbody id="corps-tableau-promotion"><tr><td colspan="5" class="etat-vide-tableau">Choisis une année puis clique "Calculer l'aperçu".</td></tr></tbody>
+          </table>
+        </div>
+
+        <div style="margin-top:18px; display:flex; justify-content:flex-end;">
+          <button class="bouton bouton-principal" id="bouton-executer-promotion" style="display:none;">Valider et appliquer la promotion</button>
+        </div>
       </div>
     </div>
   </main>
@@ -342,28 +398,133 @@
 
     conteneur.querySelectorAll('[data-action="activer"]').forEach(b => b.addEventListener('click', async () => {
       const r = await appelApi(`/annees-scolaires/${b.dataset.id}/activer`, { method: 'POST' });
-      if (r && r.ok) { afficherMessage('Année activée comme pivot de la plateforme.', 'succes'); chargerAnnees(); }
+      const d = r ? await r.json().catch(() => ({})) : {};
+      if (r && r.ok) { afficherMessage(d.message || 'Année activée comme pivot de la plateforme.', 'succes'); chargerAnnees(); }
+      else afficherMessage(d.message || "Erreur lors de l'activation.", 'erreur');
     }));
     conteneur.querySelectorAll('[data-action="cloturer"]').forEach(b => b.addEventListener('click', async () => {
-      if (!confirm("Clôturer cette année la verrouille définitivement (consultation et impression uniquement). Continuer ?")) return;
+      if (!confirm("Clôturer cette année la verrouille définitivement (consultation et impression uniquement).\n\nSi c'est l'année active, l'année suivante sera créée et activée automatiquement pour que la plateforme ne reste jamais sans année de référence.\n\nContinuer ?")) return;
       const r = await appelApi(`/annees-scolaires/${b.dataset.id}/cloturer`, { method: 'POST' });
-      if (r && r.ok) { afficherMessage('Année clôturée.', 'succes'); chargerAnnees(); }
+      const d = r ? await r.json().catch(() => ({})) : {};
+      if (r && r.ok) { afficherMessage(d.message || 'Année clôturée.', 'succes'); chargerAnnees(); }
+      else afficherMessage(d.message || 'Erreur lors de la clôture.', 'erreur');
     }));
 
     remplirSelecteursAnnees();
+    chargerProposition();
   }
 
   function remplirSelecteursAnnees() {
     const options = anneesCache.map(a => `<option value="${a.id}">${a.libelle}${a.cloturee ? ' (clôturée)' : ''}</option>`).join('');
     document.getElementById('select-annee-periodes').innerHTML = options;
     document.getElementById('select-annee-source').innerHTML = options;
+
+    // Report de structure : la source peut être n'importe quelle année (souvent
+    // celle qui se termine) ; la cible ne peut PAS être clôturée, on n'écrit
+    // jamais dans une année dont les comptes sont arrêtés.
+    const ouvertes = anneesCache.filter(a => !a.cloturee);
+    document.getElementById('select-report-source').innerHTML = options
+      || '<option value="">Aucune année</option>';
+    document.getElementById('select-report-cible').innerHTML =
+      ouvertes.map(a => `<option value="${a.id}">${a.libelle}${a.active ? ' (active)' : ''}</option>`).join('')
+      || '<option value="">Aucune année ouverte</option>';
+
     const active = anneesCache.find(a => a.active);
     if (active) {
       document.getElementById('select-annee-periodes').value = active.id;
       document.getElementById('select-annee-source').value = active.id;
+      document.getElementById('select-report-cible').value = active.id;
+
+      // Source proposée par défaut : l'année juste avant l'active dans la liste
+      // (elle est triée du plus récent au plus ancien), c'est-à-dire celle dont
+      // on veut presque toujours recopier la structure.
+      const indexActive = anneesCache.findIndex(a => a.id === active.id);
+      const precedente = anneesCache[indexActive + 1];
+      if (precedente) document.getElementById('select-report-source').value = precedente.id;
     }
     chargerPeriodesDeLAnnee();
   }
+
+  /**
+   * Propose l'année suivante. Le calcul vient du serveur : c'est lui qui sait
+   * quelle est la dernière année connue et si la suivante existe déjà.
+   */
+  let propositionCourante = null;
+  async function chargerProposition() {
+    const bandeau = document.getElementById('bandeau-proposition');
+    const r = await appelApi('/annees-scolaires/proposition-suivante');
+    if (!r || !r.ok) { bandeau.classList.remove('visible'); return; }
+    const d = await r.json();
+
+    propositionCourante = d.proposition;
+    if (!d.proposition || d.existe_deja) { bandeau.classList.remove('visible'); return; }
+
+    document.getElementById('texte-proposition').innerHTML =
+      `Après <strong>${d.source.libelle}</strong>, l'année suivante serait <strong>${d.proposition.libelle}</strong>`
+      + (d.proposition.date_debut ? ` (du ${new Date(d.proposition.date_debut).toLocaleDateString('fr-FR')} au ${new Date(d.proposition.date_fin).toLocaleDateString('fr-FR')})` : '')
+      + '. Elle n\'existe pas encore.';
+    bandeau.classList.add('visible');
+  }
+
+  document.getElementById('bouton-ignorer-proposition').addEventListener('click', () => {
+    document.getElementById('bandeau-proposition').classList.remove('visible');
+  });
+
+  document.getElementById('bouton-creer-proposition').addEventListener('click', async () => {
+    if (!propositionCourante) return;
+    const bouton = document.getElementById('bouton-creer-proposition');
+    bouton.disabled = true;
+    const r = await appelApi('/annees-scolaires', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        libelle: propositionCourante.libelle,
+        date_debut: propositionCourante.date_debut,
+        date_fin: propositionCourante.date_fin,
+        active: false
+      })
+    });
+    bouton.disabled = false;
+    const d = r ? await r.json().catch(() => ({})) : {};
+    if (r && r.ok) { afficherMessage(d.message || 'Année créée.', 'succes'); chargerAnnees(); }
+    else afficherMessage(d.message || "Erreur lors de la création.", 'erreur');
+  });
+
+  // ---------- Report de structure ----------
+  document.getElementById('bouton-reporter-structure').addEventListener('click', async () => {
+    const source = document.getElementById('select-report-source').value;
+    const cible = document.getElementById('select-report-cible').value;
+    if (!source || !cible) { afficherMessage('Choisis une année source et une année cible.', 'erreur'); return; }
+    if (source === cible) { afficherMessage("L'année source et l'année cible doivent être différentes.", 'erreur'); return; }
+
+    const libelleSource = anneesCache.find(a => a.id === source)?.libelle || '';
+    const libelleCible = anneesCache.find(a => a.id === cible)?.libelle || '';
+    if (!confirm(`Copier les classes, leurs cours et les professeurs de ${libelleSource} vers ${libelleCible} ?\n\nL'opération peut être relancée sans risque : elle complète sans créer de doublons.`)) return;
+
+    const bouton = document.getElementById('bouton-reporter-structure');
+    bouton.disabled = true; bouton.textContent = 'Report en cours…';
+
+    const r = await appelApi(`/annees-scolaires/${cible}/reporter-structure`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ anneeSourceId: source })
+    });
+
+    bouton.disabled = false; bouton.textContent = 'Reporter la structure';
+    const d = r ? await r.json().catch(() => ({})) : {};
+    const bilan = document.getElementById('bilan-report');
+
+    if (!r || !r.ok) {
+      afficherMessage(d.message || 'Erreur lors du report.', 'erreur');
+      bilan.classList.remove('visible');
+      return;
+    }
+
+    afficherMessage(d.message, 'succes');
+    bilan.innerHTML = `
+      <strong>${d.bilan.annee_source} → ${d.bilan.annee_cible}</strong><br />
+      ${d.bilan.classes_creees} classe(s) créée(s), ${d.bilan.classes_existantes} déjà présente(s)<br />
+      ${d.bilan.cours_rattaches} cours rattaché(s), ${d.bilan.professeurs_affectes} affectation(s) de professeur`;
+    bilan.classList.add('visible');
+  });
 
   document.getElementById('form-annee').addEventListener('submit', async (evt) => {
     evt.preventDefault();
@@ -379,8 +540,9 @@
       })
     });
     bouton.disabled = false;
-    if (r && r.ok) { evt.target.reset(); afficherMessage('Année créée. Active-la comme pivot quand tu es prêt.', 'succes'); chargerAnnees(); }
-    else afficherMessage("Erreur lors de la création de l'année.", 'erreur');
+    const d = r ? await r.json().catch(() => ({})) : {};
+    if (r && r.ok) { evt.target.reset(); afficherMessage(d.message || 'Année créée.', 'succes'); chargerAnnees(); }
+    else afficherMessage(d.message || "Erreur lors de la création de l'année.", 'erreur');
   });
 
   // ---------- Onglet Périodes/Semestres/Examens ----------

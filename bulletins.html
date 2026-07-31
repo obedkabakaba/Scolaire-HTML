@@ -377,8 +377,17 @@
 
     const rPeriodes = await appelApi(`/periodes?anneeScolaireId=${anneeActiveId}`);
     if (rPeriodes?.ok) {
-      const periodes = (await rPeriodes.json()).filter(p => p.type !== 'semestre');
-      document.getElementById('select-periode').innerHTML = periodes.map(p => `<option value="${p.id}">${p.libelle}</option>`).join('') || '<option value="">Aucune période créée pour l\'année active</option>';
+      // Toutes les périodes sont proposées, semestres compris : une école de
+      // secondaire peut ainsi imprimer indifféremment une période seule (1ère,
+      // 2ème, examen...) ou le regroupement d'un semestre entier. Le type est
+      // porté sur chaque option pour que le bouton Imprimer sache vers quel
+      // endpoint router — /bulletins/classe/.../imprimer pour une période
+      // ordinaire, /bulletins/semestre/classe/.../imprimer pour un semestre,
+      // qui agrège automatiquement ses deux périodes et son examen.
+      const periodes = await rPeriodes.json();
+      document.getElementById('select-periode').innerHTML = periodes
+        .map(p => `<option value="${p.id}" data-type="${p.type}">${p.libelle}</option>`).join('')
+        || '<option value="">Aucune période créée pour l\'année active</option>';
     }
 
     // Pré-sélection depuis l'URL (ex: lien depuis l'espace titulaire)
@@ -595,13 +604,23 @@
 
   async function genererPdf() {
     const classeId = document.getElementById('select-classe').value;
-    const periodeId = document.getElementById('select-periode').value;
+    const selectPeriode = document.getElementById('select-periode');
+    const periodeId = selectPeriode.value;
     if (!classeId || !periodeId) { afficherMessage('Choisissez une classe et une période.', 'erreur'); return; }
+
+    // Un semestre est un REGROUPEMENT (1ère P + 2ème P + examen), pas une
+    // période notable en tant que telle : ses bulletins passent par la route
+    // dédiée, qui recalcule l'agrégat à la volée plutôt que de chercher des
+    // notes directement saisies sur ce regroupement (il n'y en a jamais).
+    const typeSelectionne = selectPeriode.selectedOptions[0]?.dataset.type;
+    const chemin = typeSelectionne === 'semestre'
+      ? `/bulletins/semestre/classe/${classeId}/imprimer?semestreId=${periodeId}`
+      : `/bulletins/classe/${classeId}/imprimer?periodeId=${periodeId}`;
 
     const bouton = document.getElementById('bouton-generer-pdf');
     bouton.disabled = true; bouton.textContent = 'Génération en cours…';
 
-    const r = await appelApi(`/bulletins/classe/${classeId}/imprimer?periodeId=${periodeId}`);
+    const r = await appelApi(chemin);
     bouton.disabled = false; bouton.textContent = '📄 Générer les bulletins de la classe';
 
     if (!r || !r.ok) {

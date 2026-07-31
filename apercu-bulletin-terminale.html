@@ -3,11 +3,14 @@
   @page { size: A4 portrait; margin: 6mm; }
   * { box-sizing: border-box; }
   body { font-family: 'Times New Roman', Times, serif; font-size: 8px; color: #000; margin: 0; }
-  .page { page-break-after: always; display: flex; flex-direction: column; min-height: 281mm; }
+  /* Pas de min-height ni d'etirement : le bulletin s'arrete ou s'arrete son
+     contenu. Sur le modele officiel le pied suit immediatement la ligne
+     SIGN. DU RESPONSABLE, et le bas de page reste blanc. */
+  .page { page-break-after: always; }
   .page:last-child { page-break-after: auto; }
 
   /* ---------- En-tête officiel ---------- */
-  .entete { display: flex; align-items: center; border: 0.5px solid #000; }
+  .entete { display: flex; align-items: center; border: 1.3px solid #000; }
   .entete .drapeau { width: 24mm; height: 17mm; flex: none; padding: 1mm; }
   .entete .armoiries {
     width: 17mm; height: 17mm; flex: none; margin: 1mm;
@@ -17,56 +20,85 @@
   .entete .titre { flex: 1; text-align: center; font-weight: bold; font-size: 10px; line-height: 1.45; padding: 0 2mm; }
 
   .cases { display: inline-flex; gap: 0; vertical-align: middle; }
-  .case { border: 0.4px solid #000; width: 3.4mm; height: 3.8mm; display: inline-block; }
+  .case { border: 1px solid #000; width: 3.4mm; height: 3.8mm; display: inline-block; }
 
-  .bandeau-id { border: 0.5px solid #000; border-top: none; padding: 0.8mm 2mm; display: flex; align-items: center; gap: 2mm; }
+  .bandeau-id { border: 1.3px solid #000; border-top: none; padding: 0.8mm 2mm; display: flex; align-items: center; gap: 2mm; }
   .bandeau-id .libelle { font-weight: bold; }
 
-  .identite { display: flex; border: 0.5px solid #000; border-top: none; }
-  .identite .colonne { flex: 1; padding: 1mm 2mm; }
-  .identite .colonne + .colonne { border-left: 0.5px solid #000; }
+  /* PROVINCE et VILLE courent sur TOUTE la largeur : le filet vertical qui
+     sépare les deux colonnes ne commence qu'à la ligne COMMUNE / TER.
+     (relevé sur la photo cadrée de l'en-tête de terminale). */
+  .identite-large { border: 1.3px solid #000; border-top: none; padding: 0.9mm 2mm; }
+  .identite-large .champ { white-space: nowrap; overflow: hidden; }
+
+  .identite { display: flex; border: 1.3px solid #000; border-top: none; }
+  /* Le filet tombe à ~51 % de la largeur, pratiquement au milieu. */
+  .identite .colonne { width: 51%; flex: none; padding: 1mm 2mm; }
+  .identite .colonne + .colonne { width: 49%; border-left: 1.3px solid #000; }
   .identite .champ { margin-bottom: 0.9mm; white-space: nowrap; overflow: hidden; }
-  .pointilles { border-bottom: 0.4px dotted #000; display: inline-block; min-width: 14mm; height: 2.6mm; vertical-align: bottom; }
+  /* ÉLÈVE et SEXE partagent une seule ligne, SEXE rejeté à droite. */
+  .identite .champ.duo { display: flex; justify-content: space-between; gap: 2mm; }
+  .pointilles { border-bottom: 0.8px dotted #000; display: inline-block; min-width: 14mm; height: 2.6mm; vertical-align: bottom; }
   .pointilles.long { min-width: 32mm; }
 
   .ligne-bulletin {
-    border: 0.5px solid #000; border-top: none; padding: 1mm 2mm;
+    border: 1.3px solid #000; border-top: none; padding: 1mm 2mm;
     display: flex; justify-content: space-between; font-weight: bold; font-size: 9px;
   }
 
   /* ---------- Tableau des branches ---------- */
-  .corps { display: flex; margin-top: 1.5mm; flex: 1; align-items: stretch; }
-  .colonne-droite { width: 34mm; flex: none; margin-left: 1.2mm; }
+  .corps { margin-top: 0; }
+  /* Pas de gouttière : sur le modèle officiel le bloc de droite est accolé à
+     la barre noire, il n'y a pas de blanc entre les deux. */
+  .colonne-droite { width: 34mm; flex: none; margin-left: 0; }
 
   table.cotes { border-collapse: collapse; width: 100%; }
-  table.cotes th, table.cotes td { border: 0.4px solid #000; text-align: center; padding: 0.25mm 0.3mm; font-size: 7px; }
-  table.cotes th { font-weight: bold; font-size: 6.6px; line-height: 1.15; }
-  table.cotes td.branche { text-align: left; padding-left: 1mm; font-size: 7px; white-space: nowrap; overflow: hidden; max-width: 44mm; }
+  table.cotes th, table.cotes td { border: 1px solid #000; text-align: center; padding: 0.3mm 0.5mm; font-size: 8.8px; }
+  table.cotes th { font-weight: bold; font-size: 7.6px; line-height: 1.25; }
+  table.cotes td.branche { text-align: left; padding-left: 1.2mm; font-size: 8.8px; white-space: nowrap; overflow: hidden; max-width: 44mm; }
   table.cotes tr.maxima td { font-weight: bold; background: #f0f0f0; }
   table.cotes tr.synthese td { font-weight: bold; }
   table.cotes tr.synthese td.branche { text-transform: uppercase; }
   /* Aplats noirs du modèle officiel. Ils ne sont pas décoratifs : une case
      noire se lit « aucune cote n'est attendue ici », là où une case blanche
      vide se lit « cote manquante ». Confondre les deux fait croire à un oubli
-     de saisie. */
-  table.cotes td.noir, table.cotes td.separateur { background: #000; }
+     de saisie.
+
+     Le mot-clé important est ici volontaire et nécessaire. La règle
+     "tr.maxima td" ci-dessus a une spécificité de 0-2-3, supérieure à
+     "td.noir" (0-2-2) : sans cela, le gris des lignes MAXIMA repeint par-dessus
+     le noir et la barre séparatrice se retrouve trouée à chaque ligne de
+     barème. Ces aplats portent du sens, aucune règle de fond ne doit pouvoir
+     les effacer. */
+  table.cotes td.noir, table.cotes th.noir,
+  table.cotes td.separateur, table.cotes th.separateur { background: #000 !important; }
 
   /* Colonne séparatrice noire, entre le tableau des cotes et la colonne de
      droite. Avec la bande noire des lignes Application / Conduite, elle forme
      le L inversé caractéristique du modèle officiel. */
-  table.cotes td.separateur, table.cotes th.separateur { width: 3.5mm; padding: 0; border-color: #000; }
-  table.cotes td.saisie { height: 4.2mm; }
-  table.cotes tr.signature-resp td { height: 7mm; }
+  table.cotes td.separateur, table.cotes th.separateur { width: 5mm; padding: 0; border-color: #000; }
+  table.cotes tbody td { height: 3.4mm; }
+  table.cotes td.saisie { height: 3.4mm; }
+  table.cotes tr.signature-resp td { height: 3.4mm; }
 
-  /* ---------- Colonne « examen de repêchage » ---------- */
-  .repechage { border: 0.4px solid #000; height: 100%; display: flex; flex-direction: column; }
-  .repechage .titre { text-align: center; font-weight: bold; font-size: 7.5px; padding: 1mm 0.5mm; border-bottom: 0.4px solid #000; }
-  .repechage table { border-collapse: collapse; width: 100%; }
-  .repechage th, .repechage td { border: 0.4px solid #000; font-size: 6.4px; text-align: center; padding: 0.3mm; }
-  .repechage td.saisie { height: 4.5mm; }
+  /* ---------- Colonnes de droite, intégrées au tableau ---------- */
+  table.cotes td.rep-saisie { height: 3.4mm; }
+  table.cotes th.rep-pct { width: 5%; }
+  table.cotes td.rep-pied {
+    vertical-align: top; text-align: left; padding: 0.8mm 1.2mm;
+    font-size: 6.6px; line-height: 1.3;
+  }
+  table.cotes td.rep-pied .rep-option { display: block; }
+  table.cotes td.rep-pied .rep-date { margin-top: 0.8mm; }
+  table.cotes td.rep-pied .rep-sign { margin-top: 0.8mm; text-align: center; }
+  table.cotes td.rep-pied .rep-sceau { height: 5mm; }
+
+  /* Cellule fusionnée portant le bloc Examen d'État de la terminale. */
+  table.cotes th.tete-etat { width: 34mm; }
+  table.cotes td.cellule-etat { vertical-align: top; padding: 0; width: 34mm; }
 
   /* ---------- Pied ---------- */
-  .pied { border: 0.5px solid #000; margin-top: 1.5mm; padding: 1.5mm 2mm; font-size: 7.5px; }
+  .pied { border: 1px solid #000; border-top: none; margin-top: 0; padding: 2mm; font-size: 8px; }
   .pied .mentions { margin-bottom: 1.5mm; line-height: 1.7; }
   .pied .options { line-height: 1.8; }
   .pied .signatures { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 2mm; }
@@ -79,12 +111,12 @@
 
   .duplicata {
     text-align: center; font-size: 7.5px; letter-spacing: 0.06em; text-transform: uppercase;
-    color: #8a2b2b; border: 0.4px solid #8a2b2b; border-radius: 1mm;
+    color: #8a2b2b; border: 1px solid #8a2b2b; border-radius: 1mm;
     padding: 0.6mm 1mm; margin: 1mm auto; max-width: 70mm;
   }
   
   .examen-etat {
-    border: 0.4px solid #000;
+    border: 1px solid #000;
     display: flex; flex-direction: column;
     font-size: 7px; line-height: 1.5;
     padding: 0; height: 100%;
@@ -92,7 +124,7 @@
   .ee-titre {
     text-align: center; font-weight: bold; font-size: 7.5px;
     letter-spacing: 0.04em; padding: 1mm 0.5mm;
-    border-bottom: 0.4px solid #000;
+    border-bottom: 1px solid #000;
   }
   .ee-corps { padding: 1mm 1.5mm; display: flex; flex-direction: column; gap: 1.6mm; flex: 1; }
 
@@ -100,24 +132,25 @@
      elles sont remplies à la main depuis le relevé du centre. */
   .ee-points { border-collapse: collapse; width: 100%; }
   .ee-points td, .ee-points th {
-    border: 0.4px solid #000; text-align: center;
+    border: 1px solid #000; text-align: center;
     font-size: 6.2px; font-weight: normal; padding: 0.3mm 0.2mm;
   }
   .ee-points th { font-weight: bold; line-height: 1.15; }
   .ee-points td.saisie { height: 4.5mm; }
   .ee-points td.etiquette { font-weight: bold; width: 22%; }
+  .ee-points td.ee-noir, .ee-points th.ee-noir { background: #000; }
 
   .ee-ligne { margin: 0; }
   .ee-libelle { font-weight: bold; }
   .ee-pointilles {
-    border-bottom: 0.4px dotted #000;
+    border-bottom: 0.8px dotted #000;
     display: inline-block; min-width: 12mm; height: 2.6mm; vertical-align: bottom;
   }
   .ee-pointilles.large { display: block; width: 100%; margin-top: 0.8mm; }
 
   .ee-cases { display: flex; gap: 0.4mm; margin-top: 0.8mm; }
   .ee-case {
-    border: 0.4px solid #000; width: 4mm; height: 4.5mm; display: block;
+    border: 1px solid #000; width: 4mm; height: 4.5mm; display: block;
   }
 
   .ee-resultat { margin-top: 0.5mm; }
@@ -147,23 +180,34 @@
         <div class="armoiries"></div>
       </div>
 
-      <div class="bandeau-id"><span class="libelle">N° ID.</span> <span class="cases"><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span></span></div>
+      <div class="bandeau-id"><span class="libelle">N° ID.</span> <span class="cases"><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span></span></div>
+
+      <!-- PROVINCE et VILLE occupent chacune une bande pleine largeur. Le
+           découpage en deux colonnes ne commence qu'ensuite : c'est ce que
+           montre la photo cadrée de l'en-tête, où le filet vertical part de la
+           ligne COMMUNE / TER. et non du haut du bloc. -->
+      <div class="identite-large">
+        <div class="champ">PROVINCE : Kinshasa</div>
+      </div>
+      <div class="identite-large">
+        <div class="champ">VILLE : Kinshasa</div>
+      </div>
 
       <div class="identite">
         <div class="colonne">
-          <div class="champ">PROVINCE : Kinshasa</div>
-          <div class="champ">VILLE : Kinshasa</div>
           <div class="champ">COMMUNE / TER. (1) : N&#39;Djili</div>
           <div class="champ">ÉCOLE : COLLÈGE BONSOMI</div>
           <div class="champ">CODE : <span class="cases"><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span></span></div>
         </div>
         <div class="colonne">
-          <div class="champ">ÉLÈVE : KABAKABA OBED</div>
-          <div class="champ">SEXE : M</div>
-          <div class="champ">NÉ(E) À : <span class="pointilles"></span>
-               LE : <span class="pointilles"></span></div>
+          <div class="champ duo">
+            <span>ÉLÈVE : KABAKABA OBED</span>
+            <span>SEXE : M</span>
+          </div>
+          <div class="champ">NÉ(E) À : Kinshasa
+               LE : 16/11/2007</div>
           <div class="champ">CLASSE : 4ème ANNÉE HUMANITÉ COMMERCIALE &amp; GESTION</div>
-          <div class="champ">N° PERM. : <span class="cases"><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span></span></div>
+          <div class="champ">N° PERM. : <span class="cases"><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span></span></div>
         </div>
       </div>
 
@@ -174,7 +218,7 @@
              contient déjà dans l'usage congolais, les répéter donnerait
              « 4ème HCG — Commerciale Gestion ». -->
         <span>BULLETIN DE LA 4ème ANNÉE HUMANITÉ COMMERCIALE &amp; GESTION</span>
-        <span>ANNÉE SCOLAIRE 2025-2026</span>
+        <span>ANNÉE SCOLAIRE 2024-2025</span>
       </div>
 
       <div class="corps">
@@ -182,11 +226,12 @@
           
     <thead>
       <tr>
-        <th rowspan="3" class="branche" style="width:32%">BRANCHES</th>
+        <th rowspan="3" class="branche" style="width:22%">BRANCHES</th>
         <th colspan="4">PREMIER SEMESTRE</th>
         <th colspan="4">SECOND SEMESTRE</th>
         <th rowspan="3">T.G.</th>
         <th rowspan="3" class="separateur"></th>
+        <th rowspan="3" class="tete-etat">EXAMEN D'ÉTAT</th>
       </tr>
       <tr>
         <th colspan="2">TRAVAUX<br/>JOURNAL.</th><th rowspan="2">EXAM.</th><th rowspan="2">TOT.</th>
@@ -195,6 +240,7 @@
       <tr>
         <th>1<sup>ère</sup> P.</th><th>2<sup>e</sup> P.</th>
         <th>3<sup>e</sup> P.</th><th>4<sup>e</sup> P.</th>
+        
       </tr>
     </thead>
           <tbody>
@@ -204,140 +250,30 @@
     <td>10</td><td>10</td><td class="noir"></td><td>20</td>
     <td>40</td>
     <td class="separateur"></td>
-  </tr><tr>
-    <td class="branche">Activités compl. (Visites guidées)</td>
-    <td></td><td></td><td class="noir"></td><td></td>
-    <td></td><td></td><td class="noir"></td><td></td>
-    <td></td>
-    <td class="separateur"></td>
-  </tr><tr class="maxima">
-    <td class="branche">MAXIMA</td>
-    <td>10</td><td>10</td><td>20</td><td>40</td>
-    <td>10</td><td>10</td><td>20</td><td>40</td>
-    <td>80</td>
-    <td class="separateur"></td>
-  </tr><tr>
-    <td class="branche">Fiscalité</td>
-    <td></td><td></td><td></td><td></td>
-    <td></td><td></td><td></td><td></td>
-    <td></td>
-    <td class="separateur"></td>
-  </tr><tr>
-    <td class="branche">Religion</td>
-    <td></td><td></td><td></td><td></td>
-    <td></td><td></td><td></td><td></td>
-    <td></td>
-    <td class="separateur"></td>
-  </tr><tr class="maxima">
-    <td class="branche">MAXIMA</td>
-    <td>20</td><td>20</td><td>20</td><td>60</td>
-    <td>20</td><td>20</td><td>20</td><td>60</td>
-    <td>120</td>
-    <td class="separateur"></td>
-  </tr><tr>
-    <td class="branche">Dissertation</td>
-    <td></td><td></td><td></td><td></td>
-    <td></td><td></td><td></td><td></td>
-    <td></td>
-    <td class="separateur"></td>
-  </tr><tr class="maxima">
-    <td class="branche">MAXIMA</td>
-    <td>20</td><td>20</td><td>40</td><td>80</td>
-    <td>20</td><td>20</td><td>40</td><td>80</td>
-    <td>160</td>
-    <td class="separateur"></td>
-  </tr><tr>
-    <td class="branche">Droit</td>
-    <td></td><td></td><td></td><td></td>
-    <td></td><td></td><td></td><td></td>
-    <td></td>
-    <td class="separateur"></td>
-  </tr><tr class="maxima">
-    <td class="branche">MAXIMA</td>
-    <td>30</td><td>30</td><td>60</td><td>120</td>
-    <td>30</td><td>30</td><td>60</td><td>120</td>
-    <td>240</td>
-    <td class="separateur"></td>
-  </tr><tr>
-    <td class="branche">Anglais</td>
-    <td></td><td></td><td></td><td></td>
-    <td></td><td></td><td></td><td></td>
-    <td></td>
-    <td class="separateur"></td>
-  </tr><tr class="maxima">
-    <td class="branche">MAXIMA</td>
-    <td>50</td><td>50</td><td>100</td><td>200</td>
-    <td>50</td><td>50</td><td>100</td><td>200</td>
-    <td>400</td>
-    <td class="separateur"></td>
-  </tr><tr>
-    <td class="branche">Comptabilité générale</td>
-    <td></td><td></td><td></td><td></td>
-    <td></td><td></td><td></td><td></td>
-    <td></td>
-    <td class="separateur"></td>
-  </tr><tr class="maxima">
-    <td class="branche">MAXIMA</td>
-    <td>100</td><td>100</td><td class="noir"></td><td>200</td>
-    <td>100</td><td>100</td><td class="noir"></td><td>200</td>
-    <td>400</td>
-    <td class="separateur"></td>
-  </tr><tr>
-    <td class="branche">Pratique professionnelle</td>
-    <td></td><td></td><td class="noir"></td><td></td>
-    <td></td><td></td><td class="noir"></td><td></td>
-    <td></td>
-    <td class="separateur"></td>
-  </tr>
-            <tr class="maxima"><td class="branche">MAXIMA GÉNÉRAUX</td><td>250</td><td>250</td><td>260</td><td>760</td><td>250</td><td>250</td><td>260</td><td>760</td><td>1520</td><td class="separateur"></td></tr><tr class="synthese"><td class="branche">TOTAUX</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="separateur"></td></tr><tr class="synthese"><td class="branche">POURCENTAGE</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="separateur"></td></tr><tr class="synthese"><td class="branche">PLACE / NBRE D'ÉLÈVES</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="separateur"></td></tr><tr class="synthese">
-      <td class="branche">APPLICATION</td>
-      <td>TB</td>
-      <td>TB</td>
-      <td class="noir"></td><td class="noir"></td>
-      <td>TB</td>
-      <td>E</td>
-      <td class="noir"></td><td class="noir"></td>
-      <td class="noir"></td>
-      <td class="separateur"></td>
-    </tr><tr class="synthese">
-      <td class="branche">CONDUITE</td>
-      <td>TB</td>
-      <td>TB</td>
-      <td class="noir"></td><td class="noir"></td>
-      <td>TB</td>
-      <td>E</td>
-      <td class="noir"></td><td class="noir"></td>
-      <td class="noir"></td>
-      <td class="separateur"></td>
-    </tr>
-    <tr class="synthese signature-resp">
-      <td class="branche">SIGN. DU RESPONSABLE</td>
-      <td colspan="4"></td>
-      <td colspan="5"></td>
-      <td class="separateur"></td>
-    </tr>
-          </tbody>
-        </table>
-        <div class="colonne-droite">
+    <td rowspan="34" class="cellule-etat">
   <div class="examen-etat">
     <div class="ee-titre">EXAMEN D'ÉTAT</div>
     <div class="ee-corps">
 
+      <!-- Les cases noircies ne sont pas décoratives : la colonne d'étiquette
+           n'a rien à recevoir en face de « Points Obtenus », et un MAX n'a pas
+           de sens en face d'un pourcentage. Les laisser blanches donnerait à
+           l'école des cases à remplir là où le centre d'examen n'attend rien. -->
       <table class="ee-points">
         <tr>
-          <th></th>
+          <th class="ee-noir"></th>
           <th>Points<br/>Obtenus</th>
           <th>MAX</th>
         </tr>
         <tr>
-          <td class="etiquette"></td>
+          <td class="ee-noir"></td>
           <td class="saisie"></td>
           <td class="saisie"></td>
         </tr>
         <tr>
           <td class="etiquette">%</td>
           <td class="saisie"></td>
-          <td></td>
+          <td class="ee-noir"></td>
         </tr>
       </table>
 
@@ -357,9 +293,14 @@
         <div class="ee-cases"><span class="ee-case"></span><span class="ee-case"></span><span class="ee-case"></span><span class="ee-case"></span><span class="ee-case"></span></div>
       </div>
 
+      <!-- Trois lignes SÉPARÉES, et « Diplôme » au substantif : c'est ainsi que
+           le modèle officiel les imprime. Les fondre en « Diplômé (1) avec … % »
+           ferait de la mention et du pourcentage une seule option à biffer,
+           alors que le pourcentage se remplit quel que soit le résultat. -->
       <div class="ee-resultat">
         <span class="ee-libelle">RÉSULTAT FINAL</span>
-        <span class="ee-option">Diplômé (1) avec <span class="ee-pointilles"></span> %</span>
+        <span class="ee-option">Diplôme (1)</span>
+        <span class="ee-option">Avec <span class="ee-pointilles"></span> %</span>
         <span class="ee-option">A échoué (1)</span>
       </div>
 
@@ -375,22 +316,228 @@
       </div>
 
     </div>
-  </div></div>
+  </div></td>
+  </tr><tr>
+    <td class="branche">Activités compl. (Visites guidées)</td>
+    <td></td><td></td><td class="noir"></td><td></td>
+    <td></td><td></td><td class="noir"></td><td></td>
+    <td></td>
+    <td class="separateur"></td>
+    
+  </tr><tr class="maxima">
+    <td class="branche">MAXIMA</td>
+    <td>10</td><td>10</td><td>20</td><td>40</td>
+    <td>10</td><td>10</td><td>20</td><td>40</td>
+    <td>80</td>
+    <td class="separateur"></td>
+    
+  </tr><tr>
+    <td class="branche">Correspondance com. Anglaise</td>
+    <td></td><td></td><td></td><td></td>
+    <td></td><td></td><td></td><td></td>
+    <td></td>
+    <td class="separateur"></td>
+    
+  </tr><tr>
+    <td class="branche">Correspondance com. Française</td>
+    <td></td><td></td><td></td><td></td>
+    <td></td><td></td><td></td><td></td>
+    <td></td>
+    <td class="separateur"></td>
+    
+  </tr><tr>
+    <td class="branche">Déontologie professionnelle</td>
+    <td></td><td></td><td></td><td></td>
+    <td></td><td></td><td></td><td></td>
+    <td></td>
+    <td class="separateur"></td>
+    
+  </tr><tr>
+    <td class="branche">Ed. civ. &amp; morale</td>
+    <td></td><td></td><td></td><td></td>
+    <td></td><td></td><td></td><td></td>
+    <td></td>
+    <td class="separateur"></td>
+    
+  </tr><tr>
+    <td class="branche">Éducation à la vie</td>
+    <td></td><td></td><td></td><td></td>
+    <td></td><td></td><td></td><td></td>
+    <td></td>
+    <td class="separateur"></td>
+    
+  </tr><tr>
+    <td class="branche">Éducation physique</td>
+    <td></td><td></td><td></td><td></td>
+    <td></td><td></td><td></td><td></td>
+    <td></td>
+    <td class="separateur"></td>
+    
+  </tr><tr>
+    <td class="branche">Finances publiques</td>
+    <td></td><td></td><td></td><td></td>
+    <td></td><td></td><td></td><td></td>
+    <td></td>
+    <td class="separateur"></td>
+    
+  </tr><tr>
+    <td class="branche">Fiscalité</td>
+    <td></td><td></td><td></td><td></td>
+    <td></td><td></td><td></td><td></td>
+    <td></td>
+    <td class="separateur"></td>
+    
+  </tr><tr>
+    <td class="branche">Religion</td>
+    <td></td><td></td><td></td><td></td>
+    <td></td><td></td><td></td><td></td>
+    <td></td>
+    <td class="separateur"></td>
+    
+  </tr><tr class="maxima">
+    <td class="branche">MAXIMA</td>
+    <td>20</td><td>20</td><td>40</td><td>80</td>
+    <td>20</td><td>20</td><td>40</td><td>80</td>
+    <td>160</td>
+    <td class="separateur"></td>
+    
+  </tr><tr>
+    <td class="branche">Droit</td>
+    <td></td><td></td><td></td><td></td>
+    <td></td><td></td><td></td><td></td>
+    <td></td>
+    <td class="separateur"></td>
+    
+  </tr><tr>
+    <td class="branche">Économie de développement</td>
+    <td></td><td></td><td></td><td></td>
+    <td></td><td></td><td></td><td></td>
+    <td></td>
+    <td class="separateur"></td>
+    
+  </tr><tr>
+    <td class="branche">Mathématiques générales</td>
+    <td></td><td></td><td></td><td></td>
+    <td></td><td></td><td></td><td></td>
+    <td></td>
+    <td class="separateur"></td>
+    
+  </tr><tr>
+    <td class="branche">Organisation des entreprises</td>
+    <td></td><td></td><td></td><td></td>
+    <td></td><td></td><td></td><td></td>
+    <td></td>
+    <td class="separateur"></td>
+    
+  </tr><tr class="maxima">
+    <td class="branche">MAXIMA</td>
+    <td>30</td><td>30</td><td>60</td><td>120</td>
+    <td>30</td><td>30</td><td>60</td><td>120</td>
+    <td>240</td>
+    <td class="separateur"></td>
+    
+  </tr><tr>
+    <td class="branche">Anglais</td>
+    <td></td><td></td><td></td><td></td>
+    <td></td><td></td><td></td><td></td>
+    <td></td>
+    <td class="separateur"></td>
+    
+  </tr><tr class="maxima">
+    <td class="branche">MAXIMA</td>
+    <td>40</td><td>40</td><td>80</td><td>160</td>
+    <td>40</td><td>40</td><td>80</td><td>160</td>
+    <td>320</td>
+    <td class="separateur"></td>
+    
+  </tr><tr>
+    <td class="branche">Comptabilité analytique</td>
+    <td></td><td></td><td></td><td></td>
+    <td></td><td></td><td></td><td></td>
+    <td></td>
+    <td class="separateur"></td>
+    
+  </tr><tr>
+    <td class="branche">Français</td>
+    <td></td><td></td><td></td><td></td>
+    <td></td><td></td><td></td><td></td>
+    <td></td>
+    <td class="separateur"></td>
+    
+  </tr><tr>
+    <td class="branche">Informatique</td>
+    <td></td><td></td><td></td><td></td>
+    <td></td><td></td><td></td><td></td>
+    <td></td>
+    <td class="separateur"></td>
+    
+  </tr><tr class="maxima">
+    <td class="branche">MAXIMA</td>
+    <td>50</td><td>50</td><td>100</td><td>200</td>
+    <td>50</td><td>50</td><td>100</td><td>200</td>
+    <td>400</td>
+    <td class="separateur"></td>
+    
+  </tr><tr>
+    <td class="branche">Comptabilité générale</td>
+    <td></td><td></td><td></td><td></td>
+    <td></td><td></td><td></td><td></td>
+    <td></td>
+    <td class="separateur"></td>
+    
+  </tr><tr class="maxima">
+    <td class="branche">MAXIMA</td>
+    <td>100</td><td>100</td><td class="noir"></td><td>200</td>
+    <td>100</td><td>100</td><td class="noir"></td><td>200</td>
+    <td>400</td>
+    <td class="separateur"></td>
+    
+  </tr><tr>
+    <td class="branche">Pratique professionnelle</td>
+    <td></td><td></td><td class="noir"></td><td></td>
+    <td></td><td></td><td class="noir"></td><td></td>
+    <td></td>
+    <td class="separateur"></td>
+    
+  </tr>
+            <tr class="maxima"><td class="branche">MAXIMA GÉNÉRAUX</td><td>480</td><td>480</td><td>740</td><td>1700</td><td>480</td><td>480</td><td>740</td><td>1700</td><td>3400</td><td class="separateur"></td></tr><tr class="synthese"><td class="branche">TOTAUX</td><td>372</td><td>368</td><td>552</td><td>1292</td><td>389</td><td>389</td><td>616</td><td>1394</td><td>2686</td><td class="separateur"></td></tr><tr class="synthese"><td class="branche">POURCENTAGE</td><td>77,5</td><td>76,7</td><td>74,6</td><td>76</td><td>81</td><td>81</td><td>83,2</td><td>82</td><td>79</td><td class="separateur"></td></tr><tr class="synthese"><td class="branche">PLACE / NBRE D'ÉLÈVES</td><td>2/27</td><td>7/27</td><td>3/27</td><td>3/27</td><td>3/27</td><td>3/27</td><td>1/27</td><td>1/27</td><td>3/27</td><td class="separateur"></td></tr><tr class="synthese">
+      <td class="branche">APPLICATION</td>
+      <td>TB</td>
+      <td>TB</td>
+      <td class="noir"></td><td class="noir"></td>
+      <td>E</td>
+      <td>E</td>
+      <td class="noir"></td><td class="noir"></td>
+      <td class="noir"></td>
+      <td class="separateur"></td>
+      
+    </tr><tr class="synthese">
+      <td class="branche">CONDUITE</td>
+      <td>E</td>
+      <td>E</td>
+      <td class="noir"></td><td class="noir"></td>
+      <td>MA</td>
+      <td>E</td>
+      <td class="noir"></td><td class="noir"></td>
+      <td class="noir"></td>
+      <td class="separateur"></td>
+      
+    </tr>
+    <tr class="synthese signature-resp">
+      <td class="branche">SIGN. DU RESPONSABLE</td>
+      <td colspan="4"></td>
+      <td colspan="5"></td>
+      <td class="separateur"></td>
+      
+    </tr>
+          </tbody>
+        </table>
       </div>
 
       
   <div class="pied">
     
-    <div class="mentions">
-      L'élève ne pourra passer dans la classe supérieure s'il n'a subi avec succès
-      un examen de repêchage en <span class="pointilles long"></span>
-      <span class="pointilles long"></span>
-    </div>
-    <div class="options">
-      - L'élève passe dans la classe supérieure (1)<br/>
-      - L'élève double sa classe (1)<br/>
-      - L'élève a échoué et est à réorienter vers <span class="pointilles long"></span> (1)
-    </div>
+    
     <div class="signatures">
       <div class="case-sign">
         <div class="espace-sceau"></div>

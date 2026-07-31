@@ -181,9 +181,9 @@
     <div class="conteneur-tableau">
       <table>
         <thead>
-          <tr><th>Cours</th><th>Code</th><th>Maximum</th><th>Classes</th><th>Professeurs</th><th style="width:150px;"></th></tr>
+          <tr><th>Cours</th><th>Code</th><th>Maximum</th><th>Examen</th><th>Classes</th><th>Professeurs</th><th style="width:150px;"></th></tr>
         </thead>
-        <tbody id="corps-cours"><tr><td colspan="6" class="etat-vide-tableau"><span class="spinner"></span>Chargement…</td></tr></tbody>
+        <tbody id="corps-cours"><tr><td colspan="7" class="etat-vide-tableau"><span class="spinner"></span>Chargement…</td></tr></tbody>
       </table>
     </div>
 
@@ -305,7 +305,7 @@
     const corps = document.getElementById('corps-cours');
     const r = await appelApi('/cours');
     if (!r || !r.ok) {
-      corps.innerHTML = '<tr><td colspan="6" class="etat-vide-tableau">Impossible de charger les cours.</td></tr>';
+      corps.innerHTML = '<tr><td colspan="7" class="etat-vide-tableau">Impossible de charger les cours.</td></tr>';
       return;
     }
     cours = await r.json();
@@ -359,7 +359,7 @@
     const liste = coursFiltres();
 
     if (liste.length === 0) {
-      corps.innerHTML = `<tr><td colspan="6" class="etat-vide-tableau">${
+      corps.innerHTML = `<tr><td colspan="7" class="etat-vide-tableau">${
         cours.length === 0
           ? "Aucun cours enregistré. Créez-en depuis l'écran Classes."
           : 'Aucun cours ne correspond à ce filtre.'
@@ -373,6 +373,11 @@
           <td><input class="champ-ligne" data-champ="nom" value="${echapper(c.nom)}" /></td>
           <td><input class="champ-ligne" data-champ="code" value="${echapper(c.code || '')}" placeholder="—" /></td>
           <td><input class="champ-ligne" data-champ="maximum_points" type="number" min="1" step="1" value="${c.maximum_points ?? ''}" /></td>
+          <td>
+            <input class="champ-ligne" data-champ="maximum_examen" type="number" min="0" step="1"
+                   value="${c.maximum_examen ?? ''}" placeholder="2x" style="width:64px;"
+                   title="Vide = 2x le maximum de période. 0 = pas d'examen (case noircie sur le bulletin)." />
+          </td>
           <td colspan="2" class="liste-classes">${(c.classes || []).map(n => `<span class="puce-classe">${echapper(n)}</span>`).join('') || '—'}</td>
           <td>
             <button class="lien-action" data-valider="${c.id}">Valider</button>
@@ -392,6 +397,11 @@
         <td><strong>${echapper(c.nom)}</strong>${c.nb_notes > 0 ? `<div style="font-size:0.76rem; color:var(--texte-att); margin-top:3px;">${c.nb_notes} note(s) saisie(s)</div>` : ''}</td>
         <td style="font-family:var(--police-mono); font-size:0.82rem;">${echapper(c.code || '—')}</td>
         <td>${c.maximum_points ?? '—'}</td>
+        <td>${
+          c.maximum_examen === 0
+            ? '<span style="background:#000; color:#fff; padding:1px 6px; border-radius:3px; font-size:0.76rem;">sans examen</span>'
+            : (c.maximum_examen ?? `<span style="color:var(--texte-att);">2x</span>`)
+        }</td>
         <td class="liste-classes">${classes}</td>
         <td style="font-size:0.84rem;">${profs}</td>
         <td>${peutModifier ? `
@@ -426,9 +436,23 @@
       afficherMessage('Le maximum doit être un nombre supérieur à 0.', 'erreur'); return;
     }
 
+    // 0 est une valeur volontaire ici (« pas d'examen ») : `valeur(...) || null`
+    // la transformerait à tort en "champ vide", donc on teste la chaîne brute.
+    const maximumExamenBrut = valeur('maximum_examen');
+    let maximumExamen = null;
+    if (maximumExamenBrut !== '') {
+      maximumExamen = Number(maximumExamenBrut);
+      if (!Number.isFinite(maximumExamen) || maximumExamen < 0) {
+        afficherMessage("Le maximum de l'examen doit être un nombre positif ou nul.", 'erreur'); return;
+      }
+    }
+
     const r = await appelApi(`/cours/${id}`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nom, code: valeur('code') || null, maximum_points: maximum || null })
+      body: JSON.stringify({
+        nom, code: valeur('code') || null, maximum_points: maximum || null,
+        maximum_examen: maximumExamen
+      })
     });
     if (!r) return;
     const rep = await r.json().catch(() => ({}));

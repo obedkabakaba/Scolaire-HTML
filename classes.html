@@ -300,8 +300,20 @@
           <input type="text" id="champ-nouveau-cours-nom" placeholder="Nom du cours" style="flex:1;" />
           <input type="text" id="champ-nouveau-cours-code" placeholder="Code" style="width:80px;" />
           <input type="number" id="champ-nouveau-cours-max" placeholder="Maximum de points (ex. 20 ou 100)" value="20" style="width:190px;" />
+        </div>
+        <div class="form-inline" style="margin-top:8px; align-items:center;">
+          <label style="display:flex; align-items:center; gap:6px; font-size:0.82rem; cursor:pointer;">
+            <input type="checkbox" id="champ-nouveau-cours-sans-examen" />
+            Ce cours n'a pas d'examen (case noircie sur le bulletin)
+          </label>
+          <input type="number" id="champ-nouveau-cours-max-examen" placeholder="Maximum de l'examen (défaut : 2x la période)" style="width:230px;" />
           <button class="bouton bouton-secondaire bouton-petit" id="bouton-ajouter-cours-classe">Ajouter</button>
         </div>
+        <p style="font-size:0.76rem; color:var(--texte-att); margin:6px 0 0 0;">
+          Par défaut, l'examen vaut le double du maximum de période. Laisse le champ vide pour garder ce comportement,
+          renseigne un nombre si ton école cote l'examen autrement, ou coche la case si ce cours n'a pas d'examen du tout
+          (ex. visites guidées, pratique professionnelle) — le bulletin noircira alors les cases correspondantes.
+        </p>
       </div>
     </div>
   </div>
@@ -609,12 +621,20 @@
     const bouton = document.getElementById('bouton-ajouter-cours-classe');
     bouton.disabled = true;
 
+    // Trois états pour l'examen, à ne pas confondre : case cochée -> 0 (pas
+    // d'examen, case noircie) ; champ rempli -> ce nombre précis ; les deux
+    // vides -> null, le bulletin retombe alors sur 2x le maximum de période.
+    const sansExamen = document.getElementById('champ-nouveau-cours-sans-examen').checked;
+    const champMaxExamen = document.getElementById('champ-nouveau-cours-max-examen').value.trim();
+    const maximumExamen = sansExamen ? 0 : (champMaxExamen === '' ? null : parseFloat(champMaxExamen));
+
     const r = await appelApi(`/classes/${classeEnEditionCoursId}/nouveau-cours`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         nom,
         code: document.getElementById('champ-nouveau-cours-code').value.trim() || null,
-        maximum_points: parseFloat(document.getElementById('champ-nouveau-cours-max').value) || 20
+        maximum_points: parseFloat(document.getElementById('champ-nouveau-cours-max').value) || 20,
+        maximum_examen: maximumExamen
       })
     });
 
@@ -625,6 +645,8 @@
     document.getElementById('champ-nouveau-cours-nom').value = '';
     document.getElementById('champ-nouveau-cours-code').value = '';
     document.getElementById('champ-nouveau-cours-max').value = '20';
+    document.getElementById('champ-nouveau-cours-sans-examen').checked = false;
+    document.getElementById('champ-nouveau-cours-max-examen').value = '';
     afficherMessage('Cours ajouté à la classe.', 'succes');
     chargerCoursDeLaClasse(classeEnEditionCoursId);
   });

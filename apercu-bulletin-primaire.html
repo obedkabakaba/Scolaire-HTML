@@ -3,9 +3,6 @@
   @page { size: A4 portrait; margin: 6mm; }
   * { box-sizing: border-box; }
   body { font-family: 'Times New Roman', Times, serif; font-size: 8px; color: #000; margin: 0; }
-  /* Pas de min-height ni d'etirement : le bulletin s'arrete ou s'arrete son
-     contenu. Sur le modele officiel le pied suit immediatement la ligne
-     SIGN. DU RESPONSABLE, et le bas de page reste blanc. */
   .page { page-break-after: always; }
   .page:last-child { page-break-after: auto; }
 
@@ -20,23 +17,19 @@
   .entete .titre { flex: 1; text-align: center; font-weight: bold; font-size: 10px; line-height: 1.45; padding: 0 2mm; }
 
   .cases { display: inline-flex; gap: 0; vertical-align: middle; }
-  .case { border: 1px solid #000; width: 3.4mm; height: 3.8mm; display: inline-block; }
+  .case { border: 0.6px solid #000; width: 3.4mm; height: 3.8mm; display: inline-block; }
 
   .bandeau-id { border: 1.3px solid #000; border-top: none; padding: 0.8mm 2mm; display: flex; align-items: center; gap: 2mm; }
   .bandeau-id .libelle { font-weight: bold; }
 
-  /* PROVINCE et VILLE courent sur TOUTE la largeur : le filet vertical qui
-     sépare les deux colonnes ne commence qu'à la ligne COMMUNE / TER.
-     (relevé sur la photo cadrée de l'en-tête de terminale). */
+  /* PROVINCE et VILLE courent sur toute la largeur ; le filet vertical ne
+     commence qu'à la ligne COMMUNE / TER. */
   .identite-large { border: 1.3px solid #000; border-top: none; padding: 0.9mm 2mm; }
   .identite-large .champ { white-space: nowrap; overflow: hidden; }
-
   .identite { display: flex; border: 1.3px solid #000; border-top: none; }
-  /* Le filet tombe à ~51 % de la largeur, pratiquement au milieu. */
   .identite .colonne { width: 51%; flex: none; padding: 1mm 2mm; }
   .identite .colonne + .colonne { width: 49%; border-left: 1.3px solid #000; }
   .identite .champ { margin-bottom: 0.9mm; white-space: nowrap; overflow: hidden; }
-  /* ÉLÈVE et SEXE partagent une seule ligne, SEXE rejeté à droite. */
   .identite .champ.duo { display: flex; justify-content: space-between; gap: 2mm; }
   .pointilles { border-bottom: 0.8px dotted #000; display: inline-block; min-width: 14mm; height: 2.6mm; vertical-align: bottom; }
   .pointilles.long { min-width: 32mm; }
@@ -47,122 +40,48 @@
   }
 
   /* ---------- Tableau des branches ---------- */
-  .corps { margin-top: 0; }
-  /* Pas de gouttière : sur le modèle officiel le bloc de droite est accolé à
-     la barre noire, il n'y a pas de blanc entre les deux. */
-  .colonne-droite { width: 34mm; flex: none; margin-left: 0; }
+  table.cotes { border-collapse: collapse; width: 100%; table-layout: fixed; }
+  table.cotes th, table.cotes td {
+    border: 1px solid #000; text-align: center;
+    padding: 0.3mm 0.2mm; font-size: 7.4px;
+  }
+  table.cotes th { font-weight: bold; font-size: 6.2px; line-height: 1.2; }
+  table.cotes tbody td { height: 3.4mm; }
+  table.cotes td.branche {
+    text-align: left; padding-left: 1.2mm; font-size: 7.4px;
+    white-space: nowrap; overflow: hidden;
+  }
 
-  table.cotes { border-collapse: collapse; width: 100%; }
-  table.cotes th, table.cotes td { border: 1px solid #000; text-align: center; padding: 0.3mm 0.5mm; font-size: 8.8px; }
-  table.cotes th { font-weight: bold; font-size: 7.6px; line-height: 1.25; }
-  table.cotes td.branche { text-align: left; padding-left: 1.2mm; font-size: 8.8px; white-space: nowrap; overflow: hidden; max-width: 44mm; }
-  table.cotes tr.maxima td { font-weight: bold; background: #f0f0f0; }
+  /* Bandeau de domaine : une ligne pleine largeur, titre centré. */
+  table.cotes tr.domaine td {
+    font-weight: bold; text-align: center; letter-spacing: 0.04em;
+    font-size: 6.2px;
+  }
+  /* Nom de groupe (LANGUES CONGOLAISES, FRANÇAIS) : libellé seul, en gras. */
+  table.cotes tr.groupe td.branche { font-weight: bold; }
+  table.cotes tr.sous-total td { font-weight: bold; }
   table.cotes tr.synthese td { font-weight: bold; }
   table.cotes tr.synthese td.branche { text-transform: uppercase; }
-  /* Aplats noirs du modèle officiel. Ils ne sont pas décoratifs : une case
-     noire se lit « aucune cote n'est attendue ici », là où une case blanche
-     vide se lit « cote manquante ». Confondre les deux fait croire à un oubli
-     de saisie.
 
-     Le mot-clé important est ici volontaire et nécessaire. La règle
-     "tr.maxima td" ci-dessus a une spécificité de 0-2-3, supérieure à
-     "td.noir" (0-2-2) : sans cela, le gris des lignes MAXIMA repeint par-dessus
-     le noir et la barre séparatrice se retrouve trouée à chaque ligne de
-     barème. Ces aplats portent du sens, aucune règle de fond ne doit pouvoir
-     les effacer. */
-  table.cotes td.noir, table.cotes th.noir,
-  table.cotes td.separateur, table.cotes th.separateur { background: #000 !important; }
-
-  /* Colonne séparatrice noire, entre le tableau des cotes et la colonne de
-     droite. Avec la bande noire des lignes Application / Conduite, elle forme
-     le L inversé caractéristique du modèle officiel. */
-  table.cotes td.separateur, table.cotes th.separateur { width: 5mm; padding: 0; border-color: #000; }
-  table.cotes tbody td { height: 3.4mm; }
-  table.cotes td.saisie { height: 3.4mm; }
-  table.cotes tr.signature-resp td { height: 3.4mm; }
-
-  /* ---------- Colonnes de droite, intégrées au tableau ---------- */
-  table.cotes td.rep-saisie { height: 3.4mm; }
-  table.cotes th.rep-pct { width: 5%; }
-  table.cotes td.rep-pied {
-    vertical-align: top; text-align: left; padding: 0.8mm 1.2mm;
-    font-size: 6.6px; line-height: 1.3;
-  }
-  table.cotes td.rep-pied .rep-option { display: block; }
-  table.cotes td.rep-pied .rep-date { margin-top: 0.8mm; }
-  table.cotes td.rep-pied .rep-sign { margin-top: 0.8mm; text-align: center; }
-  table.cotes td.rep-pied .rep-sceau { height: 5mm; }
-
-  /* Cellule fusionnée portant le bloc Examen d'État de la terminale. */
-  table.cotes th.tete-etat { width: 34mm; }
-  table.cotes td.cellule-etat { vertical-align: top; padding: 0; width: 34mm; }
+  /* Aplats noirs. Le mot-clé important est nécessaire : les règles de ligne
+     ci-dessus ont une spécificité supérieure et repeindraient par-dessus. */
+  table.cotes td.noir { background: #000 !important; }
 
   /* ---------- Pied ---------- */
-  .pied { border: 1px solid #000; border-top: none; margin-top: 0; padding: 2mm; font-size: 8px; }
-  .pied .mentions { margin-bottom: 1.5mm; line-height: 1.7; }
+  .pied { border: 1px solid #000; border-top: none; padding: 2mm; font-size: 8px; }
   .pied .options { line-height: 1.8; }
-  .pied .signatures { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 2mm; }
-  .pied .signatures .case-sign { text-align: center; min-width: 42mm; }
-  .pied .signatures .case-sign img { max-height: 11mm; max-width: 100%; display: block; margin: 0 auto 0.6mm; }
-  .pied .espace-sceau { height: 13mm; }
-  .pied .legal { margin-top: 1.5mm; font-size: 6.5px; font-style: italic; line-height: 1.5; }
-  .pied .interdiction { font-weight: bold; text-align: center; font-style: italic; }
-  .pied .reference { text-align: right; font-size: 6.5px; }
+  .pied .bas { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 2mm; }
+  .pied .bas .case-sign { text-align: center; min-width: 45mm; }
+  .pied .bas .case-sign img { max-height: 11mm; max-width: 100%; display: block; margin: 0 auto 0.6mm; }
+  .pied .espace-sceau { height: 12mm; }
+  .pied .legal { margin-top: 1.5mm; font-size: 6.8px; font-style: italic; line-height: 1.5; }
+  .pied .reference { text-align: right; font-size: 6.8px; }
 
   .duplicata {
     text-align: center; font-size: 7.5px; letter-spacing: 0.06em; text-transform: uppercase;
-    color: #8a2b2b; border: 1px solid #8a2b2b; border-radius: 1mm;
+    color: #8a2b2b; border: 0.6px solid #8a2b2b; border-radius: 1mm;
     padding: 0.6mm 1mm; margin: 1mm auto; max-width: 70mm;
   }
-  
-  .examen-etat {
-    border: 1px solid #000;
-    display: flex; flex-direction: column;
-    font-size: 7px; line-height: 1.5;
-    padding: 0; height: 100%;
-  }
-  .ee-titre {
-    text-align: center; font-weight: bold; font-size: 7.5px;
-    letter-spacing: 0.04em; padding: 1mm 0.5mm;
-    border-bottom: 1px solid #000;
-  }
-  .ee-corps { padding: 1mm 1.5mm; display: flex; flex-direction: column; gap: 1.6mm; flex: 1; }
-
-  /* Tableau des points. Les deux cellules de valeur restent vides :
-     elles sont remplies à la main depuis le relevé du centre. */
-  .ee-points { border-collapse: collapse; width: 100%; }
-  .ee-points td, .ee-points th {
-    border: 1px solid #000; text-align: center;
-    font-size: 6.2px; font-weight: normal; padding: 0.3mm 0.2mm;
-  }
-  .ee-points th { font-weight: bold; line-height: 1.15; }
-  .ee-points td.saisie { height: 4.5mm; }
-  .ee-points td.etiquette { font-weight: bold; width: 22%; }
-  .ee-points td.ee-noir, .ee-points th.ee-noir { background: #000; }
-
-  .ee-ligne { margin: 0; }
-  .ee-libelle { font-weight: bold; }
-  .ee-pointilles {
-    border-bottom: 0.8px dotted #000;
-    display: inline-block; min-width: 12mm; height: 2.6mm; vertical-align: bottom;
-  }
-  .ee-pointilles.large { display: block; width: 100%; margin-top: 0.8mm; }
-
-  .ee-cases { display: flex; gap: 0.4mm; margin-top: 0.8mm; }
-  .ee-case {
-    border: 1px solid #000; width: 4mm; height: 4.5mm; display: block;
-  }
-
-  .ee-resultat { margin-top: 0.5mm; }
-  .ee-resultat .ee-libelle { display: block; margin-bottom: 0.8mm; }
-  .ee-option { display: block; margin-bottom: 0.6mm; }
-
-  /* Zone de signature et de cachet : volontairement laissée creuse, le tampon
-     de l'école a besoin de place (les sceaux ronds font 30 à 40 mm). */
-  .ee-signature { margin-top: auto; text-align: center; }
-  .ee-signature .ee-libelle { display: block; }
-  .ee-espace-sceau { height: 16mm; }
-
   </style></head><body>
     <div class="page">
       <div class="entete">
@@ -175,17 +94,13 @@
 </svg></div>
         <div class="titre">
           RÉPUBLIQUE DÉMOCRATIQUE DU CONGO<br/>
-          MINISTÈRE DE L'ENSEIGNEMENT PRIMAIRE,<br/>SECONDAIRE ET TECHNIQUE
+          MINISTÈRE DE L'ENSEIGNEMENT PRIMAIRE, SECONDAIRE<br/>ET TECHNIQUE
         </div>
         <div class="armoiries"></div>
       </div>
 
       <div class="bandeau-id"><span class="libelle">N° ID.</span> <span class="cases"><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span></span></div>
 
-      <!-- PROVINCE et VILLE occupent chacune une bande pleine largeur. Le
-           découpage en deux colonnes ne commence qu'ensuite : c'est ce que
-           montre la photo cadrée de l'en-tête, où le filet vertical part de la
-           ligne COMMUNE / TER. et non du haut du bloc. -->
       <div class="identite-large">
         <div class="champ">PROVINCE : Kinshasa</div>
       </div>
@@ -196,323 +111,194 @@
       <div class="identite">
         <div class="colonne">
           <div class="champ">COMMUNE / TER. (1) : N&#39;Djili</div>
-          <div class="champ">ÉCOLE : COLLÈGE BONSOMI</div>
+          <div class="champ">ÉCOLE : LYCÉE NOTRE-DAME DU ROSAIRE</div>
           <div class="champ">CODE : <span class="cases"><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span></span></div>
         </div>
         <div class="colonne">
           <div class="champ duo">
-            <span>ÉLÈVE : KABAKABA OBED</span>
+            <span>ÉLÈVE : KABAKABA NKWAYA</span>
             <span>SEXE : M</span>
           </div>
           <div class="champ">NÉ(E) À : Kinshasa
-               LE : 16/11/2007</div>
-          <div class="champ">CLASSE : 1ère ANNÉE HUMANITÉ COMMERCIALE ET GESTION</div>
+               LE : <span class="pointilles"></span></div>
+          <div class="champ">CLASSE : 2e année</div>
           <div class="champ">N° PERM. : <span class="cases"><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span><span class="case"></span></span></div>
         </div>
       </div>
 
       <div class="ligne-bulletin">
-        <!-- Le blanc après « BULLETIN DE LA » porte la CLASSE, telle qu'elle
-             est nommée par l'école (« 4ème ANNEE HUMANITE COMMERCIALE & GESTION »).
-             Section et option ne sont pas recollées ici : le nom de la classe les
-             contient déjà dans l'usage congolais, les répéter donnerait
-             « 4ème HCG — Commerciale Gestion ». -->
-        <span>BULLETIN DE LA 1ère ANNÉE HUMANITÉ COMMERCIALE ET GESTION</span>
+        <span>BULLETIN DE L'ÉLÈVE : DEGRÉ ÉLÉMENTAIRE (1ère, 2e ANNÉE) (1)</span>
         <span>ANNÉE SCOLAIRE 2024-2025</span>
       </div>
 
-      <div class="corps">
-        <table class="cotes">
-          
+      <table class="cotes">
+        
     <thead>
       <tr>
-        <th rowspan="3" class="branche" style="width:22%">BRANCHES</th>
-        <th colspan="4">PREMIER SEMESTRE</th>
-        <th colspan="4">SECOND SEMESTRE</th>
-        <th rowspan="3">T.G.</th>
-        <th rowspan="3" class="separateur"></th>
-        <th colspan="2" rowspan="2">EXAMEN DE REPÊCHAGE</th>
+        <th rowspan="2" class="branche" style="width:20%">BRANCHES</th>
+        <th colspan="7">PREMIER TRIMESTRE</th>
+        <th colspan="6">DEUXIÈME TRIMESTRE</th>
+        <th colspan="6">TROISIÈME TRIMESTRE</th>
+        <th colspan="2">TOTAL</th>
       </tr>
       <tr>
-        <th colspan="2">TR. JOURNAL</th><th rowspan="2">EXAM.</th><th rowspan="2">TOT.</th>
-        <th colspan="2">TR. JOURNAL</th><th rowspan="2">EXAM.</th><th rowspan="2">TOT.</th>
-      </tr>
-      <tr>
-        <th>1<sup>ère</sup> P.</th><th>2<sup>e</sup> P.</th>
-        <th>3<sup>e</sup> P.</th><th>4<sup>e</sup> P.</th>
-        <th class="rep-pct">%</th><th>SIGN. PROF.</th>
+        <th>MAX<br/>per</th><th>1<sup>ère</sup>P</th><th>2<sup>e</sup>P</th>
+        <th>MAX<br/>EX.</th><th>PTS<br/>OBT.</th><th>MAX<br/>TRIM.</th><th>PTS<br/>OBT.</th>
+        <th>3<sup>e</sup>P</th><th>4<sup>e</sup>P</th>
+        <th>MAX<br/>EX.</th><th>PTS<br/>OBT.</th><th>MAX<br/>TRIM.</th><th>PTS<br/>OBT.</th>
+        <th>5<sup>e</sup>P</th><th>6<sup>e</sup>P</th>
+        <th>MAX<br/>EX.</th><th>PTS<br/>OBT.</th><th>MAX<br/>TRIM.</th><th>PTS<br/>OBT.</th>
+        <th>MAX</th><th>PTS<br/>OBT.</th>
       </tr>
     </thead>
-          <tbody>
-            <tr class="maxima">
-    <td class="branche">MAXIMA</td>
-    <td>10</td><td>10</td><td class="noir"></td><td>20</td>
-    <td>10</td><td>10</td><td class="noir"></td><td>20</td>
-    <td>40</td>
-    <td class="separateur"></td>
-    <td class="noir"></td><td class="noir"></td>
+        <tbody>
+          <tr class="domaine"><td colspan="22">DOMAINE DES LANGUES</td></tr><tr class="groupe">
+    <td class="branche">LANGUES CONGOLAISES</td>
+    <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
   </tr><tr>
-    <td class="branche">Activités compl. (Visites guidées)</td>
-    <td></td><td></td><td class="noir"></td><td></td>
-    <td></td><td></td><td class="noir"></td><td></td>
-    <td></td>
-    <td class="separateur"></td>
-    <td class="rep-saisie"></td><td class="rep-saisie"></td>
-  </tr><tr class="maxima">
-    <td class="branche">MAXIMA</td>
-    <td>10</td><td>10</td><td>20</td><td>40</td>
-    <td>10</td><td>10</td><td>20</td><td>40</td>
-    <td>80</td>
-    <td class="separateur"></td>
-    <td class="noir"></td><td class="noir"></td>
+    <td class="branche">Écriture</td>
+    <td>10</td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td>120</td><td></td>
   </tr><tr>
-    <td class="branche">Correspondance com. Anglaise</td>
-    <td></td><td></td><td></td><td></td>
-    <td></td><td></td><td></td><td></td>
-    <td></td>
-    <td class="separateur"></td>
-    <td class="rep-saisie"></td><td class="rep-saisie"></td>
+    <td class="branche">Lecture</td>
+    <td>10</td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td>120</td><td></td>
   </tr><tr>
-    <td class="branche">Correspondance com. Française</td>
-    <td></td><td></td><td></td><td></td>
-    <td></td><td></td><td></td><td></td>
-    <td></td>
-    <td class="separateur"></td>
-    <td class="rep-saisie"></td><td class="rep-saisie"></td>
+    <td class="branche">Expression orale</td>
+    <td>20</td><td></td><td></td><td>40</td><td></td><td>80</td><td></td><td></td><td></td><td>40</td><td></td><td>80</td><td></td><td></td><td></td><td>40</td><td></td><td>80</td><td></td><td>240</td><td></td>
   </tr><tr>
-    <td class="branche">Déontologie professionnelle</td>
-    <td></td><td></td><td></td><td></td>
-    <td></td><td></td><td></td><td></td>
-    <td></td>
-    <td class="separateur"></td>
-    <td class="rep-saisie"></td><td class="rep-saisie"></td>
+    <td class="branche">Expression écrite</td>
+    <td>20</td><td></td><td></td><td>40</td><td></td><td>80</td><td></td><td></td><td></td><td>40</td><td></td><td>80</td><td></td><td></td><td></td><td>40</td><td></td><td>80</td><td></td><td>240</td><td></td>
+  </tr><tr class="sous-total">
+    <td class="branche">Sous-total</td>
+    <td>60</td><td></td><td></td><td>120</td><td></td><td>240</td><td></td><td></td><td></td><td>120</td><td></td><td>240</td><td></td><td></td><td></td><td>120</td><td></td><td>240</td><td></td><td>720</td><td></td>
+  </tr><tr class="groupe">
+    <td class="branche">FRANÇAIS</td>
+    <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
   </tr><tr>
-    <td class="branche">Ed. civ. &amp; morale</td>
-    <td></td><td></td><td></td><td></td>
-    <td></td><td></td><td></td><td></td>
-    <td></td>
-    <td class="separateur"></td>
-    <td class="rep-saisie"></td><td class="rep-saisie"></td>
+    <td class="branche">Vocabulaire</td>
+    <td>10</td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td>120</td><td></td>
   </tr><tr>
+    <td class="branche">Écriture &amp; lecture</td>
+    <td>10</td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td>120</td><td></td>
+  </tr><tr>
+    <td class="branche">Expression orale</td>
+    <td>20</td><td></td><td></td><td>40</td><td></td><td>80</td><td></td><td></td><td></td><td>40</td><td></td><td>80</td><td></td><td></td><td></td><td>40</td><td></td><td>80</td><td></td><td>240</td><td></td>
+  </tr><tr>
+    <td class="branche">Expression écrite</td>
+    <td>20</td><td></td><td></td><td>40</td><td></td><td>80</td><td></td><td></td><td></td><td>40</td><td></td><td>80</td><td></td><td></td><td></td><td>40</td><td></td><td>80</td><td></td><td>240</td><td></td>
+  </tr><tr class="sous-total">
+    <td class="branche">Sous-total</td>
+    <td>60</td><td></td><td></td><td>120</td><td></td><td>240</td><td></td><td></td><td></td><td>120</td><td></td><td>240</td><td></td><td></td><td></td><td>120</td><td></td><td>240</td><td></td><td>720</td><td></td>
+  </tr><tr class="domaine"><td colspan="22">DOMAINE DES MATHÉMATIQUES, SCIENCES ET TECHNOLOGIE</td></tr><tr>
+    <td class="branche">Formes géométriques</td>
+    <td>10</td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td>120</td><td></td>
+  </tr><tr>
+    <td class="branche">Mesures des grandeurs</td>
+    <td>10</td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td>120</td><td></td>
+  </tr><tr>
+    <td class="branche">Problèmes</td>
+    <td>10</td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td>120</td><td></td>
+  </tr><tr>
+    <td class="branche">Technologie</td>
+    <td>10</td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td>120</td><td></td>
+  </tr><tr>
+    <td class="branche">Numération</td>
+    <td>20</td><td></td><td></td><td>40</td><td></td><td>80</td><td></td><td></td><td></td><td>40</td><td></td><td>80</td><td></td><td></td><td></td><td>40</td><td></td><td>80</td><td></td><td>240</td><td></td>
+  </tr><tr>
+    <td class="branche">Opérations</td>
+    <td>20</td><td></td><td></td><td>40</td><td></td><td>80</td><td></td><td></td><td></td><td>40</td><td></td><td>80</td><td></td><td></td><td></td><td>40</td><td></td><td>80</td><td></td><td>240</td><td></td>
+  </tr><tr>
+    <td class="branche">Sciences d&#39;éveil</td>
+    <td>20</td><td></td><td></td><td>40</td><td></td><td>80</td><td></td><td></td><td></td><td>40</td><td></td><td>80</td><td></td><td></td><td></td><td>40</td><td></td><td>80</td><td></td><td>240</td><td></td>
+  </tr><tr class="sous-total">
+    <td class="branche">Sous-total</td>
+    <td>100</td><td></td><td></td><td>200</td><td></td><td>400</td><td></td><td></td><td></td><td>200</td><td></td><td>400</td><td></td><td></td><td></td><td>200</td><td></td><td>400</td><td></td><td>1200</td><td></td>
+  </tr><tr class="domaine"><td colspan="22">DOMAINE DE L&#39;UNIVERS SOCIAL ET ENVIRONNEMENT</td></tr><tr>
     <td class="branche">Éducation à la vie</td>
-    <td></td><td></td><td></td><td></td>
-    <td></td><td></td><td></td><td></td>
-    <td></td>
-    <td class="separateur"></td>
-    <td class="rep-saisie"></td><td class="rep-saisie"></td>
+    <td>10</td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td>120</td><td></td>
   </tr><tr>
-    <td class="branche">Éducation physique</td>
-    <td></td><td></td><td></td><td></td>
-    <td></td><td></td><td></td><td></td>
-    <td></td>
-    <td class="separateur"></td>
-    <td class="rep-saisie"></td><td class="rep-saisie"></td>
+    <td class="branche">Éd. civ. &amp; morale</td>
+    <td>10</td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td>120</td><td></td>
   </tr><tr>
-    <td class="branche">Finances publiques</td>
-    <td></td><td></td><td></td><td></td>
-    <td></td><td></td><td></td><td></td>
-    <td></td>
-    <td class="separateur"></td>
-    <td class="rep-saisie"></td><td class="rep-saisie"></td>
+    <td class="branche">Éd. santé &amp; env.</td>
+    <td>10</td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td>120</td><td></td>
+  </tr><tr class="sous-total">
+    <td class="branche">Sous-total</td>
+    <td>30</td><td></td><td></td><td>60</td><td></td><td>120</td><td></td><td></td><td></td><td>60</td><td></td><td>120</td><td></td><td></td><td></td><td>60</td><td></td><td>120</td><td></td><td>360</td><td></td>
+  </tr><tr class="domaine"><td colspan="22">DOMAINE DES ARTS</td></tr><tr>
+    <td class="branche">Art plastique</td>
+    <td>10</td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td>120</td><td></td>
   </tr><tr>
-    <td class="branche">Fiscalité</td>
-    <td></td><td></td><td></td><td></td>
-    <td></td><td></td><td></td><td></td>
-    <td></td>
-    <td class="separateur"></td>
-    <td class="rep-saisie"></td><td class="rep-saisie"></td>
+    <td class="branche">Art dramatique</td>
+    <td>10</td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td>120</td><td></td>
+  </tr><tr class="sous-total">
+    <td class="branche">Sous-total</td>
+    <td>20</td><td></td><td></td><td>40</td><td></td><td>80</td><td></td><td></td><td></td><td>40</td><td></td><td>80</td><td></td><td></td><td></td><td>40</td><td></td><td>80</td><td></td><td>240</td><td></td>
+  </tr><tr class="domaine"><td colspan="22">DOMAINE DU DÉVELOPPEMENT PERSONNEL</td></tr><tr>
+    <td class="branche">Éd. phys. &amp; sportive</td>
+    <td>10</td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td>120</td><td></td>
   </tr><tr>
-    <td class="branche">Religion</td>
-    <td></td><td></td><td></td><td></td>
-    <td></td><td></td><td></td><td></td>
-    <td></td>
-    <td class="separateur"></td>
-    <td class="rep-saisie"></td><td class="rep-saisie"></td>
-  </tr><tr class="maxima">
-    <td class="branche">MAXIMA</td>
-    <td>20</td><td>20</td><td>40</td><td>80</td>
-    <td>20</td><td>20</td><td>40</td><td>80</td>
-    <td>160</td>
-    <td class="separateur"></td>
-    <td class="noir"></td><td class="noir"></td>
+    <td class="branche">Init. trav. prod.</td>
+    <td>10</td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td>120</td><td></td>
   </tr><tr>
-    <td class="branche">Droit</td>
-    <td></td><td></td><td></td><td></td>
-    <td></td><td></td><td></td><td></td>
-    <td></td>
-    <td class="separateur"></td>
-    <td class="rep-saisie"></td><td class="rep-saisie"></td>
-  </tr><tr>
-    <td class="branche">Économie de développement</td>
-    <td></td><td></td><td></td><td></td>
-    <td></td><td></td><td></td><td></td>
-    <td></td>
-    <td class="separateur"></td>
-    <td class="rep-saisie"></td><td class="rep-saisie"></td>
-  </tr><tr>
-    <td class="branche">Mathématiques générales</td>
-    <td></td><td></td><td></td><td></td>
-    <td></td><td></td><td></td><td></td>
-    <td></td>
-    <td class="separateur"></td>
-    <td class="rep-saisie"></td><td class="rep-saisie"></td>
-  </tr><tr>
-    <td class="branche">Organisation des entreprises</td>
-    <td></td><td></td><td></td><td></td>
-    <td></td><td></td><td></td><td></td>
-    <td></td>
-    <td class="separateur"></td>
-    <td class="rep-saisie"></td><td class="rep-saisie"></td>
-  </tr><tr class="maxima">
-    <td class="branche">MAXIMA</td>
-    <td>30</td><td>30</td><td>60</td><td>120</td>
-    <td>30</td><td>30</td><td>60</td><td>120</td>
-    <td>240</td>
-    <td class="separateur"></td>
-    <td class="noir"></td><td class="noir"></td>
-  </tr><tr>
-    <td class="branche">Anglais</td>
-    <td></td><td></td><td></td><td></td>
-    <td></td><td></td><td></td><td></td>
-    <td></td>
-    <td class="separateur"></td>
-    <td class="rep-saisie"></td><td class="rep-saisie"></td>
-  </tr><tr class="maxima">
-    <td class="branche">MAXIMA</td>
-    <td>40</td><td>40</td><td>80</td><td>160</td>
-    <td>40</td><td>40</td><td>80</td><td>160</td>
-    <td>320</td>
-    <td class="separateur"></td>
-    <td class="noir"></td><td class="noir"></td>
-  </tr><tr>
-    <td class="branche">Comptabilité analytique</td>
-    <td></td><td></td><td></td><td></td>
-    <td></td><td></td><td></td><td></td>
-    <td></td>
-    <td class="separateur"></td>
-    <td class="rep-saisie"></td><td class="rep-saisie"></td>
-  </tr><tr>
-    <td class="branche">Français</td>
-    <td></td><td></td><td></td><td></td>
-    <td></td><td></td><td></td><td></td>
-    <td></td>
-    <td class="separateur"></td>
-    <td class="rep-saisie"></td><td class="rep-saisie"></td>
-  </tr><tr>
-    <td class="branche">Informatique</td>
-    <td></td><td></td><td></td><td></td>
-    <td></td><td></td><td></td><td></td>
-    <td></td>
-    <td class="separateur"></td>
-    <td class="rep-saisie"></td><td class="rep-saisie"></td>
-  </tr><tr class="maxima">
-    <td class="branche">MAXIMA</td>
-    <td>50</td><td>50</td><td>100</td><td>200</td>
-    <td>50</td><td>50</td><td>100</td><td>200</td>
-    <td>400</td>
-    <td class="separateur"></td>
-    <td class="noir"></td><td class="noir"></td>
-  </tr><tr>
-    <td class="branche">Comptabilité générale</td>
-    <td></td><td></td><td></td><td></td>
-    <td></td><td></td><td></td><td></td>
-    <td></td>
-    <td class="separateur"></td>
-    <td class="rep-saisie"></td><td class="rep-saisie"></td>
-  </tr><tr class="maxima">
-    <td class="branche">MAXIMA</td>
-    <td>100</td><td>100</td><td class="noir"></td><td>200</td>
-    <td>100</td><td>100</td><td class="noir"></td><td>200</td>
-    <td>400</td>
-    <td class="separateur"></td>
-    <td class="noir"></td><td class="noir"></td>
-  </tr><tr>
-    <td class="branche">Pratique professionnelle</td>
-    <td></td><td></td><td class="noir"></td><td></td>
-    <td></td><td></td><td class="noir"></td><td></td>
-    <td></td>
-    <td class="separateur"></td>
-    <td class="rep-saisie"></td><td class="rep-saisie"></td>
+    <td class="branche">Religion (1)</td>
+    <td>10</td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td></td><td></td><td>20</td><td></td><td>40</td><td></td><td>120</td><td></td>
+  </tr><tr class="sous-total">
+    <td class="branche">Sous-total</td>
+    <td>30</td><td></td><td></td><td>60</td><td></td><td>120</td><td></td><td></td><td></td><td>60</td><td></td><td>120</td><td></td><td></td><td></td><td>60</td><td></td><td>120</td><td></td><td>360</td><td></td>
   </tr>
-            <tr class="maxima"><td class="branche">MAXIMA GÉNÉRAUX</td><td>480</td><td>480</td><td>740</td><td>1700</td><td>480</td><td>480</td><td>740</td><td>1700</td><td>3400</td><td class="separateur"></td>
-      <td colspan="2" rowspan="7" class="rep-pied">
-        <span class="rep-option">- Passe (1)</span>
-        <span class="rep-option">- Double (1)</span>
-        <span class="rep-option">- A échoué (1)</span>
-        <div class="rep-date">Le <span class="pointilles"></span></div>
-        <div class="rep-sign">
-          Le Chef d'Étab.
-          <div class="rep-sceau"></div>
-          Sceau de l'école
-        </div>
-      </td></tr><tr class="synthese"><td class="branche">TOTAUX</td><td>372</td><td>368</td><td>552</td><td>1292</td><td>389</td><td>389</td><td>616</td><td>1394</td><td>2686</td><td class="separateur"></td></tr><tr class="synthese"><td class="branche">POURCENTAGE</td><td>77,5</td><td>76,7</td><td>74,6</td><td>76</td><td>81</td><td>81</td><td>83,2</td><td>82</td><td>79</td><td class="separateur"></td></tr><tr class="synthese"><td class="branche">PLACE / NBRE D'ÉLÈVES</td><td>2/27</td><td>7/27</td><td>3/27</td><td>3/27</td><td>3/27</td><td>3/27</td><td>1/27</td><td>1/27</td><td>3/27</td><td class="separateur"></td></tr><tr class="synthese">
-      <td class="branche">APPLICATION</td>
-      <td>TB</td>
-      <td>TB</td>
-      <td class="noir"></td><td class="noir"></td>
-      <td>E</td>
-      <td>E</td>
-      <td class="noir"></td><td class="noir"></td>
-      <td class="noir"></td>
-      <td class="separateur"></td>
-      
-    </tr><tr class="synthese">
-      <td class="branche">CONDUITE</td>
-      <td>E</td>
-      <td>E</td>
-      <td class="noir"></td><td class="noir"></td>
-      <td>MA</td>
-      <td>E</td>
-      <td class="noir"></td><td class="noir"></td>
-      <td class="noir"></td>
-      <td class="separateur"></td>
-      
-    </tr>
-    <tr class="synthese signature-resp">
-      <td class="branche">SIGN. DU RESPONSABLE</td>
-      <td colspan="4"></td>
-      <td colspan="5"></td>
-      <td class="separateur"></td>
-      
-    </tr>
-          </tbody>
-        </table>
-      </div>
+          <tr class="synthese">
+    <td class="branche">Maxima généraux</td>
+    <td>300</td><td></td><td></td><td>600</td><td></td><td>1200</td><td></td><td></td><td></td><td>600</td><td></td><td>1200</td><td></td><td></td><td></td><td>600</td><td></td><td>1200</td><td></td><td>3600</td><td></td>
+  </tr><tr class="synthese">
+    <td class="branche">POURCENTAGE</td>
+    <td class="noir"></td><td>73,8</td><td>88</td><td class="noir"></td><td>88</td><td class="noir"></td><td>84,3</td><td></td><td></td><td class="noir"></td><td></td><td class="noir"></td><td></td><td></td><td></td><td class="noir"></td><td></td><td class="noir"></td><td></td><td class="noir"></td><td></td>
+  </tr><tr class="synthese">
+    <td class="branche">PLACE</td>
+    <td class="noir"></td><td>3</td><td>5</td><td class="noir"></td><td></td><td class="noir"></td><td></td><td></td><td></td><td class="noir"></td><td></td><td class="noir"></td><td></td><td></td><td></td><td class="noir"></td><td></td><td class="noir"></td><td></td><td class="noir"></td><td></td>
+  </tr><tr class="synthese">
+    <td class="branche">NBRE D&#39;ÉLÈVES</td>
+    <td class="noir"></td><td>31</td><td>31</td><td class="noir"></td><td></td><td class="noir"></td><td></td><td></td><td></td><td class="noir"></td><td></td><td class="noir"></td><td></td><td></td><td></td><td class="noir"></td><td></td><td class="noir"></td><td></td><td class="noir"></td><td></td>
+  </tr><tr class="synthese">
+    <td class="branche">APPLICATION</td>
+    <td class="noir"></td><td>TB</td><td>B</td><td class="noir"></td><td></td><td class="noir"></td><td></td><td></td><td></td><td class="noir"></td><td></td><td class="noir"></td><td></td><td></td><td></td><td class="noir"></td><td></td><td class="noir"></td><td></td><td class="noir"></td><td></td>
+  </tr><tr class="synthese">
+    <td class="branche">CONDUITE</td>
+    <td class="noir"></td><td>TB</td><td>TB</td><td class="noir"></td><td></td><td class="noir"></td><td></td><td></td><td></td><td class="noir"></td><td></td><td class="noir"></td><td></td><td></td><td></td><td class="noir"></td><td></td><td class="noir"></td><td></td><td class="noir"></td><td></td>
+  </tr><tr class="synthese">
+    <td class="branche">SIGNAT. DE L&#39;INST.</td>
+    <td class="noir"></td><td></td><td></td><td class="noir"></td><td></td><td class="noir"></td><td></td><td></td><td></td><td class="noir"></td><td></td><td class="noir"></td><td></td><td></td><td></td><td class="noir"></td><td></td><td class="noir"></td><td></td><td class="noir"></td><td></td>
+  </tr><tr class="synthese">
+    <td class="branche">SIGNAT. DU RESP.</td>
+    <td class="noir"></td><td></td><td></td><td class="noir"></td><td></td><td class="noir"></td><td></td><td></td><td></td><td class="noir"></td><td></td><td class="noir"></td><td></td><td></td><td></td><td class="noir"></td><td></td><td class="noir"></td><td></td><td class="noir"></td><td></td>
+  </tr>
+        </tbody>
+      </table>
 
       
   <div class="pied">
     
-    
-    <div class="mentions">
-      L'élève ne pourra passer dans la classe supérieure s'il n'a subi avec succès
-      un examen de repêchage en <span class="pointilles long"></span>
-      <span class="pointilles long"></span>
-    </div>
     <div class="options">
       - L'élève passe dans la classe supérieure (1)<br/>
-      - L'élève double sa classe (1)<br/>
-      - L'élève a échoué et est à réorienter vers <span class="pointilles long"></span> (1)
+      - L'élève double la classe (1)
     </div>
-    <div class="signatures">
-      <div class="case-sign">
-        <div class="espace-sceau"></div>
-        Signature de l'élève
-      </div>
-      <div class="case-sign">
-        <div class="espace-sceau"></div>
-        Sceau de l'école
-      </div>
+    <div class="bas">
       <div class="case-sign">
         <div>Fait à Kinshasa, le <span class="pointilles"></span></div>
+      </div>
+      <div class="case-sign">
         <div class="espace-sceau"></div>
-        Le Chef d'Établissement<br/><span style="font-size:6.5px;">Nom et Signature</span>
+        SCEAU DE L'ÉCOLE
+      </div>
+      <div class="case-sign">
+        LE CHEF D'ÉTABLISSEMENT
+        <div class="espace-sceau"></div>
+        <span style="font-size:6.8px;">NOM &amp; SIGNAT.</span>
       </div>
     </div>
     <div class="legal">
       (1) Biffer la mention inutile.<br/>
-      Note importante : le bulletin est sans valeur s'il est raturé ou surchargé.
+      NOTE IMPORTANTE : Le bulletin est sans valeur s'il est raturé ou surchargé.
     </div>
-    
-    
+    <div class="reference">IGE/P.S./045</div>
   </div>
     </div></body></html>

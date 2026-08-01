@@ -241,6 +241,9 @@
         <div class="champ"><label for="champ-nom">Nom de l'école</label><input type="text" id="champ-nom" /></div>
         <div class="ligne-champs">
           <div class="champ"><label for="champ-ville">Ville</label><input type="text" id="champ-ville" /></div>
+          <!-- Imprimée sur l'en-tête des bulletins officiels (« COMMUNE / TER. »),
+               elle n'était modifiable nulle part et sortait donc toujours vide. -->
+          <div class="champ"><label for="champ-commune">Commune / Territoire</label><input type="text" id="champ-commune" /></div>
           <div class="champ"><label for="champ-province">Province</label><input type="text" id="champ-province" /></div>
         </div>
         <div class="ligne-champs">
@@ -283,6 +286,22 @@
     <div class="carte-section">
       <h2>Titulaires — droits sur les bulletins</h2>
       <form id="formulaire-pedagogique">
+        <div class="champ">
+          <label for="champ-mode-presences">Qui fait l'appel ?</label>
+          <select id="champ-mode-presences">
+            <option value="titulaire">Le titulaire de la classe seulement</option>
+            <option value="professeur">Tout professeur de la classe (un seul par jour)</option>
+            <option value="charge">Un chargé des présences pour toute l'école</option>
+          </select>
+          <p style="font-size:0.78rem; color:var(--texte-att); margin:6px 0 0;">
+            <strong>Titulaire</strong> convient au primaire, où un maître unique tient sa classe.
+            <strong>Professeur</strong> convient au secondaire : le premier qui fait l'appel le verrouille,
+            un collègue ne peut ensuite que le corriger en justifiant (retard constaté, erreur de saisie).
+            <strong>Chargé</strong> suppose de créer un utilisateur avec ce rôle.
+            Le directeur et le préfet gardent l'accès dans tous les cas.
+          </p>
+        </div>
+
         <div class="champ" style="display:flex; align-items:center; gap:10px;">
           <input type="checkbox" id="champ-autoriser-bulletins-titulaires" style="width:auto;" />
           <label for="champ-autoriser-bulletins-titulaires" style="margin:0;">Autoriser les titulaires à générer les bulletins de leur classe</label>
@@ -416,6 +435,8 @@
 
     document.getElementById('champ-nom').value = ecole.nom || '';
     document.getElementById('champ-ville').value = ecole.ville || '';
+    document.getElementById('champ-commune').value = ecole.commune || '';
+    document.getElementById('champ-mode-presences').value = ecole.mode_presences || 'titulaire';
     document.getElementById('champ-province').value = ecole.province || '';
     document.getElementById('champ-email').value = ecole.email || '';
     document.getElementById('champ-telephone').value = ecole.telephone || '';
@@ -448,6 +469,7 @@
     const corpsRequete = {
       nom: document.getElementById('champ-nom').value.trim(),
       ville: document.getElementById('champ-ville').value.trim(),
+      commune: document.getElementById('champ-commune').value.trim() || null,
       province: document.getElementById('champ-province').value.trim(),
       email: document.getElementById('champ-email').value.trim(),
       telephone: document.getElementById('champ-telephone').value.trim(),
@@ -827,7 +849,8 @@
         autoriser_bulletins_titulaires: autoriser,
         bulletins_titulaires_mode: mode,
         autoriser_titulaire_multi_classes: document.getElementById('champ-multi-classes').checked,
-        autoriser_modif_apres_signature: document.getElementById('champ-modif-apres-signature').checked
+        autoriser_modif_apres_signature: document.getElementById('champ-modif-apres-signature').checked,
+        mode_presences: document.getElementById('champ-mode-presences').value
       })
     });
     if (!r || !r.ok) { afficherMessage('Erreur lors de l\'enregistrement.', 'erreur'); return; }

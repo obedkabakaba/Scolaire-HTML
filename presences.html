@@ -373,6 +373,15 @@
   // ============================================================
   //  Feuille d'appel
   // ============================================================
+  // Verdict du calendrier pour la date affichée : null si le jour est ouvrable.
+  let jourBloque = null;
+
+  function echapperTexte(v) {
+    const d = document.createElement('div');
+    d.textContent = v == null ? '' : String(v);
+    return d.innerHTML;
+  }
+
   async function chargerFeuilleAppel() {
     const classeId = document.getElementById('select-classe').value;
     const date = document.getElementById('champ-date').value;
@@ -380,6 +389,30 @@
 
     const corps = document.getElementById('corps-appel');
     corps.innerHTML = '<tr><td colspan="4" class="etat-vide-tableau"><span class="spinner"></span>Chargement…</td></tr>';
+
+    // Le calendrier est consulté AVANT d'afficher la feuille : prévenir dès
+    // l'ouverture évite de remplir vingt lignes pour se voir refuser
+    // l'enregistrement à la fin. Le serveur refusera de toute façon — cette
+    // vérification est un confort, pas une sécurité.
+    jourBloque = null;
+    const rJour = await appelApi(`/evenements/jour?date=${date}`);
+    if (rJour && rJour.ok) {
+      const verdict = await rJour.json();
+      if (!verdict.ouvrable) {
+        jourBloque = verdict;
+        corps.innerHTML = `<tr><td colspan="4" class="etat-vide-tableau">
+            <strong>${echapperTexte(verdict.message)}</strong><br/>
+            <span style="font-size:0.84rem;">L'appel n'est pas possible ce jour-là.</span>
+          </td></tr>`;
+        document.getElementById('etat-appel').textContent = '';
+        elevesAppel = [];
+        const bouton = document.getElementById('bouton-enregistrer');
+        if (bouton) bouton.disabled = true;
+        return;
+      }
+    }
+    const boutonEnr = document.getElementById('bouton-enregistrer');
+    if (boutonEnr) boutonEnr.disabled = false;
 
     const r = await appelApi(`/presences/classe/${classeId}?date=${date}`);
     if (!r || !r.ok) {
@@ -467,25 +500,53 @@
     if (!classeId || !date) { afficherMessage('Choisissez une classe et une date.', 'erreur'); return; }
     if (elevesAppel.length === 0) { afficherMessage("Aucun élève à enregistrer.", 'erreur'); return; }
     if (date > aujourdhui()) { afficherMessage("Impossible de faire l'appel pour une date future.", 'erreur'); return; }
+    if (jourBloque) { afficherMessage(jourBloque.message, 'erreur'); return; }
 
     const bouton = document.getElementById('bouton-enregistrer');
     bouton.disabled = true;
     bouton.textContent = 'Enregistrement…';
 
-    const r = await appelApi(`/presences/classe/${classeId}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        date,
-        presences: elevesAppel.map(e => ({ eleve_id: e.eleve_id, statut: e.statut, motif: e.motif }))
-      })
-    });
+    async function envoyer(motifModification) {
+      return appelApi(`/presences/classe/${classeId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          date,
+          presences: elevesAppel.map(e => ({ eleve_id: e.eleve_id, statut: e.statut, motif: e.motif })),
+          motif_modification: motifModification || undefined
+        })
+      });
+    }
+
+    let r = await envoyer(null);
+    let reponse = r ? await r.json().catch(() => ({})) : {};
+
+    // 409 « appel_deja_fait » : un collègue a fait l'appel avant. Le serveur
+    // accepte la modification, mais exige un motif. Plutôt que d'afficher une
+    // erreur et de laisser l'utilisateur deviner, on lui demande le motif et on
+    // renvoie directement — sinon toute la grille saisie serait perdue.
+    if (r && r.status === 409 && reponse.motif === 'appel_deja_fait') {
+      bouton.disabled = false;
+      bouton.textContent = "Enregistrer l'appel";
+
+      const motif = await ArdoiseUI.demander(
+        `${reponse.message}\n\nIndiquez le motif de la modification :`
+      );
+      if (!motif || !motif.trim()) {
+        afficherMessage('Modification annulée : un motif est obligatoire.', 'erreur');
+        return;
+      }
+
+      bouton.disabled = true;
+      bouton.textContent = 'Enregistrement…';
+      r = await envoyer(motif.trim());
+      reponse = r ? await r.json().catch(() => ({})) : {};
+    }
 
     bouton.disabled = false;
     bouton.textContent = "Enregistrer l'appel";
 
     if (!r) return;
-    const reponse = await r.json().catch(() => ({}));
     if (!r.ok) { afficherMessage(reponse.message || "Erreur lors de l'enregistrement.", 'erreur'); return; }
 
     afficherMessage(reponse.message || 'Appel enregistré.', 'succes');

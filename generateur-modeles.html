@@ -416,9 +416,29 @@
     // boutons d'action : sans stopPropagation, cliquer "Supprimer" ouvrirait
     // aussi l'éditeur du modèle qu'on vient de supprimer.
     grille.querySelectorAll('.carte-modele').forEach(carte => {
-      carte.addEventListener('click', (evt) => {
+      carte.addEventListener('click', async (evt) => {
         if (evt.target.closest('.actions')) return;
         const modele = modeles.find(m => m.id === carte.dataset.id);
+
+        // Un modèle OFFICIEL (primaire/secondaire/terminale) n'a ni image ni
+        // zone : sa mise en page vient entièrement du code. L'éditeur de zones
+        // n'avait donc rien à afficher — un écran vide, pas une erreur visible,
+        // ce qui donnait l'impression que l'aperçu ne fonctionnait plus. On
+        // génère à la place un vrai PDF de démonstration.
+        if (modele.est_officiel) {
+          afficherMessage('Génération de l\'aperçu…', 'succes');
+          const r = await appelApi(`/modeles-bulletins/${modele.id}/apercu`);
+          if (!r || !r.ok) {
+            const d = r ? await r.json().catch(() => ({})) : {};
+            afficherMessage(d.message || "Impossible de générer l'aperçu.", 'erreur');
+            return;
+          }
+          const url = URL.createObjectURL(await r.blob());
+          window.open(url, '_blank');
+          setTimeout(() => URL.revokeObjectURL(url), 60000);
+          return;
+        }
+
         ouvrirEditeur(modele);
       });
     });

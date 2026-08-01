@@ -653,9 +653,34 @@
 
   // La gestion des cours se fait maintenant entièrement par classe.
 
+  /**
+   * Adapte le sélecteur de cycle au type d'enseignement de l'école : une école
+   * exclusivement primaire n'a structurellement aucune classe de secondaire,
+   * et proposer l'option dans le formulaire ne mènerait qu'à un refus du
+   * serveur (verifierCycle) après coup. On va plus loin qu'un simple filtrage :
+   * sur une école mono-cycle, le cycle est présélectionné et VERROUILLÉ — la
+   * question ne se pose tout simplement pas.
+   */
+  async function adapterSelecteurCycle() {
+    const r = await appelApi('/ecole/moi');
+    if (!r || !r.ok) return;
+    const ecole = await r.json();
+    const select = document.getElementById('champ-classe-cycle');
+
+    if (ecole.type_enseignement === 'les_deux' || !ecole.type_enseignement) {
+      return; // les deux options restent proposées, rien à verrouiller
+    }
+
+    const libelle = ecole.type_enseignement === 'primaire' ? 'Primaire' : 'Secondaire / Humanités';
+    select.innerHTML = `<option value="${ecole.type_enseignement}">${libelle}</option>`;
+    select.value = ecole.type_enseignement;
+    select.disabled = true;
+    select.title = "Cette école n'a que ce cycle (modifiable dans Paramètres).";
+  }
+
   // ---------- Initialisation ----------
   async function initialiser() {
-    await Promise.all([chargerAnnees(), chargerOptions(), chargerUtilisateurs()]);
+    await Promise.all([chargerAnnees(), chargerOptions(), chargerUtilisateurs(), adapterSelecteurCycle()]);
     chargerVacations();
     chargerClasses();
   }

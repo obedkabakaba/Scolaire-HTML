@@ -922,3 +922,115 @@
     try { injecterIcones(); } catch (e) {}
   });
 })();
+
+/* ==========================================================================
+   MODE ÉDITION DES FORMULAIRES
+
+   Reproduit — et généralise — le comportement déjà en place dans
+   mon-profil.html : un formulaire d'édition s'ouvre VERROUILLÉ, champs
+   désactivés et bouton « Modifier ». Cliquer dessus déverrouille et fait
+   apparaître « Enregistrer » et « Annuler ».
+
+   Pourquoi ce n'est pas qu'une question d'apparence : un formulaire ouvert en
+   permanence invite à modifier par inadvertance des réglages structurants
+   (seuil de promotion, type d'enseignement, taux de change...). Le clic sur
+   « Modifier » est une intention explicite.
+
+   Ne s'applique QU'AUX FORMULAIRES D'ÉDITION. Un formulaire de création n'a
+   rien à « modifier » : il s'ouvre déjà en saisie, et le laisser verrouillé
+   n'aurait aucun sens.
+
+   Usage :
+     ArdoiseEdition.installer({
+       formulaire: 'formulaire-parametres',
+       champs: ['champ-a', 'champ-b'],          // ou omis = tous les champs du formulaire
+       boutonEnregistrer: 'bouton-enregistrer',
+       libelleModifier: 'Modifier'              // optionnel
+     });
+
+   L'appelant garde la main sur la soumission : après un enregistrement réussi
+   il appelle `verrouiller()`, après un échec il ne fait rien — le formulaire
+   RESTE en édition avec les valeurs saisies, pour que l'utilisateur corrige
+   sans avoir à tout retaper.
+   ========================================================================== */
+(function () {
+  'use strict';
+
+  function champsDuFormulaire(formulaire, ids) {
+    if (ids && ids.length) {
+      return ids.map(function (id) { return document.getElementById(id); }).filter(Boolean);
+    }
+    // Les boutons ne sont pas des champs : les désactiver rendrait « Modifier »
+    // lui-même inutilisable, et le formulaire définitivement figé.
+    return Array.prototype.filter.call(
+      formulaire.querySelectorAll('input, select, textarea'),
+      function (el) { return el.type !== 'submit' && el.type !== 'button'; }
+    );
+  }
+
+  function installer(options) {
+    var formulaire = document.getElementById(options.formulaire);
+    var boutonEnregistrer = document.getElementById(options.boutonEnregistrer);
+    if (!formulaire || !boutonEnregistrer) return null;
+
+    var champs = champsDuFormulaire(formulaire, options.champs);
+
+    // Les deux boutons sont créés ici plutôt qu'ajoutés dans les 20 pages :
+    // une page qui adopte le mode édition n'a aucun balisage à écrire.
+    var boutonModifier = document.createElement('button');
+    boutonModifier.type = 'button';
+    boutonModifier.className = boutonEnregistrer.className;
+    boutonModifier.textContent = options.libelleModifier || 'Modifier';
+
+    var boutonAnnuler = document.createElement('button');
+    boutonAnnuler.type = 'button';
+    boutonAnnuler.className = 'bouton bouton-secondaire';
+    boutonAnnuler.textContent = 'Annuler';
+    boutonAnnuler.style.display = 'none';
+
+    boutonEnregistrer.parentNode.insertBefore(boutonModifier, boutonEnregistrer);
+    boutonEnregistrer.parentNode.insertBefore(boutonAnnuler, boutonEnregistrer);
+
+    // Valeurs de référence, pour qu'« Annuler » restaure réellement l'état
+    // d'origine au lieu de laisser des modifications à moitié saisies.
+    var valeurs = {};
+    function memoriser() {
+      champs.forEach(function (c, i) {
+        valeurs[i] = (c.type === 'checkbox' || c.type === 'radio') ? c.checked : c.value;
+      });
+    }
+    function restaurer() {
+      champs.forEach(function (c, i) {
+        if (c.type === 'checkbox' || c.type === 'radio') c.checked = valeurs[i];
+        else c.value = valeurs[i];
+      });
+    }
+
+    function verrouiller() {
+      champs.forEach(function (c) { c.disabled = true; });
+      boutonModifier.style.display = '';
+      boutonEnregistrer.style.display = 'none';
+      boutonAnnuler.style.display = 'none';
+    }
+
+    function deverrouiller() {
+      memoriser();
+      champs.forEach(function (c) { c.disabled = false; });
+      boutonModifier.style.display = 'none';
+      boutonEnregistrer.style.display = '';
+      boutonAnnuler.style.display = '';
+      if (champs[0]) champs[0].focus();
+    }
+
+    boutonModifier.addEventListener('click', deverrouiller);
+    boutonAnnuler.addEventListener('click', function () {
+      restaurer();
+      verrouiller();
+    });
+
+    verrouiller();
+    return { verrouiller: verrouiller, deverrouiller: deverrouiller, memoriser: memoriser };
+  }
+
+  window.ArdoiseEdition = { installer: installer };
+})();

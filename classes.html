@@ -538,17 +538,21 @@
     const donnees = await r.json();
     if (!r.ok) { afficherMessage(donnees.message || 'Erreur.', 'erreur'); return; }
 
-    afficherMessage(id ? 'Classe mise à jour.' : 'Classe ajoutée — tu peux maintenant lui ajouter des cours ci-dessous.', 'succes');
+    // La fenêtre se referme systématiquement : un formulaire qui reste ouvert
+    // après un enregistrement réussi laisse un doute — l'action a-t-elle
+    // abouti ? — et invite à recliquer, ce qui crée des doublons.
+    //
+    // Elle restait auparavant ouverte à la création pour enchaîner sur les
+    // cours. Ce n'est plus nécessaire : une classe de primaire reçoit
+    // désormais le socle officiel automatiquement, et pour le secondaire les
+    // cours s'ajoutent en rouvrant la classe — un clic, contre un doute
+    // permanent sur chaque enregistrement.
+    fermerModale('voile-modale-classe');
+    afficherMessage(
+      donnees.message || (id ? 'Classe mise à jour.' : 'Classe ajoutée.'),
+      'succes'
+    );
     await chargerClasses();
-
-    if (!id && donnees.id) {
-      // On garde la fenêtre ouverte, basculée en mode édition, pour ajouter des cours tout de suite
-      document.getElementById('classe-id').value = donnees.id;
-      document.getElementById('titre-modale-classe').textContent = 'Modifier la classe';
-      classeEnEditionCoursId = donnees.id;
-      document.getElementById('section-cours-classe').style.display = 'block';
-      await chargerCoursDeLaClasse(donnees.id);
-    }
   });
 
   async function supprimerClasse(id, nom) {

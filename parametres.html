@@ -255,7 +255,7 @@
             <option value="secondaire">Secondaire uniquement</option>
           </select>
         </div>
-        <button type="submit" class="bouton bouton-principal">Enregistrer</button>
+        <button type="submit" class="bouton bouton-principal" id="bouton-enregistrer-ecole">Enregistrer</button>
       </form>
     </div>
 
@@ -275,7 +275,7 @@
           <label for="champ-seuil-promotion">Moyenne annuelle minimale pour passer en classe supérieure (%)</label>
           <input type="number" id="champ-seuil-promotion" min="0" max="100" step="0.5" />
         </div>
-        <button type="submit" class="bouton bouton-principal">Enregistrer</button>
+        <button type="submit" class="bouton bouton-principal" id="bouton-enregistrer-notation">Enregistrer</button>
       </form>
     </div>
 
@@ -318,7 +318,7 @@
         </div>
         <p style="color:var(--texte-att); font-size:0.82rem; margin:6px 0 16px 0;">Par défaut, un bulletin signé (ou une période clôturée) ne peut plus être modifié par le titulaire.</p>
 
-        <button type="submit" class="bouton bouton-principal">Enregistrer</button>
+        <button type="submit" class="bouton bouton-principal" id="bouton-enregistrer-pedagogique">Enregistrer</button>
       </form>
     </div>
 
@@ -455,8 +455,17 @@
       type_enseignement: document.getElementById('champ-type-enseignement').value
     };
     const r = await appelApi('/ecole/moi', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpsRequete) });
-    if (r && r.ok) afficherMessage('Informations enregistrées.', 'succes');
-    else afficherMessage("Erreur lors de l'enregistrement.", 'erreur');
+    const d = r ? await r.json().catch(() => ({})) : {};
+    if (r && r.ok) {
+      afficherMessage('Informations enregistrées.', 'succes');
+      editionEcole && editionEcole.verrouiller();
+    } else {
+      // Le message du serveur est bien plus utile que « Erreur lors de
+      // l'enregistrement » : restreindre le type d'enseignement alors que des
+      // classes de l'autre cycle existent renvoie la liste de ces classes.
+      // Le formulaire RESTE en édition, valeurs saisies intactes, pour corriger.
+      afficherMessage(d.message || "Erreur lors de l'enregistrement.", 'erreur');
+    }
   });
 
   document.getElementById('formulaire-notation').addEventListener('submit', async (evt) => {
@@ -469,8 +478,13 @@
       seuil_promotion_pourcentage: parseFloat(document.getElementById('champ-seuil-promotion').value) || 50
     };
     const r = await appelApi('/ecole/moi', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpsRequete) });
-    if (r && r.ok) afficherMessage('Système de notation mis à jour.', 'succes');
-    else afficherMessage("Erreur lors de l'enregistrement.", 'erreur');
+    const d = r ? await r.json().catch(() => ({})) : {};
+    if (r && r.ok) {
+      afficherMessage('Système de notation mis à jour.', 'succes');
+      editionNotation && editionNotation.verrouiller();
+    } else {
+      afficherMessage(d.message || "Erreur lors de l'enregistrement.", 'erreur');
+    }
   });
 
   document.getElementById('bouton-changer-logo').addEventListener('click', () => document.getElementById('input-logo').click());
@@ -826,9 +840,28 @@
       });
     }
     afficherMessage('Paramètres pédagogiques mis à jour.', 'succes');
+    editionPedagogique && editionPedagogique.verrouiller();
   });
 
-  chargerEcole();
+  /* ---------- Mode édition des formulaires de réglages ----------
+     Ces trois formulaires pilotent des réglages structurants (type
+     d'enseignement, seuil de promotion, droits des titulaires) : ils s'ouvrent
+     désormais verrouillés, sous un bouton « Modifier ». Le helper est installé
+     APRÈS chargerEcole() pour que les valeurs soient déjà en place — sans quoi
+     « Annuler » restaurerait des champs vides. */
+  let editionEcole = null, editionNotation = null, editionPedagogique = null;
+
+  chargerEcole().then(() => {
+    editionEcole = ArdoiseEdition.installer({
+      formulaire: 'formulaire-ecole', boutonEnregistrer: 'bouton-enregistrer-ecole'
+    });
+    editionNotation = ArdoiseEdition.installer({
+      formulaire: 'formulaire-notation', boutonEnregistrer: 'bouton-enregistrer-notation'
+    });
+    editionPedagogique = ArdoiseEdition.installer({
+      formulaire: 'formulaire-pedagogique', boutonEnregistrer: 'bouton-enregistrer-pedagogique'
+    });
+  });
   chargerMentions();
   chargerAbonnement();
   chargerApercusDocuments();

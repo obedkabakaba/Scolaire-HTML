@@ -798,3 +798,249 @@ html[data-theme="nuit"] .pile-avatars .reste { border-color: var(--craie-2); }
   .carte-stat .valeur { padding-right: 42px; }
   .avatar, .avatar-initiales { width: 30px; height: 30px; }
 }
+
+/* ==========================================================================
+   NOTIFICATIONS FLOTTANTES (toast)
+
+   Ces règles surchargent volontairement les `.message-flash` définis en ligne
+   dans chaque page : ui.css est chargé APRÈS les <style> inline, une règle de
+   même spécificité y gagne donc la priorité. Corriger ici évite d'éditer 23
+   pages une par une — et surtout évite qu'une page oubliée conserve l'ancien
+   comportement.
+
+   Problème résolu : le message était un bloc DANS le flux de la page, en haut
+   du contenu. Après un enregistrement déclenché depuis le bas d'un long
+   formulaire, la confirmation s'affichait hors écran — l'utilisateur ne savait
+   pas si son action avait abouti, et recliquait parfois.
+   ========================================================================== */
+
+.message-flash {
+  /* Toujours dans le DOM, mais hors écran : c'est ce qui permet d'ANIMER
+     l'entrée. Un display:none ne peut pas se animer. */
+  display: block !important;
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  left: auto;
+  bottom: auto;
+  z-index: 9999;
+  max-width: min(380px, calc(100vw - 36px));
+  margin: 0 !important;
+  padding: 13px 17px;
+  border-radius: var(--r-carte, 10px);
+  font-size: 0.88rem;
+  line-height: 1.45;
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.16);
+  border: 1px solid transparent;
+
+  /* Caché par défaut : glissé vers la droite, hors de l'écran. */
+  opacity: 0;
+  transform: translateX(115%);
+  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.28s ease;
+  /* Sans ceci, un toast invisible intercepterait les clics sur la zone qu'il
+     occupe, y compris quand il est hors écran sur certains navigateurs. */
+  pointer-events: none;
+}
+
+.message-flash.visible {
+  display: block !important;
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+/* Couleurs pleines plutôt que translucides : sur un toast qui flotte au-dessus
+   d'un tableau, un fond semi-transparent rend le texte illisible. */
+.message-flash.succes {
+  background: #eaf6ee;
+  color: #1c6b3c;
+  border-color: rgba(28, 107, 60, 0.22);
+}
+.message-flash.erreur {
+  background: #fdeceb;
+  color: #a12b1f;
+  border-color: rgba(161, 43, 31, 0.22);
+}
+.message-flash.info {
+  background: #eaf0fb;
+  color: #2f4d92;
+  border-color: rgba(47, 77, 146, 0.22);
+}
+
+html[data-theme="nuit"] .message-flash.succes { background: #14301f; color: #7fd6a0; }
+html[data-theme="nuit"] .message-flash.erreur { background: #331716; color: #f2a099; }
+html[data-theme="nuit"] .message-flash.info   { background: #16223d; color: #9db6ec; }
+
+/* Sur mobile, le toast occupe la largeur : à 380px de large sur un écran de
+   360px, il déborderait ou serait tronqué. */
+@media (max-width: 520px) {
+  .message-flash {
+    top: 12px;
+    right: 12px;
+    left: 12px;
+    max-width: none;
+    transform: translateY(-140%);
+  }
+  .message-flash.visible { transform: translateY(0); }
+}
+
+/* Respecte le réglage système « réduire les animations » : le toast apparaît
+   alors franchement, sans glissement. */
+@media (prefers-reduced-motion: reduce) {
+  .message-flash { transition: opacity 0.15s ease; transform: none; }
+  .message-flash.visible { transform: none; }
+}
+
+/* ==========================================================================
+   FLOU D'ARRIÈRE-PLAN DES MODALES
+
+   Surcharge volontaire du `.voile` défini en ligne dans chaque page (ui.css
+   étant chargé après, une règle de même spécificité y gagne). Le voile n'était
+   qu'un aplat sombre translucide : le contenu restait net derrière, ce qui
+   disperse le regard au lieu de le concentrer sur la fenêtre ouverte.
+   ========================================================================== */
+
+.voile {
+  background: rgba(24, 34, 28, 0.42);
+  /* -webkit- reste nécessaire pour Safari, y compris récent. */
+  -webkit-backdrop-filter: blur(4px) saturate(0.9);
+  backdrop-filter: blur(4px) saturate(0.9);
+}
+
+/* Apparition en fondu plutôt que d'un coup : sans transition, le flou surgit
+   brutalement et donne une impression de saut. */
+.voile.visible { animation: voile-apparition 0.18s ease-out; }
+.voile.visible .modale { animation: modale-apparition 0.22s cubic-bezier(0.22, 1, 0.36, 1); }
+
+@keyframes voile-apparition {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes modale-apparition {
+  from { opacity: 0; transform: translateY(10px) scale(0.985); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voile.visible, .voile.visible .modale { animation: none; }
+}
+
+/* ==========================================================================
+   MODALE DE CONFIRMATION
+
+   Remplace les `confirm()` natifs du navigateur, qui affichent une boîte grise
+   au style imposé par le système — police, boutons et position ignorent
+   totalement la charte du site, et sur mobile la fenêtre surgit collée en haut
+   de l'écran.
+   ========================================================================== */
+
+.voile-confirmation {
+  position: fixed; inset: 0; z-index: 10000;
+  display: none; align-items: center; justify-content: center; padding: 20px;
+  background: rgba(24, 34, 28, 0.42);
+  -webkit-backdrop-filter: blur(4px) saturate(0.9);
+  backdrop-filter: blur(4px) saturate(0.9);
+}
+.voile-confirmation.visible { display: flex; animation: voile-apparition 0.18s ease-out; }
+
+.boite-confirmation {
+  background: var(--craie-2, #fff);
+  border-radius: var(--r-carte, 12px);
+  padding: 24px 26px;
+  max-width: 440px; width: 100%;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.22);
+  animation: modale-apparition 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.boite-confirmation h3 {
+  font-family: var(--police-titre, inherit);
+  font-size: 1.12rem; font-weight: 600; margin: 0 0 10px 0;
+}
+.boite-confirmation p {
+  margin: 0 0 20px 0; font-size: 0.9rem; line-height: 1.6; color: var(--texte-att, #555);
+  white-space: pre-line; /* respecte les retours à la ligne des messages existants */
+}
+.boite-confirmation .actions {
+  display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap;
+}
+.boite-confirmation .actions button {
+  padding: 9px 18px; border-radius: var(--r-bouton, 8px);
+  font-size: 0.88rem; font-family: inherit; cursor: pointer;
+  border: 1px solid var(--bordure, #ddd); background: transparent; color: inherit;
+}
+.boite-confirmation .actions .valider {
+  background: var(--ocre, #c6964a); border-color: var(--ocre, #c6964a); color: #fff; font-weight: 600;
+}
+/* Une suppression est irréversible : le bouton doit le dire visuellement,
+   pour qu'on ne confirme pas par réflexe. */
+.boite-confirmation.danger .actions .valider {
+  background: var(--rouge, #b23a2e); border-color: var(--rouge, #b23a2e);
+}
+
+@media (max-width: 520px) {
+  .boite-confirmation .actions { flex-direction: column-reverse; }
+  .boite-confirmation .actions button { width: 100%; }
+}
+
+/* ==========================================================================
+   STYLE DE BASE DES BOUTONS — FILET DE SÉCURITÉ
+
+   Problème corrigé : le style de `.bouton` était dupliqué dans le <style> de
+   chaque page, et 12 des 34 pages l'avaient tout simplement oublié (archives,
+   rapports, orientation, inscriptions, messages, présences, discipline...).
+   Leurs boutons s'affichaient donc avec l'apparence NATIVE du navigateur —
+   fond gris, coins carrés, bordure système — au milieu d'une interface au
+   design soigné. `theme.css` ne définissait qu'une transition sur `.bouton`,
+   pas son apparence, ce qui laissait le trou invisible.
+
+   POURQUOI `:where()` : ce sélecteur a une spécificité de ZÉRO. Les 22 pages
+   qui définissent déjà leur `.bouton` en local gardent donc exactement leur
+   apparence actuelle — rien n'est écrasé, aucune régression possible. Seules
+   les pages qui n'avaient aucun style reçoivent celui-ci. Une règle `.bouton`
+   ordinaire dans ce fichier aurait, elle, écrasé les 22 autres (ui.css étant
+   chargé après les styles inline).
+   ========================================================================== */
+
+:where(.bouton) {
+  padding: 9px 15px;
+  border-radius: var(--r-bouton, 8px);
+  font-family: var(--police-corps, inherit);
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  background: none;
+  color: inherit;
+  line-height: 1.35;
+}
+:where(.bouton:disabled) { opacity: 0.55; cursor: not-allowed; }
+
+:where(.bouton-principal) { background: var(--ocre); color: var(--craie-2); }
+:where(.bouton-principal:hover:not(:disabled)) { background: var(--ocre-dark); }
+
+:where(.bouton-secondaire) {
+  background: none;
+  border-color: var(--bordure);
+  color: var(--texte-sombre);
+}
+:where(.bouton-secondaire:hover:not(:disabled)) { border-color: var(--ardoise); }
+
+:where(.bouton-danger) { background: var(--rouge); color: #fff; border-color: var(--rouge); }
+:where(.bouton-petit) { padding: 5px 10px; font-size: 0.78rem; }
+
+/* Même raisonnement pour les champs de saisie : une page qui oublie de les
+   styler affiche des champs au rendu système, incohérents avec le reste. */
+:where(input[type="text"], input[type="number"], input[type="date"],
+       input[type="time"], input[type="email"], input[type="password"],
+       input[type="search"], input[type="tel"], select, textarea) {
+  font-family: var(--police-corps, inherit);
+  font-size: 0.88rem;
+  padding: 9px 11px;
+  border: 1.5px solid var(--bordure, #ddd);
+  border-radius: var(--r-bouton, 8px);
+  background: var(--craie-2, #fff);
+  color: inherit;
+}
+:where(input:disabled, select:disabled, textarea:disabled) {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

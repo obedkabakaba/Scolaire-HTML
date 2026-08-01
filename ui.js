@@ -1036,6 +1036,41 @@
 })();
 
 /* ==========================================================================
+   RÉPARATION DE #message-flash : sortie du conteneur animé
+
+   Cause du bug « le message oblige à remonter la page, et le flou d'une
+   fenêtre ouverte le floute aussi » :
+
+   `.contenu` porte une animation d'entrée (`ardoise-apparition`, dans
+   theme.css) qui anime `transform`. N'IMPORTE QUEL élément qui anime
+   `transform` — même vers `transform: none` en fin de course, même une fois
+   l'animation terminée avec `fill-mode: both` — devient un « bloc de
+   confinement » pour ses descendants en `position: fixed`. Ce point du CSS
+   est peu connu mais bien documenté : un `position: fixed` cesse alors de se
+   positionner par rapport à la fenêtre et se positionne par rapport à CE
+   conteneur à la place.
+
+   `#message-flash` est un enfant de `.contenu` dans les 34 pages. Ses
+   `top`/`right` en position fixe s'appliquaient donc en haut du CONTENU DE LA
+   PAGE plutôt qu'en haut de l'écran — d'où l'obligation de remonter le
+   défilement pour l'apercevoir. Et parce qu'il restait ainsi « piégé » dans le
+   même arbre d'empilement que le reste de la page, le flou d'arrière-plan
+   (`backdrop-filter`) d'une fenêtre ouverte le traversait aussi.
+
+   La réparation ne touche à AUCUNE des 34 pages : elle sort le nœud de son
+   conteneur et le rattache directement à <body>, où plus aucun ancêtre ne
+   peut casser sa position fixe. Son identifiant est conservé, donc le
+   `afficherMessage()` propre à chaque page continue de fonctionner sans
+   modification.
+   ========================================================================== */
+(function () {
+  var message = document.getElementById('message-flash');
+  if (message && message.parentNode !== document.body) {
+    document.body.appendChild(message);
+  }
+})();
+
+/* ==========================================================================
    BOÎTES DE DIALOGUE STYLÉES — remplacent confirm() et prompt()
 
    Les boîtes natives du navigateur (grises, police système, position

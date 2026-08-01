@@ -926,7 +926,7 @@
    * de la session sont préservées : on retire les noms, pas les lignes.
    */
   async function anonymiserCandidats() {
-    if (!confirm(
+    if (!await ArdoiseUI.confirmer(
       "Anonymiser les candidats non admis de cette année ?\n\n"
       + "Leurs noms et coordonnées seront définitivement effacés. Les élèves admis ne sont pas concernés, "
       + "et le nombre de candidats du concours reste intact.\n\nCette action est irréversible."

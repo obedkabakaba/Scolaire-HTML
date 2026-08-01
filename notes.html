@@ -495,7 +495,7 @@
       : '';
 
     document.querySelectorAll('#liste-travaux button[data-id]').forEach(b => b.addEventListener('click', async () => {
-      if (!confirm('Supprimer ce travail ? Les points déjà saisis pour lui seront perdus.')) return;
+      if (!await ArdoiseUI.confirmer('Supprimer ce travail ? Les points déjà saisis pour lui seront perdus.')) return;
       const r = await appelApi(`/travaux/${b.dataset.id}`, { method: 'DELETE' });
       if (r && r.ok) { afficherMessage('Travail supprimé.', 'succes'); chargerGrille(); }
     }));
@@ -719,7 +719,7 @@
     const message = estDirecteurOuPrefet
       ? 'Valider ces notes ? Elles seront verrouillées.'
       : 'Soumettre ces notes ? Une fois soumises, vous ne pourrez plus les modifier vous-même — seul le Directeur ou le Préfet pourra les déverrouiller.';
-    if (!confirm(message)) return;
+    if (!await ArdoiseUI.confirmer(message)) return;
     const classeId = document.getElementById('select-classe').value;
     const coursId = document.getElementById('select-cours').value;
     const periodeId = document.getElementById('select-periode').value;
@@ -736,7 +736,7 @@
   });
 
   document.getElementById('bouton-devalider-notes')?.addEventListener('click', async () => {
-    if (!confirm('Déverrouiller ces notes pour correction ?')) return;
+    if (!await ArdoiseUI.confirmer('Déverrouiller ces notes pour correction ?')) return;
     const classeId = document.getElementById('select-classe').value;
     const coursId = document.getElementById('select-cours').value;
     const periodeId = document.getElementById('select-periode').value;

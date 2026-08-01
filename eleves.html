@@ -824,7 +824,7 @@
   });
 
   async function supprimerEleve(id, nom) {
-    if (!confirm(`Supprimer définitivement ${nom} ? Cette action est irréversible.`)) return;
+    if (!await ArdoiseUI.confirmer(`Supprimer définitivement ${nom} ? Cette action est irréversible.`)) return;
     const reponse = await appelApi(`/eleves/${id}`, { method: 'DELETE' });
     if (!reponse) return;
     if (!reponse.ok) {

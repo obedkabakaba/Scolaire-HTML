@@ -556,7 +556,7 @@
   });
 
   async function supprimerClasse(id, nom) {
-    if (!confirm(`Supprimer la classe "${nom}" ? Cette action est irréversible.`)) return;
+    if (!await ArdoiseUI.confirmer(`Supprimer la classe "${nom}" ? Cette action est irréversible.`)) return;
     const r = await appelApi(`/classes/${id}`, { method: 'DELETE' });
     if (r && r.ok) { afficherMessage('Classe supprimée.', 'succes'); chargerClasses(); }
     else afficherMessage('Erreur lors de la suppression.', 'erreur');
@@ -594,7 +594,7 @@
 
     document.querySelectorAll('[data-action="retirer-cours"]').forEach(bouton => {
       bouton.addEventListener('click', async () => {
-        if (!confirm('Retirer ce cours de la classe ? Impossible si des notes existent déjà.')) return;
+        if (!await ArdoiseUI.confirmer('Retirer ce cours de la classe ? Impossible si des notes existent déjà.')) return;
         const r = await appelApi(`/classes/${classeId}/cours/${bouton.dataset.coursId}`, { method: 'DELETE' });
         const d = await r.json();
         if (!r.ok) { afficherMessage(d.message || 'Erreur lors du retrait.', 'erreur'); return; }

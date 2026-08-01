@@ -439,7 +439,7 @@
   });
 
   async function supprimerUtilisateur(id, nom) {
-    if (!confirm(`Supprimer définitivement ${nom} ? Cette action est irréversible.`)) return;
+    if (!await ArdoiseUI.confirmer(`Supprimer définitivement ${nom} ? Cette action est irréversible.`)) return;
     const r = await appelApi(`/utilisateurs/${id}`, { method: 'DELETE' });
     if (!r) return;
     if (!r.ok) { const d = await r.json(); afficherMessage(d.message || 'Erreur lors de la suppression.', 'erreur'); return; }

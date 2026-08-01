@@ -671,7 +671,7 @@
 
   async function supprimerVacation(id) {
     const v = vacations.find(x => x.id === id);
-    if (!confirm(`Supprimer la vacation « ${v ? v.nom : ''} » et ses heures de cours ?`)) return;
+    if (!await ArdoiseUI.confirmer(`Supprimer la vacation « ${v ? v.nom : ''} » et ses heures de cours ?`)) return;
     const r = await appelApi(`/vacations/${id}`, { method: 'DELETE' });
     if (!r) return;
     const rep = await r.json().catch(() => ({}));

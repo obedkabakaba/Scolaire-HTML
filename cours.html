@@ -465,7 +465,7 @@
 
   async function supprimer(id) {
     const c = cours.find(x => x.id === id);
-    if (!confirm(`Supprimer définitivement le cours « ${c ? c.nom : ''} » ?`)) return;
+    if (!await ArdoiseUI.confirmer(`Supprimer définitivement le cours « ${c ? c.nom : ''} » ?`)) return;
 
     const r = await appelApi(`/cours/${id}`, { method: 'DELETE' });
     if (!r) return;

@@ -463,7 +463,7 @@
   }
 
   document.getElementById('bouton-supprimer-signature').addEventListener('click', async () => {
-    if (!confirm('Supprimer votre signature ? Les bulletins utiliseront la signature générique de l\'école à la place, si elle existe.')) return;
+    if (!await ArdoiseUI.confirmer('Supprimer votre signature ? Les bulletins utiliseront la signature générique de l\'école à la place, si elle existe.')) return;
     const r = await appelApi('/uploads/document?type=signature&mine=true', { method: 'DELETE' });
     if (r && r.ok) {
       document.getElementById('apercu-signature').style.display = 'none';

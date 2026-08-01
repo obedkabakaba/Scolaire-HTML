@@ -568,7 +568,7 @@
   }
 
   async function supprimerIncident(id) {
-    if (!confirm('Supprimer définitivement ce fait ? Les points seront rendus à l\'élève.')) return;
+    if (!await ArdoiseUI.confirmer('Supprimer définitivement ce fait ? Les points seront rendus à l\'élève.')) return;
     const r = await appelApi(`/discipline/incidents/${id}`, { method: 'DELETE' });
     if (!r) return;
     const rep = await r.json().catch(() => ({}));

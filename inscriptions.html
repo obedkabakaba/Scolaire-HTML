@@ -770,10 +770,10 @@
   async function deciderCandidat(id, action) {
     let motif = null;
     if (action === 'recommander') {
-      motif = prompt("Motif de la recommandation ?\n\nIl sera enregistré à votre nom dans le registre de la session.");
+      motif = await ArdoiseUI.demander("Motif de la recommandation ?\n\nIl sera enregistré à votre nom dans le registre de la session.");
       if (!motif || !motif.trim()) return;
     }
-    if (action === 'refuser' && !confirm("Écarter ce candidat ?\n\nLe serveur refusera si ce candidat est admis de droit.")) return;
+    if (action === 'refuser' && !await ArdoiseUI.confirmer("Écarter ce candidat ?\n\nLe serveur refusera si ce candidat est admis de droit.")) return;
 
     const r = await appelApi(`/inscriptions/candidats/${id}/decision`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -787,7 +787,7 @@
   }
 
   async function desisterCandidat(id) {
-    if (!confirm("Enregistrer le désistement ?\n\nLa place sera automatiquement attribuée au premier de la liste d'attente.")) return;
+    if (!await ArdoiseUI.confirmer("Enregistrer le désistement ?\n\nLa place sera automatiquement attribuée au premier de la liste d'attente.")) return;
     const r = await appelApi(`/inscriptions/candidats/${id}/desister`, { method: 'POST' });
     if (!r) return;
     const rep = await r.json().catch(() => ({}));
@@ -797,7 +797,7 @@
   }
 
   async function publierSession() {
-    if (!confirm("Publier les résultats ?\n\nLe classement sera calculé et figé. Les candidats admis de droit ne pourront plus être écartés.")) return;
+    if (!await ArdoiseUI.confirmer("Publier les résultats ?\n\nLe classement sera calculé et figé. Les candidats admis de droit ne pourront plus être écartés.")) return;
     const bouton = document.getElementById('bouton-publier');
     bouton.disabled = true; bouton.textContent = 'Publication…';
 
@@ -811,7 +811,7 @@
   }
 
   async function depublierSession() {
-    if (!confirm("Dépublier cette session ?\n\nCette action est tracée. Elle n'est justifiée que pour corriger une erreur de saisie.")) return;
+    if (!await ArdoiseUI.confirmer("Dépublier cette session ?\n\nCette action est tracée. Elle n'est justifiée que pour corriger une erreur de saisie.")) return;
     const r = await appelApi(`/inscriptions/sessions/${sessionCourante.id}`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ statut: 'corrigee' })
@@ -824,7 +824,7 @@
   }
 
   async function convertirAdmis() {
-    if (!confirm("Inscrire tous les admis comme élèves ?\n\nChacun recevra un matricule et sera affecté à la classe de destination.")) return;
+    if (!await ArdoiseUI.confirmer("Inscrire tous les admis comme élèves ?\n\nChacun recevra un matricule et sera affecté à la classe de destination.")) return;
     const bouton = document.getElementById('bouton-convertir');
     bouton.disabled = true; bouton.textContent = 'Inscription…';
 

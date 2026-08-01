@@ -457,7 +457,7 @@
     grille.querySelectorAll('[data-action="supprimer"]').forEach((bouton) => {
       bouton.addEventListener('click', async (evt) => {
         evt.stopPropagation();
-        if (!confirm(`Supprimer définitivement le modèle « ${bouton.dataset.nom} » ? Cette action est irréversible.`)) return;
+        if (!await ArdoiseUI.confirmer(`Supprimer définitivement le modèle « ${bouton.dataset.nom} » ? Cette action est irréversible.`)) return;
 
         bouton.disabled = true;
         const r = await appelApi(`/modeles-bulletins/${bouton.dataset.id}`, { method: 'DELETE' });
@@ -559,7 +559,7 @@
   }
 
   document.getElementById('bouton-activer-modele').addEventListener('click', async () => {
-    if (!confirm('Utiliser ce modèle pour générer les bulletins de cette école à partir de maintenant ?')) return;
+    if (!await ArdoiseUI.confirmer('Utiliser ce modèle pour générer les bulletins de cette école à partir de maintenant ?')) return;
     const r = await appelApi(`/modeles-bulletins/${modeleCourantId}/activer`, { method: 'POST' });
     if (!r || !r.ok) { afficherMessage("Erreur lors de l'activation.", 'erreur'); return; }
     afficherMessage('Modèle activé — il sera utilisé pour la génération des bulletins.', 'succes');
@@ -584,7 +584,7 @@
 
   document.getElementById('bouton-suggerer-zones-ia').addEventListener('click', async () => {
     if (!modeleCourantId) { afficherMessage("Importe d'abord un fichier de modèle.", 'erreur'); return; }
-    if (!confirm("L'IA va analyser l'image de ton modèle et proposer un premier placement des zones. Tu pourras ensuite tout ajuster ou supprimer. Continuer ?")) return;
+    if (!await ArdoiseUI.confirmer("L'IA va analyser l'image de ton modèle et proposer un premier placement des zones. Tu pourras ensuite tout ajuster ou supprimer. Continuer ?")) return;
 
     const bouton = document.getElementById('bouton-suggerer-zones-ia');
     bouton.disabled = true; bouton.textContent = 'Analyse en cours… (peut prendre 15-20 secondes)';
@@ -623,7 +623,7 @@
 
     liste.querySelectorAll('li[data-id]').forEach(li => {
       li.addEventListener('click', async () => {
-        if (!confirm(`Supprimer la zone "${li.dataset.id === undefined ? '' : ''}" ?`)) return;
+        if (!await ArdoiseUI.confirmer(`Supprimer la zone "${li.dataset.id === undefined ? '' : ''}" ?`)) return;
         const r = await appelApi(`/modeles-bulletins/zones/${li.dataset.id}`, { method: 'DELETE' });
         if (r && r.ok) { chargerZones(); afficherMessage('Zone supprimée.', 'succes'); }
       });

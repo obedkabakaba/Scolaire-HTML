@@ -924,7 +924,7 @@
   }
 
   async function supprimerAnnonce(id) {
-    if (!confirm('Supprimer définitivement cette annonce ?')) return;
+    if (!await ArdoiseUI.confirmer('Supprimer définitivement cette annonce ?')) return;
     const r = await appelApi(`/site-public/annonces/${id}`, { method: 'DELETE' });
     if (!r) return;
     const rep = await r.json().catch(() => ({}));
@@ -985,7 +985,7 @@
   }
 
   async function reinitialiserCode(matricule) {
-    if (!confirm(`Régénérer le code de l'élève ${matricule} ? L'ancien code cessera immédiatement de fonctionner.`)) return;
+    if (!await ArdoiseUI.confirmer(`Régénérer le code de l'élève ${matricule} ? L'ancien code cessera immédiatement de fonctionner.`)) return;
 
     const rEleves = await appelApi(`/eleves?q=${encodeURIComponent(matricule)}`);
     if (!rEleves || !rEleves.ok) { afficherMessage('Élève introuvable.', 'erreur'); return; }

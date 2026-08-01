@@ -610,7 +610,7 @@
     if (canaux.length === 0) { afficherMessage("Choisissez au moins un canal.", 'erreur'); return; }
 
     const resume = document.getElementById('resume-cible').textContent;
-    if (!confirm(`Envoyer ce message ?\n\n${resume}`)) return;
+    if (!await ArdoiseUI.confirmer(`Envoyer ce message ?\n\n${resume}`)) return;
 
     const bouton = document.getElementById('bouton-envoyer');
     bouton.disabled = true; bouton.textContent = 'Envoi…';
@@ -752,8 +752,8 @@
       afficherMessage('Proposition insérée — relisez avant d\'envoyer.', 'succes');
     }
 
-    document.getElementById('ia-rediger').addEventListener('click', function () {
-      const intention = prompt("Que doit dire ce message ?\n\nExemple : convoquer les parents de 4e A le 12 octobre à 9h pour la remise des bulletins.");
+    document.getElementById('ia-rediger').addEventListener('click', async function () {
+      const intention = await ArdoiseUI.demander("Que doit dire ce message ?\n\nExemple : convoquer les parents de 4e A le 12 octobre à 9h pour la remise des bulletins.");
       if (!intention || !intention.trim()) return;
       demander('rediger', this, { intention: intention.trim() });
     });

@@ -403,7 +403,7 @@
       else afficherMessage(d.message || "Erreur lors de l'activation.", 'erreur');
     }));
     conteneur.querySelectorAll('[data-action="cloturer"]').forEach(b => b.addEventListener('click', async () => {
-      if (!confirm("Clôturer cette année la verrouille définitivement (consultation et impression uniquement).\n\nSi c'est l'année active, l'année suivante sera créée et activée automatiquement pour que la plateforme ne reste jamais sans année de référence.\n\nContinuer ?")) return;
+      if (!await ArdoiseUI.confirmer("Clôturer cette année la verrouille définitivement (consultation et impression uniquement).\n\nSi c'est l'année active, l'année suivante sera créée et activée automatiquement pour que la plateforme ne reste jamais sans année de référence.\n\nContinuer ?")) return;
       const r = await appelApi(`/annees-scolaires/${b.dataset.id}/cloturer`, { method: 'POST' });
       const d = r ? await r.json().catch(() => ({})) : {};
       if (r && r.ok) { afficherMessage(d.message || 'Année clôturée.', 'succes'); chargerAnnees(); }
@@ -498,7 +498,7 @@
 
     const libelleSource = anneesCache.find(a => a.id === source)?.libelle || '';
     const libelleCible = anneesCache.find(a => a.id === cible)?.libelle || '';
-    if (!confirm(`Copier les classes, leurs cours et les professeurs de ${libelleSource} vers ${libelleCible} ?\n\nL'opération peut être relancée sans risque : elle complète sans créer de doublons.`)) return;
+    if (!await ArdoiseUI.confirmer(`Copier les classes, leurs cours et les professeurs de ${libelleSource} vers ${libelleCible} ?\n\nL'opération peut être relancée sans risque : elle complète sans créer de doublons.`)) return;
 
     const bouton = document.getElementById('bouton-reporter-structure');
     bouton.disabled = true; bouton.textContent = 'Report en cours…';
@@ -605,7 +605,7 @@
     conteneur.innerHTML = html;
 
     conteneur.querySelectorAll('[data-action="supprimer"]').forEach(b => b.addEventListener('click', async () => {
-      if (!confirm('Supprimer ? Impossible si des notes existent déjà pour cette période, ou pas d\'impact sur les notes si c\'est un semestre (juste un regroupement).')) return;
+      if (!await ArdoiseUI.confirmer('Supprimer ? Impossible si des notes existent déjà pour cette période, ou pas d\'impact sur les notes si c\'est un semestre (juste un regroupement).')) return;
       const r = await appelApi(`/periodes/${b.dataset.id}`, { method: 'DELETE' });
       const d = await r.json();
       if (!r.ok) { afficherMessage(d.message || 'Erreur lors de la suppression.', 'erreur'); return; }
@@ -722,7 +722,7 @@
       return;
     }
 
-    if (!confirm(`Appliquer la promotion pour ${decisions.length} élève(s) ? Cette action est irréversible.`)) return;
+    if (!await ArdoiseUI.confirmer(`Appliquer la promotion pour ${decisions.length} élève(s) ? Cette action est irréversible.`)) return;
 
     const bouton = document.getElementById('bouton-executer-promotion');
     bouton.disabled = true; bouton.textContent = 'Application en cours…';

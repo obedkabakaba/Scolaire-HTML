@@ -468,7 +468,7 @@
   async function repartir() {
     const cibleId = document.getElementById('select-annee-cible').value;
     if (!cibleId) { afficherMessage("Choisissez l'année d'accueil.", 'erreur'); return; }
-    if (!confirm("Lancer la répartition au mérite ?\n\nLes affectations automatiques précédentes seront recalculées. Les affectations manuelles sont conservées.")) return;
+    if (!await ArdoiseUI.confirmer("Lancer la répartition au mérite ?\n\nLes affectations automatiques précédentes seront recalculées. Les affectations manuelles sont conservées.")) return;
 
     const bouton = document.getElementById('bouton-repartir');
     bouton.disabled = true; bouton.textContent = 'Répartition…';
@@ -498,7 +498,7 @@
     const liste = donnees.classes_cibles
       .map((c, i) => `${i + 1}. ${c.nom} — ${c.option_nom}${c.capacite !== null ? ` (${c.nb_affectes}/${c.capacite})` : ''}`)
       .join('\n');
-    const choix = prompt(`Affecter ${eleve.nom_complet} à quelle classe ?\n\n${liste}\n\nEntrez le numéro, ou 0 pour retirer l'affectation.`);
+    const choix = await ArdoiseUI.demander(`Affecter ${eleve.nom_complet} à quelle classe ?\n\n${liste}\n\nEntrez le numéro, ou 0 pour retirer l'affectation.`);
     if (choix === null) return;
 
     const index = Number(choix);
@@ -507,7 +507,7 @@
     }
     const classe = index === 0 ? null : donnees.classes_cibles[index - 1];
 
-    const motif = prompt("Motif de cette affectation manuelle ?\n\nIl sera enregistré à votre nom et distinguera cette décision d'une attribution au mérite.");
+    const motif = await ArdoiseUI.demander("Motif de cette affectation manuelle ?\n\nIl sera enregistré à votre nom et distinguera cette décision d'une attribution au mérite.");
     if (!motif || !motif.trim()) return;
 
     const r = await appelApi(`/orientation/${eleveId}`, {

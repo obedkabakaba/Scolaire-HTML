@@ -1034,3 +1034,141 @@
 
   window.ArdoiseEdition = { installer: installer };
 })();
+
+/* ==========================================================================
+   BOÎTES DE DIALOGUE STYLÉES — remplacent confirm() et prompt()
+
+   Les boîtes natives du navigateur (grises, police système, position
+   imposée) tranchent avec le reste de l'interface — au même titre que les
+   boutons non stylés corrigés plus haut. Ces deux fonctions reproduisent leur
+   usage (retour par Promise, à utiliser avec `await`) sans dépendre d'aucun
+   balisage ajouté dans les pages : la boîte est construite et détruite en JS
+   pur à chaque appel, ce qui évite de modifier les 34 fichiers HTML pour
+   ajouter un conteneur.
+
+   Utilisation, en remplacement direct de l'existant :
+     if (!confirm('Supprimer ?')) return;
+       devient
+     if (!(await ArdoiseUI.confirmer('Supprimer ?'))) return;
+
+     const motif = prompt('Motif ?');
+       devient
+     const motif = await ArdoiseUI.demander('Motif ?');
+   ========================================================================== */
+(function () {
+  'use strict';
+
+  /** Devine si l'action est destructrice, pour styler le bouton en rouge. */
+  function estDangereux(message) {
+    return /supprim|irr[ée]versible|retirer d[ée]finitivement|écarter/i.test(message);
+  }
+
+  function construireBoite(contenuInterne, classeBoite) {
+    const voile = document.createElement('div');
+    voile.className = 'voile-confirmation';
+    voile.innerHTML = `<div class="boite-confirmation${classeBoite ? ' ' + classeBoite : ''}">${contenuInterne}</div>`;
+    document.body.appendChild(voile);
+    // Un cadre à peine posé dans le DOM n'anime pas sa transition d'opacité :
+    // le rAF laisse le navigateur peindre l'état initial avant de basculer.
+    requestAnimationFrame(() => requestAnimationFrame(() => voile.classList.add('visible')));
+    return voile;
+  }
+
+  function detruireBoite(voile) {
+    voile.classList.remove('visible');
+    setTimeout(() => voile.remove(), 220);
+  }
+
+  /**
+   * @param {string} message
+   * @param {object} [options]
+   * @param {boolean} [options.danger]         force ou désactive le style rouge
+   * @param {string}  [options.libelleValider]  par défaut "Supprimer" ou "Confirmer"
+   * @param {string}  [options.libelleAnnuler]  par défaut "Annuler"
+   * @returns {Promise<boolean>}
+   */
+  function confirmer(message, options) {
+    options = options || {};
+    const danger = options.danger !== undefined ? options.danger : estDangereux(message);
+    const libelleValider = options.libelleValider || (danger ? 'Supprimer' : 'Confirmer');
+    const libelleAnnuler = options.libelleAnnuler || 'Annuler';
+
+    return new Promise((resolve) => {
+      const voile = construireBoite(
+        `<h3></h3><p></p>
+         <div class="actions">
+           <button type="button" class="annuler"></button>
+           <button type="button" class="valider"></button>
+         </div>`,
+        danger ? 'danger' : ''
+      );
+      // textContent, jamais innerHTML, pour le message : il contient souvent
+      // des noms d'élèves ou de classes saisis par l'école, jamais fiables
+      // comme HTML.
+      voile.querySelector('h3').textContent = danger ? 'Confirmer la suppression' : 'Confirmation';
+      voile.querySelector('p').textContent = message;
+      voile.querySelector('.annuler').textContent = libelleAnnuler;
+      voile.querySelector('.valider').textContent = libelleValider;
+
+      function conclure(resultat) {
+        document.removeEventListener('keydown', surEchap);
+        detruireBoite(voile);
+        resolve(resultat);
+      }
+      function surEchap(e) { if (e.key === 'Escape') conclure(false); }
+
+      voile.querySelector('.annuler').addEventListener('click', () => conclure(false));
+      voile.querySelector('.valider').addEventListener('click', () => conclure(true));
+      // Cliquer hors de la boîte équivaut à Annuler, jamais à Confirmer : une
+      // action destructrice ne doit jamais pouvoir se déclencher par un clic
+      // égaré à l'extérieur.
+      voile.addEventListener('click', (e) => { if (e.target === voile) conclure(false); });
+      document.addEventListener('keydown', surEchap);
+      voile.querySelector('.valider').focus();
+    });
+  }
+
+  /**
+   * @param {string} message
+   * @param {string} [valeurDefaut]
+   * @returns {Promise<string|null>} null si annulé, comme prompt()
+   */
+  function demander(message, valeurDefaut) {
+    return new Promise((resolve) => {
+      const voile = construireBoite(
+        `<h3></h3><p></p>
+         <input type="text" class="champ-demande" style="width:100%; box-sizing:border-box; margin-bottom:16px;
+                padding:9px 11px; border:1.5px solid var(--bordure,#ddd); border-radius:var(--r-bouton,8px);
+                font-family:inherit; font-size:0.9rem;" />
+         <div class="actions">
+           <button type="button" class="annuler">Annuler</button>
+           <button type="button" class="valider">Valider</button>
+         </div>`
+      );
+      voile.querySelector('h3').textContent = 'Une information';
+      voile.querySelector('p').textContent = message;
+      const champ = voile.querySelector('.champ-demande');
+      champ.value = valeurDefaut || '';
+
+      function conclure(resultat) {
+        document.removeEventListener('keydown', surTouche);
+        detruireBoite(voile);
+        resolve(resultat);
+      }
+      function surTouche(e) {
+        if (e.key === 'Escape') conclure(null);
+        if (e.key === 'Enter' && document.activeElement === champ) conclure(champ.value);
+      }
+
+      voile.querySelector('.annuler').addEventListener('click', () => conclure(null));
+      voile.querySelector('.valider').addEventListener('click', () => conclure(champ.value));
+      voile.addEventListener('click', (e) => { if (e.target === voile) conclure(null); });
+      document.addEventListener('keydown', surTouche);
+      setTimeout(() => champ.focus(), 50);
+    });
+  }
+
+  window.ArdoiseUI = window.ArdoiseUI || {};
+  window.ArdoiseUI.confirmer = confirmer;
+  window.ArdoiseUI.demander = demander;
+})();

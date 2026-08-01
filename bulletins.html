@@ -502,7 +502,7 @@
   }
 
   async function signerBulletin(eleveId, periodeId) {
-    if (!confirm('Signer ce bulletin ? Une fois signé, il ne pourra généralement plus être modifié.')) return;
+    if (!await ArdoiseUI.confirmer('Signer ce bulletin ? Une fois signé, il ne pourra généralement plus être modifié.')) return;
     const r = await appelApi(`/bulletins/${eleveId}/signer`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ periodeId }) });
     if (!r) return;
     const donnees = await r.json();
@@ -584,7 +584,7 @@
   document.getElementById('bouton-signer-tout').addEventListener('click', async () => {
     const classeId = document.getElementById('select-classe').value;
     const periodeId = document.getElementById('select-periode').value;
-    if (!confirm('Signer tous les bulletins pas encore signés de cette classe, pour cette période ?')) return;
+    if (!await ArdoiseUI.confirmer('Signer tous les bulletins pas encore signés de cette classe, pour cette période ?')) return;
 
     const bouton = document.getElementById('bouton-signer-tout');
     bouton.disabled = true; bouton.textContent = 'Signature en cours…';

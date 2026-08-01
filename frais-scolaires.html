@@ -557,7 +557,7 @@
     const bouton = document.getElementById('bouton-enregistrer-controle');
     const actif = document.getElementById('case-controle').checked;
 
-    if (actif && !confirm(
+    if (actif && !await ArdoiseUI.confirmer(
       "Activer le blocage des bulletins ?\n\n"
       + "Les élèves dont les frais ne sont pas réglés ne pourront plus recevoir leur bulletin, "
       + "ni le consulter en ligne. Vous pourrez accorder des dérogations au cas par cas."
@@ -580,9 +580,9 @@
   async function basculerDerogation(eleveId, actuelle, nom) {
     let motif = null;
     if (!actuelle) {
-      motif = prompt(`Motif de la dérogation pour ${nom} ?\n\nIl sera conservé à votre nom.`);
+      motif = await ArdoiseUI.demander(`Motif de la dérogation pour ${nom} ?\n\nIl sera conservé à votre nom.`);
       if (!motif || !motif.trim()) return;
-    } else if (!confirm(`Retirer la dérogation de ${nom} ? Son bulletin redeviendra bloqué.`)) {
+    } else if (!await ArdoiseUI.confirmer(`Retirer la dérogation de ${nom} ? Son bulletin redeviendra bloqué.`)) {
       return;
     }
 
@@ -770,7 +770,7 @@
 
     corps.querySelectorAll('button[data-id]').forEach(bouton => {
       bouton.addEventListener('click', async () => {
-        if (!confirm('Supprimer cette configuration ?')) return;
+        if (!await ArdoiseUI.confirmer('Supprimer cette configuration ?')) return;
         const r = await appelApi(`/frais/config/${bouton.dataset.id}`, { method: 'DELETE' });
         if (r && r.ok) { afficherMessage('Supprimé.', 'succes'); chargerConfig(); }
       });

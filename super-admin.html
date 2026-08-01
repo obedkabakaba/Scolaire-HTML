@@ -528,7 +528,7 @@
   document.getElementById('bouton-toggle-statut-ecole').addEventListener('click', async () => {
     if (!ecoleDetailCourante) return;
     const nouveauStatut = ecoleDetailCourante.ecole.statut === 'actif' ? 'suspendu' : 'actif';
-    if (!confirm(`Confirmer : passer cette école au statut "${nouveauStatut}" ?`)) return;
+    if (!await ArdoiseUI.confirmer(`Confirmer : passer cette école au statut "${nouveauStatut}" ?`)) return;
     const r = await appelApi(`/admin/ecoles/${ecoleDetailCourante.ecole.id}`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ statut: nouveauStatut })
     });
@@ -538,7 +538,7 @@
 
   document.getElementById('bouton-reset-mdp-directeur').addEventListener('click', async () => {
     if (!ecoleDetailCourante?.directeur_principal) return;
-    if (!confirm("Générer un nouveau mot de passe pour ce compte Directeur ? L'ancien ne fonctionnera plus, et toutes ses sessions actives seront déconnectées.")) return;
+    if (!await ArdoiseUI.confirmer("Générer un nouveau mot de passe pour ce compte Directeur ? L'ancien ne fonctionnera plus, et toutes ses sessions actives seront déconnectées.")) return;
     const r = await appelApi(`/admin/ecoles/${ecoleDetailCourante.ecole.id}/reset-directeur-password`, { method: 'POST' });
     if (!r || !r.ok) { afficherMessage('Erreur lors de la réinitialisation.', 'erreur'); return; }
     const d = await r.json();
@@ -561,7 +561,7 @@
 
   document.getElementById('bouton-reactiver-abonnement').addEventListener('click', async () => {
     if (!ecoleDetailCourante) return;
-    if (!confirm("Réactiver l'abonnement de cette école ?")) return;
+    if (!await ArdoiseUI.confirmer("Réactiver l'abonnement de cette école ?")) return;
     const r = await appelApi(`/admin/ecoles/${ecoleDetailCourante.ecole.id}/abonnement`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ statut: 'actif' })
     });

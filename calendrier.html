@@ -319,7 +319,7 @@
   }
 
   async function supprimerEvenement(id) {
-    if (!confirm('Supprimer cet événement ?')) return;
+    if (!await ArdoiseUI.confirmer('Supprimer cet événement ?')) return;
     const r = await appelApi(`/evenements/${id}`, { method: 'DELETE' });
     if (r && r.ok) { afficherMessage('Événement supprimé.', 'succes'); chargerEvenements(); }
     else afficherMessage('Erreur lors de la suppression.', 'erreur');

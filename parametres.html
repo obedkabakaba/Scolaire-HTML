@@ -774,7 +774,7 @@
   }
 
   document.getElementById('bouton-supprimer-signature').addEventListener('click', async () => {
-    if (!confirm('Supprimer votre signature de directeur ?')) return;
+    if (!await ArdoiseUI.confirmer('Supprimer votre signature de directeur ?')) return;
     const r = await appelApi('/uploads/document?type=signature', { method: 'DELETE' });
     if (r && r.ok) {
       document.getElementById('apercu-signature').style.display = 'none';

@@ -1,0 +1,155 @@
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">
+<style>
+    @page { size: A4 portrait; margin: 12mm; }
+    * { box-sizing: border-box; }
+    body { font-family: 'Times New Roman', Times, serif; font-size: 10px; color: #000; margin: 0; }
+    .page { page-break-after: always; display: flex; flex-direction: column; min-height: 265mm; }
+    .page:last-child { page-break-after: auto; }
+
+    .entete { text-align: center; margin-bottom: 4mm; }
+    .entete .ecole { font-weight: bold; font-size: 14px; }
+    .entete .annee { font-size: 10px; color: #333; }
+    .titre-doc { text-align: center; font-weight: bold; font-size: 12px; text-transform: uppercase; margin: 3mm 0; }
+
+    .identite { margin-bottom: 3mm; font-size: 10px; line-height: 1.7; }
+    .identite strong { display: inline-block; min-width: 22mm; }
+
+    table.cotes { border-collapse: collapse; width: 100%; }
+    table.cotes th, table.cotes td {
+      border: 0.5px solid #000; text-align: center; padding: 1mm 0.8mm; font-size: 9px;
+    }
+    table.cotes th { font-weight: bold; font-size: 8.5px; line-height: 1.2; background: #f2f2f2; }
+    table.cotes td.branche { text-align: left; padding-left: 2mm; }
+    table.cotes td.noir { background: #000; }
+    table.cotes tr.synthese td { font-weight: bold; background: #f8f8f8; }
+    table.cotes td.max { color: #444; }
+
+    .appreciations { margin-top: 4mm; font-size: 10px; line-height: 1.9; }
+    .appreciations .ligne { display: flex; gap: 6mm; }
+    .appreciations .ligne > div { flex: 1; }
+    .pointilles { border-bottom: 0.5px dotted #000; display: inline-block; min-width: 30mm; }
+
+    .pied { margin-top: auto; padding-top: 6mm; }
+    .fait-le { text-align: right; font-style: italic; font-size: 9px; margin-bottom: 3mm; }
+    .signatures { display: flex; justify-content: space-between; gap: 10mm; }
+    .signatures .case { text-align: center; flex: 1; font-size: 9px; }
+    .signatures .case img { max-height: 12mm; max-width: 100%; display: block; margin: 0 auto 1mm; }
+    .signatures .espace { height: 14mm; }
+
+    .duplicata {
+      text-align: center; font-size: 8px; letter-spacing: 0.06em; text-transform: uppercase;
+      color: #8a2b2b; border: 0.5px solid #8a2b2b; border-radius: 1mm;
+      padding: 1mm 2mm; margin: 0 auto 3mm; max-width: 70mm;
+    }
+  </style></head><body>
+    <div class="page">
+      <div class="entete">
+        <div class="ecole">Institut Saint Paul</div>
+        <div class="annee">Année scolaire 2026-2027</div>
+      </div>
+
+      
+      <div class="titre-doc">Bulletin — 1er semestre</div>
+
+      <div class="identite">
+        <div><strong>Nom :</strong> MUKENDI Obed</div>
+        <div><strong>Matricule :</strong> ELV-0001</div>
+        <div><strong>Classe :</strong> 4ème HCG</div>
+      </div>
+
+      <table class="cotes">
+        
+    <thead>
+      <tr>
+        <th rowspan="2" class="branche" style="width:30%">Cours</th>
+        <th>1<sup>ère</sup> P.</th>
+        <th>2<sup>ème</sup> P.</th>
+        <th>Max</th>
+        <th>Examen</th>
+        <th>Max</th>
+        <th>Total général</th>
+        <th>Max</th>
+      </tr>
+      <tr>
+        <th colspan="2" style="font-weight:normal; font-size:7.5px;">points obtenus</th>
+        <th style="font-weight:normal; font-size:7.5px;">par période</th>
+        <th style="font-weight:normal; font-size:7.5px;">obtenu</th>
+        <th style="font-weight:normal; font-size:7.5px;">examen</th>
+        <th style="font-weight:normal; font-size:7.5px;">du semestre</th>
+        <th style="font-weight:normal; font-size:7.5px;">du semestre</th>
+      </tr>
+    </thead>
+        <tbody>
+          <tr>
+      <td class="branche">Mathématiques</td>
+      <td>18</td>
+      <td>16</td>
+      <td class="max">20</td>
+      <td>35</td>
+      <td class="max">40</td>
+      <td>69</td>
+      <td class="max">80</td>
+    </tr><tr>
+      <td class="branche">Visites guidées</td>
+      <td>8</td>
+      <td>9</td>
+      <td class="max">10</td>
+      <td class="noir"></td>
+      <td class="noir"></td>
+      <td>17</td>
+      <td class="max">20</td>
+    </tr>
+          
+      <tr class="synthese">
+        <td class="branche">TOTAUX</td>
+        <td>26</td>
+        <td>25</td>
+        <td class="max">30</td>
+        <td>35</td>
+        <td class="max">40</td>
+        <td>86</td>
+        <td class="max">100</td>
+      </tr>
+      <tr class="synthese">
+        <td class="branche">POURCENTAGE</td>
+        <td colspan="6"></td>
+        <td>86%</td>
+      </tr>
+      <tr class="synthese">
+        <td class="branche">PLACE / NBRE D'ÉLÈVES</td>
+        <td colspan="6"></td>
+        <td>1/10</td>
+      </tr>
+      <tr class="synthese">
+        <td class="branche">MENTION</td>
+        <td colspan="7" style="text-align:left; padding-left:2mm;">Grande distinction</td>
+      </tr>
+        </tbody>
+      </table>
+
+      <div class="appreciations">
+        <div class="ligne">
+          <div><strong>Conduite :</strong> TB</div>
+          <div><strong>Application :</strong> TB</div>
+        </div>
+        <div><strong>Observation :</strong> Très bon semestre.</div>
+      </div>
+
+      <div class="pied">
+        <div class="fait-le">Fait à Kinshasa, le 1 août 2026</div>
+        <div class="signatures">
+          <div class="case">
+            <div class="espace"></div>
+            Signature du titulaire
+          </div>
+          <div class="case">
+            <div class="espace"></div>
+            Cachet de l'école
+          </div>
+          <div class="case">
+            <div class="espace"></div>
+            Signature du responsable
+          </div>
+        </div>
+      </div>
+    </div></body></html>

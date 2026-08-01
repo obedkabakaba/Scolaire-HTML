@@ -381,10 +381,25 @@
           <select id="champ-sexe"><option value="">—</option><option value="M">M</option><option value="F">F</option></select>
         </div>
       </div>
-      <div class="champ"><label for="champ-naissance">Date de naissance</label><input type="date" id="champ-naissance" /></div>
+      <div class="ligne-champs">
+        <div class="champ"><label for="champ-naissance">Date de naissance</label><input type="date" id="champ-naissance" /></div>
+        <!-- Le lieu de naissance est imprimé sur le bulletin officiel
+             (« NÉ(E) À … LE … ») : sans ce champ, la zone restait vide. -->
+        <div class="champ"><label for="champ-lieu-naissance">Lieu de naissance</label><input type="text" id="champ-lieu-naissance" placeholder="ex. Kinshasa" /></div>
+      </div>
+      <div class="ligne-champs">
+        <div class="champ"><label for="champ-adresse">Adresse de l'élève</label><input type="text" id="champ-adresse" /></div>
+        <div class="champ"><label for="champ-telephone">Téléphone de l'élève</label><input type="text" id="champ-telephone" /></div>
+      </div>
       <div class="ligne-champs">
         <div class="champ"><label for="champ-resp-nom">Responsable</label><input type="text" id="champ-resp-nom" /></div>
         <div class="champ"><label for="champ-resp-tel">Téléphone responsable</label><input type="text" id="champ-resp-tel" /></div>
+      </div>
+      <div class="ligne-champs">
+        <div class="champ"><label for="champ-resp-email">Email du responsable</label><input type="email" id="champ-resp-email" /></div>
+        <!-- Distincte de l'adresse de l'élève : un tuteur peut habiter ailleurs,
+             et les convocations partiraient sinon au mauvais endroit. -->
+        <div class="champ"><label for="champ-resp-adresse">Adresse du responsable</label><input type="text" id="champ-resp-adresse" /></div>
       </div>
       <div class="champ" id="champ-statut-conteneur" style="display:none;">
         <label for="champ-statut">Statut</label>
@@ -411,6 +426,20 @@
     <ul id="liste-historique" style="list-style:none; margin:0 0 16px 0; padding:0;"></ul>
     <div class="actions-modale">
       <button type="button" class="bouton bouton-secondaire" id="bouton-fermer-historique">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Fiche de consultation. Séparée de la modale de modification : consulter
+     les coordonnées d'un élève est l'action la plus fréquente, et passer par un
+     formulaire d'édition pour cela expose à des modifications involontaires. -->
+<div class="voile" id="voile-fiche">
+  <div class="modale modale-large">
+    <h2 id="titre-fiche">Fiche de l'élève</h2>
+    <div id="corps-fiche"></div>
+    <div class="actions-modale">
+      <button type="button" class="bouton bouton-secondaire" id="bouton-fermer-fiche">Fermer</button>
+      <button type="button" class="bouton bouton-principal" id="bouton-modifier-depuis-fiche">Modifier</button>
     </div>
   </div>
 </div>
@@ -671,6 +700,19 @@
       mettreAJourBoutonAssignation();
     }
 
+    // Clic sur la ligne (hors boutons et hors case à cocher) : ouvre la FICHE
+    // en lecture seule. C'est l'action la plus fréquente — consulter les
+    // coordonnées d'un élève — et elle ne doit pas obliger à passer par un
+    // formulaire d'édition, où une frappe involontaire modifie une donnée.
+    corps.querySelectorAll('tr[data-id]').forEach((ligne) => {
+      ligne.style.cursor = 'pointer';
+      ligne.addEventListener('click', (evt) => {
+        if (evt.target.closest('button') || evt.target.closest('input')) return;
+        const eleve = elevesAffiches.find((e) => e.id === ligne.dataset.id);
+        if (eleve) ouvrirFiche(eleve);
+      });
+    });
+
     // Écouteurs pour les actions (modifier, historique, supprimer)
     corps.querySelectorAll('button[data-action]').forEach((bouton) => {
       const ligne = bouton.closest('tr');
@@ -754,6 +796,74 @@
   });
 
   // --- Fonctions existantes (modale, suppression, historique) ---
+  /** Échappement HTML, au niveau supérieur du script.
+      (Une fonction echapperTexte existe déjà dans ce fichier, mais imbriquée
+      dans le module d'import : elle n'est pas accessible ici.) */
+  function echapper(v) {
+    const d = document.createElement('div');
+    d.textContent = v == null ? '' : String(v);
+    return d.innerHTML;
+  }
+
+  /** Formate une date ISO en JJ/MM/AAAA, ou « — » si absente. */
+  function formaterDate(valeur) {
+    if (!valeur) return '—';
+    const d = new Date(valeur);
+    return Number.isNaN(d.getTime()) ? '—' : d.toLocaleDateString('fr-FR');
+  }
+
+  let eleveAffiche = null;
+
+  function ouvrirFiche(eleve) {
+    eleveAffiche = eleve;
+    const nomComplet = [eleve.nom, eleve.postnom, eleve.prenom].filter(Boolean).join(' ');
+    document.getElementById('titre-fiche').textContent = nomComplet;
+
+    // Chaque valeur passe par echapper() : ce sont des données saisies par
+    // l'école (noms, adresses), jamais fiables comme HTML.
+    const ligne = (libelle, valeur) => `
+      <div style="display:flex; justify-content:space-between; gap:16px; padding:7px 0;
+                  border-bottom:1px solid var(--bordure);">
+        <span style="color:var(--texte-att); font-size:0.84rem;">${libelle}</span>
+        <span style="text-align:right; font-size:0.88rem;">${echapper(valeur) || '—'}</span>
+      </div>`;
+
+    const titre = (t) => `<h3 style="font-size:0.78rem; text-transform:uppercase; letter-spacing:0.06em;
+                            color:var(--texte-att); margin:18px 0 4px 0;">${t}</h3>`;
+
+    document.getElementById('corps-fiche').innerHTML =
+      titre('Identité')
+      + ligne('Matricule', eleve.matricule)
+      + ligne('Nom complet', nomComplet)
+      + ligne('Sexe', eleve.sexe === 'M' ? 'Masculin' : eleve.sexe === 'F' ? 'Féminin' : null)
+      + ligne('Date de naissance', formaterDate(eleve.date_naissance))
+      + ligne('Lieu de naissance', eleve.lieu_naissance)
+      + titre('Scolarité')
+      + ligne('Classe', eleve.classe_nom)
+      + ligne('Statut', LIBELLES_STATUT[eleve.statut] || eleve.statut)
+      + titre('Coordonnées de l\'élève')
+      + ligne('Adresse', eleve.adresse)
+      + ligne('Téléphone', eleve.telephone)
+      + titre('Responsable')
+      + ligne('Nom', eleve.responsable_nom)
+      + ligne('Téléphone', eleve.responsable_telephone)
+      + ligne('Email', eleve.responsable_email)
+      + ligne('Adresse', eleve.responsable_adresse);
+
+    document.getElementById('voile-fiche').classList.add('visible');
+  }
+
+  document.getElementById('bouton-fermer-fiche').addEventListener('click', () => {
+    document.getElementById('voile-fiche').classList.remove('visible');
+  });
+
+  // Passerelle depuis la consultation vers la modification : l'utilisateur qui
+  // consulte et constate une erreur n'a pas à refermer puis chercher le bouton.
+  document.getElementById('bouton-modifier-depuis-fiche').addEventListener('click', () => {
+    document.getElementById('voile-fiche').classList.remove('visible');
+    if (eleveAffiche) ouvrirModale(eleveAffiche);
+  });
+
   function ouvrirModale(eleve) {
     document.getElementById('titre-modale').textContent = eleve ? 'Modifier un élève' : 'Ajouter un élève';
     document.getElementById('eleve-id').value = eleve?.id || '';
@@ -763,9 +873,14 @@
     document.getElementById('champ-prenom').value = eleve?.prenom || '';
     document.getElementById('champ-sexe').value = eleve?.sexe || '';
     document.getElementById('champ-naissance').value = eleve?.date_naissance ? eleve.date_naissance.slice(0, 10) : '';
+    document.getElementById('champ-lieu-naissance').value = eleve?.lieu_naissance || '';
+    document.getElementById('champ-adresse').value = eleve?.adresse || '';
+    document.getElementById('champ-telephone').value = eleve?.telephone || '';
     document.getElementById('champ-classe').value = eleve?.classe_id || '';
     document.getElementById('champ-resp-nom').value = eleve?.responsable_nom || '';
     document.getElementById('champ-resp-tel').value = eleve?.responsable_telephone || '';
+    document.getElementById('champ-resp-email').value = eleve?.responsable_email || '';
+    document.getElementById('champ-resp-adresse').value = eleve?.responsable_adresse || '';
     document.getElementById('champ-statut-conteneur').style.display = eleve ? 'block' : 'none';
     if (eleve) document.getElementById('champ-statut').value = eleve.statut || 'actif';
     document.getElementById('voile-modale').classList.add('visible');
@@ -790,8 +905,13 @@
       sexe: document.getElementById('champ-sexe').value || null,
       date_naissance: document.getElementById('champ-naissance').value || null,
       classe_id: document.getElementById('champ-classe').value || null,
+      lieu_naissance: document.getElementById('champ-lieu-naissance').value.trim() || null,
+      adresse: document.getElementById('champ-adresse').value.trim() || null,
+      telephone: document.getElementById('champ-telephone').value.trim() || null,
       responsable_nom: document.getElementById('champ-resp-nom').value.trim(),
-      responsable_telephone: document.getElementById('champ-resp-tel').value.trim()
+      responsable_telephone: document.getElementById('champ-resp-tel').value.trim(),
+      responsable_email: document.getElementById('champ-resp-email').value.trim() || null,
+      responsable_adresse: document.getElementById('champ-resp-adresse').value.trim() || null
     };
     if (matriculeSaisi) corpsRequete.matricule = matriculeSaisi;
     if (id) corpsRequete.statut = document.getElementById('champ-statut').value;

@@ -818,12 +818,16 @@ html[data-theme="nuit"] .pile-avatars .reste { border-color: var(--craie-2); }
   /* Toujours dans le DOM, mais hors écran : c'est ce qui permet d'ANIMER
      l'entrée. Un display:none ne peut pas se animer. */
   display: block !important;
-  position: fixed;
-  top: 18px;
-  right: 18px;
-  left: auto;
-  bottom: auto;
-  z-index: 9999;
+  /* !important sur le positionnement lui-même : la réparation dans ui.js
+     (rattachement à <body>) supprime la cause structurelle du problème, mais
+     ces règles restent la seconde garantie — aucune autre règle, présente ou
+     future, ne doit pouvoir repositionner ce toast dans le flux de la page. */
+  position: fixed !important;
+  top: 18px !important;
+  right: 18px !important;
+  left: auto !important;
+  bottom: auto !important;
+  z-index: 9999 !important;
   max-width: min(380px, calc(100vw - 36px));
   margin: 0 !important;
   padding: 13px 17px;
@@ -875,9 +879,9 @@ html[data-theme="nuit"] .message-flash.info   { background: #16223d; color: #9db
    360px, il déborderait ou serait tronqué. */
 @media (max-width: 520px) {
   .message-flash {
-    top: 12px;
-    right: 12px;
-    left: 12px;
+    top: 12px !important;
+    right: 12px !important;
+    left: 12px !important;
     max-width: none;
     transform: translateY(-140%);
   }

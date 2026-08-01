@@ -1,4 +1,48 @@
 /* ==========================================================================
+   RÉPARATION DE #message-flash : sortie du conteneur animé
+
+   Cause du bug « le message oblige à remonter la page, et le flou d'une
+   fenêtre ouverte le floute aussi » :
+
+   `.contenu` porte une animation d'entrée (`ardoise-apparition`, dans
+   theme.css) qui anime `transform`. N'IMPORTE QUEL élément qui anime
+   `transform` — même vers `transform: none` en fin de course, même une fois
+   l'animation terminée avec `fill-mode: both` — devient un « bloc de
+   confinement » pour ses descendants en `position: fixed`. Ce point du CSS
+   est peu connu mais bien documenté : un `position: fixed` cesse alors de se
+   positionner par rapport à la fenêtre et se positionne par rapport à CE
+   conteneur à la place.
+
+   `#message-flash` est un enfant de `.contenu` dans les 34 pages. Ses
+   `top`/`right` en position fixe s'appliquaient donc en haut du CONTENU DE LA
+   PAGE plutôt qu'en haut de l'écran — d'où l'obligation de remonter le
+   défilement pour l'apercevoir. Et parce qu'il restait ainsi « piégé » dans le
+   même arbre d'empilement que le reste de la page, le flou d'arrière-plan
+   (`backdrop-filter`) d'une fenêtre ouverte le traversait aussi.
+
+   La réparation ne touche à AUCUNE des 34 pages : elle sort le nœud de son
+   conteneur et le rattache directement à <body>, où plus aucun ancêtre ne
+   peut casser sa position fixe. Son identifiant est conservé, donc le
+   `afficherMessage()` propre à chaque page continue de fonctionner sans
+   modification.
+
+   PLACÉ TOUT EN HAUT DU FICHIER, avant tout le reste : ui.js contient environ
+   1000 lignes d'autres scripts (icônes, animations, squelettes de
+   chargement...). Une erreur non interceptée n'importe où dans ce code
+   arrêterait l'exécution du fichier — et avec elle, tout ce qui suit,
+   y compris ce correctif s'il était resté à sa place initiale, en fin de
+   fichier. Cette réparation touche à l'affichage des retours utilisateur
+   (succès/échec de CHAQUE action de la plateforme) : elle ne peut pas se
+   permettre de dépendre du bon déroulement de code sans rapport avec elle.
+   ========================================================================== */
+(function () {
+  var message = document.getElementById('message-flash');
+  if (message && message.parentNode !== document.body) {
+    document.body.appendChild(message);
+  }
+})();
+
+/* ==========================================================================
    Ardoise — Comportements visuels (étape B)
    --------------------------------------------------------------------------
    Chargé après theme.js. Trois rôles, tous non intrusifs : si ce fichier
@@ -1033,41 +1077,6 @@
   }
 
   window.ArdoiseEdition = { installer: installer };
-})();
-
-/* ==========================================================================
-   RÉPARATION DE #message-flash : sortie du conteneur animé
-
-   Cause du bug « le message oblige à remonter la page, et le flou d'une
-   fenêtre ouverte le floute aussi » :
-
-   `.contenu` porte une animation d'entrée (`ardoise-apparition`, dans
-   theme.css) qui anime `transform`. N'IMPORTE QUEL élément qui anime
-   `transform` — même vers `transform: none` en fin de course, même une fois
-   l'animation terminée avec `fill-mode: both` — devient un « bloc de
-   confinement » pour ses descendants en `position: fixed`. Ce point du CSS
-   est peu connu mais bien documenté : un `position: fixed` cesse alors de se
-   positionner par rapport à la fenêtre et se positionne par rapport à CE
-   conteneur à la place.
-
-   `#message-flash` est un enfant de `.contenu` dans les 34 pages. Ses
-   `top`/`right` en position fixe s'appliquaient donc en haut du CONTENU DE LA
-   PAGE plutôt qu'en haut de l'écran — d'où l'obligation de remonter le
-   défilement pour l'apercevoir. Et parce qu'il restait ainsi « piégé » dans le
-   même arbre d'empilement que le reste de la page, le flou d'arrière-plan
-   (`backdrop-filter`) d'une fenêtre ouverte le traversait aussi.
-
-   La réparation ne touche à AUCUNE des 34 pages : elle sort le nœud de son
-   conteneur et le rattache directement à <body>, où plus aucun ancêtre ne
-   peut casser sa position fixe. Son identifiant est conservé, donc le
-   `afficherMessage()` propre à chaque page continue de fonctionner sans
-   modification.
-   ========================================================================== */
-(function () {
-  var message = document.getElementById('message-flash');
-  if (message && message.parentNode !== document.body) {
-    document.body.appendChild(message);
-  }
 })();
 
 /* ==========================================================================

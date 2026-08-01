@@ -38,6 +38,70 @@
   .nav-item.actif { background: var(--nav-actif-fond); color: var(--nav-texte-fort); font-weight: 600; }
   .nav-item .etiquette-bientot { font-family: var(--police-mono); font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--nav-texte-faible); }
   .contenu { padding: 36px 44px 60px 44px; }
+
+  /* ---------- Calendrier ---------- */
+  .disposition-calendrier { display: grid; grid-template-columns: 1fr 320px; gap: 24px; align-items: start; }
+  @media (max-width: 980px) { .disposition-calendrier { grid-template-columns: 1fr; } }
+
+  .panneau-mois { background: var(--craie-2); border: 1px solid var(--bordure); border-radius: var(--r-carte); padding: 18px; }
+  .barre-mois { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; gap: 10px; }
+  .barre-mois .titre-mois { font-family: var(--police-titre); font-size: 1.15rem; font-weight: 600; text-transform: capitalize; }
+  .barre-mois .navigation { display: flex; gap: 6px; align-items: center; }
+  .barre-mois button { padding: 5px 11px; }
+
+  .grille-mois { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .entete-jour {
+    text-align: center; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--texte-att); padding: 6px 0; font-weight: 600;
+  }
+  .case-jour {
+    min-height: 74px; border: 1px solid var(--bordure); border-radius: var(--r-petit);
+    padding: 5px 6px; background: var(--craie-2); position: relative; cursor: pointer;
+    display: flex; flex-direction: column; gap: 3px;
+  }
+  .case-jour.vide { border: none; background: none; cursor: default; }
+  .case-jour .numero { font-size: 0.82rem; font-weight: 600; }
+
+  /* Chaque statut a sa couleur : un jour non ouvré et un jour de vacances ne
+     doivent pas se confondre au premier regard. */
+  .case-jour.non_ouvre { background: repeating-linear-gradient(45deg, #f3f0e6, #f3f0e6 6px, #eeeade 6px, #eeeade 12px); color: var(--texte-att); }
+  .case-jour.vacances { background: rgba(76,122,90,0.13); border-color: rgba(76,122,90,0.35); }
+  .case-jour.ferie    { background: rgba(178,58,46,0.10); border-color: rgba(178,58,46,0.32); }
+  .case-jour.conge, .case-jour.greve, .case-jour.autre { background: rgba(201,138,62,0.12); border-color: rgba(201,138,62,0.35); }
+  .case-jour.hors_annee { background: #f0eee7; color: #b5b1a4; }
+
+  /* Aujourd'hui : cadre marqué plutôt qu'un simple fond, pour rester visible
+     quel que soit le statut du jour (un férié reste un férié). */
+  .case-jour.aujourdhui { outline: 2px solid var(--ocre); outline-offset: -2px; }
+  .case-jour.aujourdhui .numero { color: var(--ocre-dark); }
+
+  .puce-evenement {
+    font-size: 0.68rem; line-height: 1.3; padding: 1px 4px; border-radius: 3px;
+    background: var(--encre); color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .etiquette-special { font-size: 0.64rem; color: var(--texte-att); line-height: 1.25; }
+
+  .legende { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 14px; font-size: 0.74rem; color: var(--texte-att); }
+  .legende span { display: flex; align-items: center; gap: 5px; }
+  .legende i { width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--bordure); display: inline-block; }
+
+  /* ---------- Colonne latérale ---------- */
+  .panneau-lateral { display: flex; flex-direction: column; gap: 16px; }
+  .bloc-lateral { background: var(--craie-2); border: 1px solid var(--bordure); border-radius: var(--r-carte); padding: 16px; }
+  .bloc-lateral h3 { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--texte-att); margin: 0 0 12px 0; }
+
+  .ligne-evenement { padding: 9px 0; border-bottom: 1px solid var(--bordure); }
+  .ligne-evenement:last-child { border-bottom: none; }
+  .ligne-evenement .titre { font-size: 0.88rem; font-weight: 600; }
+  .ligne-evenement .meta { font-size: 0.76rem; color: var(--texte-att); margin-top: 2px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .badge-statut { font-size: 0.68rem; padding: 1px 7px; border-radius: var(--r-pilule); font-weight: 600; }
+  .badge-statut.passe    { background: rgba(107,114,105,0.14); color: var(--texte-att); }
+  .badge-statut.proche   { background: rgba(201,138,62,0.16); color: var(--ocre-dark); }
+  .badge-statut.avenir   { background: rgba(60,90,98,0.13); color: var(--encre); }
+  .badge-statut.en_cours { background: rgba(76,122,90,0.16); color: var(--vert-ok); }
+
+  .encart-periode { background: rgba(60,90,98,0.08); border-left: 3px solid var(--encre); padding: 10px 12px; border-radius: var(--r-petit); font-size: 0.84rem; }
+
   @media (max-width: 780px) { .contenu { padding: 24px 20px 48px 20px; } }
   .entete-page { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; }
   .entete-page h1 { font-family: var(--police-titre); font-weight: 600; font-size: 1.9rem; margin: 0 0 4px 0; }
@@ -184,7 +248,51 @@
 
     <div class="message-flash" id="message-flash"></div>
 
-    <div id="conteneur-evenements"><p class="etat-vide"><span class="spinner"></span>Chargement…</p></div>
+    <div class="disposition-calendrier">
+      <div class="panneau-mois">
+        <div class="barre-mois">
+          <div class="titre-mois" id="titre-mois">…</div>
+          <div class="navigation">
+            <button class="bouton bouton-secondaire bouton-petit" id="mois-precedent">‹</button>
+            <button class="bouton bouton-secondaire bouton-petit" id="mois-aujourdhui">Aujourd'hui</button>
+            <button class="bouton bouton-secondaire bouton-petit" id="mois-suivant">›</button>
+          </div>
+        </div>
+
+        <div class="grille-mois" id="entetes-jours"></div>
+        <div class="grille-mois" id="grille-mois" style="margin-top:4px;">
+          <p class="etat-vide" style="grid-column:1/-1;"><span class="spinner"></span>Chargement…</p>
+        </div>
+
+        <div class="legende">
+          <span><i style="background:var(--craie-2);"></i> Jour de classe</span>
+          <span><i style="background:#eeeade;"></i> Non ouvré</span>
+          <span><i style="background:rgba(76,122,90,0.13);"></i> Vacances</span>
+          <span><i style="background:rgba(178,58,46,0.10);"></i> Férié</span>
+          <span><i style="outline:2px solid var(--ocre); outline-offset:-2px;"></i> Aujourd'hui</span>
+        </div>
+      </div>
+
+      <div class="panneau-lateral">
+        <div class="bloc-lateral" id="bloc-periode" style="display:none;">
+          <h3>Période en cours</h3>
+          <div class="encart-periode" id="encart-periode"></div>
+        </div>
+
+        <div class="bloc-lateral">
+          <h3>Événements</h3>
+          <div id="liste-evenements"><p class="etat-vide">Chargement…</p></div>
+        </div>
+
+        <div class="bloc-lateral">
+          <h3>Jours non ouvrés</h3>
+          <button class="bouton bouton-secondaire bouton-petit" id="bouton-ajouter-special" style="width:100%; margin-bottom:10px;">
+            + Férié, vacances ou congé
+          </button>
+          <div id="liste-speciaux"><p class="etat-vide" style="font-size:0.8rem;">Aucun enregistré.</p></div>
+        </div>
+      </div>
+    </div>
   </main>
 </div>
 
@@ -210,6 +318,52 @@
       </div>
       <div class="actions-modale">
         <button type="button" class="bouton bouton-secondaire" id="bouton-annuler">Annuler</button>
+        <button type="submit" class="bouton bouton-principal">Enregistrer</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Jours non ouvrés. Distincts des événements : un événement s'AJOUTE au
+     calendrier (un conseil de classe a lieu un jour de classe), un jour non
+     ouvré RETIRE ce jour du calendrier et bloque la saisie des présences. -->
+<div class="voile" id="voile-special">
+  <div class="modale">
+    <h2>Jour non ouvré</h2>
+    <form id="formulaire-special">
+      <div class="champ">
+        <label for="champ-special-libelle">Libellé</label>
+        <input type="text" id="champ-special-libelle" placeholder="ex. Fête de l'Indépendance" required />
+      </div>
+      <div class="ligne-champs">
+        <div class="champ">
+          <label for="champ-special-type">Type</label>
+          <select id="champ-special-type">
+            <option value="ferie">Jour férié</option>
+            <option value="vacances">Vacances</option>
+            <option value="conge">Congé</option>
+            <option value="greve">Grève</option>
+            <option value="autre">Autre</option>
+          </select>
+        </div>
+        <div class="champ">
+          <label for="champ-special-cycle">Cycle concerné</label>
+          <select id="champ-special-cycle">
+            <option value="">Toute l'école</option>
+            <option value="primaire">Primaire seulement</option>
+            <option value="secondaire">Secondaire seulement</option>
+          </select>
+        </div>
+      </div>
+      <div class="ligne-champs">
+        <div class="champ"><label for="champ-special-debut">Du</label><input type="date" id="champ-special-debut" required /></div>
+        <div class="champ"><label for="champ-special-fin">Au (laisser vide si un seul jour)</label><input type="date" id="champ-special-fin" /></div>
+      </div>
+      <p style="font-size:0.78rem; color:var(--texte-att); margin:4px 0 0;">
+        Les présences seront bloquées sur cette période, avec un message expliquant pourquoi.
+      </p>
+      <div class="actions-modale">
+        <button type="button" class="bouton bouton-secondaire" id="bouton-annuler-special">Annuler</button>
         <button type="submit" class="bouton bouton-principal">Enregistrer</button>
       </div>
     </form>
@@ -278,75 +432,255 @@
     setTimeout(() => zone.classList.remove('visible'), 5000);
   }
 
+  function echapper(v) {
+    const d = document.createElement('div');
+    d.textContent = v == null ? '' : String(v);
+    return d.innerHTML;
+  }
+
+  const NOMS_MOIS = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+  const ENTETES_JOURS = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+
+  // Mois affiché. On garde année et mois séparés plutôt qu'un objet Date :
+  // manipuler un Date pour changer de mois réserve des surprises (31 janvier
+  // + 1 mois donne le 3 mars), et un calendrier qui saute un mois est un bug
+  // difficile à repérer.
+  let anneeAffichee = new Date().getFullYear();
+  let moisAffiche = new Date().getMonth() + 1;   // 1 = janvier
+
+  const AUJOURDHUI = new Date().toISOString().slice(0, 10);
+
+  document.getElementById('entetes-jours').innerHTML =
+    ENTETES_JOURS.map((j) => `<div class="entete-jour">${j}</div>`).join('');
+
+  async function chargerMois() {
+    const grille = document.getElementById('grille-mois');
+    document.getElementById('titre-mois').textContent = `${NOMS_MOIS[moisAffiche - 1]} ${anneeAffichee}`;
+    grille.innerHTML = '<p class="etat-vide" style="grid-column:1/-1;"><span class="spinner"></span>Chargement…</p>';
+
+    const r = await appelApi(`/evenements/mois?annee=${anneeAffichee}&mois=${moisAffiche}`);
+    if (!r || !r.ok) {
+      grille.innerHTML = '<p class="etat-vide" style="grid-column:1/-1;">Impossible de charger ce mois.</p>';
+      return;
+    }
+    const d = await r.json();
+
+    // Décalage initial : le 1er du mois doit tomber sous le bon en-tête.
+    // jour_semaine vaut 1 pour lundi, et la grille commence par lundi.
+    const premier = d.jours[0];
+    const vides = premier ? premier.jour_semaine - 1 : 0;
+
+    let html = '';
+    for (let i = 0; i < vides; i++) html += '<div class="case-jour vide"></div>';
+
+    for (const jour of d.jours) {
+      const estAujourdhui = jour.date === AUJOURDHUI;
+      const classes = ['case-jour', jour.statut];
+      if (estAujourdhui) classes.push('aujourdhui');
+
+      const evenements = jour.evenements.map((e) =>
+        `<span class="puce-evenement" title="${echapper(e.titre)}">${echapper(e.titre)}</span>`).join('');
+      const special = jour.libelle_special
+        ? `<span class="etiquette-special">${echapper(jour.libelle_special)}</span>` : '';
+
+      html += `<div class="${classes.join(' ')}" data-date="${jour.date}" title="${echapper(jour.libelle_special || '')}">
+                 <span class="numero">${Number(jour.date.slice(-2))}</span>
+                 ${special}${evenements}
+               </div>`;
+    }
+    grille.innerHTML = html;
+
+    // Cliquer un jour ouvre le formulaire d'événement pré-daté : c'est le geste
+    // naturel sur un calendrier, et il évite de ressaisir la date à la main.
+    if (peutGererEvenements) {
+      grille.querySelectorAll('.case-jour[data-date]').forEach((caseJour) => {
+        caseJour.addEventListener('click', () => {
+          document.getElementById('champ-debut').value = caseJour.dataset.date;
+          document.getElementById('voile-modale').classList.add('visible');
+        });
+      });
+    }
+
+    // Période en cours, calculée par le serveur à partir des dates réelles.
+    const bloc = document.getElementById('bloc-periode');
+    if (d.periode_courante) {
+      bloc.style.display = '';
+      document.getElementById('encart-periode').innerHTML =
+        `<strong>${echapper(d.periode_courante.libelle)}</strong>`
+        + (d.periode_courante.date_fin
+            ? `<br/>jusqu'au ${new Date(d.periode_courante.date_fin).toLocaleDateString('fr-FR')}` : '');
+    } else {
+      bloc.style.display = 'none';
+    }
+
+    afficherJoursSpeciaux(d.jours_speciaux);
+  }
+
+  /**
+   * Statut d'un événement par rapport à aujourd'hui. Les seuils sont choisis
+   * pour être actionnables : « dans deux semaines » laisse le temps de
+   * s'organiser, « passé » n'appelle plus aucune action.
+   */
+  function statutEvenement(debut, fin) {
+    const aujourdhui = new Date(AUJOURDHUI);
+    const d = new Date(String(debut).slice(0, 10));
+    const f = new Date(String(fin || debut).slice(0, 10));
+    if (f < aujourdhui) return { cle: 'passe', libelle: 'Passé' };
+    if (d <= aujourdhui && f >= aujourdhui) return { cle: 'en_cours', libelle: 'En cours' };
+    const jours = Math.ceil((d - aujourdhui) / 86400000);
+    if (jours <= 14) return { cle: 'proche', libelle: jours <= 1 ? 'Demain' : `Dans ${jours} jours` };
+    return { cle: 'avenir', libelle: 'À venir' };
+  }
+
   async function chargerEvenements() {
     const r = await appelApi('/evenements');
-    if (!r || !r.ok) return;
+    const conteneur = document.getElementById('liste-evenements');
+    if (!r || !r.ok) { conteneur.innerHTML = '<p class="etat-vide">Erreur de chargement.</p>'; return; }
     const evenements = await r.json();
-    const conteneur = document.getElementById('conteneur-evenements');
 
     if (evenements.length === 0) {
-      conteneur.innerHTML = '<p class="etat-vide">Aucun événement pour l\'instant. Ajoute le premier.</p>';
+      conteneur.innerHTML = '<p class="etat-vide" style="font-size:0.82rem;">Aucun événement.</p>';
       return;
     }
 
-    const groupes = {};
-    evenements.forEach((evt) => {
-      const cle = new Date(evt.date_debut).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
-      if (!groupes[cle]) groupes[cle] = [];
-      groupes[cle].push(evt);
-    });
+    // Les événements à venir d'abord, les passés ensuite : c'est ce qui appelle
+    // une action qui doit être visible en premier.
+    const ordre = { en_cours: 0, proche: 1, avenir: 2, passe: 3 };
+    const triees = evenements
+      .map((e) => ({ ...e, statut: statutEvenement(e.date_debut, e.date_fin) }))
+      .sort((a, b) => ordre[a.statut.cle] - ordre[b.statut.cle]
+                   || new Date(a.date_debut) - new Date(b.date_debut));
 
-    conteneur.innerHTML = Object.entries(groupes).map(([mois, liste]) => `
-      <div class="liste-mois">
-        <h2 class="titre-mois">${mois}</h2>
-        ${liste.map(evt => `
-          <div class="carte-evenement" data-id="${evt.id}">
-            <div class="date-evenement">${new Date(evt.date_debut).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}</div>
-            <div class="contenu-evenement">
-              <div class="titre">${evt.titre}</div>
-              <div class="type">${TYPES_EVENEMENTS[evt.type] || evt.type}</div>
-            </div>
-            ${peutGererEvenements ? `<button class="lien-action" data-action="supprimer">Supprimer</button>` : ''}
-          </div>
-        `).join('')}
-      </div>
-    `).join('');
+    conteneur.innerHTML = triees.map((e) => `
+      <div class="ligne-evenement" data-id="${e.id}">
+        <div class="titre">${echapper(e.titre)}</div>
+        <div class="meta">
+          <span class="badge-statut ${e.statut.cle}">${e.statut.libelle}</span>
+          <span>${new Date(e.date_debut).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}</span>
+          <span>${echapper(TYPES_EVENEMENTS[e.type] || e.type)}</span>
+          ${peutGererEvenements ? '<button class="lien-action" data-action="supprimer" style="margin-left:auto;">Supprimer</button>' : ''}
+        </div>
+      </div>`).join('');
 
     conteneur.querySelectorAll('button[data-action="supprimer"]').forEach((bouton) => {
-      const carte = bouton.closest('.carte-evenement');
-      bouton.addEventListener('click', () => supprimerEvenement(carte.dataset.id));
+      bouton.addEventListener('click', () => supprimerEvenement(bouton.closest('.ligne-evenement').dataset.id));
+    });
+  }
+
+  function afficherJoursSpeciaux(liste) {
+    const conteneur = document.getElementById('liste-speciaux');
+    if (!liste || liste.length === 0) {
+      conteneur.innerHTML = '<p class="etat-vide" style="font-size:0.8rem;">Aucun ce mois-ci.</p>';
+      return;
+    }
+    const LIBELLES = { ferie: 'Férié', vacances: 'Vacances', conge: 'Congé', greve: 'Grève', autre: 'Autre' };
+    conteneur.innerHTML = liste.map((j) => {
+      const memeJour = String(j.date_debut).slice(0, 10) === String(j.date_fin).slice(0, 10);
+      const periode = memeJour
+        ? new Date(j.date_debut).toLocaleDateString('fr-FR')
+        : `${new Date(j.date_debut).toLocaleDateString('fr-FR')} → ${new Date(j.date_fin).toLocaleDateString('fr-FR')}`;
+      return `<div class="ligne-evenement" data-id="${j.id}">
+                <div class="titre">${echapper(j.libelle)}</div>
+                <div class="meta">
+                  <span>${LIBELLES[j.type] || j.type}</span>
+                  <span>${periode}</span>
+                  ${j.cycle ? `<span>${echapper(j.cycle)}</span>` : ''}
+                  ${peutGererEvenements ? '<button class="lien-action" data-action="suppr-special" style="margin-left:auto;">Retirer</button>' : ''}
+                </div>
+              </div>`;
+    }).join('');
+
+    conteneur.querySelectorAll('button[data-action="suppr-special"]').forEach((bouton) => {
+      bouton.addEventListener('click', async () => {
+        const id = bouton.closest('.ligne-evenement').dataset.id;
+        if (!await ArdoiseUI.confirmer('Retirer ce jour non ouvré ? Les présences y redeviendront possibles.')) return;
+        const r = await appelApi(`/evenements/jours-speciaux/${id}`, { method: 'DELETE' });
+        const d = r ? await r.json().catch(() => ({})) : {};
+        if (r && r.ok) { afficherMessage(d.message || 'Retiré.', 'succes'); chargerMois(); }
+        else afficherMessage(d.message || 'Erreur.', 'erreur');
+      });
     });
   }
 
   async function supprimerEvenement(id) {
     if (!await ArdoiseUI.confirmer('Supprimer cet événement ?')) return;
     const r = await appelApi(`/evenements/${id}`, { method: 'DELETE' });
-    if (r && r.ok) { afficherMessage('Événement supprimé.', 'succes'); chargerEvenements(); }
+    if (r && r.ok) { afficherMessage('Événement supprimé.', 'succes'); chargerEvenements(); chargerMois(); }
     else afficherMessage('Erreur lors de la suppression.', 'erreur');
   }
 
+  // ---------- Navigation ----------
+  document.getElementById('mois-precedent').addEventListener('click', () => {
+    moisAffiche--; if (moisAffiche < 1) { moisAffiche = 12; anneeAffichee--; }
+    chargerMois();
+  });
+  document.getElementById('mois-suivant').addEventListener('click', () => {
+    moisAffiche++; if (moisAffiche > 12) { moisAffiche = 1; anneeAffichee++; }
+    chargerMois();
+  });
+  document.getElementById('mois-aujourdhui').addEventListener('click', () => {
+    anneeAffichee = new Date().getFullYear();
+    moisAffiche = new Date().getMonth() + 1;
+    chargerMois();
+  });
+
+  // ---------- Événements ----------
   document.getElementById('bouton-ajouter').addEventListener('click', () => document.getElementById('voile-modale').classList.add('visible'));
   document.getElementById('bouton-annuler').addEventListener('click', () => document.getElementById('voile-modale').classList.remove('visible'));
 
   document.getElementById('formulaire-evenement').addEventListener('submit', async (evt) => {
     evt.preventDefault();
-    const corpsRequete = {
-      titre: document.getElementById('champ-titre').value.trim(),
-      type: document.getElementById('champ-type').value,
-      date_debut: document.getElementById('champ-debut').value,
-      date_fin: document.getElementById('champ-fin').value || null
-    };
-    const r = await appelApi('/evenements', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpsRequete) });
-    if (!r || !r.ok) { afficherMessage("Erreur lors de l'ajout.", 'erreur'); return; }
+    const r = await appelApi('/evenements', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        titre: document.getElementById('champ-titre').value.trim(),
+        type: document.getElementById('champ-type').value,
+        date_debut: document.getElementById('champ-debut').value,
+        date_fin: document.getElementById('champ-fin').value || null
+      })
+    });
+    const d = r ? await r.json().catch(() => ({})) : {};
+    if (!r || !r.ok) { afficherMessage(d.message || "Erreur lors de l'ajout.", 'erreur'); return; }
     document.getElementById('voile-modale').classList.remove('visible');
     document.getElementById('formulaire-evenement').reset();
     afficherMessage('Événement ajouté.', 'succes');
-    chargerEvenements();
+    chargerEvenements(); chargerMois();
   });
 
+  // ---------- Jours non ouvrés ----------
+  document.getElementById('bouton-ajouter-special').addEventListener('click', () =>
+    document.getElementById('voile-special').classList.add('visible'));
+  document.getElementById('bouton-annuler-special').addEventListener('click', () =>
+    document.getElementById('voile-special').classList.remove('visible'));
+
+  document.getElementById('formulaire-special').addEventListener('submit', async (evt) => {
+    evt.preventDefault();
+    const debut = document.getElementById('champ-special-debut').value;
+    const fin = document.getElementById('champ-special-fin').value || debut;
+    if (fin < debut) { afficherMessage('La date de fin doit suivre la date de début.', 'erreur'); return; }
+
+    const r = await appelApi('/evenements/jours-speciaux', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        libelle: document.getElementById('champ-special-libelle').value.trim(),
+        type: document.getElementById('champ-special-type').value,
+        cycle: document.getElementById('champ-special-cycle').value || null,
+        date_debut: debut, date_fin: fin
+      })
+    });
+    const d = r ? await r.json().catch(() => ({})) : {};
+    if (!r || !r.ok) { afficherMessage(d.message || "Erreur lors de l'enregistrement.", 'erreur'); return; }
+    document.getElementById('voile-special').classList.remove('visible');
+    document.getElementById('formulaire-special').reset();
+    afficherMessage(d.message || 'Enregistré.', 'succes');
+    chargerMois();
+  });
+
+  chargerMois();
   chargerEvenements();
   if (!peutGererEvenements) {
     document.getElementById('bouton-ajouter').style.display = 'none';
+    document.getElementById('bouton-ajouter-special').style.display = 'none';
   }
 
   document.getElementById('bouton-deconnexion-nav')?.addEventListener('click', async () => {

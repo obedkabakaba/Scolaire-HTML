@@ -407,9 +407,12 @@
         <div class="valeur" id="stat-classes">–</div>
         <div class="etiquette">Classes</div>
       </div>
-      <div class="carte-stat" id="carte-reussite">
+      <!-- Cliquable : le filtre reste invisible tant qu'on n'en a pas besoin,
+           comme demandé. Le titre indique l'affordance sans surcharger l'écran. -->
+      <div class="carte-stat" id="carte-reussite" style="cursor:pointer;" title="Cliquer pour choisir la période">
         <div class="valeur" id="stat-reussite">–</div>
-        <div class="etiquette">Taux de réussite global</div>
+        <div class="etiquette" id="etiquette-reussite">Moyenne générale</div>
+        <div style="font-size:0.7rem; color:var(--texte-att); margin-top:3px;" id="portee-reussite"></div>
       </div>
       <div class="carte-stat" id="carte-impayes" style="border: 1.5px solid var(--rouge);">
         <div class="valeur" id="stat-impayes" style="color:var(--rouge);">–</div>
@@ -423,7 +426,7 @@
         <div id="widget-encodage"></div>
       </div>
       <div class="widget">
-        <p class="widget-titre">Taux de réussite global</p>
+        <p class="widget-titre">Moyenne générale</p>
         <div id="widget-reussite"></div>
       </div>
       <div class="widget">
@@ -472,6 +475,21 @@
       </div>
     </div>
   </main>
+</div>
+
+<!-- Choix de la portée de la moyenne. Ouverte au clic sur la carte. -->
+<div class="voile" id="voile-portee">
+  <div class="modale">
+    <h2>Moyenne — quelle période ?</h2>
+    <div class="champ">
+      <label for="select-portee-moyenne">Afficher la moyenne de</label>
+      <select id="select-portee-moyenne"></select>
+    </div>
+    <div id="detail-portee" style="margin-top:14px;"></div>
+    <div class="actions-modale">
+      <button type="button" class="bouton bouton-secondaire" id="fermer-portee">Fermer</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -688,6 +706,9 @@
       document.getElementById('stat-profs').textContent = donnees.effectifs.nb_professeurs;
       document.getElementById('stat-classes').textContent = donnees.effectifs.nb_classes;
       document.getElementById('stat-reussite').textContent = donnees.taux_reussite_global !== null ? `${donnees.taux_reussite_global}%` : '—';
+      // La valeur du tableau de bord reste celle de l'année ; le filtre au clic
+      // permet ensuite de la recalculer sur une période précise.
+      chargerPorteesMoyenne();
       // « 0 en retard » et « impayés indisponibles » ne veulent pas dire la même
       // chose : afficher zéro quand le calcul a échoué ferait croire au Directeur
       // que toutes les familles sont à jour. On distingue explicitement.
@@ -733,7 +754,7 @@
           couleur: donnees.taux_reussite_global === null ? 'var(--bordure)'
                  : (donnees.taux_reussite_global >= 50 ? 'var(--vert-ok)' : 'var(--rouge)'),
           detail: donnees.taux_reussite_global !== null
-            ? `Moyenne de tous les bulletins<br/>de l'année en cours`
+            ? `Moyenne des bulletins<br/>de l'année en cours`
             : `Aucun bulletin calculé<br/>pour le moment`
         });
 
@@ -801,6 +822,79 @@
       ecranErreur.textContent = "Impossible de charger le tableau de bord. Vérifie ta connexion et réessaie.";
     }
   }
+
+  /* ==========================================================================
+     WIDGET MOYENNE — filtre au clic
+
+     Le filtre est volontairement invisible tant qu'on n'en a pas besoin : la
+     carte affiche un chiffre, et cliquer dessus ouvre le choix de la période.
+     Un sélecteur permanent sur le tableau de bord alourdirait un écran qui doit
+     se lire d'un coup d'œil.
+     ========================================================================== */
+  let porteesMoyenne = [];
+
+  async function chargerPorteesMoyenne() {
+    const r = await appelApi('/rapports/portees');
+    if (!r || !r.ok) return;   // droits insuffisants : la carte reste simplement non cliquable
+    const d = await r.json();
+    porteesMoyenne = d.options || [];
+
+    document.getElementById('select-portee-moyenne').innerHTML =
+      porteesMoyenne.map((o, i) => `<option value="${i}">${o.libelle}</option>`).join('');
+
+    if (d.periode_courante) {
+      document.getElementById('portee-reussite').textContent = `année en cours`;
+    }
+  }
+
+  async function chargerMoyennePour(option) {
+    const detail = document.getElementById('detail-portee');
+    detail.innerHTML = '<p class="etat-vide" style="font-size:0.84rem;">Calcul…</p>';
+
+    const params = option.periodeId
+      ? `periodeId=${encodeURIComponent(option.periodeId)}`
+      : (option.portee ? `portee=${encodeURIComponent(option.portee)}` : '');
+
+    const r = await appelApi(`/rapports/moyennes?${params}`);
+    if (!r || !r.ok) {
+      detail.innerHTML = '<p class="etat-vide" style="font-size:0.84rem;">Impossible de calculer cette moyenne.</p>';
+      return;
+    }
+    const d = await r.json();
+
+    // La carte reflète immédiatement le choix : c'est le but du filtre.
+    document.getElementById('stat-reussite').textContent =
+      d.moyenne_generale !== null ? `${d.moyenne_generale}%` : '—';
+    document.getElementById('portee-reussite').textContent = option.libelle;
+
+    const lignes = (d.par_classe || []).map((c) => `
+      <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--bordure); font-size:0.86rem;">
+        <span>${c.classe_nom}<span style="color:var(--texte-att); font-size:0.78rem;"> — ${c.nb_eleves} élève(s)</span></span>
+        <strong>${c.moyenne !== null ? c.moyenne + '%' : '—'}</strong>
+      </div>`).join('');
+
+    detail.innerHTML = `
+      <div style="font-size:0.86rem; margin-bottom:10px;">
+        Moyenne d'école : <strong>${d.moyenne_generale !== null ? d.moyenne_generale + '%' : '—'}</strong>
+        <span style="color:var(--texte-att);"> sur ${d.nb_eleves} élève(s)</span>
+      </div>
+      ${lignes || '<p class="etat-vide" style="font-size:0.84rem;">Aucun bulletin sur cette période.</p>'}`;
+  }
+
+  document.getElementById('carte-reussite').addEventListener('click', () => {
+    if (porteesMoyenne.length === 0) return;
+    document.getElementById('voile-portee').classList.add('visible');
+    const select = document.getElementById('select-portee-moyenne');
+    chargerMoyennePour(porteesMoyenne[Number(select.value) || 0]);
+  });
+
+  document.getElementById('select-portee-moyenne').addEventListener('change', (evt) => {
+    chargerMoyennePour(porteesMoyenne[Number(evt.target.value)]);
+  });
+
+  document.getElementById('fermer-portee').addEventListener('click', () => {
+    document.getElementById('voile-portee').classList.remove('visible');
+  });
 
   document.getElementById('bouton-deconnexion-nav')?.addEventListener('click', async () => {
     const { refreshToken } = obtenirTokens();

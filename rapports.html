@@ -315,22 +315,27 @@
       `${ilYaUnMois.getFullYear()}-${String(ilYaUnMois.getMonth()+1).padStart(2,'0')}-${String(ilYaUnMois.getDate()).padStart(2,'0')}`;
     document.getElementById('champ-fin').value = aujourdhui();
 
-    const rAnnees = await appelApi('/annees-scolaires');
-    if (rAnnees?.ok) {
-      const annees = await rAnnees.json();
-      const active = annees.find(a => a.active);
-      if (active) {
-        const rPeriodes = await appelApi(`/periodes?anneeScolaireId=${active.id}`);
-        if (rPeriodes?.ok) {
-          const periodes = (await rPeriodes.json()).filter(p => p.type !== 'semestre');
-          document.getElementById('select-periode').innerHTML =
-            '<option value="">Toutes les périodes</option>' +
-            periodes.map(p => `<option value="${p.id}">${echapper(p.libelle || (p.type + ' ' + p.numero))}</option>`).join('');
-        }
-      }
+    // Les options viennent du serveur (/rapports/portees), construites depuis
+    // les périodes RÉELLEMENT créées par l'école : proposer « Semestres » à une
+    // école qui fonctionne en trimestres n'aurait aucun sens.
+    //
+    // L'ancienne option « Toutes les périodes » a disparu volontairement :
+    // elle envoyait une portée vide, et le serveur agrégeait alors toutes les
+    // périodes confondues — un élève avec quatre bulletins occupait quatre
+    // lignes du palmarès. Le défaut est désormais la période EN COURS.
+    const rPortees = await appelApi('/rapports/portees');
+    if (rPortees?.ok) {
+      const d = await rPortees.json();
+      porteesDisponibles = d.options || [];
+      document.getElementById('select-periode').innerHTML =
+        porteesDisponibles.map(o => `<option value="${echapper(o.cle)}">${echapper(o.libelle)}</option>`).join('');
     }
 
     document.getElementById('select-periode').addEventListener('change', charger);
+    // Le libellé de la portée retenue est affiché avec les résultats : sans lui,
+    // impossible de savoir si un palmarès porte sur la période en cours ou sur
+    // l'année entière — deux classements très différents.
+
     document.getElementById('champ-debut').addEventListener('change', charger);
     document.getElementById('champ-fin').addEventListener('change', charger);
     document.getElementById('bouton-exporter').addEventListener('click', exporter);
@@ -352,10 +357,20 @@
     charger();
   }
 
+  // Options renvoyées par /rapports/portees, gardées pour retrouver le
+  // paramètre associé au choix de l'utilisateur.
+  let porteesDisponibles = [];
+
   function parametresCourants() {
     if (['reussite', 'palmares'].includes(vueCourante)) {
-      const p = document.getElementById('select-periode').value;
-      return p ? `periodeId=${p}` : '';
+      const cle = document.getElementById('select-periode').value;
+      const option = porteesDisponibles.find(o => o.cle === cle);
+      if (!option) return '';
+      // Une option porte SOIT une période précise, SOIT une portée nommée
+      // (examens, année) — jamais les deux.
+      if (option.periodeId) return `periodeId=${encodeURIComponent(option.periodeId)}`;
+      if (option.portee) return `portee=${encodeURIComponent(option.portee)}`;
+      return '';
     }
     if (vueCourante === 'assiduite') {
       return `debut=${document.getElementById('champ-debut').value}&fin=${document.getElementById('champ-fin').value}`;
@@ -431,7 +446,7 @@
 
   // ---------- Résultats ----------
   function rendreReussite(d, zone) {
-    zone.innerHTML = widgets(
+    zone.innerHTML = banniereEtendue(d) + widgets(
       widget('Taux de réussite global', 'w-taux') + widget('Répartition des résultats', 'w-tranches', true)
     ) + tableau(
       ['Classe', 'Bulletins', 'Moyenne', 'Taux de réussite', 'Min', 'Max'],
@@ -461,9 +476,22 @@
   }
 
   // ---------- Palmarès ----------
+  /**
+   * Rappelle sur quoi porte le résultat affiché. Un palmarès de la période en
+   * cours et un palmarès de l'année entière donnent des classements très
+   * différents : sans cette mention, impossible de savoir lequel on regarde.
+   */
+  function banniereEtendue(d) {
+    const libelle = d && d.portee && d.portee.libelle;
+    if (!libelle) return '';
+    return `<p style="font-size:0.84rem; color:var(--texte-att); margin:0 0 12px;">
+              Résultats portant sur : <strong>${echapper(libelle)}</strong>
+            </p>`;
+  }
+
   function rendrePalmares(d, zone) {
     const medaille = (r) => r === 1 ? '🥇' : r === 2 ? '🥈' : r === 3 ? '🥉' : r;
-    zone.innerHTML = tableau(
+    zone.innerHTML = banniereEtendue(d) + tableau(
       ['Rang', 'Élève', 'Classe', 'Pourcentage', 'Mention', 'Place en classe'],
       d.eleves.map(e => `<tr>
         <td class="rang-medaille">${medaille(e.rang)}</td>

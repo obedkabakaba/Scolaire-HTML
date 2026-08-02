@@ -178,6 +178,33 @@
   }
   @media (max-width: 640px) { .grille-stats { grid-template-columns: 1fr 1fr; } }
 
+  /* ==========================================================================
+     MODALE — styles absents de cette page, ce qui cassait le tableau de bord.
+
+     `ui.css` ne définit QUE l'apparence du voile (fond translucide, flou) ; il
+     ne pose ni `position`, ni `display`. Ces règles-là vivent dans le <style>
+     de chaque page. Elles manquaient ici : le voile et sa modale étaient donc
+     rendus DANS LE FLUX de la page, en permanence, et le tableau de bord
+     — première page après la connexion — s'affichait avec un bloc sombre et
+     un sélecteur en plein milieu. Le clic sur la carte ne « n'ouvrait » rien
+     puisque la modale n'avait jamais été fermée.
+
+     Mêmes valeurs que les 20+ autres pages du projet, volontairement : une
+     modale qui se comporte différemment d'un écran à l'autre est un défaut en
+     soi.
+     ========================================================================== */
+  .voile { position: fixed; inset: 0; background: rgba(31,43,36,0.45); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 10; }
+  .voile.visible { display: flex; }
+  .modale { background: var(--craie-2); border-radius: var(--r-carte); padding: 28px; max-width: 460px; width: 100%; max-height: 90vh; overflow-y: auto; }
+  .modale h2 { font-family: var(--police-titre); font-weight: 600; font-size: 1.3rem; margin: 0 0 18px 0; }
+  .modale .champ { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+  .modale .champ label { font-size: 0.84rem; color: var(--texte-att); }
+  .modale .champ select {
+    padding: 9px 12px; border: 1.5px solid var(--bordure); border-radius: var(--r-bouton);
+    font-size: 0.88rem; background: var(--craie); font-family: var(--police-corps);
+  }
+  .actions-modale { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; }
+
   .carte-stat {
     background: var(--craie-2);
     border: 1px solid var(--bordure);
@@ -892,8 +919,21 @@
     chargerMoyennePour(porteesMoyenne[Number(evt.target.value)]);
   });
 
-  document.getElementById('fermer-portee').addEventListener('click', () => {
+  function fermerModalePortee() {
     document.getElementById('voile-portee').classList.remove('visible');
+  }
+
+  document.getElementById('fermer-portee').addEventListener('click', fermerModalePortee);
+
+  // Fermeture au clic sur le voile et à Échap : sans elles, une modale posée
+  // par-dessus le tableau de bord ne se referme qu'avec un bouton précis, et
+  // l'utilisateur se croit bloqué — exactement l'impression que donnait cet
+  // écran quand la modale restait affichée en permanence.
+  document.getElementById('voile-portee').addEventListener('click', (evt) => {
+    if (evt.target.id === 'voile-portee') fermerModalePortee();
+  });
+  document.addEventListener('keydown', (evt) => {
+    if (evt.key === 'Escape') fermerModalePortee();
   });
 
   document.getElementById('bouton-deconnexion-nav')?.addEventListener('click', async () => {
@@ -1034,5 +1074,7 @@
 <script src="theme.js"></script>
 <script src="ui.js"></script>
 <script src="hors-ligne.js"></script>
+<!-- Didacticiel d'installation : bouton d'aide contextuel, partagé par toutes les pages. -->
+<script src="didacticiel.js" data-ecran="Tableau de bord"></script>
 </body>
 </html>

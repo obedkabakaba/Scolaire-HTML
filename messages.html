@@ -122,6 +122,42 @@
   .badge-resultat.reussite { background: rgba(76,122,90,0.12); color: var(--vert-ok); }
   .badge-resultat.echec { background: rgba(178,58,46,0.1); color: var(--rouge); }
   .etat-vide-tableau { padding: 50px 20px; text-align: center; color: var(--texte-att); }
+
+  /* ---------- Assistant d'aide ---------- */
+  .carte-assistant-aide { background: var(--craie-2); border: 1px solid var(--bordure); border-radius: var(--r-carte); padding: 24px; }
+  .carte-assistant-aide h3 { font-family: var(--police-titre); font-size: 1.1rem; margin: 0 0 6px 0; }
+  .aide-assistant { font-size: 0.85rem; color: var(--texte-att); margin: 0 0 16px 0; line-height: 1.5; }
+  .suggestions-assistant { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  .suggestions-assistant button {
+    padding: 7px 13px; border-radius: 20px; border: 1.5px solid var(--bordure); background: none;
+    font-size: 0.8rem; cursor: pointer; font-family: var(--police-corps); color: var(--texte-sombre);
+  }
+  .suggestions-assistant button:hover { border-color: var(--ardoise); }
+  .ligne-assistant { display: flex; gap: 10px; flex-wrap: wrap; }
+  .ligne-assistant input {
+    flex: 1 1 300px; min-width: 200px; padding: 11px 14px; border: 1.5px solid var(--bordure);
+    border-radius: var(--r-bouton); font-size: 0.92rem; background: var(--craie);
+    font-family: var(--police-corps);
+  }
+  .fil-assistant { margin-top: 18px; }
+  .echange { margin-bottom: 16px; }
+  .echange .demande { font-size: 0.86rem; font-weight: 600; margin: 0 0 6px 0; }
+  .echange .reponse {
+    font-size: 0.92rem; line-height: 1.6; margin: 0; white-space: pre-wrap;
+    background: var(--craie); border-left: 3px solid var(--ardoise);
+    padding: 12px 15px; border-radius: var(--r-petit);
+  }
+  /* Quand l'IA n'est pas disponible, l'utilisateur ne doit pas rester sans
+     réponse : le manuel couvre les mêmes procédures. */
+  .repli-manuel {
+    margin-top: 14px; font-size: 0.86rem; background: rgba(201,138,62,0.12);
+    border-left: 3px solid var(--ocre); padding: 10px 13px; border-radius: var(--r-petit);
+  }
+  .manuel-role { margin-top: 18px; }
+  .manuel-role h4 { font-family: var(--police-titre); font-size: 0.98rem; margin: 18px 0 8px 0; }
+  .manuel-role ol { margin: 0 0 8px 18px; padding: 0; font-size: 0.88rem; line-height: 1.6; }
+  .manuel-role .remarque { font-size: 0.83rem; color: var(--texte-att); font-style: italic; margin: 0 0 14px 0; }
+  .manuel-role .bloc { border: 1px solid var(--bordure); border-radius: var(--r-petit); padding: 14px 16px; margin-bottom: 12px; }
 </style>
 <script>
   /* Applique le thème AVANT le premier affichage, pour éviter tout clignotement.
@@ -189,6 +225,7 @@
 
     <div class="onglets">
       <button class="onglet actif" data-vue="reception">Réception <span class="pastille" id="pastille-non-lus" style="display:none;">0</span></button>
+      <button class="onglet" data-vue="assistant" id="onglet-assistant">Assistant</button>
       <button class="onglet" data-vue="envoyer" id="onglet-envoyer" style="display:none;">Nouveau message</button>
       <button class="onglet" data-vue="historique" id="onglet-historique" style="display:none;">Envois</button>
       <button class="onglet" data-vue="whatsapp" id="onglet-whatsapp" style="display:none;">WhatsApp</button>
@@ -205,6 +242,34 @@
     </section>
 
     <!-- ===================== Nouveau message ===================== -->
+    <!-- ===================== Assistant d'aide =====================
+         Ouvert à TOUS les rôles : l'assistant explique le logiciel et n'a
+         accès à aucune donnée de l'école. C'est précisément ce qui permet de
+         l'ouvrir à un professeur sans lui donner de fenêtre sur les données
+         d'un collègue. -->
+    <section id="vue-assistant" style="display:none;">
+      <div class="carte-assistant-aide">
+        <h3>Une question sur la plateforme&nbsp;?</h3>
+        <p class="aide-assistant">
+          Demandez comment faire quelque chose, où trouver un écran, ce que signifie un réglage.
+          L'assistant n'a accès à aucune donnée de l'école&nbsp;: il ne peut ni consulter une note,
+          ni un paiement, ni un dossier d'élève.
+        </p>
+        <div class="suggestions-assistant" id="suggestions-assistant"></div>
+        <div class="ligne-assistant">
+          <input type="text" id="question-aide" maxlength="400"
+                 placeholder="Comment saisir les cotes d'un examen&nbsp;?" />
+          <button class="bouton bouton-principal" id="bouton-question-aide">Demander</button>
+        </div>
+        <div class="fil-assistant" id="fil-assistant"></div>
+        <p class="repli-manuel" id="repli-manuel" style="display:none;"></p>
+        <div style="margin-top:16px;">
+          <button class="lien-action" id="bouton-manuel">Voir le manuel de mon rôle</button>
+        </div>
+        <div class="manuel-role" id="manuel-role" style="display:none;"></div>
+      </div>
+    </section>
+
     <section id="vue-envoyer" style="display:none;">
       <div class="carte-config">
         <h3>Destinataires</h3>
@@ -452,6 +517,7 @@
     vueCourante = vue;
     document.querySelectorAll('.onglet').forEach(o => o.classList.toggle('actif', o.dataset.vue === vue));
     document.getElementById('vue-reception').style.display = vue === 'reception' ? '' : 'none';
+    document.getElementById('vue-assistant').style.display = vue === 'assistant' ? '' : 'none';
     document.getElementById('vue-envoyer').style.display = vue === 'envoyer' ? '' : 'none';
     document.getElementById('vue-historique').style.display = vue === 'historique' ? '' : 'none';
     document.getElementById('vue-whatsapp').style.display = vue === 'whatsapp' ? '' : 'none';
@@ -839,5 +905,126 @@
 <script src="theme.js"></script>
 <script src="ui.js"></script>
 <script src="hors-ligne.js"></script>
+<!-- Didacticiel d'installation : bouton d'aide contextuel, partagé par toutes les pages. -->
+<script src="didacticiel.js" data-ecran="Messagerie">
+  // ============================================================
+  //  Assistant d'aide
+  // ============================================================
+  const SUGGESTIONS = [
+    "Par où commencer la configuration ?",
+    "Comment saisir des cotes ?",
+    "Comment générer les bulletins ?",
+    "Que veut dire « capital de conduite » ?"
+  ];
+
+  function dessinerSuggestions() {
+    const zone = document.getElementById('suggestions-assistant');
+    zone.innerHTML = SUGGESTIONS.map(q =>
+      `<button type="button" data-question="${echapper(q)}">${echapper(q)}</button>`).join('');
+    zone.querySelectorAll('[data-question]').forEach(b => {
+      b.addEventListener('click', () => {
+        document.getElementById('question-aide').value = b.dataset.question;
+        poserQuestion();
+      });
+    });
+  }
+
+  async function poserQuestion() {
+    const champ = document.getElementById('question-aide');
+    const question = champ.value.trim();
+    if (question.length < 5) { afficherMessage('Posez une question un peu plus précise.', 'erreur'); return; }
+
+    const bouton = document.getElementById('bouton-question-aide');
+    bouton.disabled = true; bouton.textContent = 'Recherche…';
+
+    const r = await appelApi('/assistant/question', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question, page: 'Messagerie' })
+    });
+
+    bouton.disabled = false; bouton.textContent = 'Demander';
+    if (!r) return;
+    const rep = await r.json().catch(() => ({}));
+
+    if (!r.ok) {
+      // Quota épuisé ou offre sans IA : on ne laisse pas l'utilisateur devant
+      // un message d'erreur sec, on lui ouvre le manuel.
+      const repli = document.getElementById('repli-manuel');
+      repli.textContent = rep.message || "L'assistant n'est pas disponible pour le moment.";
+      repli.style.display = '';
+      if (rep.manuel_disponible) chargerManuel();
+      return;
+    }
+
+    document.getElementById('repli-manuel').style.display = 'none';
+    // Le plus récent en haut : on relit rarement une réponse déjà comprise.
+    document.getElementById('fil-assistant').insertAdjacentHTML('afterbegin', `
+      <div class="echange">
+        <p class="demande">${echapper(rep.question)}</p>
+        <p class="reponse">${echapper(rep.reponse)}</p>
+      </div>`);
+    champ.value = '';
+  }
+
+  let manuelCharge = false;
+  async function chargerManuel() {
+    if (manuelCharge) { document.getElementById('manuel-role').style.display = ''; return; }
+
+    const r = await appelApi('/assistant/manuel');
+    if (!r || !r.ok) { afficherMessage('Manuel indisponible.', 'erreur'); return; }
+    const d = await r.json();
+
+    let html = '<h4>Votre rôle</h4>';
+    html += (d.roles || []).map(role =>
+      `<div class="bloc"><strong>${echapper(role.libelle)}</strong>
+       <p class="remarque">${echapper(role.perimetre || '')}</p></div>`).join('');
+
+    if ((d.configuration || []).length) {
+      html += '<h4>Configuration dont vous avez la charge</h4>';
+      html += d.configuration.map(e => `
+        <div class="bloc">
+          <strong>${e.etape}. ${echapper(e.titre)}</strong>
+          <p class="remarque">Écran : ${echapper(e.ecran)}</p>
+          <p style="font-size:0.88rem; line-height:1.55; margin:0 0 8px 0;">${echapper(e.quoi)}</p>
+          <p class="remarque">${echapper(e.piege)}</p>
+        </div>`).join('');
+    }
+
+    if ((d.procedures || []).length) {
+      html += '<h4>Procédures</h4>';
+      html += d.procedures.map(p => `
+        <div class="bloc">
+          <strong>${echapper(p.titre)}</strong>
+          <ol>${p.etapes.map(e => `<li>${echapper(e)}</li>`).join('')}</ol>
+          <p class="remarque">${echapper(p.remarque)}</p>
+        </div>`).join('');
+    }
+
+    html += '<h4>Vocabulaire</h4><div class="bloc">'
+      + Object.entries(d.lexique || {}).map(([mot, def]) =>
+          `<p style="font-size:0.87rem; margin:0 0 8px 0;"><strong>${echapper(mot)}</strong> — ${echapper(def)}</p>`
+        ).join('')
+      + '</div>';
+
+    const zone = document.getElementById('manuel-role');
+    zone.innerHTML = html;
+    zone.style.display = '';
+    manuelCharge = true;
+  }
+
+  dessinerSuggestions();
+  document.getElementById('bouton-question-aide').addEventListener('click', poserQuestion);
+  document.getElementById('question-aide').addEventListener('keydown', (evt) => {
+    if (evt.key === 'Enter') poserQuestion();
+  });
+  document.getElementById('bouton-manuel').addEventListener('click', chargerManuel);
+
+  // Le didacticiel de chaque écran renvoie ici avec ?assistant=1 : on ouvre
+  // directement le bon onglet plutôt que de laisser l'utilisateur le chercher.
+  if (new URLSearchParams(window.location.search).get('assistant') === '1') {
+    basculerVue('assistant');
+  }
+
+</script>
 </body>
 </html>

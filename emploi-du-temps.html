@@ -255,6 +255,54 @@
           <button class="bouton bouton-principal" id="bouton-enregistrer-config">Enregistrer la grille horaire</button>
         </div>
       </div>
+
+      <div class="carte-config">
+        <h3>Horaires exceptionnels</h3>
+        <p class="aide">
+          En temps normal, chaque heure garde le même horaire toute la semaine.
+          Configurez ici les jours qui font exception — le mercredi écourté,
+          le vendredi décalé — sans toucher à la grille habituelle des autres jours.
+        </p>
+
+        <div class="ligne-champs" style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; margin-bottom:16px;">
+          <div class="champ-form">
+            <label for="select-exception-jour">Jour concerné</label>
+            <select id="select-exception-jour"></select>
+          </div>
+          <div class="champ-form">
+            <label for="select-exception-creneau">Heure habituelle</label>
+            <select id="select-exception-creneau"></select>
+          </div>
+          <div class="champ-form">
+            <label for="select-exception-classe">Portée</label>
+            <select id="select-exception-classe">
+              <option value="">Toute l'école</option>
+            </select>
+          </div>
+        </div>
+        <div class="ligne-champs" style="display:flex; gap:12px; align-items:flex-end;">
+          <div class="champ-form">
+            <label for="champ-exception-debut">Nouvelle heure de début</label>
+            <input type="time" id="champ-exception-debut" />
+          </div>
+          <div class="champ-form">
+            <label for="champ-exception-fin">Nouvelle heure de fin</label>
+            <input type="time" id="champ-exception-fin" />
+          </div>
+          <div class="champ-form">
+            <label for="champ-exception-motif">Motif (optionnel)</label>
+            <input type="text" id="champ-exception-motif" placeholder="ex. Mercredi écourté" />
+          </div>
+          <button class="bouton bouton-secondaire" id="bouton-enregistrer-exception">Enregistrer</button>
+        </div>
+
+        <table class="tableau-creneaux" style="margin-top:18px;">
+          <thead><tr><th>Jour</th><th>Heure habituelle</th><th>Nouvel horaire</th><th>Portée</th><th>Motif</th><th></th></tr></thead>
+          <tbody id="corps-exceptions">
+            <tr><td colspan="6" class="etat-vide-tableau">Aucun horaire exceptionnel.</td></tr>
+          </tbody>
+        </table>
+      </div>
     </section>
   </main>
 </div>
@@ -343,8 +391,111 @@
     setTimeout(() => zone.classList.remove('visible'), 6000);
   }
 
+  function echapperTexte(v) {
+    const d = document.createElement('div');
+    d.textContent = v == null ? '' : String(v);
+    return d.innerHTML;
+  }
+
   function heureCourte(valeur) {
     return String(valeur || '').slice(0, 5);
+  }
+
+  // ============================================================
+  //  Horaires exceptionnels (mercredi écourté, etc.)
+  //
+  //  Le backend existait déjà (creneaux_exceptions), mais rien dans cette page
+  //  ne s'y branchait : impossible de modifier l'heure d'un jour en particulier
+  //  sans recréer une seconde grille entière, visible sur TOUS les jours.
+  // ============================================================
+  const NOMS_JOURS_EXCEPTION = ['', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+  let exceptionsActuelles = [];
+
+  function initialiserExceptions() {
+    document.getElementById('select-exception-jour').innerHTML =
+      config.jours.map(j => `<option value="${j.numero}">${NOMS_JOURS_EXCEPTION[j.numero]}</option>`).join('');
+
+    document.getElementById('select-exception-classe').innerHTML =
+      '<option value="">Toute l\'école</option>' +
+      classes.map(c => `<option value="${c.id}">${echapperTexte(c.nom)}</option>`).join('');
+
+    remplirCreneauxException();
+    document.getElementById('bouton-enregistrer-exception').addEventListener('click', enregistrerException);
+
+    chargerExceptions();
+  }
+
+  function remplirCreneauxException() {
+    const select = document.getElementById('select-exception-creneau');
+    select.innerHTML = config.creneaux.map(cr =>
+      `<option value="${cr.id}">${echapperTexte(cr.libelle)} (${heureCourte(cr.heure_debut)} – ${heureCourte(cr.heure_fin)})</option>`
+    ).join('');
+  }
+
+  async function chargerExceptions() {
+    const corps = document.getElementById('corps-exceptions');
+    const r = await appelApi('/emploi-du-temps/exceptions');
+    if (!r || !r.ok) {
+      corps.innerHTML = '<tr><td colspan="6" class="etat-vide-tableau">Impossible de charger les horaires exceptionnels.</td></tr>';
+      return;
+    }
+    exceptionsActuelles = await r.json();
+
+    if (exceptionsActuelles.length === 0) {
+      corps.innerHTML = '<tr><td colspan="6" class="etat-vide-tableau">Aucun horaire exceptionnel — chaque jour suit la grille habituelle.</td></tr>';
+      return;
+    }
+
+    corps.innerHTML = exceptionsActuelles.map(ex => `
+      <tr>
+        <td>${NOMS_JOURS_EXCEPTION[ex.jour]}</td>
+        <td>${heureCourte(ex.heure_habituelle_debut)} – ${heureCourte(ex.heure_habituelle_fin)}</td>
+        <td><strong>${heureCourte(ex.heure_debut)} – ${heureCourte(ex.heure_fin)}</strong></td>
+        <td>${ex.classe_nom ? echapperTexte(ex.classe_nom) : "Toute l'école"}</td>
+        <td>${ex.motif ? echapperTexte(ex.motif) : '—'}</td>
+        <td><button type="button" class="lien-action" data-retirer="${ex.id}">Rétablir</button></td>
+      </tr>`).join('');
+
+    corps.querySelectorAll('[data-retirer]').forEach(bouton => {
+      bouton.addEventListener('click', async () => {
+        if (!await ArdoiseUI.confirmer("Rétablir l'horaire habituel pour ce jour ?")) return;
+        const r = await appelApi(`/emploi-du-temps/exceptions/${bouton.dataset.retirer}`, { method: 'DELETE' });
+        const d = r ? await r.json().catch(() => ({})) : {};
+        if (r && r.ok) { afficherMessage(d.message || 'Horaire habituel rétabli.', 'succes'); chargerExceptions(); }
+        else afficherMessage(d.message || 'Erreur.', 'erreur');
+      });
+    });
+  }
+
+  async function enregistrerException() {
+    const creneau_id = document.getElementById('select-exception-creneau').value;
+    const jour = document.getElementById('select-exception-jour').value;
+    const classe_id = document.getElementById('select-exception-classe').value || null;
+    const heure_debut = document.getElementById('champ-exception-debut').value;
+    const heure_fin = document.getElementById('champ-exception-fin').value;
+    const motif = document.getElementById('champ-exception-motif').value.trim() || null;
+
+    if (!creneau_id || !jour || !heure_debut || !heure_fin) {
+      afficherMessage("Choisissez le jour, l'heure habituelle, et la nouvelle plage horaire.", 'erreur');
+      return;
+    }
+
+    const bouton = document.getElementById('bouton-enregistrer-exception');
+    bouton.disabled = true;
+    const r = await appelApi('/emploi-du-temps/exceptions', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ creneau_id, jour, classe_id, heure_debut, heure_fin, motif })
+    });
+    bouton.disabled = false;
+
+    const d = r ? await r.json().catch(() => ({})) : {};
+    if (!r || !r.ok) { afficherMessage(d.message || "Erreur lors de l'enregistrement.", 'erreur'); return; }
+
+    afficherMessage(d.message || 'Horaire exceptionnel enregistré.', 'succes');
+    document.getElementById('champ-exception-debut').value = '';
+    document.getElementById('champ-exception-fin').value = '';
+    document.getElementById('champ-exception-motif').value = '';
+    chargerExceptions();
   }
 
   // ============================================================
@@ -373,6 +524,8 @@
       ? classes.map(c => `<option value="${c.id}">${c.nom}</option>`).join('')
       : '<option value="">Aucune classe</option>';
     select.addEventListener('change', chargerEmploiClasse);
+
+    if (peutModifier) initialiserExceptions();
 
     document.querySelectorAll('.onglet').forEach(o => {
       o.addEventListener('click', () => basculerVue(o.dataset.vue));

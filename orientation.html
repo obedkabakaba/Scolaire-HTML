@@ -61,6 +61,26 @@
   .eo-sans_place { background: rgba(178,58,46,0.13); color: var(--rouge); }
   .eo-non_promu, .eo-voeu_exprime { background: rgba(107,114,105,0.13); color: var(--texte-att); }
   .puce-manuelle { font-size: 0.7rem; padding: 2px 8px; border-radius: 20px; background: rgba(60,90,98,0.14); color: var(--encre); font-weight: 600; margin-left: 5px; }
+
+  /* Bandeau de portée : informatif, pas alarmant — être limité à sa classe
+     est le fonctionnement normal d'un titulaire, pas une erreur. */
+  .bandeau-portee {
+    background: rgba(60,90,98,0.10); border-left: 3px solid var(--encre);
+    border-radius: var(--r-petit); padding: 10px 14px; font-size: 0.85rem;
+    color: var(--encre); margin: 0 0 18px 0;
+  }
+  .puce-critere {
+    font-size: 0.7rem; padding: 2px 8px; border-radius: 20px;
+    background: rgba(201,138,62,0.16); color: var(--ocre-dark); font-weight: 600; margin-left: 5px;
+  }
+  /* Un vœu voué à l'échec se signale sous la ligne, sans empêcher de le
+     saisir : le titulaire connaît parfois des raisons que le barème ignore. */
+  .alerte-admissibilite { font-size: 0.74rem; color: var(--ocre-dark); margin-top: 3px; }
+  .critere-cellule select, .critere-cellule input {
+    padding: 6px 8px; border: 1.5px solid var(--bordure); border-radius: var(--r-bouton);
+    font-size: 0.82rem; background: var(--craie-2); font-family: var(--police-corps);
+  }
+  .critere-cellule input { width: 90px; }
   .lien-action { background: none; border: none; color: var(--encre); cursor: pointer; font-family: var(--police-corps); font-size: 0.84rem; padding: 4px 6px; }
   .note-bas { font-size: 0.85rem; color: var(--texte-att); margin-top: 18px; }
   .note-bas a { color: var(--encre); }
@@ -163,6 +183,30 @@
 
     <div id="message-flash" class="message-flash"></div>
 
+    <!-- Un titulaire ne voit que sa classe. Sans ce bandeau, il croirait que
+         l'école n'a qu'une seule classe d'orientation. -->
+    <p class="bandeau-portee" id="bandeau-portee" style="display:none;"></p>
+
+    <!-- Critères d'admission — direction seule. Le seuil se règle option par
+         option : deux options du même établissement peuvent recruter sur des
+         bases différentes. -->
+    <div class="carte-config" id="carte-criteres" style="display:none;">
+      <h3>Critères d'admission par option</h3>
+      <p class="aide">
+        Le critère dit qui a le <strong>droit de concourir</strong>, pas qui l'emporte : le mérite
+        continue de départager quand les places manquent. Les seuils s'expriment en pourcentage,
+        comme toutes les moyennes de la plateforme. Laisser le minimum vide retire l'exigence.
+      </p>
+      <div class="conteneur-tableau">
+        <table>
+          <thead>
+            <tr><th>Option</th><th>Critère</th><th>Branche exigée</th><th>Minimum (%)</th><th></th></tr>
+          </thead>
+          <tbody id="corps-criteres"></tbody>
+        </table>
+      </div>
+    </div>
+
     <div class="carte-config" id="carte-repartition" style="display:none;">
       <h3>Répartition au mérite</h3>
       <p class="aide">
@@ -259,6 +303,7 @@
   let annees = [];
   let donnees = { eleves: [], options: [], classes_cibles: [], seuil: 50 };
   let brouillonVoeux = {};   // eleve_id -> { option_voeu_id, option_repli_id }
+  let cours = [];            // catalogue des branches, pour les critères par branche
 
   const utilisateur = (() => {
     try { return JSON.parse(obtenirDuStockage('ardoise_user') || 'null'); } catch (e) { return null; }
@@ -289,7 +334,14 @@
   //  Initialisation
   // ============================================================
   async function initialiser() {
-    if (estDirection) document.getElementById('carte-repartition').style.display = '';
+    if (estDirection) {
+      document.getElementById('carte-repartition').style.display = '';
+      document.getElementById('carte-criteres').style.display = '';
+      // Le catalogue des branches n'est chargé que pour la direction : c'est
+      // la seule qui règle les critères, inutile de le demander aux autres.
+      const rc = await appelApi('/cours');
+      if (rc?.ok) cours = await rc.json();
+    }
 
     const r = await appelApi('/annees-scolaires');
     if (r?.ok) annees = await r.json();
@@ -347,8 +399,102 @@
     donnees = await r.json();
     brouillonVoeux = {};
 
+    dessinerPortee();
+    dessinerCriteres();
     dessinerPlaces();
     dessinerTableau();
+  }
+
+  /** Dit à l'utilisateur ce qu'il voit — et ce qu'il ne voit pas. */
+  function dessinerPortee() {
+    const bandeau = document.getElementById('bandeau-portee');
+    if (donnees.portee_complete === false) {
+      const classes = [...new Set(donnees.eleves.map(e => e.classe_nom).filter(Boolean))];
+      bandeau.textContent = classes.length
+        ? `Vous voyez uniquement ${classes.join(', ')}, dont vous êtes titulaire. Les autres classes d'orientation sont gérées par leurs propres titulaires.`
+        : "Vous voyez uniquement les classes dont vous êtes titulaire.";
+      bandeau.style.display = '';
+    } else {
+      bandeau.style.display = 'none';
+    }
+  }
+
+  /** Tableau de réglage des critères d'admission (direction seule). */
+  function dessinerCriteres() {
+    if (!estDirection) return;
+    const corps = document.getElementById('corps-criteres');
+
+    if (!donnees.options || donnees.options.length === 0) {
+      corps.innerHTML = `<tr><td colspan="5" class="etat-vide-tableau">
+        Aucune option déclarée. Créez-les dans l'écran <a href="classes.html">Classes</a>.</td></tr>`;
+      return;
+    }
+
+    const coursHtml = (selection) => '<option value="">— Choisir la branche —</option>' +
+      cours.map(c => `<option value="${c.id}" ${c.id === selection ? 'selected' : ''}>${echapper(c.nom)}</option>`).join('');
+
+    corps.innerHTML = donnees.options.map(o => `
+      <tr data-option="${o.id}">
+        <td><strong>${echapper(o.nom)}</strong></td>
+        <td class="critere-cellule">
+          <select data-critere="type">
+            <option value="moyenne_globale" ${o.critere_type !== 'branche' ? 'selected' : ''}>Moyenne générale</option>
+            <option value="branche" ${o.critere_type === 'branche' ? 'selected' : ''}>Une branche précise</option>
+          </select>
+        </td>
+        <td class="critere-cellule">
+          <select data-critere="cours" ${o.critere_type === 'branche' ? '' : 'disabled'}>${coursHtml(o.critere_cours_id)}</select>
+        </td>
+        <td class="critere-cellule">
+          <input type="number" min="0" max="100" step="1" data-critere="minimum"
+                 placeholder="aucun" value="${o.critere_minimum === null || o.critere_minimum === undefined ? '' : o.critere_minimum}" />
+        </td>
+        <td><button class="lien-action" data-enregistrer-critere="${o.id}">Enregistrer</button></td>
+      </tr>`).join('');
+
+    // Le sélecteur de branche ne s'active que si le critère l'exige : proposer
+    // une branche à côté d'un critère « moyenne générale » suggérerait qu'elle
+    // compte, alors qu'elle serait ignorée.
+    corps.querySelectorAll('[data-critere="type"]').forEach(sel => {
+      sel.addEventListener('change', () => {
+        const ligne = sel.closest('tr');
+        ligne.querySelector('[data-critere="cours"]').disabled = sel.value !== 'branche';
+      });
+    });
+
+    corps.querySelectorAll('[data-enregistrer-critere]').forEach(b => {
+      b.addEventListener('click', () => enregistrerCritere(b.dataset.enregistrerCritere, b));
+    });
+  }
+
+  async function enregistrerCritere(optionId, bouton) {
+    const ligne = document.querySelector(`tr[data-option="${optionId}"]`);
+    const type = ligne.querySelector('[data-critere="type"]').value;
+    const coursId = ligne.querySelector('[data-critere="cours"]').value || null;
+    const brut = ligne.querySelector('[data-critere="minimum"]').value.trim();
+
+    // Champ vide = retirer l'exigence. On ne confond pas avec 0 : un minimum
+    // de 0 % est un critère explicite, pas une absence de critère.
+    const minimum = brut === '' ? null : Number(brut);
+
+    if (type === 'branche' && minimum !== null && !coursId) {
+      afficherMessage("Choisissez la branche exigée, ou laissez le minimum vide.", 'erreur');
+      return;
+    }
+
+    bouton.disabled = true;
+    const r = await appelApi(`/orientation/options/${optionId}/critere`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ critere_type: type, critere_cours_id: coursId, critere_minimum: minimum })
+    });
+    bouton.disabled = false;
+
+    if (!r) return;
+    const rep = await r.json().catch(() => ({}));
+    if (!r.ok) { afficherMessage(rep.message || 'Enregistrement impossible.', 'erreur'); return; }
+    afficherMessage(rep.message, 'succes');
+    // Rechargement : l'admissibilité des élèves vient de changer.
+    charger();
   }
 
   function dessinerPlaces() {
@@ -404,16 +550,33 @@
     }
     document.getElementById('barre-voeux').style.display = '';
 
-    const optionsHtml = (selection) => '<option value="">—</option>' +
-      donnees.options.map(o => `<option value="${o.id}" ${o.id === selection ? 'selected' : ''}>${echapper(o.nom)}</option>`).join('');
+    const optionsHtml = (selection, eleve) => {
+      const refusees = new Map((eleve.options_refusees || []).map(o => [o.option_id, o.motif]));
+      return '<option value="">—</option>' +
+        donnees.options.map(o => {
+          // Une option hors de portée est SIGNALÉE, pas interdite : le
+          // titulaire connaît parfois des raisons que le barème ignore, et les
+          // notes peuvent être incomplètes en cours d'année. On informe, on
+          // ne décide pas à sa place.
+          const marque = refusees.has(o.id) ? '✕ ' : '';
+          return `<option value="${o.id}" ${o.id === selection ? 'selected' : ''}>${marque}${echapper(o.nom)}</option>`;
+        }).join('');
+    };
 
     corps.innerHTML = donnees.eleves.map(e => {
       const faible = e.moyenne !== null && e.moyenne < donnees.seuil;
+      const refusees = new Map((e.options_refusees || []).map(o => [o.option_id, o]));
+      // On n'alerte que sur les vœux RÉELLEMENT formulés : lister les six
+      // options inaccessibles pour chaque élève noierait l'information utile.
+      const alertes = [e.option_voeu_id, e.option_repli_id]
+        .filter(id => id && refusees.has(id))
+        .map(id => `${echapper(refusees.get(id).option_nom)} : ${echapper(refusees.get(id).motif)}`);
       return `<tr>
         <td><strong>${echapper(e.nom_complet)}</strong><div style="font-size:0.76rem; color:var(--texte-att); font-family:var(--police-mono);">${echapper(e.matricule)}</div></td>
         <td class="moyenne ${faible ? 'faible' : ''}">${e.moyenne !== null ? e.moyenne + '%' : '—'}</td>
-        <td><select class="champ-voeu" data-eleve="${e.eleve_id}" data-champ="option_voeu_id">${optionsHtml(e.option_voeu_id)}</select></td>
-        <td><select class="champ-voeu" data-eleve="${e.eleve_id}" data-champ="option_repli_id">${optionsHtml(e.option_repli_id)}</select></td>
+        <td><select class="champ-voeu" data-eleve="${e.eleve_id}" data-champ="option_voeu_id">${optionsHtml(e.option_voeu_id, e)}</select>
+            ${alertes.length ? `<div class="alerte-admissibilite">Niveau exigé non atteint — ${alertes.join(' ; ')}</div>` : ''}</td>
+        <td><select class="champ-voeu" data-eleve="${e.eleve_id}" data-champ="option_repli_id">${optionsHtml(e.option_repli_id, e)}</select></td>
         <td>${e.classe_affectee_nom ? echapper(e.classe_affectee_nom) : '<span style="color:var(--texte-att);">—</span>'}${e.attribue_au_merite === false && e.classe_affectee_id ? '<span class="puce-manuelle">manuelle</span>' : ''}</td>
         <td>${e.statut_orientation ? `<span class="etat-orientation eo-${e.statut_orientation}">${echapper(LIBELLE_ETAT[e.statut_orientation] || e.statut_orientation)}</span>` : '<span style="color:var(--texte-att); font-size:0.8rem;">—</span>'}
             ${e.motif ? `<div style="font-size:0.74rem; color:var(--texte-att); margin-top:3px;">${echapper(e.motif)}</div>` : ''}</td>

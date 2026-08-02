@@ -90,6 +90,49 @@
 
   .bandeau-scelle { background: rgba(60,90,98,0.1); border-left: 3px solid var(--encre); border-radius: 0 var(--r-petit) var(--r-petit) 0; padding: 13px 16px; font-size: 0.88rem; color: var(--texte-att); margin-bottom: 18px; }
   .bandeau-anonyme { background: rgba(201,138,62,0.12); border-radius: var(--r-petit); padding: 12px 15px; font-size: 0.87rem; color: var(--ocre-dark); margin-bottom: 18px; }
+
+  /* ---------- Résultats du test ---------- */
+  /* `.widget` et `.grille-widgets` viennent d'ui.css ; seule la valeur chiffrée
+     manque. Définie ici plutôt que dans le fichier partagé : y toucher
+     affecterait les 37 autres pages pour un besoin propre à cet écran. */
+  .widget-valeur { font-family: var(--police-titre); font-size: 1.6rem; font-weight: 600; margin: 6px 0 0 0; }
+  .etat-resultats { font-size: 0.86rem; color: var(--texte-att); margin: 0 0 16px 0; }
+  .barre-filtres-resultats { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin: 18px 0 14px 0; }
+  .barre-filtres-resultats input[type="search"] {
+    flex: 1 1 240px; min-width: 200px; padding: 9px 12px; border: 1.5px solid var(--bordure);
+    border-radius: var(--r-bouton); font-size: 0.87rem; background: var(--craie-2);
+    font-family: var(--police-corps);
+  }
+  .filtres-pilules { display: flex; gap: 6px; flex-wrap: wrap; }
+  .pilule {
+    padding: 7px 14px; border-radius: 20px; border: 1.5px solid var(--bordure);
+    background: none; font-size: 0.82rem; font-family: var(--police-corps); cursor: pointer;
+    color: var(--texte-sombre);
+  }
+  .pilule:hover { border-color: var(--ardoise); }
+  .pilule.actif { background: var(--ardoise); border-color: var(--ardoise); color: var(--craie); font-weight: 600; }
+  .pilule .compte { opacity: 0.7; margin-left: 5px; font-variant-numeric: tabular-nums; }
+
+  /* La barre d'admission est la frontière qui compte : elle se voit dans le
+     tableau, à sa place exacte, plutôt que d'être seulement chiffrée à côté. */
+  tr.ligne-barre td {
+    border-top: 2px solid var(--ocre); position: relative;
+  }
+  .marque-barre {
+    font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--ocre-dark);
+  }
+  .note-epreuve { font-variant-numeric: tabular-nums; }
+  .note-epreuve.faible { color: var(--rouge); font-weight: 600; }
+  .note-epreuve.absente { color: var(--texte-att); }
+  .puce-resultat { font-size: 0.7rem; padding: 2px 9px; border-radius: 20px; font-weight: 600; }
+  .puce-resultat.admis { background: rgba(76,122,90,0.14); color: var(--vert-ok); }
+  .puce-resultat.liste_attente { background: rgba(201,138,62,0.16); color: var(--ocre-dark); }
+  .puce-resultat.refuse { background: rgba(178,58,46,0.12); color: var(--rouge); }
+  .puce-resultat.absent { background: rgba(107,114,105,0.14); color: var(--texte-att); }
+  .puce-resultat.converti { background: rgba(60,90,98,0.14); color: var(--encre); }
+  .puce-reco { font-size: 0.68rem; padding: 1px 7px; border-radius: 20px; background: rgba(60,90,98,0.14); color: var(--encre); margin-left: 5px; }
+  .motif-reco { font-size: 0.74rem; color: var(--texte-att); margin-top: 2px; }
   .numero-copie { font-family: var(--police-mono); font-size: 0.9rem; font-weight: 600; }
   .champ-points { width: 100%; border: 1px solid var(--bordure); border-radius: var(--r-petit); padding: 8px 10px; font-family: var(--police-corps); font-size: 0.9rem; background: var(--craie); color: var(--texte-sombre); }
   .lien-action { background: none; border: none; color: var(--encre); cursor: pointer; font-family: var(--police-corps); font-size: 0.84rem; padding: 4px 6px; }
@@ -190,6 +233,7 @@
 
     <div class="onglets" id="onglets">
       <button class="onglet actif" data-vue="sessions" id="onglet-sessions">Sessions</button>
+      <button class="onglet" data-vue="resultats" id="onglet-resultats" style="display:none;">Résultats</button>
       <button class="onglet" data-vue="correction" id="onglet-correction" style="display:none;">Mes corrections</button>
     </div>
 
@@ -319,6 +363,32 @@
       </div>
     </section>
 
+    <!-- ===================== Résultats du test ===================== -->
+    <section id="vue-resultats" style="display:none;">
+      <div class="barre-selecteurs">
+        <div class="champ-selecteur">
+          <label for="select-session-resultats">Session</label>
+          <select id="select-session-resultats"></select>
+        </div>
+      </div>
+
+      <p class="etat-resultats" id="etat-resultats"></p>
+
+      <div class="grille-widgets" id="grille-stats-resultats"></div>
+
+      <div class="barre-filtres-resultats" id="barre-filtres-resultats" style="display:none;">
+        <input type="search" id="recherche-resultats" placeholder="Nom, numéro de copie, école de provenance…" />
+        <div class="filtres-pilules" id="filtres-resultats"></div>
+      </div>
+
+      <div class="conteneur-tableau" id="conteneur-resultats" style="display:none;">
+        <table>
+          <thead><tr id="entete-resultats"></tr></thead>
+          <tbody id="corps-resultats"></tbody>
+        </table>
+      </div>
+    </section>
+
     <!-- ===================== Mes corrections ===================== -->
     <section id="vue-correction" style="display:none;">
       <div id="zone-liste-corrections">
@@ -423,7 +493,12 @@
   const roles = (utilisateur && utilisateur.roles) || [];
   const estDirection = roles.some(r => ['directeur', 'prefet', 'super_admin'].includes(r));
   const estSecretariat = estDirection || roles.includes('secretaire');
-  const estCorrecteur = roles.some(r => ['professeur', 'titulaire'].includes(r)) || estDirection;
+  // La direction n'est PAS correctrice par principe. Elle n'accède à l'onglet
+  // que si une épreuve lui a été explicitement confiée — auquel cas
+  // /mes-corrections la lui renvoie et l'onglet apparaît (voir initialiser()).
+  // Auparavant, `|| estDirection` ouvrait l'écran de correction au directeur
+  // quoi qu'il arrive, alors qu'il ne corrige pas.
+  const estCorrecteur = roles.some(r => ['professeur', 'titulaire'].includes(r));
 
   const LIBELLE_STATUT = {
     inscrit: 'Inscrit', admis: 'Admis', liste_attente: "Liste d'attente",
@@ -459,6 +534,27 @@
     }
     if (estCorrecteur) {
       document.getElementById('onglet-correction').style.display = '';
+    } else if (estDirection) {
+      // Un membre de la direction à qui une épreuve a été confiée doit pouvoir
+      // la corriger : on interroge le serveur plutôt que de deviner.
+      appelApi('/inscriptions/mes-corrections').then(async (r) => {
+        if (r?.ok && (await r.json()).length > 0) {
+          document.getElementById('onglet-correction').style.display = '';
+        }
+      });
+    }
+    if (estSecretariat) {
+      document.getElementById('onglet-resultats').style.display = '';
+      document.getElementById('recherche-resultats').addEventListener('keydown', (evt) => {
+        if (evt.key === 'Enter') chargerResultats();
+      });
+      // Recherche à la frappe, temporisée : le filtrage se fait côté serveur,
+      // inutile de l'appeler à chaque lettre tapée.
+      let minuterie = null;
+      document.getElementById('recherche-resultats').addEventListener('input', () => {
+        clearTimeout(minuterie);
+        minuterie = setTimeout(chargerResultats, 350);
+      });
     }
 
     document.querySelectorAll('.onglet').forEach(o => {
@@ -514,9 +610,175 @@
   function basculerVue(vue) {
     document.querySelectorAll('.onglet').forEach(o => o.classList.toggle('actif', o.dataset.vue === vue));
     document.getElementById('vue-sessions').style.display = vue === 'sessions' ? '' : 'none';
+    document.getElementById('vue-resultats').style.display = vue === 'resultats' ? '' : 'none';
     document.getElementById('vue-correction').style.display = vue === 'correction' ? '' : 'none';
     if (vue === 'sessions') chargerSessions();
+    if (vue === 'resultats') initialiserResultats();
     if (vue === 'correction') chargerMesCorrections();
+  }
+
+  // ============================================================
+  //  Résultats du test
+  // ============================================================
+  const FILTRES_RESULTATS = [
+    { code: 'tous', libelle: 'Tous', compte: 'inscrits' },
+    { code: 'admis', libelle: 'Admis', compte: 'admis' },
+    { code: 'liste_attente', libelle: "Liste d'attente", compte: 'liste_attente' },
+    { code: 'refuses', libelle: 'Refusés', compte: 'refuses' },
+    { code: 'absents', libelle: 'Absents', compte: 'absents' },
+    { code: 'recommandes', libelle: 'Recommandés', compte: 'recommandes' }
+  ];
+  const LIBELLES_STATUT_RESULTAT = {
+    admis: 'Admis', liste_attente: "Liste d'attente", refuse: 'Refusé',
+    absent: 'Absent', converti: 'Inscrit', inscrit: 'Inscrit'
+  };
+
+  let resultatsCourants = null;
+  let filtreResultats = 'tous';
+  let sessionsResultats = [];
+
+  async function initialiserResultats() {
+    const select = document.getElementById('select-session-resultats');
+    if (sessionsResultats.length === 0) {
+      const r = await appelApi('/inscriptions/sessions');
+      if (!r || !r.ok) return;
+      const toutes = await r.json();
+      // Seules les sessions PUBLIÉES ont des résultats : proposer les autres
+      // conduirait l'utilisateur droit à un message d'erreur.
+      sessionsResultats = toutes.filter(s => s.statut === 'publiee');
+      select.innerHTML = sessionsResultats.length
+        ? sessionsResultats.map(s => `<option value="${s.id}">${echapper(s.libelle)}</option>`).join('')
+        : '<option value="">Aucune session publiée</option>';
+      select.addEventListener('change', chargerResultats);
+    }
+
+    if (sessionsResultats.length === 0) {
+      document.getElementById('etat-resultats').textContent =
+        "Aucune session publiée. Les résultats apparaîtront ici dès qu'une session sera publiée.";
+      document.getElementById('grille-stats-resultats').innerHTML = '';
+      document.getElementById('barre-filtres-resultats').style.display = 'none';
+      document.getElementById('conteneur-resultats').style.display = 'none';
+      return;
+    }
+    chargerResultats();
+  }
+
+  async function chargerResultats() {
+    const sessionId = document.getElementById('select-session-resultats').value;
+    if (!sessionId) return;
+
+    const recherche = document.getElementById('recherche-resultats').value.trim();
+    const params = new URLSearchParams({ filtre: filtreResultats });
+    if (recherche) params.set('recherche', recherche);
+
+    const r = await appelApi(`/inscriptions/sessions/${sessionId}/resultats?${params}`);
+    if (!r) return;
+    const rep = await r.json().catch(() => ({}));
+    if (!r.ok) { afficherMessage(rep.message || 'Chargement impossible.', 'erreur'); return; }
+
+    resultatsCourants = rep;
+    dessinerStatsResultats();
+    dessinerFiltresResultats();
+    dessinerTableauResultats();
+  }
+
+  function dessinerStatsResultats() {
+    const s = resultatsCourants.statistiques;
+    const session = resultatsCourants.session;
+
+    document.getElementById('etat-resultats').textContent =
+      `${session.places} place(s) offerte(s) · ${s.presents} présent(s) sur ${s.inscrits} inscrit(s)`
+      + (resultatsCourants.note_plancher !== null
+          ? ` · barre d'admission à ${resultatsCourants.note_plancher}/${resultatsCourants.maximum_total}`
+          : ' · moins de candidats que de places : aucune barre');
+
+    const cartes = [
+      { titre: 'Admis', valeur: s.admis },
+      { titre: "Liste d'attente", valeur: s.liste_attente },
+      { titre: 'Moyenne des présents', valeur: s.moyenne === null ? '—' : `${s.moyenne}/${resultatsCourants.maximum_total}` },
+      { titre: 'Meilleur total', valeur: s.meilleur === null ? '—' : `${s.meilleur}/${resultatsCourants.maximum_total}` }
+    ];
+    document.getElementById('grille-stats-resultats').innerHTML = cartes.map(c => `
+      <div class="widget">
+        <p class="widget-titre">${echapper(c.titre)}</p>
+        <p class="widget-valeur">${echapper(String(c.valeur))}</p>
+      </div>`).join('');
+  }
+
+  function dessinerFiltresResultats() {
+    const s = resultatsCourants.statistiques;
+    const zone = document.getElementById('filtres-resultats');
+    // Le nombre est affiché sur chaque filtre : il évite de cliquer sur
+    // « Refusés » pour découvrir qu'il n'y en a aucun.
+    zone.innerHTML = FILTRES_RESULTATS.map(f => `
+      <button type="button" class="pilule ${filtreResultats === f.code ? 'actif' : ''}" data-filtre="${f.code}">
+        ${echapper(f.libelle)}<span class="compte">${s[f.compte] ?? 0}</span>
+      </button>`).join('');
+
+    zone.querySelectorAll('[data-filtre]').forEach(b => {
+      b.addEventListener('click', () => {
+        filtreResultats = b.dataset.filtre;
+        chargerResultats();
+      });
+    });
+    document.getElementById('barre-filtres-resultats').style.display = '';
+  }
+
+  function dessinerTableauResultats() {
+    const epreuves = resultatsCourants.epreuves;
+    const lignes = resultatsCourants.resultats;
+
+    document.getElementById('entete-resultats').innerHTML =
+      '<th>Rang</th><th>Candidat</th>'
+      + epreuves.map(e => `<th title="sur ${e.maximum}">${echapper(e.nom)}</th>`).join('')
+      + '<th>Total</th><th>Résultat</th>';
+
+    const corps = document.getElementById('corps-resultats');
+    if (lignes.length === 0) {
+      corps.innerHTML = `<tr><td colspan="${epreuves.length + 4}" class="etat-vide-tableau">Aucun candidat pour ce filtre.</td></tr>`;
+      document.getElementById('conteneur-resultats').style.display = '';
+      return;
+    }
+
+    const plancher = resultatsCourants.note_plancher;
+    let barreTracee = false;
+
+    corps.innerHTML = lignes.map(l => {
+      // La barre d'admission se dessine à sa place réelle dans le classement,
+      // et seulement sur la liste complète : au milieu d'un filtre « Refusés »,
+      // elle ne voudrait rien dire.
+      const tracerBarre = !barreTracee && filtreResultats === 'tous'
+        && plancher !== null && l.total !== null && l.total < plancher;
+      if (tracerBarre) barreTracee = true;
+
+      const notes = epreuves.map(e => {
+        const points = l.notes[e.id];
+        if (points === null || points === undefined) return '<td class="note-epreuve absente">—</td>';
+        const faible = points < e.maximum / 2;
+        return `<td class="note-epreuve ${faible ? 'faible' : ''}">${points}</td>`;
+      }).join('');
+
+      return `<tr class="${tracerBarre ? 'ligne-barre' : ''}">
+        <td>${tracerBarre ? '<span class="marque-barre">barre</span><br/>' : ''}${l.rang ?? '—'}</td>
+        <td>
+          <strong>${echapper(l.nom_complet)}</strong>
+          ${l.recommande ? '<span class="puce-reco">recommandé</span>' : ''}
+          <div style="font-size:0.74rem; color:var(--texte-att); font-family:var(--police-mono);">
+            ${echapper(l.numero_candidat)}${l.ecole_provenance ? ' · ' + echapper(l.ecole_provenance) : ''}
+          </div>
+          ${l.motif_recommandation
+            ? `<div class="motif-reco">${echapper(l.motif_recommandation)}${l.decide_par_nom ? ' — ' + echapper(l.decide_par_nom) : ''}</div>`
+            : ''}
+          ${l.epreuves_echouees > 0 && l.statut !== 'absent'
+            ? `<div class="motif-reco">${l.epreuves_echouees} épreuve(s) sous la moyenne</div>` : ''}
+        </td>
+        ${notes}
+        <td><strong>${l.total ?? '—'}</strong>${l.pourcentage !== null ? `<div style="font-size:0.72rem; color:var(--texte-att);">${l.pourcentage} %</div>` : ''}</td>
+        <td><span class="puce-resultat ${echapper(l.statut)}">${echapper(LIBELLES_STATUT_RESULTAT[l.statut] || l.statut)}</span></td>
+      </tr>`;
+    }).join('');
+
+    document.getElementById('conteneur-resultats').style.display = '';
   }
 
   function basculerSousVue(sousVue) {
@@ -943,10 +1205,19 @@
     document.getElementById('zone-saisie-copies').style.display = '';
     document.getElementById('titre-epreuve').textContent = `${d.epreuve.nom} — sur ${d.epreuve.maximum}`;
 
+    // Le serveur dit s'il s'agit d'une saisie ou d'une consultation : la
+    // direction consulte les copies après publication, sans pouvoir les
+    // modifier. Afficher un bouton « Enregistrer » qu'elle verrait refusé
+    // serait une promesse non tenue.
+    const lectureSeule = d.lecture_seule === true;
+    document.getElementById('bouton-enregistrer-notes').style.display = lectureSeule ? 'none' : '';
+
     document.getElementById('corps-copies').innerHTML = copiesCourantes.map((c, i) => `
       <tr>
         <td class="numero-copie">${echapper(c.numero_candidat)}</td>
-        <td><input type="number" class="champ-points" data-index="${i}" min="0" max="${d.epreuve.maximum}" step="0.5" value="${c.points ?? ''}" /></td>
+        <td>${lectureSeule
+          ? `<span class="note-epreuve">${c.points ?? '—'}</span>`
+          : `<input type="number" class="champ-points" data-index="${i}" min="0" max="${d.epreuve.maximum}" step="0.5" value="${c.points ?? ''}" />`}</td>
       </tr>`).join('');
 
     document.querySelectorAll('#corps-copies input').forEach(champ => {

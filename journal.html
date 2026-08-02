@@ -68,6 +68,69 @@
   .icone-action.autre { background: var(--ocre); }
   .etat-vide { color: var(--texte-att); text-align: center; padding: 60px 20px; }
 
+  /* La recherche prend la largeur disponible : c'est le filtre le plus utilisé,
+     il ne doit pas se retrouver à la taille d'un menu déroulant. */
+  .champ-recherche { flex: 1 1 260px; min-width: 200px; }
+
+  .compteur-resultats { font-size: 0.82rem; color: var(--texte-att); margin: 0 0 12px 0; }
+
+  /* Un échec doit se repérer sans lire : filet rouge en bordure de ligne. */
+  .entree-journal.echec { border-left: 3px solid var(--rouge); }
+  .icone-action.echec { background: var(--rouge); }
+
+  .entree-journal .cible { font-size: 0.8rem; color: var(--texte-att); margin-top: 2px; }
+  .badge-echec {
+    font-size: 0.68rem; font-weight: 600; text-transform: uppercase;
+    color: var(--rouge); border: 1px solid var(--rouge); border-radius: var(--r-petit);
+    padding: 1px 6px; margin-left: 8px;
+  }
+  .detail-technique { margin-top: 6px; }
+  .detail-technique summary {
+    cursor: pointer; font-size: 0.78rem; color: var(--texte-att); list-style: none;
+  }
+  .detail-technique summary::-webkit-details-marker { display: none; }
+  .detail-technique summary::before { content: '▸ '; }
+  .detail-technique[open] summary::before { content: '▾ '; }
+  .detail-technique pre {
+    font-family: var(--police-mono); font-size: 0.72rem; white-space: pre-wrap;
+    word-break: break-word; background: var(--craie); border: 1px solid var(--bordure);
+    border-radius: var(--r-petit); padding: 10px; margin: 6px 0 0 0; max-height: 260px; overflow: auto;
+  }
+  .zone-pagination { text-align: center; padding: 16px 0 8px 0; }
+
+  /* ---------- Recherche assistée ---------- */
+  .carte-assistant {
+    background: var(--craie-2); border: 1px solid var(--bordure);
+    border-radius: var(--r-carte); padding: 20px; margin-bottom: 20px;
+  }
+  .carte-assistant h3 { font-family: var(--police-titre); font-size: 1.02rem; margin: 0 0 6px 0; }
+  .aide-assistant { font-size: 0.83rem; color: var(--texte-att); margin: 0 0 14px 0; }
+  .ligne-assistant { display: flex; gap: 10px; flex-wrap: wrap; }
+  .ligne-assistant input {
+    flex: 1 1 320px; min-width: 220px; padding: 10px 13px; border: 1.5px solid var(--bordure);
+    border-radius: var(--r-bouton); font-size: 0.9rem; background: var(--craie);
+    font-family: var(--police-corps);
+  }
+  .reponse-assistant {
+    margin-top: 16px; padding: 14px 16px; background: var(--craie);
+    border-left: 3px solid var(--ocre); border-radius: var(--r-petit);
+  }
+  .reponse-assistant .synthese { margin: 0; font-size: 0.92rem; line-height: 1.55; }
+  /* Ce que l'assistant a compris : affiché sous la réponse, pour que le
+     directeur puisse juger si la question a été bien interprétée avant de
+     croire au résultat. */
+  .reponse-assistant .interpretation {
+    margin: 10px 0 8px 0; font-size: 0.78rem; color: var(--texte-att); font-style: italic;
+  }
+
+  /* Style de repli, cohérent avec les 23 autres pages. ui.css le surcharge
+     ensuite pour en faire un toast flottant — c'est voulu : la page reste
+     lisible même si ui.css n'a pas pu être chargé. */
+  .message-flash { display: none; padding: 12px 16px; border-radius: var(--r-petit); margin-bottom: 18px; font-size: 0.9rem; }
+  .message-flash.visible { display: block; }
+  .message-flash.succes { background: rgba(76,122,90,0.12); color: var(--vert-ok); }
+  .message-flash.erreur { background: rgba(178,58,46,0.12); color: var(--rouge); }
+
   .spinner {
     display: inline-block; width: 14px; height: 14px; border: 2px solid var(--bordure);
     border-top-color: var(--ocre); border-radius: 50%; animation: tourner 0.65s linear infinite;
@@ -139,45 +202,94 @@
       <p class="sous-titre">Historique des actions sensibles : notes validées, élèves supprimés, paiements confirmés…</p>
     </div>
 
+    <!-- Cette page n'avait aucun conteneur de message : toute erreur passait
+         silencieusement. ui.css lui donne son apparence de toast flottant, et
+         ui.js le rattache à <body> au chargement. -->
+    <div id="message-flash" class="message-flash"></div>
+
+    <!-- Recherche en langage courant — directeur seul. Les filtres manuels
+         supposent qu'on sache déjà quoi chercher ; la vraie question est
+         souvent « qui a touché à ça, et quand ». -->
+    <div class="carte-assistant" id="carte-assistant" style="display:none;">
+      <h3>Demander à l'assistant</h3>
+      <p class="aide-assistant">
+        Posez votre question en français. L'assistant la traduit en filtres, que vous pouvez ensuite corriger.
+        Le détail des opérations ne lui est jamais transmis.
+      </p>
+      <div class="ligne-assistant">
+        <input type="text" id="question-assistant" maxlength="500"
+               placeholder="Qui a supprimé des élèves le mois dernier ?" />
+        <button class="bouton bouton-principal" id="bouton-assistant">Chercher</button>
+      </div>
+      <div class="reponse-assistant" id="reponse-assistant" style="display:none;">
+        <p class="synthese" id="synthese-assistant"></p>
+        <p class="interpretation" id="interpretation-assistant"></p>
+        <button class="lien-action" id="bouton-appliquer-filtres">Reporter ces filtres dans la barre ci-dessous</button>
+      </div>
+    </div>
+
     <div class="barre-filtres">
-      <select id="filtre-action">
-        <option value="">Toutes les actions</option>
-        <option value="notes.validees">Notes validées</option>
-        <option value="notes.devalidees">Notes déverrouillées</option>
-        <option value="eleve.cree">Élève créé</option>
-        <option value="eleve.supprime">Élève supprimé</option>
-        <option value="utilisateur.cree">Utilisateur créé</option>
-        <option value="ecole.creee">École créée</option>
-        <option value="ecole.suspendue">École suspendue</option>
-        <option value="abonnement.paiement_confirme">Paiement confirmé (manuel)</option>
-        <option value="abonnement.paiement_confirme_mobile_money">Paiement confirmé (Mobile Money)</option>
-        <option value="abonnement.expire">Abonnement expiré</option>
+      <input type="search" id="filtre-recherche" class="champ-recherche"
+             placeholder="Rechercher : un nom, un matricule, une action…"
+             title="Cherche dans les actions, les auteurs et le détail des opérations" />
+      <!-- Les listes ci-dessous sont construites depuis les données réelles du
+           journal (GET /journal-activite/filtres). Une liste écrite en dur ne
+           pouvait pas suivre l'ajout de nouvelles actions. -->
+      <select id="filtre-action"><option value="">Toutes les actions</option></select>
+      <select id="filtre-auteur"><option value="">Tout le monde</option></select>
+      <select id="filtre-resultat">
+        <option value="">Réussites et échecs</option>
+        <option value="succes">Réussites seulement</option>
+        <option value="echec">Échecs seulement</option>
+      </select>
+      <select id="filtre-source">
+        <option value="">Tout le détail</option>
+        <option value="metier">Événements marquants</option>
       </select>
       <input type="date" id="filtre-depuis" title="Depuis" />
       <input type="date" id="filtre-jusqu" title="Jusqu'à" />
       <button class="bouton" id="bouton-filtrer">Filtrer</button>
+      <button class="bouton" id="bouton-reinitialiser" title="Effacer tous les filtres">Réinitialiser</button>
     </div>
+
+    <p class="compteur-resultats" id="compteur-resultats"></p>
 
     <ul class="liste-journal" id="liste-journal">
       <li class="etat-vide"><span class="spinner"></span>Chargement…</li>
     </ul>
+
+    <div class="zone-pagination" id="zone-pagination" style="display:none;">
+      <button class="bouton" id="bouton-plus">Afficher les entrées suivantes</button>
+    </div>
   </main>
 </div>
 
 <script>
   const API_BASE_URL = "https://scolaire-saas-backend.onrender.com";
 
-  const LIBELLES_ACTIONS = {
-    'notes.validees': 'Notes validées', 'notes.devalidees': 'Notes déverrouillées',
-    'eleve.cree': 'Élève créé', 'eleve.supprime': 'Élève supprimé',
-    'utilisateur.cree': 'Utilisateur créé', 'ecole.creee': 'École créée', 'ecole.suspendue': 'École suspendue',
-    'abonnement.paiement_confirme': 'Paiement confirmé (manuel)',
-    'abonnement.paiement_confirme_mobile_money': 'Paiement confirmé (Mobile Money)',
-    'abonnement.expire': 'Abonnement expiré'
-  };
-  const TYPES_SUPPRESSION = ['eleve.supprime', 'ecole.suspendue', 'notes.devalidees'];
-  const TYPES_CREATION = ['eleve.cree', 'utilisateur.cree', 'ecole.creee', 'notes.validees',
-    'abonnement.paiement_confirme', 'abonnement.paiement_confirme_mobile_money'];
+  // Échappement HTML. Cette page insérait jusqu'ici des noms d'utilisateurs et
+  // des codes d'action directement dans innerHTML, sans échapper. Le journal
+  // affiche désormais aussi le DÉTAIL des opérations, c'est-à-dire des données
+  // saisies par des utilisateurs : un nom d'élève contenant du balisage
+  // s'exécuterait dans le navigateur du directeur. Tout passe par ici.
+  function echapper(valeur) {
+    return String(valeur ?? '').replace(/[&<>"']/g, (c) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+
+  // Le libellé lisible vient désormais du serveur (`action_libelle`), qui seul
+  // connaît la liste complète des actions possibles. Ces motifs ne servent
+  // qu'à choisir une COULEUR de pastille.
+  const MOTIFS_SUPPRESSION = /(supprime|suspendue|devalidees|retire|annule)/;
+  const MOTIFS_CREATION = /(cree|creee|validees|confirme|enregistre|ajoute)/;
+
+  function couleurAction(entree) {
+    if (entree.reussite === false) return 'echec';
+    if (MOTIFS_SUPPRESSION.test(entree.action)) return 'suppression';
+    if (MOTIFS_CREATION.test(entree.action)) return 'creation';
+    return 'autre';
+  }
 
 
   // Session par défaut = sessionStorage (effacée à la fermeture du navigateur),
@@ -233,51 +345,269 @@
     retourConnexion();
   });
 
-  async function chargerJournal() {
+  function afficherMessage(texte, type) {
+    const zone = document.getElementById('message-flash');
+    zone.textContent = texte;
+    zone.className = `message-flash visible ${type}`;
+    setTimeout(() => zone.classList.remove('visible'), 5000);
+  }
+
+  const TAILLE_PAGE = 50;
+  let decalage = 0;          // position dans la liste complète
+  let totalEntrees = 0;
+
+  function parametresCourants() {
+    const params = new URLSearchParams();
+    const recherche = document.getElementById('filtre-recherche').value.trim();
     const action = document.getElementById('filtre-action').value;
+    const auteur = document.getElementById('filtre-auteur').value;
+    const resultat = document.getElementById('filtre-resultat').value;
+    const source = document.getElementById('filtre-source').value;
     const depuis = document.getElementById('filtre-depuis').value;
     const jusqu = document.getElementById('filtre-jusqu').value;
 
-    const params = new URLSearchParams();
+    if (recherche) params.set('recherche', recherche);
     if (action) params.set('action', action);
+    if (auteur) params.set('utilisateurId', auteur);
+    if (resultat) params.set('resultat', resultat);
+    if (source) params.set('source', source);
     if (depuis) params.set('depuis', depuis);
     if (jusqu) params.set('jusqu', jusqu);
-    params.set('limit', '150');
-
-    const r = await appelApi(`/journal-activite?${params.toString()}`);
-    const liste = document.getElementById('liste-journal');
-    if (!r) return;
-    if (!r.ok) {
-      liste.innerHTML = '<li class="etat-vide">Accès non autorisé ou erreur de chargement.</li>';
-      return;
-    }
-    const entrees = await r.json();
-
-    if (entrees.length === 0) {
-      liste.innerHTML = '<li class="etat-vide">Aucune entrée pour cette période/filtre.</li>';
-      return;
-    }
-
-    liste.innerHTML = entrees.map(e => {
-      const type = TYPES_SUPPRESSION.includes(e.action) ? 'suppression' : TYPES_CREATION.includes(e.action) ? 'creation' : 'autre';
-      const date = new Date(e.created_at);
-      const dateAffichee = date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) + ' à ' + date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-      const auteur = e.utilisateur_nom ? `${e.utilisateur_nom} ${e.utilisateur_prenom || ''}` : 'Système';
-      return `
-        <li class="entree-journal">
-          <span class="icone-action ${type}"></span>
-          <span class="horodatage">${dateAffichee}</span>
-          <div class="details">
-            <div class="action">${LIBELLES_ACTIONS[e.action] || e.action}${e.cible_type ? `<span class="badge-type">${e.cible_type}</span>` : ''}</div>
-            <div class="auteur">Par ${auteur}</div>
-          </div>
-        </li>
-      `;
-    }).join('');
+    params.set('limit', String(TAILLE_PAGE));
+    return params;
   }
 
-  document.getElementById('bouton-filtrer').addEventListener('click', chargerJournal);
-  chargerJournal();
+  function formaterDate(valeur) {
+    const date = new Date(valeur);
+    return date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
+      + ' à ' + date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  /** Résumé d'une ligne en une phrase : chemin appelé, refus éventuel. */
+  function resumeTechnique(entree) {
+    const m = entree.metadata || {};
+    const morceaux = [];
+    if (m.methode && m.chemin) morceaux.push(`${m.methode} ${m.chemin}`);
+    if (m.statut) morceaux.push(`réponse ${m.statut}`);
+    if (m.refus) morceaux.push(`refus : ${m.refus}`);
+    return morceaux.join(' — ');
+  }
+
+  function dessinerEntree(e) {
+    const couleur = couleurAction(e);
+    const auteur = e.utilisateur_nom
+      ? `${e.utilisateur_nom} ${e.utilisateur_prenom || ''}`.trim()
+      : 'Système';
+    const resume = resumeTechnique(e);
+    // Le détail complet reste replié : il est indispensable pour enquêter,
+    // encombrant pour parcourir.
+    const detail = e.metadata
+      ? `<details class="detail-technique">
+           <summary>Détail de l'opération</summary>
+           <pre>${echapper(JSON.stringify(e.metadata, null, 2))}</pre>
+         </details>`
+      : '';
+
+    return `
+      <li class="entree-journal ${e.reussite === false ? 'echec' : ''}">
+        <span class="icone-action ${couleur}"></span>
+        <span class="horodatage">${echapper(formaterDate(e.created_at))}</span>
+        <div class="details">
+          <div class="action">${echapper(e.action_libelle || e.action)}${
+            e.cible_type ? `<span class="badge-type">${echapper(e.cible_type)}</span>` : ''
+          }${e.reussite === false ? '<span class="badge-echec">refusé</span>' : ''}</div>
+          <div class="auteur">Par ${echapper(auteur)}</div>
+          ${resume ? `<div class="cible">${echapper(resume)}</div>` : ''}
+          ${detail}
+        </div>
+      </li>`;
+  }
+
+  /**
+   * @param {boolean} suite - true pour ajouter à la suite (pagination),
+   *                          false pour repartir du début (nouveau filtre).
+   */
+  async function chargerJournal(suite = false) {
+    const liste = document.getElementById('liste-journal');
+    const zonePagination = document.getElementById('zone-pagination');
+    const compteur = document.getElementById('compteur-resultats');
+
+    if (!suite) {
+      decalage = 0;
+      liste.innerHTML = '<li class="etat-vide"><span class="spinner"></span>Chargement…</li>';
+      zonePagination.style.display = 'none';
+    }
+
+    const params = parametresCourants();
+    params.set('offset', String(decalage));
+
+    const r = await appelApi(`/journal-activite?${params.toString()}`);
+    if (!r) return;
+    if (!r.ok) {
+      if (!suite) liste.innerHTML = '<li class="etat-vide">Accès non autorisé ou erreur de chargement.</li>';
+      afficherMessage('Impossible de charger le journal.', 'erreur');
+      return;
+    }
+
+    const donnees = await r.json();
+    const entrees = donnees.entrees || [];
+    totalEntrees = donnees.total || 0;
+
+    if (!suite && entrees.length === 0) {
+      liste.innerHTML = '<li class="etat-vide">Aucune entrée ne correspond à cette recherche.</li>';
+      compteur.textContent = '';
+      zonePagination.style.display = 'none';
+      return;
+    }
+
+    const html = entrees.map(dessinerEntree).join('');
+    if (suite) liste.insertAdjacentHTML('beforeend', html);
+    else liste.innerHTML = html;
+
+    decalage += entrees.length;
+    compteur.textContent = `${decalage} entrée(s) affichée(s) sur ${totalEntrees}.`;
+    zonePagination.style.display = decalage < totalEntrees ? '' : 'none';
+  }
+
+  /** Menus construits depuis les données réelles de l'école. */
+  async function chargerFiltres() {
+    const r = await appelApi('/journal-activite/filtres');
+    if (!r || !r.ok) return;   // les menus restent vides, la page fonctionne
+    const donnees = await r.json();
+
+    const selectAction = document.getElementById('filtre-action');
+    selectAction.innerHTML = '<option value="">Toutes les actions</option>'
+      + (donnees.actions || []).map(a =>
+          `<option value="${echapper(a.code)}">${echapper(a.libelle)} (${a.nb})</option>`
+        ).join('');
+
+    const selectAuteur = document.getElementById('filtre-auteur');
+    selectAuteur.innerHTML = '<option value="">Tout le monde</option>'
+      + (donnees.auteurs || []).map(u =>
+          `<option value="${echapper(u.id)}">${echapper(u.nom_complet)}</option>`
+        ).join('');
+  }
+
+  // ============================================================
+  //  Recherche assistée
+  // ============================================================
+  let filtresProposes = null;
+
+  async function interrogerAssistant() {
+    const question = document.getElementById('question-assistant').value.trim();
+    if (question.length < 5) {
+      afficherMessage('Posez une question un peu plus précise.', 'erreur');
+      return;
+    }
+
+    const bouton = document.getElementById('bouton-assistant');
+    bouton.disabled = true; bouton.textContent = 'Recherche…';
+
+    const r = await appelApi('/journal-activite/recherche-ia', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question })
+    });
+
+    bouton.disabled = false; bouton.textContent = 'Chercher';
+    if (!r) return;
+    const rep = await r.json().catch(() => ({}));
+    if (!r.ok) { afficherMessage(rep.message || 'Recherche impossible.', 'erreur'); return; }
+
+    document.getElementById('synthese-assistant').textContent = rep.synthese;
+
+    // Ce que l'assistant a compris est affiché tel quel : sans cela, le
+    // directeur ne peut pas distinguer « il n'y a rien » de « la question a été
+    // mal comprise ».
+    const f = rep.interpretation.filtres;
+    const morceaux = [];
+    if (f.depuis) morceaux.push(`depuis le ${f.depuis}`);
+    if (f.jusqu) morceaux.push(`jusqu'au ${f.jusqu}`);
+    if (f.auteur_trouve) morceaux.push(`par ${f.auteur_trouve}`);
+    if (f.action) morceaux.push(`action « ${f.action} »`);
+    if (f.cibleType) morceaux.push(`sur ${f.cibleType}`);
+    if (f.resultat) morceaux.push(f.resultat === 'echec' ? 'échecs seulement' : 'réussites seulement');
+    if (f.recherche) morceaux.push(`contenant « ${f.recherche} »`);
+
+    document.getElementById('interpretation-assistant').textContent =
+      (rep.interpretation.explication ? rep.interpretation.explication + ' ' : '')
+      + `Filtres appliqués : ${morceaux.length ? morceaux.join(', ') : 'aucun'}. `
+      + `${rep.total} entrée(s)${rep.limite_atteinte ? ' (limite d’analyse atteinte, il peut y en avoir davantage)' : ''}.`;
+
+    filtresProposes = f;
+    document.getElementById('reponse-assistant').style.display = '';
+
+    // Les entrées trouvées s'affichent dans la liste habituelle : une seconde
+    // présentation, propre à l'assistant, aurait divergé de la première.
+    const liste = document.getElementById('liste-journal');
+    if (rep.entrees.length === 0) {
+      liste.innerHTML = '<li class="etat-vide">Aucune entrée ne correspond à cette question.</li>';
+    } else {
+      liste.innerHTML = rep.entrees.map(dessinerEntree).join('');
+    }
+    document.getElementById('compteur-resultats').textContent =
+      `${rep.entrees.length} entrée(s) trouvée(s) par l'assistant.`;
+    document.getElementById('zone-pagination').style.display = 'none';
+  }
+
+  /** Reporte les filtres déduits dans la barre, pour les affiner à la main. */
+  function appliquerFiltresProposes() {
+    if (!filtresProposes) return;
+    document.getElementById('filtre-depuis').value = filtresProposes.depuis || '';
+    document.getElementById('filtre-jusqu').value = filtresProposes.jusqu || '';
+    document.getElementById('filtre-recherche').value = filtresProposes.recherche || '';
+    document.getElementById('filtre-resultat').value = filtresProposes.resultat || '';
+
+    // Une option absente du menu ne se sélectionne pas silencieusement : on
+    // laisse « toutes les actions » plutôt que d'afficher un filtre inactif.
+    const selectAction = document.getElementById('filtre-action');
+    selectAction.value = [...selectAction.options].some(o => o.value === filtresProposes.action)
+      ? filtresProposes.action : '';
+    const selectAuteur = document.getElementById('filtre-auteur');
+    selectAuteur.value = [...selectAuteur.options].some(o => o.value === filtresProposes.utilisateurId)
+      ? filtresProposes.utilisateurId : '';
+
+    document.getElementById('reponse-assistant').style.display = 'none';
+    chargerJournal(false);
+  }
+
+  document.getElementById('bouton-filtrer').addEventListener('click', () => chargerJournal(false));
+  document.getElementById('bouton-plus').addEventListener('click', () => chargerJournal(true));
+
+  document.getElementById('bouton-reinitialiser').addEventListener('click', () => {
+    ['filtre-recherche', 'filtre-depuis', 'filtre-jusqu'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    ['filtre-action', 'filtre-auteur', 'filtre-resultat', 'filtre-source'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    chargerJournal(false);
+  });
+
+  // Entrée dans le champ de recherche = lancer la recherche. Sans cela, on
+  // tape sa question et il ne se passe rien.
+  document.getElementById('filtre-recherche').addEventListener('keydown', (evt) => {
+    if (evt.key === 'Enter') chargerJournal(false);
+  });
+
+  chargerFiltres();
+  chargerJournal(false);
+
+  // La recherche assistée consomme le quota IA de l'école et permet d'observer
+  // le travail de chacun : elle reste au directeur, alors que la consultation
+  // du journal est ouverte au préfet.
+  (function activerAssistant() {
+    let utilisateur = null;
+    try { utilisateur = JSON.parse(obtenirDuStockage('ardoise_user') || 'null'); } catch (e) {}
+    const roles = (utilisateur && utilisateur.roles) || [];
+    if (!roles.includes('directeur') && !roles.includes('super_admin')) return;
+
+    document.getElementById('carte-assistant').style.display = '';
+    document.getElementById('bouton-assistant').addEventListener('click', interrogerAssistant);
+    document.getElementById('bouton-appliquer-filtres').addEventListener('click', appliquerFiltresProposes);
+    document.getElementById('question-assistant').addEventListener('keydown', (evt) => {
+      if (evt.key === 'Enter') interrogerAssistant();
+    });
+  })();
 
   // ---------- Filtrage de la navigation selon le rôle connecté ----------
   (function gererAccesParRole() {

@@ -40,6 +40,13 @@
   .nav-item.actif { background: var(--nav-actif-fond); color: var(--nav-texte-fort); font-weight: 600; }
   .nav-item .etiquette-bientot { font-family: var(--police-mono); font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--nav-texte-faible); }
 
+  /* Le niveau manquant est le défaut le plus fréquent, et il ne se voit qu'en
+     juin quand la promotion refuse de s'exécuter. On le signale dès la liste. */
+  .puce-alerte { font-size: 0.68rem; padding: 1px 8px; border-radius: 20px; background: rgba(178,58,46,0.12); color: var(--rouge); font-weight: 600; margin-left: 6px; }
+  .aide-interrupteur { font-size: 0.78rem; color: var(--texte-att); margin: 6px 0 0 26px; line-height: 1.45; }
+  /* Une classe terminale se repère dans la liste : c'est elle qui libère les
+     places de la rentrée suivante. */
+  .puce-terminale { font-size: 0.68rem; padding: 1px 8px; border-radius: 20px; background: rgba(60,90,98,0.14); color: var(--encre); font-weight: 600; margin-left: 6px; }
   .interrupteur-classe { display: flex; align-items: flex-start; gap: 9px; font-size: 0.85rem; cursor: pointer; font-weight: 400; }
   .interrupteur-classe input { width: 17px; height: 17px; accent-color: var(--ocre); cursor: pointer; margin-top: 2px; flex: none; }
   .contenu { padding: 36px 44px 60px 44px; }
@@ -139,6 +146,31 @@
     vertical-align: middle; margin-right: 8px;
   }
   @keyframes tourner { to { transform: rotate(360deg); } }
+  .lien-fiche { background: none; border: none; padding: 0; font: inherit; color: var(--encre); font-weight: 600; cursor: pointer; text-align: left; text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px; }
+  .lien-fiche:hover { color: var(--ocre-dark); }
+  .titre-fiche { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--texte-att); margin: 20px 0 8px 0; }
+  .ligne-fiche { display: flex; justify-content: space-between; gap: 16px; padding: 7px 0; border-bottom: 1px solid var(--bordure); font-size: 0.87rem; }
+  .ligne-fiche span:first-child { color: var(--texte-att); font-size: 0.84rem; }
+  /* Les défauts de configuration sont annoncés en tête : ce sont eux qui
+     bloquent la promotion ou les bulletins, des mois plus tard. */
+  .bloc-alertes { background: rgba(178,58,46,0.10); border-left: 3px solid var(--rouge); border-radius: var(--r-petit); padding: 10px 14px; margin-bottom: 6px; }
+  .bloc-alertes p { margin: 0 0 5px 0; font-size: 0.84rem; }
+  .bloc-alertes p:last-child { margin-bottom: 0; }
+  .grille-periodes { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .carte-periode { border: 1px solid var(--bordure); border-radius: var(--r-petit); padding: 10px 12px; }
+  .periode-nom { font-size: 0.76rem; color: var(--texte-att); }
+  .periode-valeur { font-family: var(--police-titre); font-size: 1.25rem; font-weight: 600; margin: 2px 0; }
+  .periode-detail { font-size: 0.73rem; color: var(--texte-att); }
+  .mini-puce { font-size: 0.64rem; padding: 0 5px; border-radius: 20px; background: rgba(107,114,105,0.16); }
+  .liste-cours-classe { list-style: none; margin: 0; padding: 0; }
+  .liste-cours-classe li { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--bordure); font-size: 0.85rem; }
+  .sans-enseignant { color: var(--rouge); font-size: 0.8rem; }
+  .grille-liens { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+  .lien-fiche-carte { display: block; border: 1.5px solid var(--bordure); border-radius: var(--r-petit); padding: 11px 13px; text-decoration: none; color: inherit; }
+  .lien-fiche-carte:hover { border-color: var(--ardoise); background: var(--craie); }
+  .lien-titre { display: block; font-size: 0.88rem; font-weight: 600; }
+  .lien-detail { display: block; font-size: 0.76rem; color: var(--texte-att); margin-top: 2px; }
+  .modale-large { max-width: 720px; }
 </style>
 <script>
   /* Applique le thème AVANT le premier affichage, pour éviter tout clignotement.
@@ -267,6 +299,17 @@
           </label>
         </div>
         <div class="champ">
+          <label class="interrupteur-classe">
+            <input type="checkbox" id="champ-classe-terminale" />
+            <span>Classe terminale — les élèves y terminent leur parcours et sortent diplômés</span>
+          </label>
+          <p class="aide-interrupteur" id="aide-terminale">
+            Sans ce réglage, la promotion de fin d'année cherche une classe supérieure
+            qui n'existe pas : les élèves restent bloqués et occupent des places dont
+            la promotion montante a besoin.
+          </p>
+        </div>
+        <div class="champ">
           <label for="champ-classe-capacite">Capacité (places)</label>
           <input type="number" id="champ-classe-capacite" min="1" max="500" placeholder="sans limite" />
         </div>
@@ -360,6 +403,137 @@
     if (reponse.status === 401 || reponse.status === 403) { retourConnexion(); return null; }
     return reponse;
   }
+  // Échappement HTML : les noms de classes et de divisions viennent de la
+  // saisie des utilisateurs. Sans échappement, un nom contenant du balisage
+  // s'exécuterait dans le navigateur.
+  function echapper(t) {
+    const d = document.createElement('div');
+    d.textContent = t == null ? '' : String(t);
+    return d.innerHTML;
+  }
+
+
+  // ============================================================
+  //  Fiche de la classe
+  // ============================================================
+  //
+  // Cliquer sur une classe ouvrait… rien. Les informations la concernant
+  // étaient réparties entre Structure, Notes, Présences et Discipline, et il
+  // fallait connaître chaque écran pour reconstituer une vue d'ensemble.
+  //
+  // Cette fiche rassemble les chiffres et renvoie aux écrans compétents. Elle
+  // ne modifie rien : le bouton « Modifier » ouvre le formulaire habituel.
+
+  let classeAffichee = null;
+
+  async function ouvrirFicheClasse(classeId) {
+    const voile = document.getElementById('voile-fiche-classe');
+    const corps = document.getElementById('corps-fiche-classe');
+    document.getElementById('titre-fiche-classe').textContent = 'Fiche de la classe';
+    corps.innerHTML = '<p class="aide"><span class="spinner"></span> Chargement…</p>';
+    voile.classList.add('visible');
+
+    const r = await appelApi(`/classes/${classeId}/fiche`);
+    if (!r || !r.ok) {
+      corps.innerHTML = '<p class="aide">La fiche n\'a pas pu être chargée.</p>';
+      return;
+    }
+    const d = await r.json();
+    classeAffichee = classes.find(c => c.id === classeId) || null;
+    document.getElementById('titre-fiche-classe').textContent = d.classe.nom;
+
+    const lien = (page, libelle, detail) => `
+      <a class="lien-fiche-carte" href="${page}?classe=${encodeURIComponent(classeId)}&nom=${encodeURIComponent(d.classe.nom)}">
+        <span class="lien-titre">${libelle}</span>
+        <span class="lien-detail">${detail}</span>
+      </a>`;
+
+    const ligne = (libelle, valeur) => `
+      <div class="ligne-fiche"><span>${libelle}</span><span>${echapper(valeur) || '—'}</span></div>`;
+
+    // Les alertes en PREMIER : ce sont des défauts de configuration qui
+    // bloquent la promotion ou les bulletins, et rien ne les signalait avant
+    // qu'il ne soit trop tard.
+    const alertes = d.alertes.length
+      ? `<div class="bloc-alertes">${d.alertes.map(a => `<p>${echapper(a)}</p>`).join('')}</div>`
+      : '';
+
+    const eff = d.effectif;
+    const res = d.resultats;
+
+    const periodes = res.par_periode.filter(p => p.moyenne !== null);
+    const blocPeriodes = periodes.length === 0
+      ? '<p class="aide">Aucune note saisie pour le moment.</p>'
+      : `<div class="grille-periodes">` + periodes.map(p => `
+          <div class="carte-periode">
+            <div class="periode-nom">${echapper(p.libelle)}${p.cloturee ? ' <span class="mini-puce">clôturée</span>' : ''}</div>
+            <div class="periode-valeur">${p.moyenne} %</div>
+            <div class="periode-detail">${p.nb_eleves_notes} élève(s) · de ${p.mini} à ${p.maxi} %</div>
+          </div>`).join('') + '</div>';
+
+    corps.innerHTML = `
+      ${alertes}
+      <h3 class="titre-fiche">Identité</h3>
+      ${ligne('Niveau et division', d.classe.niveau ? `${d.classe.niveau}${d.classe.division ? ' — ' + d.classe.division : ''}` : null)}
+      ${ligne('Cycle', d.classe.cycle)}
+      ${ligne('Section', d.classe.section_nom)}
+      ${ligne('Option', d.classe.option_nom)}
+      ${ligne('Vacation', d.classe.vacation_nom)}
+      ${ligne('Titulaire', d.classe.titulaire_nom)}
+      ${ligne('Année', d.classe.annee_libelle)}
+      ${ligne('Classe suivante', d.classe.classe_suivante_nom)}
+      ${d.classe.classe_orientation ? ligne('Particularité', "Classe d'orientation") : ''}
+      ${d.classe.classe_terminale ? ligne('Particularité', 'Classe terminale — les élèves sortent diplômés') : ''}
+
+      <h3 class="titre-fiche">Effectif</h3>
+      ${ligne('Élèves actifs', `${eff.actifs}${d.classe.capacite ? ' sur ' + d.classe.capacite + ' places' : ''}`)}
+      ${ligne('Répartition', `${eff.garcons} garçon(s) · ${eff.filles} fille(s)`)}
+      ${eff.places_restantes !== null ? ligne('Places restantes', String(eff.places_restantes)) : ''}
+      ${eff.partis > 0 ? ligne('Élèves partis', String(eff.partis)) : ''}
+
+      <h3 class="titre-fiche">Résultats${res.moyenne_annuelle !== null ? ` — moyenne annuelle ${res.moyenne_annuelle} %` : ''}</h3>
+      ${blocPeriodes}
+
+      <h3 class="titre-fiche">Cours enseignés (${d.cours.length})</h3>
+      ${d.cours.length === 0
+        ? '<p class="aide">Aucun cours rattaché.</p>'
+        : `<ul class="liste-cours-classe">${d.cours.map(c => `
+            <li>
+              <span>${echapper(c.nom)} <span class="mini-puce">sur ${c.maximum}</span></span>
+              <span class="${(c.enseignants || []).length ? '' : 'sans-enseignant'}">${
+                (c.enseignants || []).length ? echapper(c.enseignants.join(', ')) : 'aucun enseignant'
+              }</span>
+            </li>`).join('')}</ul>`}
+
+      <h3 class="titre-fiche">Voir en détail</h3>
+      <div class="grille-liens">
+        ${lien('eleves.html', 'Ses élèves', `${eff.actifs} inscrit(s)`)}
+        ${lien('notes.html', 'Ses notes', periodes.length ? `${periodes.length} période(s) notée(s)` : 'Aucune note')}
+        ${lien('presences.html', 'Ses présences',
+          d.presences.total === 0 ? 'Aucun appel'
+            : `${d.presences.absent} absence(s)` + (d.presences.taux_presence !== null ? ` · ${d.presences.taux_presence} %` : ''))}
+        ${lien('discipline.html', 'Sa discipline',
+          d.discipline.nb_fautes === 0 ? 'Aucun fait signalé'
+            : `${d.discipline.nb_fautes} faute(s) · ${d.discipline.eleves_concernes} élève(s)`)}
+        ${lien('emploi-du-temps.html', 'Son emploi du temps',
+          d.emploi_du_temps.nb_seances === 0 ? 'Aucune séance placée' : `${d.emploi_du_temps.nb_seances} séance(s)`)}
+        ${lien('bulletins.html', 'Ses bulletins', 'Générer ou consulter')}
+      </div>`;
+  }
+
+  document.getElementById('bouton-fermer-fiche-classe').addEventListener('click', () => {
+    document.getElementById('voile-fiche-classe').classList.remove('visible');
+  });
+  document.getElementById('voile-fiche-classe').addEventListener('click', (evt) => {
+    if (evt.target.id === 'voile-fiche-classe') {
+      document.getElementById('voile-fiche-classe').classList.remove('visible');
+    }
+  });
+  document.getElementById('bouton-modifier-depuis-fiche-classe').addEventListener('click', () => {
+    document.getElementById('voile-fiche-classe').classList.remove('visible');
+    if (classeAffichee) ouvrirModaleClasse(classeAffichee);
+  });
+
   function afficherMessage(texte, type) {
     const zone = document.getElementById('message-flash');
     zone.textContent = texte; zone.className = `message-flash visible ${type}`;
@@ -426,13 +600,21 @@
 
     corps.innerHTML = classes.map(c => `
       <tr data-id="${c.id}">
-        <td>${c.nom}</td>
+        <td><button type="button" class="lien-fiche" data-fiche="${c.id}">${echapper(c.nom)}</button>
+          ${c.classe_terminale ? '<span class="puce-terminale" title="Les élèves y terminent leur parcours et sortent diplômés">terminale</span>' : ''}
+          ${c.classe_orientation ? '<span class="puce-terminale" title="Les élèves y choisissent leur option">orientation</span>' : ''}
+          ${c.niveau ? `<span style="font-size:0.72rem; color:var(--texte-att);"> niv. ${c.niveau}${c.division ? '-' + echapper(c.division) : ''}</span>`
+            : '<span class="puce-alerte" title="Sans niveau, la promotion de fin d\'année ne peut pas s\'exécuter">niveau manquant</span>'}
+        </td>
         <td>${c.option_nom || '—'}</td>
         <td>${c.titulaire_nom ? c.titulaire_nom + ' ' + (c.titulaire_prenom || '') : '—'}</td>
         <td>${c.nb_eleves}</td>
         <td><button class="lien-action" data-action="modifier">Modifier</button><button class="lien-action suppr" data-action="supprimer">Supprimer</button></td>
       </tr>
     `).join('');
+
+    corps.querySelectorAll('[data-fiche]').forEach(b =>
+      b.addEventListener('click', () => ouvrirFicheClasse(b.dataset.fiche)));
 
     corps.querySelectorAll('button[data-action]').forEach((bouton) => {
       const ligne = bouton.closest('tr');
@@ -488,6 +670,7 @@
     document.getElementById('champ-classe-nom').value = classe?.nom || '';
     document.getElementById('champ-classe-cycle').value = classe?.cycle || '';
     document.getElementById('champ-classe-orientation').checked = classe?.classe_orientation === true;
+    document.getElementById('champ-classe-terminale').checked = classe?.classe_terminale === true;
     document.getElementById('champ-classe-capacite').value = classe?.capacite ?? '';
     remplirVacations(classe?.vacation_id || '');
     majChampsSelonCycle();
@@ -523,6 +706,7 @@
       nom: document.getElementById('champ-classe-nom').value.trim(),
       cycle: document.getElementById('champ-classe-cycle').value || null,
       classe_orientation: document.getElementById('champ-classe-orientation').checked,
+      classe_terminale: document.getElementById('champ-classe-terminale').checked,
       capacite: document.getElementById('champ-classe-capacite').value || null,
       vacation_id: document.getElementById('champ-classe-vacation').value || null,
       option_id: document.getElementById('champ-classe-option').value || null,
@@ -771,5 +955,17 @@
 <script src="hors-ligne.js"></script>
 <!-- Didacticiel d'installation : bouton d'aide contextuel, partagé par toutes les pages. -->
 <script src="didacticiel.js" data-ecran="Classes"></script>
+<!-- Fiche de la classe : vue transversale, en lecture seule -->
+<div class="voile" id="voile-fiche-classe">
+  <div class="modale modale-large">
+    <h2 id="titre-fiche-classe">Fiche de la classe</h2>
+    <div id="corps-fiche-classe"></div>
+    <div class="actions-modale">
+      <button type="button" class="bouton" id="bouton-fermer-fiche-classe">Fermer</button>
+      <button type="button" class="bouton bouton-principal" id="bouton-modifier-depuis-fiche-classe">Modifier</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

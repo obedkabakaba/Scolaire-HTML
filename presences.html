@@ -449,7 +449,7 @@
     }
 
     corps.innerHTML = elevesAppel.map((e, index) => `
-      <tr data-index="${index}">
+      <tr data-index="${index}" data-eleve-id="${e.eleve_id}">
         <td>${e.nom_complet}</td>
         <td style="font-family:var(--police-mono); font-size:0.82rem;">${e.matricule}</td>
         <td>
@@ -586,7 +586,9 @@
     corps.innerHTML = donnees.eleves.map(e => {
       const taux = e.taux_presence;
       const faible = taux !== null && taux < 80 ? ' taux-faible' : '';
-      return `<tr>
+      // `data-eleve-id` permet à la navigation ciblée (ui.js) de retrouver et
+      // surligner cet élève quand on arrive depuis sa fiche.
+      return `<tr data-eleve-id="${e.eleve_id || e.id}">
         <td>${nomComplet(e)}</td>
         <td>${e.nb_present}</td>
         <td>${e.nb_absent}</td>

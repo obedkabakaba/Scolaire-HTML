@@ -83,6 +83,15 @@
   .bandeau-proposition .texte { flex: 1; min-width: 220px; }
   .bandeau-proposition strong { font-family: var(--police-titre); }
 
+  .puce-cloture { font-size: 0.68rem; padding: 1px 8px; border-radius: 20px; font-weight: 600; margin-left: 6px; }
+  .puce-cloture.ouverte { background: rgba(76,122,90,0.14); color: var(--vert-ok); }
+  .puce-cloture.fermee { background: rgba(107,114,105,0.18); color: var(--texte-att); }
+  .bandeau-ok { background: rgba(76,122,90,0.12); border-left: 3px solid var(--vert-ok); padding: 10px 14px; border-radius: var(--r-petit); font-size: 0.86rem; margin: 0 0 14px 0; }
+  .bandeau-alerte { background: rgba(201,138,62,0.12); border-left: 3px solid var(--ocre); padding: 10px 14px; border-radius: var(--r-petit); font-size: 0.86rem; margin: 0 0 14px 0; line-height: 1.5; }
+  #corps-cloture h4 { font-family: var(--police-titre); font-size: 0.95rem; margin: 16px 0 8px 0; }
+  .liste-relance { list-style: none; margin: 0 0 12px 0; padding: 0; }
+  .liste-relance li { padding: 8px 0; border-bottom: 1px solid var(--bordure); font-size: 0.87rem; }
+  .cours-manquants { font-size: 0.78rem; color: var(--texte-att); margin: 3px 0 0 22px; }
   .etape { background: var(--craie-2); border: 1px solid var(--bordure); border-radius: var(--r-carte); padding: 18px; margin-bottom: 18px; }
   .etape h3 { margin: 0 0 4px; }
   .etape .aide { font-size: 0.82rem; color: var(--texte-att); margin: 0 0 14px; line-height: 1.5; }
@@ -120,6 +129,22 @@
 
   .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--bordure); border-top-color: var(--ocre); border-radius: 50%; animation: tourner 0.65s linear infinite; vertical-align: middle; margin-right: 8px; }
   @keyframes tourner { to { transform: rotate(360deg); } }
+  /* ==========================================================================
+     MODALE — `ui.css` ne définit QUE l'apparence du voile (fond translucide,
+     flou) : ni `position`, ni `display`. Ces règles-là vivent dans le <style>
+     de chaque page. Quand elles manquent, le voile et sa modale sont rendus
+     DANS LE FLUX de la page, en permanence — un bloc sombre en plein milieu de
+     l'écran dès l'ouverture, et un bouton qui semble ne rien faire puisque
+     rien n'a jamais été fermé.
+
+     Valeurs identiques aux 20+ autres pages : une modale qui se comporte
+     différemment d'un écran à l'autre est un défaut en soi.
+     ========================================================================== */
+  .voile { position: fixed; inset: 0; background: rgba(31,43,36,0.45); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 10; }
+  .voile.visible { display: flex; }
+  .modale { background: var(--craie-2); border-radius: var(--r-carte); padding: 28px; max-width: 560px; width: 100%; max-height: 90vh; overflow-y: auto; }
+  .modale h2 { font-family: var(--police-titre); font-weight: 600; font-size: 1.3rem; margin: 0 0 18px 0; }
+  .actions-modale { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
 </style>
 <script>
   /* Applique le thème AVANT le premier affichage, pour éviter tout clignotement.
@@ -550,6 +575,188 @@
     document.getElementById('champ-rattachement-conteneur').style.display = evt.target.value === 'semestre' ? 'none' : 'block';
   });
 
+
+  // ============================================================
+  //  Clôture de période
+  // ============================================================
+  //
+  // Deux verrous à ne pas confondre : `notes.valide` ferme UN cours, la clôture
+  // ferme TOUTE la période pour l'école entière. Sans le second, une école qui
+  // « était au deuxième trimestre » ne l'était que dans la tête de ses agents.
+
+  function ligneCloture(p, sansActions) {
+    const etat = p.cloturee
+      ? '<span class="puce-cloture fermee" title="Plus aucune note ne peut y être saisie">clôturée</span>'
+      : '<span class="puce-cloture ouverte">ouverte</span>';
+    const action = sansActions ? '' : (p.cloturee
+      ? `<button class="lien-action" data-cloture="rouvrir" data-id="${p.id}" data-libelle="${echapperAttr(p.libelle)}">Rouvrir</button>`
+      : `<button class="lien-action" data-cloture="fermer" data-id="${p.id}" data-libelle="${echapperAttr(p.libelle)}">Clôturer</button>`);
+    return `<span>${echapper(p.libelle)} ${etat}</span> ${action}`;
+  }
+
+  function echapper(t) {
+    const d = document.createElement('div');
+    d.textContent = t == null ? '' : String(t);
+    return d.innerHTML;
+  }
+  function echapperAttr(t) { return echapper(t).replace(/"/g, '&quot;'); }
+
+  /**
+   * Avant de clôturer, on montre ce qui manque ET QUI est concerné.
+   * « 12 cours non soumis » ne permet d'agir sur personne ; « M. Kabila n'a pas
+   * soumis les mathématiques en 5e A » permet de lui écrire.
+   */
+  async function ouvrirCloture(periodeId, libelle) {
+    const voile = document.getElementById('voile-cloture');
+    const corps = document.getElementById('corps-cloture');
+    document.getElementById('titre-cloture').textContent = `Clôturer « ${libelle} »`;
+    corps.innerHTML = '<p class="aide"><span class="spinner"></span> Vérification de la saisie…</p>';
+    voile.classList.add('visible');
+    document.getElementById('bouton-confirmer-cloture').disabled = true;
+
+    const r = await appelApi(`/periodes/${periodeId}/etat-cloture`);
+    if (!r || !r.ok) {
+      corps.innerHTML = '<p class="aide">Impossible de vérifier l\'état de la période.</p>';
+      return;
+    }
+    const d = await r.json();
+    clotureCourante = { id: periodeId, libelle, prete: d.prete };
+
+    let html = '';
+    if (d.prete) {
+      html = `<p class="bandeau-ok">Tous les cours ont leurs notes validées. La période peut être clôturée sereinement.</p>`;
+    } else {
+      html = `<p class="bandeau-alerte">
+        <strong>${d.resume.nb_cours_manquants} cours</strong> n'ont pas leurs notes validées.
+        Vous pouvez relancer les enseignants, ou clôturer quand même — la liste sera conservée avec la clôture.
+      </p>`;
+
+      if (d.enseignants_a_relancer.length) {
+        html += '<h4>Enseignants à relancer</h4><ul class="liste-relance">';
+        html += d.enseignants_a_relancer.map(e => `
+          <li>
+            <label><input type="checkbox" class="coche-relance" value="${echapperAttr(e.id)}" checked />
+            <strong>${echapper(e.nom)}</strong></label>
+            <div class="cours-manquants">${e.cours.map(c => echapper(c)).join(' · ')}</div>
+          </li>`).join('');
+        html += '</ul>';
+        html += `<button type="button" class="bouton" id="bouton-relancer">Envoyer un message aux enseignants cochés</button>`;
+      }
+
+      // Un cours sans enseignant affecté n'est pas un retard : c'est un défaut
+      // de configuration, et aucun message ne le réglera.
+      if (d.sans_enseignant.length) {
+        html += `<h4>Cours sans enseignant affecté</h4>
+          <p class="aide">Ce n'est pas un retard de saisie : personne n'est chargé de ces cours.
+          Affectez un enseignant dans Structure › Classes › Cours.</p>
+          <ul class="liste-simple">${d.sans_enseignant.map(c => `<li>${echapper(c)}</li>`).join('')}</ul>`;
+      }
+    }
+    corps.innerHTML = html;
+    document.getElementById('bouton-confirmer-cloture').disabled = false;
+    document.getElementById('bouton-confirmer-cloture').textContent =
+      d.prete ? 'Clôturer la période' : 'Clôturer malgré les réserves';
+
+    const relance = document.getElementById('bouton-relancer');
+    if (relance) relance.addEventListener('click', () => envoyerRelance(d, libelle, relance));
+  }
+
+  async function envoyerRelance(etat, libelle, bouton) {
+    const coches = [...document.querySelectorAll('.coche-relance:checked')].map(c => c.value);
+    if (coches.length === 0) { afficherMessage('Cochez au moins un enseignant.', 'erreur'); return; }
+
+    bouton.disabled = true;
+    const initial = bouton.textContent;
+    bouton.innerHTML = '<span class="spinner"></span> Envoi…';
+
+    // Un message par personne, avec SES cours : un message générique adressé à
+    // dix enseignants ne dit à aucun ce qu'on attend de lui.
+    let envoyes = 0, echecs = 0;
+    for (const id of coches) {
+      const e = etat.enseignants_a_relancer.find(x => x.id === id);
+      if (!e) continue;
+      const r = await appelApi('/communication/messages', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cible_type: 'utilisateur',
+          destinataires: [id],
+          sujet: `Notes à valider — ${libelle}`,
+          contenu: `Bonjour ${e.nom},\n\n`
+            + `La période « ${libelle} » va être clôturée. Les cours suivants n'ont pas encore `
+            + `leurs notes validées :\n\n`
+            + e.cours.map(c => `  • ${c}`).join('\n')
+            + `\n\nMerci de les saisir et de les valider avant la clôture.`
+        })
+      });
+      if (r && r.ok) envoyes++; else echecs++;
+    }
+
+    bouton.disabled = false;
+    bouton.textContent = initial;
+    afficherMessage(
+      echecs === 0 ? `${envoyes} message(s) envoyé(s).`
+                   : `${envoyes} envoyé(s), ${echecs} en échec.`,
+      echecs === 0 ? 'succes' : 'erreur'
+    );
+  }
+
+  let clotureCourante = null;
+
+  async function confirmerCloture() {
+    if (!clotureCourante) return;
+    const bouton = document.getElementById('bouton-confirmer-cloture');
+    if (bouton.disabled) return;
+
+    if (!await ArdoiseUI.confirmer(
+      `Clôturer « ${clotureCourante.libelle} » ?\n\n`
+      + `Plus aucune note ne pourra y être saisie, par personne — vous compris. `
+      + `Seule la direction pourra la rouvrir.`
+    )) return;
+
+    bouton.disabled = true;
+    const initial = bouton.textContent;
+    bouton.innerHTML = '<span class="spinner"></span> Clôture…';
+
+    const r = await appelApi(`/periodes/${clotureCourante.id}/cloturer`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ confirmer: true, malgre_reserves: !clotureCourante.prete })
+    });
+
+    bouton.disabled = false;
+    bouton.textContent = initial;
+    const d = r ? await r.json().catch(() => ({})) : {};
+    if (!r || !r.ok) { afficherMessage(d.message || 'Clôture impossible.', 'erreur'); return; }
+
+    afficherMessage(d.message, 'succes');
+    document.getElementById('voile-cloture').classList.remove('visible');
+    clotureCourante = null;
+    chargerPeriodesDeLAnnee();
+  }
+
+  async function rouvrirPeriode(periodeId, libelle) {
+    if (!await ArdoiseUI.confirmer(
+      `Rouvrir « ${libelle} » ?\n\nLa saisie des notes y redeviendra possible. `
+      + `L'opération est enregistrée dans le journal d'activité.`
+    )) return;
+
+    const r = await appelApi(`/periodes/${periodeId}/rouvrir`, { method: 'POST' });
+    const d = r ? await r.json().catch(() => ({})) : {};
+    if (!r || !r.ok) { afficherMessage(d.message || 'Réouverture impossible.', 'erreur'); return; }
+    afficherMessage(d.message, 'succes');
+    chargerPeriodesDeLAnnee();
+  }
+
+  document.getElementById('bouton-annuler-cloture').addEventListener('click', () => {
+    document.getElementById('voile-cloture').classList.remove('visible');
+    clotureCourante = null;
+  });
+  document.getElementById('bouton-confirmer-cloture').addEventListener('click', confirmerCloture);
+  document.getElementById('voile-cloture').addEventListener('click', (evt) => {
+    if (evt.target.id === 'voile-cloture') {
+      document.getElementById('voile-cloture').classList.remove('visible');
+    }
+  });
+
   document.getElementById('select-annee-periodes').addEventListener('change', chargerPeriodesDeLAnnee);
 
   async function chargerPeriodesDeLAnnee() {
@@ -579,7 +786,7 @@
           <div class="titre-semestre">${sem.libelle} <button class="lien-action" data-action="supprimer" data-id="${sem.id}">Supprimer</button></div>
           <ul class="liste-simple">
             ${enfants.length === 0 ? '<li style="color:var(--texte-att); border:none;">Aucune période rattachée.</li>' :
-              enfants.map(e => `<li>${e.libelle} <button class="lien-action" data-action="supprimer" data-id="${e.id}">Supprimer</button></li>`).join('')}
+              enfants.map(e => `<li>${ligneCloture(e)}</li>`).join('')}
           </ul>
         </div>`;
     });
@@ -591,7 +798,7 @@
           <ul class="liste-simple">
             ${sansSemestre.map(e => `
               <li>
-                <span>${e.libelle}</span>
+                <span>${ligneCloture(e, true)}</span>
                 <span style="display:flex; gap:8px; align-items:center;">
                   <select class="select-rattacher" data-id="${e.id}" style="padding:4px 8px; border:1.5px solid var(--bordure); border-radius: var(--r-petit); font-size:0.8rem;">${optionsSemestres}</select>
                   <button class="lien-action" style="color:var(--vert-ok);" data-action="rattacher" data-id="${e.id}">Rattacher</button>
@@ -603,6 +810,11 @@
         </div>`;
     }
     conteneur.innerHTML = html;
+
+    conteneur.querySelectorAll('[data-cloture]').forEach(b => b.addEventListener('click', () => {
+      if (b.dataset.cloture === 'fermer') ouvrirCloture(b.dataset.id, b.dataset.libelle);
+      else rouvrirPeriode(b.dataset.id, b.dataset.libelle);
+    }));
 
     conteneur.querySelectorAll('[data-action="supprimer"]').forEach(b => b.addEventListener('click', async () => {
       if (!await ArdoiseUI.confirmer('Supprimer ? Impossible si des notes existent déjà pour cette période, ou pas d\'impact sur les notes si c\'est un semestre (juste un regroupement).')) return;
@@ -813,5 +1025,17 @@
 <script src="hors-ligne.js"></script>
 <!-- Didacticiel d'installation : bouton d'aide contextuel, partagé par toutes les pages. -->
 <script src="didacticiel.js" data-ecran="Annee scolaire"></script>
+<!-- Modale de clôture de période -->
+<div class="voile" id="voile-cloture">
+  <div class="modale">
+    <h2 id="titre-cloture">Clôturer la période</h2>
+    <div id="corps-cloture"></div>
+    <div class="actions-modale">
+      <button type="button" class="bouton" id="bouton-annuler-cloture">Annuler</button>
+      <button type="button" class="bouton bouton-principal" id="bouton-confirmer-cloture">Clôturer la période</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

@@ -941,11 +941,169 @@
   /* ------------------------------------------------------------------
      Démarrage
      ------------------------------------------------------------------ */
+
+  /* ------------------------------------------------------------------
+     Menu Orientation — visibilité affinée
+
+     La carte des rôles écrite en dur dans chaque page sait qu'un titulaire
+     peut accéder à l'orientation. Elle ne peut pas savoir si CE titulaire
+     tient une classe d'orientation : un enseignant de 3e année voyait donc un
+     menu qui ne lui répondait que par un refus.
+
+     Le contrôle est fait ICI, dans le fichier partagé, et non dans les 38
+     pages : la carte des rôles y est déjà dupliquée 38 fois, il n'y a aucune
+     raison d'y ajouter une 39e duplication.
+
+     En cas d'échec de l'appel, le menu RESTE affiché : masquer une entrée sur
+     une erreur réseau ferait croire à une perte de droits.
+     ------------------------------------------------------------------ */
+  function affinerMenuOrientation() {
+    var liens = document.querySelectorAll('a[href="orientation.html"]');
+    if (liens.length === 0) return;
+
+    var jeton = null;
+    try {
+      jeton = localStorage.getItem('ardoise_access_token')
+           || sessionStorage.getItem('ardoise_access_token');
+    } catch (e) { return; }
+    if (!jeton) return;
+
+    var utilisateur = null;
+    try {
+      utilisateur = JSON.parse(
+        localStorage.getItem('ardoise_user') || sessionStorage.getItem('ardoise_user') || 'null'
+      );
+    } catch (e) {}
+    var roles = (utilisateur && utilisateur.roles) || [];
+
+    // La direction et le secrétariat voient toujours l'orientation : le
+    // contrôle ne concerne que les titulaires.
+    var concerne = roles.indexOf('titulaire') !== -1
+      && !roles.some(function (r) {
+        return ['directeur', 'prefet', 'secretaire', 'super_admin'].indexOf(r) !== -1;
+      });
+    if (!concerne) return;
+
+    var base = (typeof API_BASE_URL !== 'undefined' && API_BASE_URL) || window.API_BASE_URL || '';
+    fetch(base + '/orientation/acces', { headers: { Authorization: 'Bearer ' + jeton } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (!d || d.autorise !== false) return;
+        liens.forEach(function (lien) {
+          var li = lien.closest('li') || lien;
+          li.style.display = 'none';
+        });
+      })
+      .catch(function () { /* menu conservé : voir commentaire ci-dessus */ });
+  }
+
+
+  /* ==================================================================
+     NAVIGATION CIBLÉE — « montre-moi CET élève, ici »
+
+     Depuis la fiche d'un élève, on peut ouvrir ses présences, sa discipline,
+     ses frais. Le problème : ces écrans affichent une classe entière, et
+     retrouver un enfant parmi trois cents annule tout le bénéfice du lien.
+
+     Deux réponses possibles — surligner sa ligne, ou n'afficher que lui. On
+     fait LES DEUX, parce qu'elles ne servent pas au même moment :
+       · un bandeau annonce qui l'on consulte et propose de revenir à la liste
+         complète — c'est la réponse « ne montre que lui » ;
+       · la ligne correspondante est surlignée et amenée à l'écran — c'est la
+         réponse « où est-il ? », utile quand la page ne sait pas filtrer.
+
+     Le surlignage s'applique à toute ligne portant `data-eleve-id`,
+     `data-id` ou `data-classe-id`. Les pages n'ont rien à faire pour en
+     bénéficier ; celles qui savent filtrer lisent en plus le paramètre.
+
+     Implémenté ICI et non dans chaque page : la même mécanique servira aux
+     classes et aux cours, et 38 copies divergeraient dès la première
+     évolution.
+     ================================================================== */
+  var CIBLES = [
+    { param: 'eleve', libelle: 'élève', attributs: ['data-eleve-id', 'data-id'] },
+    { param: 'classe', libelle: 'classe', attributs: ['data-classe-id', 'data-id'] },
+    { param: 'cours', libelle: 'cours', attributs: ['data-cours-id', 'data-id'] }
+  ];
+
+  function installerFocus() {
+    var params = new URLSearchParams(window.location.search);
+    var cible = null;
+    for (var i = 0; i < CIBLES.length; i++) {
+      var valeur = params.get(CIBLES[i].param);
+      if (valeur) { cible = { def: CIBLES[i], id: valeur }; break; }
+    }
+    if (!cible) return;
+
+    var nom = params.get('nom') || '';
+    afficherBandeauFocus(cible, nom);
+
+    // La liste arrive par un appel réseau : elle n'est pas encore là au
+    // chargement. On observe le DOM plutôt que de deviner un délai — un
+    // setTimeout arbitraire rate la cible sur une connexion lente, ce qui est
+    // précisément le cas des écoles visées.
+    var trouve = false;
+    var observateur = new MutationObserver(function () {
+      if (trouve) return;
+      if (surlignerCible(cible)) {
+        trouve = true;
+        observateur.disconnect();
+      }
+    });
+    observateur.observe(document.body, { childList: true, subtree: true });
+
+    // Filet : on arrête d'observer au bout de 15 secondes, sinon l'observateur
+    // tourne pour rien pendant toute la session.
+    setTimeout(function () { observateur.disconnect(); }, 15000);
+    surlignerCible(cible);
+  }
+
+  function surlignerCible(cible) {
+    for (var i = 0; i < cible.def.attributs.length; i++) {
+      var attribut = cible.def.attributs[i];
+      var element = document.querySelector('[' + attribut + '="' + cible.id.replace(/"/g, '') + '"]');
+      if (!element) continue;
+      var ligne = element.closest('tr') || element.closest('li') || element;
+      ligne.classList.add('ard-ligne-ciblee');
+      try { ligne.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {}
+      return true;
+    }
+    return false;
+  }
+
+  function afficherBandeauFocus(cible, nom) {
+    if (document.getElementById('ard-bandeau-focus')) return;
+
+    var url = new URL(window.location.href);
+    url.searchParams.delete(cible.def.param);
+    url.searchParams.delete('nom');
+
+    var bandeau = document.createElement('div');
+    bandeau.id = 'ard-bandeau-focus';
+    bandeau.className = 'ard-bandeau-focus';
+    bandeau.innerHTML =
+      '<span>Vous consultez ' + (nom
+        ? '<strong>' + nom.replace(/[&<>"]/g, '') + '</strong>'
+        : 'un ' + cible.def.libelle + ' en particulier')
+      + '.</span> <a href="' + url.pathname + url.search + '">Voir tout</a>';
+
+    var contenu = document.querySelector('.contenu') || document.body;
+    var premier = contenu.querySelector('h1');
+    if (premier && premier.parentNode) {
+      premier.parentNode.insertBefore(bandeau, premier.nextSibling);
+    } else {
+      contenu.insertBefore(bandeau, contenu.firstChild);
+    }
+  }
+
   function demarrer() {
     try { injecterIcones(); } catch (e) { /* la navigation reste utilisable sans icônes */ }
     try { installerMenuMobile(); } catch (e) { /* la barre reste affichée sans bouton */ }
     // Le lanceur attend le filtrage par rôle des pages, qui s'exécute juste après.
     setTimeout(function () {
+      // Après le filtrage par rôle des pages : on affine ce qu'il a laissé.
+      try { affinerMenuOrientation(); } catch (e) { /* menu conservé */ }
+      try { installerFocus(); } catch (e) { /* la page reste utilisable sans surlignage */ }
       try { reduireRail(); } catch (e) { /* le rail complet reste utilisable */ }
       try { construireLanceur(); } catch (e) {}
     }, 60);

@@ -144,7 +144,11 @@
 
   function piedDePage() {
     return '<div class="ard-aide-actions">'
-      + '<a href="messages.html?assistant=1">Poser une question à l\'assistant</a>'
+      // L'écran d'origine est transmis : l'assistant sait alors d'où vient la
+      // question et répond dans le bon contexte, au lieu de croire qu'on lui
+      // parle depuis la messagerie.
+      + '<a href="messages.html?assistant=1&ecran=' + encodeURIComponent(nomEcran) + '">'
+      + 'Poser une question à l\'assistant</a>'
       + '<button type="button" class="ard-principal" id="ard-fermer">Fermer</button>'
       + '</div>';
   }

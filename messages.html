@@ -149,6 +149,7 @@
   }
   /* Quand l'IA n'est pas disponible, l'utilisateur ne doit pas rester sans
      réponse : le manuel couvre les mêmes procédures. */
+  .diagnostic-assistant { display: block; margin-top: 6px; font-size: 0.72rem; font-family: var(--police-mono); opacity: 0.75; }
   .repli-manuel {
     margin-top: 14px; font-size: 0.86rem; background: rgba(201,138,62,0.12);
     border-left: 3px solid var(--ocre); padding: 10px 13px; border-radius: var(--r-petit);
@@ -937,10 +938,25 @@
     const bouton = document.getElementById('bouton-question-aide');
     bouton.disabled = true; bouton.textContent = 'Recherche…';
 
-    const r = await appelApi('/assistant/question', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question, page: 'Messagerie' })
-    });
+    // La page d'origine est transmise : le didacticiel renvoie ici depuis
+    // n'importe quel écran, et l'assistant répond mieux s'il sait d'où vient
+    // la question.
+    const ecranOrigine = new URLSearchParams(window.location.search).get('ecran');
+
+    let r;
+    try {
+      r = await appelApi('/assistant/question', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question, page: ecranOrigine || 'Messagerie' })
+      });
+    } catch (e) {
+      bouton.disabled = false; bouton.textContent = 'Demander';
+      const repli = document.getElementById('repli-manuel');
+      repli.innerHTML = `${echapper("La requête n'a pas abouti : " + e.message)}`;
+      repli.style.display = '';
+      chargerManuel();
+      return;
+    }
 
     bouton.disabled = false; bouton.textContent = 'Demander';
     if (!r) return;
@@ -949,10 +965,25 @@
     if (!r.ok) {
       // Quota épuisé ou offre sans IA : on ne laisse pas l'utilisateur devant
       // un message d'erreur sec, on lui ouvre le manuel.
+      //
+      // Le code HTTP est affiché : « 404 » (route non déployée) et « 429 »
+      // (quota épuisé) appellent des actions opposées, et un message générique
+      // les confond — l'utilisateur croit à une panne alors qu'il s'agit d'une
+      // limite, ou l'inverse.
       const repli = document.getElementById('repli-manuel');
-      repli.textContent = rep.message || "L'assistant n'est pas disponible pour le moment.";
+      let texte = rep.message;
+      if (!texte) {
+        texte = r.status === 404
+          ? "L'assistant n'est pas encore activé sur ce serveur. Le manuel de votre rôle est disponible ci-dessous."
+          : "L'assistant n'a pas pu répondre.";
+      }
+      repli.innerHTML = `${echapper(texte)}`
+        + `<span class="diagnostic-assistant">POST /assistant/question → ${r.status}</span>`;
       repli.style.display = '';
-      if (rep.manuel_disponible) chargerManuel();
+      // Le manuel s'ouvre dans TOUS les cas d'échec, pas seulement quand le
+      // serveur pense à le signaler : rester sans réponse n'est jamais
+      // acceptable.
+      chargerManuel();
       return;
     }
 
@@ -1021,9 +1052,23 @@
 
   // Le didacticiel de chaque écran renvoie ici avec ?assistant=1 : on ouvre
   // directement le bon onglet plutôt que de laisser l'utilisateur le chercher.
-  if (new URLSearchParams(window.location.search).get('assistant') === '1') {
-    basculerVue('assistant');
-  }
+  (function ouvrirDepuisDidacticiel() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('assistant') !== '1') return;
+
+    // `initialiser()` est asynchrone : l'appel direct pouvait être exécuté
+    // avant qu'elle ait fini de poser les onglets, et la vue retombait sur la
+    // boîte de réception. On refait la bascule une fois la page stabilisée.
+    const ouvrir = () => {
+      basculerVue('assistant');
+      const champ = document.getElementById('question-aide');
+      const question = params.get('question');
+      if (question) champ.value = question;
+      champ.focus();
+    };
+    ouvrir();
+    setTimeout(ouvrir, 300);
+  })();
 
 </script>
 </body>

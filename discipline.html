@@ -66,6 +66,42 @@
   .liste-bareme { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
   .ligne-bareme { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--craie); border: 1px solid var(--bordure); border-radius: var(--r-petit); padding: 11px 14px; font-size: 0.88rem; }
   .ligne-bareme .points { font-weight: 600; font-variant-numeric: tabular-nums; color: var(--rouge); }
+  /* Un gain ne doit pas s'afficher en rouge : la couleur porte le sens du fait
+     autant que le signe. */
+  .ligne-bareme .points.gain { color: var(--vert-ok); }
+  .titre-categorie {
+    grid-column: 1 / -1; margin: 14px 0 2px 0; font-size: 0.78rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.04em; color: var(--texte-att);
+  }
+  .puce-origine {
+    font-size: 0.68rem; padding: 1px 7px; border-radius: 20px; font-weight: 600;
+    background: rgba(201,138,62,0.16); color: var(--ocre-dark); margin-left: 6px;
+  }
+  .puce-mesure {
+    font-size: 0.68rem; padding: 1px 7px; border-radius: 20px;
+    background: rgba(60,90,98,0.12); color: var(--encre); margin-left: 6px;
+  }
+  .avis-bareme {
+    background: rgba(201,138,62,0.12); border-left: 3px solid var(--ocre);
+    border-radius: var(--r-petit); padding: 10px 14px; font-size: 0.85rem;
+    color: var(--texte-sombre); margin: 0 0 14px 0;
+  }
+  .etat-reglement { font-size: 0.85rem; color: var(--texte-att); margin: 0 0 14px 0; }
+  .etat-reglement.en-vigueur { color: var(--vert-ok); font-weight: 600; }
+  .aide-champ { font-size: 0.76rem; color: var(--texte-att); margin-top: 4px; display: block; }
+  .detail-citations { margin-top: 14px; }
+  .detail-citations summary { cursor: pointer; font-size: 0.82rem; color: var(--texte-att); }
+  .detail-citations blockquote {
+    margin: 8px 0 8px 0; padding: 8px 12px; border-left: 2px solid var(--bordure);
+    font-size: 0.8rem; color: var(--texte-att); background: var(--craie);
+  }
+  .cellule-proposition input, .cellule-proposition select {
+    padding: 6px 8px; border: 1.5px solid var(--bordure); border-radius: var(--r-bouton);
+    font-size: 0.82rem; background: var(--craie-2); font-family: var(--police-corps);
+  }
+  .cellule-proposition input[type="number"] { width: 80px; }
+  .cellule-proposition input[type="text"] { width: 100%; min-width: 160px; }
+  tr.regle-retiree { opacity: 0.45; }
 
   .puce-gravite { font-size: 0.74rem; padding: 2px 9px; border-radius: 20px; font-weight: 600; }
   .puce-gravite.legere { background: rgba(107,114,105,0.14); color: var(--texte-att); }
@@ -267,9 +303,74 @@
       </div>
 
       <div class="carte-config">
-        <h3>Barème indicatif</h3>
+        <h3>Barème appliqué</h3>
         <p class="aide">Ces valeurs pré-remplissent le formulaire de signalement. Elles restent modifiables au cas par cas, car la gravité dépend du contexte.</p>
+        <p class="avis-bareme" id="avis-bareme" style="display:none;"></p>
         <div id="liste-bareme" class="liste-bareme"></div>
+      </div>
+
+      <!-- ============ Règlement intérieur (directeur seul) ============ -->
+      <div class="carte-config" id="carte-reglement" style="display:none;">
+        <h3>Règlement intérieur</h3>
+        <p class="aide">
+          Importez le règlement de votre école pour que le logiciel applique <strong>votre</strong> barème.
+          S'il chiffre déjà les sanctions, elles sont reprises telles quelles. S'il ne les chiffre pas,
+          des points cohérents vous sont proposés — vous les corrigez avant de valider.
+        </p>
+
+        <p class="etat-reglement" id="etat-reglement"></p>
+
+        <div class="grille-formulaire">
+          <div class="champ-form">
+            <label for="champ-fichier-reglement">Fichier</label>
+            <input type="file" id="champ-fichier-reglement"
+                   accept=".docx,.txt,.md,.csv,.json,.html,.htm,.rtf,.xlsx,.xls" />
+            <span class="aide-champ">Word (.docx), texte, Markdown, CSV, Excel. Les PDF ne peuvent pas être lus : copiez-collez leur contenu ci-dessous.</span>
+          </div>
+          <div class="champ-form">
+            <label for="champ-nom-reglement">Nom du document</label>
+            <input type="text" id="champ-nom-reglement" maxlength="120" placeholder="Règlement intérieur 2025-2026" />
+          </div>
+        </div>
+
+        <div class="champ-form" style="margin-top:14px;">
+          <label for="champ-texte-reglement">…ou collez le texte du règlement</label>
+          <textarea id="champ-texte-reglement" rows="6"
+                    placeholder="Article 1. Tout retard non justifié…"></textarea>
+        </div>
+
+        <div class="barre-actions">
+          <button class="bouton bouton-principal" id="bouton-analyser-reglement">Analyser le règlement</button>
+          <button class="bouton" id="bouton-generer-reglement">Je n'ai pas de règlement écrit</button>
+        </div>
+      </div>
+
+      <!-- ============ Relecture de la proposition ============ -->
+      <div class="carte-config" id="carte-proposition" style="display:none;">
+        <h3>Proposition à relire</h3>
+        <p class="aide" id="aide-proposition"></p>
+
+        <div class="champ-form" style="max-width:260px;">
+          <label for="champ-capital-propose">Capital de conduite</label>
+          <input type="number" id="champ-capital-propose" min="1" max="100" step="1" />
+        </div>
+
+        <div class="conteneur-tableau" style="margin-top:14px;">
+          <table>
+            <thead><tr><th>Fait</th><th>Sens</th><th>Points</th><th>Mesure</th><th>Origine</th><th></th></tr></thead>
+            <tbody id="corps-proposition"></tbody>
+          </table>
+        </div>
+
+        <details class="detail-citations" id="detail-citations" style="display:none;">
+          <summary>Voir les passages du règlement dont viennent ces règles</summary>
+          <div id="liste-citations"></div>
+        </details>
+
+        <div class="barre-actions">
+          <button class="bouton bouton-principal" id="bouton-valider-reglement">Valider et appliquer ce barème</button>
+          <button class="bouton" id="bouton-abandonner-reglement">Abandonner</button>
+        </div>
       </div>
     </section>
   </main>
@@ -343,7 +444,11 @@
   // Les faits positifs ajoutent des points au lieu d'en retirer : une école
   // qui ne sait que sanctionner passe à côté de la moitié de son rôle.
   const TYPES_POSITIFS = ['entraide', 'effort', 'exemplarite', 'service_rendu', 'distinction'];
-  const estPositif = (t) => TYPES_POSITIFS.includes(t);
+  // Le sens vient du barème de l'école dès qu'elle en a un : ses faits à
+  // valoriser ne portent pas forcément les mêmes codes que ceux du logiciel.
+  const estPositif = (t) => (config && Array.isArray(config.types_positifs))
+    ? config.types_positifs.includes(t)
+    : TYPES_POSITIFS.includes(t);
   const LIBELLES_MESURE = {
     aucune: 'Aucune', avertissement: 'Avertissement', convocation_parent: 'Convocation des parents',
     travail_supplementaire: 'Travail supplémentaire', exclusion_temporaire: 'Exclusion temporaire',
@@ -356,6 +461,8 @@
   };
 
   let config = null;
+  let reglement = null;        // état du règlement intérieur (direction)
+  let propositionEnCours = null;
   let classes = [];
   let vueCourante = 'incidents';
 
@@ -363,9 +470,28 @@
     try { return JSON.parse(obtenirDuStockage('ardoise_user') || 'null'); } catch (e) { return null; }
   })();
   const roles = (utilisateur && utilisateur.roles) || [];
-  const estAutorite = roles.includes('directeur') || roles.includes('prefet') || roles.includes('super_admin');
+  const estAutorite = roles.includes('directeur') || roles.includes('prefet')
+    || roles.includes('directeur_discipline') || roles.includes('super_admin');
   const peutSignaler = estAutorite || roles.includes('titulaire');
   const voitToutesClasses = estAutorite || roles.includes('secretaire');
+  // Importer un règlement redéfinit les sanctions de toute l'école : c'est au
+  // directeur seul, pas au préfet ni au directeur de discipline qui, eux,
+  // appliquent le barème sans le fixer.
+  const estDirecteur = roles.includes('directeur') || roles.includes('super_admin');
+
+  // Barème de l'école quand elle en a validé un, celui du code sinon. Ces deux
+  // fonctions sont le point de passage unique : partout ailleurs dans la page,
+  // on ne consulte plus jamais LIBELLES_TYPE ni TYPES_POSITIFS directement,
+  // sinon l'écran continuerait d'afficher « Tenue non conforme » alors que le
+  // règlement de l'école dit « Négligence vestimentaire ».
+  function regleDe(code) {
+    return (config.regles || []).find(r => r.code === code) || null;
+  }
+  function libelleType(code) {
+    const regle = regleDe(code);
+    if (regle) return regle.libelle;
+    return LIBELLES_TYPE[code] || code;
+  }
 
   function afficherMessage(texte, type) {
     const zone = document.getElementById('message-flash');
@@ -408,15 +534,7 @@
     if (!rConfig || !rConfig.ok) { afficherMessage('Impossible de charger le barème.', 'erreur'); return; }
     config = await rConfig.json();
 
-    const negatifs = config.types.filter(t => !estPositif(t));
-    const positifs = (config.types_positifs || TYPES_POSITIFS).filter(t => config.types.includes(t));
-    document.getElementById('select-type').innerHTML =
-      `<optgroup label="Faits à sanctionner">`
-      + negatifs.map(t => `<option value="${t}">${echapper(LIBELLES_TYPE[t] || t)}</option>`).join('')
-      + `</optgroup>`
-      + (positifs.length ? `<optgroup label="Faits à valoriser">`
-          + positifs.map(t => `<option value="${t}">${echapper(LIBELLES_TYPE[t] || t)}</option>`).join('')
-          + `</optgroup>` : '');
+    remplirSelecteurType();
     document.getElementById('select-mesure').innerHTML = config.mesures
       .map(m => `<option value="${m}">${echapper(LIBELLES_MESURE[m] || m)}</option>`).join('');
     document.getElementById('champ-capital').value = config.capital_conduite;
@@ -447,8 +565,41 @@
     document.getElementById('bouton-appliquer').addEventListener('click', appliquerConduite);
     document.getElementById('bouton-enregistrer-capital').addEventListener('click', enregistrerCapital);
 
+    // Règlement intérieur : réservé au directeur, et chargé seulement pour lui
+    // — inutile d'interroger le serveur pour un écran que les autres ne
+    // verront pas.
+    if (estDirecteur) {
+      document.getElementById('carte-reglement').style.display = '';
+      document.getElementById('bouton-analyser-reglement').addEventListener('click', analyserReglement);
+      document.getElementById('bouton-generer-reglement').addEventListener('click', genererReglement);
+      document.getElementById('bouton-valider-reglement').addEventListener('click', validerReglement);
+      document.getElementById('bouton-abandonner-reglement').addEventListener('click', abandonnerProposition);
+      chargerReglement();
+    }
+
     await chargerEleves();
     chargerIncidents();
+  }
+
+  /**
+   * Alimente le menu « Type de fait ».
+   *
+   * Ce qui est proposé : les règles ACTIVES de l'école si elle a validé un
+   * règlement, sinon les types du logiciel. `config.types` contient aussi les
+   * règles désactivées — elles servent à relire les incidents déjà saisis
+   * sous ces codes, pas à en enregistrer de nouveaux.
+   */
+  function remplirSelecteurType() {
+    const codesProposables = config.regles && config.regles.length
+      ? config.regles.map(r => r.code)
+      : config.types;
+
+    const negatifs = codesProposables.filter(t => !estPositif(t));
+    const positifs = codesProposables.filter(t => estPositif(t));
+    const option = (t) => `<option value="${echapper(t)}">${echapper(libelleType(t))}</option>`;
+    document.getElementById('select-type').innerHTML =
+      (negatifs.length ? `<optgroup label="Faits à sanctionner">` + negatifs.map(option).join('') + `</optgroup>` : '')
+      + (positifs.length ? `<optgroup label="Faits à valoriser">` + positifs.map(option).join('') + `</optgroup>` : '');
   }
 
   function majPointsParDefaut() {
@@ -457,16 +608,56 @@
     if (etiquette) etiquette.textContent = estPositif(type) ? 'Points gagnés' : 'Points retirés';
     document.getElementById('champ-points').value = config.points_par_defaut[type] ?? 0;
     document.getElementById('champ-points').max = config.capital_conduite;
+
+    // La mesure habituelle définie dans le règlement est proposée d'office :
+    // si l'école a écrit « bagarre → convocation des parents », l'enseignant
+    // n'a pas à s'en souvenir à chaque signalement.
+    const mesureHabituelle = (config.mesures_par_defaut || {})[type];
+    const selectMesure = document.getElementById('select-mesure');
+    if (selectMesure) selectMesure.value = estPositif(type) ? 'aucune' : (mesureHabituelle || 'aucune');
   }
 
   function dessinerBareme() {
-    document.getElementById('liste-bareme').innerHTML = config.types.map(t => `
-      <div class="ligne-bareme">
-        <span>${echapper(LIBELLES_TYPE[t] || t)}
-          <span class="puce-gravite ${GRAVITE_PAR_TYPE[t] || 'moyenne'}">${GRAVITE_PAR_TYPE[t] || 'moyenne'}</span>
-        </span>
-        <span class="points">−${config.points_par_defaut[t] ?? 0}</span>
-      </div>
+    const zone = document.getElementById('liste-bareme');
+    const avis = document.getElementById('avis-bareme');
+
+    if (!config.bareme_personnalise) {
+      avis.innerHTML = "Cette école utilise le <strong>barème générique</strong> du logiciel. "
+        + "Importez votre règlement intérieur ci-dessous pour appliquer le vôtre.";
+      avis.style.display = '';
+      zone.innerHTML = config.types.map(t => `
+        <div class="ligne-bareme">
+          <span>${echapper(libelleType(t))}
+            <span class="puce-gravite ${GRAVITE_PAR_TYPE[t] || 'moyenne'}">${GRAVITE_PAR_TYPE[t] || 'moyenne'}</span>
+          </span>
+          <span class="points">${estPositif(t) ? '+' : '−'}${config.points_par_defaut[t] ?? 0}</span>
+        </div>`).join('');
+      return;
+    }
+
+    avis.style.display = 'none';
+    // Regroupement par catégorie issue du règlement : c'est ainsi que le
+    // directeur retrouvera l'organisation de son propre texte.
+    const parCategorie = new Map();
+    (config.regles || []).forEach(r => {
+      const cle = r.categorie || (r.sens === 'positif' ? 'Mérite' : 'Autres');
+      if (!parCategorie.has(cle)) parCategorie.set(cle, []);
+      parCategorie.get(cle).push(r);
+    });
+
+    zone.innerHTML = [...parCategorie.entries()].map(([categorie, regles]) => `
+      <p class="titre-categorie">${echapper(categorie)}</p>
+      ${regles.map(r => `
+        <div class="ligne-bareme">
+          <span>${echapper(r.libelle)}
+            ${r.origine_points === 'propose'
+              ? '<span class="puce-origine" title="Points proposés par l\'assistant, pas écrits dans votre règlement">proposé</span>'
+              : ''}
+            ${r.mesure && r.mesure !== 'aucune'
+              ? `<span class="puce-mesure">${echapper(LIBELLES_MESURE[r.mesure] || r.mesure)}</span>` : ''}
+          </span>
+          <span class="points ${r.sens === 'positif' ? 'gain' : ''}">${r.sens === 'positif' ? '+' : '−'}${r.points}</span>
+        </div>`).join('')}
     `).join('');
   }
 
@@ -520,7 +711,7 @@
     }
 
     corps.innerHTML = incidents.map(i => `
-      <tr>
+      <tr data-eleve-id="${i.eleve_id || ''}">
         <td>${formaterDate(i.date_incident)}</td>
         <td>${echapper(nomComplet(i))}</td>
         <td>${echapper(LIBELLES_TYPE[i.type] || i.type)}${i.description ? `<div style="font-size:0.78rem; color:var(--texte-att); margin-top:3px;">${echapper(i.description)}</div>` : ''}</td>
@@ -597,7 +788,8 @@
 
     corps.innerHTML = donnees.eleves.map(e => {
       const faible = e.points_restants < capital * 0.5 ? ' capital-faible' : '';
-      return `<tr>
+      // Voir presences.html : identifiant nécessaire au surlignage ciblé.
+      return `<tr data-eleve-id="${e.eleve_id || e.id}">
         <td>${echapper(nomComplet(e))}</td>
         <td>${e.nb_incidents}${e.nb_positifs > 0 ? ` <span style="color:var(--vert-ok);">+${e.nb_positifs}</span>` : ''}</td>
         <td style="color:${e.points_perdus > 0 ? 'var(--rouge)' : 'var(--texte-att)'};">${e.points_perdus > 0 ? '−' + e.points_perdus : '—'}${e.points_gagnes > 0 ? ` <span style="color:var(--vert-ok);">+${e.points_gagnes}</span>` : ''}</td>
@@ -651,6 +843,264 @@
     const rep = await r.json().catch(() => ({}));
     if (!r.ok) { afficherMessage(rep.message || 'Erreur.', 'erreur'); return; }
     afficherMessage(rep.message, 'succes');
+  }
+
+  // ============================================================
+  //  Règlement intérieur
+  // ============================================================
+  async function chargerReglement() {
+    const r = await appelApi('/discipline/reglement');
+    if (!r || !r.ok) return;
+    reglement = await r.json();
+
+    const etat = document.getElementById('etat-reglement');
+    if (reglement.en_vigueur) {
+      const quand = new Date(reglement.en_vigueur.valide_at).toLocaleDateString('fr-FR',
+        { day: '2-digit', month: 'long', year: 'numeric' });
+      etat.className = 'etat-reglement en-vigueur';
+      etat.textContent = `En vigueur : « ${reglement.en_vigueur.nom} », validé le ${quand}`
+        + (reglement.en_vigueur.valide_par_nom ? ` par ${reglement.en_vigueur.valide_par_nom}.` : '.');
+    } else {
+      etat.className = 'etat-reglement';
+      etat.textContent = "Aucun règlement enregistré : le barème générique du logiciel s'applique.";
+    }
+
+    // Une proposition laissée en attente doit se retrouver au rechargement de
+    // la page : le directeur peut avoir été interrompu au milieu de sa
+    // relecture, et refaire l'analyse consommerait un appel pour rien.
+    if (reglement.proposition && reglement.proposition.analyse) {
+      afficherProposition(
+        reglement.proposition.id,
+        reglement.proposition.analyse,
+        reglement.proposition.bareme_present ? 'transcription'
+          : (reglement.proposition.origine === 'genere' ? 'redaction' : 'attribution')
+      );
+    }
+  }
+
+  const AIDE_PAR_MODE = {
+    transcription: "Votre règlement chiffrait déjà les sanctions : les points ci-dessous en sont la transcription, "
+      + "ils n'ont pas été réévalués. Vérifiez la fidélité avant de valider.",
+    attribution: "Votre règlement ne chiffrait pas les sanctions. Les points ci-dessous sont une PROPOSITION : "
+      + "relisez-les, ce sont eux qui décideront des sanctions réelles.",
+    redaction: "Ce barème a été rédigé faute de règlement existant. C'est un point de départ à amender — "
+      + "il n'a aucune valeur tant que vous ne l'avez pas validé."
+  };
+
+  function afficherProposition(id, proposition, mode) {
+    propositionEnCours = { id, regles: proposition.regles.map(r => ({ ...r, retiree: false })) };
+
+    document.getElementById('aide-proposition').textContent = AIDE_PAR_MODE[mode] || AIDE_PAR_MODE.attribution;
+    document.getElementById('champ-capital-propose').value = proposition.capital_conduite_suggere;
+    document.getElementById('carte-proposition').style.display = '';
+
+    dessinerProposition();
+
+    // Les citations permettent de vérifier que l'assistant n'a pas inventé une
+    // règle : sans elles, le directeur devrait relire son règlement en
+    // parallèle pour contrôler.
+    const avecCitation = proposition.regles.filter(r => r.citation);
+    const detail = document.getElementById('detail-citations');
+    if (avecCitation.length) {
+      document.getElementById('liste-citations').innerHTML = avecCitation.map(r =>
+        `<blockquote><strong>${echapper(r.libelle)}</strong><br/>${echapper(r.citation)}</blockquote>`
+      ).join('');
+      detail.style.display = '';
+    } else {
+      detail.style.display = 'none';
+    }
+
+    document.getElementById('carte-proposition').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function dessinerProposition() {
+    const corps = document.getElementById('corps-proposition');
+    corps.innerHTML = propositionEnCours.regles.map((r, i) => `
+      <tr class="${r.retiree ? 'regle-retiree' : ''}" data-index="${i}">
+        <td class="cellule-proposition"><input type="text" data-champ="libelle" value="${echapper(r.libelle)}" ${r.retiree ? 'disabled' : ''} /></td>
+        <td class="cellule-proposition">
+          <select data-champ="sens" ${r.retiree ? 'disabled' : ''}>
+            <option value="negatif" ${r.sens !== 'positif' ? 'selected' : ''}>Retire</option>
+            <option value="positif" ${r.sens === 'positif' ? 'selected' : ''}>Ajoute</option>
+          </select>
+        </td>
+        <td class="cellule-proposition"><input type="number" min="0" step="0.5" data-champ="points" value="${r.points}" ${r.retiree ? 'disabled' : ''} /></td>
+        <td class="cellule-proposition">
+          <select data-champ="mesure" ${r.retiree ? 'disabled' : ''}>
+            ${Object.entries(LIBELLES_MESURE).map(([code, libelle]) =>
+              `<option value="${code}" ${r.mesure === code ? 'selected' : ''}>${echapper(libelle)}</option>`).join('')}
+          </select>
+        </td>
+        <td>${r.origine_points === 'texte'
+              ? '<span class="puce-mesure">votre règlement</span>'
+              : '<span class="puce-origine">proposé</span>'}</td>
+        <td><button class="lien-action" data-retirer="${i}">${r.retiree ? 'Rétablir' : 'Retirer'}</button></td>
+      </tr>`).join('');
+
+    corps.querySelectorAll('[data-champ]').forEach(champ => {
+      champ.addEventListener('change', () => {
+        const index = Number(champ.closest('tr').dataset.index);
+        let valeur = champ.value;
+        if (champ.dataset.champ === 'points') valeur = Math.abs(Number(valeur)) || 0;
+        propositionEnCours.regles[index][champ.dataset.champ] = valeur;
+        // Une correction humaine cesse d'être attribuée au règlement ou à
+        // l'assistant : c'est désormais la décision du directeur.
+        if (champ.dataset.champ === 'points') propositionEnCours.regles[index].origine_points = 'manuel';
+      });
+    });
+
+    corps.querySelectorAll('[data-retirer]').forEach(bouton => {
+      bouton.addEventListener('click', () => {
+        const index = Number(bouton.dataset.retirer);
+        propositionEnCours.regles[index].retiree = !propositionEnCours.regles[index].retiree;
+        dessinerProposition();
+      });
+    });
+  }
+
+  async function analyserReglement() {
+    const fichier = document.getElementById('champ-fichier-reglement').files[0];
+    const texte = document.getElementById('champ-texte-reglement').value.trim();
+    const nom = document.getElementById('champ-nom-reglement').value.trim() || 'Règlement intérieur';
+
+    if (!fichier && !texte) {
+      afficherMessage("Choisissez un fichier ou collez le texte du règlement.", 'erreur');
+      return;
+    }
+
+    const bouton = document.getElementById('bouton-analyser-reglement');
+    bouton.disabled = true; bouton.textContent = 'Analyse en cours…';
+
+    // FormData quand il y a un fichier, JSON sinon : le serveur accepte les
+    // deux, et envoyer un fichier en JSON obligerait à l'encoder en base64
+    // pour rien.
+    let options;
+    if (fichier) {
+      const formulaire = new FormData();
+      formulaire.append('fichier', fichier);
+      formulaire.append('nom', nom);
+      // Pas de Content-Type explicite : le navigateur doit poser lui-même la
+      // frontière multipart, qu'on ne peut pas deviner.
+      options = { method: 'POST', body: formulaire };
+    } else {
+      options = {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nom, texte })
+      };
+    }
+
+    const r = await appelApi('/discipline/reglement/importer', options);
+    bouton.disabled = false; bouton.textContent = 'Analyser le règlement';
+    if (!r) return;
+    const rep = await r.json().catch(() => ({}));
+    if (!r.ok) { afficherMessage(rep.message || "L'analyse a échoué.", 'erreur'); return; }
+
+    afficherMessage(rep.message, 'succes');
+    afficherProposition(rep.reglement_id, rep.proposition, rep.mode);
+  }
+
+  async function genererReglement() {
+    if (!await ArdoiseUI.confirmer(
+      "Rédiger un règlement de départ ?\n\nIl sera fondé sur les usages courants des écoles conventionnées de RDC. "
+      + "Vous pourrez le relire et le corriger entièrement avant qu'il ne s'applique."
+    )) return;
+
+    const bouton = document.getElementById('bouton-generer-reglement');
+    bouton.disabled = true; bouton.textContent = 'Rédaction en cours…';
+
+    const r = await appelApi('/discipline/reglement/generer', { method: 'POST' });
+    bouton.disabled = false; bouton.textContent = "Je n'ai pas de règlement écrit";
+    if (!r) return;
+    const rep = await r.json().catch(() => ({}));
+    if (!r.ok) { afficherMessage(rep.message || 'La rédaction a échoué.', 'erreur'); return; }
+
+    afficherMessage(rep.message, 'succes');
+    afficherProposition(rep.reglement_id, rep.proposition, 'redaction');
+  }
+
+  async function validerReglement() {
+    if (!propositionEnCours) return;
+    const capital = Number(document.getElementById('champ-capital-propose').value);
+    if (!Number.isInteger(capital) || capital < 1 || capital > 100) {
+      afficherMessage('Le capital de conduite doit être un entier entre 1 et 100.', 'erreur'); return;
+    }
+
+    const regles = propositionEnCours.regles
+      .filter(r => !r.retiree)
+      .map(r => ({
+        code: r.code, libelle: String(r.libelle).trim(), sens: r.sens,
+        points: Math.abs(Number(r.points)) || 0, mesure: r.mesure,
+        categorie: r.categorie, origine_points: r.origine_points
+      }));
+
+    if (regles.length === 0) {
+      afficherMessage('Conservez au moins une règle.', 'erreur'); return;
+    }
+    const sansLibelle = regles.find(r => !r.libelle);
+    if (sansLibelle) { afficherMessage('Chaque règle doit avoir un libellé.', 'erreur'); return; }
+    // Contrôle côté écran en plus de celui du serveur : mieux vaut le signaler
+    // avant l'envoi que de faire échouer une validation de vingt règles pour
+    // une seule ligne fautive.
+    const excessive = regles.find(r => r.points > capital);
+    if (excessive) {
+      afficherMessage(
+        `« ${excessive.libelle} » retire ${excessive.points} points alors que le capital n'est que de ${capital}.`,
+        'erreur');
+      return;
+    }
+
+    if (!await ArdoiseUI.confirmer(
+      `Appliquer ce barème à toute l'école ?\n\n${regles.length} règle(s), capital de ${capital} points. `
+      + "Le barème actuel sera remplacé ; les faits déjà signalés restent consultables."
+    )) return;
+
+    const bouton = document.getElementById('bouton-valider-reglement');
+    bouton.disabled = true; bouton.textContent = 'Validation…';
+
+    const r = await appelApi(`/discipline/reglement/${propositionEnCours.id}/valider`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ capital_conduite: capital, regles })
+    });
+
+    bouton.disabled = false; bouton.textContent = 'Valider et appliquer ce barème';
+    if (!r) return;
+    const rep = await r.json().catch(() => ({}));
+    if (!r.ok) { afficherMessage(rep.message || 'Validation impossible.', 'erreur'); return; }
+
+    afficherMessage(rep.message, 'succes');
+    document.getElementById('carte-proposition').style.display = 'none';
+    propositionEnCours = null;
+    // Le barème vient de changer : tout l'écran doit se recaler dessus, y
+    // compris le menu de signalement de l'onglet voisin.
+    await rechargerBareme();
+    await chargerReglement();
+  }
+
+  async function abandonnerProposition() {
+    if (!propositionEnCours) return;
+    if (!await ArdoiseUI.confirmer("Abandonner cette proposition ? L'analyse sera perdue.")) return;
+
+    const r = await appelApi(`/discipline/reglement/${propositionEnCours.id}`, { method: 'DELETE' });
+    if (!r) return;
+    const rep = await r.json().catch(() => ({}));
+    if (!r.ok) { afficherMessage(rep.message || 'Erreur.', 'erreur'); return; }
+
+    afficherMessage(rep.message, 'succes');
+    document.getElementById('carte-proposition').style.display = 'none';
+    propositionEnCours = null;
+  }
+
+  /** Recharge le barème et tout ce qui en dépend à l'écran. */
+  async function rechargerBareme() {
+    const r = await appelApi('/discipline/parametres');
+    if (!r || !r.ok) return;
+    const anneeActive = config ? config.annee_active : null;
+    config = await r.json();
+    if (!config.annee_active) config.annee_active = anneeActive;
+    remplirSelecteurType();
+    document.getElementById('champ-capital').value = config.capital_conduite;
+    majPointsParDefaut();
+    dessinerBareme();
   }
 
   // ============================================================

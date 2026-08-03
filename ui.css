@@ -1048,3 +1048,34 @@ html[data-theme="nuit"] .message-flash.info   { background: #16223d; color: #9db
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+
+/* ==========================================================================
+   NAVIGATION CIBLÉE (voir installerFocus dans ui.js)
+   Le surlignage doit rester lisible dans les deux thèmes : on s'appuie sur les
+   variables, jamais sur une couleur en dur.
+   ========================================================================== */
+.ard-bandeau-focus {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  background: rgba(201, 138, 62, 0.12);
+  border-left: 3px solid var(--ocre, #c98a3e);
+  border-radius: var(--r-petit, 6px);
+  padding: 10px 14px; margin: 0 0 18px 0;
+  font-size: 0.86rem; color: var(--texte-sombre, #22302a);
+}
+.ard-bandeau-focus a { color: var(--encre, #2f4f4f); font-weight: 600; }
+
+.ard-ligne-ciblee {
+  background: rgba(201, 138, 62, 0.16) !important;
+  outline: 2px solid var(--ocre, #c98a3e);
+  outline-offset: -2px;
+}
+/* L'animation attire l'œil au moment de l'arrivée, puis s'efface : un
+   surlignage permanent finirait par être ignoré. */
+@media (prefers-reduced-motion: no-preference) {
+  .ard-ligne-ciblee { animation: ard-focus-pulse 1.2s ease-out 2; }
+}
+@keyframes ard-focus-pulse {
+  0%, 100% { background: rgba(201, 138, 62, 0.16); }
+  50% { background: rgba(201, 138, 62, 0.34); }
+}

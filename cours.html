@@ -84,6 +84,38 @@
   .badge-resultat.reussite { background: rgba(76,122,90,0.12); color: var(--vert-ok); }
   .badge-resultat.echec { background: rgba(178,58,46,0.1); color: var(--rouge); }
   .etat-vide-tableau { padding: 50px 20px; text-align: center; color: var(--texte-att); }
+  /* Modale : ui.css ne pose ni position ni display, ces règles sont propres à
+     chaque page. Voir le défaut corrigé au lot 10 sur trois autres écrans. */
+  .voile { position: fixed; inset: 0; background: rgba(31,43,36,0.45); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 10; }
+  .voile.visible { display: flex; }
+  .modale { background: var(--craie-2); border-radius: var(--r-carte); padding: 28px; max-width: 560px; width: 100%; max-height: 90vh; overflow-y: auto; }
+  .modale-large { max-width: 760px; }
+  .modale h2 { font-family: var(--police-titre); font-weight: 600; font-size: 1.3rem; margin: 0 0 18px 0; }
+  .actions-modale { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+
+  .lien-fiche { background: none; border: none; padding: 0; font: inherit; color: var(--encre); cursor: pointer; text-align: left; text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px; }
+  .lien-fiche:hover { color: var(--ocre-dark); }
+  .titre-fiche { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--texte-att); margin: 20px 0 8px 0; }
+  .ligne-fiche { display: flex; justify-content: space-between; gap: 16px; padding: 7px 0; border-bottom: 1px solid var(--bordure); font-size: 0.87rem; }
+  .ligne-fiche span:first-child { color: var(--texte-att); font-size: 0.84rem; }
+  .bloc-alertes { background: rgba(178,58,46,0.10); border-left: 3px solid var(--rouge); border-radius: var(--r-petit); padding: 10px 14px; margin-bottom: 6px; }
+  .bloc-alertes p { margin: 0 0 5px 0; font-size: 0.84rem; }
+  .bloc-alertes p:last-child { margin-bottom: 0; }
+  .periode-cours { border: 1px solid var(--bordure); border-radius: var(--r-petit); padding: 10px 13px; margin-bottom: 8px; }
+  .periode-cours summary { cursor: pointer; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 0.87rem; }
+  .periode-nom { font-weight: 600; }
+  .periode-chiffres { color: var(--texte-att); }
+  .periode-detail { font-size: 0.76rem; }
+  /* Un taux sous 50 % se voit : c'est le seul chiffre qui appelle une décision. */
+  .taux-bas { color: var(--rouge); }
+  .tableau-classes { width: 100%; margin-top: 10px; font-size: 0.84rem; border-collapse: collapse; }
+  .tableau-classes th { text-align: left; font-size: 0.74rem; color: var(--texte-att); text-transform: uppercase; letter-spacing: 0.04em; padding: 5px 0; }
+  .tableau-classes td { padding: 5px 0; border-top: 1px solid var(--bordure); }
+  .liste-classes-cours { list-style: none; margin: 0; padding: 0; }
+  .liste-classes-cours li { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 6px 0; border-bottom: 1px solid var(--bordure); font-size: 0.85rem; }
+  .liste-classes-cours .enseignants { color: var(--texte-att); font-size: 0.8rem; margin-left: auto; }
+  .mini-puce { font-size: 0.64rem; padding: 0 5px; border-radius: 20px; background: rgba(107,114,105,0.16); }
+  .sans-enseignant { color: var(--rouge); font-size: 0.8rem; margin-left: auto; }
 </style>
 <script>
   /* Applique le thème AVANT le premier affichage, pour éviter tout clignotement.
@@ -261,6 +293,106 @@
   const roles = (utilisateur && utilisateur.roles) || [];
   const peutModifier = roles.includes('directeur') || roles.includes('prefet') || roles.includes('super_admin');
 
+
+  // ============================================================
+  //  Fiche du cours
+  // ============================================================
+  //
+  // Le taux de réussite PAR PÉRIODE et PAR CLASSE est l'information qu'aucun
+  // écran ne donnait. Un cours peut se passer correctement en 5e A et
+  // s'effondrer en 5e B : la moyenne générale du cours masque exactement cela,
+  // et c'est pourtant le seul chiffre qui appelle une décision.
+
+  async function ouvrirFicheCours(coursId) {
+    const voile = document.getElementById('voile-fiche-cours');
+    const corps = document.getElementById('corps-fiche-cours');
+    document.getElementById('titre-fiche-cours').textContent = 'Fiche du cours';
+    corps.innerHTML = '<p class="aide"><span class="spinner"></span> Chargement…</p>';
+    voile.classList.add('visible');
+
+    const r = await appelApi(`/cours/${coursId}/fiche`);
+    if (!r || !r.ok) {
+      corps.innerHTML = '<p class="aide">La fiche n\'a pas pu être chargée.</p>';
+      return;
+    }
+    const d = await r.json();
+    document.getElementById('titre-fiche-cours').textContent = d.cours.nom;
+
+    if (d.sans_annee) {
+      corps.innerHTML = `<p class="bloc-alertes"><p>${echapper(d.message)}</p></p>`;
+      return;
+    }
+
+    const alertes = (d.alertes || []).length
+      ? `<div class="bloc-alertes">${d.alertes.map(a => `<p>${echapper(a)}</p>`).join('')}</div>`
+      : '';
+
+    const notees = d.resultats.filter(p => p.nb_notes > 0);
+
+    // Le détail par classe est REPLIÉ : la vue d'ensemble d'abord, le détail
+    // sur demande. Déplié d'office, il ferait plusieurs écrans de haut sur une
+    // école à vingt classes.
+    const blocPeriodes = notees.length === 0
+      ? '<p class="aide">Aucune note saisie dans ce cours pour l\'année en cours.</p>'
+      : notees.map(p => `
+          <details class="periode-cours">
+            <summary>
+              <span class="periode-nom">${echapper(p.libelle)}${p.cloturee ? ' <span class="mini-puce">clôturée</span>' : ''}</span>
+              <span class="periode-chiffres">
+                moyenne <strong>${p.moyenne} %</strong> ·
+                réussite <strong class="${p.taux_reussite < 50 ? 'taux-bas' : ''}">${p.taux_reussite} %</strong>
+                <span class="periode-detail">(${p.nb_notes} note(s))</span>
+              </span>
+            </summary>
+            <table class="tableau-classes">
+              <thead><tr><th>Classe</th><th>Notes</th><th>Moyenne</th><th>Réussite</th></tr></thead>
+              <tbody>${p.par_classe.map(c => `
+                <tr>
+                  <td>${echapper(c.classe_nom)}</td>
+                  <td>${c.nb_notes}</td>
+                  <td>${c.moyenne !== null ? c.moyenne + ' %' : '—'}</td>
+                  <td class="${c.taux_reussite !== null && c.taux_reussite < 50 ? 'taux-bas' : ''}">${
+                    c.taux_reussite !== null ? c.taux_reussite + ' %' : '—'}</td>
+                </tr>`).join('')}</tbody>
+            </table>
+          </details>`).join('');
+
+    corps.innerHTML = `
+      ${alertes}
+      <h3 class="titre-fiche">Le cours</h3>
+      <div class="ligne-fiche"><span>Code</span><span>${echapper(d.cours.code || '—')}</span></div>
+      <div class="ligne-fiche"><span>Maximum de période</span><span>${d.cours.maximum_points}</span></div>
+      <div class="ligne-fiche"><span>Maximum d'examen</span><span>${
+        d.cours.maximum_examen === null ? 'non renseigné'
+        : d.cours.maximum_examen === 0 ? 'pas d\'examen' : d.cours.maximum_examen}</span></div>
+      ${d.cours.domaine ? `<div class="ligne-fiche"><span>Domaine</span><span>${echapper(d.cours.domaine)}</span></div>` : ''}
+      <div class="ligne-fiche"><span>Seuil de réussite</span><span>${d.seuil} %</span></div>
+
+      <h3 class="titre-fiche">Réussite par période — ${echapper(d.annee.libelle)}</h3>
+      ${blocPeriodes}
+
+      <h3 class="titre-fiche">Classes concernées (${d.classes.length})</h3>
+      ${d.classes.length === 0
+        ? '<p class="aide">Aucune classe pour l\'année en cours.</p>'
+        : `<ul class="liste-classes-cours">${d.classes.map(c => `
+            <li>
+              <a href="classes.html?classe=${encodeURIComponent(c.id)}&nom=${encodeURIComponent(c.nom)}">${echapper(c.nom)}</a>
+              <span class="mini-puce">sur ${c.maximum}</span>
+              <span class="${(c.enseignants || []).length ? 'enseignants' : 'sans-enseignant'}">${
+                (c.enseignants || []).length ? echapper(c.enseignants.join(', ')) : 'aucun enseignant'
+              }</span>
+            </li>`).join('')}</ul>`}`;
+  }
+
+  document.getElementById('bouton-fermer-fiche-cours').addEventListener('click', () => {
+    document.getElementById('voile-fiche-cours').classList.remove('visible');
+  });
+  document.getElementById('voile-fiche-cours').addEventListener('click', (evt) => {
+    if (evt.target.id === 'voile-fiche-cours') {
+      document.getElementById('voile-fiche-cours').classList.remove('visible');
+    }
+  });
+
   function afficherMessage(texte, type) {
     const zone = document.getElementById('message-flash');
     zone.textContent = texte;
@@ -394,7 +526,7 @@
         : '<span class="alerte-douce">rattaché à aucune classe</span>';
 
       return `<tr data-id="${c.id}">
-        <td><strong>${echapper(c.nom)}</strong>${c.nb_notes > 0 ? `<div style="font-size:0.76rem; color:var(--texte-att); margin-top:3px;">${c.nb_notes} note(s) saisie(s)</div>` : ''}</td>
+        <td><button type="button" class="lien-fiche" data-fiche="${c.id}"><strong>${echapper(c.nom)}</strong></button>${c.nb_notes > 0 ? `<div style="font-size:0.76rem; color:var(--texte-att); margin-top:3px;">${c.nb_notes} note(s) saisie(s)</div>` : ''}</td>
         <td style="font-family:var(--police-mono); font-size:0.82rem;">${echapper(c.code || '—')}</td>
         <td>${c.maximum_points ?? '—'}</td>
         <td>${
@@ -410,6 +542,9 @@
         ` : ''}</td>
       </tr>`;
     }).join('');
+
+    corps.querySelectorAll('[data-fiche]').forEach(b =>
+      b.addEventListener('click', () => ouvrirFicheCours(b.dataset.fiche)));
 
     corps.querySelectorAll('[data-editer]').forEach(b => {
       b.addEventListener('click', () => { ligneEnEdition = b.dataset.editer; dessinerTableau(); });
@@ -548,5 +683,16 @@
 <script src="hors-ligne.js"></script>
 <!-- Didacticiel d'installation : bouton d'aide contextuel, partagé par toutes les pages. -->
 <script src="didacticiel.js" data-ecran="Cours"></script>
+<!-- Fiche du cours : réussite par période et par classe -->
+<div class="voile" id="voile-fiche-cours">
+  <div class="modale modale-large">
+    <h2 id="titre-fiche-cours">Fiche du cours</h2>
+    <div id="corps-fiche-cours"></div>
+    <div class="actions-modale">
+      <button type="button" class="bouton bouton-principal" id="bouton-fermer-fiche-cours">Fermer</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

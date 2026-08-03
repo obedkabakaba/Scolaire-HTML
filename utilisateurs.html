@@ -175,6 +175,7 @@
         <option value="professeur">Professeur</option>
         <option value="titulaire">Titulaire</option>
         <option value="comptable">Comptable</option>
+        <option value="directeur_discipline">Directeur de discipline</option>
       </select>
     </div>
 
@@ -212,6 +213,12 @@
           <label class="case-role"><input type="checkbox" value="prefet" /> Préfet des études</label>
           <label class="case-role"><input type="checkbox" value="directeur" /> Directeur</label>
           <label class="case-role"><input type="checkbox" value="comptable" /> Comptable</label>
+          <!-- Rôle présent dans l'ENUM et reconnu par le backend depuis la
+               migration 008, mais absent de cet écran : le nommer était donc
+               impossible. Un compte portant ce rôle n'avait aucun moyen d'être
+               créé, et le module Discipline restait entièrement chez le
+               directeur, quoi qu'ait décidé l'école. -->
+          <label class="case-role"><input type="checkbox" value="directeur_discipline" /> Directeur de discipline</label>
         </div>
       </div>
       <div class="champ" id="champ-statut-conteneur" style="display:none;">
@@ -234,7 +241,7 @@
 
   const LIBELLES_ROLES = {
     professeur: 'Professeur', titulaire: 'Titulaire', secretaire: 'Secrétaire',
-    prefet: 'Préfet', comptable: 'Comptable', directeur: 'Directeur', super_admin: 'Super Admin'
+    prefet: 'Préfet', comptable: 'Comptable', directeur: 'Directeur', super_admin: 'Super Admin', directeur_discipline: 'Directeur de discipline'
   };
 
 

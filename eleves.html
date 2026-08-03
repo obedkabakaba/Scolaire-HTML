@@ -205,6 +205,25 @@
     border-style: solid;
     border-color: var(--ardoise) transparent transparent transparent;
   }
+  .titre-parcours { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--texte-att); margin: 22px 0 8px 0; }
+  .moyenne-annuelle { font-size: 0.95rem; margin: 0 0 12px 0; }
+  .bandeau-parcours { background: rgba(201,138,62,0.12); border-left: 3px solid var(--ocre); padding: 10px 14px; border-radius: var(--r-petit); font-size: 0.86rem; margin-top: 18px; }
+  .grille-periodes { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+  .carte-periode { border: 1px solid var(--bordure); border-radius: var(--r-petit); padding: 10px 12px; }
+  .periode-nom { font-size: 0.76rem; color: var(--texte-att); }
+  .periode-valeur { font-family: var(--police-titre); font-size: 1.25rem; font-weight: 600; margin: 2px 0; }
+  .periode-detail { font-size: 0.73rem; color: var(--texte-att); }
+  .mini-puce { font-size: 0.64rem; padding: 0 5px; border-radius: 20px; background: rgba(107,114,105,0.16); }
+  .grille-liens { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+  /* Chaque lien porte SON chiffre : « Ses présences · 4 absences » dit s'il
+     vaut la peine d'être suivi, là où un simple intitulé oblige à cliquer
+     pour le découvrir. */
+  .lien-parcours { display: block; border: 1.5px solid var(--bordure); border-radius: var(--r-petit); padding: 11px 13px; text-decoration: none; color: inherit; }
+  .lien-parcours:hover { border-color: var(--ardoise); background: var(--craie); }
+  .lien-titre { display: block; font-size: 0.88rem; font-weight: 600; }
+  .lien-detail { display: block; font-size: 0.76rem; color: var(--texte-att); margin-top: 2px; }
+  .liste-historique { list-style: none; margin: 0; padding: 0; }
+  .liste-historique li { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--bordure); font-size: 0.86rem; }
 </style>
 <script>
   /* Applique le thème AVANT le premier affichage */
@@ -848,10 +867,99 @@
       + ligne('Nom', eleve.responsable_nom)
       + ligne('Téléphone', eleve.responsable_telephone)
       + ligne('Email', eleve.responsable_email)
-      + ligne('Adresse', eleve.responsable_adresse);
+      + ligne('Adresse', eleve.responsable_adresse)
+      + '<div id="zone-parcours"><p class="aide" style="margin-top:18px;">'
+      + '<span class="spinner"></span> Chargement du parcours…</p></div>';
 
     document.getElementById('voile-fiche').classList.add('visible');
+    chargerParcours(eleve, nomComplet);
   }
+
+  // ============================================================
+  //  Parcours de l'élève
+  // ============================================================
+  //
+  // La fiche montrait l'identité et rien d'autre. Pour savoir comment un enfant
+  // travaille, s'il est assidu, s'il a des soucis de discipline ou d'écolage,
+  // il fallait ouvrir quatre écrans et l'y retrouver parmi trois cents.
+  //
+  // On affiche ici des CHIFFRES et des points d'entrée, jamais le détail : le
+  // détail reste dans les écrans spécialisés, qui savent l'afficher ET le
+  // modifier. Le dupliquer ici créerait deux endroits pour faire la même chose.
+
+  async function chargerParcours(eleve, nomComplet) {
+    const zone = document.getElementById('zone-parcours');
+    const r = await appelApi(`/eleves/${eleve.id}/parcours`);
+    if (!r || !r.ok) {
+      zone.innerHTML = '<p class="aide" style="margin-top:18px;">'
+        + 'Le parcours n\'a pas pu être chargé.</p>';
+      return;
+    }
+    const d = await r.json();
+
+    if (d.sans_classe) {
+      zone.innerHTML = `<p class="bandeau-parcours">${echapper(d.message)}</p>`;
+      return;
+    }
+
+    const lienVers = (page, libelle, detail) => `
+      <a class="lien-parcours" href="${page}?eleve=${encodeURIComponent(eleve.id)}&nom=${encodeURIComponent(nomComplet)}">
+        <span class="lien-titre">${libelle}</span>
+        <span class="lien-detail">${detail}</span>
+      </a>`;
+
+    // --- Résultats par période
+    const periodes = (d.scolarite.par_periode || []).filter(p => p.pourcentage !== null);
+    const tableauPeriodes = periodes.length === 0
+      ? '<p class="aide">Aucune note saisie pour le moment.</p>'
+      : `<div class="grille-periodes">` + periodes.map(p => `
+          <div class="carte-periode">
+            <div class="periode-nom">${echapper(p.libelle)}${p.cloturee ? ' <span class="mini-puce">clôturée</span>' : ''}</div>
+            <div class="periode-valeur">${p.pourcentage} %</div>
+            <div class="periode-detail">${p.total_obtenu}/${p.total_maxima}
+              · ${p.rang}<sup>${p.rang === 1 ? 'er' : 'e'}</sup> sur ${p.effectif_classe}</div>
+          </div>`).join('') + '</div>';
+
+    const presences = d.presences;
+    const disc = d.discipline;
+    const frais = d.frais;
+
+    zone.innerHTML = `
+      <h3 class="titre-parcours">Résultats — ${echapper(d.annee.libelle || '')}</h3>
+      ${d.scolarite.moyenne_annuelle !== null
+        ? `<p class="moyenne-annuelle">Moyenne annuelle : <strong>${d.scolarite.moyenne_annuelle} %</strong></p>`
+        : ''}
+      ${tableauPeriodes}
+
+      <h3 class="titre-parcours">Voir en détail</h3>
+      <div class="grille-liens">
+        ${lienVers('notes.html', 'Ses notes',
+          periodes.length ? `${periodes.length} période(s) notée(s)` : 'Aucune note')}
+        ${lienVers('presences.html', 'Ses présences',
+          presences.total === 0 ? 'Aucun appel enregistré'
+            : `${presences.absent} absence(s) · ${presences.retard} retard(s)`
+              + (presences.taux_presence !== null ? ` · ${presences.taux_presence} % de présence` : ''))}
+        ${lienVers('discipline.html', 'Sa discipline',
+          disc.nb_fautes === 0 && disc.nb_positifs === 0 ? 'Aucun fait signalé'
+            : `${disc.nb_fautes} faute(s)`
+              + (disc.nb_positifs ? ` · ${disc.nb_positifs} fait(s) à valoriser` : ''))}
+        ${lienVers('frais-scolaires.html', 'Son écolage',
+          frais.montant_du === 0 ? 'Aucun frais défini'
+            : frais.en_regle ? 'En règle'
+            : `Reste ${frais.solde.toLocaleString('fr-FR')} à payer`)}
+        ${lienVers('bulletins.html', 'Ses bulletins',
+          d.bulletins.length ? `${d.bulletins.length} bulletin(s)` : 'Aucun bulletin généré')}
+      </div>
+
+      ${d.historique.length ? `
+        <h3 class="titre-parcours">Années précédentes</h3>
+        <ul class="liste-historique">
+          ${d.historique.map(h => `<li><span>${echapper(h.annee_libelle || '—')}
+            — ${echapper(h.classe_nom || '—')}</span>
+            <strong>${echapper(h.resultat_final || '—')}</strong></li>`).join('')}
+        </ul>` : ''}`;
+  }
+
 
   document.getElementById('bouton-fermer-fiche').addEventListener('click', () => {
     document.getElementById('voile-fiche').classList.remove('visible');

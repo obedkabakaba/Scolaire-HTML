@@ -148,6 +148,22 @@
     main { padding: 26px 0 50px 0; }
   }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+  /* ==========================================================================
+     MODALE — `ui.css` ne définit QUE l'apparence du voile (fond translucide,
+     flou) : ni `position`, ni `display`. Ces règles-là vivent dans le <style>
+     de chaque page. Quand elles manquent, le voile et sa modale sont rendus
+     DANS LE FLUX de la page, en permanence — un bloc sombre en plein milieu de
+     l'écran dès l'ouverture, et un bouton qui semble ne rien faire puisque
+     rien n'a jamais été fermé.
+
+     Valeurs identiques aux 20+ autres pages : une modale qui se comporte
+     différemment d'un écran à l'autre est un défaut en soi.
+     ========================================================================== */
+  .voile { position: fixed; inset: 0; background: rgba(31,43,36,0.45); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 10; }
+  .voile.visible { display: flex; }
+  .modale { background: var(--craie-2); border-radius: var(--r-carte); padding: 28px; max-width: 560px; width: 100%; max-height: 90vh; overflow-y: auto; }
+  .modale h2 { font-family: var(--police-titre); font-weight: 600; font-size: 1.3rem; margin: 0 0 18px 0; }
+  .actions-modale { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
 </style>
 </head>
 <body>

@@ -48,6 +48,14 @@
   .champ label { display: block; font-size: 0.76rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--texte-att); margin-bottom: 6px; }
   .champ input, .champ select { width: 100%; padding: 10px 12px; font-size: 0.9rem; border: 1.5px solid var(--bordure); border-radius:  var(--r-bouton); background: #fff; }
   .champ input:focus, .champ select:focus { outline: none; border-color: var(--encre); }
+  .aide-section { font-size: 0.84rem; color: var(--texte-att); margin: 0 0 14px 0; line-height: 1.5; }
+  .aide-champ { font-size: 0.78rem; color: var(--texte-att); margin: 6px 0 0 0; line-height: 1.5; }
+  /* Un taux périmé est plus dangereux qu'un taux absent : il convertit
+     silencieusement avec une valeur fausse. Sa date se voit donc. */
+  .interrupteur { display: flex; align-items: flex-start; gap: 9px; cursor: pointer; font-size: 0.88rem; line-height: 1.45; }
+  .interrupteur input { margin-top: 2px; flex-shrink: 0; }
+  .aide-champ.seuils-incoherents { color: var(--rouge); font-weight: 600; }
+  .aide-champ.taux-perime { color: var(--ocre-dark); font-weight: 600; }
   .ligne-champs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 
   .bouton { padding: 10px 16px; border-radius:  var(--r-bouton); font-family: var(--police-corps); font-size: 0.88rem; font-weight: 600; cursor: pointer; border: 1.5px solid transparent; }
@@ -274,11 +282,65 @@
           <div class="champ"><label for="champ-nb-periodes">Nombre de périodes</label><input type="number" id="champ-nb-periodes" /></div>
           <div class="champ"><label for="champ-nb-semestres">Nombre de semestres</label><input type="number" id="champ-nb-semestres" /></div>
         </div>
+        <div class="ligne-champs">
+          <div class="champ">
+            <label for="champ-seuil-promotion">Passe en classe supérieure à partir de (%)</label>
+            <input type="number" id="champ-seuil-promotion" min="0" max="100" step="0.5" />
+          </div>
+          <div class="champ">
+            <label for="champ-seuil-redoublement">Redouble à partir de (%)</label>
+            <input type="number" id="champ-seuil-redoublement" min="0" max="100" step="0.5" />
+          </div>
+        </div>
+        <p class="aide-champ" id="apercu-seuils"></p>
         <div class="champ">
-          <label for="champ-seuil-promotion">Moyenne annuelle minimale pour passer en classe supérieure (%)</label>
-          <input type="number" id="champ-seuil-promotion" min="0" max="100" step="0.5" />
+          <label class="interrupteur">
+            <input type="checkbox" id="champ-sortie-sans-notes" />
+            <span>Un élève sans aucune note est proposé « sortant » en fin d'année</span>
+          </label>
+          <p class="aide-champ">
+            Un élève jamais évalué n'a pas échoué&nbsp;: il n'était pas là. Le compter
+            comme un zéro en ferait le plus mauvais de l'école. Décochez si vous préférez
+            statuer au cas par cas.
+          </p>
         </div>
         <button type="submit" class="bouton bouton-principal" id="bouton-enregistrer-notation">Enregistrer</button>
+      </form>
+    </div>
+
+    <!-- ===================== Devise et taux de change =====================
+         Ces deux réglages existaient en base et étaient lus par tout le module
+         financier, mais aucun écran ne permettait de les saisir. Une école
+         travaillant en deux devises ne pouvait donc pas déclarer son taux. -->
+    <div class="carte-section">
+      <h2>Devise et taux de change</h2>
+      <p class="aide-section">
+        La devise principale est celle dans laquelle les montants s'affichent et
+        s'impriment. Le taux n'est nécessaire que si l'école encaisse dans les deux
+        devises.
+      </p>
+      <form id="formulaire-devise">
+        <div class="ligne-champs">
+          <div class="champ">
+            <label for="champ-devise">Devise principale</label>
+            <select id="champ-devise">
+              <option value="FC">Franc congolais (FC)</option>
+              <option value="USD">Dollar américain (USD)</option>
+            </select>
+          </div>
+          <div class="champ">
+            <label for="champ-taux">Taux de change — FC pour 1 USD</label>
+            <input type="number" id="champ-taux" min="100" max="100000" step="0.01"
+                   placeholder="ex. 2800" />
+          </div>
+        </div>
+        <p class="aide-champ" id="info-taux"></p>
+        <p class="aide-champ">
+          Laissez le taux vide si l'école n'encaisse que dans une seule devise.
+          Un taux périmé fausse silencieusement toutes les conversions&nbsp;:
+          mettez-le à jour dès qu'il bouge.
+        </p>
+        <button type="submit" class="bouton bouton-principal" id="bouton-enregistrer-devise">Enregistrer</button>
       </form>
     </div>
 
@@ -433,6 +495,15 @@
     const ecole = await r.json();
     if (!ecole) return;
 
+    // Devise et taux : le taux affiche aussi sa date, parce qu'un taux périmé
+    // convertit silencieusement avec une valeur fausse — c'est plus dangereux
+    // qu'un taux absent, qui lui saute aux yeux.
+    document.getElementById('champ-devise').value = ecole.devise_principale || 'FC';
+    document.getElementById('champ-taux').value =
+      ecole.taux_change_usd_fc === null || ecole.taux_change_usd_fc === undefined
+        ? '' : ecole.taux_change_usd_fc;
+    majInfoTaux(ecole);
+
     document.getElementById('champ-nom').value = ecole.nom || '';
     document.getElementById('champ-ville').value = ecole.ville || '';
     document.getElementById('champ-commune').value = ecole.commune || '';
@@ -447,6 +518,9 @@
     document.getElementById('champ-nb-periodes').value = ecole.nb_periodes || 0;
     document.getElementById('champ-nb-semestres').value = ecole.nb_semestres || 0;
     document.getElementById('champ-seuil-promotion').value = ecole.seuil_promotion_pourcentage ?? 50;
+    document.getElementById('champ-seuil-redoublement').value = ecole.seuil_redoublement_pourcentage ?? 30;
+    document.getElementById('champ-sortie-sans-notes').checked = ecole.sortie_auto_sans_notes !== false;
+    majApercuSeuils();
 
     document.getElementById('champ-autoriser-bulletins-titulaires').checked = ecole.autoriser_bulletins_titulaires || false;
     document.getElementById('champ-mode-titulaires').value = ecole.bulletins_titulaires_mode || 'tous';
@@ -497,14 +571,127 @@
       nb_trimestres: parseInt(document.getElementById('champ-nb-trimestres').value, 10) || 0,
       nb_periodes: parseInt(document.getElementById('champ-nb-periodes').value, 10) || 0,
       nb_semestres: parseInt(document.getElementById('champ-nb-semestres').value, 10) || 0,
-      seuil_promotion_pourcentage: parseFloat(document.getElementById('champ-seuil-promotion').value) || 50
+      seuil_promotion_pourcentage: parseFloat(document.getElementById('champ-seuil-promotion').value) || 50,
+      seuil_redoublement_pourcentage: parseFloat(document.getElementById('champ-seuil-redoublement').value) || 30,
+      sortie_auto_sans_notes: document.getElementById('champ-sortie-sans-notes').checked
     };
+
+    // Contrôle avant l'envoi : le serveur refuse aussi, mais le dire ici évite
+    // un aller-retour et laisse le formulaire en édition avec les valeurs
+    // saisies sous les yeux.
+    if (corpsRequete.seuil_redoublement_pourcentage >= corpsRequete.seuil_promotion_pourcentage) {
+      afficherMessage(
+        `Le seuil de redoublement (${corpsRequete.seuil_redoublement_pourcentage} %) doit être `
+        + `inférieur au seuil de promotion (${corpsRequete.seuil_promotion_pourcentage} %).`,
+        'erreur'
+      );
+      return;
+    }
     const r = await appelApi('/ecole/moi', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpsRequete) });
     const d = r ? await r.json().catch(() => ({})) : {};
     if (r && r.ok) {
       afficherMessage('Système de notation mis à jour.', 'succes');
       editionNotation && editionNotation.verrouiller();
     } else {
+      afficherMessage(d.message || "Erreur lors de l'enregistrement.", 'erreur');
+    }
+  });
+
+
+  /** Affiche l'ancienneté du taux, et alerte au-delà d'un mois. */
+
+  /**
+   * Traduit les deux seuils en phrase. Deux nombres côte à côte ne disent pas
+   * ce qu'ils produisent ; une phrase le dit, et l'erreur de saisie devient
+   * visible avant l'enregistrement plutôt qu'en juin.
+   */
+  function majApercuSeuils() {
+    const promotion = Number(document.getElementById('champ-seuil-promotion').value);
+    const redoublement = Number(document.getElementById('champ-seuil-redoublement').value);
+    const zone = document.getElementById('apercu-seuils');
+
+    if (!Number.isFinite(promotion) || !Number.isFinite(redoublement)) {
+      zone.textContent = ''; return;
+    }
+    if (redoublement >= promotion) {
+      zone.textContent = `Incohérent : un élève entre ${promotion} % et ${redoublement} % `
+        + `ne passerait ni ne redoublerait. Le seuil de redoublement doit être INFÉRIEUR `
+        + `au seuil de promotion.`;
+      zone.className = 'aide-champ seuils-incoherents';
+      return;
+    }
+    zone.textContent = `À partir de ${promotion} % l'élève passe · `
+      + `entre ${redoublement} % et ${promotion} % il redouble · `
+      + `en dessous de ${redoublement} % il est proposé sortant.`;
+    zone.className = 'aide-champ';
+  }
+
+  ['champ-seuil-promotion', 'champ-seuil-redoublement'].forEach(id => {
+    document.getElementById(id).addEventListener('input', majApercuSeuils);
+  });
+
+  function majInfoTaux(ecole) {
+    const info = document.getElementById('info-taux');
+    if (!ecole.taux_change_usd_fc) {
+      info.textContent = "Aucun taux enregistré : l'école ne travaille que dans sa devise principale.";
+      info.className = 'aide-champ';
+      return;
+    }
+    if (!ecole.taux_change_maj_at) {
+      info.textContent = 'Taux enregistré, date de mise à jour inconnue.';
+      info.className = 'aide-champ';
+      return;
+    }
+    const date = new Date(ecole.taux_change_maj_at);
+    const jours = Math.floor((Date.now() - date.getTime()) / 86400000);
+    const quand = date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
+    if (jours > 30) {
+      info.textContent = `Taux mis à jour le ${quand}, il y a ${jours} jours. `
+        + `Vérifiez qu'il correspond encore au marché.`;
+      info.className = 'aide-champ taux-perime';
+    } else {
+      info.textContent = `Taux mis à jour le ${quand}.`;
+      info.className = 'aide-champ';
+    }
+  }
+
+  document.getElementById('formulaire-devise').addEventListener('submit', async (evt) => {
+    evt.preventDefault();
+    const bouton = document.getElementById('bouton-enregistrer-devise');
+    if (bouton.disabled) return;          // double-clic impossible
+
+    const brut = document.getElementById('champ-taux').value.trim();
+    // Champ vide = retirer le taux. On ne confond pas avec zéro, que le serveur
+    // refuse de toute façon.
+    const taux = brut === '' ? null : Number(brut);
+    if (taux !== null && (!Number.isFinite(taux) || taux <= 0)) {
+      afficherMessage('Le taux doit être un nombre positif.', 'erreur');
+      return;
+    }
+
+    bouton.disabled = true;
+    const libelleInitial = bouton.textContent;
+    bouton.innerHTML = '<span class="spinner"></span> Enregistrement…';
+
+    const r = await appelApi('/ecole/moi', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        devise_principale: document.getElementById('champ-devise').value,
+        taux_change_usd_fc: taux
+      })
+    });
+    const d = r ? await r.json().catch(() => ({})) : {};
+
+    bouton.disabled = false;
+    bouton.textContent = libelleInitial;
+
+    if (r && r.ok) {
+      afficherMessage('Devise et taux de change mis à jour.', 'succes');
+      editionDevise && editionDevise.verrouiller();
+      // Rechargement : la date de mise à jour vient d'être posée par le serveur.
+      await chargerEcole();
+    } else {
+      // Formulaire laissé en édition : l'utilisateur corrige sans retaper.
       afficherMessage(d.message || "Erreur lors de l'enregistrement.", 'erreur');
     }
   });
@@ -872,7 +1059,7 @@
      désormais verrouillés, sous un bouton « Modifier ». Le helper est installé
      APRÈS chargerEcole() pour que les valeurs soient déjà en place — sans quoi
      « Annuler » restaurerait des champs vides. */
-  let editionEcole = null, editionNotation = null, editionPedagogique = null;
+  let editionEcole = null, editionNotation = null, editionPedagogique = null, editionDevise = null;
 
   chargerEcole().then(() => {
     editionEcole = ArdoiseEdition.installer({
@@ -883,6 +1070,9 @@
     });
     editionPedagogique = ArdoiseEdition.installer({
       formulaire: 'formulaire-pedagogique', boutonEnregistrer: 'bouton-enregistrer-pedagogique'
+    });
+    editionDevise = ArdoiseEdition.installer({
+      formulaire: 'formulaire-devise', boutonEnregistrer: 'bouton-enregistrer-devise'
     });
   });
   chargerMentions();

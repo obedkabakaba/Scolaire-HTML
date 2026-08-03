@@ -205,6 +205,9 @@
   }
   .actions-modale { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; }
 
+  /* Détail technique : discret, mais présent. Sans lui, un échec se réduit à
+     « ça ne marche pas », ce qui ne permet ni de comprendre ni de rapporter. */
+  .diagnostic-technique { font-size: 0.74rem; color: var(--texte-att); margin-top: 10px; font-family: var(--police-mono); }
   .explication-panneau { font-size: 0.83rem; color: var(--texte-att); margin: 0 0 12px 0; line-height: 1.5; }
   .legende-etat { display: flex; gap: 16px; flex-wrap: wrap; font-size: 0.76rem; color: var(--texte-att); margin-bottom: 14px; }
   .legende-etat span { display: flex; align-items: center; gap: 6px; }
@@ -915,57 +918,98 @@
   }
 
   let porteesMoyenne = [];
-  let porteesEnCours = false;      // empêche deux chargements simultanés
+  let porteesEnCours = false;
   let porteesErreur = null;
+  let porteesDiagnostic = null;   // détail technique, affiché repliable
 
+  /**
+   * Charge la liste des périodes consultables.
+   *
+   * DEUX SOURCES, ET C'EST VOULU. La version précédente ne dépendait que de
+   * `/rapports/portees` : si cet appel échouait pour n'importe quelle raison —
+   * route absente, erreur serveur, coupure réseau au chargement de la page — le
+   * widget restait mort pour toute la session, avec un message générique qui
+   * n'apprenait rien à personne.
+   *
+   * Désormais, en cas d'échec, on reconstruit la liste depuis les périodes de
+   * l'école (`/structure/periodes`). Le widget rend alors un service dégradé
+   * mais réel, au lieu de ne rien rendre du tout.
+   */
   async function chargerPorteesMoyenne() {
     if (porteesEnCours) return;
     porteesEnCours = true;
     porteesErreur = null;
+    porteesDiagnostic = null;
+
     try {
       const r = await appelApi('/rapports/portees');
-      if (!r) { porteesErreur = 'session'; return; }
-      if (!r.ok) {
+      if (r && r.ok) {
+        const d = await r.json();
+        porteesMoyenne = d.options || [];
+        if (d.periode_courante) {
+          document.getElementById('portee-reussite').textContent = 'année en cours';
+        }
+      } else if (r) {
         const rep = await r.json().catch(() => ({}));
-        // On MÉMORISE la raison au lieu de l'avaler. Auparavant, un simple
-        // `return` laissait la liste vide, le clic ne faisait rien, et rien
-        // n'expliquait pourquoi — c'était un bouton mort.
-        porteesErreur = rep.message || (r.status === 403
-          ? "Votre rôle ne donne pas accès au détail des moyennes."
-          : "Le détail des moyennes n'a pas pu être chargé.");
-        return;
-      }
-      const d = await r.json();
-      porteesMoyenne = d.options || [];
-
-      document.getElementById('select-portee-moyenne').innerHTML =
-        porteesMoyenne.map((o, i) => `<option value="${i}">${echapper(o.libelle)}</option>`).join('');
-
-      if (d.periode_courante) {
-        document.getElementById('portee-reussite').textContent = 'année en cours';
+        porteesErreur = rep.message || null;
+        // Le code HTTP est conservé : « 404 » et « 500 » appellent des
+        // corrections opposées, et un message générique les confond.
+        porteesDiagnostic = `GET /rapports/portees → ${r.status}`;
+        await chargerPorteesDeSecours();
+      } else {
+        porteesDiagnostic = 'Session expirée ou requête interrompue.';
       }
     } catch (e) {
-      porteesErreur = "Le détail des moyennes n'a pas pu être chargé.";
+      porteesDiagnostic = `Erreur au chargement : ${e.message}`;
+      await chargerPorteesDeSecours();
     } finally {
       porteesEnCours = false;
+      majSelecteurPortees();
       majEtatCarte();
     }
+  }
+
+  /** Reconstruction minimale à partir des périodes déclarées par l'école. */
+  async function chargerPorteesDeSecours() {
+    try {
+      const r = await appelApi('/structure/periodes');
+      if (!r || !r.ok) return;
+      const periodes = await r.json();
+      const utiles = (periodes || []).filter(p => ['periode', 'examen'].includes(p.type));
+
+      porteesMoyenne = utiles.map(p => ({
+        cle: `periode:${p.id}`,
+        libelle: p.libelle || `${p.type} ${p.numero}`,
+        periodeId: p.id
+      }));
+      // « Année complète » ne dépend d'aucune période précise : elle reste
+      // proposable même si la liste ci-dessus est vide.
+      porteesMoyenne.push({ cle: 'annee', libelle: 'Année complète', portee: 'annee' });
+
+      if (!porteesErreur) {
+        porteesErreur = "La liste détaillée n'était pas disponible : "
+          + "les périodes ci-dessous ont été reconstruites depuis la configuration de l'école.";
+      }
+    } catch (e) { /* la liste reste vide, le message d'erreur reste affiché */ }
+  }
+
+  function majSelecteurPortees() {
+    document.getElementById('select-portee-moyenne').innerHTML =
+      porteesMoyenne.map((o, i) => `<option value="${i}">${echapper(o.libelle)}</option>`).join('');
   }
 
   /** La carte dit elle-même si elle est cliquable, et pourquoi. */
   function majEtatCarte() {
     const carte = document.getElementById('carte-reussite');
     const cliquable = porteesMoyenne.length > 0;
-    carte.style.cursor = cliquable ? 'pointer' : 'default';
-    carte.setAttribute('aria-disabled', cliquable ? 'false' : 'true');
+    carte.style.cursor = 'pointer';   // toujours : la fenêtre s'ouvre dans tous les cas
     carte.title = cliquable
       ? 'Cliquer pour choisir la période'
-      : (porteesErreur || 'Détail indisponible');
+      : (porteesErreur || 'Cliquer pour voir le détail');
   }
 
   async function chargerMoyennePour(option) {
     const detail = document.getElementById('detail-portee');
-    // État de chargement explicite : jamais d'action silencieuse.
     detail.innerHTML = '<p class="etat-vide" style="font-size:0.84rem;">'
       + '<span class="spinner"></span> Calcul en cours…</p>';
 
@@ -980,13 +1024,14 @@
       const rep = await r.json().catch(() => ({}));
       if (!r.ok) {
         detail.innerHTML = `<p class="etat-vide" style="font-size:0.84rem;">${
-          echapper(rep.message || 'Impossible de calculer cette moyenne.')}</p>`;
+          echapper(rep.message || 'Impossible de calculer cette moyenne.')}</p>`
+          + `<p class="diagnostic-technique">GET /rapports/moyennes → ${r.status}</p>`;
         return;
       }
       d = rep;
     } catch (e) {
       detail.innerHTML = '<p class="etat-vide" style="font-size:0.84rem;">'
-        + 'Le calcul a échoué. Vérifiez votre connexion et réessayez.</p>';
+        + `Le calcul a échoué : ${echapper(e.message)}</p>`;
       return;
     }
 
@@ -995,8 +1040,6 @@
     document.getElementById('portee-reussite').textContent = option.libelle;
 
     if (d.nb_eleves === 0) {
-      // Distinguer « aucune note saisie » de « moyenne de zéro » : les deux
-      // s'afficheraient sinon de la même façon.
       detail.innerHTML = '<p class="etat-vide" style="font-size:0.84rem;">'
         + 'Aucune note saisie sur cette période. La moyenne n\'est pas calculable — '
         + 'ce n\'est pas une moyenne de zéro.</p>';
@@ -1009,10 +1052,8 @@
         <strong>${c.moyenne !== null ? c.moyenne + '%' : '—'}</strong>
       </div>`).join('');
 
-    // Le détail du calcul est affiché : un directeur qui doute d'un chiffre
-    // doit pouvoir le refaire à la main.
     const calcul = d.detail_calcul
-      ? `<p style="font-size:0.76rem; color:var(--texte-att); margin-top:12px;">
+      ? `<p class="diagnostic-technique">
            Calcul : ${d.detail_calcul.total_obtenu} points obtenus sur
            ${d.detail_calcul.total_maxima} possibles, ${d.detail_calcul.nb_periodes_retenues} période(s) retenue(s).
            Les cours non notés comptent pour zéro.
@@ -1026,18 +1067,25 @@
       ${lignes}${calcul}`;
   }
 
-  function ouvrirPortee() {
+  async function ouvrirPortee() {
     const voile = document.getElementById('voile-portee');
     const detail = document.getElementById('detail-portee');
-
-    // La fenêtre s'ouvre TOUJOURS. Si les portées manquent, elle explique
-    // pourquoi et propose de réessayer — un clic sans effet n'apprend rien à
-    // personne et fait croire à une panne du navigateur.
     voile.classList.add('visible');
+
+    // Chargement PARESSEUX : si la liste n'a pas pu être obtenue au démarrage
+    // de la page, on retente maintenant. Le widget ne dépend donc plus de la
+    // réussite d'un appel fait plusieurs minutes plus tôt.
+    if (porteesMoyenne.length === 0 && !porteesEnCours) {
+      detail.innerHTML = '<p class="etat-vide" style="font-size:0.84rem;">'
+        + '<span class="spinner"></span> Chargement des périodes…</p>';
+      await chargerPorteesMoyenne();
+    }
 
     if (porteesMoyenne.length === 0) {
       detail.innerHTML = `<p class="etat-vide" style="font-size:0.86rem;">${
-        echapper(porteesErreur || 'Le détail des moyennes est en cours de chargement.')}</p>`
+        echapper(porteesErreur || "Les périodes n'ont pas pu être chargées.")}</p>`
+        + (porteesDiagnostic
+            ? `<p class="diagnostic-technique">${echapper(porteesDiagnostic)}</p>` : '')
         + '<div style="text-align:center; margin-top:12px;">'
         + '<button type="button" class="bouton" id="reessayer-portee">Réessayer</button></div>';
       const bouton = document.getElementById('reessayer-portee');
@@ -1046,23 +1094,22 @@
           bouton.disabled = true;
           bouton.textContent = 'Chargement…';
           await chargerPorteesMoyenne();
-          if (porteesMoyenne.length > 0) ouvrirPortee();
-          else {
-            bouton.disabled = false;
-            bouton.textContent = 'Réessayer';
-          }
+          ouvrirPortee();
         });
       }
       return;
     }
 
+    // Liste reconstruite : on le dit, sans bloquer l'usage.
+    const avertissement = porteesErreur
+      ? `<p class="diagnostic-technique">${echapper(porteesErreur)}</p>` : '';
     const select = document.getElementById('select-portee-moyenne');
-    chargerMoyennePour(porteesMoyenne[Number(select.value) || 0]);
+    await chargerMoyennePour(porteesMoyenne[Number(select.value) || 0]);
+    if (avertissement) detail.insertAdjacentHTML('afterbegin', avertissement);
   }
 
   document.getElementById('carte-reussite').addEventListener('click', ouvrirPortee);
 
-  // Accessibilité : une carte cliquable doit l'être aussi au clavier.
   const carteReussite = document.getElementById('carte-reussite');
   carteReussite.setAttribute('role', 'button');
   carteReussite.setAttribute('tabindex', '0');

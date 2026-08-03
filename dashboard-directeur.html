@@ -205,6 +205,17 @@
   }
   .actions-modale { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; }
 
+  .explication-panneau { font-size: 0.83rem; color: var(--texte-att); margin: 0 0 12px 0; line-height: 1.5; }
+  .legende-etat { display: flex; gap: 16px; flex-wrap: wrap; font-size: 0.76rem; color: var(--texte-att); margin-bottom: 14px; }
+  .legende-etat span { display: flex; align-items: center; gap: 6px; }
+  .pastille { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .pastille.complet { background: var(--vert-ok); }
+  .pastille.validation_partielle { background: var(--ocre); }
+  .pastille.saisie_en_cours { background: rgba(60,90,98,0.45); }
+  .pastille.rien { background: rgba(107,114,105,0.28); }
+  .pastille.sans_cours { background: none; border: 1.5px dashed var(--bordure); }
+  .cellule-etat { padding: 8px; text-align: center; font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+
   .carte-stat {
     background: var(--craie-2);
     border: 1px solid var(--bordure);
@@ -474,7 +485,20 @@
     </div>
 
     <div class="panneau" style="margin-bottom:24px;">
-      <h3>État des périodes par classe (<span id="libelle-annee-active">—</span>)</h3>
+      <h3>Avancement de la validation des notes (<span id="libelle-annee-active">—</span>)</h3>
+      <p class="explication-panneau">
+        Où en est la saisie des cotes, classe par classe et période par période.
+        Une période est complète quand <strong>tous les cours de la classe</strong> ont
+        leurs notes validées. Ce tableau ne dit rien des résultats : il sert à savoir
+        qui relancer.
+      </p>
+      <div class="legende-etat">
+        <span><i class="pastille complet"></i>Tout validé</span>
+        <span><i class="pastille validation_partielle"></i>Validation partielle</span>
+        <span><i class="pastille saisie_en_cours"></i>Saisie en cours, rien validé</span>
+        <span><i class="pastille rien"></i>Rien de saisi</span>
+        <span><i class="pastille sans_cours"></i>Aucun cours attribué</span>
+      </div>
       <div id="conteneur-etat-periodes" class="conteneur-etat-periodes">
         <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
           <thead id="entete-etat-periodes"></thead>
@@ -590,29 +614,52 @@
     return new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
   }
 
+  const LIBELLES_ETAT = {
+    complet: 'Tous les cours validés',
+    validation_partielle: 'Validation commencée, incomplète',
+    saisie_en_cours: 'Notes saisies, aucune encore validée',
+    rien: 'Aucune note saisie',
+    sans_cours: 'Aucun cours attribué à cette classe'
+  };
+
   function afficherEtatPeriodes(lignes) {
     const entete = document.getElementById('entete-etat-periodes');
     const corps = document.getElementById('corps-etat-periodes');
 
     if (!lignes || lignes.length === 0) {
       entete.innerHTML = '';
-      corps.innerHTML = '<tr><td style="padding:16px; color:var(--texte-att);">Aucune période créée pour l\'année active.</td></tr>';
+      corps.innerHTML = '<tr><td style="padding:16px; color:var(--texte-att);">'
+        + "Aucune période créée pour l'année active. Créez-les dans Structure › Périodes.</td></tr>";
       return;
     }
 
-    // Reconstruit une grille classe (lignes) x période (colonnes)
     const classes = [...new Map(lignes.map(l => [l.classe_id, l.classe_nom])).entries()];
     const periodes = [...new Map(lignes.map(l => [l.periode_id, l.periode_libelle])).entries()];
 
-    entete.innerHTML = `<tr><th style="text-align:left; padding:8px;">Classe</th>${periodes.map(([, libelle]) => `<th style="padding:8px; text-align:center;">${libelle}</th>`).join('')}</tr>`;
+    entete.innerHTML = '<tr><th style="text-align:left; padding:8px;">Classe</th>'
+      + periodes.map(([, libelle]) =>
+          `<th style="padding:8px; text-align:center;">${echapper(libelle)}</th>`).join('')
+      + '</tr>';
 
     corps.innerHTML = classes.map(([classeId, classeNom]) => {
       const cellules = periodes.map(([periodeId]) => {
-        const ligne = lignes.find(l => l.classe_id === classeId && l.periode_id === periodeId);
-        const soumis = ligne?.soumis;
-        return `<td style="padding:8px; text-align:center; color:${soumis ? 'var(--vert-ok)' : 'var(--texte-att)'};">${soumis ? '✓' : '—'}</td>`;
+        const l = lignes.find(x => x.classe_id === classeId && x.periode_id === periodeId);
+        if (!l) return '<td class="cellule-etat">—</td>';
+
+        // Le CHIFFRE plutôt qu'un symbole : « 6/8 » dit à qui parler, « — » ne
+        // dit rien. La pastille donne la lecture d'ensemble, le chiffre donne
+        // l'action à mener.
+        const texte = l.etat === 'sans_cours'
+          ? '—'
+          : `${l.nb_cours_valides}/${l.nb_cours}`;
+        const infobulle = `${classeNom} — ${LIBELLES_ETAT[l.etat] || l.etat}`
+          + (l.etat === 'sans_cours' ? '' : ` (${l.nb_cours_saisis}/${l.nb_cours} cours saisis)`);
+
+        return `<td class="cellule-etat" title="${echapper(infobulle)}">
+                  <i class="pastille ${echapper(l.etat)}"></i> ${echapper(texte)}
+                </td>`;
       }).join('');
-      return `<tr><td style="padding:8px; border-top:1px solid var(--bordure);">${classeNom}</td>${cellules}</tr>`;
+      return `<tr><td style="padding:8px; border-top:1px solid var(--bordure);">${echapper(classeNom)}</td>${cellules}</tr>`;
     }).join('');
   }
 
@@ -858,61 +905,169 @@
      Un sélecteur permanent sur le tableau de bord alourdirait un écran qui doit
      se lire d'un coup d'œil.
      ========================================================================== */
+  // Échappement HTML : la page affiche désormais des libellés de période et
+  // des messages venus du serveur. Sans échappement, un libellé contenant du
+  // balisage s'exécuterait dans le navigateur du directeur.
+  function echapper(t) {
+    const d = document.createElement('div');
+    d.textContent = t == null ? '' : String(t);
+    return d.innerHTML;
+  }
+
   let porteesMoyenne = [];
+  let porteesEnCours = false;      // empêche deux chargements simultanés
+  let porteesErreur = null;
 
   async function chargerPorteesMoyenne() {
-    const r = await appelApi('/rapports/portees');
-    if (!r || !r.ok) return;   // droits insuffisants : la carte reste simplement non cliquable
-    const d = await r.json();
-    porteesMoyenne = d.options || [];
+    if (porteesEnCours) return;
+    porteesEnCours = true;
+    porteesErreur = null;
+    try {
+      const r = await appelApi('/rapports/portees');
+      if (!r) { porteesErreur = 'session'; return; }
+      if (!r.ok) {
+        const rep = await r.json().catch(() => ({}));
+        // On MÉMORISE la raison au lieu de l'avaler. Auparavant, un simple
+        // `return` laissait la liste vide, le clic ne faisait rien, et rien
+        // n'expliquait pourquoi — c'était un bouton mort.
+        porteesErreur = rep.message || (r.status === 403
+          ? "Votre rôle ne donne pas accès au détail des moyennes."
+          : "Le détail des moyennes n'a pas pu être chargé.");
+        return;
+      }
+      const d = await r.json();
+      porteesMoyenne = d.options || [];
 
-    document.getElementById('select-portee-moyenne').innerHTML =
-      porteesMoyenne.map((o, i) => `<option value="${i}">${o.libelle}</option>`).join('');
+      document.getElementById('select-portee-moyenne').innerHTML =
+        porteesMoyenne.map((o, i) => `<option value="${i}">${echapper(o.libelle)}</option>`).join('');
 
-    if (d.periode_courante) {
-      document.getElementById('portee-reussite').textContent = `année en cours`;
+      if (d.periode_courante) {
+        document.getElementById('portee-reussite').textContent = 'année en cours';
+      }
+    } catch (e) {
+      porteesErreur = "Le détail des moyennes n'a pas pu être chargé.";
+    } finally {
+      porteesEnCours = false;
+      majEtatCarte();
     }
+  }
+
+  /** La carte dit elle-même si elle est cliquable, et pourquoi. */
+  function majEtatCarte() {
+    const carte = document.getElementById('carte-reussite');
+    const cliquable = porteesMoyenne.length > 0;
+    carte.style.cursor = cliquable ? 'pointer' : 'default';
+    carte.setAttribute('aria-disabled', cliquable ? 'false' : 'true');
+    carte.title = cliquable
+      ? 'Cliquer pour choisir la période'
+      : (porteesErreur || 'Détail indisponible');
   }
 
   async function chargerMoyennePour(option) {
     const detail = document.getElementById('detail-portee');
-    detail.innerHTML = '<p class="etat-vide" style="font-size:0.84rem;">Calcul…</p>';
+    // État de chargement explicite : jamais d'action silencieuse.
+    detail.innerHTML = '<p class="etat-vide" style="font-size:0.84rem;">'
+      + '<span class="spinner"></span> Calcul en cours…</p>';
 
     const params = option.periodeId
       ? `periodeId=${encodeURIComponent(option.periodeId)}`
       : (option.portee ? `portee=${encodeURIComponent(option.portee)}` : '');
 
-    const r = await appelApi(`/rapports/moyennes?${params}`);
-    if (!r || !r.ok) {
-      detail.innerHTML = '<p class="etat-vide" style="font-size:0.84rem;">Impossible de calculer cette moyenne.</p>';
+    let d;
+    try {
+      const r = await appelApi(`/rapports/moyennes?${params}`);
+      if (!r) return;
+      const rep = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        detail.innerHTML = `<p class="etat-vide" style="font-size:0.84rem;">${
+          echapper(rep.message || 'Impossible de calculer cette moyenne.')}</p>`;
+        return;
+      }
+      d = rep;
+    } catch (e) {
+      detail.innerHTML = '<p class="etat-vide" style="font-size:0.84rem;">'
+        + 'Le calcul a échoué. Vérifiez votre connexion et réessayez.</p>';
       return;
     }
-    const d = await r.json();
 
-    // La carte reflète immédiatement le choix : c'est le but du filtre.
     document.getElementById('stat-reussite').textContent =
       d.moyenne_generale !== null ? `${d.moyenne_generale}%` : '—';
     document.getElementById('portee-reussite').textContent = option.libelle;
 
+    if (d.nb_eleves === 0) {
+      // Distinguer « aucune note saisie » de « moyenne de zéro » : les deux
+      // s'afficheraient sinon de la même façon.
+      detail.innerHTML = '<p class="etat-vide" style="font-size:0.84rem;">'
+        + 'Aucune note saisie sur cette période. La moyenne n\'est pas calculable — '
+        + 'ce n\'est pas une moyenne de zéro.</p>';
+      return;
+    }
+
     const lignes = (d.par_classe || []).map((c) => `
       <div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--bordure); font-size:0.86rem;">
-        <span>${c.classe_nom}<span style="color:var(--texte-att); font-size:0.78rem;"> — ${c.nb_eleves} élève(s)</span></span>
+        <span>${echapper(c.classe_nom)}<span style="color:var(--texte-att); font-size:0.78rem;"> — ${c.nb_eleves} élève(s)</span></span>
         <strong>${c.moyenne !== null ? c.moyenne + '%' : '—'}</strong>
       </div>`).join('');
+
+    // Le détail du calcul est affiché : un directeur qui doute d'un chiffre
+    // doit pouvoir le refaire à la main.
+    const calcul = d.detail_calcul
+      ? `<p style="font-size:0.76rem; color:var(--texte-att); margin-top:12px;">
+           Calcul : ${d.detail_calcul.total_obtenu} points obtenus sur
+           ${d.detail_calcul.total_maxima} possibles, ${d.detail_calcul.nb_periodes_retenues} période(s) retenue(s).
+           Les cours non notés comptent pour zéro.
+         </p>` : '';
 
     detail.innerHTML = `
       <div style="font-size:0.86rem; margin-bottom:10px;">
         Moyenne d'école : <strong>${d.moyenne_generale !== null ? d.moyenne_generale + '%' : '—'}</strong>
         <span style="color:var(--texte-att);"> sur ${d.nb_eleves} élève(s)</span>
       </div>
-      ${lignes || '<p class="etat-vide" style="font-size:0.84rem;">Aucun bulletin sur cette période.</p>'}`;
+      ${lignes}${calcul}`;
   }
 
-  document.getElementById('carte-reussite').addEventListener('click', () => {
-    if (porteesMoyenne.length === 0) return;
-    document.getElementById('voile-portee').classList.add('visible');
+  function ouvrirPortee() {
+    const voile = document.getElementById('voile-portee');
+    const detail = document.getElementById('detail-portee');
+
+    // La fenêtre s'ouvre TOUJOURS. Si les portées manquent, elle explique
+    // pourquoi et propose de réessayer — un clic sans effet n'apprend rien à
+    // personne et fait croire à une panne du navigateur.
+    voile.classList.add('visible');
+
+    if (porteesMoyenne.length === 0) {
+      detail.innerHTML = `<p class="etat-vide" style="font-size:0.86rem;">${
+        echapper(porteesErreur || 'Le détail des moyennes est en cours de chargement.')}</p>`
+        + '<div style="text-align:center; margin-top:12px;">'
+        + '<button type="button" class="bouton" id="reessayer-portee">Réessayer</button></div>';
+      const bouton = document.getElementById('reessayer-portee');
+      if (bouton) {
+        bouton.addEventListener('click', async () => {
+          bouton.disabled = true;
+          bouton.textContent = 'Chargement…';
+          await chargerPorteesMoyenne();
+          if (porteesMoyenne.length > 0) ouvrirPortee();
+          else {
+            bouton.disabled = false;
+            bouton.textContent = 'Réessayer';
+          }
+        });
+      }
+      return;
+    }
+
     const select = document.getElementById('select-portee-moyenne');
     chargerMoyennePour(porteesMoyenne[Number(select.value) || 0]);
+  }
+
+  document.getElementById('carte-reussite').addEventListener('click', ouvrirPortee);
+
+  // Accessibilité : une carte cliquable doit l'être aussi au clavier.
+  const carteReussite = document.getElementById('carte-reussite');
+  carteReussite.setAttribute('role', 'button');
+  carteReussite.setAttribute('tabindex', '0');
+  carteReussite.addEventListener('keydown', (evt) => {
+    if (evt.key === 'Enter' || evt.key === ' ') { evt.preventDefault(); ouvrirPortee(); }
   });
 
   document.getElementById('select-portee-moyenne').addEventListener('change', (evt) => {
@@ -927,8 +1082,7 @@
 
   // Fermeture au clic sur le voile et à Échap : sans elles, une modale posée
   // par-dessus le tableau de bord ne se referme qu'avec un bouton précis, et
-  // l'utilisateur se croit bloqué — exactement l'impression que donnait cet
-  // écran quand la modale restait affichée en permanence.
+  // l'utilisateur se croit bloqué.
   document.getElementById('voile-portee').addEventListener('click', (evt) => {
     if (evt.target.id === 'voile-portee') fermerModalePortee();
   });

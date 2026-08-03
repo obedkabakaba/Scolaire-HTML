@@ -89,6 +89,9 @@
   .puce-reco { font-size: 0.7rem; padding: 2px 8px; border-radius: 20px; background: rgba(201,138,62,0.18); color: var(--ocre-dark); font-weight: 600; margin-left: 6px; }
 
   .bandeau-scelle { background: rgba(60,90,98,0.1); border-left: 3px solid var(--encre); border-radius: 0 var(--r-petit) var(--r-petit) 0; padding: 13px 16px; font-size: 0.88rem; color: var(--texte-att); margin-bottom: 18px; }
+  /* Une classe sans place restante reste sélectionnable — le directeur peut
+     décider de dépasser la capacité — mais elle se voit. */
+  .puce-classe-cible.classe-pleine { opacity: 0.6; border-style: dashed; }
   .bandeau-anonyme { background: rgba(201,138,62,0.12); border-radius: var(--r-petit); padding: 12px 15px; font-size: 0.87rem; color: var(--ocre-dark); margin-bottom: 18px; }
 
   /* ---------- Résultats du test ---------- */
@@ -249,10 +252,21 @@
               <label for="champ-libelle">Libellé</label>
               <input type="text" id="champ-libelle" maxlength="120" placeholder="ex. Admission 7e année 2026-2027" />
             </div>
+            <div class="champ-form">
+              <label for="select-annee-cible">Année d'entrée des admis</label>
+              <select id="select-annee-cible"></select>
+              <p class="aide" style="margin:7px 0 0 0;">
+                Un concours recrute pour l'année à venir : les places sont celles que
+                libère la promotion sortante.
+              </p>
+            </div>
             <div class="champ-form" style="grid-column: span 2;">
               <label>Promotion qui recrute</label>
               <div id="choix-classes-cibles" class="choix-classes"></div>
-              <p class="aide" style="margin:7px 0 0 0;">Cochez toutes les classes du niveau. Les admis y seront répartis automatiquement.</p>
+              <p class="aide" style="margin:7px 0 0 0;">
+                Classes de l'année d'entrée choisie ci-dessus. Le compteur indique les places
+                <strong>restantes</strong> — après les élèves que la promotion interne y a déjà fait monter.
+              </p>
             </div>
             <div class="champ-form">
               <label for="champ-ouverture">Inscriptions du</label>
@@ -575,18 +589,7 @@
       document.getElementById('bouton-inscrire').addEventListener('click', inscrireCandidat);
       document.getElementById('bouton-ajouter-epreuve').addEventListener('click', ajouterEpreuve);
 
-      const rClasses = await appelApi('/classes');
-      if (rClasses?.ok) {
-        classesEcole = await rClasses.json();
-        document.getElementById('choix-classes-cibles').innerHTML = classesEcole.length
-          ? classesEcole.map(c => `
-              <label class="puce-classe-cible">
-                <input type="checkbox" value="${c.id}" />
-                <span>${echapper(c.nom)}</span>
-                ${c.capacite ? `<span class="capacite">${c.nb_eleves}/${c.capacite}</span>` : `<span class="capacite">${c.nb_eleves} él.</span>`}
-              </label>`).join('')
-          : '<span class="aide">Aucune classe. Créez-les d\'abord.</span>';
-      }
+      await chargerAnneesCibles();
       const rUtil = await appelApi('/utilisateurs');
       if (rUtil?.ok) {
         const tous = await rUtil.json();
@@ -820,6 +823,111 @@
     });
   }
 
+
+  // ============================================================
+  //  Année d'entrée et classes d'accueil
+  // ============================================================
+  //
+  // Un concours recrute pour l'année SUIVANTE. Le formulaire proposait
+  // auparavant les classes de l'année EN COURS : un admis se retrouvait donc
+  // inscrit au milieu d'une année déjà commencée, dans une classe qu'il
+  // n'avait jamais fréquentée. Le serveur refuse désormais ce cas ; l'écran ne
+  // doit donc plus le proposer.
+
+  let anneesEcole = [];
+
+  async function chargerAnneesCibles() {
+    const select = document.getElementById('select-annee-cible');
+    const r = await appelApi('/annees-scolaires');
+    if (!r || !r.ok) {
+      select.innerHTML = '<option value="">Années indisponibles</option>';
+      document.getElementById('choix-classes-cibles').innerHTML =
+        '<span class="aide">Impossible de charger les années scolaires.</span>';
+      return;
+    }
+
+    // Une année clôturée ne reçoit plus personne : la proposer mènerait droit
+    // à un refus du serveur.
+    anneesEcole = (await r.json()).filter(a => !a.cloturee);
+
+    if (anneesEcole.length === 0) {
+      select.innerHTML = '<option value="">Aucune année ouverte</option>';
+      document.getElementById('choix-classes-cibles').innerHTML =
+        '<span class="aide">Créez d\'abord une année scolaire dans Structure.</span>';
+      return;
+    }
+
+    // Tri par date de début : « 2026-2027 » et « 2026 – 2027 » ne se trient
+    // pas pareil alphabétiquement selon la convention de chaque école.
+    anneesEcole.sort((a, b) => String(a.date_debut || '').localeCompare(String(b.date_debut || '')));
+
+    const active = anneesEcole.find(a => a.active);
+    const suivante = active
+      ? anneesEcole.find(a => String(a.date_debut || '') > String(active.date_debut || ''))
+      : null;
+
+    select.innerHTML = anneesEcole.map(a => {
+      const marque = a.active ? ' — année en cours' : (suivante && a.id === suivante.id ? ' — année à venir' : '');
+      return `<option value="${a.id}" ${suivante && a.id === suivante.id ? 'selected' : ''}>${echapper(a.libelle)}${marque}</option>`;
+    }).join('');
+
+    // Défaut : l'année à venir. C'est le cas normal ; recruter pour l'année en
+    // cours reste possible mais devient un choix délibéré, pas un accident.
+    if (!suivante) {
+      select.value = active ? active.id : anneesEcole[0].id;
+      afficherMessage(
+        "Aucune année à venir n'existe encore. Créez-la dans Structure › Années scolaires "
+        + "avant d'ouvrir un concours pour la rentrée prochaine.",
+        'erreur'
+      );
+    }
+
+    select.addEventListener('change', chargerClassesCibles);
+    await chargerClassesCibles();
+  }
+
+  async function chargerClassesCibles() {
+    const anneeId = document.getElementById('select-annee-cible').value;
+    const zone = document.getElementById('choix-classes-cibles');
+    if (!anneeId) { zone.innerHTML = '<span class="aide">Choisissez une année d\'entrée.</span>'; return; }
+
+    zone.innerHTML = '<span class="aide"><span class="spinner"></span> Chargement des classes…</span>';
+
+    const r = await appelApi(`/classes?anneeScolaireId=${encodeURIComponent(anneeId)}`);
+    if (!r || !r.ok) {
+      zone.innerHTML = '<span class="aide">Impossible de charger les classes de cette année.</span>';
+      return;
+    }
+    classesEcole = await r.json();
+
+    if (classesEcole.length === 0) {
+      const annee = anneesEcole.find(a => a.id === anneeId);
+      zone.innerHTML = `<span class="aide">Aucune classe pour ${echapper(annee ? annee.libelle : 'cette année')}. `
+        + `Créez les classes de cette année avant d'ouvrir le concours.</span>`;
+      return;
+    }
+
+    zone.innerHTML = classesEcole.map(c => {
+      const effectif = Number(c.nb_eleves || 0);
+      const capacite = c.capacite === null || c.capacite === undefined ? null : Number(c.capacite);
+      // Places RESTANTES : ce qui compte pour un concours, c'est ce qui reste
+      // après la promotion interne, pas la capacité totale de la salle.
+      const restantes = capacite === null ? null : Math.max(capacite - effectif, 0);
+      const complet = restantes === 0;
+      return `
+        <label class="puce-classe-cible ${complet ? 'classe-pleine' : ''}"
+               title="${capacite === null
+                 ? `${effectif} élève(s) déjà inscrits, capacité non renseignée`
+                 : `${effectif} déjà inscrits sur ${capacite} places — ${restantes} restante(s)`}">
+          <input type="checkbox" value="${c.id}" />
+          <span>${echapper(c.nom)}</span>
+          <span class="capacite">${capacite === null
+            ? `${effectif} él.`
+            : `${restantes} place(s) libre(s)`}</span>
+        </label>`;
+    }).join('');
+  }
+
   async function creerSession() {
     const libelle = document.getElementById('champ-libelle').value.trim();
     if (!libelle) { afficherMessage('Donnez un libellé à la session.', 'erreur'); return; }
@@ -831,6 +939,7 @@
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         libelle,
+        annee_cible_id: document.getElementById('select-annee-cible').value || null,
         classes_cibles: [...document.querySelectorAll('#choix-classes-cibles input:checked')].map(c => c.value),
         places: Number(document.getElementById('champ-places').value),
         mode: document.getElementById('select-mode').value,

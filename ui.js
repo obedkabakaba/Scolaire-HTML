@@ -86,6 +86,10 @@
       '<path d="M12 4 2 9l10 5 10-5z"/><path d="M6 11.5V17c0 1.5 3 3 6 3s6-1.5 6-3v-5.5"/>',
     'frais-scolaires.html':
       '<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10.5h18"/><circle cx="17" cy="15" r="1.3"/>',
+    'comptabilite.html':
+      '<circle cx="12" cy="12" r="8.5"/><path d="M12 7v10"/><path d="M14.5 9.5A2.5 2.5 0 0 0 12 8.5h-.5a2 2 0 0 0 0 4h1a2 2 0 0 1 0 4H12a2.5 2.5 0 0 1-2.5-1"/>',
+    'repechage.html':
+      '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/><path d="m6.3 6.3 3.2 3.2"/><path d="m14.5 14.5 3.2 3.2"/><path d="m17.7 6.3-3.2 3.2"/><path d="m9.5 14.5-3.2 3.2"/>',
     'utilisateurs.html':
       '<circle cx="10" cy="8" r="3.5"/><path d="M3 20a7 7 0 0 1 14 0"/><path d="M19 8v6"/><path d="M16 11h6"/>',
     'cours.html':
@@ -133,8 +137,6 @@
       var contenu = ICONES[lien.getAttribute('href')];
       if (!contenu) continue;
 
-      // Le libellé existant est encapsulé pour que l'icône et le texte
-      // puissent être alignés proprement en flex.
       var libelle = document.createElement('span');
       libelle.className = 'nav-libelle';
       while (lien.firstChild) libelle.appendChild(lien.firstChild);
@@ -164,7 +166,6 @@
     function etape(horodatage) {
       if (debut === null) debut = horodatage;
       var progression = Math.min((horodatage - debut) / duree, 1);
-      // Décélération : rapide au départ, posé à l'arrivée.
       var adouci = 1 - Math.pow(1 - progression, 3);
       var courant = valeurFinale * adouci;
       var decimales = String(valeurFinale).indexOf('.') !== -1 ? 1 : 0;
@@ -184,7 +185,6 @@
     if (animationsReduites || element.dataset.animation === 'en-cours') return;
 
     var texte = (element.textContent || '').trim();
-    // Format accepté : un nombre éventuellement encadré (ex. « 128 », « 72,4% », « 1 250 FC »)
     var correspondance = texte.match(/^([^0-9-]*)(-?[0-9]+(?:[.,][0-9]+)?)(.*)$/);
     if (!correspondance) return;
 
@@ -261,11 +261,6 @@
     return isNaN(n) ? null : n;
   }
 
-  /**
-   * Anneau de progression.
-   * @param {Element|string} cible  élément ou identifiant
-   * @param {object} donnees { valeur, max, unite, detail }
-   */
   function anneau(cible, donnees) {
     var hote = typeof cible === 'string' ? document.getElementById(cible) : cible;
     if (!hote) return;
@@ -291,8 +286,6 @@
         '<div class="anneau-detail">' + (donnees.detail || '') + '</div>' +
       '</div>';
 
-    // Le décalage est appliqué après un cycle d'affichage : sans cela, le
-    // navigateur dessine directement l'état final et l'animation est perdue.
     var trait = hote.querySelector('.anneau-trait');
     if (donnees.couleur) trait.style.stroke = donnees.couleur;
     requestAnimationFrame(function () {
@@ -303,7 +296,6 @@
     });
   }
 
-  /** Anneau réduit, destiné à s'insérer dans une carte existante. */
   function anneauCompact(donnees) {
     var valeur = nombreOuNul(donnees.valeur);
     var max = nombreOuNul(donnees.max);
@@ -321,11 +313,6 @@
     '</div>';
   }
 
-  /**
-   * Barres comparatives.
-   * @param {Element|string} cible
-   * @param {Array} lignes  [{ libelle, valeur, max }]
-   */
   function barres(cible, lignes, options) {
     var hote = typeof cible === 'string' ? document.getElementById(cible) : cible;
     if (!hote) return;
@@ -375,8 +362,6 @@
 
   /* ------------------------------------------------------------------
      5. Menu mobile
-     Le bouton est injecté ici plutôt que dans les 22 pages : ajouter une
-     page plus tard lui donnera automatiquement sa navigation mobile.
      ------------------------------------------------------------------ */
   function installerMenuMobile() {
     var barre = document.querySelector('.barre-laterale');
@@ -389,8 +374,6 @@
     bouton.setAttribute('aria-expanded', 'false');
     bouton.innerHTML = '<span></span><span></span><span></span>';
 
-    // Placé après le conteneur du titre : sur mobile, la règle CSS
-    // « display: contents » le remet à sa place à droite de la barre.
     barre.appendChild(bouton);
 
     function basculer(ouvrir) {
@@ -399,17 +382,12 @@
       bouton.setAttribute('aria-expanded', ouvert ? 'true' : 'false');
       bouton.setAttribute('aria-label', ouvert ? 'Fermer le menu' : 'Ouvrir le menu');
 
-      // La liste est masquée au chargement par les pages, le temps que le
-      // filtrage par rôle s'applique. On la révèle à l'ouverture au cas où
-      // ce filtrage n'aurait pas encore eu lieu.
       var liste = barre.querySelector('.nav-liste');
       if (ouvert && liste) liste.style.visibility = 'visible';
     }
 
     bouton.addEventListener('click', function () { basculer(); });
 
-    // Le menu se referme après un choix : sur une page déjà ouverte, le lien
-    // ne provoque aucune navigation et le panneau resterait déployé.
     barre.querySelectorAll('.nav-item').forEach(function (lien) {
       lien.addEventListener('click', function () { basculer(false); });
     });
@@ -418,7 +396,6 @@
       if (e.key === 'Escape') basculer(false);
     });
 
-    // Retour en paysage ou sur grand écran : on repart d'un état propre.
     window.addEventListener('resize', function () {
       if (window.innerWidth > 780) basculer(false);
     });
@@ -427,17 +404,13 @@
 
   /* ------------------------------------------------------------------
      6. Lanceur d'actions rapides
-     Le lanceur est construit à partir des liens de navigation RÉELLEMENT
-     présents dans la page. Comme ceux-ci sont déjà filtrés par rôle, le
-     lanceur est automatiquement juste pour chaque utilisateur — et il le
-     restera quand de nouvelles pages seront ajoutées.
      ------------------------------------------------------------------ */
   var GROUPES = [
     { titre: 'Élèves et parcours', pages: ['eleves.html', 'inscriptions.html', 'orientation.html', 'presences.html'] },
     { titre: 'Pédagogie', pages: ['classes.html', 'cours.html', 'emploi-du-temps.html', 'notes.html', 'cours-classe-titulaire.html'] },
-    { titre: 'Bulletins', pages: ['bulletins.html', 'bulletin-annuel.html', 'generateur-modeles.html'] },
+    { titre: 'Bulletins', pages: ['bulletins.html', 'bulletin-annuel.html', 'generateur-modeles.html', 'repechage.html'] },
     { titre: 'Vie scolaire', pages: ['discipline.html', 'calendrier.html', 'messages.html'] },
-    { titre: 'Finances', pages: ['frais-scolaires.html'] },
+    { titre: 'Finances', pages: ['frais-scolaires.html', 'comptabilite.html'] },
     { titre: 'Pilotage', pages: ['rapports.html', 'archives.html', 'journal.html'] },
     { titre: 'Administration', pages: ['annee-scolaire.html', 'utilisateurs.html', 'site-public.html', 'parametres.html', 'mon-profil.html'] }
   ];
@@ -455,10 +428,12 @@
     'bulletins.html': 'Périodes et signatures',
     'bulletin-annuel.html': 'Résultats annuels',
     'generateur-modeles.html': 'Mise en page',
+    'repechage.html': 'Sessions de repêchage',
     'discipline.html': 'Faits et conduite',
     'calendrier.html': 'Événements',
     'messages.html': 'Réception et diffusion',
     'frais-scolaires.html': 'Frais et paiements',
+    'comptabilite.html': 'Comptabilité et paie',
     'rapports.html': 'Statistiques et exports',
     'archives.html': 'Années clôturées',
     'journal.html': 'Traçabilité',
@@ -488,8 +463,6 @@
     var hote = document.getElementById('lanceur');
     if (!hote || hote.dataset.construit === 'oui') return;
 
-    // Les liens visibles font foi : ce sont ceux que le filtrage par rôle
-    // a laissés en place. Une page interdite n'apparaît donc jamais ici.
     var disponibles = {};
     var liens = document.querySelectorAll('.nav-liste .nav-item[href]');
     for (var i = 0; i < liens.length; i++) {
@@ -502,9 +475,6 @@
     }
     if (Object.keys(disponibles).length === 0) return;
 
-    // Cinq raccourcis, pas davantage : une grille de vingt tuiles n'aide
-    // personne. Les plus ouverts remontent ; s'il n'y a pas encore assez
-    // d'historique, on complète avec les écrans épinglés au rail.
     var usage = lireUsage();
     var frequents = Object.keys(disponibles)
       .filter(function (p) { return usage[p] > 0; })
@@ -556,12 +526,6 @@
     });
   }
 
-  /**
-   * Pose un compteur vivant sur une tuile.
-   * @param {string} page   ex. « presences.html »
-   * @param {string} texte  ex. « 3 sans appel »
-   * @param {boolean} calme vert plutôt que rouge
-   */
   function marquerTuile(page, texte, calme) {
     var tuile = document.querySelector('.tuile[data-page="' + page + '"]');
     if (!tuile || !texte) return;
@@ -576,1014 +540,5 @@
 
   /* ------------------------------------------------------------------
      7. Rail réduit et tiroir « Tous les menus »
-
-     Le rail n'affiche que les écrans ÉPINGLÉS, quatre par défaut. Le reste
-     vit dans un tiroir. Trois principes :
-
-       · la page courante reste toujours visible dans le rail, même non
-         épinglée — sinon l'utilisateur perd son repère de position ;
-       · les épingles sont propres à chaque personne, conservées dans le
-         navigateur ;
-       · si tout est épinglé, « Tous les menus » disparaît : un tiroir vide
-         n'aurait aucune raison d'exister.
      ------------------------------------------------------------------ */
-  var CLE_EPINGLES = 'ardoise_menus_epingles';
-  var EPINGLES_DEFAUT = {
-    directeur: ['dashboard-directeur.html', 'eleves.html', 'bulletins.html', 'rapports.html'],
-    prefet: ['dashboard-directeur.html', 'classes.html', 'emploi-du-temps.html', 'discipline.html'],
-    secretaire: ['espace-secretaire.html', 'eleves.html', 'inscriptions.html', 'frais-scolaires.html'],
-    professeur: ['espace-professeur.html', 'notes.html', 'presences.html', 'emploi-du-temps.html'],
-    titulaire: ['espace-titulaire.html', 'notes.html', 'presences.html', 'bulletins.html'],
-    comptable: ['frais-scolaires.html', 'rapports.html', 'messages.html', 'mon-profil.html']
-  };
-
-  function rolesCourants() {
-    try {
-      var u = JSON.parse(localStorage.getItem('ardoise_user') || sessionStorage.getItem('ardoise_user') || 'null');
-      return (u && u.roles) || [];
-    } catch (e) { return []; }
-  }
-
-  function epinglesParDefaut(disponibles) {
-    var roles = rolesCourants();
-    for (var i = 0; i < roles.length; i++) {
-      if (EPINGLES_DEFAUT[roles[i]]) {
-        var choix = EPINGLES_DEFAUT[roles[i]].filter(function (p) { return disponibles[p]; });
-        if (choix.length) return choix;
-      }
-    }
-    // Rôle inattendu : on prend les quatre premiers écrans accessibles.
-    return Object.keys(disponibles).slice(0, 4);
-  }
-
-  function lireEpingles(disponibles) {
-    try {
-      var brut = JSON.parse(localStorage.getItem(CLE_EPINGLES) || 'null');
-      if (Array.isArray(brut)) {
-        var valides = brut.filter(function (p) { return disponibles[p]; });
-        if (valides.length) return valides;
-      }
-    } catch (e) {}
-    return epinglesParDefaut(disponibles);
-  }
-
-  function ecrireEpingles(liste) {
-    try { localStorage.setItem(CLE_EPINGLES, JSON.stringify(liste)); } catch (e) {}
-  }
-
-  function pageCourante() {
-    var p = window.location.pathname.split('/').pop();
-    return p || 'dashboard-directeur.html';
-  }
-
-  function reduireRail() {
-    var liste = document.querySelector('.nav-liste');
-    if (!liste || liste.dataset.reduit === 'oui') return;
-
-    var elements = [];
-    var lis = liste.querySelectorAll('li');
-    for (var i = 0; i < lis.length; i++) {
-      var li = lis[i];
-      if (li.style.display === 'none') continue;      // écarté par le rôle
-      var lien = li.querySelector('.nav-item[href]');
-      if (!lien) continue;
-      elements.push({
-        li: li,
-        page: lien.getAttribute('href'),
-        libelle: (lien.querySelector('.nav-libelle') || lien).textContent.trim()
-      });
-    }
-    if (elements.length <= 5) { liste.dataset.reduit = 'oui'; return; }
-
-    var disponibles = {};
-    elements.forEach(function (e) { disponibles[e.page] = e.libelle; });
-
-    var epingles = lireEpingles(disponibles);
-    var courante = pageCourante();
-
-    elements.forEach(function (e) {
-      var visible = epingles.indexOf(e.page) !== -1 || e.page === courante;
-      e.li.style.display = visible ? '' : 'none';
-      e.li.dataset.epingle = epingles.indexOf(e.page) !== -1 ? 'oui' : 'non';
-    });
-
-    // « Tous les menus » n'apparaît que s'il reste quelque chose à y montrer.
-    var restants = elements.length - epingles.length;
-    var ancien = liste.querySelector('.nav-tiroir');
-    if (ancien) ancien.closest('li').remove();
-
-    if (restants > 0) {
-      var li = document.createElement('li');
-      li.innerHTML = '<button type="button" class="nav-item nav-tiroir">'
-        + '<svg class="nav-icone" viewBox="0 0 24 24" aria-hidden="true">'
-        + '<circle cx="5" cy="6" r="1.4"/><circle cx="5" cy="12" r="1.4"/><circle cx="5" cy="18" r="1.4"/>'
-        + '<path d="M10 6h10"/><path d="M10 12h10"/><path d="M10 18h10"/></svg>'
-        + '<span class="nav-libelle">Tous les menus</span>'
-        + '<span class="chevron">' + restants + '</span></button>';
-      liste.appendChild(li);
-      li.querySelector('.nav-tiroir').addEventListener('click', function () {
-        ouvrirTiroir(elements, disponibles);
-      });
-    }
-
-    liste.dataset.reduit = 'oui';
-    window.ArdoiseRail = {
-      elements: elements,
-      disponibles: disponibles,
-      ouvrir: function () { ouvrirTiroir(elements, disponibles); }
-    };
-  }
-
-  function ouvrirTiroir(elements, disponibles) {
-    var voile = document.getElementById('voile-tiroir');
-    if (!voile) {
-      voile = document.createElement('div');
-      voile.id = 'voile-tiroir';
-      voile.className = 'voile-tiroir';
-      voile.innerHTML = '<div class="tiroir" role="dialog" aria-label="Tous les menus"></div>';
-      document.body.appendChild(voile);
-      document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape' && voile.classList.contains('ouvert')) fermerTiroir();
-      });
-    }
-
-    var epingles = lireEpingles(disponibles);
-    var boite = voile.querySelector('.tiroir');
-
-    function ligne(e) {
-      var actif = epingles.indexOf(e.page) !== -1;
-      return '<div class="tiroir-ligne">'
-        + '<a class="lien" href="' + e.page + '">'
-        + '<span class="jeton-menu"><svg viewBox="0 0 24 24" aria-hidden="true">'
-        + (ICONES[e.page] || '') + '</svg></span>'
-        + '<span class="texte">' + e.libelle + '</span></a>'
-        + '<button type="button" class="epingle' + (actif ? ' active' : '') + '"'
-        + ' data-page="' + e.page + '" title="' + (actif ? 'Retirer du menu' : 'Ajouter au menu') + '"'
-        + ' aria-pressed="' + actif + '">'
-        + '<svg viewBox="0 0 24 24"><path d="M12 17v5"/><path d="M9 3h6l-1 6 3 3v2H7v-2l3-3z"/></svg>'
-        + '</button></div>';
-    }
-
-    var html = '<div class="tiroir-entete">'
-      + '<h2>Tous les menus</h2>'
-      + '<input type="search" class="tiroir-recherche" id="tiroir-recherche" placeholder="Rechercher un écran…" aria-label="Rechercher un écran" />'
-      + '<button type="button" class="tiroir-fermer" id="tiroir-fermer">← Retour</button>'
-      + '</div>'
-      + '<p class="tiroir-aide">Épinglez les écrans que vous utilisez le plus : ils apparaîtront directement dans le menu de gauche.</p>';
-
-    var placees = {};
-    for (var g = 0; g < GROUPES.length; g++) {
-      var dedans = elements.filter(function (e) { return GROUPES[g].pages.indexOf(e.page) !== -1; });
-      if (!dedans.length) continue;
-      dedans.forEach(function (e) { placees[e.page] = true; });
-      html += '<div class="tiroir-groupe" data-groupe><div class="titre">' + GROUPES[g].titre + '</div>'
-        + '<div class="tiroir-grille">' + dedans.map(ligne).join('') + '</div></div>';
-    }
-    // Les écrans hors catalogue restent accessibles : une page ajoutée
-    // demain ne doit pas disparaître faute d'avoir été classée.
-    var orphelines = elements.filter(function (e) { return !placees[e.page]; });
-    if (orphelines.length) {
-      html += '<div class="tiroir-groupe" data-groupe><div class="titre">Autres</div>'
-        + '<div class="tiroir-grille">' + orphelines.map(ligne).join('') + '</div></div>';
-    }
-
-    html += '<div class="tiroir-pied">'
-      + '<span id="tiroir-compte"></span>'
-      + '<button type="button" class="lien-reinit" id="tiroir-reinit">Rétablir le menu par défaut</button>'
-      + '</div>';
-
-    boite.innerHTML = html;
-    voile.classList.add('ouvert');
-    document.body.style.overflow = 'hidden';
-
-    function majCompte() {
-      var n = lireEpingles(disponibles).length;
-      document.getElementById('tiroir-compte').textContent =
-        n + ' écran(s) épinglé(s) sur ' + elements.length;
-    }
-    majCompte();
-
-    boite.querySelectorAll('.epingle').forEach(function (b) {
-      b.addEventListener('click', function () {
-        var liste = lireEpingles(disponibles);
-        var i = liste.indexOf(b.dataset.page);
-        if (i === -1) liste.push(b.dataset.page);
-        else if (liste.length > 1) liste.splice(i, 1);
-        else return;   // on ne vide jamais complètement le rail
-        ecrireEpingles(liste);
-        b.classList.toggle('active', liste.indexOf(b.dataset.page) !== -1);
-        b.setAttribute('aria-pressed', liste.indexOf(b.dataset.page) !== -1);
-        majCompte();
-        appliquerEpingles(liste);
-      });
-    });
-
-    document.getElementById('tiroir-fermer').addEventListener('click', fermerTiroir);
-    document.getElementById('tiroir-reinit').addEventListener('click', function () {
-      try { localStorage.removeItem(CLE_EPINGLES); } catch (e) {}
-      fermerTiroir();
-      window.location.reload();
-    });
-
-    var champ = document.getElementById('tiroir-recherche');
-    champ.addEventListener('input', function () {
-      var q = champ.value.trim().toLowerCase();
-      boite.querySelectorAll('[data-groupe]').forEach(function (groupe) {
-        var visibles = 0;
-        groupe.querySelectorAll('.tiroir-ligne').forEach(function (l) {
-          var ok = !q || l.textContent.toLowerCase().indexOf(q) !== -1;
-          l.style.display = ok ? '' : 'none';
-          if (ok) visibles++;
-        });
-        groupe.style.display = visibles ? '' : 'none';
-      });
-    });
-    champ.focus();
-  }
-
-  function fermerTiroir() {
-    var voile = document.getElementById('voile-tiroir');
-    if (voile) voile.classList.remove('ouvert');
-    document.body.style.overflow = '';
-  }
-
-  /** Met le rail à jour sans recharger la page. */
-  function appliquerEpingles(epingles) {
-    if (!window.ArdoiseRail) return;
-    var courante = pageCourante();
-    var restants = 0;
-    window.ArdoiseRail.elements.forEach(function (e) {
-      var epingle = epingles.indexOf(e.page) !== -1;
-      e.li.style.display = (epingle || e.page === courante) ? '' : 'none';
-      e.li.dataset.epingle = epingle ? 'oui' : 'non';
-      if (!epingle) restants++;
-    });
-    var bouton = document.querySelector('.nav-tiroir');
-    if (bouton) {
-      var li = bouton.closest('li');
-      // Tout est épinglé : le tiroir n'a plus de raison d'être.
-      li.style.display = restants > 0 ? '' : 'none';
-      bouton.querySelector('.chevron').textContent = restants;
-    }
-  }
-
-
-  /* ------------------------------------------------------------------
-     8. Composants de densité
-     Fonctions publiques appelées par les pages. Elles produisent du HTML
-     plutôt que des nœuds : c'est ce dont les pages ont besoin, puisqu'elles
-     assemblent leurs tableaux par chaînes.
-     ------------------------------------------------------------------ */
-
-  // Teintes d'avatar : dérivées du nom, donc STABLES d'un écran à l'autre.
-  // Une couleur tirée au hasard changerait à chaque rechargement et
-  // empêcherait de reconnaître quelqu'un du coin de l'œil.
-  var TEINTES_AVATAR = ['#4C5FD5', '#12B76A', '#C98A3E', '#7E56D4', '#0E9384', '#B23A2E', '#3C5A62'];
-
-  function teintePour(nom) {
-    var somme = 0;
-    var texte = String(nom || '?');
-    for (var i = 0; i < texte.length; i++) somme = (somme + texte.charCodeAt(i)) % 9973;
-    return TEINTES_AVATAR[somme % TEINTES_AVATAR.length];
-  }
-
-  function initialesDe(nom) {
-    return String(nom || '?').trim().split(/\s+/).slice(0, 2)
-      .map(function (m) { return (m[0] || '').toUpperCase(); }).join('') || '?';
-  }
-
-  function proteger(t) {
-    var d = document.createElement('div');
-    d.textContent = t == null ? '' : String(t);
-    return d.innerHTML;
-  }
-
-  function urlImage(v) {
-    return (typeof v === 'string' && /^https?:\/\//i.test(v.trim())) ? v.trim() : null;
-  }
-
-  /**
-   * Avatar seul.
-   * @param {string} nom
-   * @param {string} [photoUrl] ignorée si ce n'est pas une adresse http(s)
-   */
-  function avatar(nom, photoUrl) {
-    var src = urlImage(photoUrl);
-    if (src) {
-      return '<img class="avatar" src="' + proteger(src) + '" alt="" loading="lazy" />';
-    }
-    return '<span class="avatar-initiales" style="background:' + teintePour(nom) + '" aria-hidden="true">'
-      + proteger(initialesDe(nom)) + '</span>';
-  }
-
-  /** Cellule de tableau : avatar, nom, et une ligne secondaire facultative. */
-  function cellulePersonne(nom, sousTitre, photoUrl) {
-    return '<div class="cellule-personne">' + avatar(nom, photoUrl)
-      + '<div class="identite"><div class="nom-personne">' + proteger(nom) + '</div>'
-      + (sousTitre ? '<div class="sous-nom">' + proteger(sousTitre) + '</div>' : '')
-      + '</div></div>';
-  }
-
-  /** Pile compacte. @param {Array} personnes  [{ nom, photo_url }] */
-  function pileAvatars(personnes, maximum) {
-    var max = maximum || 4;
-    var liste = (personnes || []).slice(0, max);
-    var reste = (personnes || []).length - liste.length;
-    return '<div class="pile-avatars">'
-      + liste.map(function (p) { return avatar(p.nom, p.photo_url); }).join('')
-      + (reste > 0 ? '<span class="reste">+' + reste + '</span>' : '')
-      + '</div>';
-  }
-
-  /**
-   * Badge d'état.
-   * @param {string} texte
-   * @param {'succes'|'alerte'|'danger'|'neutre'|'info'} ton
-   */
-  function badge(texte, ton) {
-    var tons = { succes: 1, alerte: 1, danger: 1, neutre: 1, info: 1 };
-    var retenu = tons[ton] ? ton : 'neutre';
-    return '<span class="badge badge-' + retenu + '">' + proteger(texte) + '</span>';
-  }
-
-  var PICTOGRAMMES = {
-    eleves: '<path d="M12 3 2 8l10 5 10-5z"/><path d="M6 10.5V16c0 1.7 2.7 3 6 3s6-1.3 6-3v-5.5"/>',
-    enseignants: '<circle cx="12" cy="8" r="3.2"/><path d="M5 20a7 7 0 0 1 14 0"/>',
-    classes: '<rect x="3" y="4" width="18" height="14" rx="2"/><path d="M7 20h10"/><path d="M7 9h7"/>',
-    argent: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7v10"/><path d="M14.5 9.5A2.5 2.5 0 0 0 12 8.5h-.5a2 2 0 0 0 0 4h1a2 2 0 0 1 0 4H12a2.5 2.5 0 0 1-2.5-1"/>',
-    presence: '<rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M8 2.5v4"/><path d="M16 2.5v4"/><path d="m9 13.5 2 2 4-4"/>',
-    alerte: '<path d="M12 3.5 2.5 20h19z"/><path d="M12 10v4"/><path d="M12 17h.01"/>',
-    reussite: '<path d="m4 13 5 5L20 7"/>',
-    temps: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/>'
-  };
-
-  /**
-   * Pose un pictogramme coloré sur une carte de chiffre.
-   * @param {string} selecteur  ex. « #carte-eleves » ou « .carte-stat:nth-child(1) »
-   * @param {string} type       clé de PICTOGRAMMES
-   * @param {string} teinte     bleu | vert | ocre | rouge | violet
-   */
-  function decorerCarte(selecteur, type, teinte) {
-    var carte = document.querySelector(selecteur);
-    if (!carte || !PICTOGRAMMES[type]) return;
-    if (carte.querySelector('.pictogramme')) return;
-    var span = document.createElement('span');
-    span.className = 'pictogramme pict-' + (teinte || 'bleu');
-    span.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + PICTOGRAMMES[type] + '</svg>';
-    carte.appendChild(span);
-  }
-
-  /** Décore plusieurs cartes d'un coup. @param {Array} plan [[sel, type, teinte]] */
-  function decorerCartes(plan) {
-    (plan || []).forEach(function (p) { decorerCarte(p[0], p[1], p[2]); });
-  }
-
-  /* ------------------------------------------------------------------
-     Démarrage
-     ------------------------------------------------------------------ */
-
-  /* ------------------------------------------------------------------
-     Menu Orientation — visibilité affinée
-
-     La carte des rôles écrite en dur dans chaque page sait qu'un titulaire
-     peut accéder à l'orientation. Elle ne peut pas savoir si CE titulaire
-     tient une classe d'orientation : un enseignant de 3e année voyait donc un
-     menu qui ne lui répondait que par un refus.
-
-     Le contrôle est fait ICI, dans le fichier partagé, et non dans les 38
-     pages : la carte des rôles y est déjà dupliquée 38 fois, il n'y a aucune
-     raison d'y ajouter une 39e duplication.
-
-     En cas d'échec de l'appel, le menu RESTE affiché : masquer une entrée sur
-     une erreur réseau ferait croire à une perte de droits.
-     ------------------------------------------------------------------ */
-  function affinerMenuOrientation() {
-    var liens = document.querySelectorAll('a[href="orientation.html"]');
-    if (liens.length === 0) return;
-
-    var jeton = null;
-    try {
-      jeton = localStorage.getItem('ardoise_access_token')
-           || sessionStorage.getItem('ardoise_access_token');
-    } catch (e) { return; }
-    if (!jeton) return;
-
-    var utilisateur = null;
-    try {
-      utilisateur = JSON.parse(
-        localStorage.getItem('ardoise_user') || sessionStorage.getItem('ardoise_user') || 'null'
-      );
-    } catch (e) {}
-    var roles = (utilisateur && utilisateur.roles) || [];
-
-    // La direction et le secrétariat voient toujours l'orientation : le
-    // contrôle ne concerne que les titulaires.
-    var concerne = roles.indexOf('titulaire') !== -1
-      && !roles.some(function (r) {
-        return ['directeur', 'prefet', 'secretaire', 'super_admin'].indexOf(r) !== -1;
-      });
-    if (!concerne) return;
-
-    var base = (typeof API_BASE_URL !== 'undefined' && API_BASE_URL) || window.API_BASE_URL || '';
-    fetch(base + '/orientation/acces', { headers: { Authorization: 'Bearer ' + jeton } })
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (d) {
-        if (!d || d.autorise !== false) return;
-        liens.forEach(function (lien) {
-          var li = lien.closest('li') || lien;
-          li.style.display = 'none';
-        });
-      })
-      .catch(function () { /* menu conservé : voir commentaire ci-dessus */ });
-  }
-
-
-  /* ==================================================================
-     NAVIGATION CIBLÉE — « montre-moi CET élève, ici »
-
-     Depuis la fiche d'un élève, on peut ouvrir ses présences, sa discipline,
-     ses frais. Le problème : ces écrans affichent une classe entière, et
-     retrouver un enfant parmi trois cents annule tout le bénéfice du lien.
-
-     Deux réponses possibles — surligner sa ligne, ou n'afficher que lui. On
-     fait LES DEUX, parce qu'elles ne servent pas au même moment :
-       · un bandeau annonce qui l'on consulte et propose de revenir à la liste
-         complète — c'est la réponse « ne montre que lui » ;
-       · la ligne correspondante est surlignée et amenée à l'écran — c'est la
-         réponse « où est-il ? », utile quand la page ne sait pas filtrer.
-
-     Le surlignage s'applique à toute ligne portant `data-eleve-id`,
-     `data-id` ou `data-classe-id`. Les pages n'ont rien à faire pour en
-     bénéficier ; celles qui savent filtrer lisent en plus le paramètre.
-
-     Implémenté ICI et non dans chaque page : la même mécanique servira aux
-     classes et aux cours, et 38 copies divergeraient dès la première
-     évolution.
-     ================================================================== */
-  var CIBLES = [
-    { param: 'eleve', libelle: 'élève', attributs: ['data-eleve-id', 'data-id'] },
-    { param: 'classe', libelle: 'classe', attributs: ['data-classe-id', 'data-id'] },
-    { param: 'cours', libelle: 'cours', attributs: ['data-cours-id', 'data-id'] }
-  ];
-
-  function installerFocus() {
-    var params = new URLSearchParams(window.location.search);
-    var cible = null;
-    for (var i = 0; i < CIBLES.length; i++) {
-      var valeur = params.get(CIBLES[i].param);
-      if (valeur) { cible = { def: CIBLES[i], id: valeur }; break; }
-    }
-    if (!cible) return;
-
-    var nom = params.get('nom') || '';
-    afficherBandeauFocus(cible, nom);
-
-    // La liste arrive par un appel réseau : elle n'est pas encore là au
-    // chargement. On observe le DOM plutôt que de deviner un délai — un
-    // setTimeout arbitraire rate la cible sur une connexion lente, ce qui est
-    // précisément le cas des écoles visées.
-    var trouve = false;
-    var observateur = new MutationObserver(function () {
-      if (trouve) return;
-      if (surlignerCible(cible)) {
-        trouve = true;
-        observateur.disconnect();
-      }
-    });
-    observateur.observe(document.body, { childList: true, subtree: true });
-
-    // Filet : on arrête d'observer au bout de 15 secondes, sinon l'observateur
-    // tourne pour rien pendant toute la session.
-    setTimeout(function () { observateur.disconnect(); }, 15000);
-    surlignerCible(cible);
-  }
-
-  function surlignerCible(cible) {
-    for (var i = 0; i < cible.def.attributs.length; i++) {
-      var attribut = cible.def.attributs[i];
-      var element = document.querySelector('[' + attribut + '="' + cible.id.replace(/"/g, '') + '"]');
-      if (!element) continue;
-      var ligne = element.closest('tr') || element.closest('li') || element;
-      ligne.classList.add('ard-ligne-ciblee');
-      try { ligne.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {}
-      return true;
-    }
-    return false;
-  }
-
-  function afficherBandeauFocus(cible, nom) {
-    if (document.getElementById('ard-bandeau-focus')) return;
-
-    var url = new URL(window.location.href);
-    url.searchParams.delete(cible.def.param);
-    url.searchParams.delete('nom');
-
-    var bandeau = document.createElement('div');
-    bandeau.id = 'ard-bandeau-focus';
-    bandeau.className = 'ard-bandeau-focus';
-    bandeau.innerHTML =
-      '<span>Vous consultez ' + (nom
-        ? '<strong>' + nom.replace(/[&<>"]/g, '') + '</strong>'
-        : 'un ' + cible.def.libelle + ' en particulier')
-      + '.</span> <a href="' + url.pathname + url.search + '">Voir tout</a>';
-
-    var contenu = document.querySelector('.contenu') || document.body;
-    var premier = contenu.querySelector('h1');
-    if (premier && premier.parentNode) {
-      premier.parentNode.insertBefore(bandeau, premier.nextSibling);
-    } else {
-      contenu.insertBefore(bandeau, contenu.firstChild);
-    }
-  }
-
-
-  /* ==================================================================
-     TABLEAUX EN CARTES SUR TÉLÉPHONE
-
-     Les tableaux étaient rendus dans un conteneur à défilement horizontal,
-     avec une largeur minimale de 560 px. Sur un téléphone de 360 px, cela
-     oblige à balayer de côté pour lire chaque ligne — et à revenir en arrière
-     pour savoir de quel élève il s'agit. C'est ce qui donne l'impression que
-     l'application « n'est pas responsive du tout », alors que la mise en page
-     générale l'est.
-
-     La bonne réponse pour un tableau de données sur mobile n'est pas de le
-     rétrécir : c'est de le retourner. Chaque LIGNE devient une carte, et
-     chaque CELLULE une ligne « intitulé → valeur ».
-
-     Le CSS seul ne peut pas le faire : il faudrait recopier l'en-tête de
-     colonne dans chaque cellule, ce que seul le JavaScript sait faire. On
-     pose donc `data-libelle` sur chaque cellule, et la feuille de style s'en
-     sert comme préfixe.
-
-     POURQUOI ICI, ET NON DANS CHAQUE PAGE
-     Trente-neuf pages, des dizaines de tableaux, tous reconstruits
-     dynamiquement à chaque chargement de données. Une solution par page serait
-     à réécrire à chaque nouveau tableau ; celle-ci s'applique à tout ce qui
-     existe et à tout ce qui viendra.
-     ================================================================== */
-  var LARGEUR_CARTES = 700;
-
-  function etiqueterCellules(tableau) {
-    var entetes = tableau.querySelectorAll('thead th');
-    if (entetes.length === 0) return;
-
-    var libelles = [];
-    for (var i = 0; i < entetes.length; i++) {
-      libelles.push((entetes[i].textContent || '').trim());
-    }
-
-    var lignes = tableau.querySelectorAll('tbody tr');
-    for (var l = 0; l < lignes.length; l++) {
-      var cellules = lignes[l].children;
-      // Une ligne d'état vide (« Aucun résultat ») s'étale sur toute la
-      // largeur : la transformer en carte n'aurait aucun sens.
-      if (cellules.length === 1 && cellules[0].hasAttribute('colspan')) {
-        lignes[l].classList.add('ard-ligne-pleine');
-        continue;
-      }
-      for (var c = 0; c < cellules.length && c < libelles.length; c++) {
-        if (libelles[c]) cellules[c].setAttribute('data-libelle', libelles[c]);
-        // Une cellule vide n'a pas à occuper une ligne dans la carte.
-        if (!(cellules[c].textContent || '').trim() && !cellules[c].children.length) {
-          cellules[c].classList.add('ard-cellule-vide');
-        }
-      }
-    }
-  }
-
-  function activerTableauxCartes() {
-    if (window.innerWidth > LARGEUR_CARTES) return;
-    var tableaux = document.querySelectorAll('.conteneur-tableau table');
-    for (var i = 0; i < tableaux.length; i++) {
-      try { etiqueterCellules(tableaux[i]); } catch (e) { /* tableau laissé tel quel */ }
-    }
-  }
-
-  function surveillerTableaux() {
-    activerTableauxCartes();
-    // Les tableaux sont remplis par des appels réseau, souvent plusieurs fois
-    // (filtres, pagination). On réétiquette à chaque reconstruction plutôt que
-    // d'espérer un bon moment.
-    var enAttente = false;
-    var observateur = new MutationObserver(function () {
-      if (enAttente) return;
-      enAttente = true;
-      // Regroupé sur une frame : un tableau de 300 lignes déclenche 300
-      // mutations, et réétiqueter à chacune bloquerait le fil d'exécution.
-      requestAnimationFrame(function () {
-        enAttente = false;
-        activerTableauxCartes();
-      });
-    });
-    var conteneurs = document.querySelectorAll('.conteneur-tableau');
-    for (var i = 0; i < conteneurs.length; i++) {
-      observateur.observe(conteneurs[i], { childList: true, subtree: true });
-    }
-  }
-
-
-  /* ==================================================================
-     DROITS D'ACCÈS AUX PAGES — source unique
-
-     Cette carte était RECOPIÉE dans les 30 pages de l'application. Toute
-     évolution de droits demandait 30 modifications cohérentes, et rien ne
-     garantissait qu'elles le restent : il a suffi d'ajouter deux écrans
-     (Comptabilité, Repêchage) pour devoir écrire deux scripts d'installation
-     dont le seul rôle était de propager une ligne.
-
-     Vérification faite avant de centraliser : les 30 copies étaient
-     rigoureusement identiques, 29 entrées chacune, aucune divergence. La
-     fusion ne change donc aucun droit — c'est une déduplication, pas une
-     refonte.
-
-     REMARQUE DE SÉCURITÉ
-     Ce filtrage est CONFORT, pas protection. Il masque des liens ; il
-     n'interdit rien. Les droits réels sont vérifiés par le serveur à chaque
-     appel. Si ce fichier ne se charge pas, l'utilisateur verra des liens
-     inutiles et recevra un 403 en cliquant — désagréable, jamais dangereux.
-     ================================================================== */
-  var PERMISSIONS = {
-  'dashboard-directeur.html': ['directeur', 'prefet'],
-  'annee-scolaire.html': ['directeur', 'prefet'],
-  'espace-secretaire.html': ['secretaire'],
-  'espace-professeur.html': ['professeur'],
-  'espace-titulaire.html': ['titulaire'],
-  'cours-classe-titulaire.html': ['titulaire'],
-  'eleves.html': ['directeur', 'prefet', 'secretaire'],
-  'inscriptions.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire'],
-  'orientation.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
-  'frais-scolaires.html': ['directeur', 'comptable', 'secretaire'],
-  'comptabilite.html': ['directeur', 'comptable'],
-  'utilisateurs.html': ['directeur', 'prefet', 'secretaire'],
-  'classes.html': ['directeur', 'prefet', 'secretaire'],
-  'cours.html': ['directeur', 'prefet', 'secretaire'],
-  'presences.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
-  'emploi-du-temps.html': ['directeur', 'prefet', 'secretaire', 'titulaire', 'professeur'],
-  'discipline.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
-  'site-public.html': ['directeur', 'prefet', 'secretaire'],
-  'notes.html': ['directeur', 'prefet', 'professeur'],
-  'bulletins.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
-  'bulletin-annuel.html': ['directeur', 'prefet'],
-  'repechage.html': ['directeur', 'prefet', 'professeur', 'titulaire'],
-  'generateur-modeles.html': ['directeur'],
-  'calendrier.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire'],
-  'rapports.html': ['directeur', 'prefet', 'secretaire', 'comptable'],
-  'archives.html': ['directeur', 'prefet', 'secretaire'],
-  'journal.html': ['directeur', 'prefet'],
-  'messages.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire', 'comptable'],
-  'parametres.html': ['directeur']
-  };
-
-  /* Où renvoyer quelqu'un arrivé sur une page qui ne le concerne pas. L'ordre
-     compte : on cherche le premier écran d'accueil qui lui corresponde. */
-  var ORDRE_REPLI = ['dashboard-directeur.html', 'espace-secretaire.html',
-                     'espace-professeur.html', 'espace-titulaire.html',
-                     'frais-scolaires.html', 'eleves.html'];
-
-  function rolesUtilisateur() {
-    var brut = null;
-    try {
-      brut = localStorage.getItem('ardoise_user') || sessionStorage.getItem('ardoise_user');
-    } catch (e) { return []; }
-    try {
-      var u = JSON.parse(brut || 'null');
-      return (u && u.roles) || [];
-    } catch (e) { return []; }
-  }
-
-  function filtrerAcces(pageActuelle) {
-    var roles = rolesUtilisateur();
-    var estSuperAdmin = roles.indexOf('super_admin') !== -1;
-
-    var liens = document.querySelectorAll('.nav-item[href]');
-    for (var i = 0; i < liens.length; i++) {
-      var page = liens[i].getAttribute('href');
-      var autorises = PERMISSIONS[page];
-      // Une page absente de la carte reste visible : ajouter un écran sans
-      // penser à ses droits ne doit pas le rendre invisible à tout le monde.
-      if (!autorises || estSuperAdmin) continue;
-      var permis = roles.some(function (r) { return autorises.indexOf(r) !== -1; });
-      if (!permis) {
-        var li = liens[i].closest('li');
-        if (li) li.style.display = 'none';
-      }
-    }
-
-    var courante = pageActuelle
-      || (window.location.pathname.split('/').pop() || '').toLowerCase();
-    var rolesPage = PERMISSIONS[courante];
-    if (rolesPage && !estSuperAdmin
-        && !roles.some(function (r) { return rolesPage.indexOf(r) !== -1; })) {
-      var repli = ORDRE_REPLI.find(function (p) {
-        var r = PERMISSIONS[p];
-        return !r || roles.some(function (role) { return r.indexOf(role) !== -1; });
-      });
-      if (repli && repli !== courante) {
-        window.location.href = repli;
-        return false;   // on quitte : inutile d'afficher la barre ici
-      }
-    }
-
-    var liste = document.querySelector('.nav-liste');
-    if (liste) liste.style.visibility = 'visible';
-    return true;
-  }
-
-  function demarrer() {
-    // Le filtrage des droits AVANT tout le reste : la barre de navigation est
-    // masquée (`visibility: hidden`) tant qu'il n'a pas eu lieu, pour éviter
-    // qu'un utilisateur aperçoive une fraction de seconde des liens qui ne le
-    // concernent pas.
-    //
-    // Enveloppé de sorte qu'une erreur RÉVÈLE quand même le menu : un
-    // utilisateur devant une barre vide serait bloqué, alors qu'un lien de
-    // trop ne donne accès à rien — le serveur refuse de toute façon.
-    try {
-      filtrerAcces();
-    } catch (e) {
-      var liste = document.querySelector('.nav-liste');
-      if (liste) liste.style.visibility = 'visible';
-    }
-
-    try { injecterIcones(); } catch (e) { /* la navigation reste utilisable sans icônes */ }
-    try { installerMenuMobile(); } catch (e) { /* la barre reste affichée sans bouton */ }
-    // Le lanceur attend le filtrage par rôle des pages, qui s'exécute juste après.
-    setTimeout(function () {
-      // Après le filtrage par rôle des pages : on affine ce qu'il a laissé.
-      try { affinerMenuOrientation(); } catch (e) { /* menu conservé */ }
-      try { installerFocus(); } catch (e) { /* la page reste utilisable sans surlignage */ }
-      try { surveillerTableaux(); } catch (e) { /* les tableaux restent en défilement horizontal */ }
-      try { reduireRail(); } catch (e) { /* le rail complet reste utilisable */ }
-      try { construireLanceur(); } catch (e) {}
-    }, 60);
-    try { surveillerValeurs(); } catch (e) { /* les chiffres restent affichés sans animation */ }
-    if (!animationsReduites) {
-      try { poserSquelettes(); } catch (e) { /* le texte « Chargement… » reste affiché */ }
-    }
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', demarrer);
-  } else {
-    demarrer();
-  }
-
-  // Les icônes sont réinjectées si le thème change (le menu peut être redessiné).
-  document.addEventListener('ardoise:theme-change', function () {
-    try { injecterIcones(); } catch (e) {}
-  });
-})();
-
-/* ==========================================================================
-   MODE ÉDITION DES FORMULAIRES
-
-   Reproduit — et généralise — le comportement déjà en place dans
-   mon-profil.html : un formulaire d'édition s'ouvre VERROUILLÉ, champs
-   désactivés et bouton « Modifier ». Cliquer dessus déverrouille et fait
-   apparaître « Enregistrer » et « Annuler ».
-
-   Pourquoi ce n'est pas qu'une question d'apparence : un formulaire ouvert en
-   permanence invite à modifier par inadvertance des réglages structurants
-   (seuil de promotion, type d'enseignement, taux de change...). Le clic sur
-   « Modifier » est une intention explicite.
-
-   Ne s'applique QU'AUX FORMULAIRES D'ÉDITION. Un formulaire de création n'a
-   rien à « modifier » : il s'ouvre déjà en saisie, et le laisser verrouillé
-   n'aurait aucun sens.
-
-   Usage :
-     ArdoiseEdition.installer({
-       formulaire: 'formulaire-parametres',
-       champs: ['champ-a', 'champ-b'],          // ou omis = tous les champs du formulaire
-       boutonEnregistrer: 'bouton-enregistrer',
-       libelleModifier: 'Modifier'              // optionnel
-     });
-
-   L'appelant garde la main sur la soumission : après un enregistrement réussi
-   il appelle `verrouiller()`, après un échec il ne fait rien — le formulaire
-   RESTE en édition avec les valeurs saisies, pour que l'utilisateur corrige
-   sans avoir à tout retaper.
-   ========================================================================== */
-(function () {
-  'use strict';
-
-  function champsDuFormulaire(formulaire, ids) {
-    if (ids && ids.length) {
-      return ids.map(function (id) { return document.getElementById(id); }).filter(Boolean);
-    }
-    // Les boutons ne sont pas des champs : les désactiver rendrait « Modifier »
-    // lui-même inutilisable, et le formulaire définitivement figé.
-    return Array.prototype.filter.call(
-      formulaire.querySelectorAll('input, select, textarea'),
-      function (el) { return el.type !== 'submit' && el.type !== 'button'; }
-    );
-  }
-
-  function installer(options) {
-    var formulaire = document.getElementById(options.formulaire);
-    var boutonEnregistrer = document.getElementById(options.boutonEnregistrer);
-    if (!formulaire || !boutonEnregistrer) return null;
-
-    var champs = champsDuFormulaire(formulaire, options.champs);
-
-    // Les deux boutons sont créés ici plutôt qu'ajoutés dans les 20 pages :
-    // une page qui adopte le mode édition n'a aucun balisage à écrire.
-    var boutonModifier = document.createElement('button');
-    boutonModifier.type = 'button';
-    boutonModifier.className = boutonEnregistrer.className;
-    boutonModifier.textContent = options.libelleModifier || 'Modifier';
-
-    var boutonAnnuler = document.createElement('button');
-    boutonAnnuler.type = 'button';
-    boutonAnnuler.className = 'bouton bouton-secondaire';
-    boutonAnnuler.textContent = 'Annuler';
-    boutonAnnuler.style.display = 'none';
-
-    boutonEnregistrer.parentNode.insertBefore(boutonModifier, boutonEnregistrer);
-    boutonEnregistrer.parentNode.insertBefore(boutonAnnuler, boutonEnregistrer);
-
-    // Valeurs de référence, pour qu'« Annuler » restaure réellement l'état
-    // d'origine au lieu de laisser des modifications à moitié saisies.
-    var valeurs = {};
-    function memoriser() {
-      champs.forEach(function (c, i) {
-        valeurs[i] = (c.type === 'checkbox' || c.type === 'radio') ? c.checked : c.value;
-      });
-    }
-    function restaurer() {
-      champs.forEach(function (c, i) {
-        if (c.type === 'checkbox' || c.type === 'radio') c.checked = valeurs[i];
-        else c.value = valeurs[i];
-      });
-    }
-
-    function verrouiller() {
-      champs.forEach(function (c) { c.disabled = true; });
-      boutonModifier.style.display = '';
-      boutonEnregistrer.style.display = 'none';
-      boutonAnnuler.style.display = 'none';
-    }
-
-    function deverrouiller() {
-      memoriser();
-      champs.forEach(function (c) { c.disabled = false; });
-      boutonModifier.style.display = 'none';
-      boutonEnregistrer.style.display = '';
-      boutonAnnuler.style.display = '';
-      if (champs[0]) champs[0].focus();
-    }
-
-    boutonModifier.addEventListener('click', deverrouiller);
-    boutonAnnuler.addEventListener('click', function () {
-      restaurer();
-      verrouiller();
-    });
-
-    verrouiller();
-    return { verrouiller: verrouiller, deverrouiller: deverrouiller, memoriser: memoriser };
-  }
-
-  window.ArdoiseEdition = { installer: installer };
-  // Exposé pour les pages : elles appellent ArdoiseAcces.filtrer() au lieu
-  // de recopier la carte des droits.
-  window.ArdoiseAcces = { filtrer: filtrerAcces, permissions: PERMISSIONS };
-})();
-
-/* ==========================================================================
-   BOÎTES DE DIALOGUE STYLÉES — remplacent confirm() et prompt()
-
-   Les boîtes natives du navigateur (grises, police système, position
-   imposée) tranchent avec le reste de l'interface — au même titre que les
-   boutons non stylés corrigés plus haut. Ces deux fonctions reproduisent leur
-   usage (retour par Promise, à utiliser avec `await`) sans dépendre d'aucun
-   balisage ajouté dans les pages : la boîte est construite et détruite en JS
-   pur à chaque appel, ce qui évite de modifier les 34 fichiers HTML pour
-   ajouter un conteneur.
-
-   Utilisation, en remplacement direct de l'existant :
-     if (!confirm('Supprimer ?')) return;
-       devient
-     if (!(await ArdoiseUI.confirmer('Supprimer ?'))) return;
-
-     const motif = prompt('Motif ?');
-       devient
-     const motif = await ArdoiseUI.demander('Motif ?');
-   ========================================================================== */
-(function () {
-  'use strict';
-
-  /** Devine si l'action est destructrice, pour styler le bouton en rouge. */
-  function estDangereux(message) {
-    return /supprim|irr[ée]versible|retirer d[ée]finitivement|écarter/i.test(message);
-  }
-
-  function construireBoite(contenuInterne, classeBoite) {
-    const voile = document.createElement('div');
-    voile.className = 'voile-confirmation';
-    voile.innerHTML = `<div class="boite-confirmation${classeBoite ? ' ' + classeBoite : ''}">${contenuInterne}</div>`;
-    document.body.appendChild(voile);
-    // Un cadre à peine posé dans le DOM n'anime pas sa transition d'opacité :
-    // le rAF laisse le navigateur peindre l'état initial avant de basculer.
-    requestAnimationFrame(() => requestAnimationFrame(() => voile.classList.add('visible')));
-    return voile;
-  }
-
-  function detruireBoite(voile) {
-    voile.classList.remove('visible');
-    setTimeout(() => voile.remove(), 220);
-  }
-
-  /**
-   * @param {string} message
-   * @param {object} [options]
-   * @param {boolean} [options.danger]         force ou désactive le style rouge
-   * @param {string}  [options.libelleValider]  par défaut "Supprimer" ou "Confirmer"
-   * @param {string}  [options.libelleAnnuler]  par défaut "Annuler"
-   * @returns {Promise<boolean>}
-   */
-  function confirmer(message, options) {
-    options = options || {};
-    const danger = options.danger !== undefined ? options.danger : estDangereux(message);
-    const libelleValider = options.libelleValider || (danger ? 'Supprimer' : 'Confirmer');
-    const libelleAnnuler = options.libelleAnnuler || 'Annuler';
-
-    return new Promise((resolve) => {
-      const voile = construireBoite(
-        `<h3></h3><p></p>
-         <div class="actions">
-           <button type="button" class="annuler"></button>
-           <button type="button" class="valider"></button>
-         </div>`,
-        danger ? 'danger' : ''
-      );
-      // textContent, jamais innerHTML, pour le message : il contient souvent
-      // des noms d'élèves ou de classes saisis par l'école, jamais fiables
-      // comme HTML.
-      voile.querySelector('h3').textContent = danger ? 'Confirmer la suppression' : 'Confirmation';
-      voile.querySelector('p').textContent = message;
-      voile.querySelector('.annuler').textContent = libelleAnnuler;
-      voile.querySelector('.valider').textContent = libelleValider;
-
-      function conclure(resultat) {
-        document.removeEventListener('keydown', surEchap);
-        detruireBoite(voile);
-        resolve(resultat);
-      }
-      function surEchap(e) { if (e.key === 'Escape') conclure(false); }
-
-      voile.querySelector('.annuler').addEventListener('click', () => conclure(false));
-      voile.querySelector('.valider').addEventListener('click', () => conclure(true));
-      // Cliquer hors de la boîte équivaut à Annuler, jamais à Confirmer : une
-      // action destructrice ne doit jamais pouvoir se déclencher par un clic
-      // égaré à l'extérieur.
-      voile.addEventListener('click', (e) => { if (e.target === voile) conclure(false); });
-      document.addEventListener('keydown', surEchap);
-      voile.querySelector('.valider').focus();
-    });
-  }
-
-  /**
-   * @param {string} message
-   * @param {string} [valeurDefaut]
-   * @returns {Promise<string|null>} null si annulé, comme prompt()
-   */
-  function demander(message, valeurDefaut) {
-    return new Promise((resolve) => {
-      const voile = construireBoite(
-        `<h3></h3><p></p>
-         <input type="text" class="champ-demande" style="width:100%; box-sizing:border-box; margin-bottom:16px;
-                padding:9px 11px; border:1.5px solid var(--bordure,#ddd); border-radius:var(--r-bouton,8px);
-                font-family:inherit; font-size:0.9rem;" />
-         <div class="actions">
-           <button type="button" class="annuler">Annuler</button>
-           <button type="button" class="valider">Valider</button>
-         </div>`
-      );
-      voile.querySelector('h3').textContent = 'Une information';
-      voile.querySelector('p').textContent = message;
-      const champ = voile.querySelector('.champ-demande');
-      champ.value = valeurDefaut || '';
-
-      function conclure(resultat) {
-        document.removeEventListener('keydown', surTouche);
-        detruireBoite(voile);
-        resolve(resultat);
-      }
-      function surTouche(e) {
-        if (e.key === 'Escape') conclure(null);
-        if (e.key === 'Enter' && document.activeElement === champ) conclure(champ.value);
-      }
-
-      voile.querySelector('.annuler').addEventListener('click', () => conclure(null));
-      voile.querySelector('.valider').addEventListener('click', () => conclure(champ.value));
-      voile.addEventListener('click', (e) => { if (e.target === voile) conclure(null); });
-      document.addEventListener('keydown', surTouche);
-      setTimeout(() => champ.focus(), 50);
-    });
-  }
-
-  window.ArdoiseUI = window.ArdoiseUI || {};
-  window.ArdoiseUI.confirmer = confirmer;
-  window.ArdoiseUI.demander = demander;
-})();
+  var CLE_

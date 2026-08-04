@@ -86,6 +86,8 @@
       '<path d="M12 4 2 9l10 5 10-5z"/><path d="M6 11.5V17c0 1.5 3 3 6 3s6-1.5 6-3v-5.5"/>',
     'frais-scolaires.html':
       '<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10.5h18"/><circle cx="17" cy="15" r="1.3"/>',
+    'comptabilite.html':
+      '<circle cx="12" cy="12" r="8.5"/><path d="M12 7v10"/><path d="M14.5 9.5A2.5 2.5 0 0 0 12 8.5h-.5a2 2 0 0 0 0 4h1a2 2 0 0 1 0 4H12a2.5 2.5 0 0 1-2.5-1"/>',
     'utilisateurs.html':
       '<circle cx="10" cy="8" r="3.5"/><path d="M3 20a7 7 0 0 1 14 0"/><path d="M19 8v6"/><path d="M16 11h6"/>',
     'cours.html':
@@ -106,6 +108,8 @@
       '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/><path d="M9 13h6"/><path d="M9 17h6"/>',
     'bulletin-annuel.html':
       '<circle cx="12" cy="9" r="5"/><path d="M9 13.5 8 21l4-2 4 2-1-7.5"/>',
+    'repechage.html':
+      '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/><path d="m6.3 6.3 3.2 3.2"/><path d="m14.5 14.5 3.2 3.2"/><path d="m17.7 6.3-3.2 3.2"/><path d="m9.5 14.5-3.2 3.2"/>',
     'generateur-modeles.html':
       '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M10 9v11"/>',
     'calendrier.html':
@@ -435,9 +439,9 @@
   var GROUPES = [
     { titre: 'Élèves et parcours', pages: ['eleves.html', 'inscriptions.html', 'orientation.html', 'presences.html'] },
     { titre: 'Pédagogie', pages: ['classes.html', 'cours.html', 'emploi-du-temps.html', 'notes.html', 'cours-classe-titulaire.html'] },
-    { titre: 'Bulletins', pages: ['bulletins.html', 'bulletin-annuel.html', 'generateur-modeles.html'] },
+    { titre: 'Bulletins', pages: ['bulletins.html', 'bulletin-annuel.html', 'generateur-modeles.html', 'repechage.html'] },
     { titre: 'Vie scolaire', pages: ['discipline.html', 'calendrier.html', 'messages.html'] },
-    { titre: 'Finances', pages: ['frais-scolaires.html'] },
+    { titre: 'Finances', pages: ['frais-scolaires.html', 'comptabilite.html'] },
     { titre: 'Pilotage', pages: ['rapports.html', 'archives.html', 'journal.html'] },
     { titre: 'Administration', pages: ['annee-scolaire.html', 'utilisateurs.html', 'site-public.html', 'parametres.html', 'mon-profil.html'] }
   ];
@@ -455,10 +459,12 @@
     'bulletins.html': 'Périodes et signatures',
     'bulletin-annuel.html': 'Résultats annuels',
     'generateur-modeles.html': 'Mise en page',
+    'repechage.html': 'Sessions et décisions',
     'discipline.html': 'Faits et conduite',
     'calendrier.html': 'Événements',
     'messages.html': 'Réception et diffusion',
     'frais-scolaires.html': 'Frais et paiements',
+    'comptabilite.html': 'Rémunération et dépenses',
     'rapports.html': 'Statistiques et exports',
     'archives.html': 'Années clôturées',
     'journal.html': 'Traçabilité',
@@ -1182,130 +1188,7 @@
     }
   }
 
-
-  /* ==================================================================
-     DROITS D'ACCÈS AUX PAGES — source unique
-
-     Cette carte était RECOPIÉE dans les 30 pages de l'application. Toute
-     évolution de droits demandait 30 modifications cohérentes, et rien ne
-     garantissait qu'elles le restent : il a suffi d'ajouter deux écrans
-     (Comptabilité, Repêchage) pour devoir écrire deux scripts d'installation
-     dont le seul rôle était de propager une ligne.
-
-     Vérification faite avant de centraliser : les 30 copies étaient
-     rigoureusement identiques, 29 entrées chacune, aucune divergence. La
-     fusion ne change donc aucun droit — c'est une déduplication, pas une
-     refonte.
-
-     REMARQUE DE SÉCURITÉ
-     Ce filtrage est CONFORT, pas protection. Il masque des liens ; il
-     n'interdit rien. Les droits réels sont vérifiés par le serveur à chaque
-     appel. Si ce fichier ne se charge pas, l'utilisateur verra des liens
-     inutiles et recevra un 403 en cliquant — désagréable, jamais dangereux.
-     ================================================================== */
-  var PERMISSIONS = {
-  'dashboard-directeur.html': ['directeur', 'prefet'],
-  'annee-scolaire.html': ['directeur', 'prefet'],
-  'espace-secretaire.html': ['secretaire'],
-  'espace-professeur.html': ['professeur'],
-  'espace-titulaire.html': ['titulaire'],
-  'cours-classe-titulaire.html': ['titulaire'],
-  'eleves.html': ['directeur', 'prefet', 'secretaire'],
-  'inscriptions.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire'],
-  'orientation.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
-  'frais-scolaires.html': ['directeur', 'comptable', 'secretaire'],
-  'comptabilite.html': ['directeur', 'comptable'],
-  'utilisateurs.html': ['directeur', 'prefet', 'secretaire'],
-  'classes.html': ['directeur', 'prefet', 'secretaire'],
-  'cours.html': ['directeur', 'prefet', 'secretaire'],
-  'presences.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
-  'emploi-du-temps.html': ['directeur', 'prefet', 'secretaire', 'titulaire', 'professeur'],
-  'discipline.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
-  'site-public.html': ['directeur', 'prefet', 'secretaire'],
-  'notes.html': ['directeur', 'prefet', 'professeur'],
-  'bulletins.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
-  'bulletin-annuel.html': ['directeur', 'prefet'],
-  'repechage.html': ['directeur', 'prefet', 'professeur', 'titulaire'],
-  'generateur-modeles.html': ['directeur'],
-  'calendrier.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire'],
-  'rapports.html': ['directeur', 'prefet', 'secretaire', 'comptable'],
-  'archives.html': ['directeur', 'prefet', 'secretaire'],
-  'journal.html': ['directeur', 'prefet'],
-  'messages.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire', 'comptable'],
-  'parametres.html': ['directeur']
-  };
-
-  /* Où renvoyer quelqu'un arrivé sur une page qui ne le concerne pas. L'ordre
-     compte : on cherche le premier écran d'accueil qui lui corresponde. */
-  var ORDRE_REPLI = ['dashboard-directeur.html', 'espace-secretaire.html',
-                     'espace-professeur.html', 'espace-titulaire.html',
-                     'frais-scolaires.html', 'eleves.html'];
-
-  function rolesUtilisateur() {
-    var brut = null;
-    try {
-      brut = localStorage.getItem('ardoise_user') || sessionStorage.getItem('ardoise_user');
-    } catch (e) { return []; }
-    try {
-      var u = JSON.parse(brut || 'null');
-      return (u && u.roles) || [];
-    } catch (e) { return []; }
-  }
-
-  function filtrerAcces(pageActuelle) {
-    var roles = rolesUtilisateur();
-    var estSuperAdmin = roles.indexOf('super_admin') !== -1;
-
-    var liens = document.querySelectorAll('.nav-item[href]');
-    for (var i = 0; i < liens.length; i++) {
-      var page = liens[i].getAttribute('href');
-      var autorises = PERMISSIONS[page];
-      // Une page absente de la carte reste visible : ajouter un écran sans
-      // penser à ses droits ne doit pas le rendre invisible à tout le monde.
-      if (!autorises || estSuperAdmin) continue;
-      var permis = roles.some(function (r) { return autorises.indexOf(r) !== -1; });
-      if (!permis) {
-        var li = liens[i].closest('li');
-        if (li) li.style.display = 'none';
-      }
-    }
-
-    var courante = pageActuelle
-      || (window.location.pathname.split('/').pop() || '').toLowerCase();
-    var rolesPage = PERMISSIONS[courante];
-    if (rolesPage && !estSuperAdmin
-        && !roles.some(function (r) { return rolesPage.indexOf(r) !== -1; })) {
-      var repli = ORDRE_REPLI.find(function (p) {
-        var r = PERMISSIONS[p];
-        return !r || roles.some(function (role) { return r.indexOf(role) !== -1; });
-      });
-      if (repli && repli !== courante) {
-        window.location.href = repli;
-        return false;   // on quitte : inutile d'afficher la barre ici
-      }
-    }
-
-    var liste = document.querySelector('.nav-liste');
-    if (liste) liste.style.visibility = 'visible';
-    return true;
-  }
-
   function demarrer() {
-    // Le filtrage des droits AVANT tout le reste : la barre de navigation est
-    // masquée (`visibility: hidden`) tant qu'il n'a pas eu lieu, pour éviter
-    // qu'un utilisateur aperçoive une fraction de seconde des liens qui ne le
-    // concernent pas.
-    //
-    // Enveloppé de sorte qu'une erreur RÉVÈLE quand même le menu : un
-    // utilisateur devant une barre vide serait bloqué, alors qu'un lien de
-    // trop ne donne accès à rien — le serveur refuse de toute façon.
-    try {
-      filtrerAcces();
-    } catch (e) {
-      var liste = document.querySelector('.nav-liste');
-      if (liste) liste.style.visibility = 'visible';
-    }
-
     try { injecterIcones(); } catch (e) { /* la navigation reste utilisable sans icônes */ }
     try { installerMenuMobile(); } catch (e) { /* la barre reste affichée sans bouton */ }
     // Le lanceur attend le filtrage par rôle des pages, qui s'exécute juste après.
@@ -1445,9 +1328,6 @@
   }
 
   window.ArdoiseEdition = { installer: installer };
-  // Exposé pour les pages : elles appellent ArdoiseAcces.filtrer() au lieu
-  // de recopier la carte des droits.
-  window.ArdoiseAcces = { filtrer: filtrerAcces, permissions: PERMISSIONS };
 })();
 
 /* ==========================================================================

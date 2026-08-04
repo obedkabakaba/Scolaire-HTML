@@ -1022,7 +1022,8 @@
 <script src="ui.js"></script>
 <script src="hors-ligne.js"></script>
 <!-- Didacticiel d'installation : bouton d'aide contextuel, partagé par toutes les pages. -->
-<script src="didacticiel.js" data-ecran="Messagerie">
+<script src="didacticiel.js" data-ecran="Messagerie"></script>
+<script>
   // ============================================================
   //  Assistant d'aide
   // ============================================================
@@ -1051,7 +1052,7 @@
     if (question.length < 5) { afficherMessage('Posez une question un peu plus précise.', 'erreur'); return; }
 
     const bouton = document.getElementById('bouton-question-aide');
-    bouton.disabled = true; bouton.textContent = 'Recherche…';
+    bouton.disabled = true; bouton.textContent = 'En train de répondre…';
 
     // La page d'origine est transmise : le didacticiel renvoie ici depuis
     // n'importe quel écran, et l'assistant répond mieux s'il sait d'où vient

@@ -327,8 +327,14 @@
   </main>
 </div>
 
+<script src="theme.js"></script>
+<script src="ui.js"></script>
+<script src="hors-ligne.js"></script>
+<!-- Didacticiel d'installation : bouton d'aide contextuel, partagé par toutes les pages. -->
+<script src="didacticiel.js" data-ecran="Annee scolaire"></script>
 <script>
-  const API_BASE_URL = "https://scolaire-saas-backend.onrender.com";
+document.addEventListener('DOMContentLoaded', function() {
+const API_BASE_URL = "https://scolaire-saas-backend.onrender.com";
 
 
   // Session par défaut = sessionStorage (effacée à la fermeture du navigateur),
@@ -1022,13 +1028,10 @@
 
     document.querySelector('.nav-liste').style.visibility = 'visible';
   })();
+});
 </script>
 
-<script src="theme.js"></script>
-<script src="ui.js"></script>
-<script src="hors-ligne.js"></script>
-<!-- Didacticiel d'installation : bouton d'aide contextuel, partagé par toutes les pages. -->
-<script src="didacticiel.js" data-ecran="Annee scolaire"></script>
+
 <!-- Modale de clôture de période -->
 <div class="voile" id="voile-cloture">
   <div class="modale">

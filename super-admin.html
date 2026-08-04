@@ -84,6 +84,9 @@
   .modale .separation { border: none; border-top: 1px solid var(--bordure); margin: 20px 0; }
   .modale .sous-section { font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--texte-att); margin-bottom: 12px; }
   .ligne-champs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  /* Deux champs côte à côte sous 400 px sont saisissables mais désagréables
+     au doigt : on les empile. */
+  @media (max-width: 640px) { .ligne-champs { grid-template-columns: 1fr; } }
   .actions-modale { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; }
 
   .message-flash { display: none; padding: 12px 16px; border-radius:  var(--r-bouton); font-size: 0.88rem; margin-bottom: 20px; }

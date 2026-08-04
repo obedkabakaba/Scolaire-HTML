@@ -1096,6 +1096,92 @@
     }
   }
 
+
+  /* ==================================================================
+     TABLEAUX EN CARTES SUR TÉLÉPHONE
+
+     Les tableaux étaient rendus dans un conteneur à défilement horizontal,
+     avec une largeur minimale de 560 px. Sur un téléphone de 360 px, cela
+     oblige à balayer de côté pour lire chaque ligne — et à revenir en arrière
+     pour savoir de quel élève il s'agit. C'est ce qui donne l'impression que
+     l'application « n'est pas responsive du tout », alors que la mise en page
+     générale l'est.
+
+     La bonne réponse pour un tableau de données sur mobile n'est pas de le
+     rétrécir : c'est de le retourner. Chaque LIGNE devient une carte, et
+     chaque CELLULE une ligne « intitulé → valeur ».
+
+     Le CSS seul ne peut pas le faire : il faudrait recopier l'en-tête de
+     colonne dans chaque cellule, ce que seul le JavaScript sait faire. On
+     pose donc `data-libelle` sur chaque cellule, et la feuille de style s'en
+     sert comme préfixe.
+
+     POURQUOI ICI, ET NON DANS CHAQUE PAGE
+     Trente-neuf pages, des dizaines de tableaux, tous reconstruits
+     dynamiquement à chaque chargement de données. Une solution par page serait
+     à réécrire à chaque nouveau tableau ; celle-ci s'applique à tout ce qui
+     existe et à tout ce qui viendra.
+     ================================================================== */
+  var LARGEUR_CARTES = 700;
+
+  function etiqueterCellules(tableau) {
+    var entetes = tableau.querySelectorAll('thead th');
+    if (entetes.length === 0) return;
+
+    var libelles = [];
+    for (var i = 0; i < entetes.length; i++) {
+      libelles.push((entetes[i].textContent || '').trim());
+    }
+
+    var lignes = tableau.querySelectorAll('tbody tr');
+    for (var l = 0; l < lignes.length; l++) {
+      var cellules = lignes[l].children;
+      // Une ligne d'état vide (« Aucun résultat ») s'étale sur toute la
+      // largeur : la transformer en carte n'aurait aucun sens.
+      if (cellules.length === 1 && cellules[0].hasAttribute('colspan')) {
+        lignes[l].classList.add('ard-ligne-pleine');
+        continue;
+      }
+      for (var c = 0; c < cellules.length && c < libelles.length; c++) {
+        if (libelles[c]) cellules[c].setAttribute('data-libelle', libelles[c]);
+        // Une cellule vide n'a pas à occuper une ligne dans la carte.
+        if (!(cellules[c].textContent || '').trim() && !cellules[c].children.length) {
+          cellules[c].classList.add('ard-cellule-vide');
+        }
+      }
+    }
+  }
+
+  function activerTableauxCartes() {
+    if (window.innerWidth > LARGEUR_CARTES) return;
+    var tableaux = document.querySelectorAll('.conteneur-tableau table');
+    for (var i = 0; i < tableaux.length; i++) {
+      try { etiqueterCellules(tableaux[i]); } catch (e) { /* tableau laissé tel quel */ }
+    }
+  }
+
+  function surveillerTableaux() {
+    activerTableauxCartes();
+    // Les tableaux sont remplis par des appels réseau, souvent plusieurs fois
+    // (filtres, pagination). On réétiquette à chaque reconstruction plutôt que
+    // d'espérer un bon moment.
+    var enAttente = false;
+    var observateur = new MutationObserver(function () {
+      if (enAttente) return;
+      enAttente = true;
+      // Regroupé sur une frame : un tableau de 300 lignes déclenche 300
+      // mutations, et réétiqueter à chacune bloquerait le fil d'exécution.
+      requestAnimationFrame(function () {
+        enAttente = false;
+        activerTableauxCartes();
+      });
+    });
+    var conteneurs = document.querySelectorAll('.conteneur-tableau');
+    for (var i = 0; i < conteneurs.length; i++) {
+      observateur.observe(conteneurs[i], { childList: true, subtree: true });
+    }
+  }
+
   function demarrer() {
     try { injecterIcones(); } catch (e) { /* la navigation reste utilisable sans icônes */ }
     try { installerMenuMobile(); } catch (e) { /* la barre reste affichée sans bouton */ }
@@ -1104,6 +1190,7 @@
       // Après le filtrage par rôle des pages : on affine ce qu'il a laissé.
       try { affinerMenuOrientation(); } catch (e) { /* menu conservé */ }
       try { installerFocus(); } catch (e) { /* la page reste utilisable sans surlignage */ }
+      try { surveillerTableaux(); } catch (e) { /* les tableaux restent en défilement horizontal */ }
       try { reduireRail(); } catch (e) { /* le rail complet reste utilisable */ }
       try { construireLanceur(); } catch (e) {}
     }, 60);

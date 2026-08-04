@@ -97,6 +97,9 @@
   .champ input:focus { outline: none; border-color: var(--encre); }
   .champ input:disabled { background: #eee; color: var(--texte-att); }
   .ligne-champs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  /* Deux champs côte à côte sous 400 px sont saisissables mais désagréables
+     au doigt : on les empile. */
+  @media (max-width: 640px) { .ligne-champs { grid-template-columns: 1fr; } }
 
   .badge-role { display: inline-block; padding: 3px 9px; border-radius:  var(--r-pilule); font-size: 0.72rem; font-weight: 600; background: rgba(60,90,98,0.1); color: var(--encre); margin-right: 4px; }
 

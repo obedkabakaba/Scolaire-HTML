@@ -1079,3 +1079,111 @@ html[data-theme="nuit"] .message-flash.info   { background: #16223d; color: #9db
   0%, 100% { background: rgba(201, 138, 62, 0.16); }
   50% { background: rgba(201, 138, 62, 0.34); }
 }
+
+
+/* ==========================================================================
+   TABLEAUX EN CARTES SUR TÉLÉPHONE
+   Voir `surveillerTableaux` dans ui.js, qui pose `data-libelle` sur chaque
+   cellule. Sans lui, ces règles ne s'appliqueraient à rien.
+
+   Le point de rupture est à 700 px et non 780 : entre les deux, une tablette
+   en portrait affiche encore un tableau correctement, et le transformer en
+   cartes gaspillerait la place disponible.
+   ========================================================================== */
+@media (max-width: 700px) {
+  .conteneur-tableau { overflow-x: visible; }
+  /* La largeur minimale imposait le défilement horizontal : c'est elle qu'on
+     annule, sinon les cartes resteraient hors écran. */
+  .conteneur-tableau table { min-width: 0 !important; width: 100%; }
+
+  .conteneur-tableau thead { display: none; }
+  .conteneur-tableau table,
+  .conteneur-tableau tbody,
+  .conteneur-tableau tr,
+  .conteneur-tableau td { display: block; width: 100%; }
+
+  .conteneur-tableau tr {
+    border: 1px solid var(--bordure, #e2ded4);
+    border-radius: var(--r-petit, 6px);
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    background: var(--craie-2, #fbfaf7);
+  }
+  .conteneur-tableau td {
+    border: none;
+    padding: 5px 0;
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    align-items: baseline;
+    font-size: 0.87rem;
+  }
+  .conteneur-tableau td + td { border-top: 1px solid var(--bordure, #e2ded4); }
+
+  /* L'intitulé de colonne devient le libellé de la ligne : c'est ce qui rend
+     la carte lisible sans en-tête. */
+  .conteneur-tableau td[data-libelle]::before {
+    content: attr(data-libelle);
+    color: var(--texte-att, #6b7269);
+    font-size: 0.76rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    flex: 0 0 auto;
+    max-width: 45%;
+  }
+  .conteneur-tableau td[data-libelle] { text-align: right; }
+
+  /* Une cellule vide n'occupe pas de ligne : sur une carte, six tirets
+     alignés n'apprennent rien et allongent la lecture. */
+  .conteneur-tableau td.ard-cellule-vide { display: none; }
+
+  /* Ligne d'état (« Aucun résultat ») : elle reste pleine largeur et centrée. */
+  .conteneur-tableau tr.ard-ligne-pleine { border: none; background: none; padding: 0; }
+  .conteneur-tableau tr.ard-ligne-pleine td { display: block; text-align: center; }
+  .conteneur-tableau tr.ard-ligne-pleine td::before { content: none; }
+
+  /* Les boutons d'action d'une ligne se retrouvent seuls en bas de carte :
+     on leur donne une cible tactile correcte. */
+  .conteneur-tableau td .lien-action { padding: 4px 0; display: inline-block; }
+}
+
+/* ==========================================================================
+   DURCISSEMENT MOBILE DES ÉCRANS RÉCENTS
+   Classes introduites par les lots 10 à 14, absentes des règles d'origine.
+   ========================================================================== */
+@media (max-width: 640px) {
+  .grille-tresorerie,
+  .grille-periodes,
+  .grille-liens,
+  .grille-formulaire,
+  .ligne-champs,
+  .grille-2col { grid-template-columns: 1fr !important; }
+
+  .barre-filtres-compta,
+  .barre-filtres-resultats,
+  .barre-filtres { flex-direction: column; align-items: stretch; }
+  .barre-filtres-compta input,
+  .barre-filtres-compta label,
+  .barre-filtres select,
+  .barre-filtres input { width: 100%; }
+
+  /* Une modale doit occuper l'écran sur téléphone : centrée avec des marges,
+     elle réduit encore une surface déjà petite. */
+  .voile { padding: 0; align-items: flex-end; }
+  .modale, .modale-large {
+    max-width: 100%; max-height: 92vh;
+    border-radius: var(--r-carte, 10px) var(--r-carte, 10px) 0 0;
+    padding: 22px 18px;
+  }
+  .actions-modale { flex-direction: column-reverse; }
+  .actions-modale .bouton { width: 100%; }
+
+  /* Les onglets défilent horizontalement plutôt que de se replier sur
+     plusieurs lignes, ce qui ferait sauter le contenu. */
+  .onglets, .barre-onglets {
+    overflow-x: auto; flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch; scrollbar-width: none;
+  }
+  .onglets::-webkit-scrollbar, .barre-onglets::-webkit-scrollbar { display: none; }
+  .onglet { white-space: nowrap; }
+}

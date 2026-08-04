@@ -93,6 +93,9 @@
   .modale { background: var(--craie-2); border-radius:  var(--r-carte); padding: 30px; max-width: 480px; width: 100%; max-height: 90vh; overflow-y: auto; }
   .modale h2 { font-family: var(--police-titre); font-weight: 600; font-size: 1.4rem; margin: 0 0 20px 0; }
   .ligne-champs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  /* Deux champs côte à côte sous 400 px sont saisissables mais désagréables
+     au doigt : on les empile. */
+  @media (max-width: 640px) { .ligne-champs { grid-template-columns: 1fr; } }
   .champ { margin-bottom: 14px; }
   .champ label { display: block; font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--texte-att); margin-bottom: 6px; }
   .champ input, .champ select {

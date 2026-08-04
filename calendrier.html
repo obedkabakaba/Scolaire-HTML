@@ -137,6 +137,9 @@
   .champ input, .champ select { width: 100%; padding: 9px 11px; font-size: 0.9rem; border: 1.5px solid var(--bordure); border-radius:  var(--r-bouton); background: #fff; }
   .champ input:focus, .champ select:focus { outline: none; border-color: var(--encre); }
   .ligne-champs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  /* Deux champs côte à côte sous 400 px sont saisissables mais désagréables
+     au doigt : on les empile. */
+  @media (max-width: 640px) { .ligne-champs { grid-template-columns: 1fr; } }
   .actions-modale { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; }
 
   .message-flash { display: none; padding: 12px 16px; border-radius:  var(--r-bouton); font-size: 0.88rem; margin-bottom: 20px; }

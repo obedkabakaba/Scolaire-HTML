@@ -1,5 +1,39 @@
 /* ==========================================================================
    RÉPARATION DE #message-flash : sortie du conteneur animé
+
+   Cause du bug « le message oblige à remonter la page, et le flou d'une
+   fenêtre ouverte le floute aussi » :
+
+   `.contenu` porte une animation d'entrée (`ardoise-apparition`, dans
+   theme.css) qui anime `transform`. N'IMPORTE QUEL élément qui anime
+   `transform` — même vers `transform: none` en fin de course, même une fois
+   l'animation terminée avec `fill-mode: both` — devient un « bloc de
+   confinement » pour ses descendants en `position: fixed`. Ce point du CSS
+   est peu connu mais bien documenté : un `position: fixed` cesse alors de se
+   positionner par rapport à la fenêtre et se positionne par rapport à CE
+   conteneur à la place.
+
+   `#message-flash` est un enfant de `.contenu` dans les 34 pages. Ses
+   `top`/`right` en position fixe s'appliquaient donc en haut du CONTENU DE LA
+   PAGE plutôt qu'en haut de l'écran — d'où l'obligation de remonter le
+   défilement pour l'apercevoir. Et parce qu'il restait ainsi « piégé » dans le
+   même arbre d'empilement que le reste de la page, le flou d'arrière-plan
+   (`backdrop-filter`) d'une fenêtre ouverte le traversait aussi.
+
+   La réparation ne touche à AUCUNE des 34 pages : elle sort le nœud de son
+   conteneur et le rattache directement à <body>, où plus aucun ancêtre ne
+   peut casser sa position fixe. Son identifiant est conservé, donc le
+   `afficherMessage()` propre à chaque page continue de fonctionner sans
+   modification.
+
+   PLACÉ TOUT EN HAUT DU FICHIER, avant tout le reste : ui.js contient environ
+   1000 lignes d'autres scripts (icônes, animations, squelettes de
+   chargement...). Une erreur non interceptée n'importe où dans ce code
+   arrêterait l'exécution du fichier — et avec elle, tout ce qui suit,
+   y compris ce correctif s'il était resté à sa place initiale, en fin de
+   fichier. Cette réparation touche à l'affichage des retours utilisateur
+   (succès/échec de CHAQUE action de la plateforme) : elle ne peut pas se
+   permettre de dépendre du bon déroulement de code sans rapport avec elle.
    ========================================================================== */
 (function () {
   var message = document.getElementById('message-flash');
@@ -10,6 +44,13 @@
 
 /* ==========================================================================
    Ardoise — Comportements visuels (étape B)
+   --------------------------------------------------------------------------
+   Chargé après theme.js. Trois rôles, tous non intrusifs : si ce fichier
+   ne se charge pas, la plateforme fonctionne exactement comme avant.
+
+     1. Injection des icônes de navigation
+     2. Animation des chiffres des cartes statistiques
+     3. Squelettes de chargement à la place des lignes « Chargement… »
    ========================================================================== */
 
 (function () {
@@ -20,6 +61,8 @@
 
   /* ------------------------------------------------------------------
      1. Icônes de navigation
+     Chaque entrée du menu est identifiée par son lien : aucune page n'a
+     besoin d'être modifiée pour recevoir son icône.
      ------------------------------------------------------------------ */
   var ICONES = {
     'dashboard-directeur.html':
@@ -43,10 +86,6 @@
       '<path d="M12 4 2 9l10 5 10-5z"/><path d="M6 11.5V17c0 1.5 3 3 6 3s6-1.5 6-3v-5.5"/>',
     'frais-scolaires.html':
       '<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10.5h18"/><circle cx="17" cy="15" r="1.3"/>',
-    'comptabilite.html':
-      '<circle cx="12" cy="12" r="8.5"/><path d="M12 7v10"/><path d="M14.5 9.5A2.5 2.5 0 0 0 12 8.5h-.5a2 2 0 0 0 0 4h1a2 2 0 0 1 0 4H12a2.5 2.5 0 0 1-2.5-1"/>',
-    'repechage.html':
-      '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/><path d="m6.3 6.3 3.2 3.2"/><path d="m14.5 14.5 3.2 3.2"/><path d="m17.7 6.3-3.2 3.2"/><path d="m9.5 14.5-3.2 3.2"/>',
     'utilisateurs.html':
       '<circle cx="10" cy="8" r="3.5"/><path d="M3 20a7 7 0 0 1 14 0"/><path d="M19 8v6"/><path d="M16 11h6"/>',
     'cours.html':
@@ -94,6 +133,8 @@
       var contenu = ICONES[lien.getAttribute('href')];
       if (!contenu) continue;
 
+      // Le libellé existant est encapsulé pour que l'icône et le texte
+      // puissent être alignés proprement en flex.
       var libelle = document.createElement('span');
       libelle.className = 'nav-libelle';
       while (lien.firstChild) libelle.appendChild(lien.firstChild);
@@ -111,6 +152,9 @@
 
   /* ------------------------------------------------------------------
      2. Chiffres animés des cartes statistiques
+     On observe les valeurs : dès qu'un nombre remplace le tiret d'attente,
+     il défile jusqu'à sa valeur. Les textes non numériques (« — », « 72,4% »
+     partiel, dates) sont laissés intacts.
      ------------------------------------------------------------------ */
   function animerNombre(element, valeurFinale, suffixe, prefixe) {
     var duree = 620;
@@ -120,6 +164,7 @@
     function etape(horodatage) {
       if (debut === null) debut = horodatage;
       var progression = Math.min((horodatage - debut) / duree, 1);
+      // Décélération : rapide au départ, posé à l'arrivée.
       var adouci = 1 - Math.pow(1 - progression, 3);
       var courant = valeurFinale * adouci;
       var decimales = String(valeurFinale).indexOf('.') !== -1 ? 1 : 0;
@@ -139,6 +184,7 @@
     if (animationsReduites || element.dataset.animation === 'en-cours') return;
 
     var texte = (element.textContent || '').trim();
+    // Format accepté : un nombre éventuellement encadré (ex. « 128 », « 72,4% », « 1 250 FC »)
     var correspondance = texte.match(/^([^0-9-]*)(-?[0-9]+(?:[.,][0-9]+)?)(.*)$/);
     if (!correspondance) return;
 
@@ -175,6 +221,8 @@
 
   /* ------------------------------------------------------------------
      3. Squelettes de chargement
+     Une ligne « Chargement… » est remplacée par des barres qui ondulent :
+     l'utilisateur voit la forme du contenu à venir plutôt qu'un vide.
      ------------------------------------------------------------------ */
   function poserSquelettes() {
     var cellules = document.querySelectorAll('td.etat-vide-tableau, td[colspan]');
@@ -201,6 +249,9 @@
 
   /* ------------------------------------------------------------------
      4. Fabrique de widgets
+     Les pages fournissent des données, jamais du dessin. Chaque widget
+     est autonome : s'il reçoit des données absentes, il affiche un tiret
+     plutôt que de casser la page.
      ------------------------------------------------------------------ */
   var RAYON = 42;
   var CIRCONFERENCE = 2 * Math.PI * RAYON;
@@ -210,6 +261,11 @@
     return isNaN(n) ? null : n;
   }
 
+  /**
+   * Anneau de progression.
+   * @param {Element|string} cible  élément ou identifiant
+   * @param {object} donnees { valeur, max, unite, detail }
+   */
   function anneau(cible, donnees) {
     var hote = typeof cible === 'string' ? document.getElementById(cible) : cible;
     if (!hote) return;
@@ -235,6 +291,8 @@
         '<div class="anneau-detail">' + (donnees.detail || '') + '</div>' +
       '</div>';
 
+    // Le décalage est appliqué après un cycle d'affichage : sans cela, le
+    // navigateur dessine directement l'état final et l'animation est perdue.
     var trait = hote.querySelector('.anneau-trait');
     if (donnees.couleur) trait.style.stroke = donnees.couleur;
     requestAnimationFrame(function () {
@@ -245,6 +303,7 @@
     });
   }
 
+  /** Anneau réduit, destiné à s'insérer dans une carte existante. */
   function anneauCompact(donnees) {
     var valeur = nombreOuNul(donnees.valeur);
     var max = nombreOuNul(donnees.max);
@@ -262,6 +321,11 @@
     '</div>';
   }
 
+  /**
+   * Barres comparatives.
+   * @param {Element|string} cible
+   * @param {Array} lignes  [{ libelle, valeur, max }]
+   */
   function barres(cible, lignes, options) {
     var hote = typeof cible === 'string' ? document.getElementById(cible) : cible;
     if (!hote) return;
@@ -311,6 +375,8 @@
 
   /* ------------------------------------------------------------------
      5. Menu mobile
+     Le bouton est injecté ici plutôt que dans les 22 pages : ajouter une
+     page plus tard lui donnera automatiquement sa navigation mobile.
      ------------------------------------------------------------------ */
   function installerMenuMobile() {
     var barre = document.querySelector('.barre-laterale');
@@ -323,6 +389,8 @@
     bouton.setAttribute('aria-expanded', 'false');
     bouton.innerHTML = '<span></span><span></span><span></span>';
 
+    // Placé après le conteneur du titre : sur mobile, la règle CSS
+    // « display: contents » le remet à sa place à droite de la barre.
     barre.appendChild(bouton);
 
     function basculer(ouvrir) {
@@ -331,12 +399,17 @@
       bouton.setAttribute('aria-expanded', ouvert ? 'true' : 'false');
       bouton.setAttribute('aria-label', ouvert ? 'Fermer le menu' : 'Ouvrir le menu');
 
+      // La liste est masquée au chargement par les pages, le temps que le
+      // filtrage par rôle s'applique. On la révèle à l'ouverture au cas où
+      // ce filtrage n'aurait pas encore eu lieu.
       var liste = barre.querySelector('.nav-liste');
       if (ouvert && liste) liste.style.visibility = 'visible';
     }
 
     bouton.addEventListener('click', function () { basculer(); });
 
+    // Le menu se referme après un choix : sur une page déjà ouverte, le lien
+    // ne provoque aucune navigation et le panneau resterait déployé.
     barre.querySelectorAll('.nav-item').forEach(function (lien) {
       lien.addEventListener('click', function () { basculer(false); });
     });
@@ -345,6 +418,7 @@
       if (e.key === 'Escape') basculer(false);
     });
 
+    // Retour en paysage ou sur grand écran : on repart d'un état propre.
     window.addEventListener('resize', function () {
       if (window.innerWidth > 780) basculer(false);
     });
@@ -353,13 +427,17 @@
 
   /* ------------------------------------------------------------------
      6. Lanceur d'actions rapides
+     Le lanceur est construit à partir des liens de navigation RÉELLEMENT
+     présents dans la page. Comme ceux-ci sont déjà filtrés par rôle, le
+     lanceur est automatiquement juste pour chaque utilisateur — et il le
+     restera quand de nouvelles pages seront ajoutées.
      ------------------------------------------------------------------ */
   var GROUPES = [
     { titre: 'Élèves et parcours', pages: ['eleves.html', 'inscriptions.html', 'orientation.html', 'presences.html'] },
     { titre: 'Pédagogie', pages: ['classes.html', 'cours.html', 'emploi-du-temps.html', 'notes.html', 'cours-classe-titulaire.html'] },
-    { titre: 'Bulletins', pages: ['bulletins.html', 'bulletin-annuel.html', 'generateur-modeles.html', 'repechage.html'] },
+    { titre: 'Bulletins', pages: ['bulletins.html', 'bulletin-annuel.html', 'generateur-modeles.html'] },
     { titre: 'Vie scolaire', pages: ['discipline.html', 'calendrier.html', 'messages.html'] },
-    { titre: 'Finances', pages: ['frais-scolaires.html', 'comptabilite.html'] },
+    { titre: 'Finances', pages: ['frais-scolaires.html'] },
     { titre: 'Pilotage', pages: ['rapports.html', 'archives.html', 'journal.html'] },
     { titre: 'Administration', pages: ['annee-scolaire.html', 'utilisateurs.html', 'site-public.html', 'parametres.html', 'mon-profil.html'] }
   ];
@@ -377,12 +455,10 @@
     'bulletins.html': 'Périodes et signatures',
     'bulletin-annuel.html': 'Résultats annuels',
     'generateur-modeles.html': 'Mise en page',
-    'repechage.html': 'Sessions de repêchage',
     'discipline.html': 'Faits et conduite',
     'calendrier.html': 'Événements',
     'messages.html': 'Réception et diffusion',
     'frais-scolaires.html': 'Frais et paiements',
-    'comptabilite.html': 'Comptabilité et paie',
     'rapports.html': 'Statistiques et exports',
     'archives.html': 'Années clôturées',
     'journal.html': 'Traçabilité',
@@ -412,6 +488,8 @@
     var hote = document.getElementById('lanceur');
     if (!hote || hote.dataset.construit === 'oui') return;
 
+    // Les liens visibles font foi : ce sont ceux que le filtrage par rôle
+    // a laissés en place. Une page interdite n'apparaît donc jamais ici.
     var disponibles = {};
     var liens = document.querySelectorAll('.nav-liste .nav-item[href]');
     for (var i = 0; i < liens.length; i++) {
@@ -424,6 +502,9 @@
     }
     if (Object.keys(disponibles).length === 0) return;
 
+    // Cinq raccourcis, pas davantage : une grille de vingt tuiles n'aide
+    // personne. Les plus ouverts remontent ; s'il n'y a pas encore assez
+    // d'historique, on complète avec les écrans épinglés au rail.
     var usage = lireUsage();
     var frequents = Object.keys(disponibles)
       .filter(function (p) { return usage[p] > 0; })
@@ -475,6 +556,12 @@
     });
   }
 
+  /**
+   * Pose un compteur vivant sur une tuile.
+   * @param {string} page   ex. « presences.html »
+   * @param {string} texte  ex. « 3 sans appel »
+   * @param {boolean} calme vert plutôt que rouge
+   */
   function marquerTuile(page, texte, calme) {
     var tuile = document.querySelector('.tuile[data-page="' + page + '"]');
     if (!tuile || !texte) return;
@@ -489,10 +576,18 @@
 
   /* ------------------------------------------------------------------
      7. Rail réduit et tiroir « Tous les menus »
+
+     Le rail n'affiche que les écrans ÉPINGLÉS, quatre par défaut. Le reste
+     vit dans un tiroir. Trois principes :
+
+       · la page courante reste toujours visible dans le rail, même non
+         épinglée — sinon l'utilisateur perd son repère de position ;
+       · les épingles sont propres à chaque personne, conservées dans le
+         navigateur ;
+       · si tout est épinglé, « Tous les menus » disparaît : un tiroir vide
+         n'aurait aucune raison d'exister.
      ------------------------------------------------------------------ */
   var CLE_EPINGLES = 'ardoise_menus_epingles';
-  var MAX_EPINGLES = 5; // <-- Règle : maximum 5 écrans épinglés
-
   var EPINGLES_DEFAUT = {
     directeur: ['dashboard-directeur.html', 'eleves.html', 'bulletins.html', 'rapports.html'],
     prefet: ['dashboard-directeur.html', 'classes.html', 'emploi-du-temps.html', 'discipline.html'],
@@ -517,7 +612,8 @@
         if (choix.length) return choix;
       }
     }
-    return Object.keys(disponibles).slice(0, MAX_EPINGLES);
+    // Rôle inattendu : on prend les quatre premiers écrans accessibles.
+    return Object.keys(disponibles).slice(0, 4);
   }
 
   function lireEpingles(disponibles) {
@@ -525,11 +621,6 @@
       var brut = JSON.parse(localStorage.getItem(CLE_EPINGLES) || 'null');
       if (Array.isArray(brut)) {
         var valides = brut.filter(function (p) { return disponibles[p]; });
-        // Limiter à MAX_EPINGLES
-        if (valides.length > MAX_EPINGLES) {
-          valides = valides.slice(0, MAX_EPINGLES);
-          ecrireEpingles(valides);
-        }
         if (valides.length) return valides;
       }
     } catch (e) {}
@@ -553,7 +644,7 @@
     var lis = liste.querySelectorAll('li');
     for (var i = 0; i < lis.length; i++) {
       var li = lis[i];
-      if (li.style.display === 'none') continue;
+      if (li.style.display === 'none') continue;      // écarté par le rôle
       var lien = li.querySelector('.nav-item[href]');
       if (!lien) continue;
       elements.push({
@@ -562,10 +653,7 @@
         libelle: (lien.querySelector('.nav-libelle') || lien).textContent.trim()
       });
     }
-    if (elements.length <= MAX_EPINGLES + 1) { // +1 pour la page courante
-      liste.dataset.reduit = 'oui';
-      return;
-    }
+    if (elements.length <= 5) { liste.dataset.reduit = 'oui'; return; }
 
     var disponibles = {};
     elements.forEach(function (e) { disponibles[e.page] = e.libelle; });
@@ -573,22 +661,13 @@
     var epingles = lireEpingles(disponibles);
     var courante = pageCourante();
 
-    // Si la page courante n'est pas dans les épingles, on l'ajoute en premier
-    if (epingles.indexOf(courante) === -1) {
-      epingles.unshift(courante);
-      // Si on dépasse MAX_EPINGLES, on retire le dernier
-      if (epingles.length > MAX_EPINGLES) {
-        epingles.pop();
-      }
-      ecrireEpingles(epingles);
-    }
-
     elements.forEach(function (e) {
       var visible = epingles.indexOf(e.page) !== -1 || e.page === courante;
       e.li.style.display = visible ? '' : 'none';
       e.li.dataset.epingle = epingles.indexOf(e.page) !== -1 ? 'oui' : 'non';
     });
 
+    // « Tous les menus » n'apparaît que s'il reste quelque chose à y montrer.
     var restants = elements.length - epingles.length;
     var ancien = liste.querySelector('.nav-tiroir');
     if (ancien) ancien.closest('li').remove();
@@ -650,7 +729,7 @@
       + '<input type="search" class="tiroir-recherche" id="tiroir-recherche" placeholder="Rechercher un écran…" aria-label="Rechercher un écran" />'
       + '<button type="button" class="tiroir-fermer" id="tiroir-fermer">← Retour</button>'
       + '</div>'
-      + '<p class="tiroir-aide">Épinglez les écrans que vous utilisez le plus (maximum 5).</p>';
+      + '<p class="tiroir-aide">Épinglez les écrans que vous utilisez le plus : ils apparaîtront directement dans le menu de gauche.</p>';
 
     var placees = {};
     for (var g = 0; g < GROUPES.length; g++) {
@@ -660,6 +739,8 @@
       html += '<div class="tiroir-groupe" data-groupe><div class="titre">' + GROUPES[g].titre + '</div>'
         + '<div class="tiroir-grille">' + dedans.map(ligne).join('') + '</div></div>';
     }
+    // Les écrans hors catalogue restent accessibles : une page ajoutée
+    // demain ne doit pas disparaître faute d'avoir été classée.
     var orphelines = elements.filter(function (e) { return !placees[e.page]; });
     if (orphelines.length) {
       html += '<div class="tiroir-groupe" data-groupe><div class="titre">Autres</div>'
@@ -678,7 +759,7 @@
     function majCompte() {
       var n = lireEpingles(disponibles).length;
       document.getElementById('tiroir-compte').textContent =
-        n + ' écran(s) épinglé(s) sur ' + elements.length + ' (max 5)';
+        n + ' écran(s) épinglé(s) sur ' + elements.length;
     }
     majCompte();
 
@@ -686,21 +767,9 @@
       b.addEventListener('click', function () {
         var liste = lireEpingles(disponibles);
         var i = liste.indexOf(b.dataset.page);
-        if (i === -1) {
-          // Vérifier qu'on ne dépasse pas MAX_EPINGLES
-          if (liste.length >= MAX_EPINGLES) {
-            alert('Vous ne pouvez épingler que ' + MAX_EPINGLES + ' écrans maximum.');
-            return;
-          }
-          liste.push(b.dataset.page);
-        } else {
-          if (liste.length > 1) {
-            liste.splice(i, 1);
-          } else {
-            alert('Vous devez garder au moins un écran épinglé.');
-            return;
-          }
-        }
+        if (i === -1) liste.push(b.dataset.page);
+        else if (liste.length > 1) liste.splice(i, 1);
+        else return;   // on ne vide jamais complètement le rail
         ecrireEpingles(liste);
         b.classList.toggle('active', liste.indexOf(b.dataset.page) !== -1);
         b.setAttribute('aria-pressed', liste.indexOf(b.dataset.page) !== -1);
@@ -738,6 +807,7 @@
     document.body.style.overflow = '';
   }
 
+  /** Met le rail à jour sans recharger la page. */
   function appliquerEpingles(epingles) {
     if (!window.ArdoiseRail) return;
     var courante = pageCourante();
@@ -751,6 +821,7 @@
     var bouton = document.querySelector('.nav-tiroir');
     if (bouton) {
       var li = bouton.closest('li');
+      // Tout est épinglé : le tiroir n'a plus de raison d'être.
       li.style.display = restants > 0 ? '' : 'none';
       bouton.querySelector('.chevron').textContent = restants;
     }
@@ -759,7 +830,14 @@
 
   /* ------------------------------------------------------------------
      8. Composants de densité
+     Fonctions publiques appelées par les pages. Elles produisent du HTML
+     plutôt que des nœuds : c'est ce dont les pages ont besoin, puisqu'elles
+     assemblent leurs tableaux par chaînes.
      ------------------------------------------------------------------ */
+
+  // Teintes d'avatar : dérivées du nom, donc STABLES d'un écran à l'autre.
+  // Une couleur tirée au hasard changerait à chaque rechargement et
+  // empêcherait de reconnaître quelqu'un du coin de l'œil.
   var TEINTES_AVATAR = ['#4C5FD5', '#12B76A', '#C98A3E', '#7E56D4', '#0E9384', '#B23A2E', '#3C5A62'];
 
   function teintePour(nom) {
@@ -784,6 +862,11 @@
     return (typeof v === 'string' && /^https?:\/\//i.test(v.trim())) ? v.trim() : null;
   }
 
+  /**
+   * Avatar seul.
+   * @param {string} nom
+   * @param {string} [photoUrl] ignorée si ce n'est pas une adresse http(s)
+   */
   function avatar(nom, photoUrl) {
     var src = urlImage(photoUrl);
     if (src) {
@@ -793,6 +876,7 @@
       + proteger(initialesDe(nom)) + '</span>';
   }
 
+  /** Cellule de tableau : avatar, nom, et une ligne secondaire facultative. */
   function cellulePersonne(nom, sousTitre, photoUrl) {
     return '<div class="cellule-personne">' + avatar(nom, photoUrl)
       + '<div class="identite"><div class="nom-personne">' + proteger(nom) + '</div>'
@@ -800,6 +884,7 @@
       + '</div></div>';
   }
 
+  /** Pile compacte. @param {Array} personnes  [{ nom, photo_url }] */
   function pileAvatars(personnes, maximum) {
     var max = maximum || 4;
     var liste = (personnes || []).slice(0, max);
@@ -810,6 +895,11 @@
       + '</div>';
   }
 
+  /**
+   * Badge d'état.
+   * @param {string} texte
+   * @param {'succes'|'alerte'|'danger'|'neutre'|'info'} ton
+   */
   function badge(texte, ton) {
     var tons = { succes: 1, alerte: 1, danger: 1, neutre: 1, info: 1 };
     var retenu = tons[ton] ? ton : 'neutre';
@@ -827,6 +917,12 @@
     temps: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/>'
   };
 
+  /**
+   * Pose un pictogramme coloré sur une carte de chiffre.
+   * @param {string} selecteur  ex. « #carte-eleves » ou « .carte-stat:nth-child(1) »
+   * @param {string} type       clé de PICTOGRAMMES
+   * @param {string} teinte     bleu | vert | ocre | rouge | violet
+   */
   function decorerCarte(selecteur, type, teinte) {
     var carte = document.querySelector(selecteur);
     if (!carte || !PICTOGRAMMES[type]) return;
@@ -837,12 +933,29 @@
     carte.appendChild(span);
   }
 
+  /** Décore plusieurs cartes d'un coup. @param {Array} plan [[sel, type, teinte]] */
   function decorerCartes(plan) {
     (plan || []).forEach(function (p) { decorerCarte(p[0], p[1], p[2]); });
   }
 
   /* ------------------------------------------------------------------
+     Démarrage
+     ------------------------------------------------------------------ */
+
+  /* ------------------------------------------------------------------
      Menu Orientation — visibilité affinée
+
+     La carte des rôles écrite en dur dans chaque page sait qu'un titulaire
+     peut accéder à l'orientation. Elle ne peut pas savoir si CE titulaire
+     tient une classe d'orientation : un enseignant de 3e année voyait donc un
+     menu qui ne lui répondait que par un refus.
+
+     Le contrôle est fait ICI, dans le fichier partagé, et non dans les 38
+     pages : la carte des rôles y est déjà dupliquée 38 fois, il n'y a aucune
+     raison d'y ajouter une 39e duplication.
+
+     En cas d'échec de l'appel, le menu RESTE affiché : masquer une entrée sur
+     une erreur réseau ferait croire à une perte de droits.
      ------------------------------------------------------------------ */
   function affinerMenuOrientation() {
     var liens = document.querySelectorAll('a[href="orientation.html"]');
@@ -863,6 +976,8 @@
     } catch (e) {}
     var roles = (utilisateur && utilisateur.roles) || [];
 
+    // La direction et le secrétariat voient toujours l'orientation : le
+    // contrôle ne concerne que les titulaires.
     var concerne = roles.indexOf('titulaire') !== -1
       && !roles.some(function (r) {
         return ['directeur', 'prefet', 'secretaire', 'super_admin'].indexOf(r) !== -1;
@@ -879,12 +994,31 @@
           li.style.display = 'none';
         });
       })
-      .catch(function () { /* menu conservé */ });
+      .catch(function () { /* menu conservé : voir commentaire ci-dessus */ });
   }
 
 
   /* ==================================================================
-     NAVIGATION CIBLÉE
+     NAVIGATION CIBLÉE — « montre-moi CET élève, ici »
+
+     Depuis la fiche d'un élève, on peut ouvrir ses présences, sa discipline,
+     ses frais. Le problème : ces écrans affichent une classe entière, et
+     retrouver un enfant parmi trois cents annule tout le bénéfice du lien.
+
+     Deux réponses possibles — surligner sa ligne, ou n'afficher que lui. On
+     fait LES DEUX, parce qu'elles ne servent pas au même moment :
+       · un bandeau annonce qui l'on consulte et propose de revenir à la liste
+         complète — c'est la réponse « ne montre que lui » ;
+       · la ligne correspondante est surlignée et amenée à l'écran — c'est la
+         réponse « où est-il ? », utile quand la page ne sait pas filtrer.
+
+     Le surlignage s'applique à toute ligne portant `data-eleve-id`,
+     `data-id` ou `data-classe-id`. Les pages n'ont rien à faire pour en
+     bénéficier ; celles qui savent filtrer lisent en plus le paramètre.
+
+     Implémenté ICI et non dans chaque page : la même mécanique servira aux
+     classes et aux cours, et 38 copies divergeraient dès la première
+     évolution.
      ================================================================== */
   var CIBLES = [
     { param: 'eleve', libelle: 'élève', attributs: ['data-eleve-id', 'data-id'] },
@@ -904,6 +1038,10 @@
     var nom = params.get('nom') || '';
     afficherBandeauFocus(cible, nom);
 
+    // La liste arrive par un appel réseau : elle n'est pas encore là au
+    // chargement. On observe le DOM plutôt que de deviner un délai — un
+    // setTimeout arbitraire rate la cible sur une connexion lente, ce qui est
+    // précisément le cas des écoles visées.
     var trouve = false;
     var observateur = new MutationObserver(function () {
       if (trouve) return;
@@ -914,6 +1052,8 @@
     });
     observateur.observe(document.body, { childList: true, subtree: true });
 
+    // Filet : on arrête d'observer au bout de 15 secondes, sinon l'observateur
+    // tourne pour rien pendant toute la session.
     setTimeout(function () { observateur.disconnect(); }, 15000);
     surlignerCible(cible);
   }
@@ -959,6 +1099,28 @@
 
   /* ==================================================================
      TABLEAUX EN CARTES SUR TÉLÉPHONE
+
+     Les tableaux étaient rendus dans un conteneur à défilement horizontal,
+     avec une largeur minimale de 560 px. Sur un téléphone de 360 px, cela
+     oblige à balayer de côté pour lire chaque ligne — et à revenir en arrière
+     pour savoir de quel élève il s'agit. C'est ce qui donne l'impression que
+     l'application « n'est pas responsive du tout », alors que la mise en page
+     générale l'est.
+
+     La bonne réponse pour un tableau de données sur mobile n'est pas de le
+     rétrécir : c'est de le retourner. Chaque LIGNE devient une carte, et
+     chaque CELLULE une ligne « intitulé → valeur ».
+
+     Le CSS seul ne peut pas le faire : il faudrait recopier l'en-tête de
+     colonne dans chaque cellule, ce que seul le JavaScript sait faire. On
+     pose donc `data-libelle` sur chaque cellule, et la feuille de style s'en
+     sert comme préfixe.
+
+     POURQUOI ICI, ET NON DANS CHAQUE PAGE
+     Trente-neuf pages, des dizaines de tableaux, tous reconstruits
+     dynamiquement à chaque chargement de données. Une solution par page serait
+     à réécrire à chaque nouveau tableau ; celle-ci s'applique à tout ce qui
+     existe et à tout ce qui viendra.
      ================================================================== */
   var LARGEUR_CARTES = 700;
 
@@ -974,12 +1136,15 @@
     var lignes = tableau.querySelectorAll('tbody tr');
     for (var l = 0; l < lignes.length; l++) {
       var cellules = lignes[l].children;
+      // Une ligne d'état vide (« Aucun résultat ») s'étale sur toute la
+      // largeur : la transformer en carte n'aurait aucun sens.
       if (cellules.length === 1 && cellules[0].hasAttribute('colspan')) {
         lignes[l].classList.add('ard-ligne-pleine');
         continue;
       }
       for (var c = 0; c < cellules.length && c < libelles.length; c++) {
         if (libelles[c]) cellules[c].setAttribute('data-libelle', libelles[c]);
+        // Une cellule vide n'a pas à occuper une ligne dans la carte.
         if (!(cellules[c].textContent || '').trim() && !cellules[c].children.length) {
           cellules[c].classList.add('ard-cellule-vide');
         }
@@ -997,10 +1162,15 @@
 
   function surveillerTableaux() {
     activerTableauxCartes();
+    // Les tableaux sont remplis par des appels réseau, souvent plusieurs fois
+    // (filtres, pagination). On réétiquette à chaque reconstruction plutôt que
+    // d'espérer un bon moment.
     var enAttente = false;
     var observateur = new MutationObserver(function () {
       if (enAttente) return;
       enAttente = true;
+      // Regroupé sur une frame : un tableau de 300 lignes déclenche 300
+      // mutations, et réétiqueter à chacune bloquerait le fil d'exécution.
       requestAnimationFrame(function () {
         enAttente = false;
         activerTableauxCartes();
@@ -1015,39 +1185,58 @@
 
   /* ==================================================================
      DROITS D'ACCÈS AUX PAGES — source unique
+
+     Cette carte était RECOPIÉE dans les 30 pages de l'application. Toute
+     évolution de droits demandait 30 modifications cohérentes, et rien ne
+     garantissait qu'elles le restent : il a suffi d'ajouter deux écrans
+     (Comptabilité, Repêchage) pour devoir écrire deux scripts d'installation
+     dont le seul rôle était de propager une ligne.
+
+     Vérification faite avant de centraliser : les 30 copies étaient
+     rigoureusement identiques, 29 entrées chacune, aucune divergence. La
+     fusion ne change donc aucun droit — c'est une déduplication, pas une
+     refonte.
+
+     REMARQUE DE SÉCURITÉ
+     Ce filtrage est CONFORT, pas protection. Il masque des liens ; il
+     n'interdit rien. Les droits réels sont vérifiés par le serveur à chaque
+     appel. Si ce fichier ne se charge pas, l'utilisateur verra des liens
+     inutiles et recevra un 403 en cliquant — désagréable, jamais dangereux.
      ================================================================== */
   var PERMISSIONS = {
-    'dashboard-directeur.html': ['directeur', 'prefet'],
-    'annee-scolaire.html': ['directeur', 'prefet'],
-    'espace-secretaire.html': ['secretaire'],
-    'espace-professeur.html': ['professeur'],
-    'espace-titulaire.html': ['titulaire'],
-    'cours-classe-titulaire.html': ['titulaire'],
-    'eleves.html': ['directeur', 'prefet', 'secretaire'],
-    'inscriptions.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire'],
-    'orientation.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
-    'frais-scolaires.html': ['directeur', 'comptable', 'secretaire'],
-    'comptabilite.html': ['directeur', 'comptable'],
-    'utilisateurs.html': ['directeur', 'prefet', 'secretaire'],
-    'classes.html': ['directeur', 'prefet', 'secretaire'],
-    'cours.html': ['directeur', 'prefet', 'secretaire'],
-    'presences.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
-    'emploi-du-temps.html': ['directeur', 'prefet', 'secretaire', 'titulaire', 'professeur'],
-    'discipline.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
-    'site-public.html': ['directeur', 'prefet', 'secretaire'],
-    'notes.html': ['directeur', 'prefet', 'professeur'],
-    'bulletins.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
-    'bulletin-annuel.html': ['directeur', 'prefet'],
-    'repechage.html': ['directeur', 'prefet', 'professeur', 'titulaire'],
-    'generateur-modeles.html': ['directeur'],
-    'calendrier.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire'],
-    'rapports.html': ['directeur', 'prefet', 'secretaire', 'comptable'],
-    'archives.html': ['directeur', 'prefet', 'secretaire'],
-    'journal.html': ['directeur', 'prefet'],
-    'messages.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire', 'comptable'],
-    'parametres.html': ['directeur']
+  'dashboard-directeur.html': ['directeur', 'prefet'],
+  'annee-scolaire.html': ['directeur', 'prefet'],
+  'espace-secretaire.html': ['secretaire'],
+  'espace-professeur.html': ['professeur'],
+  'espace-titulaire.html': ['titulaire'],
+  'cours-classe-titulaire.html': ['titulaire'],
+  'eleves.html': ['directeur', 'prefet', 'secretaire'],
+  'inscriptions.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire'],
+  'orientation.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
+  'frais-scolaires.html': ['directeur', 'comptable', 'secretaire'],
+  'comptabilite.html': ['directeur', 'comptable'],
+  'utilisateurs.html': ['directeur', 'prefet', 'secretaire'],
+  'classes.html': ['directeur', 'prefet', 'secretaire'],
+  'cours.html': ['directeur', 'prefet', 'secretaire'],
+  'presences.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
+  'emploi-du-temps.html': ['directeur', 'prefet', 'secretaire', 'titulaire', 'professeur'],
+  'discipline.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
+  'site-public.html': ['directeur', 'prefet', 'secretaire'],
+  'notes.html': ['directeur', 'prefet', 'professeur'],
+  'bulletins.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
+  'bulletin-annuel.html': ['directeur', 'prefet'],
+  'repechage.html': ['directeur', 'prefet', 'professeur', 'titulaire'],
+  'generateur-modeles.html': ['directeur'],
+  'calendrier.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire'],
+  'rapports.html': ['directeur', 'prefet', 'secretaire', 'comptable'],
+  'archives.html': ['directeur', 'prefet', 'secretaire'],
+  'journal.html': ['directeur', 'prefet'],
+  'messages.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire', 'comptable'],
+  'parametres.html': ['directeur']
   };
 
+  /* Où renvoyer quelqu'un arrivé sur une page qui ne le concerne pas. L'ordre
+     compte : on cherche le premier écran d'accueil qui lui corresponde. */
   var ORDRE_REPLI = ['dashboard-directeur.html', 'espace-secretaire.html',
                      'espace-professeur.html', 'espace-titulaire.html',
                      'frais-scolaires.html', 'eleves.html'];
@@ -1071,6 +1260,8 @@
     for (var i = 0; i < liens.length; i++) {
       var page = liens[i].getAttribute('href');
       var autorises = PERMISSIONS[page];
+      // Une page absente de la carte reste visible : ajouter un écran sans
+      // penser à ses droits ne doit pas le rendre invisible à tout le monde.
       if (!autorises || estSuperAdmin) continue;
       var permis = roles.some(function (r) { return autorises.indexOf(r) !== -1; });
       if (!permis) {
@@ -1090,7 +1281,7 @@
       });
       if (repli && repli !== courante) {
         window.location.href = repli;
-        return false;
+        return false;   // on quitte : inutile d'afficher la barre ici
       }
     }
 
@@ -1100,6 +1291,14 @@
   }
 
   function demarrer() {
+    // Le filtrage des droits AVANT tout le reste : la barre de navigation est
+    // masquée (`visibility: hidden`) tant qu'il n'a pas eu lieu, pour éviter
+    // qu'un utilisateur aperçoive une fraction de seconde des liens qui ne le
+    // concernent pas.
+    //
+    // Enveloppé de sorte qu'une erreur RÉVÈLE quand même le menu : un
+    // utilisateur devant une barre vide serait bloqué, alors qu'un lien de
+    // trop ne donne accès à rien — le serveur refuse de toute façon.
     try {
       filtrerAcces();
     } catch (e) {
@@ -1107,18 +1306,20 @@
       if (liste) liste.style.visibility = 'visible';
     }
 
-    try { injecterIcones(); } catch (e) {}
-    try { installerMenuMobile(); } catch (e) {}
+    try { injecterIcones(); } catch (e) { /* la navigation reste utilisable sans icônes */ }
+    try { installerMenuMobile(); } catch (e) { /* la barre reste affichée sans bouton */ }
+    // Le lanceur attend le filtrage par rôle des pages, qui s'exécute juste après.
     setTimeout(function () {
-      try { affinerMenuOrientation(); } catch (e) {}
-      try { installerFocus(); } catch (e) {}
-      try { surveillerTableaux(); } catch (e) {}
-      try { reduireRail(); } catch (e) {}
+      // Après le filtrage par rôle des pages : on affine ce qu'il a laissé.
+      try { affinerMenuOrientation(); } catch (e) { /* menu conservé */ }
+      try { installerFocus(); } catch (e) { /* la page reste utilisable sans surlignage */ }
+      try { surveillerTableaux(); } catch (e) { /* les tableaux restent en défilement horizontal */ }
+      try { reduireRail(); } catch (e) { /* le rail complet reste utilisable */ }
       try { construireLanceur(); } catch (e) {}
     }, 60);
-    try { surveillerValeurs(); } catch (e) {}
+    try { surveillerValeurs(); } catch (e) { /* les chiffres restent affichés sans animation */ }
     if (!animationsReduites) {
-      try { poserSquelettes(); } catch (e) {}
+      try { poserSquelettes(); } catch (e) { /* le texte « Chargement… » reste affiché */ }
     }
   }
 
@@ -1128,6 +1329,7 @@
     demarrer();
   }
 
+  // Les icônes sont réinjectées si le thème change (le menu peut être redessiné).
   document.addEventListener('ardoise:theme-change', function () {
     try { injecterIcones(); } catch (e) {}
   });
@@ -1135,6 +1337,33 @@
 
 /* ==========================================================================
    MODE ÉDITION DES FORMULAIRES
+
+   Reproduit — et généralise — le comportement déjà en place dans
+   mon-profil.html : un formulaire d'édition s'ouvre VERROUILLÉ, champs
+   désactivés et bouton « Modifier ». Cliquer dessus déverrouille et fait
+   apparaître « Enregistrer » et « Annuler ».
+
+   Pourquoi ce n'est pas qu'une question d'apparence : un formulaire ouvert en
+   permanence invite à modifier par inadvertance des réglages structurants
+   (seuil de promotion, type d'enseignement, taux de change...). Le clic sur
+   « Modifier » est une intention explicite.
+
+   Ne s'applique QU'AUX FORMULAIRES D'ÉDITION. Un formulaire de création n'a
+   rien à « modifier » : il s'ouvre déjà en saisie, et le laisser verrouillé
+   n'aurait aucun sens.
+
+   Usage :
+     ArdoiseEdition.installer({
+       formulaire: 'formulaire-parametres',
+       champs: ['champ-a', 'champ-b'],          // ou omis = tous les champs du formulaire
+       boutonEnregistrer: 'bouton-enregistrer',
+       libelleModifier: 'Modifier'              // optionnel
+     });
+
+   L'appelant garde la main sur la soumission : après un enregistrement réussi
+   il appelle `verrouiller()`, après un échec il ne fait rien — le formulaire
+   RESTE en édition avec les valeurs saisies, pour que l'utilisateur corrige
+   sans avoir à tout retaper.
    ========================================================================== */
 (function () {
   'use strict';
@@ -1143,6 +1372,8 @@
     if (ids && ids.length) {
       return ids.map(function (id) { return document.getElementById(id); }).filter(Boolean);
     }
+    // Les boutons ne sont pas des champs : les désactiver rendrait « Modifier »
+    // lui-même inutilisable, et le formulaire définitivement figé.
     return Array.prototype.filter.call(
       formulaire.querySelectorAll('input, select, textarea'),
       function (el) { return el.type !== 'submit' && el.type !== 'button'; }
@@ -1156,6 +1387,8 @@
 
     var champs = champsDuFormulaire(formulaire, options.champs);
 
+    // Les deux boutons sont créés ici plutôt qu'ajoutés dans les 20 pages :
+    // une page qui adopte le mode édition n'a aucun balisage à écrire.
     var boutonModifier = document.createElement('button');
     boutonModifier.type = 'button';
     boutonModifier.className = boutonEnregistrer.className;
@@ -1170,6 +1403,8 @@
     boutonEnregistrer.parentNode.insertBefore(boutonModifier, boutonEnregistrer);
     boutonEnregistrer.parentNode.insertBefore(boutonAnnuler, boutonEnregistrer);
 
+    // Valeurs de référence, pour qu'« Annuler » restaure réellement l'état
+    // d'origine au lieu de laisser des modifications à moitié saisies.
     var valeurs = {};
     function memoriser() {
       champs.forEach(function (c, i) {
@@ -1210,15 +1445,35 @@
   }
 
   window.ArdoiseEdition = { installer: installer };
+  // Exposé pour les pages : elles appellent ArdoiseAcces.filtrer() au lieu
+  // de recopier la carte des droits.
   window.ArdoiseAcces = { filtrer: filtrerAcces, permissions: PERMISSIONS };
 })();
 
 /* ==========================================================================
-   BOÎTES DE DIALOGUE STYLÉES
+   BOÎTES DE DIALOGUE STYLÉES — remplacent confirm() et prompt()
+
+   Les boîtes natives du navigateur (grises, police système, position
+   imposée) tranchent avec le reste de l'interface — au même titre que les
+   boutons non stylés corrigés plus haut. Ces deux fonctions reproduisent leur
+   usage (retour par Promise, à utiliser avec `await`) sans dépendre d'aucun
+   balisage ajouté dans les pages : la boîte est construite et détruite en JS
+   pur à chaque appel, ce qui évite de modifier les 34 fichiers HTML pour
+   ajouter un conteneur.
+
+   Utilisation, en remplacement direct de l'existant :
+     if (!confirm('Supprimer ?')) return;
+       devient
+     if (!(await ArdoiseUI.confirmer('Supprimer ?'))) return;
+
+     const motif = prompt('Motif ?');
+       devient
+     const motif = await ArdoiseUI.demander('Motif ?');
    ========================================================================== */
 (function () {
   'use strict';
 
+  /** Devine si l'action est destructrice, pour styler le bouton en rouge. */
   function estDangereux(message) {
     return /supprim|irr[ée]versible|retirer d[ée]finitivement|écarter/i.test(message);
   }
@@ -1228,6 +1483,8 @@
     voile.className = 'voile-confirmation';
     voile.innerHTML = `<div class="boite-confirmation${classeBoite ? ' ' + classeBoite : ''}">${contenuInterne}</div>`;
     document.body.appendChild(voile);
+    // Un cadre à peine posé dans le DOM n'anime pas sa transition d'opacité :
+    // le rAF laisse le navigateur peindre l'état initial avant de basculer.
     requestAnimationFrame(() => requestAnimationFrame(() => voile.classList.add('visible')));
     return voile;
   }
@@ -1237,6 +1494,14 @@
     setTimeout(() => voile.remove(), 220);
   }
 
+  /**
+   * @param {string} message
+   * @param {object} [options]
+   * @param {boolean} [options.danger]         force ou désactive le style rouge
+   * @param {string}  [options.libelleValider]  par défaut "Supprimer" ou "Confirmer"
+   * @param {string}  [options.libelleAnnuler]  par défaut "Annuler"
+   * @returns {Promise<boolean>}
+   */
   function confirmer(message, options) {
     options = options || {};
     const danger = options.danger !== undefined ? options.danger : estDangereux(message);
@@ -1252,6 +1517,9 @@
          </div>`,
         danger ? 'danger' : ''
       );
+      // textContent, jamais innerHTML, pour le message : il contient souvent
+      // des noms d'élèves ou de classes saisis par l'école, jamais fiables
+      // comme HTML.
       voile.querySelector('h3').textContent = danger ? 'Confirmer la suppression' : 'Confirmation';
       voile.querySelector('p').textContent = message;
       voile.querySelector('.annuler').textContent = libelleAnnuler;
@@ -1266,12 +1534,20 @@
 
       voile.querySelector('.annuler').addEventListener('click', () => conclure(false));
       voile.querySelector('.valider').addEventListener('click', () => conclure(true));
+      // Cliquer hors de la boîte équivaut à Annuler, jamais à Confirmer : une
+      // action destructrice ne doit jamais pouvoir se déclencher par un clic
+      // égaré à l'extérieur.
       voile.addEventListener('click', (e) => { if (e.target === voile) conclure(false); });
       document.addEventListener('keydown', surEchap);
       voile.querySelector('.valider').focus();
     });
   }
 
+  /**
+   * @param {string} message
+   * @param {string} [valeurDefaut]
+   * @returns {Promise<string|null>} null si annulé, comme prompt()
+   */
   function demander(message, valeurDefaut) {
     return new Promise((resolve) => {
       const voile = construireBoite(

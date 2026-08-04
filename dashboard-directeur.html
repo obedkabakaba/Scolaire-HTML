@@ -593,26 +593,25 @@
     return donnees.access_token;
   }
 
-  async function appelApi(chemin) {
+  async function appelApi(chemin, options = {}) {
     let { accessToken, refreshToken } = obtenirTokens();
     if (!accessToken) { retourConnexion(); return null; }
 
-    let reponse = await fetch(`${API_BASE_URL}${chemin}`, {
-      headers: { Authorization: `Bearer ${accessToken}` }
+    const executer = (token) => fetch(`${API_BASE_URL}${chemin}`, {
+      ...options,
+      headers: { ...(options.headers || {}), Authorization: `Bearer ${token}` }
     });
+
+    let reponse = await executer(accessToken);
 
     if (reponse.status === 401 && refreshToken) {
       const nouveauToken = await rafraichirToken(refreshToken);
       if (!nouveauToken) { retourConnexion(); return null; }
-      reponse = await fetch(`${API_BASE_URL}${chemin}`, {
-        headers: { Authorization: `Bearer ${nouveauToken}` }
-      });
+      reponse = await executer(nouveauToken);
     }
 
     if (reponse.status === 401 || reponse.status === 403) { retourConnexion(); return null; }
-    if (!reponse.ok) throw new Error('Erreur serveur (' + reponse.status + ')');
-
-    return reponse.json();
+    return reponse;
   }
 
   function formaterDate(iso) {
@@ -754,8 +753,10 @@
 
   async function chargerDashboard() {
     try {
-      const donnees = await appelApi('/dashboard/directeur');
-      if (!donnees) return; // redirection déjà en cours
+      const reponse = await appelApi('/dashboard/directeur');
+      if (!reponse) return; // redirection déjà en cours
+      if (!reponse.ok) throw new Error('Erreur serveur (' + reponse.status + ')');
+      const donnees = await reponse.json();
 
       document.getElementById('ecran-chargement').style.display = 'none';
       document.getElementById('mise-en-page').style.display = 'grid';

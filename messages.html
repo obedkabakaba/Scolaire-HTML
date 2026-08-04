@@ -78,6 +78,22 @@
   .message-recu .objet { font-weight: 600; font-size: 1rem; }
   .message-recu .date { font-size: 0.78rem; color: var(--texte-att); white-space: nowrap; }
   .message-recu .corps { white-space: pre-wrap; margin-top: 9px; font-size: 0.92rem; line-height: 1.55; }
+  #zone-personnes input[type="search"] { width: 100%; padding: 9px 12px; border: 1.5px solid var(--bordure); border-radius: var(--r-bouton); font-size: 0.88rem; background: var(--craie); font-family: var(--police-corps); margin-bottom: 10px; }
+  #choix-personnes { max-height: 240px; overflow-y: auto; }
+  .puce-choix { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border: 1.5px solid var(--bordure); border-radius: var(--r-petit); margin-bottom: 6px; cursor: pointer; font-size: 0.87rem; }
+  .puce-choix.choisi { border-color: var(--ardoise); background: var(--craie); }
+  .role-mini { font-size: 0.72rem; color: var(--texte-att); margin-left: auto; }
+  .message-recu summary { cursor: pointer; list-style: none; }
+  .message-recu summary::-webkit-details-marker { display: none; }
+  .message-recu .ligne-expediteur { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 3px; }
+  /* L'expéditeur passe avant l'objet : « qui m'écrit » se lit avant « à quel
+     sujet », et c'est ce qui manquait totalement. */
+  .message-recu .expediteur { font-weight: 600; font-size: 0.88rem; }
+  .message-recu .expediteur.systeme { color: var(--texte-att); font-style: italic; }
+  .message-recu .role-expediteur { font-size: 0.72rem; color: var(--texte-att); background: rgba(107,114,105,0.14); padding: 1px 7px; border-radius: 20px; }
+  .message-recu .objet { display: block; font-weight: 600; font-size: 0.95rem; }
+  .message-recu .extrait { display: block; font-size: 0.82rem; color: var(--texte-att); margin-top: 2px; }
+  .message-recu[open] .extrait { display: none; }
   .message-recu .pied { margin-top: 12px; }
   .lien-action { background: none; border: none; color: var(--encre); cursor: pointer; font-size: 0.84rem; font-family: var(--police-corps); padding: 3px 0; }
   .barre-ia { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: rgba(60,90,98,0.08); border-radius: var(--r-petit); padding: 11px 14px; margin-top: 26px; }
@@ -195,6 +211,7 @@
         <li><a class="nav-item" href="inscriptions.html">Inscriptions</a></li>
         <li><a class="nav-item" href="orientation.html">Orientation</a></li>
         <li><a class="nav-item" href="frais-scolaires.html">Frais scolaires</a></li>
+        <li><a class="nav-item" href="comptabilite.html">Comptabilité</a></li>
         <li><a class="nav-item" href="utilisateurs.html">Utilisateurs</a></li>
         <li><a class="nav-item" href="classes.html">Classes</a></li>
         <li><a class="nav-item" href="cours.html">Cours</a></li>
@@ -279,11 +296,19 @@
         <div class="champ-form">
           <label for="select-cible">Envoyer à</label>
           <select id="select-cible">
+            <option value="utilisateurs">Une ou plusieurs personnes</option>
             <option value="roles">Des rôles (personnel)</option>
             <option value="equipe_classe">L'équipe pédagogique d'une classe</option>
             <option value="parents_classe">Les parents d'une classe</option>
             <option value="parents_ecole">Les parents de toute l'école</option>
           </select>
+        </div>
+
+        <!-- Écrire à quelqu'un en particulier : c'est le geste le plus courant,
+             et il était impossible — il fallait diffuser à tout un rôle. -->
+        <div id="zone-personnes" style="margin-top:14px;">
+          <input type="search" id="recherche-personne" placeholder="Rechercher une personne…" />
+          <div id="choix-personnes" class="choix-multiples"></div>
         </div>
 
         <div id="zone-roles" style="margin-top:14px;">
@@ -485,8 +510,23 @@
   //  Initialisation
   // ============================================================
   async function initialiser() {
+    // L'onglet d'envoi s'ouvre à TOUT le personnel : écrire à un collègue est
+    // de la communication ordinaire. Ce qui reste réservé, c'est la DIFFUSION
+    // à un groupe entier — le sélecteur de destinataires s'adapte, et le
+    // serveur refuse de toute façon.
+    document.getElementById('onglet-envoyer').style.display = '';
+    document.getElementById('onglet-envoyer').textContent = peutDiffuser
+      ? 'Nouveau message' : 'Écrire à un collègue';
+
+    if (!peutDiffuser) {
+      // Un professeur ne voit que ce qu'il peut faire : lui proposer « les
+      // parents de toute l'école » pour se voir refuser ensuite serait une
+      // promesse non tenue.
+      const select = document.getElementById('select-cible');
+      [...select.options].forEach(o => { if (o.value !== 'utilisateurs') o.remove(); });
+    }
+
     if (peutDiffuser) {
-      document.getElementById('onglet-envoyer').style.display = '';
       document.getElementById('onglet-historique').style.display = '';
       document.getElementById('onglet-whatsapp').style.display = '';
       document.getElementById('sous-titre-messages').textContent =
@@ -500,6 +540,7 @@
 
     if (peutDiffuser) {
       document.getElementById('select-cible').addEventListener('change', majFormulaireCible);
+      chargerPersonnel();
       document.getElementById('select-classe').addEventListener('change', majResumeCible);
       document.getElementById('bouton-envoyer').addEventListener('click', envoyer);
       document.getElementById('champ-contenu').addEventListener('input', () => {
@@ -550,19 +591,36 @@
       return;
     }
 
-    zone.innerHTML = messages.map(m => `
-      <div class="message-recu ${m.lu ? '' : 'non-lu'}">
-        <div class="entete">
+    // Affichage COMPACT et repliable. Chaque message occupait auparavant tout
+    // le contenu déplié : dix messages faisaient plusieurs écrans de haut, et
+    // il fallait faire défiler pour voir s'il y avait autre chose. On montre
+    // l'expéditeur, l'objet, la date et un extrait ; le reste s'ouvre au clic.
+    //
+    // Les messages NON LUS s'ouvrent d'office : ce sont ceux qu'on vient
+    // consulter, les replier ajouterait un clic à chaque fois.
+    zone.innerHTML = messages.map(m => {
+      const extrait = (m.contenu || '').replace(/\s+/g, ' ').slice(0, 110);
+      const tronque = (m.contenu || '').length > 110;
+      return `
+      <details class="message-recu ${m.lu ? '' : 'non-lu'}" ${m.lu ? '' : 'open'}>
+        <summary>
+          <span class="ligne-expediteur">
+            <span class="expediteur ${m.origine === 'plateforme' ? 'systeme' : ''}">${
+              echapper(m.expediteur_libelle || 'Plateforme Ardoise')}</span>
+            ${m.expediteur_roles ? `<span class="role-expediteur">${echapper(m.expediteur_roles)}</span>` : ''}
+            <span class="date">${echapper(formaterDate(m.created_at))}</span>
+          </span>
           <span class="objet">${echapper(m.sujet || 'Sans objet')}</span>
-          <span class="date">${formaterDate(m.created_at)}</span>
-        </div>
+          ${m.lu ? `<span class="extrait">${echapper(extrait)}${tronque ? '…' : ''}</span>` : ''}
+        </summary>
         <div class="corps">${echapper(m.contenu || '')}</div>
         ${m.lu ? '' : `<div class="pied"><button class="lien-action" data-lu="${m.id}">Marquer comme lu</button></div>`}
-      </div>
-    `).join('');
+        ${m.lien ? `<div class="pied"><a class="lien-action" href="${echapper(m.lien)}">Ouvrir l'écran concerné</a></div>` : ''}
+      </details>`;
+    }).join('');
 
     zone.querySelectorAll('[data-lu]').forEach(b => {
-      b.addEventListener('click', () => marquerLu(b.dataset.lu));
+      b.addEventListener('click', (evt) => { evt.preventDefault(); marquerLu(b.dataset.lu); });
     });
   }
 
@@ -610,8 +668,57 @@
     majFormulaireCible();
   }
 
+
+  // ============================================================
+  //  Envoi à des personnes précises
+  // ============================================================
+  let personnel = [];
+  let personnesChoisies = [];
+
+  async function chargerPersonnel() {
+    const r = await appelApi('/communication/personnel');
+    if (!r || !r.ok) return;
+    personnel = await r.json();
+    dessinerPersonnel();
+  }
+
+  function dessinerPersonnel() {
+    const recherche = document.getElementById('recherche-personne').value.trim().toLowerCase();
+    const zone = document.getElementById('choix-personnes');
+    const visibles = personnel.filter(p =>
+      !recherche || `${p.nom} ${p.roles}`.toLowerCase().includes(recherche));
+
+    if (visibles.length === 0) {
+      zone.innerHTML = '<span class="aide">Aucune personne ne correspond.</span>';
+      return;
+    }
+    zone.innerHTML = visibles.map(p => `
+      <label class="puce-choix ${personnesChoisies.includes(p.id) ? 'choisi' : ''}">
+        <input type="checkbox" value="${p.id}" ${personnesChoisies.includes(p.id) ? 'checked' : ''} />
+        <span>${echapper(p.nom)}</span>
+        <span class="role-mini">${echapper(p.roles || '')}</span>
+      </label>`).join('');
+
+    zone.querySelectorAll('input[type="checkbox"]').forEach(c =>
+      c.addEventListener('change', () => {
+        // La sélection survit au filtrage : cocher trois personnes, chercher
+        // une quatrième, et voir les trois premières décochées serait
+        // exaspérant.
+        if (c.checked) {
+          if (!personnesChoisies.includes(c.value)) personnesChoisies.push(c.value);
+        } else {
+          personnesChoisies = personnesChoisies.filter(id => id !== c.value);
+        }
+        dessinerPersonnel();
+        majResumeCible();
+      }));
+  }
+
+  document.getElementById('recherche-personne').addEventListener('input', dessinerPersonnel);
+
   function majFormulaireCible() {
     const type = document.getElementById('select-cible').value;
+    document.getElementById('zone-personnes').style.display = type === 'utilisateurs' ? '' : 'none';
     document.getElementById('zone-roles').style.display = type === 'roles' ? '' : 'none';
     document.getElementById('zone-classe').style.display =
       ['equipe_classe', 'parents_classe'].includes(type) ? '' : 'none';
@@ -637,7 +744,11 @@
     const classe = destinataires.classes.find(c => c.id === classeId);
 
     let texte = '';
-    if (type === 'roles') {
+    if (type === 'utilisateurs') {
+      texte = personnesChoisies.length === 0
+        ? 'Choisissez au moins une personne.'
+        : `${personnesChoisies.length} personne(s) recevront ce message.`;
+    } else if (type === 'roles') {
       const total = destinataires.roles
         .filter(r => rolesChoisis.includes(r.role))
         .reduce((a, r) => a + r.nb, 0);
@@ -683,6 +794,7 @@
     bouton.disabled = true; bouton.textContent = 'Envoi…';
 
     const cible = { type };
+    if (type === 'utilisateurs') cible.utilisateurs = personnesChoisies;
     if (type === 'roles') cible.roles = rolesChoisis;
     if (['equipe_classe', 'parents_classe'].includes(type)) {
       cible.classe_id = document.getElementById('select-classe').value;
@@ -852,6 +964,7 @@
       'inscriptions.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire'],
       'orientation.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
       'frais-scolaires.html': ['directeur', 'comptable', 'secretaire'],
+      'comptabilite.html': ['directeur', 'comptable'],
       'utilisateurs.html': ['directeur', 'prefet', 'secretaire'],
       'classes.html': ['directeur', 'prefet', 'secretaire'],
       'cours.html': ['directeur', 'prefet', 'secretaire'],

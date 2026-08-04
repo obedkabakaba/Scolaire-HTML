@@ -178,6 +178,7 @@
         <li><a class="nav-item" href="inscriptions.html">Inscriptions</a></li>
         <li><a class="nav-item" href="orientation.html">Orientation</a></li>
         <li><a class="nav-item" href="frais-scolaires.html">Frais scolaires</a></li>
+        <li><a class="nav-item" href="comptabilite.html">Comptabilité</a></li>
         <li><a class="nav-item" href="utilisateurs.html">Utilisateurs</a></li>
         <li><a class="nav-item" href="classes.html">Classes</a></li>
         <li><a class="nav-item" href="cours.html">Cours</a></li>
@@ -592,7 +593,56 @@
     document.getElementById('voile-detail-eleve').style.display = 'none';
   });
   document.getElementById('bouton-apercu-impression').addEventListener('click', () => genererPdf(true));
-  document.getElementById('bouton-imprimer-classe').addEventListener('click', () => genererPdf(false));
+  /**
+   * Avant d'imprimer toute une classe, on VÉRIFIE et on AVERTIT — sans jamais
+   * bloquer.
+   *
+   * Une école imprime parfois des bulletins incomplets en connaissance de
+   * cause : un enseignant absent, une matière non évaluée ce trimestre.
+   * L'empêcher la mettrait dans l'impasse. Mais imprimer sans le savoir, puis
+   * distribuer trois cents bulletins où il manque une note, est bien pire.
+   */
+  async function verifierPuisImprimer() {
+    const classeId = document.getElementById('select-classe').value;
+    const periodeId = document.getElementById('select-periode').value;
+    if (!classeId || !periodeId) { genererPdf(false); return; }
+
+    const r = await appelApi(
+      `/bulletins/classe/${classeId}/verification?periodeId=${encodeURIComponent(periodeId)}`);
+    // Une vérification qui échoue ne doit pas empêcher d'imprimer : elle est
+    // une aide, pas une condition.
+    if (!r || !r.ok) { genererPdf(false); return; }
+
+    const d = await r.json();
+    if (d.prete) { genererPdf(false); return; }
+
+    const lignes = [];
+    if (d.cours_sans_note.length) {
+      lignes.push(`• ${d.cours_sans_note.length} cours sans aucune note : `
+        + d.cours_sans_note.map(c => c.cours + (c.enseignants ? ` (${c.enseignants})` : '')).join(', '));
+    }
+    if (d.cours_partiels.length) {
+      lignes.push(`• ${d.cours_partiels.length} cours incomplets : `
+        + d.cours_partiels.map(c => `${c.cours} ${c.nb_notes}/${c.nb_eleves}`).join(', '));
+    }
+    if (d.cours_non_valides.length) {
+      lignes.push(`• ${d.cours_non_valides.length} cours saisis mais non validés : `
+        + d.cours_non_valides.map(c => c.cours).join(', '));
+    }
+    if (d.eleves_sans_aucune_note.length) {
+      lignes.push(`• ${d.eleves_sans_aucune_note.length} élève(s) sans aucune note : `
+        + d.eleves_sans_aucune_note.slice(0, 5).join(', ')
+        + (d.eleves_sans_aucune_note.length > 5 ? '…' : ''));
+    }
+
+    const suite = await ArdoiseUI.confirmer(
+      `Des éléments manquent pour ${d.periode} :\n\n${lignes.join('\n')}\n\n`
+      + `Vous pouvez imprimer quand même — les bulletins seront simplement incomplets.`
+    );
+    if (suite) genererPdf(false);
+  }
+
+  document.getElementById('bouton-imprimer-classe').addEventListener('click', verifierPuisImprimer);
 
 
   document.getElementById('bouton-generer-pdf').addEventListener('click', () => genererPdf());
@@ -866,6 +916,7 @@
       'inscriptions.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire'],
       'orientation.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
       'frais-scolaires.html': ['directeur', 'comptable', 'secretaire'],
+      'comptabilite.html': ['directeur', 'comptable'],
       'utilisateurs.html': ['directeur', 'prefet', 'secretaire'],
       'classes.html': ['directeur', 'prefet', 'secretaire'],
       'cours.html': ['directeur', 'prefet', 'secretaire'],

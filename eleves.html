@@ -224,6 +224,9 @@
   .lien-detail { display: block; font-size: 0.76rem; color: var(--texte-att); margin-top: 2px; }
   .liste-historique { list-style: none; margin: 0; padding: 0; }
   .liste-historique li { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--bordure); font-size: 0.86rem; }
+  .zone-sortie { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--bordure); }
+  /* Un élève déjà parti ne propose plus le bouton : le geste ne se répète pas. */
+  .zone-sortie.sortie-faite { font-size: 0.86rem; color: var(--texte-att); font-style: italic; }
 </style>
 <script>
   /* Applique le thème AVANT le premier affichage */
@@ -258,6 +261,7 @@
         <li><a class="nav-item" href="inscriptions.html">Inscriptions</a></li>
         <li><a class="nav-item" href="orientation.html">Orientation</a></li>
         <li><a class="nav-item" href="frais-scolaires.html">Frais scolaires</a></li>
+        <li><a class="nav-item" href="comptabilite.html">Comptabilité</a></li>
         <li><a class="nav-item" href="utilisateurs.html">Utilisateurs</a></li>
         <li><a class="nav-item" href="classes.html">Classes</a></li>
         <li><a class="nav-item" href="cours.html">Cours</a></li>
@@ -833,6 +837,82 @@
 
   let eleveAffiche = null;
 
+
+  // ============================================================
+  //  Départ d'un élève
+  // ============================================================
+  //
+  // Un élève quittait l'école en passant simplement au statut « transféré »,
+  // quelle qu'en soit la raison. Or les raisons ne se valent pas : un exclu, un
+  // transféré et un abandon appellent des suites différentes — dossier à
+  // transmettre, décision à archiver, famille à relancer. Sans motif, le
+  // secrétariat ne peut ni les distinguer ni en rendre compte.
+
+  const LIBELLES_SORTIE = {
+    diplome: 'a terminé son cycle',
+    echec_repete: "n'a pas réussi",
+    depart_volontaire: 'départ à la demande de la famille',
+    transfert: 'transféré dans un autre établissement',
+    exclusion: 'exclu par décision disciplinaire',
+    abandon: 'ne se présente plus',
+    sans_notes: "inscrit mais jamais évalué",
+    autre: 'autre motif'
+  };
+
+  let eleveSortie = null;
+
+  function ouvrirSortie(eleve, nomComplet) {
+    eleveSortie = { id: eleve.id, nom: nomComplet };
+    document.getElementById('titre-sortie').textContent = `Départ de ${nomComplet}`;
+    document.getElementById('select-motif-sortie').innerHTML =
+      Object.entries(LIBELLES_SORTIE).map(([code, libelle]) =>
+        `<option value="${code}">${echapper(libelle)}</option>`).join('');
+    document.getElementById('champ-date-sortie').value = new Date().toISOString().slice(0, 10);
+    document.getElementById('voile-sortie').classList.add('visible');
+  }
+
+  document.getElementById('bouton-annuler-sortie').addEventListener('click', () => {
+    document.getElementById('voile-sortie').classList.remove('visible');
+    eleveSortie = null;
+  });
+
+  document.getElementById('bouton-confirmer-sortie').addEventListener('click', async () => {
+    if (!eleveSortie) return;
+    const bouton = document.getElementById('bouton-confirmer-sortie');
+    if (bouton.disabled) return;
+
+    const motif = document.getElementById('select-motif-sortie').value;
+    if (!await ArdoiseUI.confirmer(
+      `Enregistrer le départ de ${eleveSortie.nom} ?\n\n`
+      + `Motif : ${LIBELLES_SORTIE[motif]}.\n`
+      + `Sa place sera libérée. Son dossier restera consultable dans les Archives.`
+    )) return;
+
+    bouton.disabled = true;
+    const initial = bouton.textContent;
+    bouton.innerHTML = '<span class="spinner"></span> Enregistrement…';
+
+    const r = await appelApi(`/eleves/${eleveSortie.id}/sortie`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        motif,
+        date_sortie: document.getElementById('champ-date-sortie').value || null,
+        note: document.getElementById('champ-note-sortie').value.trim() || null
+      })
+    });
+
+    bouton.disabled = false;
+    bouton.textContent = initial;
+    const d = r ? await r.json().catch(() => ({})) : {};
+    if (!r || !r.ok) { afficherMessage(d.message || 'Enregistrement impossible.', 'erreur'); return; }
+
+    afficherMessage(d.message, 'succes');
+    document.getElementById('voile-sortie').classList.remove('visible');
+    document.getElementById('voile-fiche').classList.remove('visible');
+    eleveSortie = null;
+    chargerEleves();
+  });
+
   function ouvrirFiche(eleve) {
     eleveAffiche = eleve;
     const nomComplet = [eleve.nom, eleve.postnom, eleve.prenom].filter(Boolean).join(' ');
@@ -868,10 +948,18 @@
       + ligne('Téléphone', eleve.responsable_telephone)
       + ligne('Email', eleve.responsable_email)
       + ligne('Adresse', eleve.responsable_adresse)
+      + (eleve.statut === 'actif'
+          ? '<div class="zone-sortie"><button type="button" class="bouton" id="bouton-sortie">'
+            + 'Enregistrer le départ de cet élève</button></div>'
+          : `<div class="zone-sortie sortie-faite">Cet élève a quitté l'école`
+            + (eleve.motif_sortie ? ` — ${echapper(LIBELLES_SORTIE[eleve.motif_sortie] || eleve.motif_sortie)}` : '')
+            + (eleve.date_sortie ? ` le ${echapper(formaterDate(eleve.date_sortie))}` : '') + '.</div>')
       + '<div id="zone-parcours"><p class="aide" style="margin-top:18px;">'
       + '<span class="spinner"></span> Chargement du parcours…</p></div>';
 
     document.getElementById('voile-fiche').classList.add('visible');
+    const boutonSortie = document.getElementById('bouton-sortie');
+    if (boutonSortie) boutonSortie.addEventListener('click', () => ouvrirSortie(eleve, nomComplet));
     chargerParcours(eleve, nomComplet);
   }
 
@@ -1288,6 +1376,7 @@
       'inscriptions.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire'],
       'orientation.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
       'frais-scolaires.html': ['directeur', 'comptable', 'secretaire'],
+      'comptabilite.html': ['directeur', 'comptable'],
       'utilisateurs.html': ['directeur', 'prefet', 'secretaire'],
       'classes.html': ['directeur', 'prefet', 'secretaire'],
       'cours.html': ['directeur', 'prefet', 'secretaire'],
@@ -1344,5 +1433,33 @@
 <script src="hors-ligne.js"></script>
 <!-- Didacticiel d'installation : bouton d'aide contextuel, partagé par toutes les pages. -->
 <script src="didacticiel.js" data-ecran="Élèves"></script>
+<!-- Départ d'un élève -->
+<div class="voile" id="voile-sortie">
+  <div class="modale">
+    <h2 id="titre-sortie">Départ de l'élève</h2>
+    <p class="aide">
+      Le motif n'est pas une formalité&nbsp;: un élève exclu, un élève transféré et un
+      élève qui abandonne appellent des suites différentes. C'est lui qui permettra
+      plus tard de savoir ce qui s'est passé.
+    </p>
+    <div class="champ">
+      <label for="select-motif-sortie">Motif du départ</label>
+      <select id="select-motif-sortie"></select>
+    </div>
+    <div class="champ">
+      <label for="champ-date-sortie">Date du départ</label>
+      <input type="date" id="champ-date-sortie" />
+    </div>
+    <div class="champ">
+      <label for="champ-note-sortie">Précision (facultatif)</label>
+      <input type="text" id="champ-note-sortie" maxlength="200" placeholder="Établissement d'accueil, référence…" />
+    </div>
+    <div class="actions-modale">
+      <button type="button" class="bouton" id="bouton-annuler-sortie">Annuler</button>
+      <button type="button" class="bouton bouton-principal" id="bouton-confirmer-sortie">Enregistrer le départ</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

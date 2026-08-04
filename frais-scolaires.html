@@ -57,6 +57,18 @@
   .bouton:disabled { opacity: 0.55; cursor: not-allowed; }
 
   .barre-onglets { display: flex; gap: 6px; border-bottom: 1.5px solid var(--bordure); margin-bottom: 24px; }
+  .tableau-frais-dus { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin: 12px 0; }
+  .tableau-frais-dus th { text-align: left; font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--texte-att); padding: 5px 0; }
+  .tableau-frais-dus td { padding: 6px 0; border-top: 1px solid var(--bordure); }
+  .tableau-frais-dus tfoot th { border-top: 2px solid var(--bordure); padding-top: 8px; font-size: 0.86rem; text-transform: none; color: var(--texte-sombre); }
+  .ligne-soldee { opacity: 0.55; }
+  .soldee { color: var(--vert-ok); font-weight: 600; }
+  .reste-du { color: var(--rouge); }
+  /* Un versement sans objet n'est pas une erreur : c'est un encaissement global
+     ou antérieur au rattachement. On le montre pour que le total reste juste. */
+  .ligne-non-imputee { font-style: italic; color: var(--texte-att); }
+  .mini-puce { font-size: 0.64rem; padding: 0 5px; border-radius: 20px; background: rgba(107,114,105,0.16); margin-left: 5px; font-style: normal; }
+  .alerte-recap { background: rgba(201,138,62,0.12); border-left: 3px solid var(--ocre); border-radius: var(--r-petit); padding: 10px 14px; font-size: 0.85rem; margin: 0 0 16px 0; line-height: 1.5; }
   .onglet { padding: 10px 4px; margin-right: 20px; font-size: 0.92rem; font-weight: 600; color: var(--texte-att); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1.5px; }
   .onglet.actif { color: var(--ardoise); border-bottom-color: var(--ocre); }
   .panneau-onglet { display: none; }
@@ -186,6 +198,8 @@
     </div>
 
     <div class="message-flash" id="message-flash"></div>
+
+    <p class="alerte-recap" id="alerte-recap" style="display:none;"></p>
 
     <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px,1fr)); gap:16px; margin-bottom:24px;">
       <div style="background:var(--craie-2); border:1px solid var(--bordure); border-radius: var(--r-carte); padding:18px;">
@@ -336,6 +350,12 @@
             <option value="USD">USD — Dollar américain</option>
           </select>
         </div>
+        <div class="champ">
+          <label for="champ-frais-regle">Frais réglé</label>
+          <select id="champ-frais-regle">
+            <option value="">Versement global (non affecté)</option>
+          </select>
+        </div>
         <div class="champ"><label for="champ-methode-paiement">Méthode</label>
           <select id="champ-methode-paiement">
             <option value="cash">Espèces</option>
@@ -347,6 +367,9 @@
         </div>
       </div>
       <p id="aide-devise-paiement" style="font-size:0.8rem; color:var(--texte-att); margin:-4px 0 10px;"></p>
+      <!-- Le détail ligne par ligne : « il a payé quoi » est une question à
+           laquelle un montant global ne répond pas. -->
+      <div id="zone-frais-dus"></div>
       <div class="champ"><label for="champ-notes-paiement">Note (optionnel)</label><input type="text" id="champ-notes-paiement" /></div>
       <div class="actions-modale">
         <button type="button" class="bouton bouton-secondaire" id="bouton-fermer-paiement">Fermer</button>
@@ -489,6 +512,13 @@
   //  peut valoir 300 FC ou 300 USD, soit un facteur de plus de deux mille.
   // ============================================================
   let configMonetaire = { devise_principale: 'FC', taux_change_usd_fc: null };
+
+  // Échappement HTML : les libellés de frais sont saisis par l'école.
+  function echapper(t) {
+    const d = document.createElement('div');
+    d.textContent = t == null ? '' : String(t);
+    return d.innerHTML;
+  }
 
   function formaterMontant(valeur, devise) {
     const d = devise || configMonetaire.devise_principale || 'FC';
@@ -658,8 +688,73 @@
     document.getElementById('titre-modale-paiement').textContent = `Paiements — ${nom}`;
     document.getElementById('paiement-eleve-id').value = eleveId;
     document.getElementById('voile-paiement').classList.add('visible');
+    await chargerFraisDus(eleveId);
     await chargerHistoriquePaiements(eleveId);
   }
+
+  /**
+   * Détail des frais dus, ligne par ligne.
+   *
+   * Un encaissement était un montant sans objet : une famille versant 50 $ sur
+   * 170 $ répartis en quatre lignes, personne ne savait ce qui était réglé — ni
+   * le reçu, ni la relance. Le sélecteur ne propose que les lignes NON SOLDÉES :
+   * proposer de repayer ce qui est déjà réglé est une invitation à l'erreur.
+   */
+  async function chargerFraisDus(eleveId) {
+    const zone = document.getElementById('zone-frais-dus');
+    const select = document.getElementById('champ-frais-regle');
+    zone.innerHTML = '<p class="aide"><span class="spinner"></span> Chargement du détail…</p>';
+    select.innerHTML = '<option value="">Versement global (non affecté)</option>';
+
+    const r = await appelApi(`/frais/eleves/${eleveId}/frais-dus`);
+    if (!r || !r.ok) {
+      zone.innerHTML = '<p class="aide">Le détail des frais n\'a pas pu être chargé.</p>';
+      return;
+    }
+    const d = await r.json();
+
+    if (d.lignes.length === 0) {
+      zone.innerHTML = '<p class="aide">Aucun frais défini pour la classe de cet élève cette année.</p>';
+      return;
+    }
+
+    select.innerHTML = '<option value="">Versement global (non affecté)</option>'
+      + d.lignes.filter(l => !l.solde).map(l =>
+          `<option value="${l.id}" data-reste="${l.reste}">${echapper(l.libelle)} — reste ${formaterMontant(l.reste, d.devise)}</option>`
+        ).join('');
+
+    zone.innerHTML = `
+      <table class="tableau-frais-dus">
+        <thead><tr><th>Frais</th><th>Dû</th><th>Versé</th><th>Reste</th></tr></thead>
+        <tbody>${d.lignes.map(l => `
+          <tr class="${l.solde ? 'ligne-soldee' : ''}">
+            <td>${echapper(l.libelle)}${l.propre_a_la_classe
+              ? '<span class="mini-puce" title="Montant propre à cette classe, il remplace le montant général">classe</span>' : ''}</td>
+            <td>${formaterMontant(l.montant_converti, d.devise)}</td>
+            <td>${formaterMontant(l.verse, d.devise)}</td>
+            <td>${l.solde ? '<span class="soldee">soldé</span>' : formaterMontant(l.reste, d.devise)}</td>
+          </tr>`).join('')}
+          ${d.versements_non_imputes > 0 ? `
+          <tr class="ligne-non-imputee">
+            <td colspan="3">Versements sans objet précisé</td>
+            <td>${formaterMontant(d.versements_non_imputes, d.devise)}</td>
+          </tr>` : ''}
+        </tbody>
+        <tfoot><tr>
+          <th>Total</th><th>${formaterMontant(d.total_du, d.devise)}</th>
+          <th>${formaterMontant(d.total_verse, d.devise)}</th>
+          <th class="${d.solde > 0 ? 'reste-du' : ''}">${formaterMontant(d.solde, d.devise)}</th>
+        </tr></tfoot>
+      </table>`;
+  }
+
+  // Choisir un frais pré-remplit le montant restant : c'est le cas courant, et
+  // le comptable reste libre de le corriger pour un versement partiel.
+  document.getElementById('champ-frais-regle').addEventListener('change', (evt) => {
+    const option = evt.target.selectedOptions[0];
+    const reste = option && option.dataset.reste;
+    if (reste) document.getElementById('champ-montant-paiement').value = reste;
+  });
 
   async function chargerHistoriquePaiements(eleveId) {
     const r = await appelApi(`/frais/eleves/${eleveId}/paiements`);
@@ -727,6 +822,7 @@
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         eleve_id: eleveCourantPaiement,
+        frais_id: document.getElementById('champ-frais-regle').value || null,
         montant: parseFloat(document.getElementById('champ-montant-paiement').value),
         devise: document.getElementById('champ-devise-paiement').value,
         methode: document.getElementById('champ-methode-paiement').value,
@@ -875,12 +971,28 @@
     chargerSelecteurs();
     chargerConfig();
 
+    // Les trois cases restaient vides sans le moindre message quand l'appel
+    // échouait : sortir en silence sur un `!r.ok` laissait le directeur devant
+    // trois tirets, sans savoir s'il n'y avait rien à afficher ou si quelque
+    // chose n'allait pas. Une case sans information doit dire pourquoi.
     const r = await appelApi('/frais/stats-globales');
-    if (!r || !r.ok) return;
+    const zoneAlerte = document.getElementById('alerte-recap');
+    if (!r) return;
+    if (!r.ok) {
+      const rep = await r.json().catch(() => ({}));
+      zoneAlerte.textContent = rep.message || 'Le récapitulatif n\'a pas pu être calculé.';
+      zoneAlerte.style.display = '';
+      return;
+    }
     const d = await r.json();
     document.getElementById('stat-encaisse').textContent = formaterMontant(d.montant_total_encaisse, d.devise);
     document.getElementById('stat-du').textContent = formaterMontant(d.montant_total_du, d.devise);
     document.getElementById('stat-retard').textContent = d.nb_eleves_en_retard;
+
+    if ((d.alertes || []).length) {
+      zoneAlerte.textContent = d.alertes.join(' ');
+      zoneAlerte.style.display = '';
+    }
   })();
 
   // ---------- Filtrage de la navigation selon le rôle connecté ----------
@@ -896,6 +1008,7 @@
       'inscriptions.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire'],
       'orientation.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
       'frais-scolaires.html': ['directeur', 'comptable', 'secretaire'],
+      'comptabilite.html': ['directeur', 'comptable'],
       'utilisateurs.html': ['directeur', 'prefet', 'secretaire'],
       'classes.html': ['directeur', 'prefet', 'secretaire'],
       'cours.html': ['directeur', 'prefet', 'secretaire'],

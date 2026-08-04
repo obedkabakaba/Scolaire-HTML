@@ -86,6 +86,8 @@
       '<path d="M12 4 2 9l10 5 10-5z"/><path d="M6 11.5V17c0 1.5 3 3 6 3s6-1.5 6-3v-5.5"/>',
     'frais-scolaires.html':
       '<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10.5h18"/><circle cx="17" cy="15" r="1.3"/>',
+    'comptabilite.html':
+      '<circle cx="12" cy="12" r="8.5"/><path d="M12 7v10"/><path d="M14.5 9.5A2.5 2.5 0 0 0 12 8.5h-.5a2 2 0 0 0 0 4h1a2 2 0 0 1 0 4H12a2.5 2.5 0 0 1-2.5-1"/>',
     'utilisateurs.html':
       '<circle cx="10" cy="8" r="3.5"/><path d="M3 20a7 7 0 0 1 14 0"/><path d="M19 8v6"/><path d="M16 11h6"/>',
     'cours.html':
@@ -106,6 +108,8 @@
       '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/><path d="M9 13h6"/><path d="M9 17h6"/>',
     'bulletin-annuel.html':
       '<circle cx="12" cy="9" r="5"/><path d="M9 13.5 8 21l4-2 4 2-1-7.5"/>',
+    'repechage.html':
+      '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/><path d="m6.3 6.3 3.2 3.2"/><path d="m14.5 14.5 3.2 3.2"/><path d="m17.7 6.3-3.2 3.2"/><path d="m9.5 14.5-3.2 3.2"/>',
     'generateur-modeles.html':
       '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M10 9v11"/>',
     'calendrier.html':
@@ -435,9 +439,9 @@
   var GROUPES = [
     { titre: 'Élèves et parcours', pages: ['eleves.html', 'inscriptions.html', 'orientation.html', 'presences.html'] },
     { titre: 'Pédagogie', pages: ['classes.html', 'cours.html', 'emploi-du-temps.html', 'notes.html', 'cours-classe-titulaire.html'] },
-    { titre: 'Bulletins', pages: ['bulletins.html', 'bulletin-annuel.html', 'generateur-modeles.html'] },
+    { titre: 'Bulletins', pages: ['bulletins.html', 'bulletin-annuel.html', 'generateur-modeles.html', 'repechage.html'] },
     { titre: 'Vie scolaire', pages: ['discipline.html', 'calendrier.html', 'messages.html'] },
-    { titre: 'Finances', pages: ['frais-scolaires.html'] },
+    { titre: 'Finances', pages: ['frais-scolaires.html', 'comptabilite.html'] },
     { titre: 'Pilotage', pages: ['rapports.html', 'archives.html', 'journal.html'] },
     { titre: 'Administration', pages: ['annee-scolaire.html', 'utilisateurs.html', 'site-public.html', 'parametres.html', 'mon-profil.html'] }
   ];
@@ -455,10 +459,12 @@
     'bulletins.html': 'Périodes et signatures',
     'bulletin-annuel.html': 'Résultats annuels',
     'generateur-modeles.html': 'Mise en page',
+    'repechage.html': 'Sessions et décisions',
     'discipline.html': 'Faits et conduite',
     'calendrier.html': 'Événements',
     'messages.html': 'Réception et diffusion',
     'frais-scolaires.html': 'Frais et paiements',
+    'comptabilite.html': 'Rémunération et dépenses',
     'rapports.html': 'Statistiques et exports',
     'archives.html': 'Années clôturées',
     'journal.html': 'Traçabilité',

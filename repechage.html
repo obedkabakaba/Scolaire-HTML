@@ -232,7 +232,7 @@
         <li><a class="nav-item" href="eleves.html">Élèves</a></li>
         <li><a class="nav-item" href="inscriptions.html">Inscriptions</a></li>
         <li><a class="nav-item" href="orientation.html">Orientation</a></li>
-        <li><a class="nav-item actif" href="frais-scolaires.html">Frais scolaires</a></li>
+        <li><a class="nav-item" href="frais-scolaires.html">Frais scolaires</a></li>
         <li><a class="nav-item" href="utilisateurs.html">Utilisateurs</a></li>
         <li><a class="nav-item" href="classes.html">Classes</a></li>
         <li><a class="nav-item" href="cours.html">Cours</a></li>
@@ -243,7 +243,7 @@
         <li><a class="nav-item" href="notes.html">Notes</a></li>
         <li><a class="nav-item" href="bulletins.html">Bulletins</a></li>
         <li><a class="nav-item" href="bulletin-annuel.html">Bulletin annuel</a></li>
-        <li><a class="nav-item" href="repechage.html">Repêchage</a></li>
+        <li><a class="nav-item actif" href="repechage.html">Repêchage</a></li>
         <li><a class="nav-item" href="generateur-modeles.html">Modèles de bulletins</a></li>
         <li><a class="nav-item" href="calendrier.html">Calendrier</a></li>
         <li><a class="nav-item" href="rapports.html">Rapports</a></li>
@@ -865,7 +865,7 @@ const API_BASE_URL = "https://scolaire-saas-backend.onrender.com";
       }
     });
 
-    const pageActuelle = 'frais-scolaires.html';
+    const pageActuelle = 'repechage.html';
     const rolesPourCettePage = permissions[pageActuelle];
     if (rolesPourCettePage && !estSuperAdmin && !roles.some((r) => rolesPourCettePage.includes(r))) {
       const pageDeRepli = ordrePriorite.find((p) => {
@@ -894,6 +894,9 @@ const API_BASE_URL = "https://scolaire-saas-backend.onrender.com";
   })();
 
 </script>
+<script src="theme.js"></script>
+<script src="ui.js"></script>
+<script src="hors-ligne.js"></script>
 <!-- Didacticiel : bouton d'aide contextuel, partage par toutes les pages. -->
 <script src="didacticiel.js" data-ecran="Repechage"></script>
 </body>

@@ -1,39 +1,5 @@
 /* ==========================================================================
    RÉPARATION DE #message-flash : sortie du conteneur animé
-
-   Cause du bug « le message oblige à remonter la page, et le flou d'une
-   fenêtre ouverte le floute aussi » :
-
-   `.contenu` porte une animation d'entrée (`ardoise-apparition`, dans
-   theme.css) qui anime `transform`. N'IMPORTE QUEL élément qui anime
-   `transform` — même vers `transform: none` en fin de course, même une fois
-   l'animation terminée avec `fill-mode: both` — devient un « bloc de
-   confinement » pour ses descendants en `position: fixed`. Ce point du CSS
-   est peu connu mais bien documenté : un `position: fixed` cesse alors de se
-   positionner par rapport à la fenêtre et se positionne par rapport à CE
-   conteneur à la place.
-
-   `#message-flash` est un enfant de `.contenu` dans les 34 pages. Ses
-   `top`/`right` en position fixe s'appliquaient donc en haut du CONTENU DE LA
-   PAGE plutôt qu'en haut de l'écran — d'où l'obligation de remonter le
-   défilement pour l'apercevoir. Et parce qu'il restait ainsi « piégé » dans le
-   même arbre d'empilement que le reste de la page, le flou d'arrière-plan
-   (`backdrop-filter`) d'une fenêtre ouverte le traversait aussi.
-
-   La réparation ne touche à AUCUNE des 34 pages : elle sort le nœud de son
-   conteneur et le rattache directement à <body>, où plus aucun ancêtre ne
-   peut casser sa position fixe. Son identifiant est conservé, donc le
-   `afficherMessage()` propre à chaque page continue de fonctionner sans
-   modification.
-
-   PLACÉ TOUT EN HAUT DU FICHIER, avant tout le reste : ui.js contient environ
-   1000 lignes d'autres scripts (icônes, animations, squelettes de
-   chargement...). Une erreur non interceptée n'importe où dans ce code
-   arrêterait l'exécution du fichier — et avec elle, tout ce qui suit,
-   y compris ce correctif s'il était resté à sa place initiale, en fin de
-   fichier. Cette réparation touche à l'affichage des retours utilisateur
-   (succès/échec de CHAQUE action de la plateforme) : elle ne peut pas se
-   permettre de dépendre du bon déroulement de code sans rapport avec elle.
    ========================================================================== */
 (function () {
   var message = document.getElementById('message-flash');
@@ -44,13 +10,6 @@
 
 /* ==========================================================================
    Ardoise — Comportements visuels (étape B)
-   --------------------------------------------------------------------------
-   Chargé après theme.js. Trois rôles, tous non intrusifs : si ce fichier
-   ne se charge pas, la plateforme fonctionne exactement comme avant.
-
-     1. Injection des icônes de navigation
-     2. Animation des chiffres des cartes statistiques
-     3. Squelettes de chargement à la place des lignes « Chargement… »
    ========================================================================== */
 
 (function () {
@@ -61,8 +20,6 @@
 
   /* ------------------------------------------------------------------
      1. Icônes de navigation
-     Chaque entrée du menu est identifiée par son lien : aucune page n'a
-     besoin d'être modifiée pour recevoir son icône.
      ------------------------------------------------------------------ */
   var ICONES = {
     'dashboard-directeur.html':
@@ -154,9 +111,6 @@
 
   /* ------------------------------------------------------------------
      2. Chiffres animés des cartes statistiques
-     On observe les valeurs : dès qu'un nombre remplace le tiret d'attente,
-     il défile jusqu'à sa valeur. Les textes non numériques (« — », « 72,4% »
-     partiel, dates) sont laissés intacts.
      ------------------------------------------------------------------ */
   function animerNombre(element, valeurFinale, suffixe, prefixe) {
     var duree = 620;
@@ -221,8 +175,6 @@
 
   /* ------------------------------------------------------------------
      3. Squelettes de chargement
-     Une ligne « Chargement… » est remplacée par des barres qui ondulent :
-     l'utilisateur voit la forme du contenu à venir plutôt qu'un vide.
      ------------------------------------------------------------------ */
   function poserSquelettes() {
     var cellules = document.querySelectorAll('td.etat-vide-tableau, td[colspan]');
@@ -249,9 +201,6 @@
 
   /* ------------------------------------------------------------------
      4. Fabrique de widgets
-     Les pages fournissent des données, jamais du dessin. Chaque widget
-     est autonome : s'il reçoit des données absentes, il affiche un tiret
-     plutôt que de casser la page.
      ------------------------------------------------------------------ */
   var RAYON = 42;
   var CIRCONFERENCE = 2 * Math.PI * RAYON;
@@ -541,4 +490,824 @@
   /* ------------------------------------------------------------------
      7. Rail réduit et tiroir « Tous les menus »
      ------------------------------------------------------------------ */
-  var CLE_
+  var CLE_EPINGLES = 'ardoise_menus_epingles';
+  var MAX_EPINGLES = 5; // <-- Règle : maximum 5 écrans épinglés
+
+  var EPINGLES_DEFAUT = {
+    directeur: ['dashboard-directeur.html', 'eleves.html', 'bulletins.html', 'rapports.html'],
+    prefet: ['dashboard-directeur.html', 'classes.html', 'emploi-du-temps.html', 'discipline.html'],
+    secretaire: ['espace-secretaire.html', 'eleves.html', 'inscriptions.html', 'frais-scolaires.html'],
+    professeur: ['espace-professeur.html', 'notes.html', 'presences.html', 'emploi-du-temps.html'],
+    titulaire: ['espace-titulaire.html', 'notes.html', 'presences.html', 'bulletins.html'],
+    comptable: ['frais-scolaires.html', 'rapports.html', 'messages.html', 'mon-profil.html']
+  };
+
+  function rolesCourants() {
+    try {
+      var u = JSON.parse(localStorage.getItem('ardoise_user') || sessionStorage.getItem('ardoise_user') || 'null');
+      return (u && u.roles) || [];
+    } catch (e) { return []; }
+  }
+
+  function epinglesParDefaut(disponibles) {
+    var roles = rolesCourants();
+    for (var i = 0; i < roles.length; i++) {
+      if (EPINGLES_DEFAUT[roles[i]]) {
+        var choix = EPINGLES_DEFAUT[roles[i]].filter(function (p) { return disponibles[p]; });
+        if (choix.length) return choix;
+      }
+    }
+    return Object.keys(disponibles).slice(0, MAX_EPINGLES);
+  }
+
+  function lireEpingles(disponibles) {
+    try {
+      var brut = JSON.parse(localStorage.getItem(CLE_EPINGLES) || 'null');
+      if (Array.isArray(brut)) {
+        var valides = brut.filter(function (p) { return disponibles[p]; });
+        // Limiter à MAX_EPINGLES
+        if (valides.length > MAX_EPINGLES) {
+          valides = valides.slice(0, MAX_EPINGLES);
+          ecrireEpingles(valides);
+        }
+        if (valides.length) return valides;
+      }
+    } catch (e) {}
+    return epinglesParDefaut(disponibles);
+  }
+
+  function ecrireEpingles(liste) {
+    try { localStorage.setItem(CLE_EPINGLES, JSON.stringify(liste)); } catch (e) {}
+  }
+
+  function pageCourante() {
+    var p = window.location.pathname.split('/').pop();
+    return p || 'dashboard-directeur.html';
+  }
+
+  function reduireRail() {
+    var liste = document.querySelector('.nav-liste');
+    if (!liste || liste.dataset.reduit === 'oui') return;
+
+    var elements = [];
+    var lis = liste.querySelectorAll('li');
+    for (var i = 0; i < lis.length; i++) {
+      var li = lis[i];
+      if (li.style.display === 'none') continue;
+      var lien = li.querySelector('.nav-item[href]');
+      if (!lien) continue;
+      elements.push({
+        li: li,
+        page: lien.getAttribute('href'),
+        libelle: (lien.querySelector('.nav-libelle') || lien).textContent.trim()
+      });
+    }
+    if (elements.length <= MAX_EPINGLES + 1) { // +1 pour la page courante
+      liste.dataset.reduit = 'oui';
+      return;
+    }
+
+    var disponibles = {};
+    elements.forEach(function (e) { disponibles[e.page] = e.libelle; });
+
+    var epingles = lireEpingles(disponibles);
+    var courante = pageCourante();
+
+    // Si la page courante n'est pas dans les épingles, on l'ajoute en premier
+    if (epingles.indexOf(courante) === -1) {
+      epingles.unshift(courante);
+      // Si on dépasse MAX_EPINGLES, on retire le dernier
+      if (epingles.length > MAX_EPINGLES) {
+        epingles.pop();
+      }
+      ecrireEpingles(epingles);
+    }
+
+    elements.forEach(function (e) {
+      var visible = epingles.indexOf(e.page) !== -1 || e.page === courante;
+      e.li.style.display = visible ? '' : 'none';
+      e.li.dataset.epingle = epingles.indexOf(e.page) !== -1 ? 'oui' : 'non';
+    });
+
+    var restants = elements.length - epingles.length;
+    var ancien = liste.querySelector('.nav-tiroir');
+    if (ancien) ancien.closest('li').remove();
+
+    if (restants > 0) {
+      var li = document.createElement('li');
+      li.innerHTML = '<button type="button" class="nav-item nav-tiroir">'
+        + '<svg class="nav-icone" viewBox="0 0 24 24" aria-hidden="true">'
+        + '<circle cx="5" cy="6" r="1.4"/><circle cx="5" cy="12" r="1.4"/><circle cx="5" cy="18" r="1.4"/>'
+        + '<path d="M10 6h10"/><path d="M10 12h10"/><path d="M10 18h10"/></svg>'
+        + '<span class="nav-libelle">Tous les menus</span>'
+        + '<span class="chevron">' + restants + '</span></button>';
+      liste.appendChild(li);
+      li.querySelector('.nav-tiroir').addEventListener('click', function () {
+        ouvrirTiroir(elements, disponibles);
+      });
+    }
+
+    liste.dataset.reduit = 'oui';
+    window.ArdoiseRail = {
+      elements: elements,
+      disponibles: disponibles,
+      ouvrir: function () { ouvrirTiroir(elements, disponibles); }
+    };
+  }
+
+  function ouvrirTiroir(elements, disponibles) {
+    var voile = document.getElementById('voile-tiroir');
+    if (!voile) {
+      voile = document.createElement('div');
+      voile.id = 'voile-tiroir';
+      voile.className = 'voile-tiroir';
+      voile.innerHTML = '<div class="tiroir" role="dialog" aria-label="Tous les menus"></div>';
+      document.body.appendChild(voile);
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && voile.classList.contains('ouvert')) fermerTiroir();
+      });
+    }
+
+    var epingles = lireEpingles(disponibles);
+    var boite = voile.querySelector('.tiroir');
+
+    function ligne(e) {
+      var actif = epingles.indexOf(e.page) !== -1;
+      return '<div class="tiroir-ligne">'
+        + '<a class="lien" href="' + e.page + '">'
+        + '<span class="jeton-menu"><svg viewBox="0 0 24 24" aria-hidden="true">'
+        + (ICONES[e.page] || '') + '</svg></span>'
+        + '<span class="texte">' + e.libelle + '</span></a>'
+        + '<button type="button" class="epingle' + (actif ? ' active' : '') + '"'
+        + ' data-page="' + e.page + '" title="' + (actif ? 'Retirer du menu' : 'Ajouter au menu') + '"'
+        + ' aria-pressed="' + actif + '">'
+        + '<svg viewBox="0 0 24 24"><path d="M12 17v5"/><path d="M9 3h6l-1 6 3 3v2H7v-2l3-3z"/></svg>'
+        + '</button></div>';
+    }
+
+    var html = '<div class="tiroir-entete">'
+      + '<h2>Tous les menus</h2>'
+      + '<input type="search" class="tiroir-recherche" id="tiroir-recherche" placeholder="Rechercher un écran…" aria-label="Rechercher un écran" />'
+      + '<button type="button" class="tiroir-fermer" id="tiroir-fermer">← Retour</button>'
+      + '</div>'
+      + '<p class="tiroir-aide">Épinglez les écrans que vous utilisez le plus (maximum 5).</p>';
+
+    var placees = {};
+    for (var g = 0; g < GROUPES.length; g++) {
+      var dedans = elements.filter(function (e) { return GROUPES[g].pages.indexOf(e.page) !== -1; });
+      if (!dedans.length) continue;
+      dedans.forEach(function (e) { placees[e.page] = true; });
+      html += '<div class="tiroir-groupe" data-groupe><div class="titre">' + GROUPES[g].titre + '</div>'
+        + '<div class="tiroir-grille">' + dedans.map(ligne).join('') + '</div></div>';
+    }
+    var orphelines = elements.filter(function (e) { return !placees[e.page]; });
+    if (orphelines.length) {
+      html += '<div class="tiroir-groupe" data-groupe><div class="titre">Autres</div>'
+        + '<div class="tiroir-grille">' + orphelines.map(ligne).join('') + '</div></div>';
+    }
+
+    html += '<div class="tiroir-pied">'
+      + '<span id="tiroir-compte"></span>'
+      + '<button type="button" class="lien-reinit" id="tiroir-reinit">Rétablir le menu par défaut</button>'
+      + '</div>';
+
+    boite.innerHTML = html;
+    voile.classList.add('ouvert');
+    document.body.style.overflow = 'hidden';
+
+    function majCompte() {
+      var n = lireEpingles(disponibles).length;
+      document.getElementById('tiroir-compte').textContent =
+        n + ' écran(s) épinglé(s) sur ' + elements.length + ' (max 5)';
+    }
+    majCompte();
+
+    boite.querySelectorAll('.epingle').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var liste = lireEpingles(disponibles);
+        var i = liste.indexOf(b.dataset.page);
+        if (i === -1) {
+          // Vérifier qu'on ne dépasse pas MAX_EPINGLES
+          if (liste.length >= MAX_EPINGLES) {
+            alert('Vous ne pouvez épingler que ' + MAX_EPINGLES + ' écrans maximum.');
+            return;
+          }
+          liste.push(b.dataset.page);
+        } else {
+          if (liste.length > 1) {
+            liste.splice(i, 1);
+          } else {
+            alert('Vous devez garder au moins un écran épinglé.');
+            return;
+          }
+        }
+        ecrireEpingles(liste);
+        b.classList.toggle('active', liste.indexOf(b.dataset.page) !== -1);
+        b.setAttribute('aria-pressed', liste.indexOf(b.dataset.page) !== -1);
+        majCompte();
+        appliquerEpingles(liste);
+      });
+    });
+
+    document.getElementById('tiroir-fermer').addEventListener('click', fermerTiroir);
+    document.getElementById('tiroir-reinit').addEventListener('click', function () {
+      try { localStorage.removeItem(CLE_EPINGLES); } catch (e) {}
+      fermerTiroir();
+      window.location.reload();
+    });
+
+    var champ = document.getElementById('tiroir-recherche');
+    champ.addEventListener('input', function () {
+      var q = champ.value.trim().toLowerCase();
+      boite.querySelectorAll('[data-groupe]').forEach(function (groupe) {
+        var visibles = 0;
+        groupe.querySelectorAll('.tiroir-ligne').forEach(function (l) {
+          var ok = !q || l.textContent.toLowerCase().indexOf(q) !== -1;
+          l.style.display = ok ? '' : 'none';
+          if (ok) visibles++;
+        });
+        groupe.style.display = visibles ? '' : 'none';
+      });
+    });
+    champ.focus();
+  }
+
+  function fermerTiroir() {
+    var voile = document.getElementById('voile-tiroir');
+    if (voile) voile.classList.remove('ouvert');
+    document.body.style.overflow = '';
+  }
+
+  function appliquerEpingles(epingles) {
+    if (!window.ArdoiseRail) return;
+    var courante = pageCourante();
+    var restants = 0;
+    window.ArdoiseRail.elements.forEach(function (e) {
+      var epingle = epingles.indexOf(e.page) !== -1;
+      e.li.style.display = (epingle || e.page === courante) ? '' : 'none';
+      e.li.dataset.epingle = epingle ? 'oui' : 'non';
+      if (!epingle) restants++;
+    });
+    var bouton = document.querySelector('.nav-tiroir');
+    if (bouton) {
+      var li = bouton.closest('li');
+      li.style.display = restants > 0 ? '' : 'none';
+      bouton.querySelector('.chevron').textContent = restants;
+    }
+  }
+
+
+  /* ------------------------------------------------------------------
+     8. Composants de densité
+     ------------------------------------------------------------------ */
+  var TEINTES_AVATAR = ['#4C5FD5', '#12B76A', '#C98A3E', '#7E56D4', '#0E9384', '#B23A2E', '#3C5A62'];
+
+  function teintePour(nom) {
+    var somme = 0;
+    var texte = String(nom || '?');
+    for (var i = 0; i < texte.length; i++) somme = (somme + texte.charCodeAt(i)) % 9973;
+    return TEINTES_AVATAR[somme % TEINTES_AVATAR.length];
+  }
+
+  function initialesDe(nom) {
+    return String(nom || '?').trim().split(/\s+/).slice(0, 2)
+      .map(function (m) { return (m[0] || '').toUpperCase(); }).join('') || '?';
+  }
+
+  function proteger(t) {
+    var d = document.createElement('div');
+    d.textContent = t == null ? '' : String(t);
+    return d.innerHTML;
+  }
+
+  function urlImage(v) {
+    return (typeof v === 'string' && /^https?:\/\//i.test(v.trim())) ? v.trim() : null;
+  }
+
+  function avatar(nom, photoUrl) {
+    var src = urlImage(photoUrl);
+    if (src) {
+      return '<img class="avatar" src="' + proteger(src) + '" alt="" loading="lazy" />';
+    }
+    return '<span class="avatar-initiales" style="background:' + teintePour(nom) + '" aria-hidden="true">'
+      + proteger(initialesDe(nom)) + '</span>';
+  }
+
+  function cellulePersonne(nom, sousTitre, photoUrl) {
+    return '<div class="cellule-personne">' + avatar(nom, photoUrl)
+      + '<div class="identite"><div class="nom-personne">' + proteger(nom) + '</div>'
+      + (sousTitre ? '<div class="sous-nom">' + proteger(sousTitre) + '</div>' : '')
+      + '</div></div>';
+  }
+
+  function pileAvatars(personnes, maximum) {
+    var max = maximum || 4;
+    var liste = (personnes || []).slice(0, max);
+    var reste = (personnes || []).length - liste.length;
+    return '<div class="pile-avatars">'
+      + liste.map(function (p) { return avatar(p.nom, p.photo_url); }).join('')
+      + (reste > 0 ? '<span class="reste">+' + reste + '</span>' : '')
+      + '</div>';
+  }
+
+  function badge(texte, ton) {
+    var tons = { succes: 1, alerte: 1, danger: 1, neutre: 1, info: 1 };
+    var retenu = tons[ton] ? ton : 'neutre';
+    return '<span class="badge badge-' + retenu + '">' + proteger(texte) + '</span>';
+  }
+
+  var PICTOGRAMMES = {
+    eleves: '<path d="M12 3 2 8l10 5 10-5z"/><path d="M6 10.5V16c0 1.7 2.7 3 6 3s6-1.3 6-3v-5.5"/>',
+    enseignants: '<circle cx="12" cy="8" r="3.2"/><path d="M5 20a7 7 0 0 1 14 0"/>',
+    classes: '<rect x="3" y="4" width="18" height="14" rx="2"/><path d="M7 20h10"/><path d="M7 9h7"/>',
+    argent: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7v10"/><path d="M14.5 9.5A2.5 2.5 0 0 0 12 8.5h-.5a2 2 0 0 0 0 4h1a2 2 0 0 1 0 4H12a2.5 2.5 0 0 1-2.5-1"/>',
+    presence: '<rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M8 2.5v4"/><path d="M16 2.5v4"/><path d="m9 13.5 2 2 4-4"/>',
+    alerte: '<path d="M12 3.5 2.5 20h19z"/><path d="M12 10v4"/><path d="M12 17h.01"/>',
+    reussite: '<path d="m4 13 5 5L20 7"/>',
+    temps: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/>'
+  };
+
+  function decorerCarte(selecteur, type, teinte) {
+    var carte = document.querySelector(selecteur);
+    if (!carte || !PICTOGRAMMES[type]) return;
+    if (carte.querySelector('.pictogramme')) return;
+    var span = document.createElement('span');
+    span.className = 'pictogramme pict-' + (teinte || 'bleu');
+    span.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + PICTOGRAMMES[type] + '</svg>';
+    carte.appendChild(span);
+  }
+
+  function decorerCartes(plan) {
+    (plan || []).forEach(function (p) { decorerCarte(p[0], p[1], p[2]); });
+  }
+
+  /* ------------------------------------------------------------------
+     Menu Orientation — visibilité affinée
+     ------------------------------------------------------------------ */
+  function affinerMenuOrientation() {
+    var liens = document.querySelectorAll('a[href="orientation.html"]');
+    if (liens.length === 0) return;
+
+    var jeton = null;
+    try {
+      jeton = localStorage.getItem('ardoise_access_token')
+           || sessionStorage.getItem('ardoise_access_token');
+    } catch (e) { return; }
+    if (!jeton) return;
+
+    var utilisateur = null;
+    try {
+      utilisateur = JSON.parse(
+        localStorage.getItem('ardoise_user') || sessionStorage.getItem('ardoise_user') || 'null'
+      );
+    } catch (e) {}
+    var roles = (utilisateur && utilisateur.roles) || [];
+
+    var concerne = roles.indexOf('titulaire') !== -1
+      && !roles.some(function (r) {
+        return ['directeur', 'prefet', 'secretaire', 'super_admin'].indexOf(r) !== -1;
+      });
+    if (!concerne) return;
+
+    var base = (typeof API_BASE_URL !== 'undefined' && API_BASE_URL) || window.API_BASE_URL || '';
+    fetch(base + '/orientation/acces', { headers: { Authorization: 'Bearer ' + jeton } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (!d || d.autorise !== false) return;
+        liens.forEach(function (lien) {
+          var li = lien.closest('li') || lien;
+          li.style.display = 'none';
+        });
+      })
+      .catch(function () { /* menu conservé */ });
+  }
+
+
+  /* ==================================================================
+     NAVIGATION CIBLÉE
+     ================================================================== */
+  var CIBLES = [
+    { param: 'eleve', libelle: 'élève', attributs: ['data-eleve-id', 'data-id'] },
+    { param: 'classe', libelle: 'classe', attributs: ['data-classe-id', 'data-id'] },
+    { param: 'cours', libelle: 'cours', attributs: ['data-cours-id', 'data-id'] }
+  ];
+
+  function installerFocus() {
+    var params = new URLSearchParams(window.location.search);
+    var cible = null;
+    for (var i = 0; i < CIBLES.length; i++) {
+      var valeur = params.get(CIBLES[i].param);
+      if (valeur) { cible = { def: CIBLES[i], id: valeur }; break; }
+    }
+    if (!cible) return;
+
+    var nom = params.get('nom') || '';
+    afficherBandeauFocus(cible, nom);
+
+    var trouve = false;
+    var observateur = new MutationObserver(function () {
+      if (trouve) return;
+      if (surlignerCible(cible)) {
+        trouve = true;
+        observateur.disconnect();
+      }
+    });
+    observateur.observe(document.body, { childList: true, subtree: true });
+
+    setTimeout(function () { observateur.disconnect(); }, 15000);
+    surlignerCible(cible);
+  }
+
+  function surlignerCible(cible) {
+    for (var i = 0; i < cible.def.attributs.length; i++) {
+      var attribut = cible.def.attributs[i];
+      var element = document.querySelector('[' + attribut + '="' + cible.id.replace(/"/g, '') + '"]');
+      if (!element) continue;
+      var ligne = element.closest('tr') || element.closest('li') || element;
+      ligne.classList.add('ard-ligne-ciblee');
+      try { ligne.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {}
+      return true;
+    }
+    return false;
+  }
+
+  function afficherBandeauFocus(cible, nom) {
+    if (document.getElementById('ard-bandeau-focus')) return;
+
+    var url = new URL(window.location.href);
+    url.searchParams.delete(cible.def.param);
+    url.searchParams.delete('nom');
+
+    var bandeau = document.createElement('div');
+    bandeau.id = 'ard-bandeau-focus';
+    bandeau.className = 'ard-bandeau-focus';
+    bandeau.innerHTML =
+      '<span>Vous consultez ' + (nom
+        ? '<strong>' + nom.replace(/[&<>"]/g, '') + '</strong>'
+        : 'un ' + cible.def.libelle + ' en particulier')
+      + '.</span> <a href="' + url.pathname + url.search + '">Voir tout</a>';
+
+    var contenu = document.querySelector('.contenu') || document.body;
+    var premier = contenu.querySelector('h1');
+    if (premier && premier.parentNode) {
+      premier.parentNode.insertBefore(bandeau, premier.nextSibling);
+    } else {
+      contenu.insertBefore(bandeau, contenu.firstChild);
+    }
+  }
+
+
+  /* ==================================================================
+     TABLEAUX EN CARTES SUR TÉLÉPHONE
+     ================================================================== */
+  var LARGEUR_CARTES = 700;
+
+  function etiqueterCellules(tableau) {
+    var entetes = tableau.querySelectorAll('thead th');
+    if (entetes.length === 0) return;
+
+    var libelles = [];
+    for (var i = 0; i < entetes.length; i++) {
+      libelles.push((entetes[i].textContent || '').trim());
+    }
+
+    var lignes = tableau.querySelectorAll('tbody tr');
+    for (var l = 0; l < lignes.length; l++) {
+      var cellules = lignes[l].children;
+      if (cellules.length === 1 && cellules[0].hasAttribute('colspan')) {
+        lignes[l].classList.add('ard-ligne-pleine');
+        continue;
+      }
+      for (var c = 0; c < cellules.length && c < libelles.length; c++) {
+        if (libelles[c]) cellules[c].setAttribute('data-libelle', libelles[c]);
+        if (!(cellules[c].textContent || '').trim() && !cellules[c].children.length) {
+          cellules[c].classList.add('ard-cellule-vide');
+        }
+      }
+    }
+  }
+
+  function activerTableauxCartes() {
+    if (window.innerWidth > LARGEUR_CARTES) return;
+    var tableaux = document.querySelectorAll('.conteneur-tableau table');
+    for (var i = 0; i < tableaux.length; i++) {
+      try { etiqueterCellules(tableaux[i]); } catch (e) { /* tableau laissé tel quel */ }
+    }
+  }
+
+  function surveillerTableaux() {
+    activerTableauxCartes();
+    var enAttente = false;
+    var observateur = new MutationObserver(function () {
+      if (enAttente) return;
+      enAttente = true;
+      requestAnimationFrame(function () {
+        enAttente = false;
+        activerTableauxCartes();
+      });
+    });
+    var conteneurs = document.querySelectorAll('.conteneur-tableau');
+    for (var i = 0; i < conteneurs.length; i++) {
+      observateur.observe(conteneurs[i], { childList: true, subtree: true });
+    }
+  }
+
+
+  /* ==================================================================
+     DROITS D'ACCÈS AUX PAGES — source unique
+     ================================================================== */
+  var PERMISSIONS = {
+    'dashboard-directeur.html': ['directeur', 'prefet'],
+    'annee-scolaire.html': ['directeur', 'prefet'],
+    'espace-secretaire.html': ['secretaire'],
+    'espace-professeur.html': ['professeur'],
+    'espace-titulaire.html': ['titulaire'],
+    'cours-classe-titulaire.html': ['titulaire'],
+    'eleves.html': ['directeur', 'prefet', 'secretaire'],
+    'inscriptions.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire'],
+    'orientation.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
+    'frais-scolaires.html': ['directeur', 'comptable', 'secretaire'],
+    'comptabilite.html': ['directeur', 'comptable'],
+    'utilisateurs.html': ['directeur', 'prefet', 'secretaire'],
+    'classes.html': ['directeur', 'prefet', 'secretaire'],
+    'cours.html': ['directeur', 'prefet', 'secretaire'],
+    'presences.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
+    'emploi-du-temps.html': ['directeur', 'prefet', 'secretaire', 'titulaire', 'professeur'],
+    'discipline.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
+    'site-public.html': ['directeur', 'prefet', 'secretaire'],
+    'notes.html': ['directeur', 'prefet', 'professeur'],
+    'bulletins.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
+    'bulletin-annuel.html': ['directeur', 'prefet'],
+    'repechage.html': ['directeur', 'prefet', 'professeur', 'titulaire'],
+    'generateur-modeles.html': ['directeur'],
+    'calendrier.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire'],
+    'rapports.html': ['directeur', 'prefet', 'secretaire', 'comptable'],
+    'archives.html': ['directeur', 'prefet', 'secretaire'],
+    'journal.html': ['directeur', 'prefet'],
+    'messages.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire', 'comptable'],
+    'parametres.html': ['directeur']
+  };
+
+  var ORDRE_REPLI = ['dashboard-directeur.html', 'espace-secretaire.html',
+                     'espace-professeur.html', 'espace-titulaire.html',
+                     'frais-scolaires.html', 'eleves.html'];
+
+  function rolesUtilisateur() {
+    var brut = null;
+    try {
+      brut = localStorage.getItem('ardoise_user') || sessionStorage.getItem('ardoise_user');
+    } catch (e) { return []; }
+    try {
+      var u = JSON.parse(brut || 'null');
+      return (u && u.roles) || [];
+    } catch (e) { return []; }
+  }
+
+  function filtrerAcces(pageActuelle) {
+    var roles = rolesUtilisateur();
+    var estSuperAdmin = roles.indexOf('super_admin') !== -1;
+
+    var liens = document.querySelectorAll('.nav-item[href]');
+    for (var i = 0; i < liens.length; i++) {
+      var page = liens[i].getAttribute('href');
+      var autorises = PERMISSIONS[page];
+      if (!autorises || estSuperAdmin) continue;
+      var permis = roles.some(function (r) { return autorises.indexOf(r) !== -1; });
+      if (!permis) {
+        var li = liens[i].closest('li');
+        if (li) li.style.display = 'none';
+      }
+    }
+
+    var courante = pageActuelle
+      || (window.location.pathname.split('/').pop() || '').toLowerCase();
+    var rolesPage = PERMISSIONS[courante];
+    if (rolesPage && !estSuperAdmin
+        && !roles.some(function (r) { return rolesPage.indexOf(r) !== -1; })) {
+      var repli = ORDRE_REPLI.find(function (p) {
+        var r = PERMISSIONS[p];
+        return !r || roles.some(function (role) { return r.indexOf(role) !== -1; });
+      });
+      if (repli && repli !== courante) {
+        window.location.href = repli;
+        return false;
+      }
+    }
+
+    var liste = document.querySelector('.nav-liste');
+    if (liste) liste.style.visibility = 'visible';
+    return true;
+  }
+
+  function demarrer() {
+    try {
+      filtrerAcces();
+    } catch (e) {
+      var liste = document.querySelector('.nav-liste');
+      if (liste) liste.style.visibility = 'visible';
+    }
+
+    try { injecterIcones(); } catch (e) {}
+    try { installerMenuMobile(); } catch (e) {}
+    setTimeout(function () {
+      try { affinerMenuOrientation(); } catch (e) {}
+      try { installerFocus(); } catch (e) {}
+      try { surveillerTableaux(); } catch (e) {}
+      try { reduireRail(); } catch (e) {}
+      try { construireLanceur(); } catch (e) {}
+    }, 60);
+    try { surveillerValeurs(); } catch (e) {}
+    if (!animationsReduites) {
+      try { poserSquelettes(); } catch (e) {}
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', demarrer);
+  } else {
+    demarrer();
+  }
+
+  document.addEventListener('ardoise:theme-change', function () {
+    try { injecterIcones(); } catch (e) {}
+  });
+})();
+
+/* ==========================================================================
+   MODE ÉDITION DES FORMULAIRES
+   ========================================================================== */
+(function () {
+  'use strict';
+
+  function champsDuFormulaire(formulaire, ids) {
+    if (ids && ids.length) {
+      return ids.map(function (id) { return document.getElementById(id); }).filter(Boolean);
+    }
+    return Array.prototype.filter.call(
+      formulaire.querySelectorAll('input, select, textarea'),
+      function (el) { return el.type !== 'submit' && el.type !== 'button'; }
+    );
+  }
+
+  function installer(options) {
+    var formulaire = document.getElementById(options.formulaire);
+    var boutonEnregistrer = document.getElementById(options.boutonEnregistrer);
+    if (!formulaire || !boutonEnregistrer) return null;
+
+    var champs = champsDuFormulaire(formulaire, options.champs);
+
+    var boutonModifier = document.createElement('button');
+    boutonModifier.type = 'button';
+    boutonModifier.className = boutonEnregistrer.className;
+    boutonModifier.textContent = options.libelleModifier || 'Modifier';
+
+    var boutonAnnuler = document.createElement('button');
+    boutonAnnuler.type = 'button';
+    boutonAnnuler.className = 'bouton bouton-secondaire';
+    boutonAnnuler.textContent = 'Annuler';
+    boutonAnnuler.style.display = 'none';
+
+    boutonEnregistrer.parentNode.insertBefore(boutonModifier, boutonEnregistrer);
+    boutonEnregistrer.parentNode.insertBefore(boutonAnnuler, boutonEnregistrer);
+
+    var valeurs = {};
+    function memoriser() {
+      champs.forEach(function (c, i) {
+        valeurs[i] = (c.type === 'checkbox' || c.type === 'radio') ? c.checked : c.value;
+      });
+    }
+    function restaurer() {
+      champs.forEach(function (c, i) {
+        if (c.type === 'checkbox' || c.type === 'radio') c.checked = valeurs[i];
+        else c.value = valeurs[i];
+      });
+    }
+
+    function verrouiller() {
+      champs.forEach(function (c) { c.disabled = true; });
+      boutonModifier.style.display = '';
+      boutonEnregistrer.style.display = 'none';
+      boutonAnnuler.style.display = 'none';
+    }
+
+    function deverrouiller() {
+      memoriser();
+      champs.forEach(function (c) { c.disabled = false; });
+      boutonModifier.style.display = 'none';
+      boutonEnregistrer.style.display = '';
+      boutonAnnuler.style.display = '';
+      if (champs[0]) champs[0].focus();
+    }
+
+    boutonModifier.addEventListener('click', deverrouiller);
+    boutonAnnuler.addEventListener('click', function () {
+      restaurer();
+      verrouiller();
+    });
+
+    verrouiller();
+    return { verrouiller: verrouiller, deverrouiller: deverrouiller, memoriser: memoriser };
+  }
+
+  window.ArdoiseEdition = { installer: installer };
+  window.ArdoiseAcces = { filtrer: filtrerAcces, permissions: PERMISSIONS };
+})();
+
+/* ==========================================================================
+   BOÎTES DE DIALOGUE STYLÉES
+   ========================================================================== */
+(function () {
+  'use strict';
+
+  function estDangereux(message) {
+    return /supprim|irr[ée]versible|retirer d[ée]finitivement|écarter/i.test(message);
+  }
+
+  function construireBoite(contenuInterne, classeBoite) {
+    const voile = document.createElement('div');
+    voile.className = 'voile-confirmation';
+    voile.innerHTML = `<div class="boite-confirmation${classeBoite ? ' ' + classeBoite : ''}">${contenuInterne}</div>`;
+    document.body.appendChild(voile);
+    requestAnimationFrame(() => requestAnimationFrame(() => voile.classList.add('visible')));
+    return voile;
+  }
+
+  function detruireBoite(voile) {
+    voile.classList.remove('visible');
+    setTimeout(() => voile.remove(), 220);
+  }
+
+  function confirmer(message, options) {
+    options = options || {};
+    const danger = options.danger !== undefined ? options.danger : estDangereux(message);
+    const libelleValider = options.libelleValider || (danger ? 'Supprimer' : 'Confirmer');
+    const libelleAnnuler = options.libelleAnnuler || 'Annuler';
+
+    return new Promise((resolve) => {
+      const voile = construireBoite(
+        `<h3></h3><p></p>
+         <div class="actions">
+           <button type="button" class="annuler"></button>
+           <button type="button" class="valider"></button>
+         </div>`,
+        danger ? 'danger' : ''
+      );
+      voile.querySelector('h3').textContent = danger ? 'Confirmer la suppression' : 'Confirmation';
+      voile.querySelector('p').textContent = message;
+      voile.querySelector('.annuler').textContent = libelleAnnuler;
+      voile.querySelector('.valider').textContent = libelleValider;
+
+      function conclure(resultat) {
+        document.removeEventListener('keydown', surEchap);
+        detruireBoite(voile);
+        resolve(resultat);
+      }
+      function surEchap(e) { if (e.key === 'Escape') conclure(false); }
+
+      voile.querySelector('.annuler').addEventListener('click', () => conclure(false));
+      voile.querySelector('.valider').addEventListener('click', () => conclure(true));
+      voile.addEventListener('click', (e) => { if (e.target === voile) conclure(false); });
+      document.addEventListener('keydown', surEchap);
+      voile.querySelector('.valider').focus();
+    });
+  }
+
+  function demander(message, valeurDefaut) {
+    return new Promise((resolve) => {
+      const voile = construireBoite(
+        `<h3></h3><p></p>
+         <input type="text" class="champ-demande" style="width:100%; box-sizing:border-box; margin-bottom:16px;
+                padding:9px 11px; border:1.5px solid var(--bordure,#ddd); border-radius:var(--r-bouton,8px);
+                font-family:inherit; font-size:0.9rem;" />
+         <div class="actions">
+           <button type="button" class="annuler">Annuler</button>
+           <button type="button" class="valider">Valider</button>
+         </div>`
+      );
+      voile.querySelector('h3').textContent = 'Une information';
+      voile.querySelector('p').textContent = message;
+      const champ = voile.querySelector('.champ-demande');
+      champ.value = valeurDefaut || '';
+
+      function conclure(resultat) {
+        document.removeEventListener('keydown', surTouche);
+        detruireBoite(voile);
+        resolve(resultat);
+      }
+      function surTouche(e) {
+        if (e.key === 'Escape') conclure(null);
+        if (e.key === 'Enter' && document.activeElement === champ) conclure(champ.value);
+      }
+
+      voile.querySelector('.annuler').addEventListener('click', () => conclure(null));
+      voile.querySelector('.valider').addEventListener('click', () => conclure(champ.value));
+      voile.addEventListener('click', (e) => { if (e.target === voile) conclure(null); });
+      document.addEventListener('keydown', surTouche);
+      setTimeout(() => champ.focus(), 50);
+    });
+  }
+
+  window.ArdoiseUI = window.ArdoiseUI || {};
+  window.ArdoiseUI.confirmer = confirmer;
+  window.ArdoiseUI.demander = demander;
+})();

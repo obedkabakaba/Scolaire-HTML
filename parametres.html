@@ -138,6 +138,7 @@
 <link rel="stylesheet" href="theme.css" />
 <link rel="stylesheet" href="ui.css" />
 
+  <script src="acces-presences.js"></script>
 </head>
 <body>
 
@@ -361,9 +362,12 @@
             <strong>Titulaire</strong> convient au primaire, où un maître unique tient sa classe.
             <strong>Professeur</strong> convient au secondaire : le premier qui fait l'appel le verrouille,
             un collègue ne peut ensuite que le corriger en justifiant (retard constaté, erreur de saisie).
-            <strong>Chargé</strong> suppose de créer un utilisateur avec ce rôle.
-            Le directeur et le préfet gardent l'accès dans tous les cas.
+            <strong>Chargé</strong> confie l'appel de toutes les salles à une seule
+            personne : le menu « Présences » est alors retiré aux titulaires, aux
+            professeurs et à la direction, et n'est laissé qu'au chargé des présences
+            et au directeur de discipline. Le rôle se donne dans l'écran Utilisateurs.
           </p>
+          <p id="info-charge-presences" style="display:none; font-size:0.78rem; margin:8px 0 0; padding:9px 11px; border-radius: var(--r-bouton); line-height:1.5;"></p>
         </div>
 
         <div class="champ" style="display:flex; align-items:center; gap:10px;">
@@ -510,6 +514,8 @@
     document.getElementById('champ-ville').value = ecole.ville || '';
     document.getElementById('champ-commune').value = ecole.commune || '';
     document.getElementById('champ-mode-presences').value = ecole.mode_presences || 'titulaire';
+    if (window.ArdoisePresences) ArdoisePresences.definirMode(ecole.mode_presences || 'titulaire');
+    verifierChargePresences();
     document.getElementById('champ-province').value = ecole.province || '';
     document.getElementById('champ-email').value = ecole.email || '';
     document.getElementById('champ-telephone').value = ecole.telephone || '';
@@ -1027,6 +1033,44 @@
         `).join('');
   }
 
+  /* ---------- Contrôle de cohérence du mode « chargé des présences » ----------
+     Activer le mode sans que personne ne porte le rôle retirerait le menu à
+     tout le monde sans le donner à quiconque : plus aucun appel ne pourrait
+     être fait dans l'école. L'écran le dit AVANT l'enregistrement plutôt que
+     de laisser le directeur le découvrir par les plaintes des titulaires. */
+  async function verifierChargePresences() {
+    const zone = document.getElementById('info-charge-presences');
+    if (!zone) return;
+    if (document.getElementById('champ-mode-presences').value !== 'charge') {
+      zone.style.display = 'none';
+      return;
+    }
+
+    zone.style.display = 'block';
+    zone.style.background = 'var(--craie-2)';
+    zone.style.color = 'var(--texte-att)';
+    zone.textContent = 'Vérification du personnel…';
+
+    const r = await appelApi('/utilisateurs?role=charge_presences');
+    if (!r || !r.ok) { zone.style.display = 'none'; return; }
+    const liste = await r.json();
+    const actifs = (Array.isArray(liste) ? liste : []).filter(u => u.statut !== 'inactif');
+
+    if (actifs.length === 0) {
+      zone.style.background = 'color-mix(in srgb, var(--rouge) 12%, transparent)';
+      zone.style.color = 'var(--rouge)';
+      zone.innerHTML = '<strong>Personne ne porte encore ce rôle.</strong> Tant qu\'aucun '
+        + 'utilisateur n\'est « Chargé des présences », plus aucun appel ne pourra être '
+        + 'fait dans l\'école. Créez le compte dans Utilisateurs avant d\'enregistrer.';
+    } else {
+      const noms = actifs.map(u => [u.prenom, u.nom].filter(Boolean).join(' ')).join(', ');
+      zone.style.background = 'color-mix(in srgb, var(--vert-ok) 12%, transparent)';
+      zone.style.color = 'var(--vert-ok)';
+      zone.textContent = 'L\'appel de toutes les salles reviendra à : ' + noms + '.';
+    }
+  }
+  document.getElementById('champ-mode-presences').addEventListener('change', verifierChargePresences);
+
   document.getElementById('formulaire-pedagogique').addEventListener('submit', async (evt) => {
     evt.preventDefault();
     const autoriser = document.getElementById('champ-autoriser-bulletins-titulaires').checked;
@@ -1050,6 +1094,12 @@
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ utilisateur_ids: idsAutorises })
       });
+    }
+    // Le menu « Présences » de CETTE page se réajuste sans attendre le
+    // rafraîchissement d'arrière-plan : le directeur voit tout de suite l'effet
+    // de son choix, ce qui est la seule preuve visible que le réglage a porté.
+    if (window.ArdoisePresences) {
+      ArdoisePresences.definirMode(document.getElementById('champ-mode-presences').value);
     }
     afficherMessage('Paramètres pédagogiques mis à jour.', 'succes');
     editionPedagogique && editionPedagogique.verrouiller();
@@ -1110,23 +1160,34 @@
       'utilisateurs.html': ['directeur', 'prefet', 'secretaire'],
       'classes.html': ['directeur', 'prefet', 'secretaire'],
       'cours.html': ['directeur', 'prefet', 'secretaire'],
-      'presences.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
+      // Le mode choisi par le directeur (Paramètres > « Qui fait l'appel ? »)
+      // décide qui voit cet écran : en mode « chargé des présences », le menu
+      // quitte tout le monde pour n'aller qu'au chargé et au directeur de
+      // discipline. La liste vit dans acces-presences.js, un seul endroit pour
+      // les 30 pages. Le repli couvre le cas où ce fichier n'a pas pu être
+      // chargé : la page reste utilisable avec l'ancienne règle.
+      'presences.html': (window.ArdoisePresences
+        ? window.ArdoisePresences.rolesAutorises()
+        : ['directeur', 'prefet', 'secretaire', 'titulaire']),
       'emploi-du-temps.html': ['directeur', 'prefet', 'secretaire', 'titulaire', 'professeur'],
-      'discipline.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
+      'discipline.html': ['directeur', 'prefet', 'secretaire', 'titulaire', 'directeur_discipline'],
       'site-public.html': ['directeur', 'prefet', 'secretaire'],
       'notes.html': ['directeur', 'prefet', 'professeur'],
       'bulletins.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
       'bulletin-annuel.html': ['directeur', 'prefet'],
       'repechage.html': ['directeur', 'prefet', 'professeur', 'titulaire'],
       'generateur-modeles.html': ['directeur'],
-      'calendrier.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire'],
+      'calendrier.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire', 'charge_presences', 'directeur_discipline'],
       'rapports.html': ['directeur', 'prefet', 'secretaire', 'comptable'],
       'archives.html': ['directeur', 'prefet', 'secretaire'],
       'journal.html': ['directeur', 'prefet'],
-      'messages.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire', 'comptable'],
+      'messages.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire', 'comptable', 'charge_presences', 'directeur_discipline'],
       'parametres.html': ['directeur']
     };
-    const ordrePriorite = ['dashboard-directeur.html', 'espace-secretaire.html', 'espace-professeur.html', 'espace-titulaire.html', 'frais-scolaires.html', 'eleves.html'];
+    // Les deux derniers écrans servent de page d'accueil aux rôles qui n'ont ni
+    // tableau de bord ni espace dédié : chargé des présences, directeur de
+    // discipline. Sans eux, ces comptes restaient bloqués sur une page interdite.
+    const ordrePriorite = ['dashboard-directeur.html', 'espace-secretaire.html', 'espace-professeur.html', 'espace-titulaire.html', 'frais-scolaires.html', 'eleves.html', 'presences.html', 'discipline.html'];
 
     let utilisateur = null;
     try { utilisateur = JSON.parse(obtenirDuStockage('ardoise_user') || 'null'); } catch (e) {}

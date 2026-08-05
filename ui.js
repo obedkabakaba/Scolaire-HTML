@@ -600,7 +600,11 @@
     secretaire: ['espace-secretaire.html', 'eleves.html', 'inscriptions.html', 'frais-scolaires.html'],
     professeur: ['espace-professeur.html', 'notes.html', 'presences.html', 'emploi-du-temps.html'],
     titulaire: ['espace-titulaire.html', 'notes.html', 'presences.html', 'bulletins.html'],
-    comptable: ['frais-scolaires.html', 'rapports.html', 'messages.html', 'mon-profil.html']
+    comptable: ['frais-scolaires.html', 'rapports.html', 'messages.html', 'mon-profil.html'],
+    // Deux métiers tenus par un seul écran : l'épingler d'office évite de
+    // laisser ces comptes devant un rail qui ne montre rien de leur travail.
+    charge_presences: ['presences.html', 'calendrier.html', 'messages.html', 'mon-profil.html'],
+    directeur_discipline: ['discipline.html', 'presences.html', 'messages.html', 'mon-profil.html']
   };
 
   function rolesCourants() {

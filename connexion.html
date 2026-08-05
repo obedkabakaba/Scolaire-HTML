@@ -375,6 +375,11 @@
     if (roles.includes('comptable')) return 'frais-scolaires.html';
     if (roles.includes('professeur')) return 'espace-professeur.html';
     if (roles.includes('titulaire')) return 'espace-titulaire.html';
+    // Ces deux rôles n'ont pas d'espace à eux : leur métier tient dans un
+    // seul écran. Sans ces deux lignes ils arrivaient sur une page vide et
+    // devaient trouver leur chemin dans le menu.
+    if (roles.includes('charge_presences')) return 'presences.html';
+    if (roles.includes('directeur_discipline')) return 'discipline.html';
     return null;
   }
 

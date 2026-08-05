@@ -123,6 +123,7 @@
 <link rel="stylesheet" href="theme.css" />
 <link rel="stylesheet" href="ui.css" />
 
+  <script src="acces-presences.js"></script>
 </head>
 <body>
 
@@ -803,23 +804,34 @@
       'utilisateurs.html': ['directeur', 'prefet', 'secretaire'],
       'classes.html': ['directeur', 'prefet', 'secretaire'],
       'cours.html': ['directeur', 'prefet', 'secretaire'],
-      'presences.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
+      // Le mode choisi par le directeur (Paramètres > « Qui fait l'appel ? »)
+      // décide qui voit cet écran : en mode « chargé des présences », le menu
+      // quitte tout le monde pour n'aller qu'au chargé et au directeur de
+      // discipline. La liste vit dans acces-presences.js, un seul endroit pour
+      // les 30 pages. Le repli couvre le cas où ce fichier n'a pas pu être
+      // chargé : la page reste utilisable avec l'ancienne règle.
+      'presences.html': (window.ArdoisePresences
+        ? window.ArdoisePresences.rolesAutorises()
+        : ['directeur', 'prefet', 'secretaire', 'titulaire']),
       'emploi-du-temps.html': ['directeur', 'prefet', 'secretaire', 'titulaire', 'professeur'],
-      'discipline.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
+      'discipline.html': ['directeur', 'prefet', 'secretaire', 'titulaire', 'directeur_discipline'],
       'site-public.html': ['directeur', 'prefet', 'secretaire'],
       'notes.html': ['directeur', 'prefet', 'professeur'],
       'bulletins.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
       'bulletin-annuel.html': ['directeur', 'prefet'],
       'repechage.html': ['directeur', 'prefet', 'professeur', 'titulaire'],
       'generateur-modeles.html': ['directeur'],
-      'calendrier.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire'],
+      'calendrier.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire', 'charge_presences', 'directeur_discipline'],
       'rapports.html': ['directeur', 'prefet', 'secretaire', 'comptable'],
       'archives.html': ['directeur', 'prefet', 'secretaire'],
       'journal.html': ['directeur', 'prefet'],
-      'messages.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire', 'comptable'],
+      'messages.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire', 'comptable', 'charge_presences', 'directeur_discipline'],
       'parametres.html': ['directeur']
     };
-    const ordrePriorite = ['dashboard-directeur.html', 'espace-secretaire.html', 'espace-professeur.html', 'espace-titulaire.html', 'frais-scolaires.html', 'eleves.html'];
+    // Les deux derniers écrans servent de page d'accueil aux rôles qui n'ont ni
+    // tableau de bord ni espace dédié : chargé des présences, directeur de
+    // discipline. Sans eux, ces comptes restaient bloqués sur une page interdite.
+    const ordrePriorite = ['dashboard-directeur.html', 'espace-secretaire.html', 'espace-professeur.html', 'espace-titulaire.html', 'frais-scolaires.html', 'eleves.html', 'presences.html', 'discipline.html'];
 
     let utilisateur = null;
     try { utilisateur = JSON.parse(obtenirDuStockage('ardoise_user') || 'null'); } catch (e) {}

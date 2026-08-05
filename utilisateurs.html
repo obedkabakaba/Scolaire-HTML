@@ -111,6 +111,7 @@
 <link rel="stylesheet" href="theme.css" />
 <link rel="stylesheet" href="ui.css" />
 
+  <script src="acces-presences.js"></script>
 </head>
 <body>
 
@@ -177,6 +178,7 @@
         <option value="professeur">Professeur</option>
         <option value="titulaire">Titulaire</option>
         <option value="comptable">Comptable</option>
+        <option value="charge_presences">Chargé des présences</option>
         <option value="directeur_discipline">Directeur de discipline</option>
       </select>
     </div>
@@ -220,8 +222,20 @@
                impossible. Un compte portant ce rôle n'avait aucun moyen d'être
                créé, et le module Discipline restait entièrement chez le
                directeur, quoi qu'ait décidé l'école. -->
+          <!-- Le chargé des présences fait l'appel de TOUTES les salles lorsque le
+               directeur choisit ce mode dans Paramètres. Le rôle existait dans la
+               base depuis la migration 008 et le serveur le reconnaissait déjà,
+               mais aucun écran ne permettait de le donner à quelqu'un : le mode
+               « chargé » était donc impossible à mettre en service. -->
+          <label class="case-role"><input type="checkbox" value="charge_presences" /> Chargé des présences</label>
           <label class="case-role"><input type="checkbox" value="directeur_discipline" /> Directeur de discipline</label>
         </div>
+        <p id="aide-charge-presences" style="display:none; font-size:0.78rem; color:var(--texte-att); margin:8px 0 0; line-height:1.5;">
+          Ce rôle ne prend effet que si <strong>Paramètres &gt; Qui fait l'appel ?</strong>
+          est réglé sur « Un chargé des présences pour toute l'école ». Le menu
+          <strong>Présences</strong> est alors retiré aux autres rôles et n'est laissé
+          qu'à cette personne et au directeur de discipline.
+        </p>
       </div>
       <div class="champ" id="champ-statut-conteneur" style="display:none;">
         <label for="champ-statut">Statut</label>
@@ -243,7 +257,8 @@
 
   const LIBELLES_ROLES = {
     professeur: 'Professeur', titulaire: 'Titulaire', secretaire: 'Secrétaire',
-    prefet: 'Préfet', comptable: 'Comptable', directeur: 'Directeur', super_admin: 'Super Admin', directeur_discipline: 'Directeur de discipline'
+    prefet: 'Préfet', comptable: 'Comptable', directeur: 'Directeur', super_admin: 'Super Admin',
+    charge_presences: 'Chargé des présences', directeur_discipline: 'Directeur de discipline'
   };
 
 
@@ -363,6 +378,7 @@
     document.querySelectorAll('.case-role input').forEach((c) => {
       c.checked = utilisateur ? (utilisateur.roles || []).includes(c.value) : false;
     });
+    majAideChargePresences();
 
     document.getElementById('champ-statut-conteneur').style.display = utilisateur ? 'block' : 'none';
     if (utilisateur) document.getElementById('champ-statut').value = utilisateur.statut || 'actif';
@@ -468,8 +484,18 @@
   // Professeur + Titulaire, et Préfet + Directeur.
   const PARTENAIRE_AUTORISE = { professeur: 'titulaire', titulaire: 'professeur', prefet: 'directeur', directeur: 'prefet' };
 
+  // L'aide du chargé des présences n'apparaît qu'au moment où le rôle est
+  // envisagé : le réglage à faire ensuite dans Paramètres est indispensable,
+  // et rien d'autre dans l'écran ne le laissait deviner.
+  function majAideChargePresences() {
+    const coche = document.querySelector('.case-role input[value="charge_presences"]');
+    const aide = document.getElementById('aide-charge-presences');
+    if (aide) aide.style.display = coche && coche.checked ? 'block' : 'none';
+  }
+
   document.querySelectorAll('.case-role input').forEach((case_) => {
     case_.addEventListener('change', () => {
+      majAideChargePresences();
       if (!case_.checked) return; // décocher ne pose jamais de problème
 
       const partenaire = PARTENAIRE_AUTORISE[case_.value];
@@ -500,23 +526,34 @@
       'utilisateurs.html': ['directeur', 'prefet', 'secretaire'],
       'classes.html': ['directeur', 'prefet', 'secretaire'],
       'cours.html': ['directeur', 'prefet', 'secretaire'],
-      'presences.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
+      // Le mode choisi par le directeur (Paramètres > « Qui fait l'appel ? »)
+      // décide qui voit cet écran : en mode « chargé des présences », le menu
+      // quitte tout le monde pour n'aller qu'au chargé et au directeur de
+      // discipline. La liste vit dans acces-presences.js, un seul endroit pour
+      // les 30 pages. Le repli couvre le cas où ce fichier n'a pas pu être
+      // chargé : la page reste utilisable avec l'ancienne règle.
+      'presences.html': (window.ArdoisePresences
+        ? window.ArdoisePresences.rolesAutorises()
+        : ['directeur', 'prefet', 'secretaire', 'titulaire']),
       'emploi-du-temps.html': ['directeur', 'prefet', 'secretaire', 'titulaire', 'professeur'],
-      'discipline.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
+      'discipline.html': ['directeur', 'prefet', 'secretaire', 'titulaire', 'directeur_discipline'],
       'site-public.html': ['directeur', 'prefet', 'secretaire'],
       'notes.html': ['directeur', 'prefet', 'professeur'],
       'bulletins.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
       'bulletin-annuel.html': ['directeur', 'prefet'],
       'repechage.html': ['directeur', 'prefet', 'professeur', 'titulaire'],
       'generateur-modeles.html': ['directeur'],
-      'calendrier.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire'],
+      'calendrier.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire', 'charge_presences', 'directeur_discipline'],
       'rapports.html': ['directeur', 'prefet', 'secretaire', 'comptable'],
       'archives.html': ['directeur', 'prefet', 'secretaire'],
       'journal.html': ['directeur', 'prefet'],
-      'messages.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire', 'comptable'],
+      'messages.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire', 'comptable', 'charge_presences', 'directeur_discipline'],
       'parametres.html': ['directeur']
     };
-    const ordrePriorite = ['dashboard-directeur.html', 'espace-secretaire.html', 'espace-professeur.html', 'espace-titulaire.html', 'frais-scolaires.html', 'eleves.html'];
+    // Les deux derniers écrans servent de page d'accueil aux rôles qui n'ont ni
+    // tableau de bord ni espace dédié : chargé des présences, directeur de
+    // discipline. Sans eux, ces comptes restaient bloqués sur une page interdite.
+    const ordrePriorite = ['dashboard-directeur.html', 'espace-secretaire.html', 'espace-professeur.html', 'espace-titulaire.html', 'frais-scolaires.html', 'eleves.html', 'presences.html', 'discipline.html'];
 
     let utilisateur = null;
     try { utilisateur = JSON.parse(obtenirDuStockage('ardoise_user') || 'null'); } catch (e) {}

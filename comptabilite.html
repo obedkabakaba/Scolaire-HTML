@@ -410,7 +410,7 @@
         <h2>Contrats</h2>
         <div class="conteneur-tableau">
           <table>
-            <thead><tr><th>Personne</th><th>Poste</th><th>Salaire</th><th>Depuis</th><th>Statut</th><th></th></tr></thead>
+            <thead><tr><th>Personne</th><th>Poste</th><th>Salaire</th><th>Depuis</th><th>Statut</th><th colspan="2">Actions</th></tr></thead>
             <tbody id="corps-contrats"><tr><td colspan="6" class="etat-vide-tableau">Chargement…</td></tr></tbody>
           </table>
         </div>
@@ -449,7 +449,79 @@
         </div>
       </div>
     </div>
-  </main>
+  
+<!-- ====== Modal : modifier un contrat ====== -->
+<div class="voile" id="voile-modifier-contrat">
+  <div class="modale">
+    <h2>Modifier le contrat</h2>
+    <input type="hidden" id="modifier-contrat-id" />
+    <div class="champ">
+      <label for="modifier-contrat-poste">Poste</label>
+      <input type="text" id="modifier-contrat-poste" maxlength="120" />
+    </div>
+    <div class="champ">
+      <label for="modifier-contrat-salaire">Salaire de base</label>
+      <input type="number" id="modifier-contrat-salaire" min="0" step="0.01" />
+    </div>
+    <div class="champ">
+      <label for="modifier-contrat-devise">Devise</label>
+      <select id="modifier-contrat-devise">
+        <option value="FC">FC</option>
+        <option value="USD">USD</option>
+      </select>
+    </div>
+    <p class="aide">Modifier le poste ou le salaire met uniquement à jour ce contrat. Les bulletins déjà émis <strong>ne sont pas</strong> recalculés.</p>
+    <div class="actions-modale">
+      <button type="button" class="bouton bouton-secondaire" id="annuler-modifier-contrat">Annuler</button>
+      <button type="button" class="bouton bouton-principal" id="confirmer-modifier-contrat">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== Modal : modifier un mouvement ====== -->
+<div class="voile" id="voile-modifier-mouvement">
+  <div class="modale">
+    <h2>Modifier le mouvement</h2>
+    <input type="hidden" id="modifier-mouvement-id" />
+    <div class="champ">
+      <label for="modifier-mouvement-libelle">Libellé</label>
+      <input type="text" id="modifier-mouvement-libelle" maxlength="200" />
+    </div>
+    <div class="champ">
+      <label for="modifier-mouvement-beneficiaire">Bénéficiaire</label>
+      <input type="text" id="modifier-mouvement-beneficiaire" maxlength="120" />
+    </div>
+    <div class="champ">
+      <label for="modifier-mouvement-date">Date</label>
+      <input type="date" id="modifier-mouvement-date" />
+    </div>
+    <div class="champ">
+      <label for="modifier-mouvement-categorie">Catégorie</label>
+      <select id="modifier-mouvement-categorie"></select>
+    </div>
+    <div class="actions-modale">
+      <button type="button" class="bouton bouton-secondaire" id="annuler-modifier-mouvement">Annuler</button>
+      <button type="button" class="bouton bouton-principal" id="confirmer-modifier-mouvement">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== Modal : renommer une catégorie ====== -->
+<div class="voile" id="voile-renommer-categorie">
+  <div class="modale">
+    <h2>Renommer la catégorie</h2>
+    <input type="hidden" id="renommer-categorie-id" />
+    <div class="champ">
+      <label for="renommer-categorie-nom">Nouveau nom</label>
+      <input type="text" id="renommer-categorie-nom" maxlength="80" />
+    </div>
+    <div class="actions-modale">
+      <button type="button" class="bouton bouton-secondaire" id="annuler-renommer-categorie">Annuler</button>
+      <button type="button" class="bouton bouton-principal" id="confirmer-renommer-categorie">Enregistrer</button>
+    </div>
+  </div>
+</div>
+</main>
 </div>
 
 <script>
@@ -647,11 +719,33 @@ const API_BASE_URL = "https://scolaire-saas-backend.onrender.com";
           ${m.conversion_impossible
             ? '<div style="font-size:0.72rem; color:var(--rouge);">non converti — taux manquant</div>' : ''}
         </td>
-        <td>${m.automatique ? '' : `<button class="lien-action" data-supprimer="${m.id}">Supprimer</button>`}</td>
+        <td>
+      ${m.automatique ? '' : `<button class="lien-action" style="margin-right:8px;" data-modifier-mouvement="${m.id}"
+          data-libelle="${echapper(m.libelle)}"
+          data-beneficiaire="${echapper(m.beneficiaire || '')}"
+          data-date="${m.date_mouvement ? m.date_mouvement.slice(0,10) : ''}"
+          data-categorie="${m.categorie_id || ''}"
+          data-sens="${m.sens}">Modifier</button>`}
+      ${m.automatique ? '' : `<button class="lien-action" data-supprimer="${m.id}">Supprimer</button>`}
+    </td>
       </tr>`).join('');
 
     corps.querySelectorAll('[data-supprimer]').forEach(b =>
       b.addEventListener('click', () => supprimerMouvement(b.dataset.supprimer)));
+
+  corps.querySelectorAll('[data-modifier-mouvement]').forEach(b => b.addEventListener('click', () => {
+    document.getElementById('modifier-mouvement-id').value = b.dataset.modifierMouvement;
+    document.getElementById('modifier-mouvement-libelle').value = b.dataset.libelle || '';
+    document.getElementById('modifier-mouvement-beneficiaire').value = b.dataset.beneficiaire || '';
+    document.getElementById('modifier-mouvement-date').value = b.dataset.date || '';
+    const sens = b.dataset.sens;
+    const selCat = document.getElementById('modifier-mouvement-categorie');
+    const utiles = categories.filter(c => c.sens === sens && c.actif);
+    selCat.innerHTML = '<option value="">Sans catégorie</option>'
+      + utiles.map(c => `<option value="${c.id}"${b.dataset.categorie === String(c.id) ? ' selected' : ''}>${echapper(c.nom)}</option>`).join('');
+    if (b.dataset.categorie) selCat.value = b.dataset.categorie;
+    document.getElementById('voile-modifier-mouvement').classList.add('visible');
+  }));
   }
 
   async function supprimerMouvement(id) {
@@ -732,8 +826,11 @@ const API_BASE_URL = "https://scolaire-saas-backend.onrender.com";
             <td>${echapper(c.nom)}</td>
             <td>${c.sens === 'sortie' ? 'Dépense' : 'Recette'}</td>
             <td>${c.nb_mouvements}</td>
-            <td><button class="lien-action" data-basculer="${c.id}" data-actif="${c.actif ? '1' : '0'}">
-              ${c.actif ? 'Désactiver' : 'Réactiver'}</button></td>
+            <td style="display:flex;gap:10px;align-items:center;">
+        <button class="lien-action" data-renommer="${c.id}" data-nom="${echapper(c.nom)}">Renommer</button>
+        <button class="lien-action" data-basculer="${c.id}" data-actif="${c.actif ? '1' : '0'}">
+          ${c.actif ? 'Désactiver' : 'Réactiver'}</button>
+      </td>
           </tr>`).join('');
 
     corps.querySelectorAll('[data-basculer]').forEach(b =>
@@ -744,6 +841,12 @@ const API_BASE_URL = "https://scolaire-saas-backend.onrender.com";
         });
         if (r2 && r2.ok) { afficherMessage('Catégorie mise à jour.', 'succes'); chargerCategories(); }
       }));
+
+    corps.querySelectorAll('[data-renommer]').forEach(b => b.addEventListener('click', () => {
+      document.getElementById('renommer-categorie-id').value  = b.dataset.renommer;
+      document.getElementById('renommer-categorie-nom').value = b.dataset.nom || '';
+      document.getElementById('voile-renommer-categorie').classList.add('visible');
+    }));
   }
 
   document.getElementById('bouton-ajouter-categorie').addEventListener('click', async () => {
@@ -897,20 +1000,33 @@ const API_BASE_URL = "https://scolaire-saas-backend.onrender.com";
             <td>${formaterMontant(c.salaire_base, c.devise)}</td>
             <td>${echapper(formaterDate(c.date_debut))}</td>
             <td>${c.actif ? '<span class="puce-statut paye">actif</span>' : '<span class="puce-statut a_payer">clôturé</span>'}</td>
+            <td>${c.actif ? `<button class="lien-action" data-modifier-contrat="${c.id}"
+                data-poste="${echapper(c.poste || '')}"
+                data-salaire="${c.salaire_base}"
+                data-devise="${c.devise}">Modifier</button>` : ''}</td>
             <td>${c.actif ? `<button class="lien-action" data-cloturer="${c.id}">Clôturer</button>` : ''}</td>
           </tr>`).join('');
 
     corps.querySelectorAll('[data-cloturer]').forEach(b =>
       b.addEventListener('click', async () => {
         if (!await ArdoiseUI.confirmer(
-          'Clôturer ce contrat ?\n\nLa personne ne sera plus incluse dans la préparation de la paie.'
+          'Clôturer ce contrat ?\n\nLa personne ne sera plus incluse dans la préparation de la paie.\nSi des bulletins ont déjà été préparés pour le mois en cours, annulez-les depuis l\'onglet Paie.'
         )) return;
         const r2 = await appelApi(`/comptabilite/contrats/${b.dataset.cloturer}/cloturer`, { method: 'POST' });
         const d2 = r2 ? await r2.json().catch(() => ({})) : {};
         if (!r2 || !r2.ok) { afficherMessage(d2.message || 'Clôture impossible.', 'erreur'); return; }
         afficherMessage(d2.message, 'succes');
         chargerContrats();
+        chargerTresorerie(); // Mise à jour de la carte Salaires à payer
       }));
+
+    corps.querySelectorAll('[data-modifier-contrat]').forEach(b => b.addEventListener('click', () => {
+      document.getElementById('modifier-contrat-id').value     = b.dataset.modifierContrat;
+      document.getElementById('modifier-contrat-poste').value   = b.dataset.poste || '';
+      document.getElementById('modifier-contrat-salaire').value = b.dataset.salaire || '';
+      document.getElementById('modifier-contrat-devise').value  = b.dataset.devise || 'FC';
+      document.getElementById('voile-modifier-contrat').classList.add('visible');
+    }));
   }
 
   async function chargerPersonnes() {

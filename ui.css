@@ -36,6 +36,58 @@
 .nav-item.actif .nav-icone { opacity: 1; color: var(--ocre); }
 
 /* ==========================================================================
+   1 bis. Badge de messages non lus
+   Posé sur le lien « Messages » de la navigation (voir ui.js, section
+   « Badge de messages non lus »). En rail compact (icônes seules), le
+   badge devient un simple point ancré sur l'icône : le pastille complète
+   serait rognée par l'`overflow:hidden` du rail resserré. Il redevient
+   une pastille normale dès que le rail se déploie au survol.
+   ========================================================================== */
+.nav-item { position: relative; }
+
+.badge-nav-messages {
+  display: none;
+  background: var(--rouge);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.5;
+  border-radius: 20px;
+  padding: 1px 7px;
+  min-width: 17px;
+  text-align: center;
+  flex: none;
+}
+
+html[data-nav-compact="oui"] .badge-nav-messages {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  min-width: 8px;
+  height: 8px;
+  padding: 0;
+  font-size: 0;
+  border-radius: 50%;
+  line-height: 0;
+}
+html[data-nav-compact="oui"] .barre-laterale:hover .badge-nav-messages,
+html[data-nav-compact="oui"] .barre-laterale:focus-within .badge-nav-messages {
+  position: static;
+  top: auto;
+  right: auto;
+  min-width: 17px;
+  height: auto;
+  padding: 1px 7px;
+  font-size: 0.68rem;
+  border-radius: 20px;
+  line-height: 1.5;
+}
+
+/* Même badge dans le tiroir « Tous les menus » : la ligne est déjà large,
+   la pastille se contente de se plaquer à droite. */
+.tiroir-ligne .lien .badge-nav-messages { margin-left: auto; }
+
+/* ==========================================================================
    2. Illustrations d'état vide
    Technique du masque : une seule illustration prend automatiquement la
    couleur du thème actif, au lieu d'en stocker une version par thème.

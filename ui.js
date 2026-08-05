@@ -762,6 +762,10 @@
     voile.classList.add('ouvert');
     document.body.style.overflow = 'hidden';
 
+    // Le tiroir vient d'être reconstruit : sa ligne « Messages » (si elle y
+    // figure) part sans badge tant qu'on ne le lui repose pas.
+    try { appliquerBadgeMessages(messagesNonLusCache); } catch (e) {}
+
     function majCompte() {
       var n = lireEpingles(disponibles).length;
       document.getElementById('tiroir-compte').textContent =
@@ -943,6 +947,95 @@
   function decorerCartes(plan) {
     (plan || []).forEach(function (p) { decorerCarte(p[0], p[1], p[2]); });
   }
+
+  /* ------------------------------------------------------------------
+     Badge de messages non lus
+
+     La cloche de notifications n'existe aujourd'hui que sur le tableau
+     de bord du directeur : sur les 30 autres écrans, rien ne signale un
+     message en attente. Or l'écran Messages n'est qu'une autre vue de la
+     table `notifications` (voir messages.html, qui lit `/notifications`
+     exactement comme la cloche) : le badge peut donc s'appuyer sur le
+     même point d'API, sans rien changer côté serveur.
+
+     Posé ICI, dans le fichier partagé, pour apparaître sur les 30 pages
+     d'un coup plutôt que d'être dupliqué : sur le lien « Messages » de la
+     barre latérale (pastille normale, ou simple point sur l'icône si le
+     rail est réduit), sur sa tuile dans le lanceur « Actions rapides »
+     si elle y figure, et sur sa ligne dans le tiroir « Tous les menus »
+     si celui-ci est déjà ouvert.
+
+     Échec réseau ou absence de session : le badge reste simplement
+     invisible, comme `affinerMenuOrientation` ci-dessous — une pastille
+     qui ne se met pas à jour serait pire qu'une pastille absente.
+     ------------------------------------------------------------------ */
+  var messagesNonLusCache = 0;
+
+  function jetonMessages() {
+    try {
+      return localStorage.getItem('ardoise_access_token')
+          || sessionStorage.getItem('ardoise_access_token');
+    } catch (e) { return null; }
+  }
+
+  function poserBadgeMessages(lien, n) {
+    if (!lien) return;
+    var badge = lien.querySelector('.badge-nav-messages');
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.className = 'badge-nav-messages';
+      lien.appendChild(badge);
+    }
+    if (n > 0) {
+      badge.textContent = n > 99 ? '99+' : String(n);
+      badge.style.display = 'inline-block';
+    } else {
+      badge.textContent = '';
+      badge.style.display = 'none';
+    }
+  }
+
+  function appliquerBadgeMessages(n) {
+    document.querySelectorAll('.nav-item[href="messages.html"]').forEach(function (lien) {
+      poserBadgeMessages(lien, n);
+    });
+
+    var ligneTiroir = document.querySelector('.tiroir-ligne .lien[href="messages.html"]');
+    if (ligneTiroir) poserBadgeMessages(ligneTiroir, n);
+
+    try {
+      if (n > 0) {
+        marquerTuile('messages.html', n > 99 ? '99+' : String(n));
+      } else {
+        var pastille = document.querySelector('.tuile[data-page="messages.html"] .pastille-vive');
+        if (pastille) pastille.remove();
+      }
+    } catch (e) { /* lanceur pas encore construit : rien à faire */ }
+  }
+
+  function chargerBadgeMessages() {
+    var jeton = jetonMessages();
+    if (!jeton) return;
+    var base = (typeof API_BASE_URL !== 'undefined' && API_BASE_URL) || window.API_BASE_URL || '';
+    fetch(base + '/notifications?limite=200', { headers: { Authorization: 'Bearer ' + jeton } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (liste) {
+        if (!Array.isArray(liste)) return;
+        var n = 0;
+        for (var i = 0; i < liste.length; i++) { if (!liste[i].lu) n++; }
+        messagesNonLusCache = n;
+        appliquerBadgeMessages(n);
+      })
+      .catch(function () { /* voir commentaire ci-dessus */ });
+  }
+
+  // La cloche du tableau de bord et l'écran Messages déclenchent cet
+  // évènement dès qu'un message est marqué lu : le badge se met à jour
+  // immédiatement, sans attendre le prochain chargement de page.
+  document.addEventListener('ardoise:messages-maj', function () {
+    chargerBadgeMessages();
+  });
+
 
   /* ------------------------------------------------------------------
      Démarrage
@@ -1199,6 +1292,7 @@
       try { surveillerTableaux(); } catch (e) { /* les tableaux restent en défilement horizontal */ }
       try { reduireRail(); } catch (e) { /* le rail complet reste utilisable */ }
       try { construireLanceur(); } catch (e) {}
+      try { chargerBadgeMessages(); } catch (e) { /* pas de badge plutôt qu'une page cassée */ }
     }, 60);
     try { surveillerValeurs(); } catch (e) { /* les chiffres restent affichés sans animation */ }
     if (!animationsReduites) {

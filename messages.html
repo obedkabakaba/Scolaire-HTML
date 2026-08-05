@@ -587,6 +587,10 @@
     pastille.style.display = nonLus > 0 ? '' : 'none';
     document.getElementById('barre-reception').style.display = nonLus > 0 ? '' : 'none';
 
+    // Le badge du menu « Messages » (posé par ui.js) lit la même liste : on le
+    // prévient plutôt que de le laisser attendre le prochain chargement de page.
+    document.dispatchEvent(new CustomEvent('ardoise:messages-maj'));
+
     if (messages.length === 0) {
       zone.innerHTML = '<div class="vide-doux">Aucun message pour le moment.</div>';
       return;

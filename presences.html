@@ -184,6 +184,9 @@
       <div class="barre-actions">
         <button class="bouton bouton-secondaire" id="bouton-tout-present">Tout marquer présent</button>
         <span id="etat-appel" class="etat-appel"></span>
+        <!-- Lecture seule pour le directeur et le préfet : seul le titulaire,
+             le professeur, le chargé des présences ou le secrétariat saisit. -->
+        <span id="note-lecture-seule-presence" class="aide" style="display:none;">Vous consultez l'appel. Seul le titulaire, le professeur de la classe, le chargé des présences ou le secrétariat peut le saisir.</span>
         <button class="bouton bouton-principal" id="bouton-enregistrer">Enregistrer l'appel</button>
       </div>
 
@@ -302,6 +305,15 @@
   const estPersonnelEcole = roles.some(r =>
     ['directeur', 'prefet', 'secretaire', 'charge_presences', 'directeur_discipline'].includes(r));
 
+  // Le directeur et le préfet consultent l'appel (ci-dessus, estPersonnelEcole
+  // leur laisse voir toutes les classes) mais ne le SAISISSENT plus : le
+  // serveur refuse déjà leur écriture, ceci n'en est que le reflet à l'écran.
+  // Un directeur ou un préfet par ailleurs professeur d'un cours garde la
+  // main : son rôle 'professeur' suffit, le test ne porte que sur l'absence
+  // de tout rôle autre que directeur/préfet.
+  const ROLES_SANS_SAISIE_PRESENCE = ['directeur', 'prefet'];
+  const peutModifierPresence = roles.some(r => !ROLES_SANS_SAISIE_PRESENCE.includes(r));
+
   function aujourdhui() {
     // Date locale, et non UTC : sinon l'appel du matin bascule sur la veille
     // pour les fuseaux situés à l'est de Greenwich, dont Kinshasa.
@@ -361,8 +373,14 @@
     document.querySelectorAll('.onglet').forEach(onglet => {
       onglet.addEventListener('click', () => basculerVue(onglet.dataset.vue));
     });
-    document.getElementById('bouton-tout-present').addEventListener('click', toutMarquerPresent);
-    document.getElementById('bouton-enregistrer').addEventListener('click', enregistrerAppel);
+    if (peutModifierPresence) {
+      document.getElementById('bouton-tout-present').addEventListener('click', toutMarquerPresent);
+      document.getElementById('bouton-enregistrer').addEventListener('click', enregistrerAppel);
+    } else {
+      document.getElementById('bouton-tout-present').style.display = 'none';
+      document.getElementById('bouton-enregistrer').style.display = 'none';
+      document.getElementById('note-lecture-seule-presence').style.display = '';
+    }
 
     chargerFeuilleAppel();
   }
@@ -469,12 +487,12 @@
           <div class="groupe-statut">
             ${STATUTS.map(s => `
               <button type="button" class="bouton-statut ${e.statut === s.cle ? 'choisi' : ''}"
-                      data-statut="${s.cle}" data-index="${index}">${s.libelle}</button>
+                      data-statut="${s.cle}" data-index="${index}" ${peutModifierPresence ? '' : 'disabled'}>${s.libelle}</button>
             `).join('')}
           </div>
         </td>
         <td><input type="text" class="champ-motif" data-index="${index}" value="${(e.motif || '').replace(/"/g, '&quot;')}"
-                   placeholder="${e.statut === 'present' ? '—' : 'ex. maladie'}" /></td>
+                   placeholder="${e.statut === 'present' ? '—' : 'ex. maladie'}" ${peutModifierPresence ? '' : 'disabled'} /></td>
       </tr>
     `).join('');
 

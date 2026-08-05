@@ -279,6 +279,12 @@
   const { user } = obtenirTokens();
   const estDirecteurOuPrefet = (user?.roles || []).some(r => ['directeur', 'prefet'].includes(r));
   const estProfesseurSeul = !estDirecteurOuPrefet && (user?.roles || []).includes('professeur');
+  // Directeur et préfet gardent la main sur le VERROU (valider/dévalider une
+  // grille soumise), mais plus sur les notes elles-mêmes : ils ne saisissent
+  // plus une valeur de note, seul le professeur du cours le fait. La commande
+  // « Enregistrer les notes » disparaît donc pour eux, et les champs de note
+  // restent désactivés même sur une grille non verrouillée.
+  const peutModifierNotes = !estDirecteurOuPrefet;
   document.getElementById('bouton-devalider-notes').style.display = estDirecteurOuPrefet ? 'inline-block' : 'none';
   if (estDirecteurOuPrefet) document.getElementById('bouton-valider-notes').textContent = 'Valider (verrouiller)';
 
@@ -433,7 +439,7 @@
         <td class="matricule-cell">${e.matricule}</td>
         <td>${e.nom} ${e.postnom || ''} ${e.prenom || ''}</td>
         <td><input type="number" class="champ-note" min="0" max="${donnees.maximum}" step="0.5"
-              value="${e.points_obtenus ?? ''}" ${(!modeEdition || auMoinsUneNoteVerrouillee) ? 'disabled' : ''} /></td>
+              value="${e.points_obtenus ?? ''}" ${(!modeEdition || auMoinsUneNoteVerrouillee || !peutModifierNotes) ? 'disabled' : ''} /></td>
       </tr>
     `).join('');
 
@@ -445,7 +451,8 @@
       document.getElementById('bouton-fiche-cotes').style.display = 'none';
       document.getElementById('bouton-valider-notes').style.display = 'none';
     } else {
-      document.getElementById('bouton-enregistrer-notes').style.display = 'inline-block';
+      // « Enregistrer les notes » : jamais pour directeur/préfet, verrou ou pas.
+      document.getElementById('bouton-enregistrer-notes').style.display = peutModifierNotes ? 'inline-block' : 'none';
       document.getElementById('bouton-fiche-cotes').style.display = 'inline-block';
       document.getElementById('bouton-valider-notes').style.display = 'inline-block';
       mettreAJourBoutonEnregistrer();
@@ -579,7 +586,7 @@
       return;
     }
 
-    const disabled = (!modeEdition || auMoinsUneNoteVerrouillee) ? 'disabled' : '';
+    const disabled = (!modeEdition || auMoinsUneNoteVerrouillee || !peutModifierNotes) ? 'disabled' : '';
     corps.innerHTML = donnees.eleves.map(e => `
       <tr data-eleve-id="${e.eleve_id}">
         <td class="matricule-cell">${e.matricule}</td>
@@ -596,7 +603,7 @@
       document.getElementById('bouton-fiche-cotes').style.display = 'none';
       document.getElementById('bouton-valider-notes').style.display = 'none';
     } else {
-      document.getElementById('bouton-enregistrer-notes').style.display = 'inline-block';
+      document.getElementById('bouton-enregistrer-notes').style.display = peutModifierNotes ? 'inline-block' : 'none';
       document.getElementById('bouton-fiche-cotes').style.display = 'inline-block';
       document.getElementById('bouton-valider-notes').style.display = 'inline-block';
       mettreAJourBoutonEnregistrer();

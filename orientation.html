@@ -53,6 +53,7 @@
   .barre-actions { display: flex; align-items: center; gap: 12px; margin-top: 18px; flex-wrap: wrap; }
   .barre-actions .bouton-principal { margin-left: auto; }
   .champ-voeu { width: 100%; border: 1px solid var(--bordure); border-radius: var(--r-petit); padding: 7px 9px; font-family: var(--police-corps); font-size: 0.85rem; background: var(--craie); color: var(--texte-sombre); }
+  .champ-voeu:disabled { background: var(--bordure); color: var(--texte-att); cursor: not-allowed; opacity: 0.85; }
   .moyenne { font-weight: 600; font-variant-numeric: tabular-nums; }
   .moyenne.faible { color: var(--rouge); }
   .etat-orientation { font-size: 0.74rem; padding: 3px 10px; border-radius: 20px; font-weight: 600; white-space: nowrap; }
@@ -191,6 +192,12 @@
          l'école n'a qu'une seule classe d'orientation. -->
     <p class="bandeau-portee" id="bandeau-portee" style="display:none;"></p>
 
+    <!-- Lecture seule pour la direction et le secrétariat : ils voient les
+         vœux mais seul le titulaire de la classe peut les saisir. -->
+    <p class="bandeau-portee" id="bandeau-lecture-seule" style="display:none;">
+      Vous consultez les vœux. Seul le titulaire de la classe peut les saisir ou les modifier.
+    </p>
+
     <!-- Critères d'admission — direction seule. Le seuil se règle option par
          option : deux options du même établissement peuvent recruter sur des
          bases différentes. -->
@@ -314,6 +321,11 @@
   })();
   const roles = (utilisateur && utilisateur.roles) || [];
   const estDirection = roles.some(r => ['directeur', 'prefet', 'super_admin'].includes(r));
+  // La saisie des vœux est réservée au titulaire : lui seul connaît l'élève.
+  // Directeur, préfet et secrétariat consultent le tableau mais ne peuvent
+  // plus le modifier — le serveur refuse déjà leur écriture, ceci n'est que
+  // le reflet côté écran (selects désactivés, bouton d'enregistrement masqué).
+  const peutSaisirVoeux = roles.some(r => ['titulaire', 'super_admin'].includes(r));
 
   const LIBELLE_ETAT = {
     voeu_exprime: 'Vœu exprimé', accordee_voeu: 'Premier vœu', accordee_repli: 'Repli',
@@ -380,8 +392,10 @@
 
     selAnnee.addEventListener('change', charger);
     selCible.addEventListener('change', charger);
-    document.getElementById('bouton-enregistrer-voeux').addEventListener('click', enregistrerVoeux);
+    if (peutSaisirVoeux) document.getElementById('bouton-enregistrer-voeux').addEventListener('click', enregistrerVoeux);
     if (estDirection) document.getElementById('bouton-repartir').addEventListener('click', repartir);
+
+    document.getElementById('bandeau-lecture-seule').style.display = peutSaisirVoeux ? 'none' : '';
 
     charger();
   }
@@ -552,7 +566,7 @@
       document.getElementById('barre-voeux').style.display = 'none';
       return;
     }
-    document.getElementById('barre-voeux').style.display = '';
+    document.getElementById('barre-voeux').style.display = peutSaisirVoeux ? '' : 'none';
 
     const optionsHtml = (selection, eleve) => {
       const refusees = new Map((eleve.options_refusees || []).map(o => [o.option_id, o.motif]));
@@ -578,9 +592,9 @@
       return `<tr>
         <td><strong>${echapper(e.nom_complet)}</strong><div style="font-size:0.76rem; color:var(--texte-att); font-family:var(--police-mono);">${echapper(e.matricule)}</div></td>
         <td class="moyenne ${faible ? 'faible' : ''}">${e.moyenne !== null ? e.moyenne + '%' : '—'}</td>
-        <td><select class="champ-voeu" data-eleve="${e.eleve_id}" data-champ="option_voeu_id">${optionsHtml(e.option_voeu_id, e)}</select>
+        <td><select class="champ-voeu" data-eleve="${e.eleve_id}" data-champ="option_voeu_id" ${peutSaisirVoeux ? '' : 'disabled'}>${optionsHtml(e.option_voeu_id, e)}</select>
             ${alertes.length ? `<div class="alerte-admissibilite">Niveau exigé non atteint — ${alertes.join(' ; ')}</div>` : ''}</td>
-        <td><select class="champ-voeu" data-eleve="${e.eleve_id}" data-champ="option_repli_id">${optionsHtml(e.option_repli_id, e)}</select></td>
+        <td><select class="champ-voeu" data-eleve="${e.eleve_id}" data-champ="option_repli_id" ${peutSaisirVoeux ? '' : 'disabled'}>${optionsHtml(e.option_repli_id, e)}</select></td>
         <td>${e.classe_affectee_nom ? echapper(e.classe_affectee_nom) : '<span style="color:var(--texte-att);">—</span>'}${e.attribue_au_merite === false && e.classe_affectee_id ? '<span class="puce-manuelle">manuelle</span>' : ''}</td>
         <td>${e.statut_orientation ? `<span class="etat-orientation eo-${e.statut_orientation}">${echapper(LIBELLE_ETAT[e.statut_orientation] || e.statut_orientation)}</span>` : '<span style="color:var(--texte-att); font-size:0.8rem;">—</span>'}
             ${e.motif ? `<div style="font-size:0.74rem; color:var(--texte-att); margin-top:3px;">${echapper(e.motif)}</div>` : ''}</td>

@@ -116,6 +116,7 @@
 <link rel="stylesheet" href="ui.css" />
 
   <script src="acces-presences.js"></script>
+  <script src="filtre-cycle.js"></script>
 </head>
 <body>
 
@@ -452,16 +453,17 @@
     zone.innerHTML = banniereEtendue(d) + widgets(
       widget('Taux de réussite global', 'w-taux') + widget('Répartition des résultats', 'w-tranches', true)
     ) + tableau(
-      ['Classe', 'Bulletins', 'Moyenne', 'Taux de réussite', 'Min', 'Max'],
+      ['Classe', 'Élèves', 'Non cotés', 'Moyenne', 'Taux de réussite', 'Min', 'Max'],
       d.classes.map(c => `<tr>
         <td><strong>${echapper(c.nom)}</strong></td>
-        <td>${c.nb_bulletins}</td>
+        <td>${c.nb_eleves}</td>
+        <td>${c.nb_sans_note ? c.nb_sans_note : '—'}</td>
         <td class="valeur-forte">${c.moyenne != null ? c.moyenne + '%' : '—'}</td>
         <td class="valeur-forte ${c.taux_reussite != null ? (c.taux_reussite >= 50 ? 'bon' : 'alerte') : ''}">${c.taux_reussite != null ? c.taux_reussite + '%' : '—'}</td>
         <td>${c.mini != null ? c.mini + '%' : '—'}</td>
         <td>${c.maxi != null ? c.maxi + '%' : '—'}</td>
       </tr>`).join(''),
-      'Aucun bulletin calculé pour cette sélection.'
+      "Aucune classe d'élèves actifs sur cette sélection."
     );
 
     if (!window.ArdoiseUI) return;
@@ -470,7 +472,7 @@
       affichage: d.taux_reussite_global != null ? d.taux_reussite_global + '%' : '—',
       couleur: d.taux_reussite_global == null ? 'var(--bordure)'
              : (d.taux_reussite_global >= 50 ? 'var(--vert-ok)' : 'var(--rouge)'),
-      detail: `<strong>${d.nb_bulletins}</strong> bulletin(s)<br/>seuil de réussite : ${d.seuil} %`
+      detail: `<strong>${d.nb_eleves}</strong> élève(s)<br/>seuil de réussite : ${d.seuil} %`
     });
     const maxi = Math.max(...d.repartition.map(t => t.nb), 1);
     ArdoiseUI.barres('w-tranches',
@@ -486,10 +488,27 @@
    */
   function banniereEtendue(d) {
     const libelle = d && d.portee && d.portee.libelle;
-    if (!libelle) return '';
-    return `<p style="font-size:0.84rem; color:var(--texte-att); margin:0 0 12px;">
-              Résultats portant sur : <strong>${echapper(libelle)}</strong>
-            </p>`;
+    const sansNote = d && d.nb_sans_note;
+    if (!libelle && !sansNote) return '';
+
+    let html = '';
+    if (libelle) {
+      html += `<p style="font-size:0.84rem; color:var(--texte-att); margin:0 0 12px;">
+                 Résultats portant sur : <strong>${echapper(libelle)}</strong>
+               </p>`;
+    }
+    // Un zéro faute de cote saisie n'est pas un zéro scolaire. Sans cette
+    // phrase, un tableau plein de zéros en début de période se lit comme une
+    // catastrophe alors qu'il ne dit que « la correction n'est pas rentrée ».
+    if (sansNote) {
+      html += `<p style="font-size:0.84rem; margin:0 0 12px; padding:9px 11px; border-radius:var(--r-bouton);
+                        background:color-mix(in srgb, var(--rouge) 10%, transparent); color:var(--rouge);">
+                 <strong>${sansNote} élève(s)</strong> apparaissent à 0 % : aucune cote n'a encore été
+                 saisie pour eux sur cette sélection. Leur total est bien compté sur la totalité des
+                 maxima de leur classe.
+               </p>`;
+    }
+    return html;
   }
 
   function rendrePalmares(d, zone) {
@@ -500,11 +519,13 @@
         <td class="rang-medaille">${medaille(e.rang)}</td>
         <td><strong>${echapper(e.nom_complet)}</strong><div style="font-size:0.76rem; color:var(--texte-att); font-family:var(--police-mono);">${echapper(e.matricule)}</div></td>
         <td>${echapper(e.classe_nom)}</td>
-        <td class="valeur-forte">${e.pourcentage != null ? e.pourcentage + '%' : '—'}</td>
-        <td>${echapper(e.mention || '—')}</td>
+        <td class="valeur-forte">${e.pourcentage != null ? e.pourcentage + '%' : '—'}${
+          e.total_maxima ? `<div style="font-size:0.74rem; color:var(--texte-att); font-family:var(--police-mono);">${e.total} / ${e.total_maxima}</div>` : ''
+        }</td>
+        <td>${e.sans_note ? '<span style="color:var(--texte-att);">non coté</span>' : echapper(e.mention || '—')}</td>
         <td>${e.place_classe ?? '—'}</td>
       </tr>`).join(''),
-      'Aucun bulletin calculé pour cette sélection.'
+      "Aucun élève actif sur cette sélection."
     );
   }
 

@@ -1,158 +1,622 @@
 <!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
-    @page { size: A4 portrait; margin: 12mm; }
+    @page { size: A4 landscape; margin: 8mm; }
     * { box-sizing: border-box; }
-    body { font-family: 'Times New Roman', Times, serif; font-size: 10px; color: #000; margin: 0; }
-    .page { page-break-after: always; display: flex; flex-direction: column; min-height: 265mm; }
+    body { font-family: Arial, Helvetica, sans-serif; font-size: 8px; color: #000; margin: 0; }
+
+    .page {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0;
+      width: 100%;
+      height: 190mm;
+      page-break-after: always;
+    }
     .page:last-child { page-break-after: auto; }
 
-    .entete { text-align: center; margin-bottom: 4mm; }
-    .entete .ecole { font-weight: bold; font-size: 14px; }
-    .entete .annee { font-size: 10px; color: #333; }
-    .titre-doc { text-align: center; font-weight: bold; font-size: 12px; text-transform: uppercase; margin: 3mm 0; }
-
-    .identite { margin-bottom: 3mm; font-size: 10px; line-height: 1.7; }
-    .identite strong { display: inline-block; min-width: 22mm; }
-
-    table.cotes { border-collapse: collapse; width: 100%; }
-    table.cotes th, table.cotes td {
-      border: 0.5px solid #000; text-align: center; padding: 1mm 0.8mm; font-size: 9px;
+    .colonne {
+      border-right: 1px dashed #999;
+      padding: 3mm 2.5mm;
+      display: flex;
+      flex-direction: column;
     }
-    table.cotes th { font-weight: bold; font-size: 8.5px; line-height: 1.2; background: #f2f2f2; }
-    table.cotes td.branche { text-align: left; padding-left: 2mm; }
-    table.cotes td.noir { background: #000; }
-    table.cotes tr.synthese td { font-weight: bold; background: #f8f8f8; }
-    table.cotes td.max { color: #444; }
+    .colonne:last-child { border-right: none; }
+    /* Colonne de remplissage d'une page incomplète : elle tient la grille pour
+       que le dernier bulletin garde la largeur des précédents. */
+    .colonne.vide { border-right: none; }
 
-    .appreciations { margin-top: 4mm; font-size: 10px; line-height: 1.9; }
-    .appreciations .ligne { display: flex; gap: 6mm; }
-    .appreciations .ligne > div { flex: 1; }
-    .pointilles { border-bottom: 0.5px dotted #000; display: inline-block; min-width: 30mm; }
+    .entete { text-align: center; margin-bottom: 2mm; }
+    .entete img { max-height: 12mm; margin-bottom: 1mm; }
+    .entete .nom-ecole { font-weight: bold; font-size: 9.5px; }
+    .entete .annee { font-size: 7.5px; color: #444; }
+    .titre-bulletin { text-align: center; font-weight: bold; text-transform: uppercase; margin: 1.5mm 0; font-size: 9px; }
 
-    .pied { margin-top: auto; padding-top: 6mm; }
-    .fait-le { text-align: right; font-style: italic; font-size: 9px; margin-bottom: 3mm; }
-    .signatures { display: flex; justify-content: space-between; gap: 10mm; }
-    .signatures .case { text-align: center; flex: 1; font-size: 9px; }
-    .signatures .case img { max-height: 12mm; max-width: 100%; display: block; margin: 0 auto 1mm; }
-    .signatures .espace { height: 14mm; }
+    .identite { margin-bottom: 1.5mm; font-size: 8px; }
+    .identite div { margin-bottom: 0.4mm; }
 
-    .duplicata {
-      text-align: center; font-size: 8px; letter-spacing: 0.06em; text-transform: uppercase;
-      color: #8a2b2b; border: 0.5px solid #8a2b2b; border-radius: 1mm;
-      padding: 1mm 2mm; margin: 0 auto 3mm; max-width: 70mm;
+    table.notes { width: 100%; border-collapse: collapse; font-size: 7.2px; margin-bottom: 1.5mm; table-layout: fixed; }
+    table.notes th, table.notes td { border: 0.3px solid #666; padding: 0.6mm 0.2mm; text-align: center; }
+    table.notes th { background: #eee; font-size: 6.6px; line-height: 1.15; font-weight: bold; }
+    /* Le nom du cours revient à la ligne plutôt que d'être tronqué : deux
+       branches coupées au même endroit deviendraient indiscernables. */
+    table.notes td.cours-nom, table.notes th.cours-nom {
+      text-align: left; padding-left: 0.8mm; font-size: 7px; word-break: break-word;
     }
-  </style></head><body>
-    <div class="page">
-      <div class="entete">
-        <div class="ecole">Institut Saint Paul</div>
-        <div class="annee">Année scolaire 2026-2027</div>
-      </div>
+    table.notes td.max { color: #555; background: #fafafa; }
+    /* Aplat noir : « aucune cote n'est attendue ici ». À ne pas confondre avec
+       une case blanche vide, qui se lit « cote manquante ». */
+    table.notes td.noir { background: #000; }
+    table.notes tr.synthese td { font-weight: bold; background: #f4f4f4; }
+    table.notes tr.synthese td.cours-nom { text-transform: uppercase; font-size: 6.4px; }
+    /* Cases sans objet sur une ligne de synthèse : un pourcentage n'a pas de
+       maximum. Grisées et non noircies — rien n'y manque, rien n'y est attendu. */
+    table.notes tr.synthese td.inerte { background: #e6e6e6; }
 
-      
-      <div class="titre-doc">Bulletin — 1er semestre</div>
+    .appreciations { font-size: 7.4px; margin-bottom: 1.5mm; flex-grow: 1; }
+    .appreciations div { margin-bottom: 0.6mm; }
 
-      <div class="identite">
-        <div><strong>Nom :</strong> MUKENDI Obed</div>
-        <div><strong>Matricule :</strong> ELV-0001</div>
-        <div><strong>Classe :</strong> 4ème HCG</div>
-      </div>
+    .fait-le { font-size: 7.2px; text-align: right; font-style: italic; margin-top: 2mm; }
+    .signatures { font-size: 7.2px; margin-top: auto; }
+    .signatures .ligne { display: flex; justify-content: space-between; gap: 1.5mm; margin-top: 3mm; }
+    .signatures .case { border-top: 0.3px solid #333; flex: 1; text-align: center; padding-top: 0.8mm; }
+    .signatures .case img { max-height: 9mm; max-width: 100%; display: block; margin: 0 auto 0.6mm auto; }
+    .signatures .case .espace { height: 9mm; }
+    .signatures .nom-signataire { font-size: 6.4px; color: #444; }
 
-      <table class="cotes">
+    .mention-duplicata {
+      text-align: center; font-size: 6.8px; letter-spacing: 0.05em;
+      text-transform: uppercase; color: #8a2b2b;
+      border: 0.4px solid #8a2b2b; border-radius: 1mm;
+      padding: 0.5mm 1mm; margin-bottom: 1.5mm;
+    }
+  </style></head><body><div class="page">
+      <div class="colonne">
+        <div class="entete">
+          
+          <div class="nom-ecole">Institut Saint Paul</div>
+          <div class="annee">Année scolaire 2026-2027</div>
+        </div>
+
+        <div class="titre-bulletin">Bulletin — 1er semestre</div>
         
+
+        <div class="identite">
+          <div><strong>Nom :</strong> MUKENDI KALALA Obed</div>
+          <div><strong>Matricule :</strong> ELV-0001</div>
+          <div><strong>Classe :</strong> 4ème HCG</div>
+        </div>
+
+        <table class="notes">
+          
     <thead>
       <tr>
-        <th rowspan="2" class="branche" style="width:30%">Cours</th>
-        <th>1<sup>ère</sup> P.</th>
-        <th>2<sup>ème</sup> P.</th>
-        <th>Max</th>
-        <th>Examen</th>
-        <th>Max</th>
-        <th>Total général</th>
-        <th>Max</th>
+        <th class="cours-nom" rowspan="2" style="width:26%">Cours</th>
+        <th colspan="2">Périodes</th>
+        <th rowspan="2">Max<br/>pér.</th>
+        <th rowspan="2">Exam.</th>
+        <th rowspan="2">Max<br/>exam.</th>
+        <th rowspan="2">Total</th>
+        <th rowspan="2">Max<br/>sem.</th>
       </tr>
       <tr>
-        <th colspan="2" style="font-weight:normal; font-size:7.5px;">points obtenus</th>
-        <th style="font-weight:normal; font-size:7.5px;">par période</th>
-        <th style="font-weight:normal; font-size:7.5px;">obtenu</th>
-        <th style="font-weight:normal; font-size:7.5px;">examen</th>
-        <th style="font-weight:normal; font-size:7.5px;">du semestre</th>
-        <th style="font-weight:normal; font-size:7.5px;">du semestre</th>
+        <th>1<sup>ère</sup></th>
+        <th>2<sup>ème</sup></th>
       </tr>
     </thead>
-        <tbody>
-          <tr>
-      <td class="branche">Mathématiques</td>
-      <td>18</td>
+          <tbody>
+            <tr>
+      <td class="cours-nom">Religion</td>
+      <td>8</td>
+      <td>9</td>
+      <td class="max">10</td>
+      <td>17</td>
+      <td class="max">20</td>
+      <td>34</td>
+      <td class="max">40</td>
+    </tr><tr>
+      <td class="cours-nom">Mathématiques</td>
       <td>16</td>
+      <td>17</td>
       <td class="max">20</td>
       <td>35</td>
+      <td class="max">40</td>
+      <td>68</td>
+      <td class="max">80</td>
+    </tr><tr>
+      <td class="cours-nom">Français</td>
+      <td>34</td>
+      <td>31</td>
+      <td class="max">40</td>
+      <td>68</td>
+      <td class="max">80</td>
+      <td>133</td>
+      <td class="max">160</td>
+    </tr><tr>
+      <td class="cours-nom">Anglais</td>
+      <td>17</td>
+      <td>16</td>
+      <td class="max">20</td>
+      <td>36</td>
       <td class="max">40</td>
       <td>69</td>
       <td class="max">80</td>
     </tr><tr>
-      <td class="branche">Visites guidées</td>
-      <td>8</td>
-      <td>9</td>
-      <td class="max">10</td>
-      <td class="noir"></td>
-      <td class="noir"></td>
+      <td class="cours-nom">Comptabilité générale</td>
+      <td>42</td>
+      <td>44</td>
+      <td class="max">50</td>
+      <td>92</td>
+      <td class="max">100</td>
+      <td>178</td>
+      <td class="max">200</td>
+    </tr><tr>
+      <td class="cours-nom">Droit civil</td>
+      <td>17</td>
+      <td>18</td>
+      <td class="max">20</td>
+      <td>35</td>
+      <td class="max">40</td>
+      <td>70</td>
+      <td class="max">80</td>
+    </tr><tr>
+      <td class="cours-nom">Informatique</td>
+      <td>16</td>
       <td>17</td>
       <td class="max">20</td>
+      <td>34</td>
+      <td class="max">40</td>
+      <td>67</td>
+      <td class="max">80</td>
+    </tr><tr>
+      <td class="cours-nom">Pratique professionnelle</td>
+      <td>86</td>
+      <td>88</td>
+      <td class="max">100</td>
+      <td class="noir"></td>
+      <td class="noir"></td>
+      <td>174</td>
+      <td class="max">200</td>
     </tr>
-          
+            
       <tr class="synthese">
-        <td class="branche">TOTAUX</td>
-        <td>26</td>
-        <td>25</td>
-        <td class="max">30</td>
-        <td>35</td>
-        <td class="max">40</td>
-        <td>86</td>
-        <td class="max">100</td>
+        <td class="cours-nom">Totaux</td>
+        <td>246</td>
+        <td>240</td>
+        <td class="max">280</td>
+        <td>317</td>
+        <td class="max">360</td>
+        <td>803</td>
+        <td class="max">920</td>
       </tr>
       <tr class="synthese">
-        <td class="branche">POURCENTAGE</td>
-        <td colspan="6"></td>
-        <td>86%</td>
+        <td class="cours-nom">Pourcentage</td>
+        <td>87.86%</td>
+        <td>85.71%</td>
+        <td class="inerte"></td>
+        <td>88.06%</td>
+        <td class="inerte"></td>
+        <td>87.28%</td>
+        <td class="inerte"></td>
       </tr>
       <tr class="synthese">
-        <td class="branche">PLACE / NBRE D'ÉLÈVES</td>
-        <td colspan="6"></td>
-        <td>1/10</td>
+        <td class="cours-nom">Place / nbre</td>
+        <td>1/28</td>
+        <td>2/28</td>
+        <td class="inerte"></td>
+        <td>1/28</td>
+        <td class="inerte"></td>
+        <td>1/28</td>
+        <td class="inerte"></td>
       </tr>
       <tr class="synthese">
-        <td class="branche">MENTION</td>
-        <td colspan="7" style="text-align:left; padding-left:2mm;">Grande distinction</td>
+        <td class="cours-nom">Application</td>
+        <td>TB</td>
+        <td>TB</td>
+        <td class="noir"></td><td class="noir"></td><td class="noir"></td>
+        <td class="noir"></td><td class="noir"></td>
       </tr>
-        </tbody>
-      </table>
+      <tr class="synthese">
+        <td class="cours-nom">Conduite</td>
+        <td>TB</td>
+        <td>B</td>
+        <td class="noir"></td><td class="noir"></td><td class="noir"></td>
+        <td class="noir"></td><td class="noir"></td>
+      </tr>
+      <tr class="synthese">
+        <td class="cours-nom">Mention</td>
+        <td colspan="7" style="text-align:left; padding-left:1mm;">Grande distinction</td>
+      </tr>
+          </tbody>
+        </table>
 
-      <div class="appreciations">
-        <div class="ligne">
-          <div><strong>Conduite :</strong> TB</div>
-          <div><strong>Application :</strong> TB</div>
+        <div class="appreciations">
+          <div><strong>Observation :</strong> Excellent semestre, travail régulier.</div>
         </div>
-        <div><strong>Observation :</strong> Très bon semestre.</div>
-      </div>
 
-      <div class="pied">
-        <div class="fait-le">Fait à Kinshasa, le 1 août 2026</div>
         <div class="signatures">
-          <div class="case">
-            <div class="espace"></div>
-            Signature du titulaire
-          </div>
-          <div class="case">
-            <div class="espace"></div>
-            Cachet de l'école
-          </div>
-          <div class="case">
-            <div class="espace"></div>
-            Signature du responsable
+          <div class="fait-le">Fait à Kinshasa, le 6 août 2026</div>
+          <div class="ligne">
+            <div class="case">
+              <div class="espace"></div>
+              <div>Signature du titulaire</div>
+              
+            </div>
+            <div class="case">
+              <div class="espace"></div>
+              <div>Le Chef d'Établissement</div>
+              
+            </div>
+            <div class="case">
+              <div class="espace"></div>
+              <div>Cachet de l'école</div>
+            </div>
           </div>
         </div>
       </div>
-    </div><!-- Didacticiel d'installation : bouton d'aide contextuel, partagé par toutes les pages. -->
-<script src="didacticiel.js" data-ecran="Apercu bulletin semestre"></script>
-</body></html>
+      <div class="colonne">
+        <div class="entete">
+          
+          <div class="nom-ecole">Institut Saint Paul</div>
+          <div class="annee">Année scolaire 2026-2027</div>
+        </div>
+
+        <div class="titre-bulletin">Bulletin — 1er semestre</div>
+        
+
+        <div class="identite">
+          <div><strong>Nom :</strong> ILUNGA TSHIBOLA Grâce</div>
+          <div><strong>Matricule :</strong> ELV-0002</div>
+          <div><strong>Classe :</strong> 4ème HCG</div>
+        </div>
+
+        <table class="notes">
+          
+    <thead>
+      <tr>
+        <th class="cours-nom" rowspan="2" style="width:26%">Cours</th>
+        <th colspan="2">Périodes</th>
+        <th rowspan="2">Max<br/>pér.</th>
+        <th rowspan="2">Exam.</th>
+        <th rowspan="2">Max<br/>exam.</th>
+        <th rowspan="2">Total</th>
+        <th rowspan="2">Max<br/>sem.</th>
+      </tr>
+      <tr>
+        <th>1<sup>ère</sup></th>
+        <th>2<sup>ème</sup></th>
+      </tr>
+    </thead>
+          <tbody>
+            <tr>
+      <td class="cours-nom">Religion</td>
+      <td>7</td>
+      <td>7</td>
+      <td class="max">10</td>
+      <td>14</td>
+      <td class="max">20</td>
+      <td>28</td>
+      <td class="max">40</td>
+    </tr><tr>
+      <td class="cours-nom">Mathématiques</td>
+      <td>13</td>
+      <td>14</td>
+      <td class="max">20</td>
+      <td>27</td>
+      <td class="max">40</td>
+      <td>54</td>
+      <td class="max">80</td>
+    </tr><tr>
+      <td class="cours-nom">Français</td>
+      <td>28</td>
+      <td>27</td>
+      <td class="max">40</td>
+      <td>55</td>
+      <td class="max">80</td>
+      <td>110</td>
+      <td class="max">160</td>
+    </tr><tr>
+      <td class="cours-nom">Anglais</td>
+      <td>14</td>
+      <td>13</td>
+      <td class="max">20</td>
+      <td>28</td>
+      <td class="max">40</td>
+      <td>55</td>
+      <td class="max">80</td>
+    </tr><tr>
+      <td class="cours-nom">Comptabilité générale</td>
+      <td>36</td>
+      <td>35</td>
+      <td class="max">50</td>
+      <td>74</td>
+      <td class="max">100</td>
+      <td>145</td>
+      <td class="max">200</td>
+    </tr><tr>
+      <td class="cours-nom">Droit civil</td>
+      <td>14</td>
+      <td>15</td>
+      <td class="max">20</td>
+      <td>29</td>
+      <td class="max">40</td>
+      <td>58</td>
+      <td class="max">80</td>
+    </tr><tr>
+      <td class="cours-nom">Informatique</td>
+      <td>13</td>
+      <td>14</td>
+      <td class="max">20</td>
+      <td>27</td>
+      <td class="max">40</td>
+      <td>54</td>
+      <td class="max">80</td>
+    </tr><tr>
+      <td class="cours-nom">Pratique professionnelle</td>
+      <td>74</td>
+      <td>76</td>
+      <td class="max">100</td>
+      <td class="noir"></td>
+      <td class="noir"></td>
+      <td>150</td>
+      <td class="max">200</td>
+    </tr>
+            
+      <tr class="synthese">
+        <td class="cours-nom">Totaux</td>
+        <td>199</td>
+        <td>201</td>
+        <td class="max">280</td>
+        <td>254</td>
+        <td class="max">360</td>
+        <td>654</td>
+        <td class="max">920</td>
+      </tr>
+      <tr class="synthese">
+        <td class="cours-nom">Pourcentage</td>
+        <td>71.07%</td>
+        <td>71.79%</td>
+        <td class="inerte"></td>
+        <td>70.56%</td>
+        <td class="inerte"></td>
+        <td>71.09%</td>
+        <td class="inerte"></td>
+      </tr>
+      <tr class="synthese">
+        <td class="cours-nom">Place / nbre</td>
+        <td>2/28</td>
+        <td>1/28</td>
+        <td class="inerte"></td>
+        <td>2/28</td>
+        <td class="inerte"></td>
+        <td>2/28</td>
+        <td class="inerte"></td>
+      </tr>
+      <tr class="synthese">
+        <td class="cours-nom">Application</td>
+        <td>B</td>
+        <td>TB</td>
+        <td class="noir"></td><td class="noir"></td><td class="noir"></td>
+        <td class="noir"></td><td class="noir"></td>
+      </tr>
+      <tr class="synthese">
+        <td class="cours-nom">Conduite</td>
+        <td>TB</td>
+        <td>TB</td>
+        <td class="noir"></td><td class="noir"></td><td class="noir"></td>
+        <td class="noir"></td><td class="noir"></td>
+      </tr>
+      <tr class="synthese">
+        <td class="cours-nom">Mention</td>
+        <td colspan="7" style="text-align:left; padding-left:1mm;">Distinction</td>
+      </tr>
+          </tbody>
+        </table>
+
+        <div class="appreciations">
+          <div><strong>Observation :</strong> Progression nette en deuxième période.</div>
+        </div>
+
+        <div class="signatures">
+          <div class="fait-le">Fait à Kinshasa, le 6 août 2026</div>
+          <div class="ligne">
+            <div class="case">
+              <div class="espace"></div>
+              <div>Signature du titulaire</div>
+              
+            </div>
+            <div class="case">
+              <div class="espace"></div>
+              <div>Le Chef d'Établissement</div>
+              
+            </div>
+            <div class="case">
+              <div class="espace"></div>
+              <div>Cachet de l'école</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="colonne">
+        <div class="entete">
+          
+          <div class="nom-ecole">Institut Saint Paul</div>
+          <div class="annee">Année scolaire 2026-2027</div>
+        </div>
+
+        <div class="titre-bulletin">Bulletin — 1er semestre</div>
+        
+
+        <div class="identite">
+          <div><strong>Nom :</strong> KABEYA NGOY Daniel</div>
+          <div><strong>Matricule :</strong> ELV-0003</div>
+          <div><strong>Classe :</strong> 4ème HCG</div>
+        </div>
+
+        <table class="notes">
+          
+    <thead>
+      <tr>
+        <th class="cours-nom" rowspan="2" style="width:26%">Cours</th>
+        <th colspan="2">Périodes</th>
+        <th rowspan="2">Max<br/>pér.</th>
+        <th rowspan="2">Exam.</th>
+        <th rowspan="2">Max<br/>exam.</th>
+        <th rowspan="2">Total</th>
+        <th rowspan="2">Max<br/>sem.</th>
+      </tr>
+      <tr>
+        <th>1<sup>ère</sup></th>
+        <th>2<sup>ème</sup></th>
+      </tr>
+    </thead>
+          <tbody>
+            <tr>
+      <td class="cours-nom">Religion</td>
+      <td>5</td>
+      <td>6</td>
+      <td class="max">10</td>
+      <td>11</td>
+      <td class="max">20</td>
+      <td>22</td>
+      <td class="max">40</td>
+    </tr><tr>
+      <td class="cours-nom">Mathématiques</td>
+      <td>11</td>
+      <td>10</td>
+      <td class="max">20</td>
+      <td>21</td>
+      <td class="max">40</td>
+      <td>42</td>
+      <td class="max">80</td>
+    </tr><tr>
+      <td class="cours-nom">Français</td>
+      <td>22</td>
+      <td>24</td>
+      <td class="max">40</td>
+      <td>45</td>
+      <td class="max">80</td>
+      <td>91</td>
+      <td class="max">160</td>
+    </tr><tr>
+      <td class="cours-nom">Anglais</td>
+      <td>11</td>
+      <td>12</td>
+      <td class="max">20</td>
+      <td>22</td>
+      <td class="max">40</td>
+      <td>45</td>
+      <td class="max">80</td>
+    </tr><tr>
+      <td class="cours-nom">Comptabilité générale</td>
+      <td>29</td>
+      <td>31</td>
+      <td class="max">50</td>
+      <td>60</td>
+      <td class="max">100</td>
+      <td>120</td>
+      <td class="max">200</td>
+    </tr><tr>
+      <td class="cours-nom">Droit civil</td>
+      <td>12</td>
+      <td>11</td>
+      <td class="max">20</td>
+      <td>23</td>
+      <td class="max">40</td>
+      <td>46</td>
+      <td class="max">80</td>
+    </tr><tr>
+      <td class="cours-nom">Informatique</td>
+      <td>10</td>
+      <td>12</td>
+      <td class="max">20</td>
+      <td>21</td>
+      <td class="max">40</td>
+      <td>43</td>
+      <td class="max">80</td>
+    </tr><tr>
+      <td class="cours-nom">Pratique professionnelle</td>
+      <td>62</td>
+      <td>60</td>
+      <td class="max">100</td>
+      <td class="noir"></td>
+      <td class="noir"></td>
+      <td>122</td>
+      <td class="max">200</td>
+    </tr>
+            
+      <tr class="synthese">
+        <td class="cours-nom">Totaux</td>
+        <td>162</td>
+        <td>166</td>
+        <td class="max">280</td>
+        <td>203</td>
+        <td class="max">360</td>
+        <td>531</td>
+        <td class="max">920</td>
+      </tr>
+      <tr class="synthese">
+        <td class="cours-nom">Pourcentage</td>
+        <td>57.86%</td>
+        <td>59.29%</td>
+        <td class="inerte"></td>
+        <td>56.39%</td>
+        <td class="inerte"></td>
+        <td>57.72%</td>
+        <td class="inerte"></td>
+      </tr>
+      <tr class="synthese">
+        <td class="cours-nom">Place / nbre</td>
+        <td>3/28</td>
+        <td>3/28</td>
+        <td class="inerte"></td>
+        <td>3/28</td>
+        <td class="inerte"></td>
+        <td>3/28</td>
+        <td class="inerte"></td>
+      </tr>
+      <tr class="synthese">
+        <td class="cours-nom">Application</td>
+        <td>AB</td>
+        <td>B</td>
+        <td class="noir"></td><td class="noir"></td><td class="noir"></td>
+        <td class="noir"></td><td class="noir"></td>
+      </tr>
+      <tr class="synthese">
+        <td class="cours-nom">Conduite</td>
+        <td>B</td>
+        <td>B</td>
+        <td class="noir"></td><td class="noir"></td><td class="noir"></td>
+        <td class="noir"></td><td class="noir"></td>
+      </tr>
+      <tr class="synthese">
+        <td class="cours-nom">Mention</td>
+        <td colspan="7" style="text-align:left; padding-left:1mm;">Satisfaction</td>
+      </tr>
+          </tbody>
+        </table>
+
+        <div class="appreciations">
+          <div><strong>Observation :</strong> Doit soutenir l&#39;effort à l&#39;examen.</div>
+        </div>
+
+        <div class="signatures">
+          <div class="fait-le">Fait à Kinshasa, le 6 août 2026</div>
+          <div class="ligne">
+            <div class="case">
+              <div class="espace"></div>
+              <div>Signature du titulaire</div>
+              
+            </div>
+            <div class="case">
+              <div class="espace"></div>
+              <div>Le Chef d'Établissement</div>
+              
+            </div>
+            <div class="case">
+              <div class="espace"></div>
+              <div>Cachet de l'école</div>
+            </div>
+          </div>
+        </div>
+      </div></div></body></html>

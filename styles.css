@@ -1,0 +1,626 @@
+/* ==========================================================================
+   Ardoise — Espace Super Administrateur : styles
+   --------------------------------------------------------------------------
+   Se charge APRÈS theme.css et ui.css. Aucune couleur n'est écrite en dur :
+   tout passe par les variables du thème (--ocre, --craie, --bordure…), si
+   bien que les six thèmes d'Ardoise s'appliquent à ce panneau sans qu'une
+   seule ligne soit à ajouter ici.
+
+   Le préfixe `sa-` est systématique. Il évite toute collision avec les classes
+   des pages applicatives, conformément à l'isolement voulu pour ce panneau.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Mise en page générale
+   -------------------------------------------------------------------------- */
+.sa-application {
+  display: flex;
+  min-height: 100vh;
+  background: var(--craie);
+}
+
+.sa-navigation {
+  width: 252px;
+  flex: none;
+  background: var(--nav-fond);
+  color: var(--nav-texte-fort);
+  padding: 26px 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.sa-marque {
+  font-family: var(--police-titre);
+  font-weight: 600;
+  font-size: 1.35rem;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.sa-marque .sa-etiquette-admin {
+  font-family: var(--police-mono);
+  font-size: 0.58rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--nav-fond);
+  background: var(--ocre);
+  padding: 3px 7px;
+  border-radius: var(--r-pilule);
+}
+
+.sa-menu { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.sa-menu a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 11px;
+  border-radius: var(--r-petit);
+  color: var(--nav-texte);
+  text-decoration: none;
+  font-size: 0.89rem;
+  transition: background var(--transition-base), color var(--transition-base);
+}
+.sa-menu a:hover { color: var(--nav-texte-fort); background: var(--nav-actif-fond); }
+.sa-menu a.actif {
+  background: var(--nav-actif-fond);
+  color: var(--nav-texte-fort);
+  font-weight: 600;
+  box-shadow: inset 2px 0 0 var(--ocre);
+}
+.sa-menu .sa-icone { width: 17px; text-align: center; flex: none; opacity: 0.85; font-size: 0.95rem; }
+
+/* Groupes repliables : Écoles et Explorer ont des sous-sections. Repliés par
+   défaut, la navigation tient sur un écran d'ordinateur portable. */
+.sa-groupe > .sa-groupe-titre {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 11px;
+  background: none;
+  border: 0;
+  color: var(--nav-texte);
+  font: inherit;
+  font-size: 0.89rem;
+  cursor: pointer;
+  border-radius: var(--r-petit);
+  text-align: left;
+}
+.sa-groupe > .sa-groupe-titre:hover { color: var(--nav-texte-fort); background: var(--nav-actif-fond); }
+.sa-groupe .sa-chevron { margin-left: auto; font-size: 0.7rem; transition: transform var(--transition-base); }
+.sa-groupe.ouvert .sa-chevron { transform: rotate(90deg); }
+.sa-sous-menu {
+  list-style: none;
+  margin: 2px 0 6px;
+  padding: 0 0 0 26px;
+  display: none;
+  flex-direction: column;
+  gap: 1px;
+}
+.sa-groupe.ouvert .sa-sous-menu { display: flex; }
+.sa-sous-menu a { font-size: 0.845rem; padding: 7px 10px; }
+
+.sa-nav-pied {
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid var(--nav-separateur);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sa-identite {
+  font-size: 0.76rem;
+  color: var(--nav-texte-faible);
+  padding: 0 10px;
+  word-break: break-all;
+}
+.sa-deconnexion {
+  background: none;
+  border: 1px solid var(--nav-separateur);
+  color: var(--nav-texte);
+  padding: 8px 12px;
+  border-radius: var(--r-bouton);
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.sa-deconnexion:hover { color: var(--nav-texte-fort); border-color: var(--nav-texte); }
+
+.sa-principal {
+  flex: 1;
+  min-width: 0;
+  padding: 30px 34px 64px;
+}
+
+.sa-entete {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+.sa-entete h1 {
+  font-family: var(--police-titre);
+  font-weight: 600;
+  font-size: 1.75rem;
+  margin: 0 0 3px;
+}
+.sa-sous-titre { color: var(--texte-att); font-size: 0.92rem; margin: 0; }
+.sa-entete-actions { display: flex; gap: 9px; flex-wrap: wrap; }
+
+/* Bouton d'ouverture de la navigation, mobile uniquement. */
+.sa-bouton-nav {
+  display: none;
+  background: var(--craie-2);
+  border: 1.5px solid var(--bordure);
+  border-radius: var(--r-bouton);
+  padding: 8px 12px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: var(--texte-sombre);
+}
+
+/* --------------------------------------------------------------------------
+   2. Sections et cartes
+   -------------------------------------------------------------------------- */
+.sa-section { margin-bottom: 30px; }
+.sa-section-titre {
+  font-family: var(--police-titre);
+  font-weight: 600;
+  font-size: 1.05rem;
+  margin: 0 0 13px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.sa-section-titre .sa-annexe { font-family: var(--police-corps); font-size: 0.8rem; color: var(--texte-att); font-weight: 400; }
+
+.sa-panneau {
+  background: var(--craie-2);
+  border: 1px solid var(--bordure);
+  border-radius: var(--r-carte);
+  padding: 18px;
+}
+.sa-panneau + .sa-panneau { margin-top: 14px; }
+
+.sa-grille-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(178px, 1fr));
+  gap: 12px;
+}
+.sa-grille-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 16px; }
+.sa-grille-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+
+.sa-carte-stat {
+  background: var(--craie-2);
+  border: 1px solid var(--bordure);
+  border-radius: var(--r-carte);
+  padding: 15px 16px;
+  position: relative;
+  overflow: hidden;
+}
+.sa-carte-stat.ton-succes  { box-shadow: inset 3px 0 0 var(--vert-ok); }
+.sa-carte-stat.ton-attention { box-shadow: inset 3px 0 0 var(--ocre); }
+.sa-carte-stat.ton-danger  { box-shadow: inset 3px 0 0 var(--rouge); }
+.sa-carte-stat.ton-info    { box-shadow: inset 3px 0 0 var(--encre); }
+
+.sa-carte-icone { font-size: 1rem; opacity: 0.5; margin-bottom: 6px; }
+.sa-carte-valeur {
+  font-family: var(--police-titre);
+  font-weight: 600;
+  font-size: 1.62rem;
+  line-height: 1.05;
+  word-break: break-word;
+}
+.sa-carte-etiquette { font-size: 0.74rem; color: var(--texte-att); margin-top: 5px; line-height: 1.35; }
+.sa-carte-detail { font-size: 0.72rem; color: var(--texte-att); margin-top: 7px; opacity: 0.85; }
+
+/* --------------------------------------------------------------------------
+   3. Tableaux
+   -------------------------------------------------------------------------- */
+.sa-conteneur-tableau {
+  background: var(--craie-2);
+  border: 1px solid var(--bordure);
+  border-radius: var(--r-carte);
+  overflow-x: auto;
+}
+.sa-tableau { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+.sa-tableau th {
+  text-align: left;
+  padding: 11px 14px;
+  background: #F2EFE7;
+  background: #F4F1E9; background: color-mix(in srgb, var(--texte-sombre) 3%, transparent);
+  color: var(--texte-att);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.sa-tableau td { padding: 11px 14px; border-top: 1px solid var(--bordure); vertical-align: middle; }
+.sa-tableau tbody tr:hover { background: #F4F1E9; background: color-mix(in srgb, var(--texte-sombre) 2.5%, transparent); }
+.sa-ligne-cliquable { cursor: pointer; }
+.sa-triable { cursor: pointer; user-select: none; }
+.sa-triable:hover { color: var(--texte-sombre); }
+.sa-fleche-tri { color: var(--ocre); font-size: 0.8rem; }
+
+.sa-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sa-mono { font-family: var(--police-mono); font-size: 0.8rem; color: var(--encre); }
+.sa-muet { color: var(--texte-att); opacity: 0.65; }
+.sa-tronque { max-width: 340px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+
+.sa-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 13px 2px 0;
+  font-size: 0.82rem;
+}
+.sa-pages { display: flex; gap: 4px; flex-wrap: wrap; }
+.sa-bouton-page {
+  min-width: 32px;
+  padding: 6px 9px;
+  background: var(--craie-2);
+  border: 1px solid var(--bordure);
+  border-radius: var(--r-petit);
+  font: inherit;
+  font-size: 0.82rem;
+  color: var(--texte-sombre);
+  cursor: pointer;
+}
+.sa-bouton-page:hover:not(:disabled) { border-color: var(--ocre); }
+.sa-bouton-page.actif { background: var(--ocre); border-color: var(--ocre); color: var(--craie-2); font-weight: 600; }
+.sa-bouton-page:disabled { opacity: 0.4; cursor: not-allowed; }
+.sa-ellipse { padding: 6px 3px; color: var(--texte-att); }
+
+/* --------------------------------------------------------------------------
+   4. Formulaires, filtres, boutons
+   -------------------------------------------------------------------------- */
+.sa-barre-filtres {
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.sa-champ {
+  padding: 8px 11px;
+  border: 1.5px solid var(--bordure);
+  border-radius: var(--r-bouton);
+  background: var(--craie-2);
+  color: var(--texte-sombre);
+  font: inherit;
+  font-size: 0.86rem;
+  min-width: 0;
+}
+.sa-champ:focus { outline: none; border-color: var(--encre); }
+.sa-champ-recherche { flex: 1 1 240px; max-width: 380px; }
+.sa-champ-date { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--texte-att); }
+.sa-champ-bloc { display: block; margin-bottom: 13px; }
+.sa-champ-bloc > span {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--texte-att);
+  margin-bottom: 5px;
+}
+.sa-champ-bloc .sa-champ, .sa-champ-bloc textarea { width: 100%; }
+textarea.sa-champ { font-family: var(--police-corps); resize: vertical; min-height: 92px; }
+
+.sa-bouton {
+  padding: 9px 15px;
+  border-radius: var(--r-bouton);
+  border: 1.5px solid transparent;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.sa-bouton-principal { background: var(--ocre); color: var(--craie-2); }
+.sa-bouton-principal:hover { background: var(--ocre-dark); }
+.sa-bouton-secondaire { background: var(--craie-2); border-color: var(--bordure); color: var(--texte-sombre); }
+.sa-bouton-secondaire:hover { border-color: var(--texte-sombre); }
+.sa-bouton-danger { background: var(--rouge); color: #fff; }
+.sa-bouton-danger:hover { filter: brightness(0.92); }
+.sa-bouton:disabled { opacity: 0.55; cursor: not-allowed; }
+.sa-bouton-petit { padding: 6px 11px; font-size: 0.78rem; }
+
+.sa-onglets { display: flex; gap: 4px; border-bottom: 1px solid var(--bordure); margin-bottom: 18px; overflow-x: auto; }
+.sa-onglet {
+  padding: 9px 14px;
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  font: inherit;
+  font-size: 0.86rem;
+  color: var(--texte-att);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.sa-onglet:hover { color: var(--texte-sombre); }
+.sa-onglet.actif { color: var(--texte-sombre); border-bottom-color: var(--ocre); font-weight: 600; }
+
+/* --------------------------------------------------------------------------
+   5. Badges
+   -------------------------------------------------------------------------- */
+.sa-badge {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: var(--r-pilule);
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+  text-transform: capitalize;
+}
+.sa-badge.ton-succes    { background: #E9F1EC; background: color-mix(in srgb, var(--vert-ok) 15%, transparent); color: var(--vert-ok); }
+.sa-badge.ton-danger    { background: #F7E7E5; background: color-mix(in srgb, var(--rouge) 13%, transparent);   color: var(--rouge); }
+.sa-badge.ton-attention { background: #F5EAD9; background: color-mix(in srgb, var(--ocre) 16%, transparent);    color: var(--ocre-dark); }
+.sa-badge.ton-info      { background: #E6ECEE; background: color-mix(in srgb, var(--encre) 14%, transparent);   color: var(--encre); }
+.sa-badge.ton-neutre    { background: #EFEDE6; background: color-mix(in srgb, var(--texte-att) 13%, transparent); color: var(--texte-att); }
+
+.sa-pastille { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+.sa-pastille.ton-succes { background: var(--vert-ok); }
+.sa-pastille.ton-danger { background: var(--rouge); }
+.sa-pastille.ton-attention { background: var(--ocre); }
+.sa-pastille.ton-neutre { background: var(--texte-att); }
+
+/* Bandeau de lecture seule : présent sur toutes les vues de l'Explorateur.
+   Il n'est pas décoratif — c'est le rappel permanent du contrat de la mission. */
+.sa-bandeau-lecture {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 14px;
+  border-radius: var(--r-bouton);
+  background: #E6ECEE;
+  background: #E6ECEE; background: color-mix(in srgb, var(--encre) 8%, transparent);
+  border-left: 3px solid var(--encre);
+  color: var(--encre);
+  font-size: 0.83rem;
+  margin-bottom: 16px;
+}
+.sa-bandeau-observation {
+  background: #F5EAD9;
+  background: #F5EAD9; background: color-mix(in srgb, var(--ocre) 12%, transparent);
+  border-left-color: var(--ocre);
+  color: var(--ocre-dark);
+}
+
+/* --------------------------------------------------------------------------
+   6. États : chargement, vide, erreur
+   -------------------------------------------------------------------------- */
+.sa-squelettes { display: flex; flex-direction: column; gap: 9px; }
+.sa-squelette {
+  background: #EEEBE1;
+  background: linear-gradient(90deg,
+    color-mix(in srgb, var(--texte-att) 9%, transparent) 25%,
+    color-mix(in srgb, var(--texte-att) 15%, transparent) 37%,
+    color-mix(in srgb, var(--texte-att) 9%, transparent) 63%);
+  background-size: 400% 100%;
+  border-radius: var(--r-carte);
+  animation: sa-luire 1.35s ease-in-out infinite;
+}
+@keyframes sa-luire { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
+@media (prefers-reduced-motion: reduce) { .sa-squelette { animation: none; } }
+
+.sa-etat-vide, .sa-etat-erreur {
+  padding: 44px 22px;
+  text-align: center;
+  color: var(--texte-att);
+}
+.sa-etat-erreur { color: var(--rouge); }
+.sa-etat-vide-titre { font-family: var(--police-titre); font-size: 1.02rem; font-weight: 600; margin-bottom: 6px; }
+.sa-etat-vide-detail { font-size: 0.86rem; opacity: 0.85; }
+
+/* --------------------------------------------------------------------------
+   7. Graphiques
+   -------------------------------------------------------------------------- */
+.sa-graphe svg { width: 100%; height: auto; display: block; overflow: visible; }
+.sa-grille { stroke: var(--bordure); stroke-width: 1; }
+.sa-axe { fill: var(--texte-att); font-size: 10px; font-family: var(--police-corps); }
+.sa-anneau-valeur { fill: var(--texte-sombre); font-size: 16px; font-weight: 600; font-family: var(--police-titre); }
+.sa-anneau-libelle { fill: var(--texte-att); font-size: 8.5px; font-family: var(--police-corps); }
+
+.sa-legende { display: flex; gap: 15px; flex-wrap: wrap; margin-top: 11px; font-size: 0.78rem; color: var(--texte-att); }
+.sa-legende span { display: inline-flex; align-items: center; gap: 6px; }
+.sa-legende i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+
+.sa-barres { display: flex; flex-direction: column; gap: 8px; }
+.sa-barre-ligne { display: grid; grid-template-columns: minmax(90px, 190px) 1fr 68px; gap: 11px; align-items: center; font-size: 0.82rem; }
+.sa-barre-libelle { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sa-barre-piste { background: #EFEDE6; background: color-mix(in srgb, var(--texte-att) 12%, transparent); border-radius: var(--r-pilule); height: 9px; overflow: hidden; }
+.sa-barre-remplissage { height: 100%; border-radius: var(--r-pilule); transition: width var(--transition-base); }
+.sa-barre-valeur { text-align: right; font-variant-numeric: tabular-nums; color: var(--texte-att); }
+
+.sa-repartition .sa-bande { display: flex; height: 13px; border-radius: var(--r-pilule); overflow: hidden; background: var(--bordure); }
+.sa-segment { height: 100%; }
+
+.sa-anneau svg { width: 118px; height: 118px; }
+.sa-anneaux { display: flex; gap: 20px; flex-wrap: wrap; justify-content: space-around; }
+
+/* --------------------------------------------------------------------------
+   8. Listes de définitions (fiches détaillées)
+   -------------------------------------------------------------------------- */
+.sa-liste-infos { display: flex; flex-direction: column; }
+.sa-ligne-info {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--bordure);
+  font-size: 0.86rem;
+}
+.sa-ligne-info:last-child { border-bottom: none; }
+.sa-ligne-info > span:first-child { color: var(--texte-att); flex: none; }
+.sa-ligne-info > span:last-child { text-align: right; word-break: break-word; }
+
+.sa-texte { font-size: 0.9rem; line-height: 1.55; margin: 0 0 12px; }
+.sa-note {
+  font-size: 0.8rem;
+  color: var(--texte-att);
+  background: #EFEDE6;
+  background: #EFEDE6; background: color-mix(in srgb, var(--texte-att) 6%, transparent);
+  border-radius: var(--r-bouton);
+  padding: 10px 13px;
+  line-height: 1.5;
+}
+.sa-bloc-code {
+  font-family: var(--police-mono);
+  font-size: 0.76rem;
+  background: #F2EFE7;
+  background: #F4F1E9; background: color-mix(in srgb, var(--texte-sombre) 4%, transparent);
+  border: 1px solid var(--bordure);
+  border-radius: var(--r-bouton);
+  padding: 11px 13px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 320px;
+  overflow-y: auto;
+  line-height: 1.5;
+}
+
+/* --------------------------------------------------------------------------
+   9. Modales et messages
+   -------------------------------------------------------------------------- */
+.sa-voile {
+  position: fixed;
+  inset: 0;
+  background: rgba(31, 43, 36, 0.45);
+  background: rgba(31, 43, 36, 0.45); background: color-mix(in srgb, var(--ardoise) 48%, transparent);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 60;
+}
+.sa-voile.visible { display: flex; }
+.sa-modale {
+  background: var(--craie-2);
+  border-radius: var(--r-carte);
+  width: 100%;
+  max-width: 540px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--ombre-flottante);
+}
+.sa-modale.large { max-width: 880px; }
+.sa-modale-entete {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 22px 24px 14px;
+  border-bottom: 1px solid var(--bordure);
+}
+.sa-modale-entete h2 { font-family: var(--police-titre); font-weight: 600; font-size: 1.25rem; margin: 0; }
+.sa-modale-sous-titre { color: var(--texte-att); font-size: 0.83rem; margin: 4px 0 0; }
+.sa-fermer {
+  background: none; border: 0; font-size: 1.5rem; line-height: 1;
+  color: var(--texte-att); cursor: pointer; padding: 0 4px;
+}
+.sa-fermer:hover { color: var(--texte-sombre); }
+.sa-modale-corps { padding: 20px 24px; overflow-y: auto; flex: 1; }
+.sa-modale-actions {
+  display: flex; justify-content: flex-end; gap: 9px;
+  padding: 14px 24px 20px; border-top: 1px solid var(--bordure);
+}
+
+#sa-toasts {
+  position: fixed; bottom: 20px; right: 20px; z-index: 90;
+  display: flex; flex-direction: column; gap: 9px; max-width: 380px;
+}
+.sa-toast {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 12px 15px;
+  background: var(--craie-2);
+  border: 1px solid var(--bordure);
+  border-left-width: 3px;
+  border-radius: var(--r-bouton);
+  box-shadow: var(--ombre-flottante);
+  font-size: 0.86rem;
+  animation: sa-entree 0.2s ease;
+}
+@keyframes sa-entree { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.sa-toast.ton-succes    { border-left-color: var(--vert-ok); }
+.sa-toast.ton-erreur    { border-left-color: var(--rouge); }
+.sa-toast.ton-attention { border-left-color: var(--ocre); }
+.sa-toast.ton-info      { border-left-color: var(--encre); }
+.sa-toast button { background: none; border: 0; font-size: 1.15rem; line-height: 1; color: var(--texte-att); cursor: pointer; margin-left: auto; }
+
+/* --------------------------------------------------------------------------
+   10. Recherche globale (palette)
+   -------------------------------------------------------------------------- */
+.sa-resultat {
+  display: flex; align-items: center; gap: 13px;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--bordure);
+  cursor: pointer;
+}
+.sa-resultat:last-child { border-bottom: none; }
+.sa-resultat:hover { background: #F4F1E9; background: color-mix(in srgb, var(--texte-sombre) 3%, transparent); }
+.sa-resultat-icone { font-size: 1.05rem; width: 26px; text-align: center; flex: none; }
+.sa-resultat-corps { min-width: 0; flex: 1; }
+.sa-resultat-titre { font-weight: 600; font-size: 0.9rem; }
+.sa-resultat-detail { font-size: 0.79rem; color: var(--texte-att); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sa-resultat-ecole { font-size: 0.74rem; color: var(--texte-att); flex: none; }
+
+/* --------------------------------------------------------------------------
+   11. Responsive
+   -------------------------------------------------------------------------- */
+@media (max-width: 980px) {
+  .sa-principal { padding: 22px 18px 60px; }
+  .sa-navigation {
+    position: fixed; top: 0; left: 0; z-index: 70;
+    transform: translateX(-100%);
+    transition: transform var(--transition-base);
+    box-shadow: var(--ombre-flottante);
+  }
+  body.sa-nav-ouverte .sa-navigation { transform: none; }
+  body.sa-nav-ouverte::after {
+    content: ''; position: fixed; inset: 0; z-index: 65;
+    background: rgba(31, 43, 36, 0.45);
+    background: rgba(31, 43, 36, 0.45); background: color-mix(in srgb, var(--ardoise) 40%, transparent);
+  }
+  .sa-bouton-nav { display: inline-flex; }
+  .sa-entete h1 { font-size: 1.45rem; }
+  .sa-grille-stats { grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); }
+  .sa-grille-2, .sa-grille-3 { grid-template-columns: 1fr; }
+  .sa-barre-ligne { grid-template-columns: minmax(74px, 118px) 1fr 56px; }
+}
+
+@media (max-width: 560px) {
+  .sa-principal { padding: 18px 14px 52px; }
+  .sa-carte-valeur { font-size: 1.35rem; }
+  .sa-tableau { font-size: 0.82rem; }
+  .sa-tableau th, .sa-tableau td { padding: 9px 11px; }
+  .sa-champ-recherche { flex-basis: 100%; max-width: none; }
+  .sa-modale-corps { padding: 16px 17px; }
+  .sa-modale-entete { padding: 18px 17px 12px; }
+  .sa-modale-actions { padding: 12px 17px 16px; }
+  #sa-toasts { left: 14px; right: 14px; bottom: 14px; max-width: none; }
+}
+
+/* Impression : le contenu, rien que le contenu. */
+@media print {
+  .sa-navigation, .sa-entete-actions, .sa-barre-filtres, .sa-pagination, #sa-toasts { display: none !important; }
+  .sa-principal { padding: 0; }
+  .sa-conteneur-tableau, .sa-panneau { border: none; }
+}

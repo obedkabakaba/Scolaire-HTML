@@ -2,18 +2,30 @@
 <!--
   ATTENTION : cette page est volontairement TOTALEMENT ISOLÉE du reste de l'application.
   - Aucune classe partagée (.nav-liste, .nav-item, gererAccesParRole) avec les autres pages.
+    Toutes les classes propres au panneau portent le préfixe `sa-`.
   - Clés de connexion dédiées (ardoise_admin_access_token / ardoise_admin_refresh_token),
     jamais les mêmes que ardoise_access_token / ardoise_refresh_token utilisées ailleurs.
-  - Ne JAMAIS appliquer ici les scripts de mise à jour groupée destinés aux 17 pages
+  - Ne JAMAIS appliquer ici les scripts de mise à jour groupée destinés aux pages
     applicatives normales (barre latérale, permissions par rôle, etc.) — ce panneau a
     son propre système de connexion et son propre système de navigation, à part entière.
+
+  theme.css et ui.css sont chargés : ce sont des feuilles de style, elles ne portent
+  aucune session. Les recharger ici garantit que le panneau suit la charte d'Ardoise
+  et ses six thèmes sans dupliquer une seule couleur.
+
+  ARCHITECTURE
+  ------------
+  Application monopage à routeur de fragment (#/section). Les vues sont enregistrées
+  par les modules `super-admin/vues-*.js` auprès de `super-admin/noyau.js`.
+  Ajouter une section = ajouter un SA.enregistrerVue() et une entrée de menu.
 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Ardoise — Super Admin</title>
-<link rel="icon" type="image/png" href="data:image/png;base64,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">
+<meta name="robots" content="noindex, nofollow" />
+
 <link rel="manifest" href="manifest.json" />
 <link rel="icon" type="image/png" sizes="192x192" href="icone-192.png" />
 <meta name="theme-color" content="#111A19" />
@@ -22,99 +34,11 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="Ardoise" />
 <link rel="apple-touch-icon" sizes="180x180" href="icone-ios-180.png" />
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --ardoise: #1F2B24; --craie: #F6F2E7; --craie-2: #FBF9F3;
-    --ocre: #C98A3E; --ocre-dark: #A96F2E; --encre: #3C5A62;
-    --rouge: #B23A2E; --vert-ok: #4C7A5A;
-    --texte-sombre: #1F2B24; --texte-att: #6B7269; --bordure: #E4DFCF;
-  }
-  * { box-sizing: border-box; }
-  body { margin: 0; font-family: var(--police-corps); color: var(--texte-sombre); background: var(--craie); }
 
-  /* ---------- Écran de connexion Super Admin ---------- */
-  .ecran-connexion { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
-  .carte-connexion { background: var(--craie-2); border: 1px solid var(--bordure); border-radius:  var(--r-carte); padding: 36px; max-width: 380px; width: 100%; }
-  .carte-connexion h1 { font-family: var(--police-titre); font-weight: 600; font-size: 1.6rem; margin: 0 0 4px 0; }
-  .carte-connexion .sous-titre { color: var(--texte-att); font-size: 0.9rem; margin: 0 0 28px 0; }
-
-  .champ { margin-bottom: 16px; }
-  .champ label { display: block; font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--texte-att); margin-bottom: 6px; }
-  .champ input, .champ select {
-    width: 100%; padding: 11px 13px; font-size: 0.92rem; font-family: var(--police-corps);
-    border: 1.5px solid var(--bordure); border-radius:  var(--r-bouton); background: #fff; color: var(--texte-sombre);
-  }
-  .champ input:focus, .champ select:focus { outline: none; border-color: var(--encre); }
-
-  .bouton { padding: 11px 18px; border-radius:  var(--r-bouton); font-family: var(--police-corps); font-size: 0.9rem; font-weight: 600; cursor: pointer; border: 1.5px solid transparent; }
-  .bouton-principal { background: var(--ocre); color: var(--craie-2); width: 100%; }
-  .bouton-principal:hover { background: var(--ocre-dark); }
-  .bouton-secondaire { background: none; border-color: var(--bordure); color: var(--texte-sombre); }
-  .bouton-secondaire:hover { border-color: var(--ardoise); }
-  .bouton:disabled { opacity: 0.55; cursor: not-allowed; }
-
-  .message-erreur { display: none; margin: -4px 0 16px 0; padding: 10px 12px; font-size: 0.85rem; color: var(--rouge); border-left: 2.5px solid var(--rouge); background: rgba(178,58,46,0.06); }
-  .message-erreur.visible { display: block; }
-
-  /* ---------- Panneau principal ---------- */
-  .panneau-principal { display: none; padding: 36px 44px 60px 44px; max-width: 1000px; margin: 0 auto; }
-  .entete-page { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px; flex-wrap: wrap; gap: 16px; }
-  .entete-page h1 { font-family: var(--police-titre); font-weight: 600; font-size: 1.9rem; margin: 0 0 4px 0; }
-  .entete-page .sous-titre { color: var(--texte-att); font-size: 0.95rem; margin: 0; }
-  .bouton-deconnexion { background: none; border: 1.5px solid var(--bordure); color: var(--texte-sombre); padding: 9px 16px; border-radius:  var(--r-bouton); font-size: 0.86rem; font-weight: 500; cursor: pointer; }
-
-  .conteneur-tableau { background: var(--craie-2); border: 1px solid var(--bordure); border-radius:  var(--r-carte); overflow: hidden; margin-bottom: 24px; }
-  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-  th { text-align: left; padding: 13px 16px; background: rgba(31,43,36,0.03); color: var(--texte-att); font-size: 0.78rem; text-transform: uppercase; font-weight: 600; }
-  td { padding: 13px 16px; border-top: 1px solid var(--bordure); }
-  .matricule-cell { font-family: var(--police-mono); font-size: 0.82rem; color: var(--encre); }
-  .badge-statut { display: inline-block; padding: 3px 9px; border-radius:  var(--r-pilule); font-size: 0.75rem; font-weight: 600; }
-  .badge-statut.actif { background: rgba(76,122,90,0.12); color: var(--vert-ok); }
-  .badge-statut.autre { background: rgba(178,58,46,0.1); color: var(--rouge); }
-  .etat-vide-tableau { padding: 40px 20px; text-align: center; color: var(--texte-att); }
-
-  /* Modale création école */
-  .voile { position: fixed; inset: 0; background: rgba(31,43,36,0.45); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 10; }
-  .voile.visible { display: flex; }
-  .modale { background: var(--craie-2); border-radius:  var(--r-carte); padding: 30px; max-width: 520px; width: 100%; max-height: 90vh; overflow-y: auto; }
-  .modale h2 { font-family: var(--police-titre); font-weight: 600; font-size: 1.4rem; margin: 0 0 6px 0; }
-  .modale .separation { border: none; border-top: 1px solid var(--bordure); margin: 20px 0; }
-  .modale .sous-section { font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--texte-att); margin-bottom: 12px; }
-  .ligne-champs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-  /* Deux champs côte à côte sous 400 px sont saisissables mais désagréables
-     au doigt : on les empile. */
-  @media (max-width: 640px) { .ligne-champs { grid-template-columns: 1fr; } }
-  .actions-modale { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; }
-
-  .message-flash { display: none; padding: 12px 16px; border-radius:  var(--r-bouton); font-size: 0.88rem; margin-bottom: 20px; }
-  .message-flash.visible { display: block; }
-  .message-flash.succes { background: rgba(76,122,90,0.1); color: var(--vert-ok); }
-  .message-flash.erreur { background: rgba(178,58,46,0.08); color: var(--rouge); }
-
-  .grille-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 26px; }
-  @media (max-width: 900px) { .grille-stats { grid-template-columns: repeat(2, 1fr); } }
-  .carte-stat { background: var(--craie-2); border: 1px solid var(--bordure); border-radius:  var(--r-carte); padding: 16px; }
-  .carte-stat .valeur { font-family: var(--police-titre); font-weight: 600; font-size: 1.6rem; line-height: 1; }
-  .carte-stat .etiquette { font-size: 0.74rem; color: var(--texte-att); margin-top: 4px; }
-
-  .barre-recherche { margin-bottom: 16px; }
-  .barre-recherche input { width: 100%; max-width: 360px; padding: 9px 12px; border: 1.5px solid var(--bordure); border-radius:  var(--r-bouton); font-size: 0.9rem; font-family: var(--police-corps); }
-  tr.ligne-ecole { cursor: pointer; }
-  tr.ligne-ecole:hover { background: rgba(31,43,36,0.03); }
-
-  .modale-large { max-width: 720px; }
-  .section-detail { margin-bottom: 22px; }
-  .section-detail h3 { font-family: var(--police-titre); font-weight: 600; font-size: 1rem; margin: 0 0 12px 0; display: flex; justify-content: space-between; align-items: center; }
-  .ligne-info { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--bordure); font-size: 0.88rem; }
-  .ligne-info:last-child { border-bottom: none; }
-  .ligne-info span:first-child { color: var(--texte-att); }
-  .grille-stats-mini { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-  .grille-stats-mini .carte-stat { text-align: center; padding: 12px; }
-  .mot-de-passe-affiche { background: rgba(201,138,62,0.1); border: 1px dashed var(--ocre); border-radius:  var(--r-bouton); padding: 10px 12px; font-family: var(--police-mono); font-size: 0.95rem; margin-top: 10px; }
-</style>
 <script>
   /* Applique le thème AVANT le premier affichage, pour éviter tout clignotement.
      Aucune liste ici : elle divergerait à chaque nouveau thème. theme.js
@@ -122,653 +46,238 @@
   (function(){var t;
    try{t=localStorage.getItem('ardoise_theme')||sessionStorage.getItem('ardoise_theme');}catch(e){}
    var th=(t&&/^[a-z][a-z0-9-]{1,19}$/.test(t))?t:'ardoise';
-   document.documentElement.setAttribute('data-theme', th);
-   var p,c;
-   try{p=localStorage.getItem('ardoise_nav_position');c=localStorage.getItem('ardoise_nav_compact');}catch(e){}
-   if(!c&&th==='studio')c='oui';
-   document.documentElement.setAttribute('data-nav-position',['gauche','droite','haut','bas'].indexOf(p)!==-1?p:'gauche');
-   document.documentElement.setAttribute('data-nav-compact',c==='oui'?'oui':'non');})();
+   document.documentElement.setAttribute('data-theme', th);})();
 </script>
+
 <link rel="stylesheet" href="theme.css" />
 <link rel="stylesheet" href="ui.css" />
+<link rel="stylesheet" href="super-admin/styles.css" />
 
+<style>
+  /* Seul bloc de style propre à cette page : l'écran de connexion, qui vit
+     avant que l'application ne soit montée. Tout le reste est dans
+     super-admin/styles.css. */
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: var(--police-corps); color: var(--texte-sombre); background: var(--craie); }
+
+  .sa-ecran-connexion { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+  .sa-carte-connexion {
+    background: var(--craie-2); border: 1px solid var(--bordure);
+    border-radius: var(--r-carte); padding: 36px; max-width: 390px; width: 100%;
+  }
+  .sa-carte-connexion h1 { font-family: var(--police-titre); font-weight: 600; font-size: 1.55rem; margin: 0 0 4px; }
+  .sa-carte-connexion .sa-sous-titre { margin: 0 0 26px; font-size: 0.88rem; }
+  .sa-erreur-connexion {
+    display: none; margin: -6px 0 16px; padding: 10px 12px; font-size: 0.85rem;
+    color: var(--rouge); border-left: 2.5px solid var(--rouge);
+    background: rgba(178, 58, 46, 0.06);
+  }
+  .sa-erreur-connexion.visible { display: block; }
+  .sa-carte-connexion .sa-bouton { width: 100%; margin-top: 6px; }
+</style>
 </head>
 <body>
 
-<!-- Écran de connexion Super Admin -->
-<div class="ecran-connexion" id="ecran-connexion">
-  <div class="carte-connexion">
+<!-- =====================================================================
+     Écran de connexion
+     ===================================================================== -->
+<div class="sa-ecran-connexion" id="ecran-connexion">
+  <div class="sa-carte-connexion">
     <h1>Ardoise — Super Admin</h1>
-    <p class="sous-titre">Accès réservé à l'administration de la plateforme.</p>
-    <div class="message-erreur" id="zone-erreur-connexion"></div>
-    <form id="formulaire-connexion-admin">
-      <div class="champ"><label for="admin-email">Email</label><input type="email" id="admin-email" required /></div>
-      <div class="champ"><label for="admin-mdp">Mot de passe</label><input type="password" id="admin-mdp" required /></div>
-      <button type="submit" class="bouton bouton-principal" id="bouton-connexion-admin">Se connecter</button>
+    <p class="sa-sous-titre">Accès réservé à l'administration de la plateforme.</p>
+
+    <div class="sa-erreur-connexion" id="erreur-connexion" role="alert"></div>
+
+    <form id="formulaire-connexion" autocomplete="on">
+      <label class="sa-champ-bloc">
+        <span>Email</span>
+        <input type="email" class="sa-champ" id="champ-email" autocomplete="username" required />
+      </label>
+      <label class="sa-champ-bloc">
+        <span>Mot de passe</span>
+        <input type="password" class="sa-champ" id="champ-mot-de-passe" autocomplete="current-password" required />
+      </label>
+      <button type="submit" class="sa-bouton sa-bouton-principal" id="bouton-connexion">Se connecter</button>
     </form>
   </div>
 </div>
 
-<!-- Panneau principal -->
-<div class="panneau-principal" id="panneau-principal">
-  <div class="entete-page">
-    <div>
-      <h1>Écoles clientes</h1>
-      <p class="sous-titre" id="compteur-ecoles">Chargement…</p>
+<!-- =====================================================================
+     Application
+     ===================================================================== -->
+<div class="sa-application" id="application" style="display:none;">
+
+  <nav class="sa-navigation" id="sa-navigation" aria-label="Navigation principale">
+    <div class="sa-marque">
+      <span>Ardoise</span>
+      <span class="sa-etiquette-admin">Admin</span>
     </div>
-    <div style="display:flex; gap:10px;">
-      <button class="bouton bouton-secondaire" id="bouton-journal-ia" title="Registre des recherches produites par l'assistant">Journal IA</button>
-      <button class="bouton bouton-secondaire" id="bouton-deconnexion-admin">Se déconnecter</button>
-      <button class="bouton bouton-principal" id="bouton-nouvelle-ecole">+ Nouvelle école</button>
+
+    <ul class="sa-menu">
+      <li><a href="#/tableau-de-bord" data-route="tableau-de-bord"><span class="sa-icone">📊</span> Tableau de bord</a></li>
+
+      <li class="sa-groupe" data-groupe="ecoles">
+        <button type="button" class="sa-groupe-titre">
+          <span class="sa-icone">🏫</span> Écoles <span class="sa-chevron">›</span>
+        </button>
+        <ul class="sa-sous-menu">
+          <li><a href="#/ecoles" data-route="ecoles">Toutes les écoles</a></li>
+          <li><a href="#/ecoles/abonnements" data-route="ecoles/abonnements">Abonnements</a></li>
+          <li><a href="#/ecoles/statistiques" data-route="ecoles/statistiques">Statistiques</a></li>
+        </ul>
+      </li>
+
+      <li><a href="#/utilisateurs" data-route="utilisateurs"><span class="sa-icone">👥</span> Utilisateurs</a></li>
+
+      <li class="sa-groupe" data-groupe="explorer">
+        <button type="button" class="sa-groupe-titre">
+          <span class="sa-icone">🔍</span> Explorer <span class="sa-chevron">›</span>
+        </button>
+        <ul class="sa-sous-menu">
+          <li><a href="#/explorer" data-route="explorer">Explorateur</a></li>
+          <li><a href="#/explorer/voir-comme" data-route="explorer/voir-comme">Voir comme…</a></li>
+          <li><a href="#/explorer/recherche" data-route="explorer/recherche">Recherche globale</a></li>
+          <li><a href="#/explorer/annuaire/eleves" data-route="explorer/annuaire/eleves">Élèves</a></li>
+          <li><a href="#/explorer/annuaire/enseignants" data-route="explorer/annuaire/enseignants">Professeurs</a></li>
+          <li><a href="#/explorer/annuaire/parents" data-route="explorer/annuaire/parents">Parents</a></li>
+          <li><a href="#/explorer/annuaire/classes" data-route="explorer/annuaire/classes">Classes</a></li>
+        </ul>
+      </li>
+
+      <li><a href="#/analyses" data-route="analyses"><span class="sa-icone">📈</span> Analyses</a></li>
+      <li><a href="#/sante" data-route="sante"><span class="sa-icone">🩺</span> Santé de la plateforme</a></li>
+      <li><a href="#/bugs" data-route="bugs"><span class="sa-icone">🐞</span> Bugs &amp; erreurs</a></li>
+      <li><a href="#/journal" data-route="journal"><span class="sa-icone">📜</span> Journal d'activité</a></li>
+      <li><a href="#/securite" data-route="securite"><span class="sa-icone">🔐</span> Sécurité</a></li>
+      <li><a href="#/sauvegardes" data-route="sauvegardes"><span class="sa-icone">💾</span> Sauvegardes</a></li>
+      <li><a href="#/notifications" data-route="notifications"><span class="sa-icone">🔔</span> Notifications</a></li>
+      <li><a href="#/support" data-route="support"><span class="sa-icone">🎫</span> Support</a></li>
+      <li><a href="#/ia" data-route="ia"><span class="sa-icone">🤖</span> Intelligence artificielle</a></li>
+      <li><a href="#/configuration" data-route="configuration"><span class="sa-icone">⚙️</span> Configuration</a></li>
+      <li><a href="#/outils" data-route="outils"><span class="sa-icone">🛠</span> Outils développeur</a></li>
+      <li><a href="#/rapports" data-route="rapports"><span class="sa-icone">📄</span> Rapports</a></li>
+    </ul>
+
+    <div class="sa-nav-pied">
+      <div class="sa-identite" id="sa-identite">—</div>
+      <button class="sa-deconnexion" id="bouton-deconnexion">↩ Se déconnecter</button>
     </div>
-  </div>
+  </nav>
 
-  <div class="message-flash" id="message-flash"></div>
-
-  <div class="grille-stats" id="grille-stats">
-    <div class="carte-stat"><div class="valeur" id="stat-nb-ecoles">—</div><div class="etiquette">Écoles au total</div></div>
-    <div class="carte-stat"><div class="valeur" id="stat-nb-actives">—</div><div class="etiquette">Actives</div></div>
-    <div class="carte-stat"><div class="valeur" id="stat-nb-suspendues">—</div><div class="etiquette">Suspendues</div></div>
-    <div class="carte-stat"><div class="valeur" id="stat-nb-eleves">—</div><div class="etiquette">Élèves (toutes écoles)</div></div>
-    <div class="carte-stat"><div class="valeur" id="stat-revenu">—</div><div class="etiquette">Revenu confirmé</div></div>
-  </div>
-
-  <div class="barre-recherche">
-    <input type="text" id="champ-recherche-ecoles" placeholder="Rechercher une école (nom, code, ville)…" />
-  </div>
-
-  <div class="conteneur-tableau">
-    <table>
-      <thead><tr><th>École</th><th>Code</th><th>Ville</th><th>Statut</th><th>Abonnement</th></tr></thead>
-      <tbody id="corps-tableau-ecoles"><tr><td colspan="5" class="etat-vide-tableau">Chargement…</td></tr></tbody>
-    </table>
-  </div>
+  <main class="sa-principal">
+    <div class="sa-entete" id="sa-entete">
+      <div><h1>Chargement…</h1></div>
+      <div class="sa-entete-actions" id="sa-entete-actions"></div>
+    </div>
+    <div id="sa-contenu"></div>
+  </main>
 </div>
 
-<!-- Modale création d'école -->
-<div class="voile" id="voile-modale">
-  <div class="modale">
-    <h2>Nouvelle école</h2>
-    <p class="sous-titre" style="margin-bottom:20px; color:var(--texte-att); font-size:0.88rem;">Crée l'école et son premier compte Directeur en une fois.</p>
-    <form id="formulaire-ecole">
-      <div class="sous-section">École</div>
-      <div class="ligne-champs">
-        <div class="champ"><label for="ecole-nom">Nom de l'école</label><input type="text" id="ecole-nom" required /></div>
-        <div class="champ"><label for="ecole-code">Code (identifiant de connexion)</label><input type="text" id="ecole-code" placeholder="ex. college-boboto" required /></div>
-      </div>
-      <div class="ligne-champs">
-        <div class="champ"><label for="ecole-ville">Ville</label><input type="text" id="ecole-ville" /></div>
-        <div class="champ"><label for="ecole-province">Province</label><input type="text" id="ecole-province" /></div>
-      </div>
-      <div class="ligne-champs">
-        <div class="champ"><label for="ecole-email">Email de l'école</label><input type="email" id="ecole-email" /></div>
-        <div class="champ"><label for="ecole-telephone">Téléphone</label><input type="text" id="ecole-telephone" /></div>
-      </div>
-      <div class="ligne-champs">
-        <div class="champ"><label for="ecole-type">Type d'enseignement</label>
-          <select id="ecole-type">
-            <option value="les_deux">Primaire et secondaire</option>
-            <option value="primaire">Primaire uniquement</option>
-            <option value="secondaire">Secondaire uniquement</option>
-          </select>
-        </div>
-        <div class="champ"><label for="ecole-plan">Plan d'abonnement</label><select id="ecole-plan" required></select></div>
-      </div>
-
-      <hr class="separation" />
-      <div class="sous-section">Premier compte Directeur</div>
-      <div class="ligne-champs">
-        <div class="champ"><label for="dir-nom">Nom</label><input type="text" id="dir-nom" required /></div>
-        <div class="champ"><label for="dir-prenom">Prénom</label><input type="text" id="dir-prenom" /></div>
-      </div>
-      <div class="champ"><label for="dir-email">Email</label><input type="email" id="dir-email" required /></div>
-      <div class="champ"><label for="dir-mdp">Mot de passe provisoire</label><input type="text" id="dir-mdp" required /></div>
-
-      <div class="actions-modale">
-        <button type="button" class="bouton bouton-secondaire" id="bouton-annuler-modale">Annuler</button>
-        <button type="submit" class="bouton bouton-principal" id="bouton-creer-ecole">Créer l'école</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- Modale détail d'une école -->
-<div class="voile" id="voile-detail">
-  <div class="modale modale-large">
-    <h2 id="detail-nom-ecole">École</h2>
-    <p class="sous-titre" id="detail-code-ecole" style="margin-bottom:20px; color:var(--texte-att); font-size:0.85rem;"></p>
-
-    <div class="section-detail">
-      <h3>Aperçu</h3>
-      <div class="grille-stats-mini">
-        <div class="carte-stat"><div class="valeur" id="detail-nb-eleves">—</div><div class="etiquette">Élèves actifs</div></div>
-        <div class="carte-stat"><div class="valeur" id="detail-nb-utilisateurs">—</div><div class="etiquette">Utilisateurs</div></div>
-        <div class="carte-stat"><div class="valeur" id="detail-nb-classes">—</div><div class="etiquette">Classes</div></div>
-      </div>
-    </div>
-
-    <div class="section-detail">
-      <h3>École <span><button class="bouton bouton-secondaire bouton-petit" id="bouton-toggle-statut-ecole"></button></span></h3>
-      <div class="ligne-info"><span>Email</span><span id="detail-email-ecole">—</span></div>
-      <div class="ligne-info"><span>Téléphone</span><span id="detail-telephone-ecole">—</span></div>
-      <div class="ligne-info"><span>Ville / Province</span><span id="detail-ville-ecole">—</span></div>
-      <div class="ligne-info"><span>Statut</span><span id="detail-statut-ecole">—</span></div>
-    </div>
-
-    <div class="section-detail">
-      <h3>Compte Directeur principal (premier créé)</h3>
-      <div id="detail-bloc-directeur">
-        <div class="ligne-info"><span>Nom</span><span id="detail-directeur-nom">—</span></div>
-        <div class="ligne-info"><span>Email</span><span id="detail-directeur-email">—</span></div>
-        <div class="ligne-info"><span>Créé le</span><span id="detail-directeur-date">—</span></div>
-        <div style="margin-top:12px;">
-          <button class="bouton bouton-secondaire bouton-petit" id="bouton-reset-mdp-directeur">Réinitialiser son mot de passe</button>
-        </div>
-        <div class="mot-de-passe-affiche" id="zone-nouveau-mdp" style="display:none;"></div>
-      </div>
-    </div>
-
-    <div class="section-detail">
-      <h3>Abonnement</h3>
-      <div class="ligne-info"><span>Plan actuel</span><span id="detail-plan-nom">—</span></div>
-      <div class="ligne-info"><span>Statut</span><span id="detail-abonnement-statut">—</span></div>
-      <div class="ligne-info"><span>Expire le</span><span id="detail-abonnement-expiration">—</span></div>
-
-      <div class="ligne-champs" style="margin-top:14px;">
-        <div class="champ"><label for="modif-plan">Changer de plan</label><select id="modif-plan"></select></div>
-        <div class="champ"><label for="modif-expiration">Nouvelle date d'expiration</label><input type="date" id="modif-expiration" /></div>
-      </div>
-      <div style="display:flex; gap:10px; flex-wrap:wrap;">
-        <button class="bouton bouton-secondaire bouton-petit" id="bouton-appliquer-abonnement">Appliquer les changements</button>
-        <button class="bouton bouton-secondaire bouton-petit" id="bouton-reactiver-abonnement">Réactiver l'abonnement</button>
-      </div>
-
-      <hr class="separation" />
-      <div class="sous-section">Confirmer un paiement manuel (hors Mobile Money)</div>
-      <div class="ligne-champs">
-        <div class="champ"><label for="paiement-montant">Montant</label><input type="number" id="paiement-montant" step="0.01" /></div>
-        <div class="champ"><label for="paiement-methode">Méthode</label>
-          <select id="paiement-methode">
-            <option value="virement">Virement</option>
-            <option value="cash">Espèces</option>
-            <option value="orange_money">Orange Money</option>
-            <option value="airtel_money">Airtel Money</option>
-            <option value="mpesa">M-Pesa</option>
-          </select>
-        </div>
-      </div>
-      <button class="bouton bouton-principal bouton-petit" id="bouton-confirmer-paiement">Confirmer ce paiement</button>
-    </div>
-
-    <div class="section-detail">
-      <h3>Historique des paiements</h3>
-      <div id="detail-liste-paiements" style="max-height:180px; overflow-y:auto;"></div>
-    </div>
-
-    <div class="actions-modale">
-      <button type="button" class="bouton bouton-secondaire" id="bouton-fermer-detail">Fermer</button>
-    </div>
-  </div>
-</div>
+<!-- =====================================================================
+     Scripts — ordre imposé : le noyau d'abord, les vues ensuite.
+     ===================================================================== -->
+<script src="super-admin/noyau.js"></script>
+<script src="super-admin/vues-pilotage.js"></script>
+<script src="super-admin/vues-ecoles.js"></script>
+<script src="super-admin/vues-explorer.js"></script>
+<script src="super-admin/vues-systeme.js"></script>
 
 <script>
-  const API_BASE_URL = "https://scolaire-saas-backend.onrender.com";
+(function () {
+  'use strict';
 
-  function obtenirTokens() {
-    return {
-      accessToken: localStorage.getItem('ardoise_admin_access_token'),
-      refreshToken: localStorage.getItem('ardoise_admin_refresh_token')
-    };
+  /* ---------- Connexion ---------- */
+  const formulaire = document.getElementById('formulaire-connexion');
+  const zoneErreur = document.getElementById('erreur-connexion');
+  const bouton = document.getElementById('bouton-connexion');
+
+  function afficherErreur(texte) {
+    zoneErreur.textContent = texte;
+    zoneErreur.classList.add('visible');
+    bouton.disabled = false;
+    bouton.textContent = 'Se connecter';
   }
 
-  function reinitialiserEcranConnexion() {
-    localStorage.removeItem('ardoise_admin_access_token');
-    localStorage.removeItem('ardoise_admin_refresh_token');
-    document.getElementById('ecran-connexion').style.display = 'flex';
-    document.getElementById('panneau-principal').style.display = 'none';
-  }
-
-  async function rafraichirToken(refreshToken) {
-    const reponse = await fetch(`${API_BASE_URL}/auth/refresh`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refresh_token: refreshToken })
-    });
-    if (!reponse.ok) return null;
-    const donnees = await reponse.json();
-    localStorage.setItem('ardoise_admin_access_token', donnees.access_token);
-    return donnees.access_token;
-  }
-
-  async function appelApi(chemin, options = {}) {
-    let { accessToken, refreshToken } = obtenirTokens();
-    if (!accessToken) { reinitialiserEcranConnexion(); return null; }
-
-    const executer = (token) => fetch(`${API_BASE_URL}${chemin}`, {
-      ...options, headers: { ...(options.headers || {}), Authorization: `Bearer ${token}` }
-    });
-
-    let reponse = await executer(accessToken);
-    if (reponse.status === 401 && refreshToken) {
-      const nouveauToken = await rafraichirToken(refreshToken);
-      if (!nouveauToken) { reinitialiserEcranConnexion(); return null; }
-      reponse = await executer(nouveauToken);
-    }
-    if (reponse.status === 401 || reponse.status === 403) { reinitialiserEcranConnexion(); return null; }
-    return reponse;
-  }
-
-  function afficherMessage(texte, type) {
-    const zone = document.getElementById('message-flash');
-    zone.textContent = texte;
-    zone.className = `message-flash visible ${type}`;
-    setTimeout(() => zone.classList.remove('visible'), 6000);
-  }
-
-  // ---------- Connexion Super Admin ----------
-  document.getElementById('formulaire-connexion-admin').addEventListener('submit', async (evt) => {
-    evt.preventDefault();
-    const zoneErreur = document.getElementById('zone-erreur-connexion');
+  formulaire.addEventListener('submit', async function (evenement) {
+    evenement.preventDefault();
     zoneErreur.classList.remove('visible');
-
-    const bouton = document.getElementById('bouton-connexion-admin');
     bouton.disabled = true;
     bouton.textContent = 'Connexion…';
 
     try {
-      const reponse = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+      const reponse = await fetch(`${SA.API_BASE_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: document.getElementById('admin-email').value.trim(),
-          password: document.getElementById('admin-mdp').value
+          email: document.getElementById('champ-email').value.trim(),
+          password: document.getElementById('champ-mot-de-passe').value
         })
       });
-      const donnees = await reponse.json();
+
+      const donnees = await reponse.json().catch(() => ({}));
 
       if (!reponse.ok) {
-        zoneErreur.textContent = donnees.message || 'Identifiants incorrects.';
-        zoneErreur.classList.add('visible');
-        bouton.disabled = false; bouton.textContent = 'Se connecter';
-        return;
+        return afficherErreur(donnees.message || 'Identifiants incorrects.');
       }
 
-      if (!(donnees.user?.roles || []).includes('super_admin')) {
-        zoneErreur.textContent = "Ce compte n'a pas les droits Super Admin.";
-        zoneErreur.classList.add('visible');
-        bouton.disabled = false; bouton.textContent = 'Se connecter';
-        return;
+      // Vérification côté client par courtoisie : elle évite d'afficher un
+      // panneau vide à un directeur qui se trompe de page. La vraie barrière
+      // est côté serveur (`superAdminSeul`), qui refuserait chaque requête.
+      if (!(donnees.user && (donnees.user.roles || []).includes('super_admin'))) {
+        return afficherErreur("Ce compte n'a pas les droits Super Admin.");
       }
 
-      localStorage.setItem('ardoise_admin_access_token', donnees.access_token);
-      localStorage.setItem('ardoise_admin_refresh_token', donnees.refresh_token);
-
-      document.getElementById('ecran-connexion').style.display = 'none';
-      document.getElementById('panneau-principal').style.display = 'block';
-      chargerPlans();
-      chargerEcoles();
-      chargerStats();
-
-    } catch (err) {
-      zoneErreur.textContent = 'Impossible de contacter le serveur.';
-      zoneErreur.classList.add('visible');
-      bouton.disabled = false; bouton.textContent = 'Se connecter';
+      SA.session.enregistrer(donnees);
+      SA.demarrer();
+    } catch (erreur) {
+      afficherErreur('Impossible de contacter le serveur.');
     }
   });
 
-  document.getElementById('bouton-deconnexion-admin').addEventListener('click', reinitialiserEcranConnexion);
+  /* ---------- Navigation ---------- */
+  document.getElementById('bouton-deconnexion').addEventListener('click', function () {
+    SA.session.effacer();
+    location.hash = '';
+    location.reload();
+  });
 
-  // ---------- Statistiques globales ----------
-  async function chargerStats() {
-    const reponse = await appelApi('/admin/ecoles/stats/globales');
-    if (!reponse || !reponse.ok) return;
-    const s = await reponse.json();
-    document.getElementById('stat-nb-ecoles').textContent = s.nb_ecoles;
-    document.getElementById('stat-nb-actives').textContent = s.nb_ecoles_actives;
-    document.getElementById('stat-nb-suspendues').textContent = s.nb_ecoles_suspendues;
-    document.getElementById('stat-nb-eleves').textContent = s.nb_eleves_total;
-    document.getElementById('stat-revenu').textContent = `${Number(s.revenu_total_confirme).toLocaleString('fr-FR')} $`;
-  }
-
-  // ---------- Liste des écoles ----------
-  let ecolesCache = [];
-
-  async function chargerEcoles() {
-    const reponse = await appelApi('/admin/ecoles');
-    if (!reponse || !reponse.ok) return;
-    ecolesCache = await reponse.json();
-    afficherEcoles(ecolesCache);
-  }
-
-  function afficherEcoles(ecoles) {
-    document.getElementById('compteur-ecoles').textContent = `${ecoles.length} école${ecoles.length !== 1 ? 's' : ''}`;
-
-    const corps = document.getElementById('corps-tableau-ecoles');
-    if (ecoles.length === 0) {
-      corps.innerHTML = '<tr><td colspan="5" class="etat-vide-tableau">Aucune école pour l\'instant. Crée la première !</td></tr>';
-      return;
-    }
-
-    corps.innerHTML = ecoles.map((e) => `
-      <tr class="ligne-ecole" data-id="${e.id}">
-        <td>${e.nom}</td>
-        <td class="matricule-cell">${e.code}</td>
-        <td>${e.ville || '—'}</td>
-        <td><span class="badge-statut ${e.statut === 'actif' ? 'actif' : 'autre'}">${e.statut}</span></td>
-        <td>${e.statut_abonnement || '—'}</td>
-      </tr>
-    `).join('');
-
-    corps.querySelectorAll('tr[data-id]').forEach((ligne) => {
-      ligne.addEventListener('click', () => ouvrirDetailEcole(ligne.dataset.id));
+  // Groupes repliables.
+  document.querySelectorAll('.sa-groupe > .sa-groupe-titre').forEach(function (titre) {
+    titre.addEventListener('click', function () {
+      titre.parentElement.classList.toggle('ouvert');
     });
-  }
-
-  document.getElementById('champ-recherche-ecoles').addEventListener('input', (evt) => {
-    const q = evt.target.value.trim().toLowerCase();
-    const filtrees = ecolesCache.filter((e) =>
-      e.nom.toLowerCase().includes(q) || e.code.toLowerCase().includes(q) || (e.ville || '').toLowerCase().includes(q)
-    );
-    afficherEcoles(filtrees);
   });
 
-  // ---------- Détail d'une école ----------
-  let ecoleDetailCourante = null;
-  let plansCache = [];
-
-  async function ouvrirDetailEcole(id) {
-    document.getElementById('zone-nouveau-mdp').style.display = 'none';
-    const reponse = await appelApi(`/admin/ecoles/${id}`);
-    if (!reponse || !reponse.ok) { afficherMessage('Erreur lors du chargement des détails.', 'erreur'); return; }
-    const d = await reponse.json();
-    ecoleDetailCourante = d;
-
-    document.getElementById('detail-nom-ecole').textContent = d.ecole.nom;
-    document.getElementById('detail-code-ecole').textContent = `Code de connexion : ${d.ecole.code}`;
-    document.getElementById('detail-email-ecole').textContent = d.ecole.email || '—';
-    document.getElementById('detail-telephone-ecole').textContent = d.ecole.telephone || '—';
-    document.getElementById('detail-ville-ecole').textContent = `${d.ecole.ville || '—'} / ${d.ecole.province || '—'}`;
-    document.getElementById('detail-statut-ecole').textContent = d.ecole.statut;
-
-    const boutonToggle = document.getElementById('bouton-toggle-statut-ecole');
-    boutonToggle.textContent = d.ecole.statut === 'actif' ? 'Suspendre cette école' : 'Réactiver cette école';
-
-    document.getElementById('detail-nb-eleves').textContent = d.stats.nb_eleves;
-    document.getElementById('detail-nb-utilisateurs').textContent = d.stats.nb_utilisateurs;
-    document.getElementById('detail-nb-classes').textContent = d.stats.nb_classes;
-
-    if (d.directeur_principal) {
-      document.getElementById('detail-directeur-nom').textContent = `${d.directeur_principal.nom} ${d.directeur_principal.prenom || ''}`;
-      document.getElementById('detail-directeur-email').textContent = d.directeur_principal.email;
-      document.getElementById('detail-directeur-date').textContent = new Date(d.directeur_principal.created_at).toLocaleDateString('fr-FR');
-      document.getElementById('detail-bloc-directeur').style.display = 'block';
-    } else {
-      document.getElementById('detail-bloc-directeur').innerHTML = '<p style="color:var(--texte-att); font-size:0.88rem;">Aucun compte Directeur trouvé pour cette école.</p>';
-    }
-
-    if (d.abonnement) {
-      document.getElementById('detail-plan-nom').textContent = `${d.abonnement.plan_nom} — ${d.abonnement.prix} ${d.abonnement.devise}`;
-      document.getElementById('detail-abonnement-statut').textContent = d.abonnement.statut;
-      document.getElementById('detail-abonnement-expiration').textContent = d.abonnement.date_expiration
-        ? new Date(d.abonnement.date_expiration).toLocaleDateString('fr-FR') : '—';
-      document.getElementById('modif-plan').value = d.abonnement.plan_id;
-    }
-
-    document.getElementById('detail-liste-paiements').innerHTML = d.paiements.length === 0
-      ? '<p style="color:var(--texte-att); font-size:0.85rem;">Aucun paiement enregistré.</p>'
-      : d.paiements.map((p) => `
-          <div class="ligne-info">
-            <span>${new Date(p.date_paiement).toLocaleDateString('fr-FR')} — ${p.methode}</span>
-            <span>${Number(p.montant).toLocaleString('fr-FR')} (${p.statut})</span>
-          </div>
-        `).join('');
-
-    document.getElementById('voile-detail').classList.add('visible');
-  }
-
-  document.getElementById('bouton-fermer-detail').addEventListener('click', () => {
-    document.getElementById('voile-detail').classList.remove('visible');
-  });
-
-  document.getElementById('bouton-toggle-statut-ecole').addEventListener('click', async () => {
-    if (!ecoleDetailCourante) return;
-    const nouveauStatut = ecoleDetailCourante.ecole.statut === 'actif' ? 'suspendu' : 'actif';
-    if (!await ArdoiseUI.confirmer(`Confirmer : passer cette école au statut "${nouveauStatut}" ?`)) return;
-    const r = await appelApi(`/admin/ecoles/${ecoleDetailCourante.ecole.id}`, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ statut: nouveauStatut })
+  // Tiroir de navigation sur mobile : le bouton est injecté dans l'en-tête,
+  // qui est réécrit à chaque rendu de vue. On le repose donc après coup.
+  const observateur = new MutationObserver(function () {
+    const entete = document.getElementById('sa-entete');
+    if (!entete || entete.querySelector('.sa-bouton-nav')) return;
+    const bouton = document.createElement('button');
+    bouton.className = 'sa-bouton-nav';
+    bouton.setAttribute('aria-label', 'Ouvrir la navigation');
+    bouton.textContent = '☰';
+    bouton.addEventListener('click', function () {
+      document.body.classList.toggle('sa-nav-ouverte');
     });
-    if (r && r.ok) { afficherMessage('Statut mis à jour.', 'succes'); ouvrirDetailEcole(ecoleDetailCourante.ecole.id); chargerEcoles(); chargerStats(); }
-    else afficherMessage('Erreur lors de la mise à jour.', 'erreur');
+    entete.insertBefore(bouton, entete.firstChild);
   });
+  observateur.observe(document.getElementById('sa-entete'), { childList: true });
 
-  document.getElementById('bouton-reset-mdp-directeur').addEventListener('click', async () => {
-    if (!ecoleDetailCourante?.directeur_principal) return;
-    if (!await ArdoiseUI.confirmer("Générer un nouveau mot de passe pour ce compte Directeur ? L'ancien ne fonctionnera plus, et toutes ses sessions actives seront déconnectées.")) return;
-    const r = await appelApi(`/admin/ecoles/${ecoleDetailCourante.ecole.id}/reset-directeur-password`, { method: 'POST' });
-    if (!r || !r.ok) { afficherMessage('Erreur lors de la réinitialisation.', 'erreur'); return; }
-    const d = await r.json();
-    const zone = document.getElementById('zone-nouveau-mdp');
-    zone.textContent = `Nouveau mot de passe pour ${d.email} : ${d.nouveau_mot_de_passe} (transmets-le à l'école, il ne sera plus jamais affiché)`;
-    zone.style.display = 'block';
-  });
-
-  document.getElementById('bouton-appliquer-abonnement').addEventListener('click', async () => {
-    if (!ecoleDetailCourante) return;
-    const plan_id = document.getElementById('modif-plan').value;
-    const date_expiration = document.getElementById('modif-expiration').value;
-    const r = await appelApi(`/admin/ecoles/${ecoleDetailCourante.ecole.id}/abonnement`, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ plan_id: plan_id || null, date_expiration: date_expiration || null })
-    });
-    if (r && r.ok) { afficherMessage('Abonnement mis à jour.', 'succes'); ouvrirDetailEcole(ecoleDetailCourante.ecole.id); chargerEcoles(); }
-    else afficherMessage("Erreur lors de la mise à jour de l'abonnement.", 'erreur');
-  });
-
-  document.getElementById('bouton-reactiver-abonnement').addEventListener('click', async () => {
-    if (!ecoleDetailCourante) return;
-    if (!await ArdoiseUI.confirmer("Réactiver l'abonnement de cette école ?")) return;
-    const r = await appelApi(`/admin/ecoles/${ecoleDetailCourante.ecole.id}/abonnement`, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ statut: 'actif' })
-    });
-    if (r && r.ok) { afficherMessage('Abonnement réactivé.', 'succes'); ouvrirDetailEcole(ecoleDetailCourante.ecole.id); chargerEcoles(); chargerStats(); }
-    else afficherMessage('Erreur lors de la réactivation.', 'erreur');
-  });
-
-  document.getElementById('bouton-confirmer-paiement').addEventListener('click', async () => {
-    if (!ecoleDetailCourante?.abonnement) { afficherMessage('Aucun abonnement à créditer.', 'erreur'); return; }
-    const montant = document.getElementById('paiement-montant').value;
-    const methode = document.getElementById('paiement-methode').value;
-    if (!montant) { afficherMessage('Indique un montant.', 'erreur'); return; }
-
-    const r = await appelApi(`/abonnements/${ecoleDetailCourante.abonnement.id}/confirmer-paiement`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ montant: parseFloat(montant), methode })
-    });
-    if (r && r.ok) {
-      afficherMessage('Paiement confirmé, abonnement réactivé.', 'succes');
-      document.getElementById('paiement-montant').value = '';
-      ouvrirDetailEcole(ecoleDetailCourante.ecole.id); chargerEcoles(); chargerStats();
-    } else {
-      afficherMessage('Erreur lors de la confirmation du paiement.', 'erreur');
+  document.addEventListener('click', function (evenement) {
+    if (document.body.classList.contains('sa-nav-ouverte')
+        && !evenement.target.closest('.sa-navigation')
+        && !evenement.target.closest('.sa-bouton-nav')) {
+      document.body.classList.remove('sa-nav-ouverte');
     }
   });
 
-  // ---------- Plans d'abonnement ----------
-  async function chargerPlans() {
-    const reponse = await appelApi('/admin/ecoles/plans/liste');
-    if (!reponse || !reponse.ok) return;
-    plansCache = await reponse.json();
-    const options = plansCache.map((p) =>
-      `<option value="${p.id}">${p.nom} — ${p.prix} ${p.devise}/${p.duree_jours}j</option>`
-    ).join('');
-    document.getElementById('ecole-plan').innerHTML = options;
-    document.getElementById('modif-plan').innerHTML = options;
+  /* ---------- Reprise de session ---------- */
+  if (SA.session.connecte()) {
+    SA.demarrer();
   }
-
-  // ---------- Modale création d'école ----------
-  document.getElementById('bouton-nouvelle-ecole').addEventListener('click', () => {
-    document.getElementById('voile-modale').classList.add('visible');
-  });
-  document.getElementById('bouton-annuler-modale').addEventListener('click', () => {
-    document.getElementById('voile-modale').classList.remove('visible');
-    document.getElementById('formulaire-ecole').reset();
-  });
-
-  document.getElementById('formulaire-ecole').addEventListener('submit', async (evt) => {
-    evt.preventDefault();
-
-    const corpsRequete = {
-      nom: document.getElementById('ecole-nom').value.trim(),
-      code: document.getElementById('ecole-code').value.trim(),
-      ville: document.getElementById('ecole-ville').value.trim(),
-      province: document.getElementById('ecole-province').value.trim(),
-      email: document.getElementById('ecole-email').value.trim(),
-      telephone: document.getElementById('ecole-telephone').value.trim(),
-      type_enseignement: document.getElementById('ecole-type').value,
-      plan_id: document.getElementById('ecole-plan').value,
-      directeur: {
-        nom: document.getElementById('dir-nom').value.trim(),
-        prenom: document.getElementById('dir-prenom').value.trim(),
-        email: document.getElementById('dir-email').value.trim(),
-        password: document.getElementById('dir-mdp').value
-      }
-    };
-
-    const bouton = document.getElementById('bouton-creer-ecole');
-    bouton.disabled = true;
-    bouton.textContent = 'Création…';
-
-    const reponse = await appelApi('/admin/ecoles', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(corpsRequete)
-    });
-
-    bouton.disabled = false;
-    bouton.textContent = "Créer l'école";
-
-    if (!reponse) return;
-    const donnees = await reponse.json();
-
-    if (!reponse.ok) {
-      afficherMessage(donnees.message || 'Erreur lors de la création.', 'erreur');
-      return;
-    }
-
-    document.getElementById('voile-modale').classList.remove('visible');
-    document.getElementById('formulaire-ecole').reset();
-    afficherMessage(
-      `École créée. Le directeur peut se connecter avec le code "${corpsRequete.code}", son email et son mot de passe.`,
-      'succes'
-    );
-    chargerEcoles();
-    chargerStats();
-  });
-
-  // Reprise de session si déjà connecté
-  if (obtenirTokens().accessToken) {
-    document.getElementById('ecran-connexion').style.display = 'none';
-    document.getElementById('panneau-principal').style.display = 'block';
-    chargerPlans();
-    chargerEcoles();
-    chargerStats();
-  }
+})();
 </script>
 
-<script src="theme.js"></script>
-<!-- Registre des recherches produites par l'assistant — diagnostic interne -->
-<div class="voile" id="voile-journal-ia" style="display:none; position:fixed; inset:0; background:rgba(31,43,36,0.5); align-items:center; justify-content:center; padding:20px; z-index:80;">
-  <div style="background:var(--craie-2); border-radius:12px; padding:26px; max-width:1000px; width:100%; max-height:90vh; overflow-y:auto;">
-    <h2 style="font-family:var(--police-titre); font-weight:600; font-size:1.25rem; margin:0 0 4px 0;">Journal des recherches assistées</h2>
-    <p style="color:var(--texte-att); font-size:0.84rem; margin:0 0 16px 0;">
-      Toutes les requêtes produites par l'assistant, exécutées ou refusées. Une requête récurrente et fiable mérite de devenir une recherche préécrite ; une requête fausse indique un modèle à corriger.
-    </p>
-
-    <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items:center;">
-      <select id="filtre-statut-journal" style="border:1px solid var(--bordure); border-radius:6px; padding:8px 11px; font-family:var(--police-corps); background:var(--craie); color:var(--texte-sombre);">
-        <option value="">Tous les statuts</option>
-        <option value="preecrite">Recherches préécrites</option>
-        <option value="executee">Requêtes générées</option>
-        <option value="refusee">Refusées par le garde-fou</option>
-        <option value="erreur">Erreurs d'exécution</option>
-        <option value="sans_reponse">Sans réponse</option>
-      </select>
-      <button class="bouton bouton-secondaire" id="bouton-fermer-journal" style="margin-left:auto;">Fermer</button>
-    </div>
-
-    <div id="liste-journal"></div>
-  </div>
-</div>
-
-<script>
-  // ============================================================
-  //  Registre des recherches assistées
-  //  Volontairement discret : c'est un outil de diagnostic, sans intérêt
-  //  pour une école cliente.
-  // ============================================================
-  (function activerJournalIA() {
-    const voile = document.getElementById('voile-journal-ia');
-
-    function echapperJ(t) {
-      const d = document.createElement('div');
-      d.textContent = t == null ? '' : String(t);
-      return d.innerHTML;
-    }
-
-    const COULEURS = {
-      preecrite: 'var(--vert-ok)', executee: 'var(--encre)',
-      refusee: 'var(--rouge)', erreur: 'var(--rouge)', sans_reponse: 'var(--texte-att)'
-    };
-
-    async function charger() {
-      const zone = document.getElementById('liste-journal');
-      zone.innerHTML = '<p style="color:var(--texte-att); padding:24px 0; text-align:center;">Chargement…</p>';
-
-      const statut = document.getElementById('filtre-statut-journal').value;
-      const r = await appelApi(`/ia/journal${statut ? '?statut=' + statut : ''}`);
-      if (!r || !r.ok) {
-        zone.innerHTML = '<p style="color:var(--texte-att); padding:24px 0; text-align:center;">Registre indisponible.</p>';
-        return;
-      }
-      const lignes = await r.json();
-      if (lignes.length === 0) {
-        zone.innerHTML = '<p style="color:var(--texte-att); padding:24px 0; text-align:center;">Aucune recherche enregistrée.</p>';
-        return;
-      }
-
-      zone.innerHTML = lignes.map(l => `
-        <div style="border:1px solid var(--bordure); border-left:3px solid ${COULEURS[l.statut] || 'var(--bordure)'}; border-radius:0 8px 8px 0; padding:14px 16px; margin-bottom:10px;">
-          <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:baseline;">
-            <strong style="font-size:0.94rem;">${echapperJ(l.question)}</strong>
-            <span style="font-size:0.76rem; color:var(--texte-att); white-space:nowrap;">
-              ${new Date(l.created_at).toLocaleString('fr-FR')}
-            </span>
-          </div>
-          <div style="font-size:0.78rem; color:var(--texte-att); margin-top:5px;">
-            ${echapperJ(l.ecole_nom || '—')} · ${echapperJ(l.utilisateur || '—')} ·
-            <span style="color:${COULEURS[l.statut] || 'inherit'}; font-weight:600;">${echapperJ(l.statut)}</span>
-            ${l.modele ? ` · modèle « ${echapperJ(l.modele)} »` : ''}
-            ${l.nb_lignes !== null ? ` · ${l.nb_lignes} ligne(s)` : ''}
-            ${l.duree_ms !== null ? ` · ${l.duree_ms} ms` : ''}
-          </div>
-          ${l.sql_genere ? `<pre style="margin:10px 0 0 0; background:var(--ardoise); color:rgba(246,242,231,0.9); border-radius:6px; padding:11px 13px; font-family:var(--police-mono); font-size:0.76rem; white-space:pre-wrap; word-break:break-word; line-height:1.5;">${echapperJ(l.sql_genere)}</pre>` : ''}
-          ${l.detail ? `<div style="margin-top:8px; font-size:0.79rem; color:var(--rouge);">${echapperJ(l.detail)}</div>` : ''}
-        </div>
-      `).join('');
-    }
-
-    document.getElementById('bouton-journal-ia').addEventListener('click', () => {
-      voile.style.display = 'flex';
-      charger();
-    });
-    document.getElementById('bouton-fermer-journal').addEventListener('click', () => {
-      voile.style.display = 'none';
-    });
-    document.getElementById('filtre-statut-journal').addEventListener('change', charger);
-  })();
-</script>
-
-<script src="ui.js"></script>
-<script src="hors-ligne.js"></script>
-<!-- Didacticiel d'installation : bouton d'aide contextuel, partagé par toutes les pages. -->
-<script src="didacticiel.js" data-ecran="Super admin"></script>
 </body>
 </html>

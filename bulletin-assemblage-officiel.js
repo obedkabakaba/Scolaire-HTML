@@ -45,7 +45,11 @@ function sommeSiPresent(...valeurs) {
  * convention partout dans l'application évite qu'une égalité de points classe
  * différemment un élève selon l'écran consulté.
  */
-function classerParColonne(eleves, cle, lireValeur) {
+function classerParColonne(eleves, cle, lireValeur, options = {}) {
+  // `avecEffectif` : le secondaire imprime « 3/28 » dans une seule case, le
+  // primaire sépare la place et l'effectif sur deux lignes du modèle officiel.
+  // Le même calcul de rang sert les deux, seule la mise en forme change.
+  const avecEffectif = options.avecEffectif !== false;
   const effectif = eleves.length;
   const classables = eleves
     .filter((e) => lireValeur(e) !== null && lireValeur(e) !== undefined)
@@ -55,7 +59,7 @@ function classerParColonne(eleves, cle, lireValeur) {
       || (a.postnom || '').localeCompare(b.postnom || '', 'fr'));
 
   classables.forEach((e, i) => {
-    e.places[cle] = `${i + 1}/${effectif}`;
+    e.places[cle] = avecEffectif ? `${i + 1}/${effectif}` : String(i + 1);
   });
 }
 
@@ -328,6 +332,29 @@ function grouperParDomaine(cours) {
   return { domaines, sansDomaine };
 }
 
+/**
+ * Colonnes de POINTS du modèle primaire (les colonnes de maximum en sont
+ * exclues : elles sont noircies sur les lignes de synthèse).
+ */
+const COLONNES_POINTS_PRIMAIRE = [
+  'p1', 'p2', 'ex1', 't1',
+  'p3', 'p4', 'ex2', 't2',
+  'p5', 'p6', 'ex3', 't3',
+  'total'
+];
+
+/** Appréciations (application / conduite) portées par le bulletin d'une période. */
+async function appreciationsPrimaireDe(client, periode) {
+  if (!periode) return new Map();
+  const r = await client.query(
+    `SELECT eleve_id, application, conduite FROM bulletins WHERE periode_id = $1`,
+    [periode.id]
+  );
+  const m = new Map();
+  for (const ligne of r.rows) m.set(ligne.eleve_id, ligne);
+  return m;
+}
+
 async function assemblerDonneesPrimaire(client, { classeId, anneeScolaireId }) {
   const coursResult = await client.query(
     `SELECT cc.id AS classe_cours_id, c.id, c.nom, c.domaine, c.groupe_domaine,
@@ -348,7 +375,10 @@ async function assemblerDonneesPrimaire(client, { classeId, anneeScolaireId }) {
       ORDER BY nom, postnom`,
     [classeId]
   );
-  const eleves = elevesResult.rows.map((e) => ({ ...e, cotes: {} }));
+  const eleves = elevesResult.rows.map((e) => ({
+    ...e, cotes: {}, totaux: {}, pourcentages: {}, places: {}, effectifs: {},
+    applications: {}, conduites: {}
+  }));
   if (eleves.length === 0 || cours.length === 0) return { domaines, eleves, sansDomaine };
 
   const arbre = await trouverArbreTrimestres(client, { anneeScolaireId });
@@ -389,6 +419,18 @@ async function assemblerDonneesPrimaire(client, { classeId, anneeScolaireId }) {
         eleve.cotes[c.id][nTot] = sommeSiPresent(p1, p2, ex);
       }
     }
+
+    // Application et conduite : une appréciation par période de travail, prise
+    // sur le bulletin de cette période. Ce sont des lettres, elles ne se
+    // cumulent ni ne se moyennent — on les reporte telles quelles.
+    const apprP1 = await appreciationsPrimaireDe(client, t?.p1);
+    const apprP2 = await appreciationsPrimaireDe(client, t?.p2);
+    for (const eleve of eleves) {
+      eleve.applications[nP1] = apprP1.get(eleve.id)?.application ?? null;
+      eleve.applications[nP2] = apprP2.get(eleve.id)?.application ?? null;
+      eleve.conduites[nP1] = apprP1.get(eleve.id)?.conduite ?? null;
+      eleve.conduites[nP2] = apprP2.get(eleve.id)?.conduite ?? null;
+    }
   }
 
   for (const eleve of eleves) {
@@ -398,7 +440,53 @@ async function assemblerDonneesPrimaire(client, { classeId, anneeScolaireId }) {
     }
   }
 
-  return { domaines, eleves, sansDomaine };
+  /* ------------------------------------------------------------------------
+     SYNTHÈSE DU BAS DE TABLEAU — pourcentage, place, effectif.
+
+     Ces trois lignes s'imprimaient VIDES : le gabarit primaire lit
+     `eleve.pourcentages`, `eleve.places` et `eleve.effectifs`, qu'aucun code ne
+     remplissait. Le bulletin annuel du primaire sortait donc avec ses cotes et
+     ses totaux justes, mais sans aucun pourcentage ni aucun classement — sur
+     un document de fin d'année, c'est l'information que le parent lit en
+     premier. L'équivalent secondaire, lui, les calculait déjà.
+
+     Une ligne par colonne de points, comme sur le modèle officiel : chaque
+     période, chaque examen, chaque trimestre et le total ont leur propre
+     pourcentage et leur propre place.
+     ------------------------------------------------------------------------ */
+  const maximaParColonne = cours.reduce((acc, c) => {
+    const b = baremePrimaire(c.maximum);
+    for (const k of ['p1', 'p2', 'p3', 'p4', 'p5', 'p6']) acc[k] += b.periode;
+    for (const k of ['ex1', 'ex2', 'ex3']) acc[k] += b.examen;
+    for (const k of ['t1', 't2', 't3']) acc[k] += b.trimestre;
+    acc.total += b.total;
+    return acc;
+  }, {
+    p1: 0, p2: 0, p3: 0, p4: 0, p5: 0, p6: 0,
+    ex1: 0, ex2: 0, ex3: 0, t1: 0, t2: 0, t3: 0, total: 0
+  });
+
+  const effectif = eleves.length;
+
+  for (const eleve of eleves) {
+    for (const col of COLONNES_POINTS_PRIMAIRE) {
+      eleve.totaux[col] = sommeSiPresent(...cours.map((c) => eleve.cotes[c.id][col]));
+      const total = eleve.totaux[col];
+      eleve.pourcentages[col] = (total === null || !maximaParColonne[col])
+        ? null
+        : Math.round((total / maximaParColonne[col]) * 10000) / 100;
+      // Le modèle primaire sépare la place et l'effectif sur DEUX lignes
+      // (« PLACE » puis « NBRE D'ÉLÈVES »), là où le secondaire les réunit en
+      // « 3/28 » sur une seule. On remplit donc les deux.
+      eleve.effectifs[col] = total === null ? null : effectif;
+    }
+  }
+
+  for (const col of COLONNES_POINTS_PRIMAIRE) {
+    classerParColonne(eleves, col, (e) => e.totaux[col], { avecEffectif: false });
+  }
+
+  return { domaines, eleves, sansDomaine, maxima: maximaParColonne, effectif };
 }
 
 module.exports = {
@@ -406,47 +494,124 @@ module.exports = {
   assemblerDonneesPrimaire,
   sommeSiPresent,
   classerParColonne,
+  // Exporté pour que les bulletins de période et d'examen rangent leurs
+  // branches comme le bulletin annuel, au lieu de chacun sa présentation.
+  grouperParDomaine,
 };
 
+
 /* ==========================================================================
-   BULLETIN DE SEMESTRE — grille par cours
+   BULLETIN D'UN REGROUPEMENT — semestre OU trimestre, grille par cours
    ========================================================================== */
 
 /**
- * Assemble la grille d'un SEUL semestre, cours par cours.
+ * Assemble la grille d'un REGROUPEMENT de périodes, cours par cours.
  *
- * Structure produite, conforme au bulletin de semestre demandé :
+ * ---------------------------------------------------------------------------
+ * POURQUOI CETTE FONCTION N'EST PLUS « assemblerDonneesSemestre »
  *
- *   Cours | 1ère P | 2ème P | Max période | Examen | Max examen | Total | Max semestre
+ * Elle supposait qu'un regroupement contienne exactement deux périodes de
+ * travail et un examen, et nommait ses colonnes p1 / p2 / ex en dur. Cela
+ * décrit un semestre du secondaire, et rien d'autre. Or la même mécanique
+ * s'applique mot pour mot à un TRIMESTRE du primaire (deux périodes + un
+ * examen), qui n'était de ce fait imprimable nulle part : la page Bulletins
+ * n'aiguillait que le type « semestre » vers l'agrégation, et un trimestre
+ * partait vers la route des périodes ordinaires, où l'on cherchait des notes
+ * saisies directement sur le trimestre — il n'y en a jamais. Le bulletin
+ * sortait avec toutes ses cotes vides.
  *
- * Le « Max période » est le maximum d'UN cours POUR UNE période — pas le cumul
- * des deux. C'est le point qui distingue ce bulletin du bulletin annuel : il
- * sert de repère de lecture pour les deux colonnes de période à sa gauche, qui
- * partagent le même barème.
+ * Les colonnes sont donc DÉDUITES des enfants du regroupement, et non écrites
+ * d'avance. Trois formes en découlent, sans code particulier pour aucune :
  *
- * Le total est celui du SEMESTRE (P1 + P2 + examen), jamais de l'année.
+ *   semestre du secondaire → 1ʳᵉ P. | 2ᵉ P. | Exam. | Total
+ *   trimestre du primaire  → 1ʳᵉ P. | 2ᵉ P. | Exam. | Total
  *
+ * Les deux cycles ont le même découpage interne — deux périodes de travail et
+ * un examen — et ne diffèrent que par le nombre de regroupements dans l'année :
+ * deux semestres au secondaire, trois trimestres au primaire. C'est exactement
+ * ce que montre le bulletin officiel du degré élémentaire, dont les colonnes
+ * vont de PREMIER TRIMESTRE à TROISIÈME TRIMESTRE puis TOTAL.
+ *
+ * La descente jusqu'aux périodes qui portent les notes est néanmoins récursive :
+ * elle ne coûte rien et évite d'avoir à réécrire cette fonction si une école
+ * intercale un jour un niveau supplémentaire.
+ *
+ * ---------------------------------------------------------------------------
+ * GROUPES DE MAXIMA
+ *
+ * Le modèle imprime une colonne « Max » partagée par les colonnes de même
+ * barème (les deux périodes partagent le leur, l'examen a le sien). On calcule
+ * donc des groupes de colonnes consécutives dont le maximum est identique pour
+ * TOUS les cours. Ce regroupement se déduit des données au lieu d'être posé
+ * d'avance, ce qui le rend juste aussi bien pour trois colonnes de trimestres
+ * que pour deux périodes et un examen.
+ *
+ * ---------------------------------------------------------------------------
  * Le pourcentage se calcule en total obtenu sur total des maxima — et non en
- * moyenne des pourcentages de période comme le faisait `recalculerBulletinSemestre`.
+ * moyenne des pourcentages de période comme le fait `recalculerBulletinSemestre`.
  * Les deux méthodes divergent dès que les cours n'ont pas tous le même maximum :
  * une moyenne de pourcentages donne le même poids à un cours sur 10 et à un
  * cours sur 100, ce qui n'est pas ce qu'attend un bulletin.
  */
-/** Les quatre colonnes chiffrées du bulletin de semestre, dans l'ordre imprimé. */
-const COLONNES_SEMESTRE = ['p1', 'p2', 'ex', 'total'];
 
-async function assemblerDonneesSemestre(client, { classeId, semestreId }) {
-  // Les trois enfants du semestre : deux périodes de travail journalier et un
-  // examen. On les distingue par leur TYPE, jamais par leur ordre d'insertion.
-  const enfants = await client.query(
+/** Types de périodes qui ne portent jamais de notes : ce sont des contenants. */
+const TYPES_REGROUPEMENT = ['semestre', 'trimestre'];
+
+/** Libellé court d'une colonne, tel qu'imprimé en tête de grille. */
+function libelleColonne(enfant, rangPeriode) {
+  if (enfant.type === 'examen') return 'Exam.';
+  if (enfant.type === 'periode') {
+    return rangPeriode === 1 ? '1<sup>ère</sup> P.' : `${rangPeriode}<sup>ème</sup> P.`;
+  }
+  // Regroupement imbriqué : T1, T2… ou S1, S2…
+  const initiale = enfant.type === 'trimestre' ? 'T' : 'S';
+  return `${initiale}${enfant.numero}`;
+}
+
+/**
+ * Feuilles d'un enfant du regroupement : les périodes qui portent réellement
+ * des notes. Un enfant qui est lui-même un regroupement délègue à ses propres
+ * enfants — c'est ce qui permet à un semestre de primaire de sommer ses
+ * trimestres sans que personne n'ait à décrire cette imbrication.
+ */
+async function feuillesDe(client, enfant) {
+  if (!TYPES_REGROUPEMENT.includes(enfant.type)) return [enfant];
+
+  const petitsEnfants = await client.query(
     `SELECT id, type, numero FROM periodes WHERE semestre_id = $1 ORDER BY numero`,
-    [semestreId]
+    [enfant.id]
   );
-  const periodes = enfants.rows.filter((e) => e.type === 'periode').sort((a, b) => a.numero - b.numero);
-  const examen = enfants.rows.find((e) => e.type === 'examen') || null;
+  const feuilles = [];
+  for (const pe of petitsEnfants.rows) {
+    feuilles.push(...await feuillesDe(client, pe));
+  }
+  return feuilles;
+}
+
+async function assemblerDonneesRegroupement(client, { classeId, regroupementId }) {
+  const parentResult = await client.query(
+    `SELECT id, type, libelle, numero FROM periodes WHERE id = $1`,
+    [regroupementId]
+  );
+  const parent = parentResult.rows[0];
+  if (!parent) {
+    throw Object.assign(new Error('Période introuvable.'), { statusCode: 404 });
+  }
+  if (!TYPES_REGROUPEMENT.includes(parent.type)) {
+    throw Object.assign(
+      new Error(`« ${parent.libelle} » est une période de travail, pas un regroupement : son bulletin s'imprime par la route des bulletins de période.`),
+      { statusCode: 400 }
+    );
+  }
+
+  const enfantsResult = await client.query(
+    `SELECT id, type, numero FROM periodes WHERE semestre_id = $1 ORDER BY numero`,
+    [regroupementId]
+  );
+  const enfants = enfantsResult.rows;
 
   const coursResult = await client.query(
-    `SELECT cc.id AS classe_cours_id, c.id, c.nom,
+    `SELECT cc.id AS classe_cours_id, c.id, c.nom, c.domaine, c.groupe_domaine,
             COALESCE(cc.maximum_points_override, c.maximum_points) AS maximum,
             COALESCE(cc.maximum_examen_override, c.maximum_examen) AS maximum_examen
        FROM classe_cours cc
@@ -457,19 +622,12 @@ async function assemblerDonneesSemestre(client, { classeId, semestreId }) {
   );
   const cours = coursResult.rows.map((c) => {
     const maxPeriode = Number(c.maximum || 0);
-    // Même règle que le bulletin annuel : maximum_examen NULL = 2x la période,
+    // Même règle que le bulletin annuel : maximum_examen NULL = 2× la période,
     // 0 = branche non examinée (la case est alors noircie).
     const maxExamen = (c.maximum_examen === null || c.maximum_examen === undefined)
       ? maxPeriode * 2
       : Number(c.maximum_examen);
-    return {
-      ...c,
-      maxPeriode,
-      maxExamen,
-      sansExamen: maxExamen === 0,
-      // Total du semestre pour ce cours : les deux périodes + l'examen.
-      maxSemestre: maxPeriode * 2 + maxExamen,
-    };
+    return { ...c, maxPeriode, maxExamen, sansExamen: maxExamen === 0, maxima: {} };
   });
 
   const elevesResult = await client.query(
@@ -482,10 +640,45 @@ async function assemblerDonneesSemestre(client, { classeId, semestreId }) {
     ...e, cotes: {}, totaux: {}, pourcentages: {}, places: {},
     applications: {}, conduites: {}
   }));
-  if (eleves.length === 0 || cours.length === 0) return { cours, eleves, maxima: null };
 
+  /* ---------- Colonnes, déduites des enfants ---------- */
+  const colonnes = [];
+  let rangPeriode = 0;
+  for (let i = 0; i < enfants.length; i++) {
+    const enfant = enfants[i];
+    if (enfant.type === 'periode') rangPeriode += 1;
+    const feuilles = await feuillesDe(client, enfant);
+    colonnes.push({
+      cle: `c${i}`,
+      libelle: libelleColonne(enfant, rangPeriode),
+      type: enfant.type,
+      periodeId: enfant.id,
+      // Une colonne qui ne contient QUE des examens se noircit pour un cours
+      // non examiné ; une colonne mixte (un trimestre entier) ne le peut pas :
+      // elle contient aussi des périodes, que le cours passe bel et bien.
+      feuilles,
+      queDesExamens: feuilles.length > 0 && feuilles.every((f) => f.type === 'examen')
+    });
+  }
+
+  if (eleves.length === 0 || cours.length === 0) {
+    return { cours, eleves, colonnes, groupes: [], maxima: null, domaines: null, regroupement: parent };
+  }
+
+  /* ---------- Maximum de chaque cours, colonne par colonne ---------- */
+  for (const c of cours) {
+    for (const col of colonnes) {
+      if (c.sansExamen && col.queDesExamens) { c.maxima[col.cle] = null; continue; }
+      c.maxima[col.cle] = col.feuilles.reduce(
+        (t, f) => t + (f.type === 'examen' ? (c.sansExamen ? 0 : c.maxExamen) : c.maxPeriode),
+        0
+      );
+    }
+    c.maxima.total = colonnes.reduce((t, col) => t + (c.maxima[col.cle] || 0), 0);
+  }
+
+  /** Notes brutes d'une période feuille, indexées par élève et par cours. */
   async function notesDe(periode) {
-    if (!periode) return new Map();
     const r = await client.query(
       `SELECT eleve_id, classe_cours_id, points_obtenus
          FROM notes WHERE periode_id = $1 AND classe_cours_id = ANY($2::uuid[])`,
@@ -496,84 +689,157 @@ async function assemblerDonneesSemestre(client, { classeId, semestreId }) {
     return m;
   }
 
-  const notesP1 = await notesDe(periodes[0]);
-  const notesP2 = await notesDe(periodes[1]);
-  const notesEx = await notesDe(examen);
+  // Une seule requête par période feuille, réutilisée pour tous les élèves.
+  const notesParFeuille = new Map();
+  for (const col of colonnes) {
+    for (const f of col.feuilles) {
+      if (!notesParFeuille.has(f.id)) notesParFeuille.set(f.id, await notesDe(f));
+    }
+  }
+
+  const CLES = colonnes.map((c) => c.cle);
 
   for (const eleve of eleves) {
     for (const c of cours) {
-      const clef = `${eleve.id}|${c.classe_cours_id}`;
-      const p1 = notesP1.get(clef) ?? null;
-      const p2 = notesP2.get(clef) ?? null;
-      const ex = c.sansExamen ? null : (notesEx.get(clef) ?? null);
-      eleve.cotes[c.id] = { p1, p2, ex, total: sommeSiPresent(p1, p2, ex) };
+      const cotes = {};
+      for (const col of colonnes) {
+        if (c.sansExamen && col.queDesExamens) { cotes[col.cle] = null; continue; }
+        const valeurs = col.feuilles.map((f) => {
+          if (c.sansExamen && f.type === 'examen') return null;
+          return notesParFeuille.get(f.id)?.get(`${eleve.id}|${c.classe_cours_id}`) ?? null;
+        });
+        cotes[col.cle] = sommeSiPresent(...valeurs);
+      }
+      cotes.total = sommeSiPresent(...CLES.map((k) => cotes[k]));
+      eleve.cotes[c.id] = cotes;
     }
-    for (const col of COLONNES_SEMESTRE) {
-      eleve.totaux[col] = sommeSiPresent(...cours.map((c) => eleve.cotes[c.id][col]));
+
+    for (const cle of [...CLES, 'total']) {
+      eleve.totaux[cle] = sommeSiPresent(...cours.map((c) => eleve.cotes[c.id][cle]));
     }
   }
 
-  // Maxima généraux de la classe, pour la ligne de synthèse.
-  const maxima = cours.reduce((acc, c) => {
-    acc.p1 += c.maxPeriode;
-    acc.p2 += c.maxPeriode;
-    acc.ex += c.maxExamen;
-    acc.total += c.maxSemestre;
-    return acc;
-  }, { p1: 0, p2: 0, ex: 0, total: 0 });
+  /* ---------- Maxima de la classe ---------- */
+  const maxima = {};
+  for (const cle of [...CLES, 'total']) {
+    maxima[cle] = cours.reduce((t, c) => t + (c.maxima[cle] || 0), 0);
+  }
 
   for (const eleve of eleves) {
-    eleve.pourcentages = {};
-    for (const col of COLONNES_SEMESTRE) {
-      const total = eleve.totaux[col];
-      eleve.pourcentages[col] = (total === null || !maxima[col])
+    for (const cle of [...CLES, 'total']) {
+      const total = eleve.totaux[cle];
+      eleve.pourcentages[cle] = (total === null || !maxima[cle])
         ? null
-        : Math.round((total / maxima[col]) * 10000) / 100;
+        : Math.round((total / maxima[cle]) * 10000) / 100;
     }
-    // Conservé pour les appels qui ne lisaient qu'un pourcentage unique.
     eleve.pourcentage = eleve.pourcentages.total;
   }
 
-  /* ---------- Appréciations, période par période ----------
-     Conduite et application ne s'additionnent pas et ne se moyennent pas : ce
-     sont des lettres. Le bulletin de semestre les REPORTE donc, une colonne
-     par période, exactement comme le bulletin officiel de fin d'année. Les
-     colonnes Examen et Total restent fermées : il n'existe pas de conduite
-     « du total du semestre ». */
-  async function appreciationsDe(periode) {
-    if (!periode) return new Map();
+  /* ---------- Appréciations ----------
+     Conduite et application sont des lettres : elles ne s'additionnent pas.
+     On ne les reporte donc que sous une colonne qui EST une période de travail.
+     Sous une colonne « T1 » (un trimestre entier), il n'existe pas
+     d'appréciation unique à afficher — la case reste fermée. */
+  for (const col of colonnes) {
+    if (col.type !== 'periode') continue;
     const r = await client.query(
       `SELECT eleve_id, application, conduite FROM bulletins WHERE periode_id = $1`,
-      [periode.id]
+      [col.periodeId]
     );
-    const m = new Map();
-    for (const l of r.rows) m.set(l.eleve_id, l);
-    return m;
-  }
-
-  const apprP1 = await appreciationsDe(periodes[0]);
-  const apprP2 = await appreciationsDe(periodes[1]);
-  for (const eleve of eleves) {
-    const a1 = apprP1.get(eleve.id) || {};
-    const a2 = apprP2.get(eleve.id) || {};
-    eleve.applications = { p1: a1.application ?? null, p2: a2.application ?? null };
-    eleve.conduites = { p1: a1.conduite ?? null, p2: a2.conduite ?? null };
+    const m = new Map(r.rows.map((l) => [l.eleve_id, l]));
+    for (const eleve of eleves) {
+      eleve.applications[col.cle] = m.get(eleve.id)?.application ?? null;
+      eleve.conduites[col.cle] = m.get(eleve.id)?.conduite ?? null;
+    }
   }
 
   /* ---------- Classement, colonne par colonne ----------
-     Le modèle imprime une place par colonne, et non un seul rang général :
-     un élève peut être 3ᵉ en première période, 1ᵉʳ à l'examen et 2ᵉ au total.
-     Ne classer que sur le total ferait disparaître cette lecture, qui est la
-     raison d'être d'un récapitulatif de semestre.
-
-     Un élève dépourvu de cote sur une colonne n'y est pas classé : lui donner
-     un rang laisserait croire à un résultat nul là où rien n'a été saisi. */
-  for (const col of COLONNES_SEMESTRE) {
-    classerParColonne(eleves, col, (e) => e.totaux[col]);
+     Le modèle imprime une place par colonne, et non un seul rang général : un
+     élève peut être 3ᵉ en première période, 1ᵉʳ à l'examen et 2ᵉ au total. Ne
+     classer que sur le total ferait disparaître cette lecture, qui est la
+     raison d'être d'un récapitulatif. */
+  for (const cle of [...CLES, 'total']) {
+    classerParColonne(eleves, cle, (e) => e.totaux[cle]);
   }
 
-  return { cours, eleves, maxima, periodes, examen };
+  /* ---------- Groupes de maxima ----------
+     Deux colonnes consécutives forment un groupe si leur maximum est identique
+     POUR CHAQUE COURS. Un seul « Max » les couvre alors, comme sur le modèle
+     où les deux périodes partagent le leur. */
+  const groupes = [];
+  for (const col of colonnes) {
+    const dernier = groupes[groupes.length - 1];
+    const memeBareme = dernier && cours.every((c) =>
+      c.maxima[dernier.colonnes[dernier.colonnes.length - 1].cle] === c.maxima[col.cle]);
+    if (memeBareme) dernier.colonnes.push(col);
+    else groupes.push({ colonnes: [col] });
+  }
+  for (const g of groupes) {
+    g.cleMax = g.colonnes[0].cle;
+    g.queDesExamens = g.colonnes.every((c) => c.queDesExamens);
+  }
+
+  /* ---------- Regroupement par domaines (primaire) ----------
+     Le bulletin du primaire ne présente pas une liste plate de branches : il
+     les range par domaine, avec un sous-total par groupe — c'est ce que montre
+     le bulletin officiel, où « Sous-total » revient après les langues
+     congolaises, après le français, après les mathématiques, et ainsi de suite.
+     Le bulletin de trimestre, qui est la vue rapprochée du même document, doit
+     donc porter la même structure ; sans elle, l'instituteur lit sa classe
+     rangée par domaines en fin d'année et par ordre alphabétique en cours
+     d'année.
+
+     La structure n'est produite QUE si les cours portent un domaine. Une classe
+     de secondaire, dont les cours n'en ont pas, reçoit `domaines: null` et le
+     gabarit imprime alors sa liste plate habituelle — rien ne change pour elle. */
+  const auMoinsUnDomaine = cours.some((c) => c.domaine);
+  let domaines = null;
+  if (auMoinsUnDomaine) {
+    const groupement = grouperParDomaine(cours);
+    domaines = groupement.domaines;
+    // Un cours sans domaine dans une classe qui en a serait silencieusement
+    // absent du tableau. On le rattache à un domaine explicite plutôt que de
+    // le laisser disparaître : un bulletin amputé d'une branche ne se remarque
+    // pas à la lecture, et c'est le pire des défauts pour ce document.
+    if (groupement.sansDomaine.length > 0) {
+      domaines = domaines.concat([{ nom: 'AUTRES BRANCHES', cours: groupement.sansDomaine }]);
+    }
+  }
+
+  /**
+   * Sous-total d'un ensemble de branches, colonne par colonne.
+   * Utilisé pour les lignes « Sous-total » du primaire ; calculé ici et non
+   * dans le gabarit, pour que la même somme serve à l'affichage et à tout
+   * contrôle ultérieur.
+   */
+  function sousTotalDe(liste, eleve) {
+    const somme = { maxima: {} };
+    for (const cle of [...CLES, 'total']) {
+      somme[cle] = sommeSiPresent(...liste.map((c) => eleve.cotes[c.id][cle]));
+      somme.maxima[cle] = liste.reduce((t, c) => t + (c.maxima[cle] || 0), 0);
+    }
+    return somme;
+  }
+
+  if (domaines) {
+    for (const eleve of eleves) {
+      eleve.sousTotaux = {};
+      for (const d of domaines) {
+        if (d.groupes && d.groupes.length) {
+          for (const g of d.groupes) {
+            eleve.sousTotaux[`${d.nom}|${g.nom}`] = sousTotalDe(g.cours || [], eleve);
+          }
+        } else {
+          eleve.sousTotaux[d.nom] = sousTotalDe(d.cours || [], eleve);
+        }
+      }
+    }
+  }
+
+  return { cours, eleves, colonnes, groupes, maxima, domaines, regroupement: parent };
 }
 
-module.exports.assemblerDonneesSemestre = assemblerDonneesSemestre;
-module.exports.COLONNES_SEMESTRE = COLONNES_SEMESTRE;
+module.exports.assemblerDonneesRegroupement = assemblerDonneesRegroupement;
+// Ancien nom, conservé pour ne casser aucun appel existant.
+module.exports.assemblerDonneesSemestre = (client, { classeId, semestreId }) =>
+  assemblerDonneesRegroupement(client, { classeId, regroupementId: semestreId });

@@ -1651,4 +1651,68 @@
       bouton.textContent = libelle;
     }
   }
+
+  /* ======================================================================
+     Apparence
+     ------------------------------------------------------------------
+     Même sélecteur que la carte « Apparence » de mon-profil.html, rendu ici
+     avec les classes sa-. La liste des thèmes et leur application viennent
+     de theme.js (window.ArdoiseTheme), chargé par super-admin.html pour
+     cette seule raison — voir le commentaire d'isolation en tête de cette
+     page. Aucune route « moi » n'existe côté Super Admin : le choix reste
+     local à cet appareil, comme la disposition du menu sur les pages
+     applicatives.
+     ====================================================================== */
+
+  SA.enregistrerVue('apparence', {
+    titre: 'Apparence',
+    sousTitre: 'Le thème visuel de ce panneau d\'administration.',
+
+    async rendu(conteneur) {
+      if (!window.ArdoiseTheme) {
+        conteneur.innerHTML = ui.etatErreur('theme.js n\'a pas pu être chargé : la liste des thèmes est indisponible.');
+        return;
+      }
+
+      function dessiner() {
+        const actuel = ArdoiseTheme.actuel();
+        conteneur.innerHTML = `
+          <section class="sa-section">
+            <p class="sa-muet" style="font-size:.85rem;margin:-4px 0 18px;max-width:640px">
+              Ce choix ne concerne que votre poste : il ne change rien pour les autres
+              administrateurs, et rien pour les écoles, qui gardent chacune leur propre thème.
+            </p>
+            <div class="sa-grille-themes">
+              ${ArdoiseTheme.liste.map((t) => `
+                <button type="button" class="sa-carte-theme ${t.cle === actuel ? 'actif' : ''}" data-theme="${esc(t.cle)}"
+                        aria-pressed="${t.cle === actuel}">
+                  <div class="sa-apercu-theme" style="background:${t.apercu.fond}">
+                    <div class="sa-bande-theme" style="background:${t.apercu.barre}"></div>
+                    <div class="sa-corps-theme">
+                      <div class="sa-ligne-theme-1" style="background:${t.apercu.texte}"></div>
+                      <div class="sa-ligne-theme-2" style="background:${t.apercu.texte}"></div>
+                      <div class="sa-pastille-theme" style="background:${t.apercu.accent}"></div>
+                    </div>
+                  </div>
+                  <div class="sa-pied-theme">
+                    <div class="sa-nom-theme">${esc(t.nom)}<span class="sa-coche-theme">${t.cle === actuel ? '✓' : ''}</span></div>
+                    <div class="sa-desc-theme">${esc(t.description)}</div>
+                  </div>
+                </button>
+              `).join('')}
+            </div>
+          </section>`;
+
+        conteneur.querySelectorAll('.sa-carte-theme').forEach((bouton) => {
+          bouton.addEventListener('click', () => {
+            ArdoiseTheme.appliquer(bouton.dataset.theme);
+            dessiner();
+            SA.toast('Thème appliqué.', 'succes');
+          });
+        });
+      }
+
+      dessiner();
+    }
+  });
 })();

@@ -13,6 +13,15 @@
   aucune session. Les recharger ici garantit que le panneau suit la charte d'Ardoise
   et ses six thèmes sans dupliquer une seule couleur.
 
+  theme.js est chargé aussi, en exception ciblée à la règle ci-dessus : il ne porte
+  ni barre latérale ni permissions par rôle, seulement la liste des thèmes et leur
+  application (menu Apparence). Sans lui, ajouter un thème demanderait de mettre à
+  jour cette liste à deux endroits, ici et dans theme.js, jusqu'à ce qu'ils divergent.
+  Il ne trouve pas `appelApi` dans cette page (le panneau utilise `SA.api`) : la
+  synchronisation avec le compte s'efface donc silencieusement, et le choix reste
+  local à cet appareil — exactement comme la disposition du menu sur les pages
+  applicatives.
+
   ARCHITECTURE
   ------------
   Application monopage à routeur de fragment (#/section). Les vues sont enregistrées
@@ -264,6 +273,7 @@
       <li><a href="#/configuration" data-route="configuration"><span class="sa-icone">⚙️</span> Configuration</a></li>
       <li><a href="#/outils" data-route="outils"><span class="sa-icone">🛠</span> Outils développeur</a></li>
       <li><a href="#/rapports" data-route="rapports"><span class="sa-icone">📄</span> Rapports</a></li>
+      <li><a href="#/apparence" data-route="apparence"><span class="sa-icone">🎨</span> Apparence</a></li>
     </ul>
 
     <div class="sa-nav-pied">
@@ -282,8 +292,11 @@
 </div>
 
 <!-- =====================================================================
-     Scripts — ordre imposé : le noyau d'abord, les vues ensuite.
+     Scripts — ordre imposé : theme.js et le noyau d'abord, les vues ensuite.
+     theme.js est chargé ici volontairement, voir le commentaire d'isolation
+     tout en haut de ce fichier.
      ===================================================================== -->
+<script src="theme.js"></script>
 <script src="super-admin-noyau.js"></script>
 <script src="super-admin-vues-pilotage.js"></script>
 <script src="super-admin-vues-ecoles.js"></script>

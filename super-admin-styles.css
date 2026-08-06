@@ -194,6 +194,34 @@
 }
 .sa-panneau + .sa-panneau { margin-top: 14px; }
 
+/* Sélecteur de thème (menu Apparence). Même composant visuel que la carte
+   « Apparence » de mon-profil.html, redessiné avec le préfixe sa- : la liste
+   des thèmes elle-même vient de theme.js (window.ArdoiseTheme), pas d'ici. */
+.sa-grille-themes { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; }
+.sa-carte-theme {
+  border: 2px solid var(--bordure);
+  border-radius: var(--r-carte);
+  padding: 0;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  overflow: hidden;
+  font-family: var(--police-corps);
+  transition: border-color 0.18s ease, transform 0.18s ease;
+}
+.sa-carte-theme:hover { border-color: var(--texte-att); transform: translateY(-2px); }
+.sa-carte-theme.actif { border-color: var(--ocre); }
+.sa-carte-theme .sa-apercu-theme { height: 74px; display: flex; }
+.sa-carte-theme .sa-apercu-theme .sa-bande-theme { width: 26px; }
+.sa-carte-theme .sa-apercu-theme .sa-corps-theme { flex: 1; padding: 9px 10px; }
+.sa-carte-theme .sa-apercu-theme .sa-ligne-theme-1 { height: 7px; border-radius: 3px; width: 62%; margin-bottom: 6px; }
+.sa-carte-theme .sa-apercu-theme .sa-ligne-theme-2 { height: 7px; border-radius: 3px; width: 84%; opacity: 0.45; margin-bottom: 9px; }
+.sa-carte-theme .sa-apercu-theme .sa-pastille-theme { height: 14px; width: 46px; border-radius: 4px; }
+.sa-carte-theme .sa-pied-theme { padding: 11px 12px; background: var(--craie-2); border-top: 1px solid var(--bordure); }
+.sa-carte-theme .sa-pied-theme .sa-nom-theme { font-weight: 600; font-size: 0.93rem; color: var(--texte-sombre); display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.sa-carte-theme .sa-pied-theme .sa-desc-theme { font-size: 0.76rem; color: var(--texte-att); margin-top: 3px; line-height: 1.35; }
+.sa-carte-theme .sa-coche-theme { color: var(--ocre); font-size: 0.95rem; }
+
 .sa-grille-stats {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(178px, 1fr));
@@ -256,6 +284,12 @@
 .sa-fleche-tri { color: var(--ocre); font-size: 0.8rem; }
 
 .sa-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* .sa-tableau th a une spécificité plus forte (élément + classe) que .sa-num
+   (classe seule) : sans cette règle, l'en-tête d'une colonne numérique reste
+   aligné à gauche alors que les cellules de données passent à droite via
+   .sa-num, ce qui désaligne visuellement toute colonne « Reste », « Revenu
+   cumulé », « Tarif », etc. dans tous les tableaux du panneau. */
+.sa-tableau th.sa-num { text-align: right; }
 .sa-mono { font-family: var(--police-mono); font-size: 0.8rem; color: var(--encre); }
 .sa-muet { color: var(--texte-att); opacity: 0.65; }
 .sa-tronque { max-width: 340px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }

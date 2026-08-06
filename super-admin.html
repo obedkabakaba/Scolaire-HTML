@@ -16,7 +16,9 @@
   ARCHITECTURE
   ------------
   Application monopage à routeur de fragment (#/section). Les vues sont enregistrées
-  par les modules `super-admin/vues-*.js` auprès de `super-admin/noyau.js`.
+  par les modules `super-admin-vues-*.js` auprès de `super-admin-noyau.js`.
+  Tous les fichiers sont À LA RACINE du dépôt, comme les 34 autres pages : ce dépôt
+  n'utilise aucun sous-dossier, et un sous-dossier n'y serait pas servi.
   Ajouter une section = ajouter un SA.enregistrerVue() et une entrée de menu.
 -->
 <html lang="fr">
@@ -51,29 +53,134 @@
 
 <link rel="stylesheet" href="theme.css" />
 <link rel="stylesheet" href="ui.css" />
-<link rel="stylesheet" href="super-admin/styles.css" />
+<link rel="stylesheet" href="super-admin-styles.css" />
 
 <style>
-  /* Seul bloc de style propre à cette page : l'écran de connexion, qui vit
-     avant que l'application ne soit montée. Tout le reste est dans
-     super-admin/styles.css. */
-  * { box-sizing: border-box; }
-  body { margin: 0; font-family: var(--police-corps); color: var(--texte-sombre); background: var(--craie); }
+  /* ------------------------------------------------------------------
+     Écran de connexion : styles VOLONTAIREMENT AUTONOMES.
 
-  .sa-ecran-connexion { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
-  .sa-carte-connexion {
-    background: var(--craie-2); border: 1px solid var(--bordure);
-    border-radius: var(--r-carte); padding: 36px; max-width: 390px; width: 100%;
+     Cet écran vit avant que l'application ne soit montée, et il doit
+     rester lisible même si super-admin-styles.css ne se charge pas.
+     C'est exactement ce qui est arrivé : la feuille manquait, les
+     styles des champs avec elle, et le formulaire s'est affiché en
+     ligne — « Email [   ] Mot de passe [   ] » — au lieu d'être empilé.
+     Un écran de connexion cassé empêche d'entrer dans l'outil ; il ne
+     doit donc dépendre d'aucun fichier externe.
+
+     Les variables du thème sont utilisées avec un repli explicite, pour
+     la même raison : si theme.css manque aussi, la page reste correcte.
+     ------------------------------------------------------------------ */
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--police-corps, "Inter", system-ui, -apple-system, sans-serif);
+    color: var(--texte-sombre, #2B2A26);
+    background: var(--craie, #F6F1E7);
   }
-  .sa-carte-connexion h1 { font-family: var(--police-titre); font-weight: 600; font-size: 1.55rem; margin: 0 0 4px; }
-  .sa-carte-connexion .sa-sous-titre { margin: 0 0 26px; font-size: 0.88rem; }
+
+  .sa-ecran-connexion {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .sa-carte-connexion {
+    background: var(--craie-2, #FFFDF8);
+    border: 1px solid var(--bordure, #E2DACA);
+    border-radius: var(--r-carte, 14px);
+    padding: 40px 36px 34px;
+    max-width: 400px;
+    width: 100%;
+    box-shadow: 0 1px 2px rgba(43, 42, 38, 0.04), 0 8px 28px rgba(43, 42, 38, 0.07);
+  }
+
+  /* Filet ocre au-dessus du titre : le seul ornement, repris de la charte. */
+  .sa-marque-connexion {
+    width: 34px; height: 3px;
+    background: var(--ocre, #C08A3E);
+    border-radius: 2px;
+    margin-bottom: 20px;
+  }
+
+  .sa-carte-connexion h1 {
+    font-family: var(--police-titre, "Fraunces", Georgia, serif);
+    font-weight: 600;
+    font-size: 1.5rem;
+    line-height: 1.2;
+    margin: 0 0 6px;
+    color: var(--texte-sombre, #2B2A26);
+  }
+  .sa-carte-connexion .sa-sous-titre {
+    margin: 0 0 28px;
+    font-size: 0.875rem;
+    line-height: 1.45;
+    color: var(--texte-att, #7A7466);
+  }
+
+  /* Champs empilés. C'est CE bloc dont l'absence cassait la mise en page. */
+  .sa-connexion-champ { display: block; margin-bottom: 16px; }
+  .sa-connexion-champ > span {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--texte-att, #7A7466);
+    margin-bottom: 7px;
+  }
+  .sa-connexion-champ > input {
+    display: block;
+    width: 100%;
+    padding: 11px 13px;
+    font: inherit;
+    font-size: 0.94rem;
+    color: var(--texte-sombre, #2B2A26);
+    background: var(--craie-2, #FFFDF8);
+    border: 1.5px solid var(--bordure, #E2DACA);
+    border-radius: var(--r-bouton, 9px);
+    transition: border-color 0.15s ease;
+  }
+  .sa-connexion-champ > input:focus {
+    outline: none;
+    border-color: var(--ocre, #C08A3E);
+  }
+
   .sa-erreur-connexion {
-    display: none; margin: -6px 0 16px; padding: 10px 12px; font-size: 0.85rem;
-    color: var(--rouge); border-left: 2.5px solid var(--rouge);
-    background: rgba(178, 58, 46, 0.06);
+    display: none;
+    margin: 0 0 18px;
+    padding: 11px 13px;
+    font-size: 0.85rem;
+    line-height: 1.45;
+    color: var(--rouge, #B23A2E);
+    border-left: 3px solid var(--rouge, #B23A2E);
+    border-radius: 0 var(--r-bouton, 9px) var(--r-bouton, 9px) 0;
+    background: rgba(178, 58, 46, 0.07);
   }
   .sa-erreur-connexion.visible { display: block; }
-  .sa-carte-connexion .sa-bouton { width: 100%; margin-top: 6px; }
+
+  .sa-bouton-connexion {
+    display: block;
+    width: 100%;
+    margin-top: 8px;
+    padding: 12px 16px;
+    font: inherit;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--craie-2, #FFFDF8);
+    background: var(--ocre, #C08A3E);
+    border: 1.5px solid var(--ocre, #C08A3E);
+    border-radius: var(--r-bouton, 9px);
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  .sa-bouton-connexion:hover:not(:disabled) { background: var(--ocre-dark, #A5722F); border-color: var(--ocre-dark, #A5722F); }
+  .sa-bouton-connexion:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  @media (max-width: 420px) {
+    .sa-carte-connexion { padding: 30px 22px 26px; }
+  }
 </style>
 </head>
 <body>
@@ -83,21 +190,22 @@
      ===================================================================== -->
 <div class="sa-ecran-connexion" id="ecran-connexion">
   <div class="sa-carte-connexion">
+    <div class="sa-marque-connexion" aria-hidden="true"></div>
     <h1>Ardoise — Super Admin</h1>
     <p class="sa-sous-titre">Accès réservé à l'administration de la plateforme.</p>
 
     <div class="sa-erreur-connexion" id="erreur-connexion" role="alert"></div>
 
     <form id="formulaire-connexion" autocomplete="on">
-      <label class="sa-champ-bloc">
+      <label class="sa-connexion-champ">
         <span>Email</span>
-        <input type="email" class="sa-champ" id="champ-email" autocomplete="username" required />
+        <input type="email" id="champ-email" autocomplete="username" required />
       </label>
-      <label class="sa-champ-bloc">
+      <label class="sa-connexion-champ">
         <span>Mot de passe</span>
-        <input type="password" class="sa-champ" id="champ-mot-de-passe" autocomplete="current-password" required />
+        <input type="password" id="champ-mot-de-passe" autocomplete="current-password" required />
       </label>
-      <button type="submit" class="sa-bouton sa-bouton-principal" id="bouton-connexion">Se connecter</button>
+      <button type="submit" class="sa-bouton-connexion" id="bouton-connexion">Se connecter</button>
     </form>
   </div>
 </div>
@@ -176,11 +284,11 @@
 <!-- =====================================================================
      Scripts — ordre imposé : le noyau d'abord, les vues ensuite.
      ===================================================================== -->
-<script src="super-admin/noyau.js"></script>
-<script src="super-admin/vues-pilotage.js"></script>
-<script src="super-admin/vues-ecoles.js"></script>
-<script src="super-admin/vues-explorer.js"></script>
-<script src="super-admin/vues-systeme.js"></script>
+<script src="super-admin-noyau.js"></script>
+<script src="super-admin-vues-pilotage.js"></script>
+<script src="super-admin-vues-ecoles.js"></script>
+<script src="super-admin-vues-explorer.js"></script>
+<script src="super-admin-vues-systeme.js"></script>
 
 <script>
 (function () {
@@ -190,6 +298,42 @@
   const formulaire = document.getElementById('formulaire-connexion');
   const zoneErreur = document.getElementById('erreur-connexion');
   const bouton = document.getElementById('bouton-connexion');
+
+  /* ---------- Vérification du chargement des scripts ----------
+     Si un seul des fichiers super-admin-*.js n'est pas servi, `SA` n'existe
+     pas, `SA.API_BASE_URL` vaut undefined, et le fetch part sur une URL
+     invalide : le catch affichait alors « Impossible de contacter le
+     serveur », ce qui accusait le backend à tort et faisait chercher la
+     panne au mauvais endroit. On distingue donc les deux cas dès le départ
+     et on nomme le vrai problème. */
+  const SCRIPTS_REQUIS = [
+    'super-admin-noyau.js', 'super-admin-vues-pilotage.js', 'super-admin-vues-ecoles.js',
+    'super-admin-vues-explorer.js', 'super-admin-vues-systeme.js'
+  ];
+
+  function scriptsCharges() {
+    return typeof window.SA !== 'undefined'
+        && typeof SA.API_BASE_URL === 'string'
+        && typeof SA.demarrer === 'function'
+        && SA.vues && SA.vues.size > 0;
+  }
+
+  if (!scriptsCharges()) {
+    zoneErreur.innerHTML =
+      '<strong>Installation incomplète.</strong><br>' +
+      'Les fichiers de l\'espace Super Admin ne sont pas accessibles. ' +
+      'Ils doivent se trouver <strong>à la racine</strong> du dépôt, à côté de ' +
+      'super-admin.html :<br>' +
+      '<code style="font-size:.78rem;display:block;margin-top:7px;line-height:1.7">'
+      + SCRIPTS_REQUIS.join('<br>') + '<br>super-admin-styles.css</code>' +
+      '<span style="display:block;margin-top:8px">' +
+      'Le serveur n\'est pas en cause : ouvrez la console du navigateur, ' +
+      'les fichiers manquants y apparaissent en 404.</span>';
+    zoneErreur.classList.add('visible');
+    bouton.disabled = true;
+    bouton.textContent = 'Fichiers manquants';
+    return;
+  }
 
   function afficherErreur(texte) {
     zoneErreur.textContent = texte;
@@ -230,7 +374,10 @@
       SA.session.enregistrer(donnees);
       SA.demarrer();
     } catch (erreur) {
-      afficherErreur('Impossible de contacter le serveur.');
+      // À ce stade les scripts sont chargés : l'échec vient bien du réseau
+      // ou du serveur, et le message peut le dire sans risque de tromper.
+      afficherErreur('Serveur injoignable. Vérifiez votre connexion, '
+        + 'ou réessayez dans un instant si le service redémarre.');
     }
   });
 

@@ -233,12 +233,43 @@
           <button class="sa-bouton sa-bouton-secondaire sa-bouton-petit" id="btn-reactiver-abonnement">Réactiver l'abonnement</button>
         </div>
 
+        <h4 class="sa-section-titre" style="margin-top:22px">Encaisser un paiement</h4>
+        <p class="sa-note" style="margin-bottom:12px">
+          Espèces, virement, chèque ou mobile money reçu hors ligne. L'enregistrement
+          émet la facture, confirme le paiement, prolonge l'abonnement et remet
+          l'école en service — en une seule opération.
+        </p>
+        <div style="display:flex;gap:9px;flex-wrap:wrap">
+          <button class="sa-bouton sa-bouton-principal sa-bouton-petit" id="btn-encaisser"
+                  ${abonnement ? '' : 'disabled title="Cette école n\'a pas d\'abonnement"'}>
+            Enregistrer un paiement
+          </button>
+        </div>
+
         <h4 class="sa-section-titre" style="margin-top:22px">Paiements récents</h4>
         ${ui.tableau({
           colonnes: [
             { cle: 'date_paiement', titre: 'Date', rendu: (l) => esc(fmt.date(l.date_paiement)) },
             { cle: 'montant', titre: 'Montant', classe: 'sa-num', rendu: (l) => esc(fmt.nombre(l.montant)) },
-            { cle: 'methode', titre: 'Méthode' },
+            {
+              cle: 'methode', titre: 'Méthode',
+              rendu: (l) => {
+                const libelles = {
+                  especes: 'Espèces', virement_bancaire: 'Virement', cheque: 'Chèque',
+                  orange_money: 'Orange Money', airtel_money: 'Airtel Money', mpesa: 'M-Pesa'
+                };
+                const manuel = ['especes', 'virement_bancaire', 'cheque'].includes(l.methode);
+                return ui.badge(libelles[l.methode] || l.methode, manuel ? 'attention' : 'info');
+              }
+            },
+            {
+              // La référence est la seule pièce rattachant un paiement en
+              // espèces à un justificatif papier : elle doit être visible ici,
+              // pas seulement dans le journal.
+              cle: 'reference_externe', titre: 'Référence', classe: 'sa-mono',
+              rendu: (l) => l.reference_externe
+                ? esc(l.reference_externe) : '<span class="sa-muet">—</span>'
+            },
             { cle: 'statut', titre: 'Statut', rendu: (l) => ui.badgeStatut(l.statut) }
           ],
           lignes: detail.paiements || [],
@@ -329,6 +360,28 @@
         SA.toast(erreur.message, 'erreur');
       }
     });
+
+    const boutonEncaisser = modale.querySelector('#btn-encaisser');
+    if (boutonEncaisser && abonnement) {
+      boutonEncaisser.addEventListener('click', () => {
+        // La fiche école n'expose pas les mêmes noms que la liste des
+        // abonnements : on normalise ici pour que le formulaire reçoive
+        // toujours la même forme, quel que soit l'écran d'où on l'ouvre.
+        ouvrirEncaissement({
+          id: abonnement.id,
+          ecole_nom: ecole.nom,
+          ecole_statut: ecole.statut,
+          plan_nom: abonnement.plan_nom,
+          prix: abonnement.prix,
+          devise: abonnement.devise,
+          duree_jours: abonnement.duree_jours,
+          date_expiration: abonnement.date_expiration
+        }, () => {
+          modale.fermer();
+          if (surChangement) surChangement();
+        });
+      });
+    }
 
     modale.querySelector('#btn-appliquer-abonnement').addEventListener('click', async () => {
       const planId = modale.querySelector('#champ-plan').value;
@@ -480,6 +533,185 @@
     });
   }
 
+
+  /* ======================================================================
+     Encaissement d'un paiement d'abonnement
+     ----------------------------------------------------------------------
+     Beaucoup d'écoles règlent en espèces, de la main à la main. Ce paiement
+     existait dans la réalité mais n'était enregistrable nulle part : le
+     Directeur ne peut initier qu'un mobile money, et rien ne permettait au
+     Super Admin de prendre acte d'un billet reçu. L'abonnement restait donc
+     « en attente » et l'école suspendue, alors qu'elle avait payé.
+
+     Le formulaire appelle la route qui existait déjà,
+     POST /abonnements/:id/confirmer-paiement, laquelle enchaîne en une seule
+     transaction : facture payée, paiement confirmé, abonnement réactivé avec
+     une nouvelle échéance, et école remise en service. Aucune route jumelle
+     n'a été créée pour l'occasion.
+     ====================================================================== */
+
+  function ouvrirEncaissement(abonnement, surSucces) {
+    const methodes = (SA.referentiels && SA.referentiels.methodes_paiement) || [];
+    if (!methodes.length) {
+      return SA.toast('Méthodes de paiement indisponibles. Rechargez la page.', 'attention');
+    }
+
+    // Espèces en tête : c'est le cas le plus fréquent, il doit être le
+    // premier sous la souris plutôt qu'à chercher dans la liste.
+    const ordonnees = [...methodes].sort((a, b) =>
+      (a.cle === 'especes' ? -1 : b.cle === 'especes' ? 1 : 0));
+
+    const aujourdhui = new Date().toISOString().slice(0, 10);
+
+    const modale = SA.modale({
+      titre: 'Enregistrer un paiement',
+      sousTitre: `${abonnement.ecole_nom || ''} — ${abonnement.plan_nom || 'sans plan'}`,
+      contenu: `
+        <p class="sa-note" style="margin-bottom:16px">
+          À utiliser lorsque l'argent a <strong>déjà été reçu</strong>. L'enregistrement
+          réactive l'abonnement et remet l'école en service immédiatement.
+        </p>
+
+        <div class="sa-grille-2">
+          <label class="sa-champ-bloc"><span>Méthode *</span>
+            <select class="sa-champ" id="p-methode">
+              ${ordonnees.map((m) => `<option value="${esc(m.cle)}" data-manuel="${m.manuel ? '1' : ''}">
+                ${esc(m.libelle)}</option>`).join('')}
+            </select>
+          </label>
+          <label class="sa-champ-bloc"><span>Montant *</span>
+            <input type="number" step="0.01" min="0" class="sa-champ" id="p-montant"
+                   value="${esc(abonnement.prix || '')}" />
+          </label>
+          <label class="sa-champ-bloc"><span>Devise</span>
+            <select class="sa-champ" id="p-devise">
+              <option value="USD" ${abonnement.devise === 'USD' ? 'selected' : ''}>USD</option>
+              <option value="FC" ${abonnement.devise === 'FC' ? 'selected' : ''}>FC</option>
+            </select>
+          </label>
+          <label class="sa-champ-bloc"><span>Date de réception</span>
+            <input type="date" class="sa-champ" id="p-date" value="${aujourdhui}" />
+          </label>
+        </div>
+
+        <label class="sa-champ-bloc" id="bloc-reference">
+          <span>Référence * <span style="font-weight:400;text-transform:none;letter-spacing:0">
+            (n° de reçu, bordereau ou chèque)</span></span>
+          <input class="sa-champ" id="p-reference" placeholder="ex. REC-2026-0184" />
+        </label>
+
+        <label class="sa-champ-bloc"><span>Note (facultatif)</span>
+          <textarea class="sa-champ" id="p-note" style="min-height:64px"
+                    placeholder="Remis par…, contexte, observation"></textarea>
+        </label>
+
+        <div class="sa-note" id="p-apercu"></div>`,
+      actions: `
+        <button class="sa-bouton sa-bouton-secondaire" data-role="annuler">Annuler</button>
+        <button class="sa-bouton sa-bouton-principal" data-role="valider">Enregistrer le paiement</button>`,
+      large: true
+    });
+
+    const champMethode = modale.querySelector('#p-methode');
+    const blocReference = modale.querySelector('#bloc-reference');
+    const champReference = modale.querySelector('#p-reference');
+    const apercu = modale.querySelector('#p-apercu');
+
+    // Aperçu de la nouvelle échéance, calculé côté interface avec la même
+    // règle que le serveur : on repart de l'échéance en cours si elle n'est
+    // pas atteinte, de maintenant sinon. L'administrateur voit donc ce qu'il
+    // s'apprête à décider avant de cliquer.
+    function rafraichirApercu() {
+      const duree = Number(abonnement.duree_jours) || 0;
+      const maintenant = new Date();
+      const actuelle = abonnement.date_expiration ? new Date(abonnement.date_expiration) : null;
+      const depart = (actuelle && actuelle > maintenant) ? actuelle : maintenant;
+      const nouvelle = new Date(depart.getTime() + duree * 86400000);
+
+      const prolonge = actuelle && actuelle > maintenant;
+      apercu.innerHTML = `
+        Nouvelle échéance : <strong>${esc(fmt.date(nouvelle))}</strong>
+        ${duree ? ` (+${duree} jours)` : ''}.
+        ${prolonge
+          ? `L'échéance actuelle du ${esc(fmt.date(actuelle))} n'étant pas atteinte,
+             les jours restants sont conservés.`
+          : `L'abonnement passera en <strong>actif</strong>.`}
+        ${abonnement.ecole_statut && abonnement.ecole_statut !== 'actif'
+          ? `<br>L'école, actuellement <strong>${esc(abonnement.ecole_statut)}</strong>,
+             sera remise en service.`
+          : ''}`;
+    }
+
+    function rafraichirReference() {
+      const manuel = champMethode.selectedOptions[0].getAttribute('data-manuel') === '1';
+      blocReference.style.display = manuel ? '' : 'none';
+      champReference.placeholder = manuel
+        ? 'ex. REC-2026-0184' : 'ex. identifiant de transaction';
+      // Pour un mobile money enregistré à la main, la référence reste utile
+      // mais n'est pas exigée : la transaction laisse une trace chez l'opérateur.
+      if (!manuel) blocReference.style.display = '';
+    }
+
+    champMethode.addEventListener('change', rafraichirReference);
+    rafraichirReference();
+    rafraichirApercu();
+
+    modale.querySelector('[data-role="annuler"]').addEventListener('click', () => modale.fermer());
+
+    modale.querySelector('[data-role="valider"]').addEventListener('click', async (evenement) => {
+      const bouton = evenement.currentTarget;
+      const methode = champMethode.value;
+      const manuel = champMethode.selectedOptions[0].getAttribute('data-manuel') === '1';
+      const montant = modale.querySelector('#p-montant').value;
+      const reference = champReference.value.trim();
+
+      if (!montant || Number(montant) <= 0) {
+        return SA.toast('Indiquez un montant supérieur à zéro.', 'attention');
+      }
+      if (manuel && !reference) {
+        return SA.toast('Une référence est requise pour un règlement manuel.', 'attention');
+      }
+
+      const confirme = await SA.confirmer({
+        titre: 'Confirmer l\'encaissement',
+        message: `Enregistrer ${montant} ${modale.querySelector('#p-devise').value} `
+               + `en ${champMethode.selectedOptions[0].textContent.trim().toLowerCase()} `
+               + `pour « ${abonnement.ecole_nom} » ? `
+               + `L'abonnement sera réactivé et l'école remise en service.`,
+        libelleValider: 'Enregistrer'
+      });
+      if (!confirme) return;
+
+      bouton.disabled = true;
+      bouton.textContent = 'Enregistrement…';
+      try {
+        const r = await SA.api(`/abonnements/${abonnement.id}/confirmer-paiement`, {
+          method: 'POST',
+          body: JSON.stringify({
+            montant: Number(montant),
+            methode,
+            devise: modale.querySelector('#p-devise').value,
+            reference: reference || null,
+            note: modale.querySelector('#p-note').value.trim() || null
+          })
+        });
+
+        SA.toast(
+          `${r.message} Facture ${r.facture}, échéance au ${fmt.date(r.nouvelleExpiration)}.`,
+          'succes', 9000);
+        modale.fermer();
+        await SA.chargerReferentiels(true);
+        if (surSucces) surSucces();
+      } catch (erreur) {
+        SA.toast(erreur.message, 'erreur', 9000);
+        bouton.disabled = false;
+        bouton.textContent = 'Enregistrer le paiement';
+      }
+    });
+  }
+
+  SA.ouvrirEncaissement = ouvrirEncaissement;
+
   /* ======================================================================
      Abonnements
      ====================================================================== */
@@ -551,7 +783,12 @@
                 return ui.badge(j < 0 ? `${Math.abs(j)} j de retard` : `${j} j`, ton);
               }
             },
-            { cle: 'revenu_cumule', titre: 'Revenu cumulé', classe: 'sa-num', rendu: (l) => esc(fmt.nombre(l.revenu_cumule)) }
+            { cle: 'revenu_cumule', titre: 'Revenu cumulé', classe: 'sa-num', rendu: (l) => esc(fmt.nombre(l.revenu_cumule)) },
+            {
+              cle: 'encaisser', titre: '',
+              rendu: (l, i) => `<button class="sa-bouton sa-bouton-secondaire sa-bouton-petit"
+                                        data-encaisser="${i}">Encaisser</button>`
+            }
           ],
           lignes: d.donnees,
           vide: 'Aucun abonnement'
@@ -559,6 +796,18 @@
         ${ui.pagination(d.pagination)}`;
 
       brancherPagination(zone, 'ecoles/abonnements', requete);
+
+      // Le bouton d'encaissement est posé AVANT l'écouteur de ligne et coupe
+      // la propagation : sans cela, un clic dessus ouvrirait aussi la fiche
+      // école par-dessus le formulaire de paiement.
+      zone.querySelectorAll('[data-encaisser]').forEach((bouton) => {
+        bouton.addEventListener('click', (evenement) => {
+          evenement.stopPropagation();
+          const abonnement = d.donnees[Number(bouton.getAttribute('data-encaisser'))];
+          if (abonnement) ouvrirEncaissement(abonnement, () => SA.rafraichirVue());
+        });
+      });
+
       zone.querySelectorAll('tbody tr').forEach((ligne, index) => {
         ligne.addEventListener('click', () => {
           const abonnement = d.donnees[index];

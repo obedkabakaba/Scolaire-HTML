@@ -13,7 +13,7 @@
    ils continueraient d'utiliser l'ancienne version des pages.
    ========================================================================== */
 
-const VERSION = 'ardoise-v34';
+const VERSION = 'ardoise-v35';
 const CACHE_COQUILLE = `${VERSION}-coquille`;
 const CACHE_DONNEES = `${VERSION}-donnees`;
 
@@ -39,10 +39,22 @@ const COQUILLE = [
   'utilisateurs.html',
   'annee-scolaire.html',
   'frais-scolaires.html',
+  'comptabilite.html',
+  'repechage.html',
   'calendrier.html',
   'journal.html',
   'parametres.html',
   'generateur-modeles.html',
+
+  // Ouvertes par generateur-modeles.html (voir la table de correspondance
+  // vers la ligne 399 de cette page). La page mère est pré-cachée : sans ses
+  // quatre aperçus, l'aperçu d'un modèle s'ouvre sur une page morte hors
+  // ligne, ce qui est plus déroutant qu'un bouton simplement inactif.
+  'apercu-bulletin-primaire.html',
+  'apercu-bulletin-secondaire.html',
+  'apercu-bulletin-terminale.html',
+  'apercu-bulletin-semestre.html',
+
   'mon-profil.html',
   'messages.html',
   'site-public.html',
@@ -58,6 +70,21 @@ const COQUILLE = [
   'acces-presences.js',
   'filtre-cycle.js',
   'hors-ligne.js',
+  'didacticiel.js',
+
+  // Espace Super Admin. super-admin.html était déjà pré-caché, mais pas ses
+  // scripts : à la toute première ouverture hors ligne, la page s'affichait
+  // et affichait « Installation incomplète » — message qui accuse un mauvais
+  // déploiement alors que le seul problème est l'absence de réseau. Les cinq
+  // fichiers sont indissociables de la page (voir SCRIPTS_REQUIS dans
+  // super-admin.html) : ils vont donc au cache avec elle.
+  'super-admin-styles.css',
+  'super-admin-noyau.js',
+  'super-admin-vues-pilotage.js',
+  'super-admin-vues-ecoles.js',
+  'super-admin-vues-explorer.js',
+  'super-admin-vues-systeme.js',
+
   'manifest.json',
   'icone-192.png',
   'icone-512.png',

@@ -156,6 +156,31 @@
     border-color: var(--ocre, #C08A3E);
   }
 
+  .sa-case-souvenir {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin: 2px 0 4px;
+    font-size: 0.86rem;
+    color: var(--texte-att, #7A7466);
+    cursor: pointer;
+    user-select: none;
+  }
+  .sa-case-souvenir > input {
+    width: auto;
+    margin: 0;
+    accent-color: var(--ocre, #C08A3E);
+    cursor: pointer;
+  }
+  .sa-note-souvenir {
+    margin: 12px 0 0;
+    font-size: 0.78rem;
+    line-height: 1.5;
+    color: var(--texte-att, #7A7466);
+    opacity: 0.85;
+    text-align: center;
+  }
+
   .sa-erreur-connexion {
     display: none;
     margin: 0 0 18px;
@@ -205,16 +230,31 @@
 
     <div class="sa-erreur-connexion" id="erreur-connexion" role="alert"></div>
 
-    <form id="formulaire-connexion" autocomplete="on">
+    <!-- autocomplete="off" (et "new-password" sur le mot de passe, seule
+         valeur que Chrome respecte réellement) : sur un panneau qui voit
+         toutes les écoles, le navigateur ne doit pas repréremplir les
+         identifiants du dernier super admin devant la personne suivante.
+         La persistance volontaire passe par la case ci-dessous, pas par le
+         gestionnaire de mots de passe. -->
+    <form id="formulaire-connexion" autocomplete="off">
       <label class="sa-connexion-champ">
         <span>Email</span>
-        <input type="email" id="champ-email" autocomplete="username" required />
+        <input type="email" id="champ-email" autocomplete="off" required />
       </label>
       <label class="sa-connexion-champ">
         <span>Mot de passe</span>
-        <input type="password" id="champ-mot-de-passe" autocomplete="current-password" required />
+        <input type="password" id="champ-mot-de-passe" autocomplete="new-password" required />
       </label>
+
+      <label class="sa-case-souvenir">
+        <input type="checkbox" id="case-souvenir" />
+        <span>Se souvenir de moi sur cet appareil</span>
+      </label>
+
       <button type="submit" class="sa-bouton-connexion" id="bouton-connexion">Se connecter</button>
+      <p class="sa-note-souvenir">
+        Sans cette case, la session se ferme dès que l'onglet est fermé.
+      </p>
     </form>
   </div>
 </div>
@@ -361,13 +401,19 @@
     bouton.disabled = true;
     bouton.textContent = 'Connexion…';
 
+    const seSouvenir = document.getElementById('case-souvenir').checked;
+
     try {
       const reponse = await fetch(`${SA.API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: document.getElementById('champ-email').value.trim(),
-          password: document.getElementById('champ-mot-de-passe').value
+          password: document.getElementById('champ-mot-de-passe').value,
+          // Le serveur en tient compte pour la durée de vie du refresh token :
+          // une session non mémorisée ne doit pas rester ouverte 30 jours en
+          // base sous prétexte que le navigateur, lui, l'a oubliée.
+          se_souvenir: seSouvenir
         })
       });
 
@@ -384,7 +430,9 @@
         return afficherErreur("Ce compte n'a pas les droits Super Admin.");
       }
 
-      SA.session.enregistrer(donnees);
+      SA.session.enregistrer(donnees, seSouvenir);
+      // Les identifiants ne restent pas dans le DOM une fois la session ouverte.
+      SA.viderFormulaireConnexion();
       SA.demarrer();
     } catch (erreur) {
       // À ce stade les scripts sont chargés : l'échec vient bien du réseau
@@ -396,9 +444,10 @@
 
   /* ---------- Navigation ---------- */
   document.getElementById('bouton-deconnexion').addEventListener('click', function () {
-    SA.session.effacer();
-    location.hash = '';
-    location.reload();
+    // `recharger: true` repart sur une URL propre via location.replace().
+    // On évitait auparavant location.reload(), qui laissait le navigateur
+    // restaurer les champs email/mot de passe précédemment saisis.
+    SA.deconnecter({ recharger: true });
   });
 
   // Groupes repliables.
@@ -429,6 +478,34 @@
         && !evenement.target.closest('.sa-navigation')
         && !evenement.target.closest('.sa-bouton-nav')) {
       document.body.classList.remove('sa-nav-ouverte');
+    }
+  });
+
+  /* ---------- Hygiène de l'écran de connexion ----------
+     Les navigateurs restaurent les valeurs des formulaires après un
+     rechargement, et rejouent la page telle quelle au retour arrière
+     (bfcache). Sans ces trois nettoyages, l'email et le mot de passe du
+     super admin réapparaissaient sur l'écran de connexion après une
+     déconnexion. Le `setTimeout` n'est pas superflu : la restauration
+     du navigateur a lieu après le premier rendu. */
+  SA.viderFormulaireConnexion();
+  setTimeout(SA.viderFormulaireConnexion, 0);
+  window.addEventListener('pageshow', function (evenement) {
+    if (!SA.session.connecte()) {
+      SA.viderFormulaireConnexion();
+      // Page ressortie du cache alors que la session n'existe plus :
+      // on ne laisse pas réapparaître le panneau avec ses données.
+      if (evenement.persisted) location.replace(location.pathname);
+    }
+  });
+
+  /* ---------- Déconnexion propagée aux autres onglets ----------
+     Session mémorisée : se déconnecter dans un onglet doit fermer les
+     autres, sinon un onglet resté ouvert continue d'afficher — et
+     d'interroger — la plateforme entière. */
+  window.addEventListener('storage', function (evenement) {
+    if (evenement.key === 'ardoise_admin_access_token' && !evenement.newValue) {
+      if (!SA.session.connecte()) location.replace(location.pathname);
     }
   });
 

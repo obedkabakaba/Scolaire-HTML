@@ -448,6 +448,7 @@
     const codeEcole = document.getElementById('code_ecole').value.trim();
     const email = document.getElementById('email').value.trim();
     const motDePasse = champMotDePasse.value;
+    const seSouvenirCoche = document.getElementById('case-souvenir').checked;
 
     boutonConnexion.disabled = true;
     boutonConnexion.textContent = 'Connexion en cours…';
@@ -459,7 +460,11 @@
         body: JSON.stringify({
           email,
           password: motDePasse,
-          code_ecole: codeEcole || undefined
+          code_ecole: codeEcole || undefined,
+          // Le serveur aligne la durée de vie de la session en base sur ce
+          // choix : sans la case, la session expire en quelques heures au
+          // lieu de rester ouverte 30 jours.
+          se_souvenir: seSouvenirCoche
         })
       });
 
@@ -477,7 +482,7 @@
       // est effacée à la fermeture du navigateur/onglet, pour ne jamais rester
       // connecté malgré soi sur un appareil partagé. Seul un "Se souvenir de moi"
       // explicite bascule sur localStorage (persistant).
-      const seSouvenir = document.getElementById('case-souvenir').checked;
+      const seSouvenir = seSouvenirCoche;
       const stockage = seSouvenir ? localStorage : sessionStorage;
       const autreStockage = seSouvenir ? sessionStorage : localStorage;
       autreStockage.removeItem('ardoise_access_token');

@@ -218,7 +218,7 @@
 
     <div class="barre-onglets">
       <div class="onglet actif" data-onglet="annees">Années</div>
-      <div class="onglet" data-onglet="periodes">Périodes, semestres &amp; examens</div>
+      <div class="onglet" data-onglet="periodes">Périodes, trimestres, semestres &amp; examens</div>
       <div class="onglet" data-onglet="promotion">Promotion vers l'année suivante</div>
     </div>
 
@@ -250,15 +250,21 @@
         <div class="panneau">
           <h3>Ajouter</h3>
           <form id="form-periode" style="display:flex; flex-direction:column; gap:10px;">
+            <!-- Le type « trimestre » manquait : une école primaire ne pouvait
+                 donc pas créer ses trimestres depuis cet écran, alors que le
+                 bulletin du primaire les cherche par ce type exact et sortait
+                 vide sans eux. Trois trimestres au primaire, deux semestres au
+                 secondaire — chacun contenant deux périodes et un examen. -->
             <select id="champ-periode-type">
               <option value="periode">Période</option>
               <option value="examen">Examen</option>
-              <option value="semestre">Semestre (regroupement)</option>
+              <option value="trimestre">Trimestre (regroupement — primaire)</option>
+              <option value="semestre">Semestre (regroupement — secondaire)</option>
             </select>
             <input type="number" id="champ-periode-numero" placeholder="N°" min="1" required />
             <input type="text" id="champ-periode-libelle" placeholder="Libellé (ex. 1er Trimestre, Examen 1er semestre, 1er Semestre)" />
             <div id="champ-rattachement-conteneur">
-              <label style="font-size:0.8rem; color:var(--texte-att); display:block; margin-bottom:6px;">Rattacher au semestre</label>
+              <label style="font-size:0.8rem; color:var(--texte-att); display:block; margin-bottom:6px;">Rattacher au regroupement (trimestre ou semestre)</label>
               <select id="champ-periode-semestre"><option value="">— Aucun —</option></select>
             </div>
             <button type="submit" class="bouton bouton-principal">Ajouter</button>
@@ -582,7 +588,10 @@ const API_BASE_URL = "https://scolaire-saas-backend.onrender.com";
 
   // ---------- Onglet Périodes/Semestres/Examens ----------
   document.getElementById('champ-periode-type').addEventListener('change', (evt) => {
-    document.getElementById('champ-rattachement-conteneur').style.display = evt.target.value === 'semestre' ? 'none' : 'block';
+    // Un regroupement (trimestre OU semestre) ne se rattache à rien : il est
+    // lui-même le contenant. Seules les périodes et les examens se rattachent.
+    const estRegroupement = ['semestre', 'trimestre'].includes(evt.target.value);
+    document.getElementById('champ-rattachement-conteneur').style.display = estRegroupement ? 'none' : 'block';
   });
 
 
@@ -776,11 +785,15 @@ const API_BASE_URL = "https://scolaire-saas-backend.onrender.com";
     if (!r || !r.ok) return;
     const periodes = await r.json();
 
-    const semestres = periodes.filter(p => p.type === 'semestre');
-    const sansSemestre = periodes.filter(p => p.type !== 'semestre' && !p.semestre_id);
+    // Trimestres ET semestres sont des regroupements : les deux doivent
+    // apparaître comme contenants. Ne lister que les semestres rendait les
+    // trimestres du primaire invisibles dans la structure de l'année, et
+    // impossibles à choisir comme parent d'une période.
+    const regroupements = periodes.filter(p => p.type === 'semestre' || p.type === 'trimestre');
+    const sansSemestre = periodes.filter(p => !regroupements.includes(p) && !p.semestre_id);
 
     document.getElementById('champ-periode-semestre').innerHTML =
-      '<option value="">— Aucun —</option>' + semestres.map(s => `<option value="${s.id}">${s.libelle}</option>`).join('');
+      '<option value="">— Aucun —</option>' + regroupements.map(s => `<option value="${s.id}">${s.libelle}</option>`).join('');
 
     const conteneur = document.getElementById('conteneur-semestres');
     if (periodes.length === 0) {
@@ -789,7 +802,7 @@ const API_BASE_URL = "https://scolaire-saas-backend.onrender.com";
     }
 
     let html = '';
-    semestres.forEach(sem => {
+    regroupements.forEach(sem => {
       const enfants = periodes.filter(p => p.semestre_id === sem.id);
       html += `
         <div class="bloc-semestre">
@@ -801,10 +814,10 @@ const API_BASE_URL = "https://scolaire-saas-backend.onrender.com";
         </div>`;
     });
     if (sansSemestre.length > 0) {
-      const optionsSemestres = '<option value="">Rattacher à…</option>' + semestres.map(s => `<option value="${s.id}">${s.libelle}</option>`).join('');
+      const optionsSemestres = '<option value="">Rattacher à…</option>' + regroupements.map(s => `<option value="${s.id}">${s.libelle}</option>`).join('');
       html += `
         <div class="bloc-semestre">
-          <div class="titre-semestre" style="color:var(--texte-att);">Sans semestre</div>
+          <div class="titre-semestre" style="color:var(--texte-att);">Sans regroupement</div>
           <ul class="liste-simple">
             ${sansSemestre.map(e => `
               <li>
@@ -858,14 +871,49 @@ const API_BASE_URL = "https://scolaire-saas-backend.onrender.com";
     const bouton = evt.target.querySelector('button[type="submit"]');
     bouton.disabled = true;
 
+    const type = document.getElementById('champ-periode-type').value;
+
+    // CYCLE — obligatoire dans une école qui tient le primaire ET le secondaire.
+    //
+    // Les deux cycles y ont chacun leur découpage de l'année : trois trimestres
+    // d'un côté, deux semestres de l'autre. Sans cette information, le serveur
+    // refuse la création, car il ne peut pas deviner à quel arbre rattacher la
+    // période — et une période rattachée au mauvais cycle n'apparaît sur aucun
+    // bulletin. Le formulaire ne l'envoyait pas : dans une école mixte, aucune
+    // période ne pouvait donc être créée depuis cet écran.
+    //
+    // On prend le cycle affiché dans le sélecteur en haut de page. S'il est
+    // resté sur « Les deux », on le déduit du type quand il ne fait aucun doute
+    // (un trimestre est primaire, un semestre est secondaire) ; pour une simple
+    // période ou un examen, on demande plutôt que de choisir à la place de
+    // l'utilisateur.
+    let cycle = null;
+    if (window.ArdoiseCycle && window.ArdoiseCycle.estEcoleMixte()) {
+      const choisi = window.ArdoiseCycle.valeur();
+      cycle = choisi !== 'les_deux'
+        ? choisi
+        : ({ trimestre: 'primaire', semestre: 'secondaire' })[type] || null;
+
+      if (!cycle) {
+        afficherMessage(
+          "Votre école tient le primaire et le secondaire : choisissez d'abord un cycle "
+          + 'dans le sélecteur en haut de page, pour savoir où rattacher cette période.',
+          'erreur'
+        );
+        bouton.disabled = false;
+        return;
+      }
+    }
+
     const r = await appelApi('/periodes', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         annee_scolaire_id: anneeId,
-        type: document.getElementById('champ-periode-type').value,
+        type,
         numero: parseInt(document.getElementById('champ-periode-numero').value, 10),
         libelle: document.getElementById('champ-periode-libelle').value.trim() || null,
-        semestre_id: document.getElementById('champ-periode-semestre').value || null
+        semestre_id: document.getElementById('champ-periode-semestre').value || null,
+        cycle
       })
     });
 

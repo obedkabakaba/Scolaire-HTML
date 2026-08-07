@@ -136,8 +136,8 @@
   <main class="contenu">
     <div class="entete-page">
       <div>
-        <h1>Bulletin annuel &amp; semestre</h1>
-        <p class="sous-titre">Moyenne, classement et mention calculés automatiquement — sur toute l'année, ou sur un semestre (2 périodes + examen).</p>
+        <h1>Bulletin annuel &amp; regroupement</h1>
+        <p class="sous-titre">Moyenne, classement et mention calculés automatiquement — sur toute l'année, ou sur un regroupement : semestre au secondaire, trimestre au primaire (2 périodes + examen dans les deux cas).</p>
       </div>
       <button class="bouton bouton-principal" id="bouton-generer-pdf">📄 Générer le PDF de la classe</button>
     </div>
@@ -150,11 +150,11 @@
       <div class="champ-selecteur"><label for="select-portee">Portée</label>
         <select id="select-portee">
           <option value="annee">Année complète</option>
-          <option value="semestre">Un semestre</option>
+          <option value="semestre">Un semestre / trimestre</option>
         </select>
       </div>
       <div class="champ-selecteur" id="conteneur-select-semestre" style="display:none;">
-        <label for="select-semestre">Semestre</label>
+        <label for="select-semestre">Semestre ou trimestre</label>
         <select id="select-semestre"></select>
       </div>
       <button class="bouton bouton-secondaire" id="bouton-afficher">Afficher le récapitulatif</button>
@@ -168,7 +168,7 @@
       <table>
         <thead><tr><th>Classement</th><th>Élève</th><th>Moyenne</th><th>Mention</th></tr></thead>
         <tbody id="corps-tableau">
-          <tr><td colspan="4" class="etat-vide-tableau">Choisis une classe, une année (et un semestre si besoin), puis clique "Afficher le récapitulatif".</td></tr>
+          <tr><td colspan="4" class="etat-vide-tableau">Choisis une classe, une année (et un semestre ou trimestre si besoin), puis clique "Afficher le récapitulatif".</td></tr>
         </tbody>
       </table>
     </div>
@@ -276,8 +276,12 @@
     const r = await appelApi(`/periodes?anneeScolaireId=${anneeId}`);
     if (!r || !r.ok) return;
     const periodes = await r.json();
-    const semestres = periodes.filter(p => p.type === 'semestre');
-    document.getElementById('select-semestre').innerHTML = semestres.map(s => `<option value="${s.id}">${s.libelle}</option>`).join('') || '<option value="">Aucun semestre créé</option>';
+    // Semestres ET trimestres : ce sont les deux formes de regroupement, et la
+    // route d'agrégation traite les deux à l'identique. Ne lister que les
+    // semestres privait le primaire de tout récapitulatif intermédiaire — ses
+    // trimestres n'apparaissaient nulle part sur cet écran.
+    const regroupements = periodes.filter(p => p.type === 'semestre' || p.type === 'trimestre');
+    document.getElementById('select-semestre').innerHTML = regroupements.map(s => `<option value="${s.id}">${s.libelle}</option>`).join('') || '<option value="">Aucun semestre ni trimestre créé</option>';
   }
 
   async function chargerRecapitulatif() {
@@ -287,7 +291,7 @@
     const semestreId = document.getElementById('select-semestre').value;
 
     if (!classeId || !anneeScolaireId) { afficherMessage('Choisis une classe et une année scolaire.', 'erreur'); return; }
-    if (portee === 'semestre' && !semestreId) { afficherMessage('Choisis un semestre.', 'erreur'); return; }
+    if (portee === 'semestre' && !semestreId) { afficherMessage('Choisis un semestre ou un trimestre.', 'erreur'); return; }
 
     const chemin = portee === 'semestre'
       ? `/bulletins/semestre/recapitulatif?classeId=${classeId}&semestreId=${semestreId}`

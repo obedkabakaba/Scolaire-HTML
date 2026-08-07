@@ -677,12 +677,17 @@
     const periodeId = selectPeriode.value;
     if (!classeId || !periodeId) { afficherMessage('Choisissez une classe et une période.', 'erreur'); return; }
 
-    // Un semestre est un REGROUPEMENT (1ère P + 2ème P + examen), pas une
-    // période notable en tant que telle : ses bulletins passent par la route
-    // dédiée, qui recalcule l'agrégat à la volée plutôt que de chercher des
-    // notes directement saisies sur ce regroupement (il n'y en a jamais).
+    // Un REGROUPEMENT — semestre du secondaire, trimestre du primaire — ne
+    // porte jamais de notes : ce sont ses périodes et son examen qui en
+    // portent. Ses bulletins passent donc par la route dédiée, qui recalcule
+    // l'agrégat à la volée.
+    //
+    // Le trimestre manquait ici : il partait vers la route des périodes
+    // ordinaires, qui cherche des notes saisies directement sur lui. Il n'y en
+    // a jamais, et le bulletin sortait avec toutes ses cotes vides.
     const typeSelectionne = selectPeriode.selectedOptions[0]?.dataset.type;
-    const chemin = typeSelectionne === 'semestre'
+    const estRegroupement = ['semestre', 'trimestre'].includes(typeSelectionne);
+    const chemin = estRegroupement
       ? `/bulletins/semestre/classe/${classeId}/imprimer?semestreId=${periodeId}`
       : `/bulletins/classe/${classeId}/imprimer?periodeId=${periodeId}`;
 

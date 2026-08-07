@@ -36,8 +36,14 @@
     .identite div { margin-bottom: 0.4mm; }
 
     table.notes { width: 100%; border-collapse: collapse; font-size: 7.2px; margin-bottom: 1.5mm; table-layout: fixed; }
-    table.notes th, table.notes td { border: 0.3px solid #666; padding: 0.6mm 0.2mm; text-align: center; }
-    table.notes th { background: #eee; font-size: 6.6px; line-height: 1.15; font-weight: bold; }
+    /* SANS QUADRILLAGE. Seule la ligne d'en-tête garde un trait, celui qui la
+       sépare des cotes. Un quadrillage complet, à cette taille de police,
+       ajoute plus de traits que de chiffres et rend la colonne difficile à
+       suivre de l'œil ; les alignements et les aplats de fond suffisent à
+       structurer la grille. */
+    table.notes th, table.notes td { border: none; padding: 0.6mm 0.2mm; text-align: center; }
+    table.notes thead th { background: #eee; font-size: 6.6px; line-height: 1.15; font-weight: bold; }
+    table.notes thead tr:last-child th { border-bottom: 0.5px solid #333; }
     /* Le nom du cours revient à la ligne plutôt que d'être tronqué : deux
        branches coupées au même endroit deviendraient indiscernables. */
     table.notes td.cours-nom, table.notes th.cours-nom {
@@ -47,11 +53,26 @@
     /* Aplat noir : « aucune cote n'est attendue ici ». À ne pas confondre avec
        une case blanche vide, qui se lit « cote manquante ». */
     table.notes td.noir { background: #000; }
+    /* Bandeau de domaine : pleine largeur, comme sur le modèle officiel. */
+    table.notes tr.domaine td {
+      background: #ddd; font-weight: bold; text-align: center;
+      font-size: 6.4px; text-transform: uppercase; letter-spacing: 0.02em;
+    }
+    table.notes tr.groupe td { background: #efefef; font-weight: bold; font-size: 6.6px; }
+    table.notes tr.sous-total td { font-weight: bold; background: #f4f4f4; }
     table.notes tr.synthese td { font-weight: bold; background: #f4f4f4; }
     table.notes tr.synthese td.cours-nom { text-transform: uppercase; font-size: 6.4px; }
     /* Cases sans objet sur une ligne de synthèse : un pourcentage n'a pas de
        maximum. Grisées et non noircies — rien n'y manque, rien n'y est attendu. */
     table.notes tr.synthese td.inerte { background: #e6e6e6; }
+
+    /* ÉCHEC — la cote reste lisible, sur fond gris.
+       On grise la case AVEC son point dedans plutôt que de la barrer ou de la
+       colorer en rouge : le bulletin part en photocopie noir et blanc, où une
+       couleur disparaît. Le seuil est celui de l'école (seuil_promotion_
+       pourcentage, 50 % par défaut) — le même que la promotion et les rapports,
+       pour qu'une branche marquée en échec ici le soit partout ailleurs. */
+    table.notes td.echec { background: #cfcfcf; font-weight: bold; }
 
     .appreciations { font-size: 7.4px; margin-bottom: 1.5mm; flex-grow: 1; }
     .appreciations div { margin-bottom: 0.6mm; }
@@ -91,137 +112,84 @@
           
     <thead>
       <tr>
-        <th class="cours-nom" rowspan="2" style="width:26%">Cours</th>
-        <th colspan="2">Périodes</th>
-        <th rowspan="2">Max<br/>pér.</th>
-        <th rowspan="2">Exam.</th>
-        <th rowspan="2">Max<br/>exam.</th>
-        <th rowspan="2">Total</th>
-        <th rowspan="2">Max<br/>sem.</th>
-      </tr>
-      <tr>
-        <th>1<sup>ère</sup></th>
-        <th>2<sup>ème</sup></th>
+        <th class="cours-nom" style="width:28%">Cours</th>
+        <th>1<sup>ère</sup> P.</th><th>2<sup>ème</sup> P.</th><th>Max</th><th>Exam.</th><th>Max</th>
+        <th>Total</th>
+        <th>Max</th>
       </tr>
     </thead>
           <tbody>
             <tr>
       <td class="cours-nom">Religion</td>
-      <td>8</td>
-      <td>9</td>
-      <td class="max">10</td>
-      <td>17</td>
-      <td class="max">20</td>
-      <td>34</td>
+      <td>9</td><td>9</td><td class="max">10</td><td>18</td><td class="max">20</td>
+      <td>36</td>
       <td class="max">40</td>
     </tr><tr>
       <td class="cours-nom">Mathématiques</td>
-      <td>16</td>
-      <td>17</td>
-      <td class="max">20</td>
-      <td>35</td>
-      <td class="max">40</td>
-      <td>68</td>
+      <td>19</td><td>19</td><td class="max">20</td><td>37</td><td class="max">40</td>
+      <td>75</td>
       <td class="max">80</td>
     </tr><tr>
       <td class="cours-nom">Français</td>
-      <td>34</td>
-      <td>31</td>
-      <td class="max">40</td>
-      <td>68</td>
-      <td class="max">80</td>
-      <td>133</td>
+      <td>34</td><td>34</td><td class="max">40</td><td>67</td><td class="max">80</td>
+      <td>135</td>
       <td class="max">160</td>
     </tr><tr>
       <td class="cours-nom">Anglais</td>
-      <td>17</td>
-      <td>16</td>
-      <td class="max">20</td>
-      <td>36</td>
-      <td class="max">40</td>
-      <td>69</td>
+      <td>18</td><td>18</td><td class="max">20</td><td>36</td><td class="max">40</td>
+      <td>72</td>
       <td class="max">80</td>
     </tr><tr>
       <td class="cours-nom">Comptabilité générale</td>
-      <td>42</td>
-      <td>44</td>
-      <td class="max">50</td>
-      <td>92</td>
-      <td class="max">100</td>
-      <td>178</td>
+      <td>41</td><td>41</td><td class="max">50</td><td>82</td><td class="max">100</td>
+      <td>164</td>
       <td class="max">200</td>
     </tr><tr>
       <td class="cours-nom">Droit civil</td>
-      <td>17</td>
-      <td>18</td>
-      <td class="max">20</td>
-      <td>35</td>
-      <td class="max">40</td>
-      <td>70</td>
+      <td>18</td><td>18</td><td class="max">20</td><td>36</td><td class="max">40</td>
+      <td>72</td>
       <td class="max">80</td>
     </tr><tr>
       <td class="cours-nom">Informatique</td>
-      <td>16</td>
-      <td>17</td>
-      <td class="max">20</td>
-      <td>34</td>
-      <td class="max">40</td>
-      <td>67</td>
+      <td>18</td><td>18</td><td class="max">20</td><td>35</td><td class="max">40</td>
+      <td>71</td>
       <td class="max">80</td>
     </tr><tr>
       <td class="cours-nom">Pratique professionnelle</td>
-      <td>86</td>
-      <td>88</td>
-      <td class="max">100</td>
-      <td class="noir"></td>
-      <td class="noir"></td>
-      <td>174</td>
+      <td>86</td><td>86</td><td class="max">100</td><td class="noir"></td><td class="noir"></td>
+      <td>172</td>
       <td class="max">200</td>
     </tr>
             
       <tr class="synthese">
         <td class="cours-nom">Totaux</td>
-        <td>246</td>
-        <td>240</td>
-        <td class="max">280</td>
-        <td>317</td>
-        <td class="max">360</td>
-        <td>803</td>
+        <td>243</td><td>243</td><td class="max">280</td><td>311</td><td class="max">360</td>
+        <td>797</td>
         <td class="max">920</td>
       </tr>
       <tr class="synthese">
         <td class="cours-nom">Pourcentage</td>
-        <td>87.86%</td>
-        <td>85.71%</td>
-        <td class="inerte"></td>
-        <td>88.06%</td>
-        <td class="inerte"></td>
-        <td>87.28%</td>
+        <td>86.79%</td><td>86.79%</td><td class="inerte"></td><td>86.39%</td><td class="inerte"></td>
+        <td>86.63%</td>
         <td class="inerte"></td>
       </tr>
       <tr class="synthese">
         <td class="cours-nom">Place / nbre</td>
-        <td>1/28</td>
-        <td>2/28</td>
-        <td class="inerte"></td>
-        <td>1/28</td>
-        <td class="inerte"></td>
+        <td>1/28</td><td>1/28</td><td class="inerte"></td><td>1/28</td><td class="inerte"></td>
         <td>1/28</td>
         <td class="inerte"></td>
       </tr>
       <tr class="synthese">
         <td class="cours-nom">Application</td>
-        <td>TB</td>
-        <td>TB</td>
-        <td class="noir"></td><td class="noir"></td><td class="noir"></td>
-        <td class="noir"></td><td class="noir"></td>
+        <td>TB</td><td>TB</td><td class="noir"></td><td class="noir"></td><td class="noir"></td>
+        <td class="noir"></td>
+        <td class="noir"></td>
       </tr>
       <tr class="synthese">
         <td class="cours-nom">Conduite</td>
-        <td>TB</td>
-        <td>B</td>
-        <td class="noir"></td><td class="noir"></td><td class="noir"></td>
-        <td class="noir"></td><td class="noir"></td>
+        <td>TB</td><td>B</td><td class="noir"></td><td class="noir"></td><td class="noir"></td>
+        <td class="noir"></td>
+        <td class="noir"></td>
       </tr>
       <tr class="synthese">
         <td class="cours-nom">Mention</td>
@@ -235,7 +203,7 @@
         </div>
 
         <div class="signatures">
-          <div class="fait-le">Fait à Kinshasa, le 6 août 2026</div>
+          <div class="fait-le">Fait à Kinshasa, le 7 août 2026</div>
           <div class="ligne">
             <div class="case">
               <div class="espace"></div>
@@ -274,137 +242,84 @@
           
     <thead>
       <tr>
-        <th class="cours-nom" rowspan="2" style="width:26%">Cours</th>
-        <th colspan="2">Périodes</th>
-        <th rowspan="2">Max<br/>pér.</th>
-        <th rowspan="2">Exam.</th>
-        <th rowspan="2">Max<br/>exam.</th>
-        <th rowspan="2">Total</th>
-        <th rowspan="2">Max<br/>sem.</th>
-      </tr>
-      <tr>
-        <th>1<sup>ère</sup></th>
-        <th>2<sup>ème</sup></th>
+        <th class="cours-nom" style="width:28%">Cours</th>
+        <th>1<sup>ère</sup> P.</th><th>2<sup>ème</sup> P.</th><th>Max</th><th>Exam.</th><th>Max</th>
+        <th>Total</th>
+        <th>Max</th>
       </tr>
     </thead>
           <tbody>
             <tr>
       <td class="cours-nom">Religion</td>
-      <td>7</td>
-      <td>7</td>
-      <td class="max">10</td>
-      <td>14</td>
-      <td class="max">20</td>
+      <td>7</td><td>7</td><td class="max">10</td><td>14</td><td class="max">20</td>
       <td>28</td>
       <td class="max">40</td>
     </tr><tr>
       <td class="cours-nom">Mathématiques</td>
-      <td>13</td>
-      <td>14</td>
-      <td class="max">20</td>
-      <td>27</td>
-      <td class="max">40</td>
-      <td>54</td>
+      <td>15</td><td>15</td><td class="max">20</td><td>31</td><td class="max">40</td>
+      <td>61</td>
       <td class="max">80</td>
     </tr><tr>
       <td class="cours-nom">Français</td>
-      <td>28</td>
-      <td>27</td>
-      <td class="max">40</td>
-      <td>55</td>
-      <td class="max">80</td>
-      <td>110</td>
+      <td>27</td><td>27</td><td class="max">40</td><td>54</td><td class="max">80</td>
+      <td>108</td>
       <td class="max">160</td>
     </tr><tr>
       <td class="cours-nom">Anglais</td>
-      <td>14</td>
-      <td>13</td>
-      <td class="max">20</td>
-      <td>28</td>
-      <td class="max">40</td>
-      <td>55</td>
+      <td>15</td><td>15</td><td class="max">20</td><td>30</td><td class="max">40</td>
+      <td>60</td>
       <td class="max">80</td>
     </tr><tr>
       <td class="cours-nom">Comptabilité générale</td>
-      <td>36</td>
-      <td>35</td>
-      <td class="max">50</td>
-      <td>74</td>
-      <td class="max">100</td>
-      <td>145</td>
+      <td>33</td><td>33</td><td class="max">50</td><td>66</td><td class="max">100</td>
+      <td>132</td>
       <td class="max">200</td>
     </tr><tr>
       <td class="cours-nom">Droit civil</td>
-      <td>14</td>
-      <td>15</td>
-      <td class="max">20</td>
-      <td>29</td>
-      <td class="max">40</td>
-      <td>58</td>
+      <td>15</td><td>15</td><td class="max">20</td><td>30</td><td class="max">40</td>
+      <td>60</td>
       <td class="max">80</td>
     </tr><tr>
       <td class="cours-nom">Informatique</td>
-      <td>13</td>
-      <td>14</td>
-      <td class="max">20</td>
-      <td>27</td>
-      <td class="max">40</td>
-      <td>54</td>
+      <td>14</td><td>14</td><td class="max">20</td><td>29</td><td class="max">40</td>
+      <td>57</td>
       <td class="max">80</td>
     </tr><tr>
       <td class="cours-nom">Pratique professionnelle</td>
-      <td>74</td>
-      <td>76</td>
-      <td class="max">100</td>
-      <td class="noir"></td>
-      <td class="noir"></td>
-      <td>150</td>
+      <td>70</td><td>70</td><td class="max">100</td><td class="noir"></td><td class="noir"></td>
+      <td>140</td>
       <td class="max">200</td>
     </tr>
             
       <tr class="synthese">
         <td class="cours-nom">Totaux</td>
-        <td>199</td>
-        <td>201</td>
-        <td class="max">280</td>
-        <td>254</td>
-        <td class="max">360</td>
-        <td>654</td>
+        <td>196</td><td>196</td><td class="max">280</td><td>254</td><td class="max">360</td>
+        <td>646</td>
         <td class="max">920</td>
       </tr>
       <tr class="synthese">
         <td class="cours-nom">Pourcentage</td>
-        <td>71.07%</td>
-        <td>71.79%</td>
-        <td class="inerte"></td>
-        <td>70.56%</td>
-        <td class="inerte"></td>
-        <td>71.09%</td>
+        <td>70%</td><td>70%</td><td class="inerte"></td><td>70.56%</td><td class="inerte"></td>
+        <td>70.22%</td>
         <td class="inerte"></td>
       </tr>
       <tr class="synthese">
         <td class="cours-nom">Place / nbre</td>
-        <td>2/28</td>
-        <td>1/28</td>
-        <td class="inerte"></td>
-        <td>2/28</td>
-        <td class="inerte"></td>
+        <td>2/28</td><td>2/28</td><td class="inerte"></td><td>2/28</td><td class="inerte"></td>
         <td>2/28</td>
         <td class="inerte"></td>
       </tr>
       <tr class="synthese">
         <td class="cours-nom">Application</td>
-        <td>B</td>
-        <td>TB</td>
-        <td class="noir"></td><td class="noir"></td><td class="noir"></td>
-        <td class="noir"></td><td class="noir"></td>
+        <td>B</td><td>TB</td><td class="noir"></td><td class="noir"></td><td class="noir"></td>
+        <td class="noir"></td>
+        <td class="noir"></td>
       </tr>
       <tr class="synthese">
         <td class="cours-nom">Conduite</td>
-        <td>TB</td>
-        <td>TB</td>
-        <td class="noir"></td><td class="noir"></td><td class="noir"></td>
-        <td class="noir"></td><td class="noir"></td>
+        <td>TB</td><td>TB</td><td class="noir"></td><td class="noir"></td><td class="noir"></td>
+        <td class="noir"></td>
+        <td class="noir"></td>
       </tr>
       <tr class="synthese">
         <td class="cours-nom">Mention</td>
@@ -418,7 +333,7 @@
         </div>
 
         <div class="signatures">
-          <div class="fait-le">Fait à Kinshasa, le 6 août 2026</div>
+          <div class="fait-le">Fait à Kinshasa, le 7 août 2026</div>
           <div class="ligne">
             <div class="case">
               <div class="espace"></div>
@@ -457,141 +372,88 @@
           
     <thead>
       <tr>
-        <th class="cours-nom" rowspan="2" style="width:26%">Cours</th>
-        <th colspan="2">Périodes</th>
-        <th rowspan="2">Max<br/>pér.</th>
-        <th rowspan="2">Exam.</th>
-        <th rowspan="2">Max<br/>exam.</th>
-        <th rowspan="2">Total</th>
-        <th rowspan="2">Max<br/>sem.</th>
-      </tr>
-      <tr>
-        <th>1<sup>ère</sup></th>
-        <th>2<sup>ème</sup></th>
+        <th class="cours-nom" style="width:28%">Cours</th>
+        <th>1<sup>ère</sup> P.</th><th>2<sup>ème</sup> P.</th><th>Max</th><th>Exam.</th><th>Max</th>
+        <th>Total</th>
+        <th>Max</th>
       </tr>
     </thead>
           <tbody>
             <tr>
       <td class="cours-nom">Religion</td>
-      <td>5</td>
-      <td>6</td>
-      <td class="max">10</td>
-      <td>11</td>
-      <td class="max">20</td>
-      <td>22</td>
+      <td>5</td><td>5</td><td class="max">10</td><td class="echec">9</td><td class="max">20</td>
+      <td class="echec">19</td>
       <td class="max">40</td>
     </tr><tr>
       <td class="cours-nom">Mathématiques</td>
-      <td>11</td>
-      <td>10</td>
-      <td class="max">20</td>
-      <td>21</td>
-      <td class="max">40</td>
-      <td>42</td>
+      <td>10</td><td>10</td><td class="max">20</td><td>21</td><td class="max">40</td>
+      <td>41</td>
       <td class="max">80</td>
     </tr><tr>
       <td class="cours-nom">Français</td>
-      <td>22</td>
-      <td>24</td>
-      <td class="max">40</td>
-      <td>45</td>
-      <td class="max">80</td>
-      <td>91</td>
+      <td class="echec">17</td><td class="echec">17</td><td class="max">40</td><td class="echec">34</td><td class="max">80</td>
+      <td class="echec">68</td>
       <td class="max">160</td>
     </tr><tr>
       <td class="cours-nom">Anglais</td>
-      <td>11</td>
-      <td>12</td>
-      <td class="max">20</td>
-      <td>22</td>
-      <td class="max">40</td>
-      <td>45</td>
+      <td>10</td><td>10</td><td class="max">20</td><td>20</td><td class="max">40</td>
+      <td>40</td>
       <td class="max">80</td>
     </tr><tr>
       <td class="cours-nom">Comptabilité générale</td>
-      <td>29</td>
-      <td>31</td>
-      <td class="max">50</td>
-      <td>60</td>
-      <td class="max">100</td>
-      <td>120</td>
+      <td class="echec">21</td><td class="echec">21</td><td class="max">50</td><td class="echec">41</td><td class="max">100</td>
+      <td class="echec">83</td>
       <td class="max">200</td>
     </tr><tr>
       <td class="cours-nom">Droit civil</td>
-      <td>12</td>
-      <td>11</td>
-      <td class="max">20</td>
-      <td>23</td>
-      <td class="max">40</td>
-      <td>46</td>
+      <td>10</td><td>10</td><td class="max">20</td><td>20</td><td class="max">40</td>
+      <td>40</td>
       <td class="max">80</td>
     </tr><tr>
       <td class="cours-nom">Informatique</td>
-      <td>10</td>
-      <td>12</td>
-      <td class="max">20</td>
-      <td>21</td>
-      <td class="max">40</td>
-      <td>43</td>
+      <td class="echec">9</td><td class="echec">9</td><td class="max">20</td><td class="echec">19</td><td class="max">40</td>
+      <td class="echec">37</td>
       <td class="max">80</td>
     </tr><tr>
       <td class="cours-nom">Pratique professionnelle</td>
-      <td>62</td>
-      <td>60</td>
-      <td class="max">100</td>
-      <td class="noir"></td>
-      <td class="noir"></td>
-      <td>122</td>
+      <td class="echec">45</td><td class="echec">45</td><td class="max">100</td><td class="noir"></td><td class="noir"></td>
+      <td class="echec">90</td>
       <td class="max">200</td>
     </tr>
             
       <tr class="synthese">
         <td class="cours-nom">Totaux</td>
-        <td>162</td>
-        <td>166</td>
-        <td class="max">280</td>
-        <td>203</td>
-        <td class="max">360</td>
-        <td>531</td>
+        <td>127</td><td>127</td><td class="max">280</td><td>164</td><td class="max">360</td>
+        <td>418</td>
         <td class="max">920</td>
       </tr>
       <tr class="synthese">
         <td class="cours-nom">Pourcentage</td>
-        <td>57.86%</td>
-        <td>59.29%</td>
-        <td class="inerte"></td>
-        <td>56.39%</td>
-        <td class="inerte"></td>
-        <td>57.72%</td>
+        <td>45.36%</td><td>45.36%</td><td class="inerte"></td><td>45.56%</td><td class="inerte"></td>
+        <td>45.43%</td>
         <td class="inerte"></td>
       </tr>
       <tr class="synthese">
         <td class="cours-nom">Place / nbre</td>
-        <td>3/28</td>
-        <td>3/28</td>
-        <td class="inerte"></td>
-        <td>3/28</td>
-        <td class="inerte"></td>
+        <td>3/28</td><td>3/28</td><td class="inerte"></td><td>3/28</td><td class="inerte"></td>
         <td>3/28</td>
         <td class="inerte"></td>
       </tr>
       <tr class="synthese">
         <td class="cours-nom">Application</td>
-        <td>AB</td>
-        <td>B</td>
-        <td class="noir"></td><td class="noir"></td><td class="noir"></td>
-        <td class="noir"></td><td class="noir"></td>
+        <td>AB</td><td>B</td><td class="noir"></td><td class="noir"></td><td class="noir"></td>
+        <td class="noir"></td>
+        <td class="noir"></td>
       </tr>
       <tr class="synthese">
         <td class="cours-nom">Conduite</td>
-        <td>B</td>
-        <td>B</td>
-        <td class="noir"></td><td class="noir"></td><td class="noir"></td>
-        <td class="noir"></td><td class="noir"></td>
+        <td>B</td><td>B</td><td class="noir"></td><td class="noir"></td><td class="noir"></td>
+        <td class="noir"></td>
+        <td class="noir"></td>
       </tr>
       <tr class="synthese">
         <td class="cours-nom">Mention</td>
-        <td colspan="7" style="text-align:left; padding-left:1mm;">Satisfaction</td>
+        <td colspan="7" style="text-align:left; padding-left:1mm;">Échec</td>
       </tr>
           </tbody>
         </table>
@@ -601,7 +463,7 @@
         </div>
 
         <div class="signatures">
-          <div class="fait-le">Fait à Kinshasa, le 6 août 2026</div>
+          <div class="fait-le">Fait à Kinshasa, le 7 août 2026</div>
           <div class="ligne">
             <div class="case">
               <div class="espace"></div>

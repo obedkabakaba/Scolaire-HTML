@@ -694,11 +694,23 @@ const API_BASE_URL = "https://scolaire-saas-backend.onrender.com";
     for (const id of coches) {
       const e = etat.enseignants_a_relancer.find(x => x.id === id);
       if (!e) continue;
-      const r = await appelApi('/communication/messages', {
+      /* La relance échouait à 100 %, sur deux points à la fois :
+         - le chemin `/communication/messages` n'existe pas ; la route est
+           `/communication/envoyer` ;
+         - la charge utile employait `cible_type` / `destinataires`, alors que
+           le contrôleur attend `cible: { type, utilisateurs }` et exige
+           `canaux`.
+         Le backend avait pourtant été écrit POUR cet appelant : son commentaire
+         mentionne « la relance nominative depuis la clôture de période ».
+         Seule la moitié frontend n'avait jamais été mise à jour. Résultat :
+         avant chaque clôture, le Directeur cliquait sur « Relancer », lisait
+         « 0 envoyé(s), 4 en échec » et n'avait aucun moyen de joindre les
+         enseignants en retard. */
+      const r = await appelApi('/communication/envoyer', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          cible_type: 'utilisateur',
-          destinataires: [id],
+          cible: { type: 'utilisateurs', utilisateurs: [id] },
+          canaux: ['interne', 'email'],
           sujet: `Notes à valider — ${libelle}`,
           contenu: `Bonjour ${e.nom},\n\n`
             + `La période « ${libelle} » va être clôturée. Les cours suivants n'ont pas encore `

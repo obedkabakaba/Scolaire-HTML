@@ -937,7 +937,7 @@
    * n'apprenait rien à personne.
    *
    * Désormais, en cas d'échec, on reconstruit la liste depuis les périodes de
-   * l'école (`/structure/periodes`). Le widget rend alors un service dégradé
+   * l'école (`/periodes`). Le widget rend alors un service dégradé
    * mais réel, au lieu de ne rien rendre du tout.
    */
   async function chargerPorteesMoyenne() {
@@ -977,7 +977,11 @@
   /** Reconstruction minimale à partir des périodes déclarées par l'école. */
   async function chargerPorteesDeSecours() {
     try {
-      const r = await appelApi('/structure/periodes');
+      /* `/structure/periodes` n'existe pas : les routes de structure sont
+         montées à la racine, le chemin est `/periodes`. Le repli censé sauver
+         le widget quand `/rapports/portees` échoue échouait donc lui aussi —
+         un filet de sécurité troué, qui donnait l'illusion d'en avoir un. */
+      const r = await appelApi('/periodes');
       if (!r || !r.ok) return;
       const periodes = await r.json();
       const utiles = (periodes || []).filter(p => ['periode', 'examen'].includes(p.type));

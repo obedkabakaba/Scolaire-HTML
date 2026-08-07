@@ -36,34 +36,131 @@
   const CLE_ACCES = 'ardoise_admin_access_token';
   const CLE_RAFRAICHISSEMENT = 'ardoise_admin_refresh_token';
   const CLE_PROFIL = 'ardoise_admin_profil';
+  const CLE_PERSISTANT = 'ardoise_admin_persistant';
+  const CLE_EXPIRATION = 'ardoise_admin_expire_le';
+
+  const TOUTES_LES_CLES = [
+    CLE_ACCES, CLE_RAFRAICHISSEMENT, CLE_PROFIL, CLE_PERSISTANT, CLE_EXPIRATION
+  ];
+
+  /* Durée de vie d'une session « Se souvenir de moi ». Elle doit rester
+     inférieure ou égale à JWT_REFRESH_EXPIRES_DAYS côté serveur, sinon on
+     garde localement une session que le serveur a déjà oubliée. */
+  const MEMOIRE_JOURS = 30;
+
+  /**
+   * SESSION — comportement voulu, à ne pas défaire.
+   * ---------------------------------------------------------------------
+   * Par défaut la session vit dans `sessionStorage` : elle meurt à la
+   * fermeture de l'onglet. Revenir sur l'adresse une heure plus tard
+   * redemande donc l'email et le mot de passe, ce qui est le seul
+   * comportement acceptable pour un compte qui voit toutes les écoles.
+   *
+   * `localStorage` — donc une session qui survit à la fermeture du
+   * navigateur — n'est utilisé que si l'utilisateur a coché lui-même
+   * « Se souvenir de moi sur cet appareil ». Ce choix est daté : passé
+   * MEMOIRE_JOURS, la session est effacée localement même si le serveur
+   * l'accepterait encore.
+   */
+  function depots() {
+    const liste = [];
+    try { liste.push(sessionStorage); } catch (e) { /* indisponible */ }
+    try { liste.push(localStorage); } catch (e) { /* indisponible */ }
+    return liste;
+  }
+
+  /** Le dépôt qui porte réellement la session en cours, ou null. */
+  function depotActif() {
+    const liste = depots();
+    for (let i = 0; i < liste.length; i++) {
+      try { if (liste[i].getItem(CLE_ACCES)) return liste[i]; } catch (e) { /* ignoré */ }
+    }
+    return null;
+  }
+
+  function memoireExpiree(depot) {
+    try {
+      const echeance = depot.getItem(CLE_EXPIRATION);
+      return Boolean(echeance) && Date.now() > Number(echeance);
+    } catch (e) { return false; }
+  }
 
   SA.session = {
     jetons() {
+      const depot = depotActif();
+      if (!depot) return { acces: null, rafraichissement: null };
+
+      // Session héritée de l'ancien comportement : elle vit dans localStorage
+      // sans que personne n'ait coché « Se souvenir de moi », puisque la case
+      // n'existait pas. On la refuse — c'est précisément la reconnexion
+      // silencieuse qu'on veut supprimer. Une seule saisie du mot de passe
+      // suffit à repartir sur le nouveau fonctionnement.
+      let persistant = false;
+      try { persistant = depot.getItem(CLE_PERSISTANT) === '1'; } catch (e) { /* ignoré */ }
+      if (depot === localStorage && !persistant) {
+        SA.session.effacer();
+        return { acces: null, rafraichissement: null };
+      }
+
+      if (memoireExpiree(depot)) {
+        SA.session.effacer();
+        return { acces: null, rafraichissement: null };
+      }
       try {
         return {
-          acces: localStorage.getItem(CLE_ACCES),
-          rafraichissement: localStorage.getItem(CLE_RAFRAICHISSEMENT)
+          acces: depot.getItem(CLE_ACCES),
+          rafraichissement: depot.getItem(CLE_RAFRAICHISSEMENT)
         };
       } catch (e) { return { acces: null, rafraichissement: null }; }
     },
-    enregistrer(donnees) {
+
+    /** @param {boolean} seSouvenir — coche « Se souvenir de moi ». */
+    enregistrer(donnees, seSouvenir) {
+      // On efface d'abord partout : sans ça, une ancienne session persistante
+      // resterait dans localStorage et reprendrait la main au prochain retour,
+      // alors que l'utilisateur vient de se connecter sans cocher la case.
+      SA.session.effacer();
       try {
-        localStorage.setItem(CLE_ACCES, donnees.access_token);
-        localStorage.setItem(CLE_RAFRAICHISSEMENT, donnees.refresh_token);
-        if (donnees.user) localStorage.setItem(CLE_PROFIL, JSON.stringify(donnees.user));
-      } catch (e) { /* navigation privée : la session vit alors le temps de l'onglet */ }
+        const depot = seSouvenir ? localStorage : sessionStorage;
+        depot.setItem(CLE_ACCES, donnees.access_token);
+        depot.setItem(CLE_RAFRAICHISSEMENT, donnees.refresh_token);
+        if (donnees.user) depot.setItem(CLE_PROFIL, JSON.stringify(donnees.user));
+        if (seSouvenir) {
+          depot.setItem(CLE_PERSISTANT, '1');
+          depot.setItem(CLE_EXPIRATION, String(Date.now() + MEMOIRE_JOURS * 86400000));
+        }
+      } catch (e) { /* navigation privée : la session vit le temps de l'onglet */ }
     },
+
+    /** Met à jour le seul access token, sans changer de dépôt. */
+    majAcces(jeton) {
+      const depot = depotActif();
+      if (!depot) return;
+      try { depot.setItem(CLE_ACCES, jeton); } catch (e) { /* ignoré */ }
+    },
+
     profil() {
-      try { return JSON.parse(localStorage.getItem(CLE_PROFIL) || 'null'); }
+      const depot = depotActif();
+      if (!depot) return null;
+      try { return JSON.parse(depot.getItem(CLE_PROFIL) || 'null'); }
       catch (e) { return null; }
     },
-    effacer() {
-      try {
-        localStorage.removeItem(CLE_ACCES);
-        localStorage.removeItem(CLE_RAFRAICHISSEMENT);
-        localStorage.removeItem(CLE_PROFIL);
-      } catch (e) { /* rien à nettoyer */ }
+
+    persistante() {
+      const depot = depotActif();
+      if (!depot) return false;
+      try { return depot.getItem(CLE_PERSISTANT) === '1'; } catch (e) { return false; }
     },
+
+    /** Efface dans les DEUX dépôts : une déconnexion ne laisse rien derrière. */
+    effacer() {
+      depots().forEach(function (depot) {
+        TOUTES_LES_CLES.forEach(function (cle) {
+          try { depot.removeItem(cle); } catch (e) { /* rien à nettoyer */ }
+        });
+      });
+    },
+
     connecte() { return Boolean(SA.session.jetons().acces); }
   };
 
@@ -91,7 +188,10 @@
         });
         if (!reponse.ok) return null;
         const donnees = await reponse.json();
-        localStorage.setItem(CLE_ACCES, donnees.access_token);
+        // Écrire dans le dépôt actif : si la session vit dans sessionStorage
+        // (case « Se souvenir de moi » non cochée), écrire dans localStorage
+        // la rendrait persistante à l'insu de l'utilisateur.
+        SA.session.majAcces(donnees.access_token);
         return donnees.access_token;
       } catch (e) {
         return null;
@@ -119,7 +219,7 @@
 
   SA.api = async function (chemin, options = {}) {
     const { acces } = SA.session.jetons();
-    if (!acces) { SA.deconnecter(); throw new ErreurApi('Session expirée.', 401); }
+    if (!acces) { SA.deconnecter({ message: 'Session expirée. Reconnectez-vous.' }); throw new ErreurApi('Session expirée.', 401); }
 
     const executer = (jeton) => {
       const entetes = Object.assign({}, options.headers || {}, { Authorization: `Bearer ${jeton}` });
@@ -136,13 +236,13 @@
 
     if (reponse.status === 401) {
       const nouveau = await rafraichirJeton();
-      if (!nouveau) { SA.deconnecter(); throw new ErreurApi('Session expirée.', 401); }
+      if (!nouveau) { SA.deconnecter({ message: 'Session expirée. Reconnectez-vous.' }); throw new ErreurApi('Session expirée.', 401); }
       reponse = await executer(nouveau);
     }
 
     if (reponse.status === 401 || reponse.status === 403) {
       const corps = await reponse.json().catch(() => ({}));
-      if (reponse.status === 401) SA.deconnecter();
+      if (reponse.status === 401) SA.deconnecter({ message: 'Session expirée. Reconnectez-vous.' });
       throw new ErreurApi(corps.message || 'Accès refusé.', reponse.status, corps);
     }
 
@@ -184,10 +284,81 @@
     setTimeout(() => URL.revokeObjectURL(lien.href), 4000);
   };
 
-  SA.deconnecter = function () {
+  /**
+   * Vide les champs du formulaire de connexion.
+   * ---------------------------------------------------------------------
+   * Ce n'est pas de la coquetterie : après un `location.reload()`, les
+   * navigateurs restaurent d'eux-mêmes les valeurs saisies dans les
+   * formulaires — l'email et le mot de passe du super admin réapparaissaient
+   * donc en clair sur l'écran de connexion juste après la déconnexion.
+   * On les efface explicitement, et on le refait au `pageshow` (retour
+   * arrière depuis le cache du navigateur) et après un tour de boucle,
+   * car la restauration a lieu après le premier rendu.
+   */
+  SA.viderFormulaireConnexion = function () {
+    const formulaire = document.getElementById('formulaire-connexion');
+    if (!formulaire) return;
+    try { formulaire.reset(); } catch (e) { /* ignoré */ }
+    const email = document.getElementById('champ-email');
+    const motDePasse = document.getElementById('champ-mot-de-passe');
+    const souvenir = document.getElementById('case-souvenir');
+    if (email) email.value = '';
+    if (motDePasse) motDePasse.value = '';
+    if (souvenir) souvenir.checked = false;
+  };
+
+  /**
+   * Déconnexion.
+   * @param {{message?: string, recharger?: boolean}} options
+   *
+   * Trois gestes, dans cet ordre :
+   *   1. révoquer le refresh token côté serveur (`/auth/logout` supprime la
+   *      ligne `sessions`). Sans lui, effacer le navigateur ne servait à rien :
+   *      le jeton restait valable 30 jours en base, donc réutilisable ;
+   *   2. effacer les deux dépôts locaux ;
+   *   3. remettre l'écran de connexion à zéro, champs compris.
+   */
+  SA.deconnecter = function (options) {
+    const opts = options || {};
+    const { rafraichissement } = SA.session.jetons();
+
     SA.session.effacer();
-    document.getElementById('ecran-connexion').style.display = 'flex';
-    document.getElementById('application').style.display = 'none';
+
+    if (rafraichissement) {
+      // `keepalive` : la requête survit au rechargement de la page.
+      try {
+        fetch(`${SA.API_BASE_URL}/auth/logout`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refresh_token: rafraichissement }),
+          keepalive: true
+        }).catch(function () { /* hors ligne : la session locale est déjà effacée */ });
+      } catch (e) { /* ignoré */ }
+    }
+
+    if (opts.recharger) {
+      // `replace` et non `reload` : on repart d'une URL propre (sans le hash
+      // de la dernière vue) et sans entrée d'historique vers le panneau.
+      location.replace(location.pathname);
+      return;
+    }
+
+    const application = document.getElementById('application');
+    const ecran = document.getElementById('ecran-connexion');
+    if (application) {
+      application.style.display = 'none';
+      // On vide la zone de contenu : les données des écoles ne doivent pas
+      // rester lisibles dans le DOM derrière l'écran de connexion.
+      const contenu = document.getElementById('sa-contenu');
+      if (contenu) contenu.innerHTML = '';
+    }
+    if (ecran) ecran.style.display = 'flex';
+    SA.viderFormulaireConnexion();
+
+    if (opts.message) {
+      const zone = document.getElementById('erreur-connexion');
+      if (zone) { zone.textContent = opts.message; zone.classList.add('visible'); }
+    }
   };
 
   /* ======================================================================

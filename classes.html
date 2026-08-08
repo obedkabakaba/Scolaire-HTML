@@ -189,6 +189,9 @@
 <link rel="stylesheet" href="theme.css" />
 <link rel="stylesheet" href="ui.css" />
 
+  <!-- Session partagée : rafraîchit le jeton et rejoue les requêtes refusées.
+       Doit rester AVANT les autres scripts partagés. -->
+  <script src="session.js"></script>
   <script src="acces-presences.js"></script>
   <script src="filtre-cycle.js"></script>
 </head>
@@ -287,6 +290,49 @@
     <form id="formulaire-classe">
       <input type="hidden" id="classe-id" />
       <div class="champ"><label for="champ-classe-nom">Nom de la classe</label><input type="text" id="champ-classe-nom" placeholder="ex. 3ème Scientifique A" required /></div>
+
+      <!-- NIVEAU ET DIVISION
+           ==================
+           Ces deux champs manquaient. Le serveur les acceptait déjà
+           (`POST /classes` et `PATCH /classes/:id` lisent `niveau` et
+           `division`, et rejettent un niveau hors de 1..8), la promotion de fin
+           d'année s'appuie dessus, et le tableau des classes affiche
+           « niveau manquant » en rouge quand ils sont vides — mais aucun écran
+           ne permettait de les renseigner. L'alerte était donc incorrigible :
+           elle signalait un défaut sans offrir nulle part où le réparer.
+
+           Ils sont placés juste sous le nom, et non plus bas : c'est le moment
+           où l'on pense au « rang » de la classe, et un champ relégué en fin de
+           formulaire se remplit deux fois moins. -->
+      <div class="ligne-champs">
+        <div class="champ">
+          <label for="champ-classe-niveau">Niveau (rang de l'année d'études)</label>
+          <select id="champ-classe-niveau">
+            <option value="">— À renseigner —</option>
+            <option value="1">1 — première année</option>
+            <option value="2">2 — deuxième année</option>
+            <option value="3">3 — troisième année</option>
+            <option value="4">4 — quatrième année</option>
+            <option value="5">5 — cinquième année</option>
+            <option value="6">6 — sixième année</option>
+            <option value="7">7 — septième année</option>
+            <option value="8">8 — huitième année</option>
+          </select>
+          <p class="aide-interrupteur">
+            C'est ce nombre — et non le nom de la classe — qui permet à la promotion
+            de fin d'année de savoir quelle classe vient après.
+          </p>
+        </div>
+        <div class="champ">
+          <label for="champ-classe-division">Division</label>
+          <input type="text" id="champ-classe-division" maxlength="4" placeholder="A, B, C…" />
+          <p class="aide-interrupteur">
+            La lettre qui distingue deux classes parallèles de même niveau.
+            Laissez vide s'il n'y en a qu'une.
+          </p>
+        </div>
+      </div>
+
       <div class="ligne-champs">
         <div class="champ">
           <label for="champ-classe-cycle">Cycle</label>
@@ -614,7 +660,9 @@ document.addEventListener('DOMContentLoaded', function() {
           ${c.classe_terminale ? '<span class="puce-terminale" title="Les élèves y terminent leur parcours et sortent diplômés">terminale</span>' : ''}
           ${c.classe_orientation ? '<span class="puce-terminale" title="Les élèves y choisissent leur option">orientation</span>' : ''}
           ${c.niveau ? `<span style="font-size:0.72rem; color:var(--texte-att);"> niv. ${c.niveau}${c.division ? '-' + echapper(c.division) : ''}</span>`
-            : '<span class="puce-alerte" title="Sans niveau, la promotion de fin d\'année ne peut pas s\'exécuter">niveau manquant</span>'}
+            : `<button type="button" class="puce-alerte" data-editer="${c.id}"
+                 title="Sans niveau, la promotion de fin d'année ne peut pas s'exécuter. Cliquez pour le renseigner."
+                 style="border:none; cursor:pointer; font:inherit;">niveau manquant</button>`}
         </td>
         <td>${c.option_nom || '—'}</td>
         <td>${c.titulaire_nom ? c.titulaire_nom + ' ' + (c.titulaire_prenom || '') : '—'}</td>
@@ -625,6 +673,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
     corps.querySelectorAll('[data-fiche]').forEach(b =>
       b.addEventListener('click', () => ouvrirFicheClasse(b.dataset.fiche)));
+
+    // La pastille « niveau manquant » ouvre directement la classe concernée,
+    // au champ qui manque. Signaler un défaut sans donner accès à sa
+    // correction est exactement ce qui rendait cette alerte agaçante : elle
+    // se voyait partout et ne se réparait nulle part.
+    corps.querySelectorAll('[data-editer]').forEach(b =>
+      b.addEventListener('click', async () => {
+        const classe = classes.find(c => c.id === b.dataset.editer);
+        if (!classe) return;
+        await ouvrirModaleClasse(classe);
+        const champ = document.getElementById('champ-classe-niveau');
+        if (champ) champ.focus();
+      }));
 
     corps.querySelectorAll('button[data-action]').forEach((bouton) => {
       const ligne = bouton.closest('tr');
@@ -678,6 +739,11 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('titre-modale-classe').textContent = classe ? 'Modifier la classe' : 'Ajouter une classe';
     document.getElementById('classe-id').value = classe?.id || '';
     document.getElementById('champ-classe-nom').value = classe?.nom || '';
+    // `?? ''` et non `|| ''` : un niveau valant 0 n'existe pas ici (le serveur
+    // impose 1 à 8), mais la nuance évite d'introduire un piège si la borne
+    // change un jour.
+    document.getElementById('champ-classe-niveau').value = classe?.niveau ?? '';
+    document.getElementById('champ-classe-division').value = classe?.division || '';
     document.getElementById('champ-classe-cycle').value = classe?.cycle || '';
     document.getElementById('champ-classe-orientation').checked = classe?.classe_orientation === true;
     document.getElementById('champ-classe-terminale').checked = classe?.classe_terminale === true;
@@ -714,6 +780,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const id = document.getElementById('classe-id').value;
     const corpsRequete = {
       nom: document.getElementById('champ-classe-nom').value.trim(),
+      // null et non '' : le serveur teste `niveau !== ''` avant de convertir,
+      // mais `division` passe par un COALESCE côté SQL, et une chaîne vide y
+      // écraserait une division existante par du vide.
+      niveau: document.getElementById('champ-classe-niveau').value || null,
+      division: document.getElementById('champ-classe-division').value.trim().toUpperCase() || null,
       cycle: document.getElementById('champ-classe-cycle').value || null,
       classe_orientation: document.getElementById('champ-classe-orientation').checked,
       classe_terminale: document.getElementById('champ-classe-terminale').checked,

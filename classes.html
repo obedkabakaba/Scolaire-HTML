@@ -295,7 +295,8 @@
            ==================
            Ces deux champs manquaient. Le serveur les acceptait déjà
            (`POST /classes` et `PATCH /classes/:id` lisent `niveau` et
-           `division`, et rejettent un niveau hors de 1..8), la promotion de fin
+           `division`, et rejettent un niveau hors de 1..6 — le primaire comme
+           le secondaire/humanités comptent chacun six années en RDC), la promotion de fin
            d'année s'appuie dessus, et le tableau des classes affiche
            « niveau manquant » en rouge quand ils sont vides — mais aucun écran
            ne permettait de les renseigner. L'alerte était donc incorrigible :
@@ -315,8 +316,6 @@
             <option value="4">4 — quatrième année</option>
             <option value="5">5 — cinquième année</option>
             <option value="6">6 — sixième année</option>
-            <option value="7">7 — septième année</option>
-            <option value="8">8 — huitième année</option>
           </select>
           <p class="aide-interrupteur">
             C'est ce nombre — et non le nom de la classe — qui permet à la promotion
@@ -735,12 +734,55 @@ document.addEventListener('DOMContentLoaded', function() {
     majChampsSelonCycle();
   });
 
+  /**
+   * Liste des classes proposées comme « classe suivante ».
+   *
+   * BUG CORRIGÉ : la liste proposait TOUTES les classes de l'école, y compris
+   * celles d'une autre option — rien n'empêchait de faire suivre une classe
+   * de Scientifique par une classe de Commerciale. Elle est maintenant
+   * restreinte aux classes de LA MÊME OPTION que celle en cours de saisie
+   * (une classe sans option, primaire compris, n'en propose que d'autres
+   * sans option).
+   *
+   * EXCEPTION VOLONTAIRE : une classe d'orientation existe précisément pour
+   * disperser ses élèves vers plusieurs options différentes l'année
+   * suivante — lui imposer une option unique irait contre son rôle. Le
+   * serveur applique la même exception (voir HANDOVER, section promotion).
+   *
+   * Appelée à l'ouverture de la modale ET à chaque changement d'Option ou du
+   * réglage « classe d'orientation » : au moment de l'ouverture, une classe
+   * neuve n'a pas encore d'option choisie, or c'est justement ce choix qui
+   * doit déterminer la liste — la reconstruire uniquement à l'ouverture
+   * aurait laissé passer les classes de toutes les options tant que le
+   * formulaire n'est pas soumis.
+   */
+  function remplirClasseSuivante(selection) {
+    const optionId = document.getElementById('champ-classe-option').value || null;
+    const estOrientation = document.getElementById('champ-classe-orientation').checked;
+    const idActuel = document.getElementById('classe-id').value || null;
+
+    const compatibles = classesCache.filter(c => {
+      if (c.id === idActuel) return false;
+      if (estOrientation) return true;
+      return (c.option_id || null) === optionId;
+    });
+
+    const select = document.getElementById('champ-classe-suivante');
+    const precedente = select.value;
+    select.innerHTML = '<option value="">— À définir plus tard —</option>'
+      + compatibles.map(c => `<option value="${c.id}">${echapper(c.nom)}</option>`).join('');
+    select.value = (selection !== undefined ? selection : precedente) || '';
+  }
+
+  document.getElementById('champ-classe-option').addEventListener('change', () => remplirClasseSuivante());
+  document.getElementById('champ-classe-orientation').addEventListener('change', () => remplirClasseSuivante());
+
   async function ouvrirModaleClasse(classe) {
     document.getElementById('titre-modale-classe').textContent = classe ? 'Modifier la classe' : 'Ajouter une classe';
     document.getElementById('classe-id').value = classe?.id || '';
     document.getElementById('champ-classe-nom').value = classe?.nom || '';
     // `?? ''` et non `|| ''` : un niveau valant 0 n'existe pas ici (le serveur
-    // impose 1 à 8), mais la nuance évite d'introduire un piège si la borne
+    // impose 1 à 6), mais la nuance évite d'introduire un piège si la borne
     // change un jour.
     document.getElementById('champ-classe-niveau').value = classe?.niveau ?? '';
     document.getElementById('champ-classe-division').value = classe?.division || '';
@@ -754,11 +796,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('champ-classe-titulaire').value = classe?.titulaire_id || '';
     document.getElementById('champ-classe-annee').value = classe?.annee_scolaire_id || (anneesCache.find(a => a.active)?.id || '');
 
-    const optionsClasseSuivante = classesCache
-      .filter(c => c.id !== classe?.id)
-      .map(c => `<option value="${c.id}">${c.nom}</option>`).join('');
-    document.getElementById('champ-classe-suivante').innerHTML = '<option value="">— À définir plus tard —</option>' + optionsClasseSuivante;
-    document.getElementById('champ-classe-suivante').value = classe?.classe_suivante_id || '';
+    remplirClasseSuivante(classe?.classe_suivante_id || '');
 
     const sectionCours = document.getElementById('section-cours-classe');
     if (classe) {

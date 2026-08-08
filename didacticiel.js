@@ -127,19 +127,20 @@
    * le même nom, et le didacticiel doit fonctionner de façon identique sur les
    * trente-sept écrans.
    *
-   * CE QUI A CHANGÉ ICI
-   * -------------------
+   * LE 401 N'EST PLUS FATAL
+   * -----------------------
    * Ce commentaire disait : « il ne tente pas de rafraîchir le jeton : un 401
-   * fait simplement taire le didacticiel, la page mère gérant déjà la
-   * reconnexion ». C'était une erreur d'appréciation. La page mère renouvelle
-   * bien le jeton pour SES propres requêtes, mais celle du didacticiel est
-   * déjà partie et perdue — le didacticiel se taisait donc pour de bon, et
-   * c'est la cause de « le guide ne s'ouvre pas parfois ».
+   * fait simplement taire le didacticiel ». C'était la cause du défaut le plus
+   * visible du guide — il ne s'ouvrait pas « parfois ». Ce parfois, c'était :
+   * chaque fois que la page était rouverte plus de quinze minutes après la
+   * connexion. La page mère renouvelait bien le jeton pour ses propres appels,
+   * mais celui du didacticiel était déjà parti, et personne ne le rejouait.
    *
-   * `session.js`, chargé avant ce fichier, enveloppe `fetch` et rejoue toute
-   * requête refusée après un rafraîchissement partagé. Il n'y a donc plus
-   * rien à faire ici — sinon relire le jeton au moment de l'envoi plutôt que
-   * de le figer, pour que le rejeu reparte bien avec le bon.
+   * `session.js` enveloppe désormais `fetch` et rejoue toute requête
+   * authentifiée revenue en 401, une fois le jeton renouvelé. Il n'y a donc
+   * plus rien à faire ici — sinon lire le jeton au moment de l'appel plutôt
+   * qu'au chargement, pour repartir du jeton frais quand il vient d'être
+   * renouvelé par quelqu'un d'autre.
    */
   function appeler(chemin, options) {
     var o = options || {};
@@ -218,6 +219,30 @@
      modifier trente-sept menus à la main, c'est trente-sept occasions
      d'oublier, et un menu qui diverge d'une page à l'autre.
      -------------------------------------------------------------------------- */
+  /* --------------------------------------------------------------------------
+     L'ICÔNE ET LE CLIC QUI NE FAISAIT RIEN
+
+     Deux défauts se cumulaient sur cette entrée de menu :
+
+     · Pas d'icône. `ui.js` pose les icônes en cherchant le `href` du lien dans
+       sa table `ICONES`. Ce lien portait `href="#"`, qui n'y figure pas : la
+       ligne restait donc nue au milieu d'un menu entièrement illustré, ce qui
+       la faisait passer pour un élément cassé. L'icône est maintenant posée
+       ici, directement, avec la même structure que celles de `ui.js`
+       (`<svg class="nav-icone">` + `<span class="nav-libelle">`) pour que
+       l'alignement en flex soit identique.
+
+     · Le clic ouvrait un panneau vide. `ouvrir()` dessine à partir de `etat` ;
+       si le chargement avait échoué — typiquement le 401 corrigé plus haut —
+       `etat` valait `null` et le panneau affichait « Chargement… »
+       indéfiniment. D'où « on clique dessus et rien ne se passe ». Le clic
+       relance désormais le chargement s'il manque, et affiche un message
+       utile s'il échoue vraiment.
+     -------------------------------------------------------------------------- */
+  var ICONE_AIDE = '<circle cx="12" cy="12" r="9"/>'
+    + '<path d="M9.6 9.2a2.5 2.5 0 1 1 3.2 3.1c-.6.3-.9.8-.9 1.4v.4"/>'
+    + '<path d="M12 17.2h.01"/>';
+
   (function poserEntreeMenu() {
     var liste = document.querySelector('.nav-liste');
     if (!liste || document.getElementById('ard-di-nav')) return;
@@ -226,51 +251,57 @@
     var lien = document.createElement('a');
     lien.className = 'nav-item';
     lien.href = '#';
+    lien.setAttribute('role', 'button');
 
-    /* L'ICÔNE
-       -------
-       `ui.js` pose les icônes du menu en cherchant le `href` du lien dans sa
-       table `ICONES`. Notre entrée porte `href="#"` — aucune correspondance,
-       donc aucune icône, et une ligne de menu qui n'a pas l'air d'en être une
-       à côté des autres. On pose donc la nôtre directement, dans la même
-       structure que celle qu'`ui.js` construit (`.nav-icone` + `.nav-libelle`),
-       pour que l'alignement flex soit identique. */
     var icone = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     icone.setAttribute('class', 'nav-icone');
     icone.setAttribute('viewBox', '0 0 24 24');
     icone.setAttribute('aria-hidden', 'true');
-    icone.innerHTML = '<circle cx="12" cy="12" r="9"/>'
-      + '<path d="M9.5 9.2a2.6 2.6 0 0 1 5 .9c0 1.7-2.5 2.2-2.5 3.9"/>'
-      + '<path d="M12 17h.01"/>';
+    icone.innerHTML = ICONE_AIDE;
+
     var libelle = document.createElement('span');
     libelle.className = 'nav-libelle';
     libelle.textContent = 'Aide & Tutoriels';
+
     lien.appendChild(icone);
     lien.appendChild(libelle);
 
-    /* LE CLIC
-       -------
-       Il appelait `ouvrir()` en lisant `etat`. Quand `etat` était encore null
-       — chargement en cours, ou requête refusée — le panneau s'ouvrait sur
-       « Chargement… » et n'en sortait jamais : de l'extérieur, « on clique et
-       rien ne se passe ».
-
-       Désormais le panneau s'ouvre toujours, et s'il n'a pas d'état il en
-       redemande un. Si la requête échoue quand même, `dessiner()` affiche le
-       repli hors ligne plutôt qu'une attente perpétuelle. */
     lien.addEventListener('click', function (e) {
       e.preventDefault();
-      if (!etat) {
-        ouvrir('parcours');
-        charger().then(function () { if (voile.classList.contains('ouvert')) dessiner(); });
-        return;
-      }
-      ouvrir(etat.progression && !etat.progression.termine ? 'parcours' : 'centre');
+      ouvrirDepuisMenu();
     });
-
     li.appendChild(lien);
     liste.appendChild(li);
   })();
+
+  /**
+   * Ouverture par l'entrée de menu.
+   *
+   * Si l'état n'a pas encore été chargé — ou n'a pas pu l'être — on ouvre
+   * quand même, on montre que ça travaille, et on charge. Ne rien afficher du
+   * tout laisse croire que le menu est mort.
+   */
+  function ouvrirDepuisMenu() {
+    if (etat) {
+      ouvrir(etat.progression && !etat.progression.termine ? 'parcours' : 'centre');
+      return;
+    }
+    ouvrir('parcours');
+    panneau.innerHTML = attente('Chargement du guide…');
+    charger().then(function (d) {
+      if (d) { dessiner(); return; }
+      // Vraie panne : on le dit, et on laisse une porte de sortie plutôt
+      // qu'un panneau figé sur « Chargement… ».
+      panneau.innerHTML = entete('Aide & Tutoriels', '')
+        + '<div class="ard-di-corps"><p>Le guide n\'a pas pu être chargé. '
+        + 'Vérifiez votre connexion, puis réessayez.</p></div>'
+        + '<div class="ard-di-pied">'
+        + '<button type="button" class="ard-di-btn ard-di-btn-discret" data-action="fermer">Fermer</button>'
+        + '<button type="button" class="ard-di-btn ard-di-btn-principal" data-action="recharger">Réessayer</button>'
+        + '</div>';
+      brancher();
+    });
+  }
 
   var annonceur = document.createElement('div');
   annonceur.className = 'ard-di-lecture-seule';
@@ -359,17 +390,8 @@
      5. RENDU
      ========================================================================== */
 
-  var chargementEchoue = false;
-
   function dessiner() {
-    if (!etat) {
-      // Un panneau ouvert sans état affichait « Chargement… » indéfiniment
-      // dès que la requête avait échoué. On distingue les deux situations :
-      // en cours, on patiente ; en échec, on le dit et on offre de réessayer.
-      panneau.innerHTML = chargementEchoue ? vueIndisponible() : attente('Chargement…');
-      if (chargementEchoue) brancher();
-      return;
-    }
+    if (!etat) { panneau.innerHTML = attente('Chargement…'); return; }
     if (ancienMode) { panneau.innerHTML = modeAncien(); brancher(); return; }
 
     if (vue === 'bienvenue') panneau.innerHTML = vueBienvenue();
@@ -382,26 +404,6 @@
 
   function attente(texte) {
     return '<div class="ard-di-corps"><p class="ard-di-attente">' + echapper(texte) + '</p></div>';
-  }
-
-  /**
-   * Le guide n'a pas pu se charger.
-   *
-   * Une fenêtre vide laisse croire à une panne de la plateforme entière. On
-   * nomme ce qui s'est passé, on propose de réessayer, et on laisse une porte
-   * vers l'assistant écrit — qui, lui, ne dépend pas de cet appel.
-   */
-  function vueIndisponible() {
-    return entete('Aide & Tutoriels', 'Le guide n\'a pas pu se charger')
-      + '<div class="ard-di-corps">'
-      + '<p>Le guide de prise en main n\'a pas répondu. C\'est le plus souvent une '
-      + 'connexion momentanément interrompue — vos données ne sont pas concernées.</p>'
-      + '<p class="ard-di-sous">Si cela se reproduit après une longue inactivité, '
-      + 'rechargez la page : votre session sera renouvelée.</p>'
-      + '</div><div class="ard-di-pied">'
-      + '<a class="ard-di-btn" href="messages.html?assistant=1">Poser une question à l\'assistant</a>'
-      + '<button type="button" class="ard-di-btn ard-di-btn-principal" data-action="reessayer">Réessayer</button>'
-      + '</div>';
   }
 
   function entete(titre, sous, boutonFermer) {
@@ -569,18 +571,7 @@
       + '</li>';
   }
 
-  /**
-   * La carte détaillée d'une étape.
-   *
-   * Elle donnait : quoi, pourquoi, quel piège. Trois paragraphes qui décrivent
-   * l'INTENTION de l'étape, et pas un mot sur la manipulation. Deux blocs
-   * s'ajoutent, dans l'ordre où on en a besoin :
-   *
-   *   · « À faire, dans l'ordre » — la suite de gestes (`details`) ;
-   *   · « Ce que contient l'écran » — le formulaire champ par champ (`champs`),
-   *     replié, parce qu'il est long et qu'on ne le consulte que lorsqu'on
-   *     bute sur un champ précis.
-   */
+  /** La carte détaillée d'une étape : quoi, pourquoi, quel piège. */
   function carteEtape(detail, sommaire) {
     var html = '<div class="ard-di-etape">'
       + '<div class="ard-di-cartouche">'
@@ -589,18 +580,24 @@
       + '<h3>' + echapper(detail.titre) + '</h3>'
       + '<p>' + echapper(detail.quoi || detail.resume) + '</p>';
 
-    if (detail.details && detail.details.length) {
-      html += '<p class="ard-di-sous-titre">À faire, dans l\'ordre</p>'
-        + '<ol class="ard-di-gestes">'
-        + detail.details.map(function (d) { return '<li>' + echapper(d) + '</li>'; }).join('')
+    // LES GESTES, DANS L'ORDRE.
+    //
+    // C'est ce qui manquait. La carte nommait l'écran et s'arrêtait là : la
+    // personne arrivait devant un formulaire de quinze champs sans savoir
+    // lequel comptait. `details` porte la suite — les gestes concrets à faire
+    // DANS l'écran — et `champs` le contenu exact de la fenêtre, replié pour
+    // ne pas noyer la consigne principale.
+    var gestes = detail.details || (sommaire && sommaire.details) || [];
+    if (gestes.length) {
+      html += '<ol class="ard-di-gestes">'
+        + gestes.map(function (g) { return '<li>' + echapper(g) + '</li>'; }).join('')
         + '</ol>';
     }
 
-    if (detail.champs && detail.champs.length) {
-      html += '<details class="ard-di-champs">'
-        + '<summary>Ce que contient l\'écran (' + detail.champs.length + ' points)</summary>'
-        + '<ul>' + detail.champs.map(function (c) { return '<li>' + echapper(c) + '</li>'; }).join('') + '</ul>'
-        + '</details>';
+    if ((detail.champs || []).length) {
+      html += '<details class="ard-di-champs"><summary>Ce que contient cet écran</summary><ul>'
+        + detail.champs.map(function (c) { return '<li>' + echapper(c) + '</li>'; }).join('')
+        + '</ul></details>';
     }
 
     if (detail.pourquoi) html += '<p class="ard-di-pourquoi">' + echapper(detail.pourquoi) + '</p>';
@@ -758,10 +755,9 @@
         fermer();
         break;
 
-      case 'reessayer':
-        chargementEchoue = false;
-        dessiner();
-        charger().then(function () { if (voile.classList.contains('ouvert')) dessiner(); });
+      case 'recharger':
+        panneau.innerHTML = attente('Chargement du guide…');
+        charger().then(function (d) { if (d) dessiner(); });
         break;
 
       case 'demarrer':
@@ -845,10 +841,7 @@
     etat._detailCourant = sommaire ? {
       code: sommaire.code, type: sommaire.type, titre: sommaire.titre,
       resume: sommaire.resume, ecran: sommaire.ecran, ancre: sommaire.ancre,
-      selecteurs: sommaire.selecteurs,
-      // Les gestes descendent désormais avec le sommaire : sans eux, ouvrir
-      // une étape autre que la prochaine donnait une carte sans mode d'emploi.
-      details: sommaire.details || []
+      selecteurs: sommaire.selecteurs
     } : null;
     vue = 'etape';
     dessiner();
@@ -952,9 +945,6 @@
 
   var cibleCourante = null;
   var etapeGuidee = null;
-  // Étape validée juste avant l'enchaînement : sert au bandeau de la bulle
-  // suivante, et se vide dès qu'il est affiché.
-  var derniereReussie = null;
 
   function eclairer(code) {
     var e = etapeParCode(code)
@@ -1023,84 +1013,113 @@
     var e = etapeGuidee;
     var restantes = (etat.etapes || []).filter(function (x) { return !x.fait && !x.ignoree; }).length;
 
-    /* LA FÉLICITATION D'ENCHAÎNEMENT
-       ------------------------------
-       Quand on arrive ici en venant de « Continuer », l'étape précédente vient
-       d'être validée en base. Le dire dans la bulle suivante — plutôt que dans
-       un panneau qui s'ouvre par-dessus — est ce qui donne la sensation d'un
-       parcours qui avance, au lieu d'une suite de fenêtres sans lien. */
-    var bandeau = '';
-    if (derniereReussie) {
-      bandeau = '<p class="ard-di-succes" style="margin:0 0 9px;padding:7px 9px;font-size:0.82rem">'
-        + '🎉 ' + echapper(derniereReussie.titre) + ' — c\'est fait.</p>';
-      derniereReussie = null;
-    }
-
-    /* LES GESTES
-       ----------
-       La bulle n'affichait que `resume` : une phrase qui nomme l'écran. La
-       personne y arrivait et se retrouvait devant un formulaire de quinze
-       champs sans savoir lequel compte — « il explique seulement la fenêtre,
-       pas ce qu'il y a dedans ». `details` porte désormais la suite des gestes,
-       et c'est elle qu'on montre. Le repli sur `resume` reste, pour les étapes
-       qui n'en ont pas encore. */
-    var gestes = (e.details && e.details.length)
-      ? '<ol class="ard-di-gestes">' + e.details.map(function (d) {
-          return '<li>' + echapper(d) + '</li>';
-        }).join('') + '</ol>'
-      : '<p>' + echapper(e.resume || '') + '</p>';
-
     bulle.innerHTML = '<span class="ard-di-fleche" aria-hidden="true"></span>'
-      + bandeau
       + '<div class="ard-di-cartouche"><span>'
       + (e.type === 'decouverte' ? 'Découverte' : 'Étape') + '</span>'
       + '<span>' + restantes + ' restante' + (restantes > 1 ? 's' : '') + '</span></div>'
       + '<h3>' + echapper(e.titre) + '</h3>'
-      + gestes
+      + '<p>' + echapper(e.resume || '') + '</p>'
+      // La bulle disait « créez vos classes » et laissait la personne devant
+      // le formulaire. Les trois premiers gestes tiennent dans la bulle ; le
+      // reste s'obtient par « Détails », qui rouvre la fiche complète.
+      + ((e.details && e.details.length)
+          ? '<ol class="ard-di-gestes ard-di-gestes-bulle">'
+            + e.details.slice(0, 3).map(function (g) {
+                return '<li>' + echapper(g) + '</li>';
+              }).join('')
+            + '</ol>'
+            + (e.details.length > 3
+                ? '<button type="button" class="ard-di-plus" data-g="details">'
+                  + 'Voir les ' + e.details.length + ' étapes</button>'
+                : '')
+          : '')
       + '<div class="ard-di-bulle-actions">'
       + '<button type="button" class="ard-di-btn ard-di-btn-discret" data-g="arreter">Fermer</button>'
       + '<button type="button" class="ard-di-btn ard-di-btn-ia" data-g="aide">Besoin d\'aide ?</button>'
       + '<button type="button" class="ard-di-btn ard-di-btn-principal" data-g="suivante">'
-      + (e.type === 'decouverte' ? 'J\'ai vu' : 'J\'ai terminé') + '</button>'
+      + (e.type === 'decouverte' ? 'J\'ai vu' : 'Continuer') + '</button>'
       + '</div>';
 
-    brancherBulle(e);
-  }
-
-  /* Les boutons de la bulle sont rebranchés à chaque réécriture de son
-     contenu : `signalerNonFaite()` les remplace, et des gestionnaires posés
-     une seule fois disparaîtraient avec eux. */
-  function brancherBulle(e) {
     bulle.querySelectorAll('[data-g]').forEach(function (b) {
       b.addEventListener('click', function () {
         var g = b.dataset.g;
         if (g === 'arreter') { arreterGuidage(); return; }
+        if (g === 'details') { arreterGuidage(); ouvrirEtape(e.code); ouvrir('etape'); return; }
         if (g === 'aide') { arreterGuidage(); ouvrirEtape(e.code); ouvrir('etape'); demanderIA(e.code); return; }
-        if (g === 'passer') { noter('ignorer_etape', e.code); arreterGuidage(); charger(true); return; }
         if (g === 'suivante') {
-          /* POURQUOI CE BOUTON NE CONTINUAIT PAS
-             ------------------------------------
-             Il faisait `arreterGuidage()` puis `charger(true)`, et rien de
-             plus. Deux issues, toutes deux muettes :
+          /* ----------------------------------------------------------------
+             POURQUOI « CONTINUER » NE CONTINUAIT PAS
 
-               · l'étape venait d'être accomplie → la bulle disparaissait et le
-                 parcours s'arrêtait là, alors qu'il restait douze étapes ;
-               · l'étape n'était pas faite → la bulle disparaissait aussi, sans
-                 un mot. C'est le cas le plus fréquent, et de loin : on clique
-                 « Continuer » AVANT d'avoir rempli le formulaire, parce que
-                 c'est le bouton qui a l'air de faire avancer le guide.
+             L'ancien code faisait exactement deux choses : `arreterGuidage()`,
+             puis `charger(true)`. Autrement dit : il effaçait le projecteur et
+             relisait la base. Si l'étape n'était pas encore faite — le cas
+             normal, puisqu'on clique « Continuer » AVANT d'avoir rempli le
+             formulaire — la bulle disparaissait et il ne se passait plus rien.
+             Rien à l'écran, rien dans la console, aucun message. Le bouton
+             avait l'air cassé parce qu'il ne faisait, littéralement, rien de
+             visible.
 
-             Dans les deux cas : « je clique sur continuer et ça ne continue
-             pas ». `enchainer()` relit la base, puis soit félicite et guide
-             vers l'étape suivante, soit explique ce qui manque encore sans
-             effacer la bulle. */
+             Il fait maintenant les trois choses qu'on attend de lui :
+
+               · une DÉCOUVERTE se valide en la voyant, et on enchaîne
+                 immédiatement sur l'étape suivante ;
+               · une CONFIGURATION est relue en base. Si elle est faite, on
+                 félicite et on enchaîne ;
+               · si elle ne l'est pas, on le DIT — sans reproche — et on laisse
+                 la bulle en place avec ce qui reste à faire. Se taire était
+                 le vrai défaut : la personne ne pouvait pas savoir si elle
+                 avait mal fait ou si le bouton était mort.
+             ---------------------------------------------------------------- */
+          var boutonSuivant = b;
+          boutonSuivant.disabled = true;
+          boutonSuivant.textContent = 'Vérification…';
+
           if (e.type === 'decouverte') {
-            // Une découverte se valide en la voyant : c'est la seule chose
-            // observable, et le clic vaut donc constat.
-            noter('ecran_visite', e.ecran).then(function () { enchainer(e); });
+            noter('ecran_visite', e.ecran);
+            arreterGuidage();
+            charger(true).then(function () { enchainer(e.code); });
             return;
           }
-          enchainer(e);
+
+          charger(true).then(function () {
+            var apres = etapeParCode(e.code);
+
+            if (apres && apres.fait) {
+              arreterGuidage();
+              enchainer(e.code);
+              return;
+            }
+
+            // Pas encore fait : on reste sur place et on explique.
+            boutonSuivant.disabled = false;
+            boutonSuivant.textContent = 'J\'ai terminé';
+            var deja = bulle.querySelector('.ard-di-attente-etape');
+            if (deja) deja.remove();
+            var note = document.createElement('p');
+            note.className = 'ard-di-attente-etape';
+            note.textContent = "Cette étape n'est pas encore enregistrée. "
+              + "Terminez-la sur l'écran, puis revenez cliquer ici — "
+              + "ou passez à la suite avec « Étape suivante ».";
+            var actions = bulle.querySelector('.ard-di-bulle-actions');
+            bulle.insertBefore(note, actions);
+
+            // Une porte de sortie explicite : rester bloqué sur une étape
+            // qu'on ne veut pas faire maintenant est exactement ce qui fait
+            // abandonner un guide.
+            if (!bulle.querySelector('[data-g="passer"]')) {
+              var passer = document.createElement('button');
+              passer.type = 'button';
+              passer.className = 'ard-di-btn ard-di-btn-discret';
+              passer.dataset.g = 'passer';
+              passer.textContent = 'Étape suivante';
+              passer.addEventListener('click', function () {
+                arreterGuidage();
+                enchainer(e.code);
+              });
+              actions.insertBefore(passer, actions.firstChild);
+            }
+            repositionner();
+          });
         }
       });
     });
@@ -1114,92 +1133,38 @@
   }
 
   /**
-   * Ce qui se passe après « Continuer ».
+   * Passe à l'étape suivante du parcours.
    *
-   * On relit la base — c'est la seule source qui dise si l'étape est faite —
-   * puis on décide :
+   * C'est la pièce qui manquait : le guidage savait démarrer sur une étape,
+   * mais pas passer à la suivante. Chaque étape était donc un cul-de-sac dont
+   * on ne sortait qu'en rouvrant le panneau à la main.
    *
-   *   · étape accomplie et une suivante existe → on félicite brièvement et on
-   *     enchaîne le guidage, sans repasser par le panneau. C'est ce que
-   *     « continuer » veut dire.
-   *   · étape accomplie et plus rien à faire → on ouvre le panneau sur le
-   *     message de fin.
-   *   · étape NON accomplie → on garde la bulle et on affiche ce qui manque.
-   *     L'effacer sans explication est ce qui donnait l'impression d'un bouton
-   *     mort.
+   * `apres` est le code de l'étape qu'on vient de quitter : on l'écarte pour
+   * ne pas y revenir en boucle si le serveur la propose encore (une étape
+   * ignorée ou non détectable reste « prochaine » tant qu'on ne l'a pas
+   * dépassée).
    *
-   * `charger(false)` et non `charger(true)` : la félicitation d'origine ouvre
-   * le panneau par-dessus le guidage, ce qui casserait justement
-   * l'enchaînement qu'on cherche à produire. On félicite nous-mêmes, dans la
-   * bulle suivante.
+   * Quand l'étape suivante se joue sur un AUTRE écran, `demarrerGuidage()`
+   * mémorise l'intention et navigue : le guidage reprend tout seul à
+   * l'arrivée, comme il le faisait déjà.
    */
-  function enchainer(etapeQuittee) {
-    if (bulle) {
-      var actions = bulle.querySelector('.ard-di-bulle-actions');
-      if (actions) actions.innerHTML = '<p class="ard-di-attente" style="margin:0">Vérification…</p>';
+  function enchainer(apres) {
+    var suivante = null;
+
+    if (etat && etat.prochaine && etat.prochaine.code !== apres) {
+      suivante = etat.prochaine.code;
+    } else {
+      var candidates = (etat && etat.etapes ? etat.etapes : []).filter(function (x) {
+        return !x.fait && !x.ignoree && !x.bloquee && x.code !== apres;
+      });
+      if (candidates.length) suivante = candidates[0].code;
     }
 
-    charger(false).then(function () {
-      var relue = etapeParCode(etapeQuittee.code);
-      var faite = !relue || relue.fait === true || etapeQuittee.type === 'decouverte';
+    if (suivante) { demarrerGuidage(suivante); return; }
 
-      if (!faite) {
-        // Rien n'a changé en base : on ne fait pas semblant d'avancer.
-        arreterGuidage();
-        eclairer(etapeQuittee.code);
-        signalerNonFaite(etapeQuittee);
-        return;
-      }
-
-      var suivante = prochaineAGuider(etapeQuittee.code);
-      arreterGuidage();
-
-      if (!suivante) {
-        vue = 'parcours';
-        ouvrir('parcours');
-        return;
-      }
-
-      derniereReussie = etapeQuittee;
-      demarrerGuidage(suivante.code);
-    });
-  }
-
-  /** L'étape suivante réellement guidable, en sautant celle qu'on quitte. */
-  function prochaineAGuider(codeQuitte) {
-    if (etat && etat.prochaine && etat.prochaine.code !== codeQuitte) return etat.prochaine;
-    var liste = (etat && etat.etapes) || [];
-    for (var i = 0; i < liste.length; i++) {
-      var e = liste[i];
-      if (e.code === codeQuitte) continue;
-      if (!e.fait && !e.ignoree && !e.bloquee) return e;
-    }
-    return null;
-  }
-
-  /** Étape non accomplie : on le dit dans la bulle, on ne la fait pas
-   *  disparaître. Le bouton « Passer cette étape » n'apparaît que pour les
-   *  étapes facultatives — proposer de sauter une étape obligatoire
-   *  reviendrait à promettre un contournement qui n'existe pas. */
-  function signalerNonFaite(e) {
-    if (!bulle) return;
-    var corps = bulle.querySelector('p');
-    if (corps) {
-      corps.innerHTML = '<strong>Cette étape n\'est pas encore enregistrée.</strong><br/>'
-        + echapper(e.resume || '');
-    }
-    var actions = bulle.querySelector('.ard-di-bulle-actions');
-    if (actions) {
-      actions.innerHTML =
-        '<button type="button" class="ard-di-btn ard-di-btn-discret" data-g="arreter">Fermer</button>'
-        + (e.obligatoire === false
-            ? '<button type="button" class="ard-di-btn ard-di-btn-discret" data-g="passer">Passer</button>'
-            : '')
-        + '<button type="button" class="ard-di-btn ard-di-btn-ia" data-g="aide">Comment faire ?</button>'
-        + '<button type="button" class="ard-di-btn ard-di-btn-principal" data-g="suivante">J\'ai terminé</button>';
-      brancherBulle(e);
-    }
-    annoncer('Cette étape n\'est pas encore enregistrée. ' + (e.resume || ''));
+    // Plus rien à faire : on le montre, plutôt que de laisser l'écran nu.
+    vue = 'parcours';
+    ouvrir('parcours');
   }
 
   function repositionner() {
@@ -1335,8 +1300,7 @@
     return appeler('/assistant/onboarding?ecran=' + encodeURIComponent(FICHIER))
       .then(function (r) {
         if (r.status === 404) return chargerAncien();      // serveur pas encore à jour
-        if (!r.ok) { chargementEchoue = true; return null; }
-        chargementEchoue = false;
+        if (!r.ok) return null;
         return r.json().then(function (d) {
           if (!d || d.actif === false) { bouton.remove(); return null; }
 
@@ -1360,13 +1324,9 @@
           return d;
         });
       })
-      .catch(function () {
-        // Le silence d'origine était le bon choix TANT QUE le bouton d'aide
-        // restait ouvrable. Il l'est ; mais le panneau, lui, doit savoir qu'il
-        // n'aura pas de contenu, sans quoi il attend pour toujours.
-        chargementEchoue = true;
-        if (voile.classList.contains('ouvert')) dessiner();
-      });
+      // On rend `null` plutôt que `undefined` : les appelants enchaînent sur
+      // `.then()` et doivent pouvoir distinguer « chargé » de « échoué ».
+      .catch(function () { return null; });
   }
 
   function chargerAncien() {

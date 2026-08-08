@@ -193,8 +193,8 @@
 <link rel="stylesheet" href="theme.css" />
 <link rel="stylesheet" href="ui.css" />
 
-  <!-- Session partagée : rafraîchit le jeton et rejoue les requêtes refusées.
-       Doit rester AVANT les autres scripts partagés. -->
+  <!-- Session partagée : renouvellement du jeton et rejeu des requêtes
+       expirées. Doit rester AVANT les autres scripts. -->
   <script src="session.js"></script>
   <script src="acces-presences.js"></script>
 </head>
@@ -490,17 +490,10 @@
   const peutDiffuser = roles.includes('super_admin')
     || roles.some(r => ['directeur', 'prefet', 'secretaire'].includes(r));
 
-  /* ÉCRIRE AUX PARENTS DE SA CLASSE
-     -------------------------------
-     Un titulaire ne pouvait joindre les familles de sa propre classe que par
-     l'intermédiaire de la direction. C'est le contraire de ce que fait un
-     titulaire au quotidien : convoquer, prévenir d'une absence, annoncer une
-     réunion. On ouvre donc `parents_classe` aux enseignants, borné à leurs
-     classes — et c'est le serveur qui vérifie ce lien, la restriction posée
-     ici n'étant qu'un confort d'affichage.
-
-     Ce qui reste fermé : « les parents de toute l'école ». Cette diffusion-là
-     engage l'établissement, pas un enseignant. */
+  // Écrire aux parents d'UNE classe dont on a la charge n'est pas une
+  // diffusion d'établissement : c'est le lien ordinaire entre un enseignant et
+  // les familles de ses élèves. Le serveur restreint la liste des classes à
+  // celles de la personne ; ici on se contente de proposer l'option.
   const peutEcrireAuxParents = peutDiffuser
     || roles.some(r => ['titulaire', 'professeur'].includes(r));
 
@@ -538,31 +531,30 @@
       ? 'Nouveau message' : 'Écrire à un collègue';
 
     if (!peutDiffuser) {
-      // Un professeur ne voit que ce qu'il peut faire : lui proposer « les
+      // Un enseignant ne voit que ce qu'il peut faire : lui proposer « les
       // parents de toute l'école » pour se voir refuser ensuite serait une
       // promesse non tenue.
       //
-      // Deux destinations lui restent, et non plus une seule : écrire à des
-      // personnes, et écrire aux parents d'une classe DONT IL A LA CHARGE. Le
-      // serveur vérifie cette charge ; ici on se contente de ne proposer que
-      // les classes concernées.
+      // En revanche il GARDE « les parents d'une classe » : un titulaire doit
+      // pouvoir écrire aux familles de sa classe, et un professeur à celles
+      // des classes où il enseigne. Le serveur vérifie que la classe est bien
+      // la sienne, et le sélecteur de classe ne lui proposera que celles-là.
       const select = document.getElementById('select-cible');
-      const autorisees = peutEcrireAuxParents
+      const autorises = peutEcrireAuxParents
         ? ['utilisateurs', 'parents_classe']
         : ['utilisateurs'];
-      [...select.options].forEach(o => { if (!autorisees.includes(o.value)) o.remove(); });
+      [...select.options].forEach(o => { if (!autorises.includes(o.value)) o.remove(); });
     }
 
     if (peutDiffuser) {
+      document.getElementById('onglet-historique').style.display = '';
       document.getElementById('onglet-whatsapp').style.display = '';
       document.getElementById('sous-titre-messages').textContent =
         "Votre boîte de réception, et la diffusion de messages au personnel et aux parents.";
-    } else if (peutEcrireAuxParents) {
-      document.getElementById('sous-titre-messages').textContent =
-        "Votre boîte de réception, et l'envoi de messages à vos collègues et aux parents de vos classes.";
     } else {
       document.getElementById('sous-titre-messages').textContent =
-        "Votre boîte de réception, et l'envoi de messages à vos collègues.";
+        "Votre boîte de réception, et vos messages aux collègues"
+        + (peutEcrireAuxParents ? " et aux parents de vos classes." : ".");
     }
 
     document.querySelectorAll('.onglet').forEach(o => {
@@ -571,25 +563,28 @@
     document.getElementById('bouton-tout-lu').addEventListener('click', toutMarquerLu);
 
     /* ------------------------------------------------------------------
-       LE CÂBLAGE DU FORMULAIRE D'ENVOI
+       POURQUOI L'ENVOI NE MARCHAIT PAS POUR LES AUTRES RÔLES
 
-       Tout ce bloc était enfermé dans `if (peutDiffuser)`. L'onglet « Écrire à
-       un collègue » s'affichait pourtant pour tout le monde — mais pour un
-       professeur, un titulaire, un comptable :
+       Tout ce bloc était enfermé dans `if (peutDiffuser)`. L'onglet « Écrire
+       à un collègue » s'affichait bien — il est activé plus haut, hors de la
+       condition — mais rien derrière n'était branché :
 
          · `chargerPersonnel()` n'était jamais appelé, donc la liste des
-           personnes restait vide et il n'y avait personne à cocher ;
+           collègues restait vide et il n'y avait personne à cocher ;
          · le bouton « Envoyer » n'avait AUCUN gestionnaire de clic : on
-           cliquait, et rien ne se produisait ;
-         · `majFormulaireCible()` n'était pas branché, donc les zones du
-           formulaire ne s'affichaient pas selon la cible choisie.
+           rédigeait un message, on cliquait, et il ne se passait rien ;
+         · `majFormulaireCible()` n'était pas branché non plus, donc les zones
+           de sélection ne s'affichaient jamais correctement ;
+         · le compteur de caractères restait figé à 0 / 5000.
 
-       D'où « la commande des messages chez les autres rôles ne marche pas ».
-       Le serveur, lui, acceptait déjà ces envois : c'est bien l'interface qui
-       ne les émettait jamais.
+       Un professeur voyait donc un formulaire complet et parfaitement inerte.
+       Ce n'est pas un problème de droits — le serveur acceptait déjà l'envoi
+       entre collègues — c'était l'interface qui n'était câblée que pour la
+       direction.
 
-       Le câblage est donc commun. Seul reste réservé à la diffusion ce qui ne
-       concerne QUE les groupes : le chargement des rôles et des effectifs.
+       La règle est maintenant la bonne : tout ce qui sert à ÉCRIRE est branché
+       pour tout le monde ; seul ce qui sert à DIFFUSER à un groupe entier
+       reste conditionné.
        ------------------------------------------------------------------ */
     document.getElementById('select-cible').addEventListener('change', majFormulaireCible);
     document.getElementById('bouton-envoyer').addEventListener('click', envoyer);
@@ -601,22 +596,26 @@
       document.getElementById(id).addEventListener('change', majResumeCible));
     document.getElementById('select-classe').addEventListener('change', majResumeCible);
 
-    // La liste des personnes joignables : ouverte à tout le personnel, c'est
-    // elle qui rend possible l'envoi entre collègues.
-    chargerPersonnel();
+    // La liste des collègues joignables : ouverte à tout le personnel, c'est
+    // la matière première de « écrire à quelqu'un ».
+    await chargerPersonnel();
+
+    // Les GROUPES (rôles, classes) ne concernent que ceux qui peuvent
+    // diffuser… et les enseignants, pour la seule liste des classes dont ils
+    // ont la charge.
+    if (peutDiffuser || peutEcrireAuxParents) {
+      await chargerDestinataires();
+    }
 
     if (peutDiffuser) {
       document.getElementById('onglet-historique').style.display = '';
-      await chargerDestinataires();
-    } else if (peutEcrireAuxParents) {
-      // Un enseignant a besoin de la liste de SES classes pour écrire à leurs
-      // parents. `/communication/destinataires` est réservé à la diffusion ;
-      // on passe donc par `/ma-classe` (titulaire) et `/mes-cours` (professeur),
-      // qui ne renvoient chacun que ce qui relève de la personne.
-      await chargerMesClasses();
     }
 
+    // L'état initial du formulaire doit correspondre au premier choix du
+    // sélecteur, sinon la zone de recherche des personnes reste masquée
+    // jusqu'au premier changement.
     majFormulaireCible();
+
     chargerReception();
   }
 
@@ -744,47 +743,6 @@
   let personnel = [];
   let personnesChoisies = [];
 
-  /**
-   * Les classes dont la personne a la charge.
-   *
-   * Deux sources, parce que « avoir la charge » n'a pas le même sens selon le
-   * rôle : un titulaire répond de sa classe entière (`/ma-classe`), un
-   * professeur des classes où il enseigne (`/mes-cours`). Un compte qui cumule
-   * les deux rôles réunit les deux listes, sans doublon.
-   *
-   * Cette liste ne sert qu'à REMPLIR le menu déroulant. L'autorisation réelle
-   * est vérifiée par le serveur à l'envoi : un menu ne protège rien.
-   */
-  async function chargerMesClasses() {
-    const vues = new Map();
-
-    if (roles.includes('titulaire')) {
-      const r = await appelApi('/ma-classe');
-      if (r?.ok) (await r.json()).forEach(c => vues.set(c.id, c.nom));
-    }
-    if (roles.includes('professeur')) {
-      const r = await appelApi('/mes-cours');
-      if (r?.ok) {
-        (await r.json()).forEach(c => {
-          const id = c.classe_id || c.id;
-          const nom = c.classe_nom || c.nom;
-          if (id && nom) vues.set(id, nom);
-        });
-      }
-    }
-
-    const select = document.getElementById('select-classe');
-    if (vues.size === 0) {
-      // Aucune classe : plutôt que de laisser un menu vide qui laisse croire à
-      // une panne, on retire la destination et on dit pourquoi.
-      [...document.getElementById('select-cible').options]
-        .forEach(o => { if (o.value === 'parents_classe') o.remove(); });
-      return;
-    }
-    select.innerHTML = [...vues.entries()]
-      .map(([id, nom]) => `<option value="${id}">${echapper(nom)}</option>`).join('');
-  }
-
   async function chargerPersonnel() {
     const r = await appelApi('/communication/personnel');
     if (!r || !r.ok) return;
@@ -851,9 +809,7 @@
     const type = document.getElementById('select-cible').value;
     const resume = document.getElementById('resume-cible');
     const classeId = document.getElementById('select-classe').value;
-    // `destinataires` reste vide pour qui n'a pas le droit de diffuser : la
-    // recherche doit donc tolérer une liste absente.
-    const classe = (destinataires.classes || []).find(c => c.id === classeId);
+    const classe = destinataires.classes.find(c => c.id === classeId);
 
     let texte = '';
     if (type === 'utilisateurs') {
@@ -872,20 +828,9 @@
         ? `Le titulaire et ${classe.nb_enseignants} enseignant(s) de ${classe.nom}.`
         : 'Choisissez une classe.';
     } else if (type === 'parents_classe') {
-      // Un enseignant n'a pas accès à `/communication/destinataires`, réservé à
-      // la diffusion : il n'a donc pas le décompte des adresses. On annonce
-      // alors la classe sans chiffre plutôt que « Choisissez une classe » sur
-      // une classe déjà choisie, qui laisserait croire que la sélection n'a
-      // pas été prise.
-      const nomChoisi = document.getElementById('select-classe')
-        .selectedOptions[0]?.textContent || '';
-      if (classe) {
-        texte = `${classe.nb_parents_email} parent(s) de ${classe.nom} ont une adresse enregistrée, sur ${classe.nb_eleves} élève(s).`;
-      } else if (nomChoisi) {
-        texte = `Les parents de ${nomChoisi} qui ont une adresse enregistrée recevront ce message.`;
-      } else {
-        texte = 'Choisissez une classe.';
-      }
+      texte = classe
+        ? `${classe.nb_parents_email} parent(s) de ${classe.nom} ont une adresse enregistrée, sur ${classe.nb_eleves} élève(s).`
+        : 'Choisissez une classe.';
     } else if (type === 'parents_ecole') {
       const avecEmail = destinataires.classes.reduce((a, c) => a + c.nb_parents_email, 0);
       const total = destinataires.classes.reduce((a, c) => a + c.nb_eleves, 0);
@@ -903,15 +848,6 @@
     if (!contenu) { afficherMessage('Le message est vide.', 'erreur'); return; }
     if (type === 'roles' && rolesChoisis.length === 0) {
       afficherMessage('Sélectionnez au moins un rôle.', 'erreur'); return;
-    }
-    // Le serveur refuse déjà une liste vide, mais avec un message générique
-    // renvoyé après un aller-retour. Le dire ici est plus rapide et plus clair.
-    if (type === 'utilisateurs' && personnesChoisies.length === 0) {
-      afficherMessage('Choisissez au moins une personne dans la liste.', 'erreur'); return;
-    }
-    if (['equipe_classe', 'parents_classe'].includes(type)
-        && !document.getElementById('select-classe').value) {
-      afficherMessage('Choisissez une classe.', 'erreur'); return;
     }
 
     const canaux = [];

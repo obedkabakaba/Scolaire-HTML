@@ -13,7 +13,7 @@
    ils continueraient d'utiliser l'ancienne version des pages.
    ========================================================================== */
 
-const VERSION = 'ardoise-v35';
+const VERSION = 'ardoise-v36';
 const CACHE_COQUILLE = `${VERSION}-coquille`;
 const CACHE_DONNEES = `${VERSION}-donnees`;
 
@@ -71,6 +71,11 @@ const COQUILLE = [
   'filtre-cycle.js',
   'hors-ligne.js',
   'didacticiel.js',
+  // La feuille du didacticiel est indissociable de son script : sans elle, le
+  // projecteur et la bulle s'affichent sans mise en forme — un pavé de texte
+  // brut par-dessus la page, plus déroutant qu'une aide absente. Elle rejoint
+  // donc la coquille, comme les scripts du Super Admin plus bas.
+  'didacticiel.css',
 
   // Espace Super Admin. super-admin.html était déjà pré-caché, mais pas ses
   // scripts : à la toute première ouverture hors ligne, la page s'affichait

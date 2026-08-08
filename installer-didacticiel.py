@@ -47,18 +47,25 @@ ECRANS = {
 
 # Pages sans session ouverte : y poser un bouton d'aide qui appelle l'API
 # produirait une erreur au chargement.
-SANS_AIDE = {'index', 'connexion', 'changer-mot-de-passe'}
+SANS_AIDE = {'index', 'connexion', 'changer-mot-de-passe',
+             'reinitialiser-mot-de-passe', 'confidentialite'}
 
-COMMENTAIRE = ("<!-- Didacticiel d'installation : bouton d'aide contextuel, "
-               "partagé par toutes les pages. -->")
+COMMENTAIRE = ("<!-- Didacticiel : guide de prise en main, projecteur, checklist et "
+               "assistant contextuel. Partagé par toutes les pages ; la feuille "
+               "didacticiel.css est chargée par le script lui-même. -->")
 
 
 def main():
     simulation = '--simulation' in sys.argv
 
-    if not os.path.exists('didacticiel.js'):
-        print("ERREUR : didacticiel.js est absent de ce dossier.")
-        print("Copiez-le ici avant de lancer l'installation.")
+    manquants = [f for f in ('didacticiel.js', 'didacticiel.css') if not os.path.exists(f)]
+    if manquants:
+        print("ERREUR : fichier(s) absent(s) de ce dossier : " + ", ".join(manquants))
+        print("Copiez-les ici avant de lancer l'installation.")
+        # La feuille de style est vérifiée au même titre que le script : elle
+        # est chargée par lui au démarrage, et son absence ne produit aucune
+        # erreur visible — seulement un panneau sans mise en forme, qu'on met
+        # longtemps à diagnostiquer.
         return 1
 
     modifiees, deja, ignorees = [], [], []

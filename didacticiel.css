@@ -1,0 +1,475 @@
+/* ==========================================================================
+   ARDOISE — DIDACTICIEL / ONBOARDING
+   --------------------------------------------------------------------------
+   POURQUOI UN FICHIER SÉPARÉ MAINTENANT
+   Le didacticiel injectait ses styles depuis JavaScript, sous forme d'un
+   tableau de chaînes concaténées. C'était tenable pour cinquante lignes de
+   CSS ; ça ne l'est plus pour un projecteur, une bulle positionnée, un écran
+   de bienvenue, une checklist et quatre points d'arrêt responsive. Une
+   feuille séparée se relit, se met en cache, et se corrige sans toucher au
+   moteur.
+
+   TOUT PASSE PAR LES VARIABLES DE THEME.CSS
+   Aucune couleur en dur, hors les voiles semi-transparents. C'est ce qui fait
+   que le didacticiel suit les quatre thèmes d'Ardoise — dont « nuit » — sans
+   une seule règle spécifique au mode sombre.
+
+   PRÉFIXE `ard-di-` : le didacticiel s'injecte dans trente-sept pages qui ont
+   chacune leurs styles. Un préfixe court et unique évite toute collision.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. BOUTON FLOTTANT
+   -------------------------------------------------------------------------- */
+.ard-di-bouton {
+  position: fixed; right: 20px; bottom: 20px; z-index: 400;
+  min-width: 46px; height: 46px; padding: 0 14px;
+  border-radius: 23px; border: none;
+  background: var(--ardoise, #1F2B24); color: var(--craie, #F6F2E7);
+  font-family: inherit; font-size: 0.86rem; font-weight: 600;
+  cursor: pointer; box-shadow: var(--ombre-flottante, 0 10px 30px rgba(31,43,36,0.14));
+  display: flex; align-items: center; gap: 8px;
+  transition: transform var(--transition-base, 0.18s ease), box-shadow var(--transition-base, 0.18s ease);
+}
+.ard-di-bouton:hover { transform: translateY(-2px); }
+.ard-di-bouton:focus-visible { outline: 3px solid var(--ocre, #C98A3E); outline-offset: 3px; }
+.ard-di-bouton .ard-di-glyphe { font-size: 1.1rem; line-height: 1; }
+/* Le libellé disparaît sur petit écran : le bouton redevient une pastille
+   ronde. Un bouton large en bas d'un téléphone masque le contenu réel. */
+.ard-di-bouton .ard-di-libelle { white-space: nowrap; }
+@media (max-width: 560px) {
+  .ard-di-bouton { padding: 0; width: 46px; }
+  .ard-di-bouton .ard-di-libelle { display: none; }
+}
+.ard-di-pastille {
+  position: absolute; top: -3px; right: -3px;
+  min-width: 16px; height: 16px; padding: 0 4px;
+  border-radius: 8px; background: var(--ocre, #C98A3E);
+  border: 2px solid var(--craie-2, #FBF9F3);
+  font-size: 0.6rem; font-weight: 700; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* --------------------------------------------------------------------------
+   2. VOILE ET PANNEAU
+   -------------------------------------------------------------------------- */
+.ard-di-voile {
+  position: fixed; inset: 0; z-index: 401;
+  background: rgba(20, 24, 21, 0.5);
+  backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+  display: none; align-items: center; justify-content: center; padding: 20px;
+  opacity: 0; transition: opacity 0.22s ease;
+}
+.ard-di-voile.ouvert { display: flex; opacity: 1; }
+
+.ard-di-panneau {
+  background: var(--craie-2, #FBF9F3);
+  color: var(--texte-sombre, #1F2B24);
+  border: 1px solid var(--bordure, #E4DFCF);
+  border-radius: var(--r-carte, 10px);
+  box-shadow: var(--ombre-flottante, 0 10px 30px rgba(31,43,36,0.14));
+  width: 100%; max-width: 560px; max-height: 88vh;
+  display: flex; flex-direction: column;
+  font-family: var(--police-corps, inherit);
+  transform: translateY(10px) scale(0.985);
+  transition: transform 0.24s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+.ard-di-voile.ouvert .ard-di-panneau { transform: none; }
+.ard-di-panneau.ard-di-large { max-width: 640px; }
+
+.ard-di-entete {
+  padding: 22px 24px 0 24px;
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+}
+.ard-di-entete h2 {
+  font-family: var(--police-titre, inherit);
+  font-size: 1.22rem; line-height: 1.3; margin: 0; font-weight: 600;
+}
+.ard-di-sous {
+  font-size: 0.82rem; color: var(--texte-att, #6B7269);
+  margin: 4px 0 0 0; line-height: 1.5;
+}
+.ard-di-fermer {
+  flex: 0 0 auto; width: 30px; height: 30px; border-radius: 50%;
+  border: 1px solid var(--bordure, #E4DFCF); background: none;
+  color: var(--texte-att, #6B7269); font-size: 1rem; line-height: 1;
+  cursor: pointer; font-family: inherit;
+}
+.ard-di-fermer:hover { background: var(--nav-actif-fond, rgba(0,0,0,0.05)); }
+.ard-di-fermer:focus-visible { outline: 2px solid var(--ocre, #C98A3E); outline-offset: 2px; }
+
+.ard-di-corps { padding: 18px 24px; overflow-y: auto; flex: 1 1 auto; }
+.ard-di-pied {
+  padding: 14px 24px 20px 24px;
+  border-top: 1px solid var(--ligne, #E4DFCF);
+  display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end;
+}
+
+/* --------------------------------------------------------------------------
+   3. BOUTONS
+   -------------------------------------------------------------------------- */
+.ard-di-btn {
+  padding: 9px 17px; border-radius: var(--r-bouton, 7px);
+  border: 1.5px solid var(--bordure, #E4DFCF); background: none;
+  color: inherit; font-family: inherit; font-size: 0.87rem;
+  cursor: pointer; text-decoration: none; display: inline-flex;
+  align-items: center; gap: 7px;
+  transition: background var(--transition-base, 0.18s ease);
+}
+.ard-di-btn:hover { background: var(--nav-actif-fond, rgba(0,0,0,0.05)); }
+.ard-di-btn:focus-visible { outline: 2px solid var(--ocre, #C98A3E); outline-offset: 2px; }
+.ard-di-btn-principal {
+  background: var(--ardoise, #1F2B24); color: var(--craie, #F6F2E7);
+  border-color: var(--ardoise, #1F2B24); font-weight: 600;
+}
+.ard-di-btn-principal:hover { background: var(--ardoise-2, #2A3830); }
+.ard-di-btn-discret { border-color: transparent; color: var(--texte-att, #6B7269); }
+.ard-di-btn-ia {
+  border-color: var(--encre, #3C5A62); color: var(--encre, #3C5A62); font-weight: 600;
+}
+
+/* --------------------------------------------------------------------------
+   4. ÉCRAN DE BIENVENUE
+
+   Volontairement dépouillé : un titre, une phrase, deux boutons. La première
+   impression ne doit pas ressembler à un formulaire administratif — c'est
+   exactement ce qui fait abandonner un onboarding avant la deuxième étape.
+   -------------------------------------------------------------------------- */
+.ard-di-bienvenue { text-align: center; padding: 34px 30px 26px 30px; }
+.ard-di-bienvenue .ard-di-salut {
+  font-family: var(--police-titre, inherit);
+  font-size: 1.65rem; line-height: 1.25; margin: 0 0 12px 0; font-weight: 600;
+}
+.ard-di-bienvenue .ard-di-texte {
+  font-size: 0.97rem; line-height: 1.65; color: var(--texte-att, #6B7269);
+  margin: 0 auto; max-width: 400px;
+}
+.ard-di-bienvenue .ard-di-marque {
+  width: 46px; height: 46px; margin: 0 auto 18px auto; border-radius: 12px;
+  background: var(--ardoise, #1F2B24); color: var(--craie, #F6F2E7);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--police-titre, inherit); font-size: 1.3rem; font-weight: 600;
+}
+.ard-di-bienvenue-pied {
+  display: flex; gap: 10px; justify-content: center;
+  padding: 4px 30px 30px 30px; flex-wrap: wrap;
+}
+@media (max-width: 480px) {
+  .ard-di-bienvenue { padding: 28px 20px 20px 20px; }
+  .ard-di-bienvenue .ard-di-salut { font-size: 1.35rem; }
+  .ard-di-bienvenue-pied .ard-di-btn { flex: 1 1 100%; justify-content: center; }
+}
+
+/* --------------------------------------------------------------------------
+   5. JAUGE ET CHECKLIST
+   -------------------------------------------------------------------------- */
+.ard-di-jauge {
+  height: 6px; border-radius: 3px; overflow: hidden;
+  background: var(--ligne, #E4DFCF); margin: 14px 0 6px 0;
+}
+.ard-di-jauge span {
+  display: block; height: 100%; background: var(--vert-ok, #4C7A5A);
+  transition: width 0.5s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+.ard-di-jauge-texte {
+  font-size: 0.78rem; color: var(--texte-att, #6B7269);
+  margin: 0 0 16px 0; display: flex; justify-content: space-between;
+}
+
+.ard-di-liste { list-style: none; padding: 0; margin: 0; }
+.ard-di-liste li {
+  display: flex; align-items: flex-start; gap: 11px;
+  padding: 9px 10px; border-radius: var(--r-petit, 6px);
+  font-size: 0.89rem; line-height: 1.45;
+}
+.ard-di-liste li + li { border-top: 1px solid var(--ligne, #E4DFCF); border-radius: 0; }
+.ard-di-coche {
+  flex: 0 0 auto; width: 18px; height: 18px; border-radius: 50%;
+  border: 1.5px solid var(--bordure, #E4DFCF); margin-top: 1px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.68rem; line-height: 1;
+}
+.ard-di-liste li.fait .ard-di-coche {
+  background: var(--vert-ok, #4C7A5A); border-color: var(--vert-ok, #4C7A5A); color: #fff;
+}
+.ard-di-liste li.fait .ard-di-nom { color: var(--texte-att, #6B7269); }
+.ard-di-liste li.ignoree { opacity: 0.55; }
+.ard-di-liste li.bloquee { opacity: 0.5; }
+.ard-di-liste li.courante {
+  background: var(--nav-actif-fond, rgba(0,0,0,0.05));
+  box-shadow: inset 3px 0 0 var(--ocre, #C98A3E);
+}
+.ard-di-liste .ard-di-nom { flex: 1 1 auto; }
+.ard-di-liste .ard-di-note {
+  display: block; font-size: 0.76rem; color: var(--texte-att, #6B7269); margin-top: 2px;
+}
+.ard-di-liste .ard-di-facultatif {
+  font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--texte-att, #6B7269); font-family: var(--police-mono, monospace);
+}
+.ard-di-liste button.ard-di-aller {
+  flex: 0 0 auto; border: none; background: none; cursor: pointer;
+  color: var(--encre, #3C5A62); font-family: inherit; font-size: 0.8rem;
+  text-decoration: underline; padding: 0;
+}
+
+/* --------------------------------------------------------------------------
+   6. CARTE D'ÉTAPE
+   -------------------------------------------------------------------------- */
+.ard-di-etape {
+  border: 1px solid var(--bordure, #E4DFCF);
+  border-radius: var(--r-carte, 10px);
+  padding: 16px 18px; margin-bottom: 14px;
+  background: var(--craie, #F6F2E7);
+}
+.ard-di-etape .ard-di-cartouche {
+  font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--texte-att, #6B7269); font-family: var(--police-mono, monospace);
+  margin-bottom: 7px;
+}
+.ard-di-etape h3 {
+  font-family: var(--police-titre, inherit);
+  font-size: 1.02rem; margin: 0 0 8px 0; font-weight: 600;
+}
+.ard-di-etape p { font-size: 0.88rem; line-height: 1.6; margin: 0 0 9px 0; }
+.ard-di-etape p:last-child { margin-bottom: 0; }
+.ard-di-etape .ard-di-pourquoi { color: var(--texte-att, #6B7269); font-style: italic; }
+.ard-di-piege {
+  font-size: 0.83rem; line-height: 1.55;
+  background: rgba(201, 138, 62, 0.12);
+  border-left: 3px solid var(--ocre, #C98A3E);
+  padding: 9px 12px; border-radius: var(--r-petit, 6px); margin: 0;
+}
+.ard-di-alerte {
+  font-size: 0.85rem; line-height: 1.55;
+  background: rgba(178, 58, 46, 0.10);
+  border-left: 3px solid var(--rouge, #B23A2E);
+  padding: 10px 13px; border-radius: var(--r-petit, 6px); margin: 0 0 11px 0;
+}
+.ard-di-succes {
+  font-size: 0.9rem; line-height: 1.6;
+  background: rgba(76, 122, 90, 0.12);
+  border-left: 3px solid var(--vert-ok, #4C7A5A);
+  padding: 11px 14px; border-radius: var(--r-petit, 6px); margin: 0 0 14px 0;
+}
+
+/* --------------------------------------------------------------------------
+   7. LE PROJECTEUR
+
+   Quatre panneaux opaques plutôt qu'un `box-shadow` géant : le trou reste
+   entièrement CLIQUABLE. Avec un voile unique percé par une ombre, la zone
+   éclairée capte quand même les clics, et la personne à qui l'on vient de
+   dire « cliquez ici » ne peut pas cliquer. C'est le défaut classique de ce
+   genre de guidage, et il ruine tout l'exercice.
+   -------------------------------------------------------------------------- */
+.ard-di-projecteur { position: fixed; inset: 0; z-index: 398; pointer-events: none; }
+.ard-di-projecteur .ard-di-vitre {
+  position: fixed; background: rgba(20, 24, 21, 0.55);
+  pointer-events: auto; transition: all 0.3s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+.ard-di-halo {
+  position: fixed; z-index: 399; pointer-events: none;
+  border-radius: var(--r-bouton, 7px);
+  box-shadow: 0 0 0 3px var(--ocre, #C98A3E), 0 0 22px 6px rgba(201, 138, 62, 0.4);
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+/* La pulsation attire l'œil sans bouger la mise en page. Coupée dès que la
+   personne a demandé moins d'animation — voir la section 10. */
+.ard-di-halo::after {
+  content: ''; position: absolute; inset: -6px;
+  border-radius: inherit; border: 2px solid var(--ocre, #C98A3E);
+  animation: ard-di-pulse 1.9s ease-out infinite;
+}
+@keyframes ard-di-pulse {
+  0%   { transform: scale(1);    opacity: 0.85; }
+  70%  { transform: scale(1.14); opacity: 0; }
+  100% { transform: scale(1.14); opacity: 0; }
+}
+
+/* --------------------------------------------------------------------------
+   8. LA BULLE
+   -------------------------------------------------------------------------- */
+.ard-di-bulle {
+  position: fixed; z-index: 402; width: 320px; max-width: calc(100vw - 32px);
+  background: var(--craie-2, #FBF9F3); color: var(--texte-sombre, #1F2B24);
+  border: 1px solid var(--bordure, #E4DFCF);
+  border-radius: var(--r-carte, 10px);
+  box-shadow: var(--ombre-flottante, 0 10px 30px rgba(31,43,36,0.18));
+  padding: 16px 18px; font-family: var(--police-corps, inherit);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.ard-di-bulle .ard-di-cartouche {
+  font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--texte-att, #6B7269); font-family: var(--police-mono, monospace);
+  margin-bottom: 6px; display: flex; justify-content: space-between; gap: 8px;
+}
+.ard-di-bulle h3 {
+  font-family: var(--police-titre, inherit);
+  font-size: 1rem; margin: 0 0 7px 0; font-weight: 600;
+}
+.ard-di-bulle p { font-size: 0.87rem; line-height: 1.55; margin: 0 0 12px 0; }
+.ard-di-bulle-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.ard-di-bulle-actions .ard-di-btn { padding: 7px 13px; font-size: 0.82rem; }
+
+/* La flèche. Positionnée par le moteur via une classe de côté. */
+.ard-di-fleche {
+  position: absolute; width: 12px; height: 12px;
+  background: var(--craie-2, #FBF9F3);
+  border: 1px solid var(--bordure, #E4DFCF);
+  transform: rotate(45deg);
+}
+.ard-di-bulle[data-cote="bas"]    .ard-di-fleche { top: -7px;    border-right: none; border-bottom: none; }
+.ard-di-bulle[data-cote="haut"]   .ard-di-fleche { bottom: -7px; border-left: none;  border-top: none; }
+.ard-di-bulle[data-cote="droite"] .ard-di-fleche { left: -7px;   border-right: none; border-top: none; }
+.ard-di-bulle[data-cote="gauche"] .ard-di-fleche { right: -7px;  border-left: none;  border-bottom: none; }
+
+/* --------------------------------------------------------------------------
+   9. MINI-TUTORIEL CONTEXTUEL
+
+   Un bandeau, pas une modale : il apparaît pendant que la personne travaille
+   et ne doit pas l'interrompre. Une modale sur la première ouverture de
+   « Notes » se ferme sans être lue.
+   -------------------------------------------------------------------------- */
+.ard-di-tuto {
+  position: fixed; right: 20px; bottom: 78px; z-index: 397;
+  width: 330px; max-width: calc(100vw - 40px);
+  background: var(--craie-2, #FBF9F3); color: var(--texte-sombre, #1F2B24);
+  border: 1px solid var(--bordure, #E4DFCF);
+  border-left: 3px solid var(--encre, #3C5A62);
+  border-radius: var(--r-carte, 10px);
+  box-shadow: var(--ombre-flottante, 0 10px 30px rgba(31,43,36,0.16));
+  padding: 15px 17px; font-family: var(--police-corps, inherit);
+  animation: ard-di-entree 0.35s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+@keyframes ard-di-entree {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: none; }
+}
+.ard-di-tuto h3 {
+  font-family: var(--police-titre, inherit);
+  font-size: 0.97rem; margin: 0 0 9px 0; font-weight: 600;
+  padding-right: 22px;
+}
+.ard-di-tuto ul { margin: 0 0 12px 0; padding-left: 17px; }
+.ard-di-tuto li { font-size: 0.84rem; line-height: 1.55; margin-bottom: 6px; }
+.ard-di-tuto .ard-di-fermer { position: absolute; top: 11px; right: 11px; width: 24px; height: 24px; }
+@media (max-width: 560px) {
+  .ard-di-tuto { right: 12px; left: 12px; width: auto; bottom: 76px; }
+}
+
+/* --------------------------------------------------------------------------
+   10. CENTRE « APPRENDRE ARDOISE »
+   -------------------------------------------------------------------------- */
+.ard-di-onglets {
+  display: flex; gap: 4px; padding: 0 24px;
+  border-bottom: 1px solid var(--ligne, #E4DFCF);
+}
+.ard-di-onglets button {
+  border: none; background: none; cursor: pointer; font-family: inherit;
+  font-size: 0.85rem; padding: 11px 12px; color: var(--texte-att, #6B7269);
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+}
+.ard-di-onglets button[aria-selected="true"] {
+  color: var(--texte-sombre, #1F2B24); font-weight: 600;
+  border-bottom-color: var(--ocre, #C98A3E);
+}
+.ard-di-onglets button:focus-visible { outline: 2px solid var(--ocre, #C98A3E); outline-offset: -2px; }
+
+.ard-di-rubrique { border-bottom: 1px solid var(--ligne, #E4DFCF); }
+.ard-di-rubrique:last-child { border-bottom: none; }
+.ard-di-rubrique > button {
+  width: 100%; text-align: left; border: none; background: none; cursor: pointer;
+  font-family: var(--police-titre, inherit); font-size: 0.95rem; font-weight: 600;
+  color: inherit; padding: 13px 2px; display: flex;
+  justify-content: space-between; align-items: center; gap: 10px;
+}
+.ard-di-rubrique > button:focus-visible { outline: 2px solid var(--ocre, #C98A3E); outline-offset: 2px; }
+.ard-di-rubrique .ard-di-chevron { transition: transform 0.2s ease; color: var(--texte-att, #6B7269); }
+.ard-di-rubrique[data-ouvert="oui"] .ard-di-chevron { transform: rotate(90deg); }
+.ard-di-articles { padding: 0 0 12px 0; margin: 0; list-style: none; }
+.ard-di-articles li { padding: 7px 0; }
+.ard-di-articles button {
+  border: none; background: none; cursor: pointer; font-family: inherit;
+  color: var(--encre, #3C5A62); font-size: 0.87rem; text-align: left; padding: 0;
+}
+.ard-di-articles button:hover { text-decoration: underline; }
+.ard-di-articles .ard-di-desc {
+  display: block; font-size: 0.79rem; color: var(--texte-att, #6B7269);
+  line-height: 1.5; margin-top: 3px;
+}
+
+/* --------------------------------------------------------------------------
+   11. RÉPONSE DE L'IA
+   -------------------------------------------------------------------------- */
+.ard-di-ia {
+  border: 1px solid var(--bordure, #E4DFCF);
+  border-left: 3px solid var(--encre, #3C5A62);
+  border-radius: var(--r-petit, 6px);
+  padding: 13px 15px; margin-top: 13px;
+  background: var(--craie, #F6F2E7);
+}
+.ard-di-ia .ard-di-cartouche {
+  font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--texte-att, #6B7269); font-family: var(--police-mono, monospace);
+  margin-bottom: 7px;
+}
+.ard-di-ia p { font-size: 0.88rem; line-height: 1.65; margin: 0 0 8px 0; white-space: pre-wrap; }
+.ard-di-ia p:last-child { margin-bottom: 0; }
+.ard-di-champ {
+  display: flex; gap: 8px; margin-top: 11px; flex-wrap: wrap;
+}
+.ard-di-champ input {
+  flex: 1 1 180px; padding: 8px 11px; font-family: inherit; font-size: 0.85rem;
+  border: 1px solid var(--bordure, #E4DFCF); border-radius: var(--r-bouton, 7px);
+  background: var(--craie-2, #FBF9F3); color: inherit;
+}
+.ard-di-champ input:focus-visible { outline: 2px solid var(--ocre, #C98A3E); outline-offset: 1px; }
+
+.ard-di-attente {
+  font-size: 0.85rem; color: var(--texte-att, #6B7269);
+  display: flex; align-items: center; gap: 9px;
+}
+.ard-di-attente::before {
+  content: ''; width: 13px; height: 13px; border-radius: 50%;
+  border: 2px solid var(--bordure, #E4DFCF);
+  border-top-color: var(--ocre, #C98A3E);
+  animation: ard-di-tourne 0.75s linear infinite;
+}
+@keyframes ard-di-tourne { to { transform: rotate(360deg); } }
+
+/* --------------------------------------------------------------------------
+   12. ACCESSIBILITÉ ET PRÉFÉRENCES SYSTÈME
+
+   `prefers-reduced-motion` n'est pas une politesse : les animations de halo
+   et de pulsation peuvent déclencher des troubles vestibulaires. Tout est
+   coupé, la fonctionnalité reste entière.
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .ard-di-voile, .ard-di-panneau, .ard-di-jauge span,
+  .ard-di-halo, .ard-di-projecteur .ard-di-vitre, .ard-di-bulle {
+    transition: none !important;
+  }
+  .ard-di-halo::after, .ard-di-tuto, .ard-di-attente::before { animation: none !important; }
+  .ard-di-halo::after { opacity: 0.6; }
+}
+
+/* Contraste renforcé : les voiles semi-transparents deviennent opaques et les
+   bordures s'épaississent. */
+@media (prefers-contrast: more) {
+  .ard-di-voile { background: rgba(20, 24, 21, 0.82); backdrop-filter: none; }
+  .ard-di-projecteur .ard-di-vitre { background: rgba(20, 24, 21, 0.82); }
+  .ard-di-panneau, .ard-di-bulle, .ard-di-tuto { border-width: 2px; }
+}
+
+/* Le lecteur d'écran lit ce texte, l'œil ne le voit pas. Sert aux annonces de
+   changement d'étape, qui n'ont pas de rendu visuel propre. */
+.ard-di-lecture-seule {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* Rien du didacticiel ne s'imprime. */
+@media print {
+  .ard-di-bouton, .ard-di-voile, .ard-di-projecteur, .ard-di-halo,
+  .ard-di-bulle, .ard-di-tuto { display: none !important; }
+}

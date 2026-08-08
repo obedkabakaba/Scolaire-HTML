@@ -53,8 +53,14 @@
 
   // La page de connexion et le changement de mot de passe n'ont pas de session :
   // y afficher un bouton d'aide qui appelle l'API produirait une erreur.
+  // Les quatre aperçus de bulletin sont des vues d'impression autonomes,
+  // sans barre de navigation (`.nav-liste` absente) et sans API_BASE_URL
+  // défini sur la page : y afficher le bouton d'aide n'a pas de sens et ne
+  // faisait jusqu'ici qu'échouer silencieusement contre l'origine du site.
   var PAGES_SANS_AIDE = ['index.html', 'connexion.html', 'changer-mot-de-passe.html',
-                         'reinitialiser-mot-de-passe.html', 'confidentialite.html', ''];
+                         'reinitialiser-mot-de-passe.html', 'confidentialite.html',
+                         'apercu-bulletin-primaire.html', 'apercu-bulletin-secondaire.html',
+                         'apercu-bulletin-semestre.html', 'apercu-bulletin-terminale.html', ''];
   var FICHIER = (window.location.pathname.split('/').pop() || '').toLowerCase();
   if (PAGES_SANS_AIDE.indexOf(FICHIER) !== -1) return;
 
@@ -83,7 +89,26 @@
   // en requête pour se faire répondre « actif: false ».
   if (ROLES.indexOf('super_admin') !== -1) return;
 
-  var API = (typeof API_BASE_URL !== 'undefined' && API_BASE_URL) || window.API_BASE_URL || '';
+  /**
+   * Base de l'API, résolue À L'APPEL et non une fois pour toutes ici.
+   *
+   * Raison : `const API_BASE_URL = "…"` est déclarée par chaque page dans un
+   * <script> inline, et `<script src="didacticiel.js">` est un script
+   * classique (ni `defer` ni `async`) : il s'exécute immédiatement, dans
+   * l'ordre du document. Sur les pages où la balise didacticiel se trouve
+   * AVANT la déclaration de la constante (ex. cours.html, classes.html,
+   * annee-scolaire.html, eleves.html), lire `API_BASE_URL` ici renvoyait
+   * `undefined` et gelait la base sur `''` pour toute la durée de vie de la
+   * page. Résultat observé : les appels partaient vers l'origine du site
+   * statique (`https://myardoise.com/assistant/…`) au lieu du backend
+   * (`https://scolaire-saas-backend.onrender.com/assistant/…`), d'où les 404.
+   * En recalculant à chaque appel (et en démarrant après DOMContentLoaded,
+   * voir §12), la constante — déclarée n'importe où sur la page — est
+   * toujours visible le moment venu.
+   */
+  function baseAPI() {
+    return (typeof API_BASE_URL !== 'undefined' && API_BASE_URL) || window.API_BASE_URL || '';
+  }
 
   /* ==========================================================================
      1. OUTILS
@@ -108,7 +133,7 @@
     var o = options || {};
     var entetes = { Authorization: 'Bearer ' + lireStockage('ardoise_access_token') };
     if (o.body) entetes['Content-Type'] = 'application/json';
-    return fetch(API + chemin, {
+    return fetch(baseAPI() + chemin, {
       method: o.method || 'GET',
       headers: entetes,
       body: o.body ? JSON.stringify(o.body) : undefined
@@ -1120,31 +1145,51 @@
 
   /* ==========================================================================
      12. DÉMARRAGE
+
+     Reporté à `DOMContentLoaded` — jamais lancé en réaction au simple fait
+     que ce script vient de s'exécuter. Raison : `charger()` fait le premier
+     `fetch()`, qui lit `API_BASE_URL` via `baseAPI()` (§1). Si on appelait
+     `demarrer()` tout de suite, sur une page où la balise
+     `<script src="didacticiel.js">` précède la déclaration de la constante,
+     le premier appel partirait quand même trop tôt. `DOMContentLoaded` ne se
+     déclenche qu'une fois TOUS les scripts synchrones de la page exécutés
+     (c'est ce qui bloque le parseur) : à ce moment-là, la constante — quel
+     que soit l'endroit où la page la déclare — existe forcément déjà. Si le
+     document est déjà prêt quand ce fichier s'exécute (chargement tardif,
+     script injecté dynamiquement…), on démarre immédiatement.
      ========================================================================== */
 
-  charger().then(function (d) {
-    if (!d || ancienMode) return;
+  function demarrer() {
+    charger().then(function (d) {
+      if (!d || ancienMode) return;
 
-    // 1. Première connexion : l'accueil, tout de suite. Le laisser attendre un
-    //    clic sur le bouton d'aide reviendrait à ne jamais l'afficher.
-    if (d.progression && !d.progression.vu_bienvenue) {
-      noter('bienvenue_vue');
-      ouvrir('bienvenue');
-      return;
-    }
+      // 1. Première connexion : l'accueil, tout de suite. Le laisser attendre un
+      //    clic sur le bouton d'aide reviendrait à ne jamais l'afficher.
+      if (d.progression && !d.progression.vu_bienvenue) {
+        noter('bienvenue_vue');
+        ouvrir('bienvenue');
+        return;
+      }
 
-    // 2. Un guidage était en cours et nous a amenés ici : on le reprend.
-    var g = lireGuidage();
-    if (g && g.ecran && g.ecran.toLowerCase() === FICHIER) {
-      codeGuideAvant = g.code;
-      eclairer(g.code);
-      return;
-    }
-    if (g && Date.now() - (g.debut || 0) > 30 * 60 * 1000) ecrireGuidage(null);
+      // 2. Un guidage était en cours et nous a amenés ici : on le reprend.
+      var g = lireGuidage();
+      if (g && g.ecran && g.ecran.toLowerCase() === FICHIER) {
+        codeGuideAvant = g.code;
+        eclairer(g.code);
+        return;
+      }
+      if (g && Date.now() - (g.debut || 0) > 30 * 60 * 1000) ecrireGuidage(null);
 
-    // 3. Sinon, le mini-tutoriel de l'écran, s'il y en a un et s'il est neuf.
-    if (d.tutoriel) afficherTutoriel(d.tutoriel);
-  });
+      // 3. Sinon, le mini-tutoriel de l'écran, s'il y en a un et s'il est neuf.
+      if (d.tutoriel) afficherTutoriel(d.tutoriel);
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', demarrer);
+  } else {
+    demarrer();
+  }
 
   /* --------------------------------------------------------------------------
      Relecture au retour sur l'onglet.

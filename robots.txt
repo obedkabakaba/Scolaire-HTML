@@ -1,17 +1,39 @@
 # Ardoise — myardoise.com
 #
-# Le site public (accueil, tarifs, accompagnement) est destiné à être indexé.
+# Le site public est destiné à être indexé, page par page : chaque adresse
+# ci-dessous répond à une intention de recherche distincte et porte son propre
+# titre, sa propre description et son propre contenu.
+#
 # L'application, elle, ne l'est pas : ses pages exigent un jeton, ne rendent
 # rien d'utile à un robot, et leur présence dans un index n'apporterait que des
 # résultats morts pointant vers un écran de connexion.
 
 User-agent: *
 Allow: /$
-Allow: /index.html
+Allow: /
+Allow: /fonctionnalites/
+Allow: /fonctionnalites/gestion-scolaire/
+Allow: /fonctionnalites/notes-et-bulletins/
+Allow: /fonctionnalites/vie-scolaire/
+Allow: /fonctionnalites/finances/
+Allow: /fonctionnalites/admissions-et-orientation/
+Allow: /fonctionnalites/direction-et-pilotage/
+Allow: /fonctionnalites/ia/
+Allow: /tarifs/
+Allow: /tarifs/comparer/
+Allow: /services/
+Allow: /services/installation/
+Allow: /services/formation/
+Allow: /services/campagne-de-capture/
+Allow: /securite/
+Allow: /faq/
+Allow: /contact/
+Allow: /site-public.html
+Allow: /confidentialite.html
+
+# Anciennes adresses, conservées en redirection.
 Allow: /tarifs.html
 Allow: /services.html
-Allow: /confidentialite.html
-Allow: /site-public.html
 
 # Écrans de l'application — inutiles hors session.
 Disallow: /connexion.html

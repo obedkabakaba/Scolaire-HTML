@@ -2,13 +2,12 @@
 <!--
   Ardoise — plan du site public.
 
-  Quatre URL seulement, et c'est volontaire : un plan de site n'est pas un
-  inventaire de fichiers. Y déclarer les trente-sept écrans de l'application
-  reviendrait à demander leur indexation tout en l'interdisant dans robots.txt,
-  ce qui produit des avertissements plutôt que des visites.
+  Seules les pages publiques y figurent. Les écrans de l'application
+  sont exclus ici comme dans robots.txt : demander l'indexation d'une
+  page qu'on interdit par ailleurs ne produit que des avertissements.
 
-  `lastmod` doit être mis à jour lors d'une modification réelle du contenu.
-  Une date fausse est ignorée après quelques passages du robot.
+  `lastmod` doit être mis à jour lors d'une modification réelle du
+  contenu. Une date fausse est ignorée après quelques passages.
 -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 
@@ -20,17 +19,122 @@
   </url>
 
   <url>
-    <loc>https://myardoise.com/tarifs.html</loc>
+    <loc>https://myardoise.com/fonctionnalites/</loc>
+    <lastmod>2026-08-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://myardoise.com/fonctionnalites/gestion-scolaire/</loc>
+    <lastmod>2026-08-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://myardoise.com/fonctionnalites/notes-et-bulletins/</loc>
+    <lastmod>2026-08-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://myardoise.com/fonctionnalites/vie-scolaire/</loc>
+    <lastmod>2026-08-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://myardoise.com/fonctionnalites/finances/</loc>
+    <lastmod>2026-08-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://myardoise.com/fonctionnalites/admissions-et-orientation/</loc>
+    <lastmod>2026-08-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://myardoise.com/fonctionnalites/direction-et-pilotage/</loc>
+    <lastmod>2026-08-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://myardoise.com/fonctionnalites/ia/</loc>
+    <lastmod>2026-08-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://myardoise.com/tarifs/</loc>
     <lastmod>2026-08-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
 
   <url>
-    <loc>https://myardoise.com/services.html</loc>
+    <loc>https://myardoise.com/tarifs/comparer/</loc>
+    <lastmod>2026-08-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://myardoise.com/services/</loc>
     <lastmod>2026-08-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://myardoise.com/services/installation/</loc>
+    <lastmod>2026-08-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://myardoise.com/services/formation/</loc>
+    <lastmod>2026-08-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://myardoise.com/services/campagne-de-capture/</loc>
+    <lastmod>2026-08-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://myardoise.com/securite/</loc>
+    <lastmod>2026-08-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://myardoise.com/faq/</loc>
+    <lastmod>2026-08-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://myardoise.com/contact/</loc>
+    <lastmod>2026-08-09</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.7</priority>
   </url>
 
   <url>

@@ -4,18 +4,6 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-<!-- =========================================================================
-     RÉFÉRENCEMENT
-     -------------------------------------------------------------------------
-     Le titre nomme la catégorie de produit AVANT la marque : personne ne
-     cherche « Ardoise », on cherche « logiciel de gestion scolaire ». La marque
-     vient ensuite, une fois que le résultat a été trouvé.
-
-     Les mots-clés ne sont écrits nulle part en liste : ils apparaissent dans
-     des phrases que quelqu'un a des raisons de lire. Un empilement de
-     « logiciel scolaire RDC gestion école Congo » se voit, se pénalise, et ne
-     convainc aucun directeur.
-     ========================================================================= -->
 <title>Logiciel de gestion scolaire pour les écoles de la RDC — Ardoise</title>
 <meta name="description" content="Élèves, notes, bulletins officiels, présences et frais scolaires en une seule plateforme, conçue pour les écoles de la RDC. À partir de 35 $ par mois." />
 <link rel="canonical" href="https://myardoise.com/" />
@@ -29,29 +17,24 @@
 <meta property="og:locale" content="fr_CD" />
 <meta property="og:url" content="https://myardoise.com/" />
 <meta property="og:title" content="Logiciel de gestion scolaire pour les écoles de la RDC — Ardoise" />
-<meta property="og:description" content="Élèves, notes, bulletins officiels, présences et frais scolaires en une seule plateforme. À partir de 35 $ par mois." />
+<meta property="og:description" content="Élèves, notes, bulletins officiels, présences et frais scolaires en une seule plateforme, conçue pour les écoles de la RDC. À partir de 35 $ par mois." />
 <meta property="og:image" content="https://myardoise.com/icone-512.png" />
 <meta property="og:image:alt" content="Ardoise, plateforme de gestion scolaire" />
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="Ardoise — Logiciel de gestion scolaire" />
-<meta name="twitter:description" content="La plateforme qui centralise la gestion académique, administrative et financière d'une école." />
+<meta name="twitter:title" content="Logiciel de gestion scolaire pour les écoles de la RDC — Ardoise" />
+<meta name="twitter:description" content="Élèves, notes, bulletins officiels, présences et frais scolaires en une seule plateforme, conçue pour les écoles de la RDC. À partir de 35 $ par mois." />
 <meta name="twitter:image" content="https://myardoise.com/icone-512.png" />
 
-<link rel="icon" type="image/png" sizes="192x192" href="icone-192.png" />
-<link rel="apple-touch-icon" sizes="180x180" href="icone-ios-180.png" />
-<link rel="manifest" href="manifest.json" />
+<link rel="icon" type="image/png" sizes="192x192" href="/icone-192.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="/icone-ios-180.png" />
+<link rel="manifest" href="/manifest.json" />
 
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="preconnect" href="https://scolaire-saas-backend.onrender.com" />
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="site.css" />
+<link rel="stylesheet" href="/site.css" />
 
-<!-- Données structurées.
-     Trois objets seulement, tous vérifiables sur la page : le logiciel et ses
-     quatre offres, l'organisation, et la FAQ. Rien qui décrive une note
-     moyenne ou un nombre de clients — un balisage qu'aucune page ne justifie
-     est une invitation au déclassement. -->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -77,18 +60,38 @@
         "Assistance par intelligence artificielle"
       ],
       "offers": [
-        { "@type": "Offer", "name": "Ardoise Ascension", "price": "35", "priceCurrency": "USD",
-          "description": "Abonnement mensuel. 193 $ pour six mois, 350 $ pour un an — deux mois offerts.",
-          "url": "https://myardoise.com/tarifs.html", "availability": "https://schema.org/InStock" },
-        { "@type": "Offer", "name": "Ardoise Prime", "price": "59", "priceCurrency": "USD",
-          "description": "Abonnement mensuel. 325 $ pour six mois, 590 $ pour un an — deux mois offerts.",
-          "url": "https://myardoise.com/tarifs.html", "availability": "https://schema.org/InStock" },
-        { "@type": "Offer", "name": "Ardoise Pilote", "price": "99", "priceCurrency": "USD",
-          "description": "Abonnement mensuel. 545 $ pour six mois, 990 $ pour un an — deux mois offerts.",
-          "url": "https://myardoise.com/tarifs.html", "availability": "https://schema.org/InStock" },
-        { "@type": "Offer", "name": "Ardoise Infinite", "price": "159", "priceCurrency": "USD",
-          "description": "Abonnement mensuel. 875 $ pour six mois, 1 590 $ pour un an — deux mois offerts.",
-          "url": "https://myardoise.com/tarifs.html", "availability": "https://schema.org/InStock" }
+        {
+          "@type": "Offer",
+          "name": "Ardoise Ascension",
+          "price": "35",
+          "priceCurrency": "USD",
+          "url": "https://myardoise.com/tarifs/",
+          "availability": "https://schema.org/InStock"
+        },
+        {
+          "@type": "Offer",
+          "name": "Ardoise Prime",
+          "price": "59",
+          "priceCurrency": "USD",
+          "url": "https://myardoise.com/tarifs/",
+          "availability": "https://schema.org/InStock"
+        },
+        {
+          "@type": "Offer",
+          "name": "Ardoise Pilote",
+          "price": "99",
+          "priceCurrency": "USD",
+          "url": "https://myardoise.com/tarifs/",
+          "availability": "https://schema.org/InStock"
+        },
+        {
+          "@type": "Offer",
+          "name": "Ardoise Infinite",
+          "price": "159",
+          "priceCurrency": "USD",
+          "url": "https://myardoise.com/tarifs/",
+          "availability": "https://schema.org/InStock"
+        }
       ]
     },
     {
@@ -98,29 +101,26 @@
       "url": "https://myardoise.com/",
       "logo": "https://myardoise.com/icone-512.png",
       "areaServed": [
-        { "@type": "Country", "name": "République démocratique du Congo" }
+        {
+          "@type": "Country",
+          "name": "République démocratique du Congo"
+        }
       ],
       "knowsAbout": [
-        "gestion scolaire", "bulletins scolaires RDC", "digitalisation des écoles"
+        "gestion scolaire",
+        "bulletins scolaires RDC",
+        "digitalisation des écoles"
       ]
     },
     {
-      "@type": "FAQPage",
-      "@id": "https://myardoise.com/#faq",
-      "mainEntity": [
-        { "@type": "Question", "name": "Quelle offre Ardoise choisir pour mon école ?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Le nombre d'élèves donne la réponse dans la plupart des cas : Ascension jusqu'à 250 élèves, Prime jusqu'à 600, Pilote jusqu'à 1 500, Infinite au-delà. Si votre école tient une comptabilité, organise un concours d'admission ou fait de l'orientation, prenez Pilote même en dessous de 600 élèves." } },
-        { "@type": "Question", "name": "L'installation est-elle obligatoire pour utiliser Ardoise ?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Non. Vous pouvez créer et paramétrer votre école vous-même, guidé par le didacticiel intégré. L'installation à 60 $ est une prestation optionnelle : notre équipe fait le paramétrage à votre place à partir de vos documents." } },
-        { "@type": "Question", "name": "Qu'est-ce qu'une campagne de capture ?",
-          "acceptedAnswer": { "@type": "Answer", "text": "C'est le travail de saisie qui transforme vos registres papier en base de données. Notre équipe collecte, saisit et vérifie les informations de chaque élève, puis les charge dans Ardoise. La prestation coûte 0,50 $ par élève : 250 $ pour 500 élèves." } },
-        { "@type": "Question", "name": "La formation est-elle incluse dans l'abonnement ?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Le didacticiel intégré et l'assistant d'aide sont inclus dans les quatre offres. La formation par un formateur, sur place ou à distance, est un service complémentaire facturé 30, 60 ou 100 $ selon sa profondeur. Elle s'achète avec n'importe quelle offre, y compris Ascension." } },
-        { "@type": "Question", "name": "L'intelligence artificielle est-elle incluse dans toutes les offres ?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Oui. L'assistant d'aide et la génération des appréciations sont disponibles dès Ascension. Ce qui change d'une offre à l'autre, c'est le volume mensuel (100 générations en Ascension, 5 000 en Infinite) et les capacités avancées : lecture du règlement intérieur à partir de Prime, questions sur vos données en langage naturel à partir de Pilote, traitements de masse et assistant WhatsApp en Infinite." } },
-        { "@type": "Question", "name": "Puis-je changer d'offre en cours d'année ?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Oui, dans les deux sens et à tout moment. Aucune donnée n'est perdue lors d'un changement d'offre : ce qui change, ce sont les plafonds et les modules ouverts." } }
-      ]
+      "@type": "WebSite",
+      "@id": "https://myardoise.com/#site",
+      "name": "Ardoise",
+      "url": "https://myardoise.com/",
+      "inLanguage": "fr",
+      "publisher": {
+        "@id": "https://myardoise.com/#organisation"
+      }
     }
   ]
 }
@@ -133,27 +133,130 @@
 <header class="entete">
   <div class="conteneur">
     <a class="marque" href="/">Ardoise</a>
+
     <nav class="nav-site" aria-label="Navigation principale">
-      <a href="#fonctionnalites" class="masquer-mobile">Fonctionnalités</a>
-      <a href="tarifs.html">Tarifs</a>
-      <a href="services.html">Accompagnement</a>
-      <a href="#faq" class="masquer-mobile">Questions</a>
-      <button class="bascule-theme" data-bascule-theme type="button" aria-label="Changer de thème">☾</button>
-      <a class="bouton principal petit" href="connexion.html">Se connecter</a>
+      <ul class="nav-niveau1">
+<li class="a-sous-menu">
+<button type="button" class="declencheur" aria-expanded="false" aria-controls="sm-produit">Produit<span class="chevron" aria-hidden="true"></span></button>
+<div class="sous-menu" id="sm-produit" hidden>
+<div class="sm-conteneur">
+<div class="sm-colonne">
+<p class="sm-titre">Vue d'ensemble</p>
+<ul>
+<li><a href="/fonctionnalites/"><span class="sm-lien">Toutes les fonctionnalités</span><span class="sm-note">Ce qu'Ardoise couvre, module par module</span></a></li>
+<li><a href="/fonctionnalites/ia/"><span class="sm-lien">Intelligence artificielle</span><span class="sm-note">Assistance, appréciations, analyse des données</span></a></li>
+<li><a href="/securite/"><span class="sm-lien">Sécurité et données</span><span class="sm-note">Isolation, rôles, traçabilité, sauvegardes</span></a></li>
+</ul></div>
+<div class="sm-colonne">
+<p class="sm-titre">Par domaine</p>
+<ul>
+<li><a href="/fonctionnalites/gestion-scolaire/"><span class="sm-lien">Gestion scolaire</span><span class="sm-note">Élèves, classes, cours, années scolaires</span></a></li>
+<li><a href="/fonctionnalites/notes-et-bulletins/"><span class="sm-lien">Notes et bulletins</span><span class="sm-note">Cotes, moyennes, bulletins officiels RDC</span></a></li>
+<li><a href="/fonctionnalites/vie-scolaire/"><span class="sm-lien">Vie scolaire</span><span class="sm-note">Présences, discipline, emploi du temps</span></a></li>
+<li><a href="/fonctionnalites/finances/"><span class="sm-lien">Finances de l'école</span><span class="sm-note">Frais scolaires, caisse, paie</span></a></li>
+<li><a href="/fonctionnalites/admissions-et-orientation/"><span class="sm-lien">Admissions et orientation</span><span class="sm-note">Concours, candidats, vœux, affectation</span></a></li>
+<li><a href="/fonctionnalites/direction-et-pilotage/"><span class="sm-lien">Direction et pilotage</span><span class="sm-note">Rapports, communication, archives</span></a></li>
+</ul></div>
+</div></div></li>
+<li class="a-sous-menu">
+<button type="button" class="declencheur" aria-expanded="false" aria-controls="sm-tarifs">Tarifs<span class="chevron" aria-hidden="true"></span></button>
+<div class="sous-menu" id="sm-tarifs" hidden>
+<div class="sm-conteneur">
+<div class="sm-colonne">
+<p class="sm-titre">Abonnement</p>
+<ul>
+<li><a href="/tarifs/"><span class="sm-lien">Les quatre offres</span><span class="sm-note">Ascension, Prime, Pilote, Infinite</span></a></li>
+<li><a href="/tarifs/comparer/"><span class="sm-lien">Comparer les offres</span><span class="sm-note">Le tableau ligne par ligne</span></a></li>
+</ul></div>
+</div></div></li>
+<li class="a-sous-menu">
+<button type="button" class="declencheur" aria-expanded="false" aria-controls="sm-services">Services<span class="chevron" aria-hidden="true"></span></button>
+<div class="sous-menu" id="sm-services" hidden>
+<div class="sm-conteneur">
+<div class="sm-colonne">
+<p class="sm-titre">Accompagnement</p>
+<ul>
+<li><a href="/services/"><span class="sm-lien">Tous les services</span><span class="sm-note">Ce que notre équipe fait pour vous</span></a></li>
+<li><a href="/services/installation/"><span class="sm-lien">Installation et configuration</span><span class="sm-note">60 $, forfait unique</span></a></li>
+<li><a href="/services/formation/"><span class="sm-lien">Formation du personnel</span><span class="sm-note">30, 60 ou 100 $</span></a></li>
+<li><a href="/services/campagne-de-capture/"><span class="sm-lien">Campagne de capture</span><span class="sm-note">0,50 $ par élève</span></a></li>
+</ul></div>
+</div></div></li>
+<li class="a-sous-menu">
+<button type="button" class="declencheur" aria-expanded="false" aria-controls="sm-ressources">Ressources<span class="chevron" aria-hidden="true"></span></button>
+<div class="sous-menu" id="sm-ressources" hidden>
+<div class="sm-conteneur">
+<div class="sm-colonne">
+<p class="sm-titre">Comprendre Ardoise</p>
+<ul>
+<li><a href="/faq/"><span class="sm-lien">Questions fréquentes</span><span class="sm-note">Les 25 questions posées avant de signer</span></a></li>
+<li><a href="/securite/"><span class="sm-lien">Sécurité et données</span><span class="sm-note">Où sont les données, qui y accède</span></a></li>
+<li><a href="/contact/"><span class="sm-lien">Parler à quelqu'un</span><span class="sm-note">Demander un accompagnement</span></a></li>
+</ul></div>
+</div></div></li>
+</ul>
     </nav>
+
+    <div class="actions-entete">
+      <button class="bascule-theme" data-bascule-theme type="button" aria-label="Changer de thème">☾</button>
+      <a class="lien-connexion" href="/connexion.html">Se connecter</a>
+      <a class="bouton ocre petit" href="/contact/">Découvrir Ardoise</a>
+      <button class="bascule-menu" type="button" aria-expanded="false"
+              aria-controls="panneau-mobile" aria-label="Ouvrir le menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
   </div>
+  <div class="panneau-mobile" id="panneau-mobile" hidden>
+<div class="conteneur">
+<section class="bloc-mobile">
+<h2>Produit</h2>
+<ul>
+<li><a href="/fonctionnalites/">Toutes les fonctionnalités</a></li>
+<li><a href="/fonctionnalites/ia/">Intelligence artificielle</a></li>
+<li><a href="/securite/">Sécurité et données</a></li>
+</ul>
+<ul>
+<li><a href="/fonctionnalites/gestion-scolaire/">Gestion scolaire</a></li>
+<li><a href="/fonctionnalites/notes-et-bulletins/">Notes et bulletins</a></li>
+<li><a href="/fonctionnalites/vie-scolaire/">Vie scolaire</a></li>
+<li><a href="/fonctionnalites/finances/">Finances de l'école</a></li>
+<li><a href="/fonctionnalites/admissions-et-orientation/">Admissions et orientation</a></li>
+<li><a href="/fonctionnalites/direction-et-pilotage/">Direction et pilotage</a></li>
+</ul>
+</section>
+<section class="bloc-mobile">
+<h2>Tarifs</h2>
+<ul>
+<li><a href="/tarifs/">Les quatre offres</a></li>
+<li><a href="/tarifs/comparer/">Comparer les offres</a></li>
+</ul>
+</section>
+<section class="bloc-mobile">
+<h2>Services</h2>
+<ul>
+<li><a href="/services/">Tous les services</a></li>
+<li><a href="/services/installation/">Installation et configuration</a></li>
+<li><a href="/services/formation/">Formation du personnel</a></li>
+<li><a href="/services/campagne-de-capture/">Campagne de capture</a></li>
+</ul>
+</section>
+<section class="bloc-mobile">
+<h2>Ressources</h2>
+<ul>
+<li><a href="/faq/">Questions fréquentes</a></li>
+<li><a href="/securite/">Sécurité et données</a></li>
+<li><a href="/contact/">Parler à quelqu'un</a></li>
+</ul>
+</section>
+<div class="actions-mobile"><a class="bouton secondaire pleine-largeur" href="/connexion.html">Se connecter</a><a class="bouton ocre pleine-largeur" href="/contact/">Découvrir Ardoise</a></div>
+</div></div>
 </header>
 
 <main id="contenu">
 
-<!-- ===================================================================== HERO
-     Le visiteur doit savoir en dix secondes : ce que c'est, pour qui, et
-     pourquoi. Pas de slogan. La vignette de droite n'est pas une image du
-     produit mais le SCHÉMA COMMERCIAL — abonnement d'un côté, services de
-     l'autre — parce que c'est la seule chose que le reste de la page passera
-     son temps à répéter, et que la comprendre tout de suite évite au directeur
-     de croire qu'on lui vend une formation déguisée en fonctionnalité.
-     ===================================================================== -->
+
+<!-- ==================================================================== HERO -->
 <section class="hero regle">
   <div class="conteneur grille">
     <div>
@@ -166,8 +269,8 @@
         d'Afrique francophone qui travaillent avec les mêmes contraintes.
       </p>
       <div class="groupe-cta">
-        <a class="bouton ocre" href="tarifs.html">Voir les offres</a>
-        <a class="bouton secondaire" href="#comment">Comment ça marche</a>
+        <a class="bouton ocre" href="/fonctionnalites/">Découvrir Ardoise</a>
+        <a class="bouton secondaire" href="/tarifs/">Voir les offres</a>
       </div>
       <p class="mention-cta">
         À partir de 35&nbsp;$ par mois. Sans engagement en mensuel.
@@ -180,20 +283,19 @@
         <div class="titre">L'abonnement <span class="rythme">récurrent</span></div>
         <p>Ce que vous payez pour utiliser Ardoise. Quatre niveaux, du plus simple
            au plus complet, en mensuel, semestriel ou annuel.</p>
+        <a class="lien-fleche" href="/tarifs/">Voir les quatre offres</a>
       </div>
       <div class="plus">+ si vous le souhaitez</div>
       <div class="etage services">
         <div class="titre">Les services <span class="rythme">ponctuel</span></div>
         <p>Ce que vous payez pour qu'on vous accompagne : installer, former votre
            équipe, saisir vos élèves. Optionnel, avec n'importe quelle offre.</p>
+        <a class="lien-fleche" href="/services/">Voir les services</a>
       </div>
     </div>
   </div>
 </section>
 
-<!-- Quatre repères vérifiables. Aucun chiffre de clients ou de satisfaction :
-     un « 98 % de directeurs satisfaits » sans enquête derrière est une phrase
-     qu'on ne peut pas défendre en rendez-vous. -->
 <div class="bandeau">
   <div class="conteneur">
     <div>
@@ -215,685 +317,273 @@
   </div>
 </div>
 
-<!-- ============================================================ PROBLÈMES
-     Chaque carte part de ce que le directeur vit, pas de ce que le logiciel
-     sait faire. « Les bulletins prennent trois semaines » est un problème ;
-     « génération PDF multi-modèles » est une caractéristique.
-     ============================================================ -->
-<section class="section" id="fonctionnalites">
+<!-- ============================================================== VALEUR -->
+<section class="section">
   <div class="conteneur">
     <div class="section-entete">
-      <span class="eyebrow">Ce qu'Ardoise règle</span>
-      <h2>Les six choses qui coûtent le plus de temps dans une école</h2>
-      <p class="chapeau">Et ce qu'il en reste une fois qu'elles passent par Ardoise.</p>
+      <span class="eyebrow">Pourquoi Ardoise</span>
+      <h2>Une école tient dans un seul dossier, pas dans douze cahiers</h2>
+      <p class="chapeau">
+        Le temps perdu dans une école ne se perd pas dans le travail : il se perd
+        entre les registres. La liste des élèves est chez la secrétaire, les cotes
+        chez les professeurs, les paiements dans un cahier, et personne ne sait
+        lequel des trois a raison. Ardoise met les trois au même endroit.
+      </p>
     </div>
 
-    <div class="grille-cartes">
+    <div class="grille-cartes trois">
       <article class="carte">
-        <span class="probleme">Les dossiers élèves sont éparpillés</span>
-        <h3>Gérer les élèves</h3>
-        <p>Un dossier par élève : identité, responsable, classe, historique d'une année
-           à l'autre, situation financière, présences, discipline. Import depuis Excel,
-           matricules et codes d'accès attribués automatiquement.</p>
+        <h3>Une seule saisie</h3>
+        <p>Un élève inscrit une fois apparaît partout : liste d'appel, grille de
+           cotes, bulletin, fiche de paiement. Plus de recopie, donc plus d'écart
+           entre deux listes.</p>
       </article>
-
       <article class="carte">
-        <span class="probleme">Les moyennes se calculent à la main</span>
-        <h3>Gérer les notes</h3>
-        <p>Chaque professeur saisit ses propres cotes depuis son espace. Les totaux,
-           moyennes pondérées, classements et mentions se recalculent à chaque
-           modification. Les notes se valident, puis se verrouillent.</p>
+        <h3>Des chiffres justes, tout de suite</h3>
+        <p>Moyennes, pourcentages, classements et mentions sont calculés par la
+           plateforme selon vos règles. La proclamation ne dépend plus d'une
+           addition faite trois fois à la main.</p>
       </article>
-
       <article class="carte">
-        <span class="probleme">Les bulletins prennent des semaines</span>
-        <h3>Éditer les bulletins</h3>
-        <p>Bulletins de période, de semestre et annuels aux formats officiels de la RDC —
-           primaire, secondaire, terminale. Ou votre propre maquette, dessinée dans
-           l'éditeur de modèles. Signature, PDF, impression par classe entière.</p>
-      </article>
-
-      <article class="carte">
-        <span class="probleme">Personne ne sait qui a payé quoi</span>
-        <h3>Suivre l'argent</h3>
-        <p>Grille des frais par classe, encaissements en francs ou en dollars, reçus
-           numérotés, élèves en retard identifiés en un écran. Et, au niveau supérieur,
-           la caisse de l'école et la paie du personnel.</p>
-      </article>
-
-      <article class="carte">
-        <span class="probleme">La direction pilote au ressenti</span>
-        <h3>Piloter l'établissement</h3>
-        <p>Taux de réussite par classe et par cours, effectifs, présences, recouvrement
-           des frais. Des chiffres tenus à jour par l'usage quotidien, pas par une
-           collecte de fin de trimestre.</p>
-      </article>
-
-      <article class="carte">
-        <span class="probleme">Le personnel n'a jamais été formé</span>
-        <h3>Accompagner les utilisateurs</h3>
-        <p>Un didacticiel intégré suit l'avancement de la configuration, indique
-           l'étape suivante et propose l'aide au bon moment. Il se met en pause et se
-           reprend. Aucune session de formation n'est nécessaire pour démarrer.</p>
+        <h3>Chacun voit ce qui le concerne</h3>
+        <p>Le professeur voit ses classes, le titulaire la sienne, le comptable
+           la caisse, le directeur l'ensemble. Personne ne se promène dans les
+           données des autres.</p>
       </article>
     </div>
   </div>
 </section>
 
-<!-- ================================================================== IA -->
-<section class="section alt">
+<!-- ======================================================= LES SIX DOMAINES -->
+<section class="section alt" id="domaines">
   <div class="conteneur">
     <div class="section-entete">
-      <span class="eyebrow">Intelligence artificielle</span>
-      <h2>Présente dès la première offre, pas réservée à la dernière</h2>
+      <span class="eyebrow">Ce que couvre Ardoise</span>
+      <h2>Six domaines, un seul produit</h2>
       <p class="chapeau">
-        Certaines fonctions d'assistance sont trop utiles au quotidien pour être
-        vendues comme un supplément. Ce qui distingue les offres, c'est le volume
-        et la profondeur, pas l'accès.
+        Chacun a sa page : le résumé ci-dessous sert à savoir où aller, pas à tout
+        comprendre d'un coup.
       </p>
     </div>
 
-    <div class="grille-cartes">
+    <div class="grille-cartes trois">
       <article class="carte">
-        <span class="probleme">Dès Ascension</span>
-        <h3>Assistance et appréciations</h3>
-        <p>L'assistant répond aux questions d'usage à l'intérieur de la plateforme et
-           guide le didacticiel. Les appréciations et observations de bulletins se
-           génèrent à partir des résultats réels de l'élève, puis se corrigent.
-           100 générations par mois.</p>
+        <h3>Gestion scolaire</h3>
+        <p>Élèves, classes, sections, options, cours et coefficients, années
+           scolaires, trimestres ou semestres, comptes et rôles du personnel.</p>
+        <a class="lien-fleche" href="/fonctionnalites/gestion-scolaire/">En savoir plus</a>
       </article>
-
       <article class="carte">
-        <span class="probleme">À partir de Prime</span>
-        <h3>Lecture du règlement intérieur</h3>
-        <p>Vous chargez votre règlement de discipline ; l'IA en extrait les manquements,
-           les barèmes de points et les mesures, et vous propose une grille à valider.
-           Ce qui prenait une réunion prend une relecture. 400 générations par mois.</p>
+        <h3>Notes et bulletins</h3>
+        <p>Travaux, interrogations et examens, moyennes pondérées, classements,
+           mentions, bulletins officiels RDC et bulletin annuel.</p>
+        <a class="lien-fleche" href="/fonctionnalites/notes-et-bulletins/">En savoir plus</a>
       </article>
-
       <article class="carte">
-        <span class="probleme">À partir de Pilote</span>
-        <h3>Vos données, en langage courant</h3>
-        <p>« Quelles classes ont plus de 30 % d'échec en mathématiques ce trimestre ? »
-           La question est posée en français, la réponse vient de vos propres données.
-           Les requêtes sont bridées en lecture seule et journalisées.
-           1 500 générations par mois.</p>
+        <h3>Vie scolaire</h3>
+        <p>Appel quotidien, absences justifiées, incidents de discipline, capital
+           conduite, emploi du temps et calendrier de l'établissement.</p>
+        <a class="lien-fleche" href="/fonctionnalites/vie-scolaire/">En savoir plus</a>
       </article>
-
       <article class="carte">
-        <span class="probleme">Infinite</span>
-        <h3>Assistant WhatsApp</h3>
-        <p>Un assistant WhatsApp que parents et personnel interrogent depuis leur
-           téléphone : résultats, absences, frais. Et le quota le plus élevé —
-           5 000 générations par mois — pour les établissements qui génèrent des
-           appréciations sur des promotions entières.</p>
+        <h3>Finances de l'école</h3>
+        <p>Grille des frais, encaissements en francs et en dollars, reçus numérotés,
+           caisse, dépenses, contrats et salaires du personnel.</p>
+        <a class="lien-fleche" href="/fonctionnalites/finances/">En savoir plus</a>
+      </article>
+      <article class="carte">
+        <h3>Admissions et orientation</h3>
+        <p>Concours d'admission, épreuves et correcteurs, classement des candidats,
+           vœux d'orientation et affectation au mérite.</p>
+        <a class="lien-fleche" href="/fonctionnalites/admissions-et-orientation/">En savoir plus</a>
+      </article>
+      <article class="carte">
+        <h3>Direction et pilotage</h3>
+        <p>Tableau de bord, rapports d'effectifs et de réussite, messages aux
+           parents, site public de l'école, archives et journal d'activité.</p>
+        <a class="lien-fleche" href="/fonctionnalites/direction-et-pilotage/">En savoir plus</a>
       </article>
     </div>
 
-    <p class="rappel-separation" style="margin-top:26px">
-      Aucun nom d'élève ne quitte la plateforme : les données envoyées au modèle sont
-      pseudonymisées avant l'appel, et chaque requête est inscrite au journal de l'école.
+    <p class="apres-grille">
+      <a class="bouton secondaire" href="/fonctionnalites/">Voir toutes les fonctionnalités</a>
     </p>
   </div>
 </section>
 
-<!-- ============================================================ COMMENT -->
-<section class="section" id="comment">
-  <div class="conteneur">
-    <div class="section-entete">
-      <span class="eyebrow">Mise en route</span>
-      <h2>De l'inscription à la première proclamation</h2>
+<!-- ==================================================================== IA -->
+<section class="section">
+  <div class="conteneur grille-deux">
+    <div>
+      <span class="eyebrow">Intelligence artificielle</span>
+      <h2>Présente dès la première offre, pas réservée à la dernière</h2>
       <p class="chapeau">
-        Les quatre étapes se font seules avec le didacticiel. Chacune peut aussi
-        être confiée à notre équipe — c'est ce à quoi servent les services
-        complémentaires, et rien d'autre.
+        L'IA d'Ardoise ne remplace aucune décision pédagogique. Elle écrit les
+        phrases que personne n'a le temps d'écrire, explique la plateforme à
+        celui qui s'y perd, et répond aux questions qu'on poserait à une base
+        de données si on savait lui parler.
       </p>
+      <a class="bouton secondaire" href="/fonctionnalites/ia/">Ce que fait l'IA d'Ardoise</a>
     </div>
-
-    <div class="grille-cartes">
-      <article class="carte">
-        <span class="probleme">Étape 1</span>
-        <h3>Créer l'école</h3>
-        <p>Identité de l'établissement, année scolaire, trimestres ou semestres,
-           système de notation. Le didacticiel affiche ce qui reste à faire.</p>
-      </article>
-      <article class="carte">
-        <span class="probleme">Étape 2</span>
-        <h3>Poser la structure</h3>
-        <p>Sections, options, classes, cours et coefficients, grille des frais.
-           C'est le paramétrage que couvre le service d'installation.</p>
-      </article>
-      <article class="carte">
-        <span class="probleme">Étape 3</span>
-        <h3>Charger les élèves</h3>
-        <p>Un par un, ou par import Excel. C'est ici qu'intervient la campagne de
-           capture si vos registres sont encore sur papier.</p>
-      </article>
-      <article class="carte">
-        <span class="probleme">Étape 4</span>
-        <h3>Ouvrir aux professeurs</h3>
-        <p>Chaque enseignant reçoit son accès et saisit ses cotes. Les bulletins
-           deviennent générables dès que la période est complète.</p>
-      </article>
-    </div>
+    <ul class="liste-points">
+      <li><strong>Appréciations de bulletin</strong> — proposées pour toute une
+          classe à partir des résultats réels, relues et modifiables avant d'être
+          appliquées.</li>
+      <li><strong>Assistant d'aide</strong> — répond dans l'écran où vous êtes,
+          sur le fonctionnement d'Ardoise, sans quitter la page.</li>
+      <li><strong>Vos données en langage naturel</strong> — « quels élèves de 4e
+          n'ont rien payé depuis janvier ? » devient une réponse, pas un export.</li>
+      <li><strong>Lecture du règlement intérieur</strong> — votre règlement
+          devient un barème de discipline exploitable, que vous validez.</li>
+    </ul>
   </div>
 </section>
 
-<!-- ============================================================== TARIFS
-     Les prix sont écrits dans le HTML pour le référencement, et rafraîchis par
-     catalogue.js depuis /catalogue/offres. Les trois périodicités sont portées
-     par des attributs data- : basculer ne demande aucun appel réseau.
-     ============================================================== -->
+<!-- ================================================================ OFFRES -->
 <section class="section alt" id="offres">
   <div class="conteneur">
     <div class="section-entete">
-      <span class="eyebrow">Étage 1 — l'abonnement</span>
+      <span class="eyebrow">Tarifs</span>
       <h2>Quatre offres, un seul produit</h2>
       <p class="chapeau">
-        Aucune offre ne retire de fonctionnalité essentielle. Gérer les élèves, saisir
-        les notes, éditer les bulletins officiels, faire l'appel et suivre les frais
-        sont dans les quatre. Ce qui change : la taille de l'école, la profondeur du
-        pilotage et le volume d'IA. Deux mois sont offerts sur chacune des quatre
-        offres au paiement annuel.
+        Aucune offre n'est une version amputée : le cœur du métier — élèves, notes,
+        bulletins, présences, frais — est dans les quatre. Ce qui change est la
+        taille de l'école et la profondeur de l'administration.
       </p>
     </div>
 
-    <div class="selecteur-periode" role="group" aria-label="Période de facturation">
-      <button type="button" data-periode="mensuel" aria-pressed="true">Mensuel</button>
-      <button type="button" data-periode="semestriel" aria-pressed="false">Semestriel</button>
-      <button type="button" data-periode="annuel" aria-pressed="false">Annuel</button>
-    </div>
-    <p class="note-periode" data-note-periode></p>
-
-    <div class="grille-offres">
-
+    <div class="grille-offres compacte">
       <article class="offre" data-offre="ascension" data-devise="USD"
         data-prix-mensuel="35"  data-mois-mensuel="35"    data-eco-mensuel="0"  data-pct-mensuel="0"
         data-prix-semestriel="193" data-mois-semestriel="32.17" data-eco-semestriel="17" data-pct-semestriel="8"
         data-prix-annuel="350"  data-mois-annuel="29.17"  data-eco-annuel="70"  data-pct-annuel="17">
-        <div class="nom">Ardoise Ascension</div>
+        <h3 class="nom">Ascension</h3>
         <div class="positionnement">Digitaliser l'essentiel</div>
         <div class="prix" data-prix><span class="devise">$</span>35</div>
         <div class="par-mois" data-par-mois>par mois</div>
-        <div class="facturation" data-facturation>Facturé 35&nbsp;$ chaque mois.</div>
-        <span class="economie" data-economie hidden></span>
-        <div class="cible">Écoles jusqu'à 250 élèves qui tiennent encore leurs registres
-          sur papier ou sur Excel.</div>
-        <ul>
-          <li>Élèves, classes, sections et options</li>
-          <li>Notes, travaux, classements et mentions</li>
-          <li>Bulletins officiels RDC et bulletin annuel</li>
-          <li>Présences</li>
-          <li>Frais scolaires, paiements et reçus (FC et&nbsp;$)</li>
-          <li>Didacticiel et assistant d'aide</li>
-        </ul>
-        <div class="limites">
-          <span>250 élèves · 15 comptes · 12 classes</span>
-          <span>100 générations IA / mois</span>
-        </div>
-        <a class="bouton secondaire pleine-largeur" href="tarifs.html#ascension">Détail de l'offre</a>
+        <div class="cible">Jusqu'à 250 élèves.</div>
+        <a class="bouton secondaire pleine-largeur" href="/tarifs/#ascension">Détail de l'offre</a>
       </article>
 
       <article class="offre mise-en-avant" data-offre="prime" data-devise="USD"
         data-prix-mensuel="59"  data-mois-mensuel="59"    data-eco-mensuel="0"  data-pct-mensuel="0"
         data-prix-semestriel="325" data-mois-semestriel="54.17" data-eco-semestriel="29" data-pct-semestriel="8"
-        data-prix-annuel="590"  data-mois-annuel="49.17"  data-eco-annuel="118"  data-pct-annuel="17">
+        data-prix-annuel="590"  data-mois-annuel="49.17"  data-eco-annuel="118" data-pct-annuel="17">
         <span class="badge">Le plus choisi</span>
-        <div class="nom">Ardoise Prime</div>
+        <h3 class="nom">Prime</h3>
         <div class="positionnement">Automatiser et communiquer</div>
         <div class="prix" data-prix><span class="devise">$</span>59</div>
         <div class="par-mois" data-par-mois>par mois</div>
-        <div class="facturation" data-facturation>Facturé 59&nbsp;$ chaque mois.</div>
-        <span class="economie" data-economie hidden></span>
-        <div class="cible">Écoles de 250 à 600 élèves dont l'administration commence
-          à saturer.</div>
-        <ul>
-          <li class="herite">Tout Ascension</li>
-          <li>Emploi du temps et créneaux</li>
-          <li>Discipline et règlement intérieur</li>
-          <li>Messages groupés aux parents</li>
-          <li>Site public de l'école et résultats en ligne</li>
-          <li>Éditeur de modèles de bulletins</li>
-        </ul>
-        <div class="limites">
-          <span>600 élèves · 40 comptes · 40 classes</span>
-          <span>400 générations IA / mois</span>
-        </div>
-        <a class="bouton ocre pleine-largeur" href="tarifs.html#prime">Détail de l'offre</a>
+        <div class="cible">De 250 à 600 élèves.</div>
+        <a class="bouton ocre pleine-largeur" href="/tarifs/#prime">Détail de l'offre</a>
       </article>
 
       <article class="offre" data-offre="pilote" data-devise="USD"
         data-prix-mensuel="99"  data-mois-mensuel="99"    data-eco-mensuel="0"  data-pct-mensuel="0"
         data-prix-semestriel="545" data-mois-semestriel="90.83" data-eco-semestriel="49" data-pct-semestriel="8"
-        data-prix-annuel="990" data-mois-annuel="82.5"  data-eco-annuel="198"  data-pct-annuel="17">
-        <div class="nom">Ardoise Pilote</div>
+        data-prix-annuel="990"  data-mois-annuel="82.50"  data-eco-annuel="198" data-pct-annuel="17">
+        <h3 class="nom">Pilote</h3>
         <div class="positionnement">Piloter l'établissement</div>
         <div class="prix" data-prix><span class="devise">$</span>99</div>
         <div class="par-mois" data-par-mois>par mois</div>
-        <div class="facturation" data-facturation>Facturé 99&nbsp;$ chaque mois.</div>
-        <span class="economie" data-economie hidden></span>
-        <div class="cible">Établissements de 600 à 1 500 élèves avec une comptabilité
-          et des procédures d'admission.</div>
-        <ul>
-          <li class="herite">Tout Prime</li>
-          <li>Comptabilité : caisse et dépenses</li>
-          <li>Paie : contrats et salaires</li>
-          <li>Concours d'admission et classement</li>
-          <li>Orientation au mérite et repêchage</li>
-          <li>Questions sur vos données en langage naturel</li>
-        </ul>
-        <div class="limites">
-          <span>1 500 élèves · 120 comptes · classes illimitées</span>
-          <span>1 500 générations IA / mois</span>
-        </div>
-        <a class="bouton secondaire pleine-largeur" href="tarifs.html#pilote">Détail de l'offre</a>
+        <div class="cible">De 600 à 1 500 élèves.</div>
+        <a class="bouton secondaire pleine-largeur" href="/tarifs/#pilote">Détail de l'offre</a>
       </article>
 
       <article class="offre" data-offre="infinite" data-devise="USD"
         data-prix-mensuel="159" data-mois-mensuel="159"   data-eco-mensuel="0"  data-pct-mensuel="0"
         data-prix-semestriel="875" data-mois-semestriel="145.83" data-eco-semestriel="79" data-pct-semestriel="8"
-        data-prix-annuel="1590" data-mois-annuel="132.5"    data-eco-annuel="318" data-pct-annuel="17">
-        <div class="nom">Ardoise Infinite</div>
+        data-prix-annuel="1590" data-mois-annuel="132.50" data-eco-annuel="318" data-pct-annuel="17">
+        <h3 class="nom">Infinite</h3>
         <div class="positionnement">Exploiter Ardoise sans limite</div>
         <div class="prix" data-prix><span class="devise">$</span>159</div>
         <div class="par-mois" data-par-mois>par mois</div>
-        <div class="facturation" data-facturation>Facturé 159&nbsp;$ chaque mois.</div>
-        <span class="economie" data-economie hidden></span>
-        <div class="cible">Grands établissements et structures multi-vacations
-          de plus de 1 500 élèves.</div>
-        <ul>
-          <li class="herite">Tout Pilote</li>
-          <li>Élèves et comptes sans limite</li>
-          <li>Assistant WhatsApp parents et personnel</li>
-          <li>5 000 générations IA par mois</li>
-          <li>Archives et historique illimités</li>
-          <li>Support prioritaire</li>
-        </ul>
-        <div class="limites">
-          <span>Sans limite d'élèves ni de comptes</span>
-          <span>5 000 générations IA / mois</span>
-        </div>
-        <a class="bouton secondaire pleine-largeur" href="tarifs.html#infinite">Détail de l'offre</a>
+        <div class="cible">Au-delà de 1 500 élèves.</div>
+        <a class="bouton secondaire pleine-largeur" href="/tarifs/#infinite">Détail de l'offre</a>
       </article>
     </div>
 
-    <p style="margin-top:26px; text-align:center">
-      <a class="bouton secondaire" href="tarifs.html#comparatif">Comparer les quatre offres ligne par ligne</a>
+    <p class="apres-grille">
+      <a class="bouton secondaire" href="/tarifs/">Voir les tarifs en détail</a>
+      <a class="bouton secondaire" href="/tarifs/comparer/">Comparer les quatre offres</a>
     </p>
   </div>
 </section>
 
-<!-- =========================================================== SERVICES
-     Section séparée, après les offres, avec son propre étage annoncé. Le
-     rappel de séparation est placé AVANT les cartes : le visiteur doit savoir
-     ce qu'il regarde avant de voir un prix, sinon il lit « 60 $ » comme un
-     supplément d'abonnement.
-     =========================================================== -->
-<section class="section" id="services">
+<!-- ============================================================== SERVICES -->
+<section class="section">
   <div class="conteneur">
     <div class="section-entete">
-      <span class="eyebrow">Étage 2 — l'accompagnement</span>
-      <h2>Besoin d'un accompagnement supplémentaire&nbsp;?</h2>
-    </div>
-
-    <p class="rappel-separation" style="margin-bottom:26px">
-      <strong>L'abonnement donne accès à Ardoise. Les services complémentaires
-      permettent à Ardoise de vous accompagner davantage.</strong>
-      Ce sont des prestations réalisées par notre équipe, facturées une fois, et
-      disponibles avec n'importe quelle offre — y compris Ardoise Ascension.
-      Aucune n'est obligatoire.
-    </p>
-
-    <div class="grille-services">
-      <article class="service">
-        <span class="rythme-facturation">Facturé une fois</span>
-        <h3>Installation &amp; configuration</h3>
-        <div class="tarif">60&nbsp;$ <small>forfait</small></div>
-        <p>Nous paramétrons votre école à partir de vos documents : années, périodes,
-           sections, classes, cours et coefficients, notation, frais, comptes du
-           personnel. Vous récupérez une plateforme déjà conforme à votre organisation.</p>
-        <ul>
-          <li>Création de l'école et du compte Directeur</li>
-          <li>Structure pédagogique complète</li>
-          <li>Grille des frais et devise de référence</li>
-          <li>Vérification finale avec la direction</li>
-        </ul>
-        <a class="bouton secondaire pleine-largeur" href="services.html#installation">En savoir plus</a>
-      </article>
-
-      <article class="service">
-        <span class="rythme-facturation">Facturé une fois</span>
-        <h3>Formation du personnel</h3>
-        <div class="tarif">30 · 60 · 100&nbsp;$ <small>selon la formule</small></div>
-        <p>Un formateur accompagne votre équipe, sur place ou à distance. Trois
-           profondeurs : la prise en main rapide, la formation générale sur toute la
-           plateforme, ou la formation bâtie sur vos propres circuits internes.</p>
-        <ul>
-          <li>Express — 30 $ : une séance de prise en main</li>
-          <li>Complète — 60 $ : une demi-journée, tous les modules</li>
-          <li>Personnalisée — 100 $ : une journée, par profil</li>
-        </ul>
-        <a class="bouton secondaire pleine-largeur" href="services.html#formation">Comparer les formations</a>
-      </article>
-
-      <article class="service">
-        <span class="rythme-facturation">Facturé à la réalisation</span>
-        <h3>Campagne de capture</h3>
-        <div class="tarif">0,50&nbsp;$ <small>par élève saisi</small></div>
-        <p>Nous transformons vos registres papier en base de données : collecte, saisie,
-           vérification et chargement des informations de chaque élève. Vous passez
-           d'une armoire de fiches à une école consultable en trois clics.</p>
-        <ul>
-          <li>Identité complète et responsable de chaque élève</li>
-          <li>Affectation aux classes, matricules et codes d'accès</li>
-          <li>Contrôle des doublons et des incohérences</li>
-          <li>500 élèves&nbsp;: 250 $ · 1 000 élèves&nbsp;: 500 $</li>
-        </ul>
-        <a class="bouton secondaire pleine-largeur" href="services.html#capture">Estimer ma campagne</a>
-      </article>
-    </div>
-
-    <!-- Simulateur. Volontairement placé sous les services et pas près des
-         offres : confondre l'estimation d'une prestation avec le calcul d'un
-         abonnement est exactement l'erreur que cette page doit empêcher. -->
-    <div class="simulateur" data-simulateur-capture data-prix-unitaire="0.5" data-devise="USD"
-         style="margin-top:26px">
-      <div>
-        <label for="nb-eleves">Combien d'élèves faut-il saisir&nbsp;?</label>
-        <div class="champ">
-          <input type="number" id="nb-eleves" data-nb-eleves value="500" min="0" max="20000" step="10" />
-          <input type="range" data-curseur-eleves value="500" min="0" max="3000" step="10"
-                 aria-label="Nombre d'élèves (curseur)" />
-        </div>
-        <p class="avertissement">
-          Estimation de la campagne de capture uniquement. Elle ne comprend pas
-          l'abonnement, qui se choisit séparément.
-        </p>
-      </div>
-      <div class="resultat">
-        <div class="eyebrow">Estimation</div>
-        <div class="montant" data-montant-capture>250&nbsp;$</div>
-        <div class="detail" data-detail-capture>500 élèves × 0,50 $ par élève</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ============================================================ SÉCURITÉ -->
-<section class="section alt">
-  <div class="conteneur">
-    <div class="section-entete">
-      <span class="eyebrow">Sécurité et confiance</span>
-      <h2>Les données d'une école ne sortent pas de l'école</h2>
-    </div>
-    <div class="grille-cartes">
-      <article class="carte">
-        <h3>Cloisonnement par établissement</h3>
-        <p>Chaque école est isolée au niveau de la base de données elle-même, et non
-           par un filtre applicatif qu'un défaut de code pourrait contourner. Aucune
-           école ne peut voir les données d'une autre.</p>
-      </article>
-      <article class="carte">
-        <h3>Chacun voit ce qui le concerne</h3>
-        <p>Un professeur de matière voit ses cours et ses cotes. Un titulaire voit sa
-           classe. La situation financière d'une famille n'est visible que par ceux qui
-           tiennent la caisse.</p>
-      </article>
-      <article class="carte">
-        <h3>Tout acte sensible est tracé</h3>
-        <p>Validation de notes, encaissement, suppression, signature de bulletin :
-           chaque action est inscrite au journal de l'école, avec son auteur et sa date.</p>
-      </article>
-      <article class="carte">
-        <h3>Le réseau peut tomber</h3>
-        <p>L'application s'installe sur le téléphone et garde de quoi travailler hors
-           ligne. Ce qui a été saisi sans réseau repart dès que la connexion revient.</p>
-      </article>
-    </div>
-  </div>
-</section>
-
-<!-- ================================================================= FAQ -->
-<section class="section" id="faq">
-  <div class="conteneur">
-    <div class="section-entete">
-      <span class="eyebrow">Questions fréquentes</span>
-      <h2>Ce que les directeurs demandent avant de signer</h2>
-    </div>
-
-    <div class="faq">
-      <p class="faq-groupe">Abonnements</p>
-
-      <details>
-        <summary>Quelle offre choisir pour mon école&nbsp;?</summary>
-        <div>
-          <p>Le nombre d'élèves donne la réponse dans la plupart des cas : Ascension
-             jusqu'à 250, Prime jusqu'à 600, Pilote jusqu'à 1 500, Infinite au-delà.</p>
-          <p>Deux exceptions valent la peine d'être connues. Si votre école tient une
-             comptabilité, paie des salaires, organise un concours d'admission ou fait
-             de l'orientation, prenez Pilote même en dessous de 600 élèves : ce sont
-             ces modules que vous venez chercher, pas la taille. À l'inverse, une école
-             de 400 élèves qui ne fait que notes et bulletins reste très bien en
-             Ascension jusqu'à ce qu'elle bute sur le plafond d'élèves.</p>
-        </div>
-      </details>
-
-      <details>
-        <summary>Quelle différence entre Ascension, Prime, Pilote et Infinite&nbsp;?</summary>
-        <div>
-          <p>Chaque offre correspond à un moment de la vie d'une école, pas à un nombre
-             de fonctionnalités. Ascension digitalise l'essentiel. Prime automatise
-             l'administration et ouvre la communication vers les parents. Pilote donne
-             les outils de direction : comptabilité, admission, orientation, analyse.
-             Infinite lève les limites de volume et ajoute WhatsApp et les traitements
-             de masse.</p>
-          <p>Ce qui ne change jamais : élèves, notes, bulletins officiels, présences et
-             frais sont dans les quatre.</p>
-        </div>
-      </details>
-
-      <details>
-        <summary>Puis-je changer d'offre&nbsp;? Perdrai-je des données&nbsp;?</summary>
-        <div>
-          <p>Vous pouvez monter ou descendre à tout moment. Aucune donnée n'est
-             supprimée lors d'un changement : ce qui change, ce sont les plafonds et
-             les modules ouverts. Si vous redescendez sous un plafond que vous avez
-             dépassé, ce qui existe déjà reste consultable et modifiable ; ce sont les
-             ajouts qui sont bloqués jusqu'à ce que vous repassiez sous la limite.</p>
-        </div>
-      </details>
-
-      <details>
-        <summary>Que gagne-t-on à payer au semestre ou à l'année&nbsp;?</summary>
-        <div>
-          <p><strong>Deux mois offerts si vous payez l'année, un demi-mois si vous payez
-             le semestre.</strong> La règle est la même pour les quatre offres : l'annuel
-             coûte dix mensualités au lieu de douze, le semestriel cinq et demie au lieu
-             de six.</p>
-          <p>Vous pouvez le vérifier à la calculatrice sur n'importe quelle carte. Il n'y
-             a pas de prix barré ni de réduction inventée : le tarif annuel est
-             simplement plus bas.</p>
-          <p>Le second avantage est pratique : une école qui règle en début d'année
-             scolaire n'a plus à faire valider un paiement chaque mois.</p>
-        </div>
-      </details>
-
-      <p class="faq-groupe">Services complémentaires</p>
-
-      <details>
-        <summary>L'installation est-elle obligatoire&nbsp;?</summary>
-        <div>
-          <p>Non. Le didacticiel intégré vous guide pas à pas dans le paramétrage, et
-             beaucoup d'écoles le font seules. L'installation à 60 $ existe pour celles
-             qui préfèrent que ce soit fait, correctement et une bonne fois, à partir
-             de leurs documents.</p>
-        </div>
-      </details>
-
-      <details>
-        <summary>La formation est-elle incluse dans l'abonnement&nbsp;?</summary>
-        <div>
-          <p>Le didacticiel et l'assistant d'aide sont inclus dans les quatre offres :
-             ce sont des fonctionnalités du logiciel. La formation par un formateur
-             humain, elle, est une prestation : 30 $ pour la formule express, 60 $ pour
-             la formation complète, 100 $ pour la formation personnalisée.</p>
-          <p>Une école abonnée à Ascension peut acheter la formation personnalisée à
-             100 $. Les services ne dépendent d'aucun niveau d'abonnement.</p>
-        </div>
-      </details>
-
-      <details>
-        <summary>Qu'est-ce qu'une campagne de capture, exactement&nbsp;?</summary>
-        <div>
-          <p>C'est le travail de saisie qui transforme vos registres en base de données.
-             Notre équipe récupère vos fiches d'inscription ou vos registres, saisit
-             l'identité complète de chaque élève et de son responsable, l'affecte à sa
-             classe, attribue matricules et codes d'accès, contrôle les doublons, charge
-             le tout dans Ardoise et vous remet une liste de vérification.</p>
-          <p>Ce qui reste à votre charge : fournir des registres lisibles, avoir un
-             abonnement actif et des classes déjà créées. Ce que la campagne ne
-             comprend pas : la photographie des élèves, la numérisation des pièces
-             d'état civil et la reprise des notes des années antérieures.</p>
-        </div>
-      </details>
-
-      <details>
-        <summary>Combien coûte une campagne de capture&nbsp;?</summary>
-        <div>
-          <p>0,50 $ par élève effectivement saisi et chargé. 100 élèves : 50 $.
-             300 élèves : 150 $. 500 élèves : 250 $. 1 000 élèves : 500 $.
-             2 000 élèves : 1 000 $.</p>
-          <p>Le nombre retenu est celui des élèves réellement chargés dans votre base à
-             la fin de la campagne, pas le nombre annoncé au départ. La prestation est
-             facturée à la réalisation, une fois la liste de vérification acceptée.</p>
-        </div>
-      </details>
-
-      <details>
-        <summary>Puis-je acheter un service avec l'offre Ascension&nbsp;?</summary>
-        <div>
-          <p>Oui, sans exception. Les trois catégories de services — installation,
-             formation, campagne de capture — sont disponibles avec les quatre offres,
-             au même prix. Une prestation ne se débloque pas : elle s'achète.</p>
-        </div>
-      </details>
-
-      <p class="faq-groupe">Intelligence artificielle</p>
-
-      <details>
-        <summary>L'IA est-elle incluse&nbsp;?</summary>
-        <div>
-          <p>Oui, dès Ascension. L'assistant d'aide et la génération des appréciations
-             de bulletins font partie de l'expérience de base et ne sont pas vendus
-             séparément.</p>
-        </div>
-      </details>
-
-      <details>
-        <summary>Qu'est-ce qui change entre les offres, côté IA&nbsp;?</summary>
-        <div>
-          <p>Le volume : 100 générations mensuelles en Ascension, 400 en Prime,
-             1 500 en Pilote, 5 000 en Infinite. Le compteur se remet à zéro le 1er de
-             chaque mois et l'état du quota est visible dans la plateforme.</p>
-          <p>Et la profondeur : la lecture du règlement intérieur arrive avec Prime,
-             les questions en langage naturel sur vos données avec Pilote, les
-             traitements de masse et l'assistant WhatsApp avec Infinite.</p>
-        </div>
-      </details>
-    </div>
-  </div>
-</section>
-
-<!-- ============================================================= CONTACT -->
-<section class="section alt" id="contact">
-  <div class="conteneur">
-    <div class="section-entete">
-      <span class="eyebrow">Parler à quelqu'un</span>
-      <h2>Demander un accompagnement</h2>
+      <span class="eyebrow">Services complémentaires</span>
+      <h2>Si vous préférez qu'on s'en occupe</h2>
       <p class="chapeau">
-        Dites-nous où en est votre école. Nous vous rappelons sous 48 heures ouvrées
-        pour vous orienter vers l'offre qui convient — et vous dire si un service
-        d'accompagnement vous serait vraiment utile, ou non.
+        Trois prestations ponctuelles, achetables avec n'importe quelle offre, y
+        compris la première. Aucune n'est obligatoire : une école peut tout faire
+        elle-même, guidée par le didacticiel intégré.
       </p>
     </div>
 
-    <form class="formulaire" data-formulaire-accompagnement novalidate>
-      <div class="duo">
-        <div>
-          <label for="contact_nom">Votre nom</label>
-          <input type="text" id="contact_nom" name="contact_nom" required autocomplete="name" />
-        </div>
-        <div>
-          <label for="ecole_nom">Nom de l'école</label>
-          <input type="text" id="ecole_nom" name="ecole_nom" autocomplete="organization" />
-        </div>
-      </div>
+    <div class="grille-cartes trois">
+      <article class="carte">
+        <h3>Installation et configuration</h3>
+        <p class="tarif-carte">60&nbsp;$ — forfait</p>
+        <p>Nous paramétrons votre école à partir de vos documents : années, périodes,
+           classes, cours, coefficients, mentions, grille des frais.</p>
+        <a class="lien-fleche" href="/services/installation/">Ce qui est fait, précisément</a>
+      </article>
+      <article class="carte">
+        <h3>Formation du personnel</h3>
+        <p class="tarif-carte">30, 60 ou 100&nbsp;$</p>
+        <p>De la séance de prise en main à la formation bâtie sur vos propres
+           circuits internes, profil par profil.</p>
+        <a class="lien-fleche" href="/services/formation/">Les trois formules</a>
+      </article>
+      <article class="carte">
+        <h3>Campagne de capture</h3>
+        <p class="tarif-carte">0,50&nbsp;$ par élève</p>
+        <p>Nous transformons vos registres papier en base de données : identité,
+           classe, responsable, matricule, contrôle des doublons.</p>
+        <a class="lien-fleche" href="/services/campagne-de-capture/">Comment ça se passe</a>
+      </article>
+    </div>
+  </div>
+</section>
 
-      <div class="duo">
-        <div>
-          <label for="contact_telephone">Téléphone</label>
-          <input type="tel" id="contact_telephone" name="contact_telephone" autocomplete="tel" />
-        </div>
-        <div>
-          <label for="contact_email">Adresse e-mail</label>
-          <input type="email" id="contact_email" name="contact_email" autocomplete="email" />
-        </div>
-      </div>
-      <p class="aide">Un téléphone ou un e-mail suffit — il en faut au moins un pour vous rappeler.</p>
-
-      <div class="duo">
-        <div>
-          <label for="ville">Ville</label>
-          <input type="text" id="ville" name="ville" autocomplete="address-level2" />
-        </div>
-        <div>
-          <label for="nb_eleves_estime">Nombre d'élèves (approximatif)</label>
-          <input type="number" id="nb_eleves_estime" name="nb_eleves_estime" min="0" max="100000" />
-        </div>
-      </div>
-
-      <div>
-        <label for="offre_envisagee">Offre envisagée</label>
-        <select id="offre_envisagee" name="offre_envisagee">
-          <option value="">Je ne sais pas encore</option>
-          <option value="ascension">Ardoise Ascension</option>
-          <option value="prime">Ardoise Prime</option>
-          <option value="pilote">Ardoise Pilote</option>
-          <option value="infinite">Ardoise Infinite</option>
-        </select>
-      </div>
-
-      <fieldset style="border:0">
-        <legend class="aide" style="margin-bottom:8px">Services qui vous intéressent (facultatif)</legend>
-        <label style="font-weight:400"><input type="checkbox" name="services_souhaites" value="installation" /> Installation &amp; configuration</label>
-        <label style="font-weight:400"><input type="checkbox" name="services_souhaites" value="formation_complete" /> Formation du personnel</label>
-        <label style="font-weight:400"><input type="checkbox" name="services_souhaites" value="campagne_capture" /> Campagne de capture</label>
-      </fieldset>
-
-      <div>
-        <label for="message">Votre situation en quelques mots</label>
-        <textarea id="message" name="message" placeholder="Combien de classes, ce que vous gérez déjà sur ordinateur, ce qui vous prend le plus de temps…"></textarea>
-      </div>
-
-      <div class="message-retour" data-retour hidden></div>
-      <button class="bouton ocre" type="submit">Envoyer ma demande</button>
-    </form>
+<!-- ============================================================== SÉCURITÉ -->
+<section class="section alt">
+  <div class="conteneur grille-deux">
+    <div>
+      <span class="eyebrow">Sécurité et accompagnement</span>
+      <h2>Les données d'une école ne sortent pas de l'école</h2>
+      <p class="chapeau">
+        L'isolation entre établissements n'est pas une promesse commerciale : elle
+        est appliquée par la base de données elle-même, sous chaque requête, pour
+        chaque table. Une école ne peut pas lire les élèves d'une autre, même en
+        cas d'erreur de programmation.
+      </p>
+      <a class="bouton secondaire" href="/securite/">Comment les données sont protégées</a>
+    </div>
+    <ul class="liste-points">
+      <li><strong>Six rôles, des droits stricts</strong> — un professeur n'accède
+          qu'à ses cours, un titulaire à sa classe.</li>
+      <li><strong>Tout est tracé</strong> — qui a saisi, modifié, validé, signé,
+          encaissé, et quand.</li>
+      <li><strong>Vos données restent les vôtres</strong> — export des archives
+          par année et par classe, à tout moment.</li>
+      <li><strong>Une aide qui répond</strong> — didacticiel intégré, assistant
+          d'aide, support par ticket depuis la plateforme.</li>
+    </ul>
+  </div>
+</section>
+<section class="cta-final">
+  <div class="conteneur">
+    <h2>Votre école, tenue à jour toute seule.</h2>
+    <p>Choisissez l'offre qui correspond à sa taille. L'accompagnement viendra si vous en avez besoin — et seulement à ce moment-là.</p>
+    <div class="groupe-cta" style="justify-content:center"><a class="bouton principal" href="/tarifs/">Voir les tarifs</a><a class="bouton secondaire" href="/contact/">Être rappelé</a></div>
   </div>
 </section>
 
 </main>
-
-<section class="cta-final">
-  <div class="conteneur">
-    <h2>Votre école, tenue à jour toute seule.</h2>
-    <p>Choisissez l'offre qui correspond à sa taille. L'accompagnement viendra si
-       vous en avez besoin — et seulement à ce moment-là.</p>
-    <div class="groupe-cta" style="justify-content:center">
-      <a class="bouton principal" href="tarifs.html">Voir les tarifs</a>
-      <a class="bouton secondaire" href="#contact">Être rappelé</a>
-    </div>
-  </div>
-</section>
 
 <footer class="pied">
   <div class="conteneur">
@@ -908,26 +598,39 @@
       <div>
         <h2>Produit</h2>
         <ul>
-          <li><a href="#fonctionnalites">Fonctionnalités</a></li>
-          <li><a href="tarifs.html">Tarifs</a></li>
-          <li><a href="tarifs.html#comparatif">Comparer les offres</a></li>
-          <li><a href="#faq">Questions fréquentes</a></li>
+          <li><a href="/fonctionnalites/">Fonctionnalités</a></li>
+          <li><a href="/fonctionnalites/ia/">Intelligence artificielle</a></li>
+          <li><a href="/securite/">Sécurité</a></li>
         </ul>
       </div>
       <div>
-        <h2>Accompagnement</h2>
+        <h2>Par domaine</h2>
         <ul>
-          <li><a href="services.html#installation">Installation</a></li>
-          <li><a href="services.html#formation">Formation</a></li>
-          <li><a href="services.html#capture">Campagne de capture</a></li>
-          <li><a href="#contact">Demander un rappel</a></li>
+          <li><a href="/fonctionnalites/gestion-scolaire/">Gestion scolaire</a></li>
+          <li><a href="/fonctionnalites/notes-et-bulletins/">Notes et bulletins</a></li>
+          <li><a href="/fonctionnalites/vie-scolaire/">Vie scolaire</a></li>
+          <li><a href="/fonctionnalites/finances/">Finances</a></li>
+          <li><a href="/fonctionnalites/admissions-et-orientation/">Admissions et orientation</a></li>
+          <li><a href="/fonctionnalites/direction-et-pilotage/">Direction et pilotage</a></li>
         </ul>
       </div>
       <div>
-        <h2>Accès</h2>
+        <h2>Offres et services</h2>
         <ul>
-          <li><a href="connexion.html">Se connecter</a></li>
-          <li><a href="confidentialite.html">Confidentialité</a></li>
+          <li><a href="/tarifs/">Tarifs</a></li>
+          <li><a href="/tarifs/comparer/">Comparer les offres</a></li>
+          <li><a href="/services/installation/">Installation</a></li>
+          <li><a href="/services/formation/">Formation</a></li>
+          <li><a href="/services/campagne-de-capture/">Campagne de capture</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Ressources</h2>
+        <ul>
+          <li><a href="/faq/">Questions fréquentes</a></li>
+          <li><a href="/contact/">Nous contacter</a></li>
+          <li><a href="/connexion.html">Se connecter</a></li>
+          <li><a href="/confidentialite.html">Confidentialité</a></li>
         </ul>
       </div>
     </div>
@@ -938,6 +641,7 @@
   </div>
 </footer>
 
-<script src="catalogue.js" defer></script>
+<script src="/catalogue.js" defer></script>
+<script src="/nav.js" defer></script>
 </body>
 </html>

@@ -106,7 +106,21 @@
     racine = racine || document;
     var boutons = racine.querySelectorAll('[data-periode]');
     var note = racine.querySelector('[data-note-periode]');
-    if (!boutons.length) return;
+
+    /*
+     * Pas de sélecteur sur toutes les pages.
+     * ---------------------------------------------------------------------
+     * Depuis le passage à un site multi-pages, la page d'accueil affiche
+     * quatre cartes d'offres SANS le sélecteur Mensuel / Semestriel / Annuel :
+     * elle donne un aperçu, le choix de périodicité se fait sur /tarifs/.
+     *
+     * Renvoyer ici, comme le faisait la version précédente, laissait ces
+     * cartes hors du rafraîchissement : `rafraichirTarifs` réécrivait bien
+     * leurs attributs `data-` depuis l'API, mais personne ne les repeignait,
+     * et un changement de prix restait invisible sur la page la plus vue du
+     * site. On continue donc, en neutralisant simplement ce qui suppose un
+     * sélecteur.
+     */
 
     function appliquer(periode) {
       boutons.forEach(function (b) {
@@ -157,7 +171,10 @@
             : 'Réglé en une fois pour douze mois. Le montant économisé est calculé par rapport au tarif mensuel.';
       }
 
-      try { global.localStorage.setItem('ardoise.periode', periode); } catch (e) { /* mode privé */ }
+      // Seule une page qui PROPOSE le choix a le droit de le mémoriser.
+      if (boutons.length) {
+        try { global.localStorage.setItem('ardoise.periode', periode); } catch (e) { /* mode privé */ }
+      }
     }
 
     boutons.forEach(function (b) {

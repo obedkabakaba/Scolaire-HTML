@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<title>Notes, moyennes et bulletins scolaires RDC — Ardoise</title>
+<meta name="description" content="Saisie des cotes, moyennes pondérées, classements, mentions et bulletins officiels primaire, secondaire, terminale, semestriel et annuel." />
+<link rel="canonical" href="https://myardoise.com/fonctionnalites/notes-et-bulletins/" />
+<meta name="robots" content="index, follow, max-image-preview:large" />
+<meta name="author" content="Ardoise" />
+<meta name="theme-color" content="#F6F2E7" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#141C18" media="(prefers-color-scheme: dark)" />
+
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Ardoise" />
+<meta property="og:locale" content="fr_CD" />
+<meta property="og:url" content="https://myardoise.com/fonctionnalites/notes-et-bulletins/" />
+<meta property="og:title" content="Notes, moyennes et bulletins scolaires RDC — Ardoise" />
+<meta property="og:description" content="Saisie des cotes, moyennes pondérées, classements, mentions et bulletins officiels primaire, secondaire, terminale, semestriel et annuel." />
+<meta property="og:image" content="https://myardoise.com/icone-512.png" />
+<meta property="og:image:alt" content="Ardoise, plateforme de gestion scolaire" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Notes, moyennes et bulletins scolaires RDC — Ardoise" />
+<meta name="twitter:description" content="Saisie des cotes, moyennes pondérées, classements, mentions et bulletins officiels primaire, secondaire, terminale, semestriel et annuel." />
+<meta name="twitter:image" content="https://myardoise.com/icone-512.png" />
+
+<link rel="icon" type="image/png" sizes="192x192" href="/icone-192.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="/icone-ios-180.png" />
+<link rel="manifest" href="/manifest.json" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="preconnect" href="https://scolaire-saas-backend.onrender.com" />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/site.css" />
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Accueil",
+          "item": "https://myardoise.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Fonctionnalités",
+          "item": "https://myardoise.com/fonctionnalites/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Notes et bulletins"
+        }
+      ],
+      "@id": "https://myardoise.com/fonctionnalites/notes-et-bulletins/#n0"
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Les bulletins sont-ils au format officiel de la RDC ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Oui. Ardoise produit le bulletin primaire, le bulletin secondaire et celui des classes terminales aux formats attendus, en-tête et armoiries comprises, ainsi que le bulletin semestriel et le bulletin annuel. Une école qui utilise un modèle particulier peut en composer un dans l'éditeur de modèles, à partir de l'offre Prime."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Qui peut générer et signer un bulletin ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "La direction, toujours. Les titulaires, si l'école les y autorise — soit tous, soit une liste nominative. Un bulletin signé est daté et porte le nom du signataire ; sa modification après signature est un réglage que l'école active ou refuse."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Comment sont départagés deux élèves à la même moyenne ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Par la règle d'égalité que vous choisissez pour l'établissement, appliquée uniformément à toutes les classes. Le classement n'est donc jamais le résultat d'une décision prise au cas par cas devant un parent qui conteste."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Peut-on bloquer un bulletin pour impayé ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Oui, et c'est un réglage de l'école, pas une règle imposée. Vous pouvez bloquer la remise du bulletin au-delà d'un seuil d'impayé, tolérer un pourcentage, et accorder une dérogation nominative à un élève dont la situation le justifie. La dérogation est motivée et tracée."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Une note peut-elle être modifiée après validation ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Une note validée est verrouillée pour le professeur. La direction peut la dévalider pour permettre une correction ; l'opération est inscrite au journal d'activité avec son auteur et sa date. Après clôture de la période, plus rien ne bouge sans réouverture explicite."
+          }
+        }
+      ],
+      "@id": "https://myardoise.com/fonctionnalites/notes-et-bulletins/#n1"
+    }
+  ]
+}
+</script>
+</head>
+
+<body>
+<a class="saut-contenu" href="#contenu">Aller au contenu</a>
+
+<header class="entete">
+  <div class="conteneur">
+    <a class="marque" href="/">Ardoise</a>
+
+    <nav class="nav-site" aria-label="Navigation principale">
+      <ul class="nav-niveau1">
+<li class="a-sous-menu" data-actif="oui">
+<button type="button" class="declencheur" aria-expanded="false" aria-controls="sm-produit">Produit<span class="chevron" aria-hidden="true"></span></button>
+<div class="sous-menu" id="sm-produit" hidden>
+<div class="sm-conteneur">
+<div class="sm-colonne">
+<p class="sm-titre">Vue d'ensemble</p>
+<ul>
+<li><a href="/fonctionnalites/"><span class="sm-lien">Toutes les fonctionnalités</span><span class="sm-note">Ce qu'Ardoise couvre, module par module</span></a></li>
+<li><a href="/fonctionnalites/ia/"><span class="sm-lien">Intelligence artificielle</span><span class="sm-note">Assistance, appréciations, analyse des données</span></a></li>
+<li><a href="/securite/"><span class="sm-lien">Sécurité et données</span><span class="sm-note">Isolation, rôles, traçabilité, sauvegardes</span></a></li>
+</ul></div>
+<div class="sm-colonne">
+<p class="sm-titre">Par domaine</p>
+<ul>
+<li><a href="/fonctionnalites/gestion-scolaire/"><span class="sm-lien">Gestion scolaire</span><span class="sm-note">Élèves, classes, cours, années scolaires</span></a></li>
+<li><a href="/fonctionnalites/notes-et-bulletins/"><span class="sm-lien">Notes et bulletins</span><span class="sm-note">Cotes, moyennes, bulletins officiels RDC</span></a></li>
+<li><a href="/fonctionnalites/vie-scolaire/"><span class="sm-lien">Vie scolaire</span><span class="sm-note">Présences, discipline, emploi du temps</span></a></li>
+<li><a href="/fonctionnalites/finances/"><span class="sm-lien">Finances de l'école</span><span class="sm-note">Frais scolaires, caisse, paie</span></a></li>
+<li><a href="/fonctionnalites/admissions-et-orientation/"><span class="sm-lien">Admissions et orientation</span><span class="sm-note">Concours, candidats, vœux, affectation</span></a></li>
+<li><a href="/fonctionnalites/direction-et-pilotage/"><span class="sm-lien">Direction et pilotage</span><span class="sm-note">Rapports, communication, archives</span></a></li>
+</ul></div>
+</div></div></li>
+<li class="a-sous-menu">
+<button type="button" class="declencheur" aria-expanded="false" aria-controls="sm-tarifs">Tarifs<span class="chevron" aria-hidden="true"></span></button>
+<div class="sous-menu" id="sm-tarifs" hidden>
+<div class="sm-conteneur">
+<div class="sm-colonne">
+<p class="sm-titre">Abonnement</p>
+<ul>
+<li><a href="/tarifs/"><span class="sm-lien">Les quatre offres</span><span class="sm-note">Ascension, Prime, Pilote, Infinite</span></a></li>
+<li><a href="/tarifs/comparer/"><span class="sm-lien">Comparer les offres</span><span class="sm-note">Le tableau ligne par ligne</span></a></li>
+</ul></div>
+</div></div></li>
+<li class="a-sous-menu">
+<button type="button" class="declencheur" aria-expanded="false" aria-controls="sm-services">Services<span class="chevron" aria-hidden="true"></span></button>
+<div class="sous-menu" id="sm-services" hidden>
+<div class="sm-conteneur">
+<div class="sm-colonne">
+<p class="sm-titre">Accompagnement</p>
+<ul>
+<li><a href="/services/"><span class="sm-lien">Tous les services</span><span class="sm-note">Ce que notre équipe fait pour vous</span></a></li>
+<li><a href="/services/installation/"><span class="sm-lien">Installation et configuration</span><span class="sm-note">60 $, forfait unique</span></a></li>
+<li><a href="/services/formation/"><span class="sm-lien">Formation du personnel</span><span class="sm-note">30, 60 ou 100 $</span></a></li>
+<li><a href="/services/campagne-de-capture/"><span class="sm-lien">Campagne de capture</span><span class="sm-note">0,50 $ par élève</span></a></li>
+</ul></div>
+</div></div></li>
+<li class="a-sous-menu">
+<button type="button" class="declencheur" aria-expanded="false" aria-controls="sm-ressources">Ressources<span class="chevron" aria-hidden="true"></span></button>
+<div class="sous-menu" id="sm-ressources" hidden>
+<div class="sm-conteneur">
+<div class="sm-colonne">
+<p class="sm-titre">Comprendre Ardoise</p>
+<ul>
+<li><a href="/faq/"><span class="sm-lien">Questions fréquentes</span><span class="sm-note">Les 25 questions posées avant de signer</span></a></li>
+<li><a href="/securite/"><span class="sm-lien">Sécurité et données</span><span class="sm-note">Où sont les données, qui y accède</span></a></li>
+<li><a href="/contact/"><span class="sm-lien">Parler à quelqu'un</span><span class="sm-note">Demander un accompagnement</span></a></li>
+</ul></div>
+</div></div></li>
+</ul>
+    </nav>
+
+    <div class="actions-entete">
+      <button class="bascule-theme" data-bascule-theme type="button" aria-label="Changer de thème">☾</button>
+      <a class="lien-connexion" href="/connexion.html">Se connecter</a>
+      <a class="bouton ocre petit" href="/contact/">Découvrir Ardoise</a>
+      <button class="bascule-menu" type="button" aria-expanded="false"
+              aria-controls="panneau-mobile" aria-label="Ouvrir le menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+  <div class="panneau-mobile" id="panneau-mobile" hidden>
+<div class="conteneur">
+<section class="bloc-mobile">
+<h2>Produit</h2>
+<ul>
+<li><a href="/fonctionnalites/">Toutes les fonctionnalités</a></li>
+<li><a href="/fonctionnalites/ia/">Intelligence artificielle</a></li>
+<li><a href="/securite/">Sécurité et données</a></li>
+</ul>
+<ul>
+<li><a href="/fonctionnalites/gestion-scolaire/">Gestion scolaire</a></li>
+<li><a href="/fonctionnalites/notes-et-bulletins/">Notes et bulletins</a></li>
+<li><a href="/fonctionnalites/vie-scolaire/">Vie scolaire</a></li>
+<li><a href="/fonctionnalites/finances/">Finances de l'école</a></li>
+<li><a href="/fonctionnalites/admissions-et-orientation/">Admissions et orientation</a></li>
+<li><a href="/fonctionnalites/direction-et-pilotage/">Direction et pilotage</a></li>
+</ul>
+</section>
+<section class="bloc-mobile">
+<h2>Tarifs</h2>
+<ul>
+<li><a href="/tarifs/">Les quatre offres</a></li>
+<li><a href="/tarifs/comparer/">Comparer les offres</a></li>
+</ul>
+</section>
+<section class="bloc-mobile">
+<h2>Services</h2>
+<ul>
+<li><a href="/services/">Tous les services</a></li>
+<li><a href="/services/installation/">Installation et configuration</a></li>
+<li><a href="/services/formation/">Formation du personnel</a></li>
+<li><a href="/services/campagne-de-capture/">Campagne de capture</a></li>
+</ul>
+</section>
+<section class="bloc-mobile">
+<h2>Ressources</h2>
+<ul>
+<li><a href="/faq/">Questions fréquentes</a></li>
+<li><a href="/securite/">Sécurité et données</a></li>
+<li><a href="/contact/">Parler à quelqu'un</a></li>
+</ul>
+</section>
+<div class="actions-mobile"><a class="bouton secondaire pleine-largeur" href="/connexion.html">Se connecter</a><a class="bouton ocre pleine-largeur" href="/contact/">Découvrir Ardoise</a></div>
+</div></div>
+</header>
+
+<main id="contenu">
+
+<nav class="fil-ariane" aria-label="Fil d'Ariane"><div class="conteneur"><ol>
+<li><a href="/">Accueil</a></li>
+<li><a href="/fonctionnalites/">Fonctionnalités</a></li>
+<li aria-current="page">Notes et bulletins</li>
+</ol></div></nav><section class="hero-page regle">
+  <div class="conteneur ">
+    <div>
+      <p class="eyebrow">Fonctionnalités · Notes et bulletins</p>
+      <h1>Des cotes saisies une fois, un bulletin prêt le jour de la proclamation</h1>
+      <p class="chapeau">Travaux, interrogations, examens, moyennes pondérées, classements, mentions, et le bulletin officiel imprimé sans avoir refait une seule addition. C'est le module qu'une école regarde en premier, et celui qui fait gagner le plus de temps.</p>
+      <div class="groupe-cta"><a class="bouton ocre" href="/tarifs/">Disponible dès l'offre Ascension</a><a class="bouton secondaire" href="/tarifs/comparer/">Comparer les offres</a></div>
+    </div>
+    
+  </div>
+</section>
+<section class="section">
+  <div class="conteneur">
+    <div class="section-entete">
+      <span class="eyebrow">Saisie</span>
+      <h2>La grille de cotes, telle qu'un professeur la remplit</h2>
+      <p class="chapeau">
+        Une classe, un cours, une période : la liste des élèves et les colonnes à
+        remplir. Rien à chercher, rien à ouvrir dans un autre écran.
+      </p>
+    </div>
+
+    <div class="grille-cartes deux">
+      <article class="carte">
+        <h3>Travaux et cotes</h3>
+        <p>Le professeur crée ses travaux — interrogation, devoir, examen — avec
+           leur maximum de points et leur ordre. Il saisit les résultats élève par
+           élève, et la cote de période se compose à partir de ces travaux ou se
+           saisit directement, selon la manière de travailler de l'école.</p>
+        <ul class="mini-liste">
+          <li>Maximum de points propre à chaque travail</li>
+          <li>Récapitulatif de classe pour relire l'ensemble</li>
+          <li>Fiche de cotes imprimable pour l'archivage papier</li>
+        </ul>
+      </article>
+      <article class="carte">
+        <h3>Validation et verrouillage</h3>
+        <p>Une cote saisie n'est pas définitive tant qu'elle n'est pas validée. La
+           validation la fige et la fait entrer dans les moyennes ; la
+           dévalidation, réservée à la direction, permet la correction et laisse
+           une trace.</p>
+        <ul class="mini-liste">
+          <li>Qui a saisi, qui a validé, à quelle date</li>
+          <li>Recalcul global à la demande</li>
+          <li>Clôture de période qui gèle l'ensemble</li>
+        </ul>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section alt">
+  <div class="conteneur">
+    <div class="section-entete">
+      <span class="eyebrow">Calculs</span>
+      <h2>Les moyennes suivent vos règles, pas celles d'un logiciel étranger</h2>
+    </div>
+    <div class="grille-cartes trois">
+      <article class="carte">
+        <h3>Pondération</h3>
+        <p>Chaque cours porte son coefficient et son maximum, avec une valeur
+           dérogatoire possible par classe. Les moyennes de période, de semestre
+           et d'année en découlent, exprimées en points et en pourcentage.</p>
+      </article>
+      <article class="carte">
+        <h3>Classement</h3>
+        <p>Le rang de chaque élève dans sa classe est calculé automatiquement, avec
+           une règle d'égalité définie une fois pour l'établissement — ce qui rend
+           le classement défendable devant un parent.</p>
+      </article>
+      <article class="carte">
+        <h3>Mentions</h3>
+        <p>Les mentions sont vos seuils, écrits une fois : libellé, borne basse,
+           borne haute. Elles s'appliquent à tous les bulletins, sans intervention.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="bulletins">
+  <div class="conteneur">
+    <div class="section-entete">
+      <span class="eyebrow">Bulletins</span>
+      <h2>Cinq bulletins, tous produits depuis les mêmes données</h2>
+    </div>
+
+    <div class="grille-cartes deux">
+      <article class="carte etoffee">
+        <h3>Les formats officiels</h3>
+        <ul class="mini-liste">
+          <li><strong>Bulletin primaire</strong> — mise en page et cours officiels
+              du cycle primaire</li>
+          <li><strong>Bulletin secondaire</strong> — format attendu par
+              l'inspection</li>
+          <li><strong>Classes terminales</strong> — variante propre aux classes de
+              fin de cycle</li>
+          <li><strong>Bulletin semestriel</strong> — regroupement des périodes du
+              semestre</li>
+          <li><strong>Bulletin annuel</strong> — synthèse de l'année et décision
+              de passage</li>
+        </ul>
+      </article>
+      <article class="carte etoffee">
+        <h3>Ce que le bulletin porte</h3>
+        <ul class="mini-liste">
+          <li>Cotes par cours, totaux, pourcentage, maximum</li>
+          <li>Rang dans la classe et effectif</li>
+          <li>Mention, conduite et application</li>
+          <li>Observation du titulaire, rédigeable avec l'aide de l'IA</li>
+          <li>Signature datée et nominative</li>
+        </ul>
+        <p class="apres-liste">Le fichier PDF est conservé et peut être régénéré à
+           l'identique des années plus tard.</p>
+      </article>
+    </div>
+
+    <div class="deux-colonnes-texte">
+      <div>
+        <h3>Votre propre modèle, si le vôtre est particulier</h3>
+        <p>À partir de l'offre Prime, l'éditeur de modèles permet de composer le
+           bulletin de votre établissement : zones, positions, polices, tailles.
+           Un modèle peut être affecté à une classe pour les bulletins de période
+           et un autre pour le bulletin annuel.</p>
+      </div>
+      <div>
+        <h3>Remise conditionnée au paiement, si vous le décidez</h3>
+        <p>L'école peut bloquer la remise du bulletin au-delà d'un seuil d'impayé,
+           avec un pourcentage de tolérance, et accorder une dérogation motivée à
+           un élève. Le réglage est explicite et réversible ; la dérogation est
+           nominative et tracée.
+           <a href="/fonctionnalites/finances/#impayes">Voir le contrôle des impayés</a>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section alt" id="fin-annee">
+  <div class="conteneur">
+    <div class="section-entete">
+      <span class="eyebrow">Fin d'année</span>
+      <h2>Repêchage, décision de passage, proclamation</h2>
+      <p class="chapeau">
+        La partie de l'année où une erreur de calcul se paie le plus cher, et où
+        les additions se font traditionnellement à la main, la nuit, en salle des
+        professeurs.
+      </p>
+    </div>
+
+    <div class="grille-cartes trois">
+      <article class="carte">
+        <h3>Session de repêchage</h3>
+        <p>Vous fixez les règles : seuil d'échec par cours, nombre maximum de
+           cours repêchables, fourchette de moyenne rendant éligible, politique de
+           note retenue — plafonnée, remplacée ou moyennée. Ardoise établit la
+           liste des élèves éligibles et des cours concernés.</p>
+      </article>
+      <article class="carte">
+        <h3>Copies et résultats</h3>
+        <p>Les cotes de repêchage sont saisies, la moyenne recalculée, et la
+           décision — admis après repêchage ou redoublant — enregistrée avec la
+           moyenne avant et après. La session se clôture, et le résultat entre
+           dans le bulletin annuel.</p>
+      </article>
+      <article class="carte">
+        <h3>Passage et sortie</h3>
+        <p>Le seuil de promotion et le seuil de redoublement de l'école
+           déterminent la proposition faite pour chaque élève. Vous validez classe
+           par classe, et l'année suivante démarre avec les bons effectifs.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="conteneur">
+    <div class="encart-offre">
+  <p><strong>Dans quelle offre&nbsp;?</strong> Notes, calculs, classements, mentions et les cinq bulletins sont dans les quatre offres. L'éditeur de modèles de bulletins arrive avec Prime ; la session de repêchage et les rapports avancés avec Pilote.</p>
+  <p class="liens-encart">
+    <a href="/tarifs/">Voir les offres</a> ·
+    <a href="/tarifs/comparer/">Comparer ligne par ligne</a>
+  </p>
+</div>
+  </div>
+</section>
+<section class="section alt" id="questions">
+  <div class="conteneur">
+    <div class="section-entete">
+      <span class="eyebrow">Questions</span>
+      <h2>Les questions des directeurs sur les bulletins</h2>
+      
+    </div>
+    <div class="faq"><details><summary>Les bulletins sont-ils au format officiel de la RDC&nbsp;?</summary><div><p>Oui. Ardoise produit le bulletin primaire, le bulletin secondaire et celui des classes terminales aux formats attendus, en-tête et armoiries comprises, ainsi que le bulletin semestriel et le bulletin annuel. Une école qui utilise un modèle particulier peut en composer un dans l'éditeur de modèles, à partir de l'offre Prime.</p></div></details><details><summary>Qui peut générer et signer un bulletin&nbsp;?</summary><div><p>La direction, toujours. Les titulaires, si l'école les y autorise — soit tous, soit une liste nominative. Un bulletin signé est daté et porte le nom du signataire ; sa modification après signature est un réglage que l'école active ou refuse.</p></div></details><details><summary>Comment sont départagés deux élèves à la même moyenne&nbsp;?</summary><div><p>Par la règle d'égalité que vous choisissez pour l'établissement, appliquée uniformément à toutes les classes. Le classement n'est donc jamais le résultat d'une décision prise au cas par cas devant un parent qui conteste.</p></div></details><details><summary>Peut-on bloquer un bulletin pour impayé&nbsp;?</summary><div><p>Oui, et c'est un réglage de l'école, pas une règle imposée. Vous pouvez bloquer la remise du bulletin au-delà d'un seuil d'impayé, tolérer un pourcentage, et accorder une dérogation nominative à un élève dont la situation le justifie. La dérogation est motivée et tracée.</p></div></details><details><summary>Une note peut-elle être modifiée après validation&nbsp;?</summary><div><p>Une note validée est verrouillée pour le professeur. La direction peut la dévalider pour permettre une correction ; l'opération est inscrite au journal d'activité avec son auteur et sa date. Après clôture de la période, plus rien ne bouge sans réouverture explicite.</p></div></details></div>
+  </div>
+</section><section class="section serree" aria-labelledby="plus-loin">
+  <div class="conteneur">
+    <h2 id="plus-loin" class="titre-maillage">Pour aller plus loin</h2>
+    <div class="grille-liens"><a class="carte-lien" href="/fonctionnalites/ia/"><span class="titre">Appréciations générées</span><span class="texte">Comment l'IA rédige les observations de bulletin, et qui garde la main.</span></a><a class="carte-lien" href="/fonctionnalites/finances/"><span class="titre">Frais scolaires</span><span class="texte">Le lien entre paiement et remise du bulletin.</span></a><a class="carte-lien" href="/fonctionnalites/direction-et-pilotage/"><span class="titre">Rapports et palmarès</span><span class="texte">Taux de réussite, moyennes par cours, palmarès de fin de période.</span></a><a class="carte-lien" href="/tarifs/comparer/"><span class="titre">Comparer les offres</span><span class="texte">Où s'arrête Ascension, où commence Prime.</span></a></div>
+  </div>
+</section><section class="cta-final">
+  <div class="conteneur">
+    <h2>La prochaine proclamation peut se préparer autrement.</h2>
+    <p>Montrez-nous comment vous produisez vos bulletins aujourd'hui, nous vous montrons ce que ça devient.</p>
+    <div class="groupe-cta" style="justify-content:center"><a class="bouton principal" href="/contact/">Demander une présentation</a><a class="bouton secondaire" href="/tarifs/">Voir les offres</a></div>
+  </div>
+</section>
+
+</main>
+
+<footer class="pied">
+  <div class="conteneur">
+    <div class="grille">
+      <div>
+        <div class="marque">Ardoise</div>
+        <p class="description">
+          Plateforme de gestion scolaire pour les établissements de la République
+          démocratique du Congo et d'Afrique francophone.
+        </p>
+      </div>
+      <div>
+        <h2>Produit</h2>
+        <ul>
+          <li><a href="/fonctionnalites/">Fonctionnalités</a></li>
+          <li><a href="/fonctionnalites/ia/">Intelligence artificielle</a></li>
+          <li><a href="/securite/">Sécurité</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Par domaine</h2>
+        <ul>
+          <li><a href="/fonctionnalites/gestion-scolaire/">Gestion scolaire</a></li>
+          <li><a href="/fonctionnalites/notes-et-bulletins/">Notes et bulletins</a></li>
+          <li><a href="/fonctionnalites/vie-scolaire/">Vie scolaire</a></li>
+          <li><a href="/fonctionnalites/finances/">Finances</a></li>
+          <li><a href="/fonctionnalites/admissions-et-orientation/">Admissions et orientation</a></li>
+          <li><a href="/fonctionnalites/direction-et-pilotage/">Direction et pilotage</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Offres et services</h2>
+        <ul>
+          <li><a href="/tarifs/">Tarifs</a></li>
+          <li><a href="/tarifs/comparer/">Comparer les offres</a></li>
+          <li><a href="/services/installation/">Installation</a></li>
+          <li><a href="/services/formation/">Formation</a></li>
+          <li><a href="/services/campagne-de-capture/">Campagne de capture</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Ressources</h2>
+        <ul>
+          <li><a href="/faq/">Questions fréquentes</a></li>
+          <li><a href="/contact/">Nous contacter</a></li>
+          <li><a href="/connexion.html">Se connecter</a></li>
+          <li><a href="/confidentialite.html">Confidentialité</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="bas">
+      <div>© 2026 Ardoise — Logiciel de gestion scolaire.</div>
+      <div>Fait pour les écoles de la RDC.</div>
+    </div>
+  </div>
+</footer>
+
+<script src="/catalogue.js" defer></script>
+<script src="/nav.js" defer></script>
+</body>
+</html>

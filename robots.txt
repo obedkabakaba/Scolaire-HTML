@@ -1,0 +1,56 @@
+# Ardoise — myardoise.com
+#
+# Le site public (accueil, tarifs, accompagnement) est destiné à être indexé.
+# L'application, elle, ne l'est pas : ses pages exigent un jeton, ne rendent
+# rien d'utile à un robot, et leur présence dans un index n'apporterait que des
+# résultats morts pointant vers un écran de connexion.
+
+User-agent: *
+Allow: /$
+Allow: /index.html
+Allow: /tarifs.html
+Allow: /services.html
+Allow: /confidentialite.html
+Allow: /site-public.html
+
+# Écrans de l'application — inutiles hors session.
+Disallow: /connexion.html
+Disallow: /changer-mot-de-passe.html
+Disallow: /reinitialiser-mot-de-passe.html
+Disallow: /mon-profil.html
+Disallow: /dashboard-directeur.html
+Disallow: /espace-professeur.html
+Disallow: /espace-titulaire.html
+Disallow: /espace-secretaire.html
+Disallow: /super-admin.html
+Disallow: /eleves.html
+Disallow: /notes.html
+Disallow: /bulletins.html
+Disallow: /classes.html
+Disallow: /cours.html
+Disallow: /cours-classe-titulaire.html
+Disallow: /presences.html
+Disallow: /discipline.html
+Disallow: /frais-scolaires.html
+Disallow: /comptabilite.html
+Disallow: /emploi-du-temps.html
+Disallow: /calendrier.html
+Disallow: /inscriptions.html
+Disallow: /orientation.html
+Disallow: /repechage.html
+Disallow: /archives.html
+Disallow: /rapports.html
+Disallow: /journal.html
+Disallow: /messages.html
+Disallow: /parametres.html
+Disallow: /utilisateurs.html
+Disallow: /annee-scolaire.html
+Disallow: /ecole.html
+Disallow: /generateur-modeles.html
+Disallow: /bulletin-annuel.html
+Disallow: /apercu-bulletin-primaire.html
+Disallow: /apercu-bulletin-secondaire.html
+Disallow: /apercu-bulletin-semestre.html
+Disallow: /apercu-bulletin-terminale.html
+
+Sitemap: https://myardoise.com/sitemap.xml

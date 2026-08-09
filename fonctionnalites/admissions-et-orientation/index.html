@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<title>Concours d'admission et orientation des élèves — Ardoise</title>
+<meta name="description" content="Sessions d'admission, épreuves et correcteurs, classement des candidats, publication des résultats, conversion en élèves et orientation au mérite." />
+<link rel="canonical" href="https://myardoise.com/fonctionnalites/admissions-et-orientation/" />
+<meta name="robots" content="index, follow, max-image-preview:large" />
+<meta name="author" content="Ardoise" />
+<meta name="theme-color" content="#F6F2E7" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#141C18" media="(prefers-color-scheme: dark)" />
+
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Ardoise" />
+<meta property="og:locale" content="fr_CD" />
+<meta property="og:url" content="https://myardoise.com/fonctionnalites/admissions-et-orientation/" />
+<meta property="og:title" content="Concours d'admission et orientation des élèves — Ardoise" />
+<meta property="og:description" content="Sessions d'admission, épreuves et correcteurs, classement des candidats, publication des résultats, conversion en élèves et orientation au mérite." />
+<meta property="og:image" content="https://myardoise.com/icone-512.png" />
+<meta property="og:image:alt" content="Ardoise, plateforme de gestion scolaire" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Concours d'admission et orientation des élèves — Ardoise" />
+<meta name="twitter:description" content="Sessions d'admission, épreuves et correcteurs, classement des candidats, publication des résultats, conversion en élèves et orientation au mérite." />
+<meta name="twitter:image" content="https://myardoise.com/icone-512.png" />
+
+<link rel="icon" type="image/png" sizes="192x192" href="/icone-192.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="/icone-ios-180.png" />
+<link rel="manifest" href="/manifest.json" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="preconnect" href="https://scolaire-saas-backend.onrender.com" />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/site.css" />
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Accueil",
+          "item": "https://myardoise.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Fonctionnalités",
+          "item": "https://myardoise.com/fonctionnalites/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Admissions et orientation"
+        }
+      ],
+      "@id": "https://myardoise.com/fonctionnalites/admissions-et-orientation/#n0"
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Un candidat admis doit-il être ressaisi comme élève ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Non. La conversion transforme les candidats admis en élèves inscrits, avec leur identité, leur responsable et leur affectation de classe. L'école peut même la rendre automatique à la publication des résultats. Le lien entre le candidat et l'élève est conservé, ce qui permet de retrouver la copie d'admission des années plus tard."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Peut-on faire corriger les épreuves par plusieurs enseignants ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Oui. Chaque épreuve reçoit son correcteur, qui ne voit que les copies de son épreuve et saisit ses points sans accéder au classement général. Le total et le rang ne sont composés qu'une fois toutes les épreuves renseignées."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Comment fonctionne l'orientation au mérite ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "L'élève exprime un vœu et une option de repli. Chaque option porte son critère — moyenne globale minimale, ou résultat minimal dans une branche — et chaque classe sa capacité. La répartition classe les élèves éligibles par mérite et remplit les options dans la limite des places. La direction garde la main : toute décision peut être forcée, avec un motif enregistré."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Faut-il organiser un test pour utiliser le module ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Non. Une session peut fonctionner sur dossier plutôt que sur épreuve : vous inscrivez les candidats, vous décidez, vous publiez. Le mode test n'est qu'une des façons de conduire une admission."
+          }
+        }
+      ],
+      "@id": "https://myardoise.com/fonctionnalites/admissions-et-orientation/#n1"
+    }
+  ]
+}
+</script>
+</head>
+
+<body>
+<a class="saut-contenu" href="#contenu">Aller au contenu</a>
+
+<header class="entete">
+  <div class="conteneur">
+    <a class="marque" href="/">Ardoise</a>
+
+    <nav class="nav-site" aria-label="Navigation principale">
+      <ul class="nav-niveau1">
+<li class="a-sous-menu" data-actif="oui">
+<button type="button" class="declencheur" aria-expanded="false" aria-controls="sm-produit">Produit<span class="chevron" aria-hidden="true"></span></button>
+<div class="sous-menu" id="sm-produit" hidden>
+<div class="sm-conteneur">
+<div class="sm-colonne">
+<p class="sm-titre">Vue d'ensemble</p>
+<ul>
+<li><a href="/fonctionnalites/"><span class="sm-lien">Toutes les fonctionnalités</span><span class="sm-note">Ce qu'Ardoise couvre, module par module</span></a></li>
+<li><a href="/fonctionnalites/ia/"><span class="sm-lien">Intelligence artificielle</span><span class="sm-note">Assistance, appréciations, analyse des données</span></a></li>
+<li><a href="/securite/"><span class="sm-lien">Sécurité et données</span><span class="sm-note">Isolation, rôles, traçabilité, sauvegardes</span></a></li>
+</ul></div>
+<div class="sm-colonne">
+<p class="sm-titre">Par domaine</p>
+<ul>
+<li><a href="/fonctionnalites/gestion-scolaire/"><span class="sm-lien">Gestion scolaire</span><span class="sm-note">Élèves, classes, cours, années scolaires</span></a></li>
+<li><a href="/fonctionnalites/notes-et-bulletins/"><span class="sm-lien">Notes et bulletins</span><span class="sm-note">Cotes, moyennes, bulletins officiels RDC</span></a></li>
+<li><a href="/fonctionnalites/vie-scolaire/"><span class="sm-lien">Vie scolaire</span><span class="sm-note">Présences, discipline, emploi du temps</span></a></li>
+<li><a href="/fonctionnalites/finances/"><span class="sm-lien">Finances de l'école</span><span class="sm-note">Frais scolaires, caisse, paie</span></a></li>
+<li><a href="/fonctionnalites/admissions-et-orientation/"><span class="sm-lien">Admissions et orientation</span><span class="sm-note">Concours, candidats, vœux, affectation</span></a></li>
+<li><a href="/fonctionnalites/direction-et-pilotage/"><span class="sm-lien">Direction et pilotage</span><span class="sm-note">Rapports, communication, archives</span></a></li>
+</ul></div>
+</div></div></li>
+<li class="a-sous-menu">
+<button type="button" class="declencheur" aria-expanded="false" aria-controls="sm-tarifs">Tarifs<span class="chevron" aria-hidden="true"></span></button>
+<div class="sous-menu" id="sm-tarifs" hidden>
+<div class="sm-conteneur">
+<div class="sm-colonne">
+<p class="sm-titre">Abonnement</p>
+<ul>
+<li><a href="/tarifs/"><span class="sm-lien">Les quatre offres</span><span class="sm-note">Ascension, Prime, Pilote, Infinite</span></a></li>
+<li><a href="/tarifs/comparer/"><span class="sm-lien">Comparer les offres</span><span class="sm-note">Le tableau ligne par ligne</span></a></li>
+</ul></div>
+</div></div></li>
+<li class="a-sous-menu">
+<button type="button" class="declencheur" aria-expanded="false" aria-controls="sm-services">Services<span class="chevron" aria-hidden="true"></span></button>
+<div class="sous-menu" id="sm-services" hidden>
+<div class="sm-conteneur">
+<div class="sm-colonne">
+<p class="sm-titre">Accompagnement</p>
+<ul>
+<li><a href="/services/"><span class="sm-lien">Tous les services</span><span class="sm-note">Ce que notre équipe fait pour vous</span></a></li>
+<li><a href="/services/installation/"><span class="sm-lien">Installation et configuration</span><span class="sm-note">60 $, forfait unique</span></a></li>
+<li><a href="/services/formation/"><span class="sm-lien">Formation du personnel</span><span class="sm-note">30, 60 ou 100 $</span></a></li>
+<li><a href="/services/campagne-de-capture/"><span class="sm-lien">Campagne de capture</span><span class="sm-note">0,50 $ par élève</span></a></li>
+</ul></div>
+</div></div></li>
+<li class="a-sous-menu">
+<button type="button" class="declencheur" aria-expanded="false" aria-controls="sm-ressources">Ressources<span class="chevron" aria-hidden="true"></span></button>
+<div class="sous-menu" id="sm-ressources" hidden>
+<div class="sm-conteneur">
+<div class="sm-colonne">
+<p class="sm-titre">Comprendre Ardoise</p>
+<ul>
+<li><a href="/faq/"><span class="sm-lien">Questions fréquentes</span><span class="sm-note">Les 25 questions posées avant de signer</span></a></li>
+<li><a href="/securite/"><span class="sm-lien">Sécurité et données</span><span class="sm-note">Où sont les données, qui y accède</span></a></li>
+<li><a href="/contact/"><span class="sm-lien">Parler à quelqu'un</span><span class="sm-note">Demander un accompagnement</span></a></li>
+</ul></div>
+</div></div></li>
+</ul>
+    </nav>
+
+    <div class="actions-entete">
+      <button class="bascule-theme" data-bascule-theme type="button" aria-label="Changer de thème">☾</button>
+      <a class="lien-connexion" href="/connexion.html">Se connecter</a>
+      <a class="bouton ocre petit" href="/contact/">Découvrir Ardoise</a>
+      <button class="bascule-menu" type="button" aria-expanded="false"
+              aria-controls="panneau-mobile" aria-label="Ouvrir le menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+  <div class="panneau-mobile" id="panneau-mobile" hidden>
+<div class="conteneur">
+<section class="bloc-mobile">
+<h2>Produit</h2>
+<ul>
+<li><a href="/fonctionnalites/">Toutes les fonctionnalités</a></li>
+<li><a href="/fonctionnalites/ia/">Intelligence artificielle</a></li>
+<li><a href="/securite/">Sécurité et données</a></li>
+</ul>
+<ul>
+<li><a href="/fonctionnalites/gestion-scolaire/">Gestion scolaire</a></li>
+<li><a href="/fonctionnalites/notes-et-bulletins/">Notes et bulletins</a></li>
+<li><a href="/fonctionnalites/vie-scolaire/">Vie scolaire</a></li>
+<li><a href="/fonctionnalites/finances/">Finances de l'école</a></li>
+<li><a href="/fonctionnalites/admissions-et-orientation/">Admissions et orientation</a></li>
+<li><a href="/fonctionnalites/direction-et-pilotage/">Direction et pilotage</a></li>
+</ul>
+</section>
+<section class="bloc-mobile">
+<h2>Tarifs</h2>
+<ul>
+<li><a href="/tarifs/">Les quatre offres</a></li>
+<li><a href="/tarifs/comparer/">Comparer les offres</a></li>
+</ul>
+</section>
+<section class="bloc-mobile">
+<h2>Services</h2>
+<ul>
+<li><a href="/services/">Tous les services</a></li>
+<li><a href="/services/installation/">Installation et configuration</a></li>
+<li><a href="/services/formation/">Formation du personnel</a></li>
+<li><a href="/services/campagne-de-capture/">Campagne de capture</a></li>
+</ul>
+</section>
+<section class="bloc-mobile">
+<h2>Ressources</h2>
+<ul>
+<li><a href="/faq/">Questions fréquentes</a></li>
+<li><a href="/securite/">Sécurité et données</a></li>
+<li><a href="/contact/">Parler à quelqu'un</a></li>
+</ul>
+</section>
+<div class="actions-mobile"><a class="bouton secondaire pleine-largeur" href="/connexion.html">Se connecter</a><a class="bouton ocre pleine-largeur" href="/contact/">Découvrir Ardoise</a></div>
+</div></div>
+</header>
+
+<main id="contenu">
+
+<nav class="fil-ariane" aria-label="Fil d'Ariane"><div class="conteneur"><ol>
+<li><a href="/">Accueil</a></li>
+<li><a href="/fonctionnalites/">Fonctionnalités</a></li>
+<li aria-current="page">Admissions et orientation</li>
+</ol></div></nav><section class="hero-page regle">
+  <div class="conteneur ">
+    <div>
+      <p class="eyebrow">Fonctionnalités · Admissions et orientation</p>
+      <h1>Du concours d'entrée à l'affectation en option, sans tableau Excel</h1>
+      <p class="chapeau">Une session d'admission, ses épreuves, ses correcteurs, ses candidats, son classement et sa publication. Puis, pour les élèves déjà inscrits, l'orientation vers les options selon leurs vœux, leurs résultats et les places disponibles.</p>
+      <div class="groupe-cta"><a class="bouton ocre" href="/tarifs/">Disponible avec l'offre Pilote</a><a class="bouton secondaire" href="/tarifs/comparer/">Comparer les offres</a></div>
+    </div>
+    
+  </div>
+</section>
+<section class="section" id="concours">
+  <div class="conteneur">
+    <div class="section-entete">
+      <span class="eyebrow">Concours d'admission</span>
+      <h2>Une session, de l'inscription du premier candidat à la proclamation</h2>
+      <p class="chapeau">
+        Le concours d'entrée est le moment de l'année où une école manipule le plus
+        de chiffres en le moins de temps, souvent sur un classeur partagé entre
+        trois personnes.
+      </p>
+    </div>
+
+    <div class="grille-etapes">
+      <article class="etape">
+        <span class="num">1</span>
+        <h3>Ouvrir la session</h3>
+        <p>Libellé, année cible, classes visées, nombre de places, dates
+           d'ouverture et de clôture, date du test. Une session peut viser une
+           classe précise ou plusieurs.</p>
+      </article>
+      <article class="etape">
+        <span class="num">2</span>
+        <h3>Inscrire les candidats</h3>
+        <p>Numéro de candidat attribué automatiquement, identité, responsable et
+           coordonnées, école de provenance. Le dossier est constitué une fois et
+           servira à l'inscription définitive.</p>
+      </article>
+      <article class="etape">
+        <span class="num">3</span>
+        <h3>Composer et corriger</h3>
+        <p>Les épreuves portent leur maximum et leur ordre. Chaque épreuve reçoit
+           son correcteur, qui ne voit que ses copies. Les points sont saisis
+           épreuve par épreuve.</p>
+      </article>
+      <article class="etape">
+        <span class="num">4</span>
+        <h3>Classer et décider</h3>
+        <p>Total et rang calculés, liste ordonnée, candidats recommandés signalés
+           avec leur motif. La direction admet, refuse ou met en attente, et
+           enregistre le désistement d'un candidat.</p>
+      </article>
+      <article class="etape">
+        <span class="num">5</span>
+        <h3>Publier</h3>
+        <p>Les résultats sont publiés, avec la date et le nom de celui qui a
+           publié. Les familles peuvent les consulter sur le site public de
+           l'école.</p>
+      </article>
+      <article class="etape">
+        <span class="num">6</span>
+        <h3>Convertir en élèves</h3>
+        <p>Les admis deviennent des élèves inscrits, affectés à leur classe, sans
+           aucune ressaisie. Automatiquement si l'école l'a réglé ainsi.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section alt" id="orientation">
+  <div class="conteneur">
+    <div class="section-entete">
+      <span class="eyebrow">Orientation</span>
+      <h2>Répartir les élèves entre les options, au mérite et sans contestation</h2>
+      <p class="chapeau">
+        Le passage en section, en fin de cycle d'orientation, produit chaque année
+        les mêmes discussions. Une règle écrite d'avance et appliquée par la
+        plateforme les raccourcit beaucoup.
+      </p>
+    </div>
+
+    <div class="grille-cartes trois">
+      <article class="carte">
+        <h3>Le vœu et le repli</h3>
+        <p>Chaque élève exprime l'option qu'il souhaite et celle qu'il accepterait
+           à défaut. Les deux sont enregistrées, ce qui évite de rappeler les
+           familles une par une quand une option est pleine.</p>
+      </article>
+      <article class="carte">
+        <h3>Le critère de l'option</h3>
+        <p>Une option peut exiger une moyenne globale minimale, ou un résultat
+           minimal dans une branche donnée — les mathématiques pour la
+           scientifique, par exemple. Le critère est défini une fois, en clair.</p>
+      </article>
+      <article class="carte">
+        <h3>La répartition</h3>
+        <p>Ardoise classe les élèves éligibles et remplit les options dans la
+           limite des capacités, puis affecte chacun à une classe. La direction
+           peut forcer une décision, avec un motif qui reste attaché au dossier.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="conteneur">
+    <div class="encart-offre">
+  <p><strong>Dans quelle offre&nbsp;?</strong> Le concours d'admission et l'orientation au mérite font partie de l'offre Pilote et de l'offre Infinite. Une école plus petite qui organise un test d'entrée a intérêt à prendre Pilote même en dessous de 600 élèves.</p>
+  <p class="liens-encart">
+    <a href="/tarifs/">Voir les offres</a> ·
+    <a href="/tarifs/comparer/">Comparer ligne par ligne</a>
+  </p>
+</div>
+  </div>
+</section>
+<section class="section alt" id="questions">
+  <div class="conteneur">
+    <div class="section-entete">
+      <span class="eyebrow">Questions</span>
+      <h2>Concours et orientation</h2>
+      
+    </div>
+    <div class="faq"><details><summary>Un candidat admis doit-il être ressaisi comme élève&nbsp;?</summary><div><p>Non. La conversion transforme les candidats admis en élèves inscrits, avec leur identité, leur responsable et leur affectation de classe. L'école peut même la rendre automatique à la publication des résultats. Le lien entre le candidat et l'élève est conservé, ce qui permet de retrouver la copie d'admission des années plus tard.</p></div></details><details><summary>Peut-on faire corriger les épreuves par plusieurs enseignants&nbsp;?</summary><div><p>Oui. Chaque épreuve reçoit son correcteur, qui ne voit que les copies de son épreuve et saisit ses points sans accéder au classement général. Le total et le rang ne sont composés qu'une fois toutes les épreuves renseignées.</p></div></details><details><summary>Comment fonctionne l'orientation au mérite&nbsp;?</summary><div><p>L'élève exprime un vœu et une option de repli. Chaque option porte son critère — moyenne globale minimale, ou résultat minimal dans une branche — et chaque classe sa capacité. La répartition classe les élèves éligibles par mérite et remplit les options dans la limite des places. La direction garde la main : toute décision peut être forcée, avec un motif enregistré.</p></div></details><details><summary>Faut-il organiser un test pour utiliser le module&nbsp;?</summary><div><p>Non. Une session peut fonctionner sur dossier plutôt que sur épreuve : vous inscrivez les candidats, vous décidez, vous publiez. Le mode test n'est qu'une des façons de conduire une admission.</p></div></details></div>
+  </div>
+</section><section class="section serree" aria-labelledby="plus-loin">
+  <div class="conteneur">
+    <h2 id="plus-loin" class="titre-maillage">Pour aller plus loin</h2>
+    <div class="grille-liens"><a class="carte-lien" href="/fonctionnalites/gestion-scolaire/"><span class="titre">Gestion scolaire</span><span class="texte">Sections, options et classes : la structure que l'orientation remplit.</span></a><a class="carte-lien" href="/fonctionnalites/direction-et-pilotage/"><span class="titre">Site public de l'école</span><span class="texte">Où les familles consultent les résultats publiés.</span></a><a class="carte-lien" href="/tarifs/"><span class="titre">L'offre Pilote</span><span class="texte">Ce qu'elle contient d'autre : comptabilité, paie, rapports avancés.</span></a><a class="carte-lien" href="/services/installation/"><span class="titre">Installation</span><span class="texte">Nous préparons sections, options et critères avec vous.</span></a></div>
+  </div>
+</section><section class="cta-final">
+  <div class="conteneur">
+    <h2>Le prochain concours peut se tenir sans classeur partagé.</h2>
+    <p>Dites-nous combien de candidats vous attendez et combien d'épreuves vous faites composer.</p>
+    <div class="groupe-cta" style="justify-content:center"><a class="bouton principal" href="/contact/">Demander une présentation</a><a class="bouton secondaire" href="/tarifs/">Voir l'offre Pilote</a></div>
+  </div>
+</section>
+
+</main>
+
+<footer class="pied">
+  <div class="conteneur">
+    <div class="grille">
+      <div>
+        <div class="marque">Ardoise</div>
+        <p class="description">
+          Plateforme de gestion scolaire pour les établissements de la République
+          démocratique du Congo et d'Afrique francophone.
+        </p>
+      </div>
+      <div>
+        <h2>Produit</h2>
+        <ul>
+          <li><a href="/fonctionnalites/">Fonctionnalités</a></li>
+          <li><a href="/fonctionnalites/ia/">Intelligence artificielle</a></li>
+          <li><a href="/securite/">Sécurité</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Par domaine</h2>
+        <ul>
+          <li><a href="/fonctionnalites/gestion-scolaire/">Gestion scolaire</a></li>
+          <li><a href="/fonctionnalites/notes-et-bulletins/">Notes et bulletins</a></li>
+          <li><a href="/fonctionnalites/vie-scolaire/">Vie scolaire</a></li>
+          <li><a href="/fonctionnalites/finances/">Finances</a></li>
+          <li><a href="/fonctionnalites/admissions-et-orientation/">Admissions et orientation</a></li>
+          <li><a href="/fonctionnalites/direction-et-pilotage/">Direction et pilotage</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Offres et services</h2>
+        <ul>
+          <li><a href="/tarifs/">Tarifs</a></li>
+          <li><a href="/tarifs/comparer/">Comparer les offres</a></li>
+          <li><a href="/services/installation/">Installation</a></li>
+          <li><a href="/services/formation/">Formation</a></li>
+          <li><a href="/services/campagne-de-capture/">Campagne de capture</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Ressources</h2>
+        <ul>
+          <li><a href="/faq/">Questions fréquentes</a></li>
+          <li><a href="/contact/">Nous contacter</a></li>
+          <li><a href="/connexion.html">Se connecter</a></li>
+          <li><a href="/confidentialite.html">Confidentialité</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="bas">
+      <div>© 2026 Ardoise — Logiciel de gestion scolaire.</div>
+      <div>Fait pour les écoles de la RDC.</div>
+    </div>
+  </div>
+</footer>
+
+<script src="/catalogue.js" defer></script>
+<script src="/nav.js" defer></script>
+</body>
+</html>

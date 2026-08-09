@@ -1,0 +1,216 @@
+/* ==========================================================================
+   Ardoise — Super Administrateur : styles du centre Finance
+   --------------------------------------------------------------------------
+   Fichier ADDITIF. `super-admin-styles.css` n'est pas modifié : ce fichier se
+   charge après lui et n'ajoute que des classes absentes. Aucune règle ici ne
+   redéfinit une classe existante, si bien que retirer ce fichier ne casserait
+   que les écrans finance, jamais les écrans d'origine.
+
+   Comme le fichier principal, aucune couleur n'est écrite en dur : tout passe
+   par les variables du thème, pour que les six thèmes d'Ardoise s'appliquent
+   à ces écrans sans une ligne de plus.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Montants
+   -------------------------------------------------------------------------- */
+
+/* La devise est une précision, pas l'information principale : elle est
+   présente pour lever le doute, discrète pour ne pas encombrer la lecture
+   d'une colonne de chiffres. */
+.sa-devise {
+  font-family: var(--police-mono);
+  font-size: 0.7em;
+  color: var(--texte-att);
+  letter-spacing: 0.02em;
+}
+
+.sa-positif { color: var(--vert-ok); font-weight: 600; }
+.sa-negatif { color: var(--rouge); font-weight: 600; }
+.sa-attention-texte { color: var(--ocre-dark); font-weight: 600; }
+
+/* Donnée absente qu'il faut aller saisir — à distinguer d'un « — » qui
+   signifie « sans objet ». La nuance est ce qui évite de chercher pendant
+   dix minutes une valeur qui n'existe simplement pas. */
+.sa-manquant {
+  color: var(--ocre-dark);
+  font-style: italic;
+  font-size: 0.85em;
+}
+
+/* --------------------------------------------------------------------------
+   2. Chiffre mis en avant
+   -------------------------------------------------------------------------- */
+.sa-chiffre-cle {
+  text-align: center;
+  padding: 14px 8px 12px;
+  border-block: var(--bordure-epaisseur) solid var(--bordure);
+  margin: 12px 0;
+}
+.sa-chiffre-cle-valeur {
+  font-family: var(--police-titre);
+  font-size: 1.75rem;
+  font-weight: 600;
+  line-height: 1.15;
+  color: var(--texte-sombre);
+}
+.sa-chiffre-cle-libelle {
+  font-size: 0.78rem;
+  color: var(--texte-att);
+  margin-top: 4px;
+}
+
+/* --------------------------------------------------------------------------
+   3. Encarts d'explication et d'alerte
+   -------------------------------------------------------------------------- */
+.sa-encart-info,
+.sa-encart-alerte {
+  border: var(--bordure-epaisseur) solid var(--bordure);
+  border-left-width: 3px;
+  border-radius: var(--r-petit);
+  padding: 12px 14px;
+  margin: 16px 0;
+  font-size: 0.84rem;
+  line-height: 1.55;
+  background: var(--craie-2);
+}
+.sa-encart-info { border-left-color: var(--encre); }
+.sa-encart-alerte { border-left-color: var(--ocre); }
+
+.sa-encart-titre {
+  font-weight: 600;
+  color: var(--texte-sombre);
+  margin-bottom: 6px;
+}
+.sa-encart-liste {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.sa-encart-liste li { color: var(--texte-att); }
+.sa-encart-liste strong { color: var(--texte-sombre); }
+
+/* Précision accolée à un titre de section : « estimation »,
+   « les moins rentables en premier »… */
+.sa-annexe {
+  font-family: var(--police-corps);
+  font-size: 0.68rem;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--texte-att);
+  margin-left: 8px;
+}
+
+/* --------------------------------------------------------------------------
+   4. Cartes d'offre
+   -------------------------------------------------------------------------- */
+.sa-carte-offre {
+  display: flex;
+  flex-direction: column;
+}
+.sa-carte-offre-entete {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.sa-carte-offre-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 12px;
+}
+
+/* Une offre désactivée ou archivée reste lisible mais recule visuellement :
+   la masquer ferait croire qu'elle n'existe plus, alors que des écoles y
+   sont peut-être encore abonnées. */
+.sa-attenuee { opacity: 0.62; }
+.sa-attenuee:hover { opacity: 1; }
+
+/* --------------------------------------------------------------------------
+   5. Confirmation d'un changement de prix
+   -------------------------------------------------------------------------- */
+.sa-comparaison-prix {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  text-align: center;
+  padding: 14px 0;
+}
+.sa-comparaison-prix .sa-fleche {
+  font-size: 1.4rem;
+  color: var(--texte-att);
+}
+
+/* --------------------------------------------------------------------------
+   6. Formulaires en modale
+   -------------------------------------------------------------------------- */
+.sa-requis {
+  color: var(--rouge);
+  font-style: normal;
+  font-weight: 600;
+}
+
+.sa-form-erreur {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: var(--r-petit);
+  border: var(--bordure-epaisseur) solid var(--rouge);
+  color: var(--rouge);
+  font-size: 0.82rem;
+}
+
+/* Cases à cocher : la zone cliquable englobe le libellé, sans quoi il faut
+   viser un carré de 14 pixels — pénible à la souris, impossible au doigt. */
+.sa-bascule,
+.sa-champ-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 0.84rem;
+  color: var(--texte-sombre);
+  padding: 6px 0;
+}
+.sa-bascule input,
+.sa-champ-inline input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--ocre);
+  cursor: pointer;
+}
+
+/* --------------------------------------------------------------------------
+   7. Jauge de budget
+   -------------------------------------------------------------------------- */
+.sa-jauge {
+  height: 6px;
+  width: 100%;
+  min-width: 60px;
+  background: var(--bordure);
+  border-radius: var(--r-pilule);
+  overflow: hidden;
+}
+.sa-jauge-remplissage {
+  height: 100%;
+  border-radius: var(--r-pilule);
+  transition: width var(--transition-base);
+}
+
+/* --------------------------------------------------------------------------
+   8. Adaptations mobiles
+   -------------------------------------------------------------------------- */
+@media (max-width: 720px) {
+  .sa-comparaison-prix {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .sa-comparaison-prix .sa-fleche { transform: rotate(90deg); }
+  .sa-chiffre-cle-valeur { font-size: 1.45rem; }
+  .sa-carte-offre-actions .sa-bouton { flex: 1 1 auto; }
+}

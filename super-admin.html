@@ -63,6 +63,8 @@
 <link rel="stylesheet" href="theme.css" />
 <link rel="stylesheet" href="ui.css" />
 <link rel="stylesheet" href="super-admin-styles.css" />
+<!-- Styles du centre Finance : fichier additif, chargé APRÈS le principal. -->
+<link rel="stylesheet" href="super-admin-styles-finance.css" />
 
 <style>
   /* ------------------------------------------------------------------
@@ -301,6 +303,54 @@
         </ul>
       </li>
 
+      <!-- ===== Centre Finance, Offres et Coûts =====
+           Ajouté par l'extension commerciale. Placé après « Explorer » et avant
+           les écrans techniques : la finance se consulte avec les écoles, pas
+           avec les sauvegardes. -->
+      <li class="sa-groupe" data-groupe="finance">
+        <button type="button" class="sa-groupe-titre">
+          <span class="sa-icone">💰</span> Finance <span class="sa-chevron">›</span>
+        </button>
+        <ul class="sa-sous-menu">
+          <li><a href="#/finance" data-route="finance">Tableau de bord</a></li>
+          <li><a href="#/finance/rentabilite" data-route="finance/rentabilite">Rentabilité</a></li>
+          <li><a href="#/finance/seuil" data-route="finance/seuil">Seuil de rentabilité</a></li>
+          <li><a href="#/finance/previsions" data-route="finance/previsions">Prévisions</a></li>
+          <li><a href="#/finance/alertes" data-route="finance/alertes">Alertes</a></li>
+          <li><a href="#/finance/fonctionnalites" data-route="finance/fonctionnalites">Coût des fonctionnalités</a></li>
+          <li><a href="#/finance/journal" data-route="finance/journal">Journal financier</a></li>
+          <li><a href="#/finance/exports" data-route="finance/exports">Exports</a></li>
+          <li><a href="#/finance/permissions" data-route="finance/permissions">Permissions</a></li>
+        </ul>
+      </li>
+
+      <li class="sa-groupe" data-groupe="offres">
+        <button type="button" class="sa-groupe-titre">
+          <span class="sa-icone">💳</span> Offres &amp; tarification <span class="sa-chevron">›</span>
+        </button>
+        <ul class="sa-sous-menu">
+          <li><a href="#/offres" data-route="offres">Offres</a></li>
+          <li><a href="#/offres/historique-prix" data-route="offres/historique-prix">Historique des prix</a></li>
+          <li><a href="#/offres/promotions" data-route="offres/promotions">Promotions</a></li>
+          <li><a href="#/offres/speciales" data-route="offres/speciales">Offres spéciales</a></li>
+          <li><a href="#/offres/tarifs" data-route="offres/tarifs">Tarifs négociés</a></li>
+          <li><a href="#/offres/abonnements" data-route="offres/abonnements">Abonnements clients</a></li>
+        </ul>
+      </li>
+
+      <li class="sa-groupe" data-groupe="couts">
+        <button type="button" class="sa-groupe-titre">
+          <span class="sa-icone">🧾</span> Services &amp; coûts <span class="sa-chevron">›</span>
+        </button>
+        <ul class="sa-sous-menu">
+          <li><a href="#/couts/services" data-route="couts/services">Services &amp; infrastructure</a></li>
+          <li><a href="#/couts/depenses" data-route="couts/depenses">Dépenses</a></li>
+          <li><a href="#/couts/budgets" data-route="couts/budgets">Budget</a></li>
+          <li><a href="#/couts/calendrier" data-route="couts/calendrier">Calendrier de facturation</a></li>
+          <li><a href="#/couts/taux-change" data-route="couts/taux-change">Taux de change</a></li>
+        </ul>
+      </li>
+
       <li><a href="#/analyses" data-route="analyses"><span class="sa-icone">📈</span> Analyses</a></li>
       <li><a href="#/sante" data-route="sante"><span class="sa-icone">🩺</span> Santé de la plateforme</a></li>
       <li><a href="#/bugs" data-route="bugs"><span class="sa-icone">🐞</span> Bugs &amp; erreurs</a></li>
@@ -342,6 +392,12 @@
 <script src="super-admin-vues-ecoles.js"></script>
 <script src="super-admin-vues-explorer.js"></script>
 <script src="super-admin-vues-systeme.js"></script>
+<!-- Vues du centre Finance : chargées APRÈS les vues existantes.
+     super-admin-vues-finance.js définit SA.finance, dont les deux suivants
+     se servent pour le formatage monétaire : cet ordre n'est pas indifférent. -->
+<script src="super-admin-vues-finance.js"></script>
+<script src="super-admin-vues-offres.js"></script>
+<script src="super-admin-vues-couts.js"></script>
 
 <script>
 (function () {
@@ -361,7 +417,8 @@
      et on nomme le vrai problème. */
   const SCRIPTS_REQUIS = [
     'super-admin-noyau.js', 'super-admin-vues-pilotage.js', 'super-admin-vues-ecoles.js',
-    'super-admin-vues-explorer.js', 'super-admin-vues-systeme.js'
+    'super-admin-vues-explorer.js', 'super-admin-vues-systeme.js',
+    'super-admin-vues-finance.js', 'super-admin-vues-offres.js', 'super-admin-vues-couts.js'
   ];
 
   function scriptsCharges() {

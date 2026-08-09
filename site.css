@@ -717,7 +717,15 @@ table.comparatif tbody tr.groupe th {
 /* ---------------------------------------------------------- Fil d'Ariane */
 
 .fil-ariane { padding: 18px 0 0; }
-.fil-ariane ol { display: flex; flex-wrap: wrap; gap: 6px; font-size: .82rem; color: var(--texte-att); }
+/* La feuille d'origine neutralise les puces des <ul> mais pas des <ol> : le fil
+   d'Ariane, qui DOIT être une liste ordonnée pour être compris comme tel,
+   héritait donc de la numérotation du navigateur — « 1. Accueil 2. / Tarifs ».
+   En display:flex, les marqueurs se superposaient en plus au texte. */
+.fil-ariane ol {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  list-style: none;
+  font-size: .82rem; color: var(--texte-att);
+}
 .fil-ariane li + li::before { content: '/'; margin-right: 6px; opacity: .55; }
 .fil-ariane a:hover { color: var(--texte); text-decoration: underline; }
 .fil-ariane [aria-current="page"] { color: var(--texte); }

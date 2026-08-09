@@ -72,6 +72,14 @@
   var NOM_ECRAN = (script && script.dataset && script.dataset.ecran)
     || FICHIER.replace('.html', '').replace(/-/g, ' ');
 
+  /* Les écrans d'ACCUEIL — ceux sur lesquels on arrive en se connectant, et
+     sur lesquels on n'est en train de faire aucune saisie.
+     Deux choses s'y autorisent et nulle part ailleurs : la proposition de
+     reprise (§5.1 bis) et la checklist intégrée (§10 bis). Le reste de la
+     plateforme est du travail en cours ; on n'y interrompt personne. */
+  var ECRANS_ACCUEIL = ['dashboard-directeur.html', 'espace-professeur.html',
+                        'espace-titulaire.html', 'espace-secretaire.html'];
+
   function lireStockage(cle) {
     try { return localStorage.getItem(cle) || sessionStorage.getItem(cle); }
     catch (e) { return null; }
@@ -320,6 +328,7 @@
   var reponseIA = null;       // { texte } | { attente: true } | { erreur }
   var focusAvant = null;      // élément qui avait le focus avant ouverture
   var ancienMode = false;     // repli sur /assistant/etat-installation
+  var felicitation = null;    // titre de l'étape qu'on vient de voir aboutir
 
   function etapeParCode(code) {
     if (!etat || !etat.etapes) return null;
@@ -354,6 +363,7 @@
   function fermer() {
     voile.classList.remove('ouvert');
     reponseIA = null;
+    felicitation = null;
     if (focusAvant && focusAvant.focus) { try { focusAvant.focus(); } catch (e) {} }
     focusAvant = null;
   }
@@ -395,6 +405,7 @@
     if (ancienMode) { panneau.innerHTML = modeAncien(); brancher(); return; }
 
     if (vue === 'bienvenue') panneau.innerHTML = vueBienvenue();
+    else if (vue === 'reprise') panneau.innerHTML = vueReprise();
     else if (vue === 'etape') panneau.innerHTML = vueEtape();
     else if (vue === 'centre') panneau.innerHTML = vueCentre();
     else panneau.innerHTML = vueParcours();
@@ -478,6 +489,68 @@
   }
 
   /* -------------------------------------------------------------------------
+     5.1 bis REPRISE — « vous étiez arrivé à l'étape 5 »
+
+     POURQUOI CET ÉCRAN EXISTE
+     -------------------------
+     Quelqu'un qui commence son parcours, en fait quatre étapes, puis ferme
+     l'onglet, retrouvait Ardoise le lendemain exactement comme s'il n'avait
+     jamais rien commencé : un bouton flottant dans un coin, et rien d'autre.
+     Sa progression était pourtant intacte en base — personne ne la lui
+     montrait. C'est la différence entre « on a gardé votre travail » et « on
+     vous le rappelle », et seule la seconde se remarque.
+
+     CE QU'IL NE FAIT PAS
+     --------------------
+     Il ne recommence JAMAIS depuis zéro tout seul. « Recommencer » existe,
+     mais c'est un bouton, jamais un effet de bord.
+
+     POURQUOI IL NE S'AFFICHE PAS PARTOUT
+     ------------------------------------
+     Uniquement sur les écrans d'accueil (voir ECRANS_ACCUEIL), et une seule
+     fois par session de navigation. Surgir au milieu d'une saisie de cotes
+     pour demander « voulez-vous reprendre le tutoriel ? » transformerait
+     l'accompagnement en interruption — exactement ce que le didacticiel doit
+     éviter.
+     ------------------------------------------------------------------------- */
+  function vueReprise() {
+    var u = etat.utilisateur || {};
+    var faites = (etat.etapes || []).filter(function (e) {
+      return e.obligatoire && !e.ignoree && e.fait;
+    }).length;
+    var total = (etat.etapes || []).filter(function (e) {
+      return e.obligatoire && !e.ignoree;
+    }).length;
+
+    var salut = u.prenom ? 'Bonjour ' + echapper(u.prenom) + ' 👋' : 'Content de vous revoir 👋';
+
+    var rang = faites + 1;
+    var ligne = total
+      ? 'Vous étiez arrivé à l\'étape ' + rang + ' sur ' + total + '.'
+      : 'Vous aviez commencé votre prise en main.';
+
+    var suite = etat.prochaine
+      ? 'La suite : <strong>' + echapper(etat.prochaine.titre) + '</strong>.'
+      : '';
+
+    var pct = total ? Math.round((faites / total) * 100) : 0;
+
+    return entete(salut, ligne, false)
+      + '<div class="ard-di-corps">'
+      + '<div class="ard-di-jauge"><span style="width:' + pct + '%"></span></div>'
+      + '<p class="ard-di-jauge-texte"><span>' + pct + ' % terminé</span>'
+      + '<span>' + faites + ' / ' + total + ' étapes</span></p>'
+      + (suite ? '<p class="ard-di-texte-corps">' + suite + '</p>' : '')
+      + '<p class="ard-di-texte-corps">Voulez-vous continuer là où vous vous étiez arrêté ?</p>'
+      + '</div>'
+      + '<div class="ard-di-pied ard-di-pied-reprise">'
+      + '<button type="button" class="ard-di-btn ard-di-btn-discret" data-action="reinitialiser">Recommencer</button>'
+      + '<button type="button" class="ard-di-btn ard-di-btn-discret" data-action="reporter">Plus tard</button>'
+      + '<button type="button" class="ard-di-btn ard-di-btn-principal" data-action="reprendre">Continuer</button>'
+      + '</div>';
+  }
+
+  /* -------------------------------------------------------------------------
      5.2 PARCOURS — la checklist et la prochaine action
      ------------------------------------------------------------------------- */
   function vueParcours() {
@@ -497,6 +570,16 @@
       + '<button type="button" role="tab" aria-selected="false" data-vue="centre">Apprendre Ardoise</button>'
       + '</div>'
       + '<div class="ard-di-corps">';
+
+    // La félicitation en tête de corps : c'est la première chose qu'on lit en
+    // arrivant, et elle répond à la question qu'on se pose à cet instant —
+    // « est-ce que ça a bien marché ? ».
+    if (felicitation) {
+      html += '<div class="ard-di-succes"><strong>🎉 Parfait !</strong> '
+        + echapper(felicitation) + " — c'est fait. "
+        + (etat.prochaine ? 'Passons à la suite.' : 'Votre espace est prêt.')
+        + '</div>';
+    }
 
     html += '<div class="ard-di-jauge"><span style="width:' + pct + '%"></span></div>'
       + '<p class="ard-di-jauge-texte"><span>' + pct + ' % terminé</span>'
@@ -903,6 +986,17 @@
     if (!e) return;
 
     ecrireGuidage({ code: code, ecran: e.ecran, debut: Date.now() });
+    // Mémoriser TOUT DE SUITE l'étape guidée, et pas seulement au retour sur
+    // l'onglet ou au tic des vingt secondes.
+    //
+    // Sans cette ligne, une personne guidée sur une étape qui se joue SUR LA
+    // PAGE COURANTE (aucune navigation, donc le point 2 de `demarrer()` ne
+    // s'exécute jamais) accomplissait l'action, voyait sa checklist se cocher
+    // — et n'était pas félicitée, parce que `codeGuideAvant` était encore
+    // null. Elle finissait par l'être au tic suivant, ou jamais si elle avait
+    // quitté l'écran entre-temps. Une félicitation qui arrive vingt secondes
+    // après le geste ne se rattache plus au geste.
+    codeGuideAvant = code;
     fermer();
 
     if (e.ecran && e.ecran.toLowerCase() !== FICHIER) {
@@ -914,6 +1008,10 @@
 
   function arreterGuidage() {
     ecrireGuidage(null);
+    // Le pendant de l'affectation faite dans `demarrerGuidage`. Le laisser en
+    // place féliciterait pour une étape terminée bien après l'abandon du
+    // guidage — par exemple par un collègue, depuis un autre poste.
+    codeGuideAvant = null;
     if (observateur) { observateur.disconnect(); observateur = null; }
     if (minuterie) { clearTimeout(minuterie); minuterie = null; }
     [projecteur, halo, bulle].forEach(function (n) { if (n && n.parentNode) n.parentNode.removeChild(n); });
@@ -1285,6 +1383,125 @@
   }
 
   /* ==========================================================================
+     10 bis. CHECKLIST INTÉGRÉE À L'ÉCRAN D'ACCUEIL
+
+     POURQUOI ELLE NE POUVAIT PAS RESTER DANS LE PANNEAU
+     ---------------------------------------------------
+     La checklist existait déjà — mais derrière un clic sur un bouton
+     flottant. Or c'est exactement l'information qu'on ne pense pas à aller
+     chercher : quelqu'un qui ignore qu'il lui manque des périodes ne clique
+     pas sur « Guide » pour l'apprendre. Une liste d'avancement ne sert que si
+     elle est DÉJÀ à l'écran quand on arrive.
+
+     ELLE NE DUPLIQUE AUCUNE VÉRITÉ
+     ------------------------------
+     Aucun état local, aucun compteur maison : elle affiche `etat.etapes`, la
+     même réponse que le panneau, relue à chaque `charger()`. Quand la
+     personne crée réellement sa première classe, la ligne se coche parce que
+     la base dit que la classe existe — pas parce qu'on a intercepté un clic.
+
+     ELLE DISPARAÎT D'ELLE-MÊME
+     --------------------------
+     Plus rien d'obligatoire à faire, plus de carte. Un bandeau de
+     félicitations permanent sur le tableau de bord d'une école installée
+     depuis trois ans serait du bruit.
+     ========================================================================== */
+
+  var CLE_CHECKLIST_MASQUEE = 'ardoise_didacticiel_checklist_masquee';
+
+  function poserChecklist() {
+    var existante = document.getElementById('ard-di-checklist');
+
+    // Conditions de non-affichage : on retire ce qui traîne et on s'arrête.
+    var stop = function () { if (existante) existante.remove(); return false; };
+
+    if (ECRANS_ACCUEIL.indexOf(FICHIER) === -1) return stop();
+    if (!etat || ancienMode || !etat.etapes) return stop();
+    try { if (sessionStorage.getItem(CLE_CHECKLIST_MASQUEE)) return stop(); } catch (e) {}
+
+    var comptees = etat.etapes.filter(function (e) { return e.obligatoire && !e.ignoree; });
+    var faites = comptees.filter(function (e) { return e.fait; });
+    if (comptees.length === 0 || faites.length >= comptees.length) return stop();
+
+    // Le point d'ancrage : `#lanceur` est présent sur les quatre écrans
+    // d'accueil, juste sous l'en-tête. À défaut, le début de `main.contenu`.
+    var ancre = document.getElementById('lanceur');
+    var parent = ancre ? ancre.parentNode : document.querySelector('main.contenu');
+    if (!parent) return stop();
+
+    var carte = existante;
+    if (!carte) {
+      carte = document.createElement('section');
+      carte.id = 'ard-di-checklist';
+      carte.className = 'ard-di-checklist';
+      carte.setAttribute('aria-labelledby', 'ard-di-checklist-titre');
+      if (ancre && ancre.nextSibling) parent.insertBefore(carte, ancre.nextSibling);
+      else parent.insertBefore(carte, parent.firstChild);
+    }
+
+    var pct = Math.round((faites.length / comptees.length) * 100);
+    var titre = etat.mode === 'configuration'
+      ? 'Configuration de votre établissement'
+      : "Prise en main d'Ardoise";
+
+    // Au-delà de huit lignes la carte cesse d'être lisible d'un coup d'œil et
+    // devient une seconde page. On montre ce qui est fait le plus récemment et
+    // ce qui reste, pas les vingt-deux étapes.
+    var aMontrer = comptees.slice(0, 8);
+    var reste = comptees.length - aMontrer.length;
+
+    var lignes = aMontrer.map(function (e) {
+      var classe = e.fait ? 'fait' : (e.bloquee ? 'bloquee' : '');
+      var estProchaine = etat.prochaine && etat.prochaine.code === e.code;
+      if (estProchaine) classe += ' courante';
+      return '<li class="' + classe + '">'
+        + '<span class="ard-di-coche" aria-hidden="true">' + (e.fait ? '✓' : '○') + '</span>'
+        + '<span class="ard-di-nom">' + echapper(e.titre) + '</span>'
+        + (e.fait || e.bloquee ? ''
+           : '<button type="button" class="ard-di-aller" data-di-code="' + echapper(e.code) + '">'
+             + (estProchaine ? 'Commencer' : 'Ouvrir') + '</button>')
+        + '</li>';
+    }).join('');
+
+    carte.innerHTML =
+      '<div class="ard-di-checklist-entete">'
+      + '<h3 id="ard-di-checklist-titre">' + echapper(titre) + '</h3>'
+      + '<button type="button" class="ard-di-checklist-masquer" data-di-masquer="1"'
+      + ' aria-label="Masquer cette carte pour la session">✕</button>'
+      + '</div>'
+      + '<div class="ard-di-jauge"><span style="width:' + pct + '%"></span></div>'
+      + '<p class="ard-di-jauge-texte"><span>' + pct + ' % terminé</span>'
+      + '<span>' + faites.length + ' / ' + comptees.length + ' étapes</span></p>'
+      + '<ul class="ard-di-liste">' + lignes + '</ul>'
+      + (reste > 0 ? '<p class="ard-di-checklist-reste">et ' + reste + ' autre(s) étape(s)…</p>' : '')
+      + '<div class="ard-di-checklist-pied">'
+      + '<button type="button" class="ard-di-btn ard-di-btn-discret" data-di-panneau="1">Voir tout le guide</button>'
+      + (etat.prochaine
+         ? '<button type="button" class="ard-di-btn ard-di-btn-principal" data-di-code="'
+           + echapper(etat.prochaine.code) + '">Me guider</button>'
+         : '')
+      + '</div>';
+
+    carte.querySelectorAll('[data-di-code]').forEach(function (el) {
+      el.addEventListener('click', function () { demarrerGuidage(el.dataset.diCode); });
+    });
+    var masquer = carte.querySelector('[data-di-masquer]');
+    if (masquer) {
+      masquer.addEventListener('click', function () {
+        // sessionStorage, pas localStorage : masquer, ce n'est pas renoncer.
+        // La carte revient à la prochaine connexion — tant qu'il reste
+        // quelque chose à configurer.
+        try { sessionStorage.setItem(CLE_CHECKLIST_MASQUEE, '1'); } catch (e) {}
+        carte.remove();
+      });
+    }
+    var versPanneau = carte.querySelector('[data-di-panneau]');
+    if (versPanneau) versPanneau.addEventListener('click', function () { ouvrir('parcours'); });
+
+    return true;
+  }
+
+  /* ==========================================================================
      11. CHARGEMENT ET DÉTECTION DE L'ACTION
 
      `charger(celebrer)` relit l'état depuis la base. C'est ici que se joue la
@@ -1320,6 +1537,7 @@
           }
 
           majBouton();
+          poserChecklist();
           if (voile.classList.contains('ouvert')) dessiner();
           return d;
         });
@@ -1349,20 +1567,28 @@
       .catch(function () { bouton.remove(); });
   }
 
+  /**
+   * Félicitation après détection réelle de l'action.
+   *
+   * POURQUOI C'EST UN ÉTAT ET NON UNE INSERTION DANS LE DOM
+   * ------------------------------------------------------
+   * La version précédente ouvrait le panneau puis insérait le bandeau à la
+   * main dans `.ard-di-corps`. Or `charger()` appelle `dessiner()` JUSTE
+   * APRÈS `feliciter()` — et `dessiner()` réécrit `panneau.innerHTML` en
+   * entier. Le bandeau était donc systématiquement effacé dans la même
+   * milliseconde où il venait d'être posé : la félicitation n'apparaissait
+   * jamais, quel que soit le parcours.
+   *
+   * En la portant dans l'état, elle est REDESSINÉE avec le reste au lieu
+   * d'être ajoutée par-dessus. Elle survit à tous les rendus, et disparaît
+   * quand on ferme — ce qui est le comportement attendu : une félicitation
+   * qu'on retrouve trois jours plus tard n'en est plus une.
+   */
   function feliciter(e) {
     annoncer('Étape terminée : ' + e.titre);
+    felicitation = e.titre;
     vue = 'parcours';
     ouvrir('parcours');
-    var corps = panneau.querySelector('.ard-di-corps');
-    if (corps) {
-      var bandeau = document.createElement('div');
-      bandeau.className = 'ard-di-succes';
-      bandeau.innerHTML = '<strong>🎉 Parfait !</strong> ' + echapper(e.titre)
-        + ' — c\'est fait. ' + (etat.prochaine
-            ? 'Passons à la suite.'
-            : 'Votre espace est prêt.');
-      corps.insertBefore(bandeau, corps.firstChild);
-    }
   }
 
   /* ==========================================================================
@@ -1402,9 +1628,55 @@
       }
       if (g && Date.now() - (g.debut || 0) > 30 * 60 * 1000) ecrireGuidage(null);
 
-      // 3. Sinon, le mini-tutoriel de l'écran, s'il y en a un et s'il est neuf.
+      // 3. Reprise : le parcours a été commencé, il n'est pas fini, et on est
+      //    sur un écran d'accueil. On le rappelle — une seule fois par
+      //    session, et jamais par-dessus un guidage en cours.
+      if (proposerReprise(d)) return;
+
+      // 4. Sinon, le mini-tutoriel de l'écran, s'il y en a un et s'il est neuf.
       if (d.tutoriel) afficherTutoriel(d.tutoriel);
     });
+  }
+
+  /**
+   * Faut-il proposer de reprendre ? Renvoie true si l'écran a été affiché.
+   *
+   * Les cinq conditions sont cumulatives, et chacune écarte un cas où la
+   * proposition serait déplacée :
+   *
+   *   · écran d'accueil       — ne pas surgir au milieu d'une saisie ;
+   *   · une fois par session  — une relance à chaque page devient du harcèlement ;
+   *   · bienvenue déjà vue    — sinon c'est l'écran de bienvenue qui a la main ;
+   *   · parcours entamé ET inachevé — « reprendre » n'a de sens qu'entre les
+   *     deux : au tout début c'est un démarrage, à la fin il n'y a rien à
+   *     reprendre ;
+   *   · aucun guidage actif   — le point 2 de `demarrer()` l'a déjà repris.
+   */
+  var CLE_REPRISE = 'ardoise_didacticiel_reprise_vue';
+
+  function proposerReprise(d) {
+    if (ECRANS_ACCUEIL.indexOf(FICHIER) === -1) return false;
+    try { if (sessionStorage.getItem(CLE_REPRISE)) return false; } catch (e) {}
+    if (lireGuidage()) return false;
+
+    var p = d.progression || {};
+    if (!p.vu_bienvenue) return false;
+    if (p.statut === 'termine' || p.termine) return false;
+
+    var comptees = (d.etapes || []).filter(function (e) {
+      return e.obligatoire && !e.ignoree;
+    });
+    var faites = comptees.filter(function (e) { return e.fait; }).length;
+
+    // Rien de commencé : ce n'est pas une reprise, c'est un démarrage — et
+    // l'écran de bienvenue s'en est déjà chargé. Rien à finir : il n'y a rien
+    // à reprendre.
+    if (faites === 0) return false;
+    if (faites >= comptees.length) return false;
+
+    try { sessionStorage.setItem(CLE_REPRISE, '1'); } catch (e) {}
+    ouvrir('reprise');
+    return true;
   }
 
   if (document.readyState === 'loading') {

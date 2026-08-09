@@ -551,3 +551,99 @@
   line-height: 1.42;
   color: var(--texte-sombre, #23281f);
 }
+
+/* --------------------------------------------------------------------------
+   13. CHECKLIST INTÉGRÉE À L'ÉCRAN D'ACCUEIL
+
+   Cette carte est injectée DANS la page (sous l'en-tête du tableau de bord),
+   et non dans le panneau modal. Elle doit donc ressembler aux cartes de la
+   page qui l'accueille, pas à une fenêtre du didacticiel : mêmes variables de
+   fond, de bordure et de rayon que les autres cartes d'Ardoise.
+
+   Aucune couleur en dur : c'est ce qui lui fait suivre le mode sombre sans
+   une seule règle supplémentaire.
+   -------------------------------------------------------------------------- */
+.ard-di-checklist {
+  background: var(--craie-2, #FBF9F3);
+  border: 1px solid var(--bordure, #E4DFCF);
+  border-left: 3px solid var(--ocre, #C98A3E);
+  border-radius: var(--r-carte, 10px);
+  padding: 16px 18px 14px 18px;
+  margin: 0 0 18px 0;
+  font-family: var(--police-corps, inherit);
+  color: var(--texte-sombre, #1F2B24);
+  animation: ard-di-checklist-entree 0.3s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+@keyframes ard-di-checklist-entree {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.ard-di-checklist-entete {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;
+}
+.ard-di-checklist-entete h3 {
+  font-family: var(--police-titre, inherit);
+  font-size: 1rem; font-weight: 600; margin: 0; line-height: 1.35;
+}
+.ard-di-checklist-masquer {
+  flex: 0 0 auto; border: none; background: none; cursor: pointer;
+  color: var(--texte-att, #6B7269); font-size: 0.95rem; line-height: 1;
+  padding: 3px 5px; border-radius: var(--r-petit, 6px); font-family: inherit;
+}
+.ard-di-checklist-masquer:hover { background: var(--nav-actif-fond, rgba(0,0,0,0.05)); }
+.ard-di-checklist-masquer:focus-visible { outline: 2px solid var(--ocre, #C98A3E); outline-offset: 2px; }
+
+/* La jauge est resserrée ici : dans le panneau elle sépare deux blocs, dans la
+   carte elle suit immédiatement le titre. */
+.ard-di-checklist .ard-di-jauge { margin: 12px 0 6px 0; }
+.ard-di-checklist .ard-di-jauge-texte { margin-bottom: 10px; }
+.ard-di-checklist .ard-di-liste li { padding: 7px 8px; font-size: 0.855rem; }
+
+.ard-di-checklist-reste {
+  margin: 8px 0 0; font-size: 0.78rem; color: var(--texte-att, #6B7269);
+}
+.ard-di-checklist-pied {
+  display: flex; gap: 9px; flex-wrap: wrap; justify-content: flex-end;
+  margin-top: 13px; padding-top: 12px;
+  border-top: 1px solid var(--ligne, #E4DFCF);
+}
+.ard-di-checklist-pied .ard-di-btn { padding: 7px 14px; font-size: 0.83rem; }
+
+/* Sur téléphone, les deux boutons passent pleine largeur : côte à côte, ils
+   se réduisent à deux cibles de trente pixels qu'on rate une fois sur deux. */
+@media (max-width: 480px) {
+  .ard-di-checklist { padding: 14px 14px 12px 14px; }
+  .ard-di-checklist-pied { flex-direction: column-reverse; }
+  .ard-di-checklist-pied .ard-di-btn { width: 100%; justify-content: center; }
+}
+
+/* La carte n'a rien à faire sur une feuille imprimée. */
+@media print { .ard-di-checklist { display: none !important; } }
+
+/* --------------------------------------------------------------------------
+   14. ÉCRAN DE REPRISE
+
+   Trois boutons au lieu de deux. « Recommencer » est volontairement le plus
+   discret et le plus à gauche : c'est l'action destructrice du lot (elle
+   efface les tutoriels vus et les étapes ignorées), et rien ne doit inviter à
+   la cliquer par réflexe.
+   -------------------------------------------------------------------------- */
+.ard-di-pied-reprise { justify-content: space-between; }
+.ard-di-pied-reprise .ard-di-btn-discret:first-child { margin-right: auto; }
+
+.ard-di-texte-corps {
+  margin: 0 0 10px 0; font-size: 0.9rem; line-height: 1.55;
+  color: var(--texte-sombre, #1F2B24);
+}
+.ard-di-texte-corps:last-child { margin-bottom: 0; }
+
+@media (max-width: 480px) {
+  .ard-di-pied-reprise { flex-direction: column-reverse; }
+  .ard-di-pied-reprise .ard-di-btn { width: 100%; justify-content: center; }
+  .ard-di-pied-reprise .ard-di-btn-discret:first-child { margin-right: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ard-di-checklist { animation: none; }
+}

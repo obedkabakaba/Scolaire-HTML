@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<title>Intelligence artificielle pour la gestion scolaire — Ardoise</title>
+<meta name="description" content="Appréciations de bulletin générées, assistant d'aide contextuelle, analyse des fichiers avant import et questions sur vos données en langage naturel." />
+<link rel="canonical" href="https://myardoise.com/fonctionnalites/ia/" />
+<meta name="robots" content="index, follow, max-image-preview:large" />
+<meta name="author" content="Ardoise" />
+<meta name="theme-color" content="#F6F2E7" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#141C18" media="(prefers-color-scheme: dark)" />
+
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Ardoise" />
+<meta property="og:locale" content="fr_CD" />
+<meta property="og:url" content="https://myardoise.com/fonctionnalites/ia/" />
+<meta property="og:title" content="Intelligence artificielle pour la gestion scolaire — Ardoise" />
+<meta property="og:description" content="Appréciations de bulletin générées, assistant d'aide contextuelle, analyse des fichiers avant import et questions sur vos données en langage naturel." />
+<meta property="og:image" content="https://myardoise.com/icone-512.png" />
+<meta property="og:image:alt" content="Ardoise, plateforme de gestion scolaire" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Intelligence artificielle pour la gestion scolaire — Ardoise" />
+<meta name="twitter:description" content="Appréciations de bulletin générées, assistant d'aide contextuelle, analyse des fichiers avant import et questions sur vos données en langage naturel." />
+<meta name="twitter:image" content="https://myardoise.com/icone-512.png" />
+
+<link rel="icon" type="image/png" sizes="192x192" href="/icone-192.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="/icone-ios-180.png" />
+<link rel="manifest" href="/manifest.json" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="preconnect" href="https://scolaire-saas-backend.onrender.com" />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/site.css" />
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Accueil",
+          "item": "https://myardoise.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Fonctionnalités",
+          "item": "https://myardoise.com/fonctionnalites/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Intelligence artificielle"
+        }
+      ],
+      "@id": "https://myardoise.com/fonctionnalites/ia/#n0"
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "L'IA décide-t-elle quelque chose à ma place ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Non. Elle propose un texte, une lecture ou une réponse ; l'application d'une appréciation, la validation d'un barème de discipline et toute décision de passage restent des gestes humains, faits par une personne identifiée et enregistrés à son nom."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "L'IA peut-elle modifier mes données ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Non. Lorsqu'elle interroge la base pour répondre à une question, elle le fait sous un rôle technique dépourvu de tout droit d'écriture, limité à l'école qui pose la question et interrompu au bout d'un délai court. Une réponse fausse reste possible ; une donnée modifiée par l'IA, non."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Que se passe-t-il quand le quota mensuel est atteint ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Les fonctions d'IA s'arrêtent jusqu'au mois suivant ; le reste d'Ardoise continue de fonctionner normalement. Le quota va de 100 générations par mois en Ascension à 5 000 en Infinite, et la consommation est visible dans la plateforme."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Faut-il payer un supplément pour l'IA ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Non. Elle est comprise dans les quatre offres. Ce qui monte avec l'offre est le volume mensuel et deux capacités d'analyse : la lecture du règlement intérieur à partir de Prime, les questions sur vos données à partir de Pilote."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "L'assistant WhatsApp, c'est quoi exactement ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Un numéro auquel un parent ou un membre du personnel écrit, et qui répond à partir des données de l'école : résultats d'un élève, solde de frais, prochaine échéance. Il est réservé à l'offre Infinite, et l'historique des échanges est conservé côté école."
+          }
+        }
+      ],
+      "@id": "https://myardoise.com/fonctionnalites/ia/#n1"
+    }
+  ]
+}
+</script>
+</head>
+
+<body>
+<a class="saut-contenu" href="#contenu">Aller au contenu</a>
+
+<header class="entete">
+  <div class="conteneur">
+    <a class="marque" href="/">Ardoise</a>
+
+    <nav class="nav-site" aria-label="Navigation principale">
+      <ul class="nav-niveau1">
+<li class="a-sous-menu" data-actif="oui">
+<button type="button" class="declencheur" aria-expanded="false" aria-controls="sm-produit">Produit<span class="chevron" aria-hidden="true"></span></button>
+<div class="sous-menu" id="sm-produit" hidden>
+<div class="sm-conteneur">
+<div class="sm-colonne">
+<p class="sm-titre">Vue d'ensemble</p>
+<ul>
+<li><a href="/fonctionnalites/"><span class="sm-lien">Toutes les fonctionnalités</span><span class="sm-note">Ce qu'Ardoise couvre, module par module</span></a></li>
+<li><a href="/fonctionnalites/ia/"><span class="sm-lien">Intelligence artificielle</span><span class="sm-note">Assistance, appréciations, analyse des données</span></a></li>
+<li><a href="/securite/"><span class="sm-lien">Sécurité et données</span><span class="sm-note">Isolation, rôles, traçabilité, sauvegardes</span></a></li>
+</ul></div>
+<div class="sm-colonne">
+<p class="sm-titre">Par domaine</p>
+<ul>
+<li><a href="/fonctionnalites/gestion-scolaire/"><span class="sm-lien">Gestion scolaire</span><span class="sm-note">Élèves, classes, cours, années scolaires</span></a></li>
+<li><a href="/fonctionnalites/notes-et-bulletins/"><span class="sm-lien">Notes et bulletins</span><span class="sm-note">Cotes, moyennes, bulletins officiels RDC</span></a></li>
+<li><a href="/fonctionnalites/vie-scolaire/"><span class="sm-lien">Vie scolaire</span><span class="sm-note">Présences, discipline, emploi du temps</span></a></li>
+<li><a href="/fonctionnalites/finances/"><span class="sm-lien">Finances de l'école</span><span class="sm-note">Frais scolaires, caisse, paie</span></a></li>
+<li><a href="/fonctionnalites/admissions-et-orientation/"><span class="sm-lien">Admissions et orientation</span><span class="sm-note">Concours, candidats, vœux, affectation</span></a></li>
+<li><a href="/fonctionnalites/direction-et-pilotage/"><span class="sm-lien">Direction et pilotage</span><span class="sm-note">Rapports, communication, archives</span></a></li>
+</ul></div>
+</div></div></li>
+<li class="a-sous-menu">
+<button type="button" class="declencheur" aria-expanded="false" aria-controls="sm-tarifs">Tarifs<span class="chevron" aria-hidden="true"></span></button>
+<div class="sous-menu" id="sm-tarifs" hidden>
+<div class="sm-conteneur">
+<div class="sm-colonne">
+<p class="sm-titre">Abonnement</p>
+<ul>
+<li><a href="/tarifs/"><span class="sm-lien">Les quatre offres</span><span class="sm-note">Ascension, Prime, Pilote, Infinite</span></a></li>
+<li><a href="/tarifs/comparer/"><span class="sm-lien">Comparer les offres</span><span class="sm-note">Le tableau ligne par ligne</span></a></li>
+</ul></div>
+</div></div></li>
+<li class="a-sous-menu">
+<button type="button" class="declencheur" aria-expanded="false" aria-controls="sm-services">Services<span class="chevron" aria-hidden="true"></span></button>
+<div class="sous-menu" id="sm-services" hidden>
+<div class="sm-conteneur">
+<div class="sm-colonne">
+<p class="sm-titre">Accompagnement</p>
+<ul>
+<li><a href="/services/"><span class="sm-lien">Tous les services</span><span class="sm-note">Ce que notre équipe fait pour vous</span></a></li>
+<li><a href="/services/installation/"><span class="sm-lien">Installation et configuration</span><span class="sm-note">60 $, forfait unique</span></a></li>
+<li><a href="/services/formation/"><span class="sm-lien">Formation du personnel</span><span class="sm-note">30, 60 ou 100 $</span></a></li>
+<li><a href="/services/campagne-de-capture/"><span class="sm-lien">Campagne de capture</span><span class="sm-note">0,50 $ par élève</span></a></li>
+</ul></div>
+</div></div></li>
+<li class="a-sous-menu">
+<button type="button" class="declencheur" aria-expanded="false" aria-controls="sm-ressources">Ressources<span class="chevron" aria-hidden="true"></span></button>
+<div class="sous-menu" id="sm-ressources" hidden>
+<div class="sm-conteneur">
+<div class="sm-colonne">
+<p class="sm-titre">Comprendre Ardoise</p>
+<ul>
+<li><a href="/faq/"><span class="sm-lien">Questions fréquentes</span><span class="sm-note">Les 25 questions posées avant de signer</span></a></li>
+<li><a href="/securite/"><span class="sm-lien">Sécurité et données</span><span class="sm-note">Où sont les données, qui y accède</span></a></li>
+<li><a href="/contact/"><span class="sm-lien">Parler à quelqu'un</span><span class="sm-note">Demander un accompagnement</span></a></li>
+</ul></div>
+</div></div></li>
+</ul>
+    </nav>
+
+    <div class="actions-entete">
+      <button class="bascule-theme" data-bascule-theme type="button" aria-label="Changer de thème">☾</button>
+      <a class="lien-connexion" href="/connexion.html">Se connecter</a>
+      <a class="bouton ocre petit" href="/contact/">Découvrir Ardoise</a>
+      <button class="bascule-menu" type="button" aria-expanded="false"
+              aria-controls="panneau-mobile" aria-label="Ouvrir le menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+  <div class="panneau-mobile" id="panneau-mobile" hidden>
+<div class="conteneur">
+<section class="bloc-mobile">
+<h2>Produit</h2>
+<ul>
+<li><a href="/fonctionnalites/">Toutes les fonctionnalités</a></li>
+<li><a href="/fonctionnalites/ia/">Intelligence artificielle</a></li>
+<li><a href="/securite/">Sécurité et données</a></li>
+</ul>
+<ul>
+<li><a href="/fonctionnalites/gestion-scolaire/">Gestion scolaire</a></li>
+<li><a href="/fonctionnalites/notes-et-bulletins/">Notes et bulletins</a></li>
+<li><a href="/fonctionnalites/vie-scolaire/">Vie scolaire</a></li>
+<li><a href="/fonctionnalites/finances/">Finances de l'école</a></li>
+<li><a href="/fonctionnalites/admissions-et-orientation/">Admissions et orientation</a></li>
+<li><a href="/fonctionnalites/direction-et-pilotage/">Direction et pilotage</a></li>
+</ul>
+</section>
+<section class="bloc-mobile">
+<h2>Tarifs</h2>
+<ul>
+<li><a href="/tarifs/">Les quatre offres</a></li>
+<li><a href="/tarifs/comparer/">Comparer les offres</a></li>
+</ul>
+</section>
+<section class="bloc-mobile">
+<h2>Services</h2>
+<ul>
+<li><a href="/services/">Tous les services</a></li>
+<li><a href="/services/installation/">Installation et configuration</a></li>
+<li><a href="/services/formation/">Formation du personnel</a></li>
+<li><a href="/services/campagne-de-capture/">Campagne de capture</a></li>
+</ul>
+</section>
+<section class="bloc-mobile">
+<h2>Ressources</h2>
+<ul>
+<li><a href="/faq/">Questions fréquentes</a></li>
+<li><a href="/securite/">Sécurité et données</a></li>
+<li><a href="/contact/">Parler à quelqu'un</a></li>
+</ul>
+</section>
+<div class="actions-mobile"><a class="bouton secondaire pleine-largeur" href="/connexion.html">Se connecter</a><a class="bouton ocre pleine-largeur" href="/contact/">Découvrir Ardoise</a></div>
+</div></div>
+</header>
+
+<main id="contenu">
+
+<nav class="fil-ariane" aria-label="Fil d'Ariane"><div class="conteneur"><ol>
+<li><a href="/">Accueil</a></li>
+<li><a href="/fonctionnalites/">Fonctionnalités</a></li>
+<li aria-current="page">Intelligence artificielle</li>
+</ol></div></nav><section class="hero-page regle">
+  <div class="conteneur ">
+    <div>
+      <p class="eyebrow">Fonctionnalités · Intelligence artificielle</p>
+      <h1>Une IA qui écrit, explique et cherche&nbsp;— et qui ne décide de rien</h1>
+      <p class="chapeau">L'intelligence artificielle d'Ardoise est présente dès la première offre. Elle sert trois usages précis : rédiger ce que personne n'a le temps de rédiger, expliquer la plateforme à celui qui s'y perd, et répondre à des questions posées à vos données en français ordinaire.</p>
+      <div class="groupe-cta"><a class="bouton ocre" href="/tarifs/">Incluse dans les quatre offres</a><a class="bouton secondaire" href="/tarifs/comparer/">Voir les quotas par offre</a></div>
+    </div>
+    
+  </div>
+</section>
+<section class="section">
+  <div class="conteneur">
+    <div class="section-entete">
+      <span class="eyebrow">Rédaction</span>
+      <h2>Les phrases que personne n'a le temps d'écrire</h2>
+      <p class="chapeau">
+        Un titulaire de 45 élèves doit produire 45 appréciations à chaque période.
+        Sur trois périodes, cela fait 135 paragraphes — et c'est la raison pour
+        laquelle ils finissent tous par se ressembler.
+      </p>
+    </div>
+
+    <div class="grille-cartes trois">
+      <article class="carte">
+        <h3>Appréciations de bulletin</h3>
+        <p>Ardoise propose une appréciation par élève à partir de ses résultats
+           réels : cotes, progression, cours en difficulté. Le titulaire relit,
+           modifie ce qu'il veut, et applique. Rien n'est écrit sur le bulletin
+           sans son geste.</p>
+      </article>
+      <article class="carte">
+        <h3>Conseil de classe</h3>
+        <p>Une synthèse de la classe avant le conseil : tendance générale, cours
+           où le groupe décroche, élèves dont la situation mérite d'être évoquée.
+           De quoi préparer une réunion, pas la remplacer.</p>
+      </article>
+      <article class="carte">
+        <h3>Rédaction administrative</h3>
+        <p>Convocation, communiqué, attestation, lettre aux parents : l'IA propose
+           un texte que la direction ou le secrétariat corrige et envoie.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section alt">
+  <div class="conteneur">
+    <div class="section-entete">
+      <span class="eyebrow">Assistance</span>
+      <h2>Une aide qui connaît Ardoise, dans l'écran où vous êtes</h2>
+    </div>
+
+    <div class="grille-cartes deux">
+      <article class="carte etoffee">
+        <h3>Assistant d'aide contextuelle</h3>
+        <p>« Comment je dévalide une note ? », « pourquoi ce bulletin ne se génère
+           pas ? ». La réponse arrive dans la page, adaptée à votre rôle et à
+           l'écran ouvert. C'est ce qui permet à une école de se paramétrer
+           elle-même sans acheter de formation.</p>
+        <ul class="mini-liste">
+          <li>Didacticiel intégré, étape par étape</li>
+          <li>Manuel consultable par rôle</li>
+          <li>Suivi de la progression d'installation de l'école</li>
+        </ul>
+      </article>
+      <article class="carte etoffee">
+        <h3>Import de fichiers analysé</h3>
+        <p>Vous déposez un fichier d'élèves. L'IA en lit la structure, propose une
+           correspondance colonne par colonne, signale les doublons et les lignes
+           douteuses. Vous corrigez avant d'appliquer, jamais après.</p>
+        <ul class="mini-liste">
+          <li>Fichiers tableur et documents texte</li>
+          <li>Aperçu complet avant écriture</li>
+          <li>Aucun import silencieux</li>
+        </ul>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="analyse">
+  <div class="conteneur">
+    <div class="section-entete">
+      <span class="eyebrow">Analyse</span>
+      <h2>Poser une question à votre école, en français</h2>
+      <p class="chapeau">
+        À partir de l'offre Pilote, la direction interroge ses propres données sans
+        passer par un rapport prédéfini ni par un export.
+      </p>
+    </div>
+
+    <div class="grille-cartes trois">
+      <article class="carte">
+        <h3>Questions sur vos données</h3>
+        <p>« Quels élèves de 4e commerciale n'ont rien versé depuis janvier ? »,
+           « quelle classe a le plus d'absences au 2e trimestre ? ». La réponse
+           est construite à partir de la base, pas devinée.</p>
+      </article>
+      <article class="carte">
+        <h3>Signaux de décrochage</h3>
+        <p>Croisement des résultats, des absences et des incidents pour signaler
+           les élèves dont la trajectoire se dégrade — avant le bulletin, pas
+           après.</p>
+      </article>
+      <article class="carte">
+        <h3>Recherche dans les archives</h3>
+        <p>Retrouver un ancien élève, une promotion, un résultat, sans savoir dans
+           quelle année ni dans quelle classe chercher.</p>
+      </article>
+    </div>
+
+    <div class="encart" id="garde-fous">
+      <h3>Les garde-fous, puisque c'est la vraie question</h3>
+      <ul class="mini-liste">
+        <li><strong>Lecture seule.</strong> Les requêtes engendrées par l'IA
+            s'exécutent sous un rôle technique sans aucun droit d'écriture ni de
+            modification de structure.</li>
+        <li><strong>Votre école, et rien d'autre.</strong> La requête est bornée à
+            l'établissement qui la pose, par le même mécanisme d'isolation qui
+            protège toute la plateforme.</li>
+        <li><strong>Temps limité.</strong> Une requête trop longue est
+            interrompue : une question mal formulée ne peut pas ralentir l'école.</li>
+        <li><strong>Volume encadré.</strong> Quota mensuel par offre et limite de
+            fréquence par minute, pour que le coût reste prévisible.</li>
+        <li><strong>Tout est journalisé.</strong> Question posée, requête produite,
+            durée, nombre de lignes, résultat. L'usage de l'IA est auditable comme
+            le reste.</li>
+      </ul>
+      <p class="apres-liste"><a href="/securite/">Voir la page sécurité</a></p>
+    </div>
+  </div>
+</section>
+
+<section class="section alt">
+  <div class="conteneur">
+    <div class="section-entete">
+      <span class="eyebrow">Discipline et parents</span>
+      <h2>Deux usages plus spécifiques</h2>
+    </div>
+    <div class="grille-cartes deux">
+      <article class="carte">
+        <h3>Lecture du règlement intérieur</h3>
+        <p>Votre règlement, écrit en prose, devient une grille de manquements avec
+           leurs points et leurs mesures. Vous relisez, vous corrigez, vous
+           validez — et seulement ensuite elle s'applique.
+           <a href="/fonctionnalites/vie-scolaire/#discipline">Voir la discipline</a>.</p>
+        <p class="mention-offre">À partir de l'offre Prime.</p>
+      </article>
+      <article class="carte">
+        <h3>Assistant WhatsApp</h3>
+        <p>Un parent écrit à un numéro et obtient les résultats de son enfant ou
+           l'état de ses frais. Le personnel y accède aussi pour des consultations
+           rapides. Les échanges sont conservés côté école.</p>
+        <p class="mention-offre">Réservé à l'offre Infinite.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="conteneur">
+    <div class="encart-offre">
+  <p><strong>Dans quelle offre&nbsp;?</strong> L'assistant d'aide et les appréciations sont dans les quatre offres. Le quota mensuel monte de 100 générations en Ascension à 400 en Prime, 1 500 en Pilote et 5 000 en Infinite. La lecture du règlement arrive avec Prime, les questions sur vos données avec Pilote, l'assistant WhatsApp avec Infinite.</p>
+  <p class="liens-encart">
+    <a href="/tarifs/">Voir les offres</a> ·
+    <a href="/tarifs/comparer/">Comparer ligne par ligne</a>
+  </p>
+</div>
+  </div>
+</section>
+<section class="section alt" id="questions">
+  <div class="conteneur">
+    <div class="section-entete">
+      <span class="eyebrow">Questions</span>
+      <h2>Ce qu'on nous demande sur l'IA</h2>
+      
+    </div>
+    <div class="faq"><details><summary>L'IA décide-t-elle quelque chose à ma place&nbsp;?</summary><div><p>Non. Elle propose un texte, une lecture ou une réponse ; l'application d'une appréciation, la validation d'un barème de discipline et toute décision de passage restent des gestes humains, faits par une personne identifiée et enregistrés à son nom.</p></div></details><details><summary>L'IA peut-elle modifier mes données&nbsp;?</summary><div><p>Non. Lorsqu'elle interroge la base pour répondre à une question, elle le fait sous un rôle technique dépourvu de tout droit d'écriture, limité à l'école qui pose la question et interrompu au bout d'un délai court. Une réponse fausse reste possible ; une donnée modifiée par l'IA, non.</p></div></details><details><summary>Que se passe-t-il quand le quota mensuel est atteint&nbsp;?</summary><div><p>Les fonctions d'IA s'arrêtent jusqu'au mois suivant ; le reste d'Ardoise continue de fonctionner normalement. Le quota va de 100 générations par mois en Ascension à 5 000 en Infinite, et la consommation est visible dans la plateforme.</p></div></details><details><summary>Faut-il payer un supplément pour l'IA&nbsp;?</summary><div><p>Non. Elle est comprise dans les quatre offres. Ce qui monte avec l'offre est le volume mensuel et deux capacités d'analyse : la lecture du règlement intérieur à partir de Prime, les questions sur vos données à partir de Pilote.</p></div></details><details><summary>L'assistant WhatsApp, c'est quoi exactement&nbsp;?</summary><div><p>Un numéro auquel un parent ou un membre du personnel écrit, et qui répond à partir des données de l'école : résultats d'un élève, solde de frais, prochaine échéance. Il est réservé à l'offre Infinite, et l'historique des échanges est conservé côté école.</p></div></details></div>
+  </div>
+</section><section class="section serree" aria-labelledby="plus-loin">
+  <div class="conteneur">
+    <h2 id="plus-loin" class="titre-maillage">Pour aller plus loin</h2>
+    <div class="grille-liens"><a class="carte-lien" href="/securite/"><span class="titre">Sécurité et données</span><span class="texte">Isolation, rôles, journalisation — y compris pour l'IA.</span></a><a class="carte-lien" href="/fonctionnalites/notes-et-bulletins/"><span class="titre">Notes et bulletins</span><span class="texte">Où les appréciations générées finissent par apparaître.</span></a><a class="carte-lien" href="/fonctionnalites/vie-scolaire/"><span class="titre">Discipline</span><span class="texte">Le règlement intérieur transformé en barème validé.</span></a><a class="carte-lien" href="/tarifs/comparer/"><span class="titre">Quotas par offre</span><span class="texte">Combien de générations par mois selon le niveau.</span></a></div>
+  </div>
+</section><section class="cta-final">
+  <div class="conteneur">
+    <h2>L'IA la plus utile est celle qu'on ne remarque pas.</h2>
+    <p>Elle écrit les 45 appréciations pendant que le titulaire relit. C'est tout ce qu'on lui demande.</p>
+    <div class="groupe-cta" style="justify-content:center"><a class="bouton principal" href="/contact/">Demander une présentation</a><a class="bouton secondaire" href="/tarifs/">Voir les offres</a></div>
+  </div>
+</section>
+
+</main>
+
+<footer class="pied">
+  <div class="conteneur">
+    <div class="grille">
+      <div>
+        <div class="marque">Ardoise</div>
+        <p class="description">
+          Plateforme de gestion scolaire pour les établissements de la République
+          démocratique du Congo et d'Afrique francophone.
+        </p>
+      </div>
+      <div>
+        <h2>Produit</h2>
+        <ul>
+          <li><a href="/fonctionnalites/">Fonctionnalités</a></li>
+          <li><a href="/fonctionnalites/ia/">Intelligence artificielle</a></li>
+          <li><a href="/securite/">Sécurité</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Par domaine</h2>
+        <ul>
+          <li><a href="/fonctionnalites/gestion-scolaire/">Gestion scolaire</a></li>
+          <li><a href="/fonctionnalites/notes-et-bulletins/">Notes et bulletins</a></li>
+          <li><a href="/fonctionnalites/vie-scolaire/">Vie scolaire</a></li>
+          <li><a href="/fonctionnalites/finances/">Finances</a></li>
+          <li><a href="/fonctionnalites/admissions-et-orientation/">Admissions et orientation</a></li>
+          <li><a href="/fonctionnalites/direction-et-pilotage/">Direction et pilotage</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Offres et services</h2>
+        <ul>
+          <li><a href="/tarifs/">Tarifs</a></li>
+          <li><a href="/tarifs/comparer/">Comparer les offres</a></li>
+          <li><a href="/services/installation/">Installation</a></li>
+          <li><a href="/services/formation/">Formation</a></li>
+          <li><a href="/services/campagne-de-capture/">Campagne de capture</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Ressources</h2>
+        <ul>
+          <li><a href="/faq/">Questions fréquentes</a></li>
+          <li><a href="/contact/">Nous contacter</a></li>
+          <li><a href="/connexion.html">Se connecter</a></li>
+          <li><a href="/confidentialite.html">Confidentialité</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="bas">
+      <div>© 2026 Ardoise — Logiciel de gestion scolaire.</div>
+      <div>Fait pour les écoles de la RDC.</div>
+    </div>
+  </div>
+</footer>
+
+<script src="/catalogue.js" defer></script>
+<script src="/nav.js" defer></script>
+</body>
+</html>

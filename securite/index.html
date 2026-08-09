@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<title>Sécurité et protection des données scolaires — Ardoise</title>
+<meta name="description" content="Isolation stricte entre établissements appliquée par la base de données, six rôles aux droits contrôlés, journal d'activité, sauvegardes et export de vos archives." />
+<link rel="canonical" href="https://myardoise.com/securite/" />
+<meta name="robots" content="index, follow, max-image-preview:large" />
+<meta name="author" content="Ardoise" />
+<meta name="theme-color" content="#F6F2E7" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#141C18" media="(prefers-color-scheme: dark)" />
+
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Ardoise" />
+<meta property="og:locale" content="fr_CD" />
+<meta property="og:url" content="https://myardoise.com/securite/" />
+<meta property="og:title" content="Sécurité et protection des données scolaires — Ardoise" />
+<meta property="og:description" content="Isolation stricte entre établissements appliquée par la base de données, six rôles aux droits contrôlés, journal d'activité, sauvegardes et export de vos archives." />
+<meta property="og:image" content="https://myardoise.com/icone-512.png" />
+<meta property="og:image:alt" content="Ardoise, plateforme de gestion scolaire" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Sécurité et protection des données scolaires — Ardoise" />
+<meta name="twitter:description" content="Isolation stricte entre établissements appliquée par la base de données, six rôles aux droits contrôlés, journal d'activité, sauvegardes et export de vos archives." />
+<meta name="twitter:image" content="https://myardoise.com/icone-512.png" />
+
+<link rel="icon" type="image/png" sizes="192x192" href="/icone-192.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="/icone-ios-180.png" />
+<link rel="manifest" href="/manifest.json" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="preconnect" href="https://scolaire-saas-backend.onrender.com" />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/site.css" />
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Accueil",
+          "item": "https://myardoise.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Sécurité"
+        }
+      ],
+      "@id": "https://myardoise.com/securite/#n0"
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Où sont hébergées les données ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Sur une infrastructure d'hébergement professionnelle, dans des centres de données gérés par des opérateurs spécialisés, avec sauvegardes régulières. Les données ne sont pas stockées sur un serveur installé dans une école ni sur l'ordinateur d'un membre du personnel."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Une autre école peut-elle voir mes élèves ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Non, et la garantie n'est pas seulement applicative. Chaque requête s'exécute dans un contexte lié à l'école connectée, et les règles de sécurité de la base filtrent les lignes accessibles table par table. Même une erreur de programmation qui oublierait un filtre ne ferait pas apparaître les données d'un autre établissement."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Que voit exactement l'équipe Ardoise ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Un administrateur de la plateforme peut, pour porter assistance, observer l'interface d'une école. Cet accès est délibérément contraint : il est limité dans le temps, strictement en lecture — aucune écriture n'est possible — et il est enregistré avec le motif, l'adresse et l'horaire. Le journal continue par ailleurs de nommer la personne réelle, jamais l'identité observée."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Que se passe-t-il si je résilie ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Vos données restent exportables : archives par année et par classe, bulletins déjà produits. Nous considérons qu'un logiciel qui retient les données d'une école pour l'empêcher de partir ne mérite pas qu'on lui confie celles d'un enfant."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Les mots de passe sont-ils protégés ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Ils ne sont jamais stockés en clair : seule une empreinte cryptographique est conservée, calculée avec un algorithme conçu pour résister aux tentatives de retrouver le mot de passe d'origine. Personne, chez Ardoise, ne peut lire le mot de passe d'un directeur."
+          }
+        }
+      ],
+      "@id": "https://myardoise.com/securite/#n1"
+    }
+  ]
+}
+</script>
+</head>
+
+<body>
+<a class="saut-contenu" href="#contenu">Aller au contenu</a>
+
+<header class="entete">
+  <div class="conteneur">
+    <a class="marque" href="/">Ardoise</a>
+
+    <nav class="nav-site" aria-label="Navigation principale">
+      <ul class="nav-niveau1">
+<li class="a-sous-menu" data-actif="oui">
+<button type="button" class="declencheur" aria-expanded="false" aria-controls="sm-produit">Produit<span class="chevron" aria-hidden="true"></span></button>
+<div class="sous-menu" id="sm-produit" hidden>
+<div class="sm-conteneur">
+<div class="sm-colonne">
+<p class="sm-titre">Vue d'ensemble</p>
+<ul>
+<li><a href="/fonctionnalites/"><span class="sm-lien">Toutes les fonctionnalités</span><span class="sm-note">Ce qu'Ardoise couvre, module par module</span></a></li>
+<li><a href="/fonctionnalites/ia/"><span class="sm-lien">Intelligence artificielle</span><span class="sm-note">Assistance, appréciations, analyse des données</span></a></li>
+<li><a href="/securite/"><span class="sm-lien">Sécurité et données</span><span class="sm-note">Isolation, rôles, traçabilité, sauvegardes</span></a></li>
+</ul></div>
+<div class="sm-colonne">
+<p class="sm-titre">Par domaine</p>
+<ul>
+<li><a href="/fonctionnalites/gestion-scolaire/"><span class="sm-lien">Gestion scolaire</span><span class="sm-note">Élèves, classes, cours, années scolaires</span></a></li>
+<li><a href="/fonctionnalites/notes-et-bulletins/"><span class="sm-lien">Notes et bulletins</span><span class="sm-note">Cotes, moyennes, bulletins officiels RDC</span></a></li>
+<li><a href="/fonctionnalites/vie-scolaire/"><span class="sm-lien">Vie scolaire</span><span class="sm-note">Présences, discipline, emploi du temps</span></a></li>
+<li><a href="/fonctionnalites/finances/"><span class="sm-lien">Finances de l'école</span><span class="sm-note">Frais scolaires, caisse, paie</span></a></li>
+<li><a href="/fonctionnalites/admissions-et-orientation/"><span class="sm-lien">Admissions et orientation</span><span class="sm-note">Concours, candidats, vœux, affectation</span></a></li>
+<li><a href="/fonctionnalites/direction-et-pilotage/"><span class="sm-lien">Direction et pilotage</span><span class="sm-note">Rapports, communication, archives</span></a></li>
+</ul></div>
+</div></div></li>
+<li class="a-sous-menu">
+<button type="button" class="declencheur" aria-expanded="false" aria-controls="sm-tarifs">Tarifs<span class="chevron" aria-hidden="true"></span></button>
+<div class="sous-menu" id="sm-tarifs" hidden>
+<div class="sm-conteneur">
+<div class="sm-colonne">
+<p class="sm-titre">Abonnement</p>
+<ul>
+<li><a href="/tarifs/"><span class="sm-lien">Les quatre offres</span><span class="sm-note">Ascension, Prime, Pilote, Infinite</span></a></li>
+<li><a href="/tarifs/comparer/"><span class="sm-lien">Comparer les offres</span><span class="sm-note">Le tableau ligne par ligne</span></a></li>
+</ul></div>
+</div></div></li>
+<li class="a-sous-menu">
+<button type="button" class="declencheur" aria-expanded="false" aria-controls="sm-services">Services<span class="chevron" aria-hidden="true"></span></button>
+<div class="sous-menu" id="sm-services" hidden>
+<div class="sm-conteneur">
+<div class="sm-colonne">
+<p class="sm-titre">Accompagnement</p>
+<ul>
+<li><a href="/services/"><span class="sm-lien">Tous les services</span><span class="sm-note">Ce que notre équipe fait pour vous</span></a></li>
+<li><a href="/services/installation/"><span class="sm-lien">Installation et configuration</span><span class="sm-note">60 $, forfait unique</span></a></li>
+<li><a href="/services/formation/"><span class="sm-lien">Formation du personnel</span><span class="sm-note">30, 60 ou 100 $</span></a></li>
+<li><a href="/services/campagne-de-capture/"><span class="sm-lien">Campagne de capture</span><span class="sm-note">0,50 $ par élève</span></a></li>
+</ul></div>
+</div></div></li>
+<li class="a-sous-menu">
+<button type="button" class="declencheur" aria-expanded="false" aria-controls="sm-ressources">Ressources<span class="chevron" aria-hidden="true"></span></button>
+<div class="sous-menu" id="sm-ressources" hidden>
+<div class="sm-conteneur">
+<div class="sm-colonne">
+<p class="sm-titre">Comprendre Ardoise</p>
+<ul>
+<li><a href="/faq/"><span class="sm-lien">Questions fréquentes</span><span class="sm-note">Les 25 questions posées avant de signer</span></a></li>
+<li><a href="/securite/"><span class="sm-lien">Sécurité et données</span><span class="sm-note">Où sont les données, qui y accède</span></a></li>
+<li><a href="/contact/"><span class="sm-lien">Parler à quelqu'un</span><span class="sm-note">Demander un accompagnement</span></a></li>
+</ul></div>
+</div></div></li>
+</ul>
+    </nav>
+
+    <div class="actions-entete">
+      <button class="bascule-theme" data-bascule-theme type="button" aria-label="Changer de thème">☾</button>
+      <a class="lien-connexion" href="/connexion.html">Se connecter</a>
+      <a class="bouton ocre petit" href="/contact/">Découvrir Ardoise</a>
+      <button class="bascule-menu" type="button" aria-expanded="false"
+              aria-controls="panneau-mobile" aria-label="Ouvrir le menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+  <div class="panneau-mobile" id="panneau-mobile" hidden>
+<div class="conteneur">
+<section class="bloc-mobile">
+<h2>Produit</h2>
+<ul>
+<li><a href="/fonctionnalites/">Toutes les fonctionnalités</a></li>
+<li><a href="/fonctionnalites/ia/">Intelligence artificielle</a></li>
+<li><a href="/securite/">Sécurité et données</a></li>
+</ul>
+<ul>
+<li><a href="/fonctionnalites/gestion-scolaire/">Gestion scolaire</a></li>
+<li><a href="/fonctionnalites/notes-et-bulletins/">Notes et bulletins</a></li>
+<li><a href="/fonctionnalites/vie-scolaire/">Vie scolaire</a></li>
+<li><a href="/fonctionnalites/finances/">Finances de l'école</a></li>
+<li><a href="/fonctionnalites/admissions-et-orientation/">Admissions et orientation</a></li>
+<li><a href="/fonctionnalites/direction-et-pilotage/">Direction et pilotage</a></li>
+</ul>
+</section>
+<section class="bloc-mobile">
+<h2>Tarifs</h2>
+<ul>
+<li><a href="/tarifs/">Les quatre offres</a></li>
+<li><a href="/tarifs/comparer/">Comparer les offres</a></li>
+</ul>
+</section>
+<section class="bloc-mobile">
+<h2>Services</h2>
+<ul>
+<li><a href="/services/">Tous les services</a></li>
+<li><a href="/services/installation/">Installation et configuration</a></li>
+<li><a href="/services/formation/">Formation du personnel</a></li>
+<li><a href="/services/campagne-de-capture/">Campagne de capture</a></li>
+</ul>
+</section>
+<section class="bloc-mobile">
+<h2>Ressources</h2>
+<ul>
+<li><a href="/faq/">Questions fréquentes</a></li>
+<li><a href="/securite/">Sécurité et données</a></li>
+<li><a href="/contact/">Parler à quelqu'un</a></li>
+</ul>
+</section>
+<div class="actions-mobile"><a class="bouton secondaire pleine-largeur" href="/connexion.html">Se connecter</a><a class="bouton ocre pleine-largeur" href="/contact/">Découvrir Ardoise</a></div>
+</div></div>
+</header>
+
+<main id="contenu">
+
+<nav class="fil-ariane" aria-label="Fil d'Ariane"><div class="conteneur"><ol>
+<li><a href="/">Accueil</a></li>
+<li aria-current="page">Sécurité</li>
+</ol></div></nav><section class="hero-page regle">
+  <div class="conteneur ">
+    <div>
+      <p class="eyebrow">Sécurité et données</p>
+      <h1>Les données d'une école ne sortent pas de l'école</h1>
+      <p class="chapeau">Une plateforme scolaire manipule des informations sur des mineurs, des résultats qui décident d'une orientation et des sommes d'argent. Cette page décrit comment l'accès à ces données est contrôlé, tracé et limité — concrètement, pas en principe.</p>
+      <div class="groupe-cta"><a class="bouton secondaire" href="/contact/">Poser une question précise</a></div>
+    </div>
+    
+  </div>
+</section>
+<section class="section">
+  <div class="conteneur">
+    <div class="section-entete">
+      <span class="eyebrow">Isolation</span>
+      <h2>Une école ne peut pas lire les données d'une autre</h2>
+      <p class="chapeau">
+        C'est la promesse centrale d'une plateforme partagée par plusieurs
+        établissements, et la seule qui ne supporte aucune exception.
+      </p>
+    </div>
+
+    <div class="grille-cartes deux">
+      <article class="carte etoffee">
+        <h3>Le filtrage est dans la base, pas seulement dans le code</h3>
+        <p>À chaque requête, l'identité de l'école connectée est posée dans le
+           contexte de la transaction, et les règles de sécurité au niveau des
+           lignes filtrent ce qui est visible, table par table. Une requête qui
+           oublierait un filtre ne renverrait pas les données d'un autre
+           établissement : elle ne renverrait rien.</p>
+      </article>
+      <article class="carte etoffee">
+        <h3>Le raisonnement derrière</h3>
+        <p>Une isolation qui repose uniquement sur des conditions écrites dans le
+           code tient tant que personne n'oublie d'en écrire une. La faire
+           appliquer par la base de données déplace la garantie du côté où
+           l'oubli n'est pas possible. C'est plus contraignant à développer, et
+           c'est le bon endroit pour cette contrainte.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section alt" id="acces">
+  <div class="conteneur">
+    <div class="section-entete">
+      <span class="eyebrow">Accès</span>
+      <h2>Six rôles, et personne ne voit plus que son métier</h2>
+    </div>
+    <div class="grille-cartes trois">
+      <article class="carte">
+        <h3>Des droits par rôle</h3>
+        <p>Un professeur atteint ses cours dans ses classes ; un titulaire sa
+           classe ; un secrétaire les dossiers et les encaissements ; la direction
+           l'ensemble. Le contrôle est appliqué à chaque appel, pas seulement à
+           l'affichage du menu.</p>
+      </article>
+      <article class="carte">
+        <h3>Des cumuls encadrés</h3>
+        <p>Une personne n'a qu'un rôle, sauf deux combinaisons prévues :
+           Professeur et Titulaire, Préfet et Directeur. Toute autre combinaison
+           est refusée — ce qui garde les responsabilités lisibles.</p>
+      </article>
+      <article class="carte">
+        <h3>Des sessions maîtrisées</h3>
+        <p>La connexion repose sur un jeton de courte durée renouvelé par une
+           session enregistrée, révocable. Un mot de passe provisoire doit être
+           changé à la première connexion.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="tracabilite">
+  <div class="conteneur grille-deux">
+    <div>
+      <span class="eyebrow">Traçabilité</span>
+      <h2>Chaque geste qui engage porte un nom et une heure</h2>
+      <p class="chapeau">
+        Dans une école, la question n'est presque jamais « qu'est-ce qui est
+        écrit ? » mais « qui l'a écrit, et quand ? ». Ardoise répond aux deux.
+      </p>
+      <a class="bouton secondaire" href="/fonctionnalites/direction-et-pilotage/#memoire">Voir le journal d'activité</a>
+    </div>
+    <ul class="liste-points">
+      <li><strong>Notes</strong> — qui a saisi, qui a validé, qui a dévalidé.</li>
+      <li><strong>Bulletins</strong> — qui a signé, à quelle date.</li>
+      <li><strong>Présences</strong> — l'auteur de la saisie initiale est conservé
+          même après correction, avec le motif de la modification.</li>
+      <li><strong>Argent</strong> — chaque encaissement, chaque écriture de caisse
+          et chaque salaire portent le nom de leur auteur.</li>
+      <li><strong>Périodes</strong> — clôture et réouverture journalisées.</li>
+      <li><strong>Paramètres</strong> — taux de change, seuils, réglages sensibles.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="section alt">
+  <div class="conteneur">
+    <div class="section-entete">
+      <span class="eyebrow">Exploitation</span>
+      <h2>Ce qui protège la plateforme au quotidien</h2>
+    </div>
+    <div class="grille-cartes trois">
+      <article class="carte">
+        <h3>Mots de passe</h3>
+        <p>Jamais stockés en clair. Seule une empreinte résistante est conservée,
+           et la réinitialisation passe par un lien à usage unique qui expire.</p>
+      </article>
+      <article class="carte">
+        <h3>Limitation de débit</h3>
+        <p>Les points d'entrée publics et les fonctions coûteuses sont plafonnés :
+           un formulaire public ne peut pas être noyé sous des envois
+           automatiques, ni l'IA appelée en boucle.</p>
+      </article>
+      <article class="carte">
+        <h3>Sauvegardes</h3>
+        <p>Sauvegardes enregistrées avec leur date, leur portée et leur résultat.
+           Une sauvegarde dont on ne sait pas si elle a réussi n'est pas une
+           sauvegarde.</p>
+      </article>
+      <article class="carte">
+        <h3>Requêtes de l'IA</h3>
+        <p>Exécutées en lecture seule, bornées à l'école qui interroge et
+           interrompues au-delà d'un délai court.
+           <a href="/fonctionnalites/ia/#garde-fous">Voir les garde-fous</a>.</p>
+      </article>
+      <article class="carte">
+        <h3>Observation encadrée</h3>
+        <p>L'assistance qui regarde l'écran d'une école le fait sans droit
+           d'écriture, pour une durée limitée, avec motif et horaire enregistrés.</p>
+      </article>
+      <article class="carte">
+        <h3>Réversibilité</h3>
+        <p>Export des archives par année et par classe, bulletins téléchargeables.
+           Vos données sortent quand vous le décidez.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="conteneur">
+    <div class="encart">
+      <h3>Ce que cette page ne prétend pas</h3>
+      <p>Aucun logiciel n'est invulnérable, et une page de site ne remplace pas un
+         audit. Ce qui est décrit ici est ce qui est réellement en place :
+         isolation appliquée par la base, contrôle des rôles à chaque requête,
+         journalisation des gestes qui engagent, sauvegardes suivies et accès
+         d'assistance contraint. Si votre établissement a des exigences
+         particulières — clauses contractuelles, restitution périodique,
+         localisation des données —
+         <a href="/contact/">posez-nous la question directement</a>.</p>
+    </div>
+  </div>
+</section>
+<section class="section alt" id="faq-securite">
+  <div class="conteneur">
+    <div class="section-entete">
+      <span class="eyebrow">Questions</span>
+      <h2>Les questions qu'on nous pose sur les données</h2>
+      
+    </div>
+    <div class="faq"><details><summary>Où sont hébergées les données&nbsp;?</summary><div><p>Sur une infrastructure d'hébergement professionnelle, dans des centres de données gérés par des opérateurs spécialisés, avec sauvegardes régulières. Les données ne sont pas stockées sur un serveur installé dans une école ni sur l'ordinateur d'un membre du personnel.</p></div></details><details><summary>Une autre école peut-elle voir mes élèves&nbsp;?</summary><div><p>Non, et la garantie n'est pas seulement applicative. Chaque requête s'exécute dans un contexte lié à l'école connectée, et les règles de sécurité de la base filtrent les lignes accessibles table par table. Même une erreur de programmation qui oublierait un filtre ne ferait pas apparaître les données d'un autre établissement.</p></div></details><details><summary>Que voit exactement l'équipe Ardoise&nbsp;?</summary><div><p>Un administrateur de la plateforme peut, pour porter assistance, observer l'interface d'une école. Cet accès est délibérément contraint : il est limité dans le temps, strictement en lecture — aucune écriture n'est possible — et il est enregistré avec le motif, l'adresse et l'horaire. Le journal continue par ailleurs de nommer la personne réelle, jamais l'identité observée.</p></div></details><details><summary>Que se passe-t-il si je résilie&nbsp;?</summary><div><p>Vos données restent exportables : archives par année et par classe, bulletins déjà produits. Nous considérons qu'un logiciel qui retient les données d'une école pour l'empêcher de partir ne mérite pas qu'on lui confie celles d'un enfant.</p></div></details><details><summary>Les mots de passe sont-ils protégés&nbsp;?</summary><div><p>Ils ne sont jamais stockés en clair : seule une empreinte cryptographique est conservée, calculée avec un algorithme conçu pour résister aux tentatives de retrouver le mot de passe d'origine. Personne, chez Ardoise, ne peut lire le mot de passe d'un directeur.</p></div></details></div>
+  </div>
+</section><section class="section serree" aria-labelledby="plus-loin">
+  <div class="conteneur">
+    <h2 id="plus-loin" class="titre-maillage">Pour aller plus loin</h2>
+    <div class="grille-liens"><a class="carte-lien" href="/fonctionnalites/ia/"><span class="titre">Garde-fous de l'IA</span><span class="texte">Lecture seule, périmètre borné, journalisation.</span></a><a class="carte-lien" href="/fonctionnalites/direction-et-pilotage/"><span class="titre">Journal et archives</span><span class="texte">Ce qui est tracé, et comment le relire.</span></a><a class="carte-lien" href="/confidentialite.html"><span class="titre">Politique de confidentialité</span><span class="texte">Le texte complet sur le traitement des données.</span></a><a class="carte-lien" href="/contact/"><span class="titre">Nous écrire</span><span class="texte">Pour une question précise ou une exigence contractuelle.</span></a></div>
+  </div>
+</section><section class="cta-final">
+  <div class="conteneur">
+    <h2>Une question précise mérite une réponse précise.</h2>
+    <p>Écrivez-nous : nous répondons sur ce qui existe, pas sur ce qui serait agréable à annoncer.</p>
+    <div class="groupe-cta" style="justify-content:center"><a class="bouton principal" href="/contact/">Poser une question</a><a class="bouton secondaire" href="/fonctionnalites/">Voir les fonctionnalités</a></div>
+  </div>
+</section>
+
+</main>
+
+<footer class="pied">
+  <div class="conteneur">
+    <div class="grille">
+      <div>
+        <div class="marque">Ardoise</div>
+        <p class="description">
+          Plateforme de gestion scolaire pour les établissements de la République
+          démocratique du Congo et d'Afrique francophone.
+        </p>
+      </div>
+      <div>
+        <h2>Produit</h2>
+        <ul>
+          <li><a href="/fonctionnalites/">Fonctionnalités</a></li>
+          <li><a href="/fonctionnalites/ia/">Intelligence artificielle</a></li>
+          <li><a href="/securite/">Sécurité</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Par domaine</h2>
+        <ul>
+          <li><a href="/fonctionnalites/gestion-scolaire/">Gestion scolaire</a></li>
+          <li><a href="/fonctionnalites/notes-et-bulletins/">Notes et bulletins</a></li>
+          <li><a href="/fonctionnalites/vie-scolaire/">Vie scolaire</a></li>
+          <li><a href="/fonctionnalites/finances/">Finances</a></li>
+          <li><a href="/fonctionnalites/admissions-et-orientation/">Admissions et orientation</a></li>
+          <li><a href="/fonctionnalites/direction-et-pilotage/">Direction et pilotage</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Offres et services</h2>
+        <ul>
+          <li><a href="/tarifs/">Tarifs</a></li>
+          <li><a href="/tarifs/comparer/">Comparer les offres</a></li>
+          <li><a href="/services/installation/">Installation</a></li>
+          <li><a href="/services/formation/">Formation</a></li>
+          <li><a href="/services/campagne-de-capture/">Campagne de capture</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Ressources</h2>
+        <ul>
+          <li><a href="/faq/">Questions fréquentes</a></li>
+          <li><a href="/contact/">Nous contacter</a></li>
+          <li><a href="/connexion.html">Se connecter</a></li>
+          <li><a href="/confidentialite.html">Confidentialité</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="bas">
+      <div>© 2026 Ardoise — Logiciel de gestion scolaire.</div>
+      <div>Fait pour les écoles de la RDC.</div>
+    </div>
+  </div>
+</footer>
+
+<script src="/catalogue.js" defer></script>
+<script src="/nav.js" defer></script>
+</body>
+</html>

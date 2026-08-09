@@ -136,6 +136,48 @@
     return voile;
   }
 
+  /**
+   * Regroupe les champs `limite_*` du formulaire dans l'objet `limites`.
+   * ----------------------------------------------------------------------
+   * Le générateur de formulaire ne connaît que des champs plats ; le serveur,
+   * lui, attend un objet jsonb. Cette fonction fait la traduction à un seul
+   * endroit, juste avant l'envoi.
+   *
+   * Deux détails qui comptent :
+   *   · un champ vide devient `null`, c'est-à-dire « sans limite », et non 0.
+   *     Enregistrer 0 plafonnerait l'offre à zéro élève ;
+   *   · `max_eleves` et `max_utilisateurs` sont RECOPIÉS dans `limites`. Les
+   *     deux anciennes colonnes existent toujours et restent affichées ailleurs,
+   *     mais c'est `limites` que le serveur applique. Sans cette recopie, un
+   *     plafond saisi ici serait affiché partout et respecté nulle part.
+   */
+  function regrouperLimites(valeurs) {
+    const limites = {};
+    let touche = false;
+
+    for (const cle of Object.keys(valeurs)) {
+      if (!cle.startsWith('limite_')) continue;
+      const v = valeurs[cle];
+      limites[cle.slice('limite_'.length)] = (v === '' || v === null || v === undefined) ? null : v;
+      delete valeurs[cle];
+      touche = true;
+    }
+
+    if ('max_eleves' in valeurs) {
+      limites.max_eleves = (valeurs.max_eleves === '' || valeurs.max_eleves === null
+                            || valeurs.max_eleves === undefined) ? null : valeurs.max_eleves;
+      touche = true;
+    }
+    if ('max_utilisateurs' in valeurs) {
+      limites.max_utilisateurs = (valeurs.max_utilisateurs === '' || valeurs.max_utilisateurs === null
+                                  || valeurs.max_utilisateurs === undefined) ? null : valeurs.max_utilisateurs;
+      touche = true;
+    }
+
+    if (touche) valeurs.limites = limites;
+    return valeurs;
+  }
+
   /** Raccourci : POST/PATCH/PUT JSON puis toast et rafraîchissement. */
   async function envoyer(chemin, methode, corps, messageSucces) {
     const reponse = await SA.api(chemin, { method: methode, body: JSON.stringify(corps) });
@@ -162,10 +204,41 @@
     { cle: 'devise', libelle: 'Devise', valeur: o.devise || 'USD', longueurMax: 8 },
     { cle: 'duree_jours', libelle: 'Durée facturée (jours)', type: 'nombre', pas: '1', min: 1, valeur: o.duree_jours || 30,
       aide: '30 pour un abonnement mensuel, 365 pour un annuel.' },
+    { cle: 'prix_semestriel', libelle: 'Prix semestriel (facultatif)', type: 'nombre', min: 0,
+      valeur: o.prix_semestriel,
+      aide: 'Montant réglé en une fois pour six mois. Laissé vide, la périodicité semestrielle n\'est pas proposée pour cette offre.' },
     { cle: 'prix_annuel', libelle: 'Prix annuel (facultatif)', type: 'nombre', min: 0, valeur: o.prix_annuel },
+    { cle: 'positionnement', libelle: 'Positionnement', valeur: o.positionnement, longueurMax: 160,
+      exemple: 'Ex. Piloter l\'établissement',
+      aide: 'La phrase courte affichée sous le nom de l\'offre sur le site public.' },
+    { cle: 'cible', libelle: 'À qui s\'adresse cette offre', type: 'zone', valeur: o.cible,
+      aide: 'Affiché tel quel sur la page des tarifs. Décrivez l\'école, pas la fonctionnalité.' },
+
+    /* ------------------------------------------------------------------
+       Les plafonds vivent désormais dans `limites` (migration 028), qui les
+       regroupe tous au même endroit et que le serveur applique réellement.
+
+       `max_eleves` et `max_utilisateurs` restent affichés parce que les deux
+       anciennes colonnes existent toujours et sont lues par d'autres écrans.
+       Ils sont recopiés dans `limites` à l'enregistrement — voir plus bas —
+       pour qu'un plafond saisi ici soit celui que le serveur fait respecter,
+       et pas seulement celui qu'il affiche.
+       ------------------------------------------------------------------ */
     { cle: 'max_eleves', libelle: "Plafond d'élèves", type: 'nombre', pas: '1', min: 0, valeur: o.max_eleves,
+      aide: 'Vide = illimité. Appliqué à la création d\'un élève et à l\'import.' },
+    { cle: 'max_utilisateurs', libelle: "Plafond d'utilisateurs", type: 'nombre', pas: '1', min: 0, valeur: o.max_utilisateurs,
       aide: 'Vide = illimité.' },
-    { cle: 'max_utilisateurs', libelle: "Plafond d'utilisateurs", type: 'nombre', pas: '1', min: 0, valeur: o.max_utilisateurs },
+    { cle: 'limite_max_classes', libelle: 'Plafond de classes', type: 'nombre', pas: '1', min: 0,
+      valeur: (o.limites || {}).max_classes, aide: 'Vide = illimité.' },
+    { cle: 'limite_ia_quota_mensuel', libelle: 'Générations IA par mois', type: 'nombre', pas: '1', min: 0,
+      valeur: (o.limites || {}).ia_quota_mensuel,
+      aide: 'Compteur remis à zéro le 1er de chaque mois. Vide = illimité.' },
+    { cle: 'limite_historique_annees', libelle: 'Années scolaires archivées', type: 'nombre', pas: '1', min: 0,
+      valeur: (o.limites || {}).historique_annees, aide: 'Vide = illimité.' },
+    { cle: 'limite_stockage_mo', libelle: 'Stockage (Mo)', type: 'nombre', pas: '1', min: 0,
+      valeur: (o.limites || {}).stockage_mo, aide: 'Vide = illimité.' },
+    { cle: 'limite_notifications_email_mois', libelle: 'E-mails sortants par mois', type: 'nombre', pas: '1', min: 0,
+      valeur: (o.limites || {}).notifications_email_mois, aide: 'Vide = illimité.' },
     { cle: 'ordre_affichage', libelle: 'Ordre', type: 'nombre', pas: '1', min: 0, valeur: o.ordre_affichage || 0 },
     { cle: 'badge', libelle: 'Badge', valeur: o.badge, longueurMax: 40, exemple: 'Ex. Le plus choisi' },
     { cle: 'description', libelle: 'Description', type: 'zone', valeur: o.description },
@@ -203,7 +276,7 @@
           sousTitre: 'Elle sera créée inactive côté public tant que vous ne la rendez pas visible.',
           champs: CHAMPS_OFFRE(),
           libelleValider: "Créer l'offre",
-          soumettre: (v) => envoyer('/super-admin/offres', 'POST', v, 'Offre créée.')
+          soumettre: (v) => envoyer('/super-admin/offres', 'POST', regrouperLimites(v), 'Offre créée.')
         }));
       }
 
@@ -262,6 +335,8 @@
         <div class="sa-ligne-info"><span>Encaissé à ce jour</span><span>${argent(o.revenu_encaisse)}</span></div>
         <div class="sa-ligne-info"><span>Remises en cours</span><span>${Number(o.remises_mensuelles) ? `<span class="sa-negatif">−${fmt.decimal(o.remises_mensuelles, 2)}</span>` : '<span class="sa-muet">aucune</span>'}${Number(o.tarifs_negocies) ? ` <span class="sa-muet">· ${fmt.nombre(o.tarifs_negocies)} négocié(s)</span>` : ''}</span></div>
         <div class="sa-ligne-info"><span>Plafonds</span><span>${o.max_eleves ? `${fmt.nombre(o.max_eleves)} élèves` : 'élèves illimités'}${o.max_utilisateurs ? ` · ${fmt.nombre(o.max_utilisateurs)} utilisateurs` : ''}</span></div>
+        <div class="sa-ligne-info"><span>Semestriel / annuel</span><span>${o.prix_semestriel ? argent(o.prix_semestriel) : '<span class="sa-muet">non proposé</span>'} · ${o.prix_annuel ? argent(o.prix_annuel) : '<span class="sa-muet">non proposé</span>'}</span></div>
+        <div class="sa-ligne-info"><span>Quota IA mensuel</span><span>${(o.limites && o.limites.ia_quota_mensuel != null) ? `${fmt.nombre(o.limites.ia_quota_mensuel)} générations` : '<span class="sa-muet">non défini</span>'}</span></div>
       </div>
 
       ${o.description ? `<p class="sa-note">${esc(o.description)}</p>` : ''}
@@ -286,7 +361,7 @@
         titre: `Modifier « ${o.nom} »`,
         sousTitre: 'Le prix ne se modifie pas ici : il exige un motif et alimente un historique.',
         champs,
-        soumettre: (v) => envoyer(`/super-admin/offres/${o.id}`, 'PATCH', v, 'Offre mise à jour.')
+        soumettre: (v) => envoyer(`/super-admin/offres/${o.id}`, 'PATCH', regrouperLimites(v), 'Offre mise à jour.')
       });
     }));
 
@@ -332,6 +407,9 @@
       large: false,
       champs: [
         { cle: 'nouveau_prix', libelle: 'Nouveau prix', type: 'nombre', min: 0, requis: true, valeur: o.prix },
+        { cle: 'nouveau_prix_semestriel', libelle: 'Nouveau prix semestriel', type: 'nombre', min: 0,
+          valeur: o.prix_semestriel,
+          aide: 'À revoir en même temps que le mensuel : le site public calcule l\'économie affichée à partir des deux.' },
         { cle: 'nouveau_prix_annuel', libelle: 'Nouveau prix annuel', type: 'nombre', min: 0, valeur: o.prix_annuel },
         { cle: 'date_application', libelle: "Date d'application", type: 'date',
           valeur: new Date().toISOString().slice(0, 10) },
@@ -380,6 +458,7 @@
             await envoyer(`/super-admin/offres/${o.id}/prix`, 'POST', {
               confirmation: true,
               nouveau_prix: v.nouveau_prix,
+              nouveau_prix_semestriel: v.nouveau_prix_semestriel,
               nouveau_prix_annuel: v.nouveau_prix_annuel,
               date_application: v.date_application,
               raison: v.raison

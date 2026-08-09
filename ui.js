@@ -1565,3 +1565,222 @@
   window.ArdoiseUI.confirmer = confirmer;
   window.ArdoiseUI.demander = demander;
 })();
+
+
+/* =============================================================================
+   ARDOISE — CE QUE L'OFFRE DE L'ÉCOLE OUVRE, ET CE QU'ELLE N'OUVRE PAS
+   =============================================================================
+
+   LE PROBLÈME QU'IL RÈGLE
+   -----------------------
+   Le serveur refuse maintenant les modules qu'une école n'a pas souscrits, avec
+   un code 402 et un message clair. C'est la bonne décision côté sécurité — mais
+   à l'écran, sans ce module, le directeur d'une école en Ascension voit
+   « Comptabilité » dans son menu, clique, et reçoit une erreur. Il en conclut
+   que le logiciel est cassé, pas que son offre ne comprend pas ce module.
+
+   CE QU'IL FAIT
+   -------------
+     1. Il retire du menu les entrées que l'offre ne comprend pas. Ce qui n'est
+        pas proposé n'est pas montré grisé ni barré : il n'est pas montré.
+     2. Il intercepte les 402 restants — lien direct, favori, redirection — et
+        affiche un message qui nomme ce qui manque, avec un chemin vers les
+        offres.
+
+   POURQUOI ICI ET PAS DANS UN FICHIER À PART
+   ------------------------------------------
+   Parce que `ui.js` est déjà chargé par les trente écrans de l'application et
+   construit déjà le menu. Un trente-et-unième fichier aurait demandé d'ajouter
+   une balise `<script>` à trente pages HTML, avec la certitude d'en oublier
+   une — et c'est sur celle-là que l'entrée morte serait restée.
+
+   CE QU'IL N'EST PAS
+   ------------------
+   Un contrôle de sécurité. Masquer une entrée de menu n'empêche personne
+   d'appeler l'API. Le seul verrou qui compte est celui du serveur
+   (`middleware/offre.middleware.js`) ; celui-ci ne sert qu'au confort.
+
+   UNE LIMITE ASSUMÉE
+   ------------------
+   Les droits sont lus par le réseau, donc APRÈS la construction du menu. Pour
+   éviter que chaque page ne montre l'entrée une fraction de seconde avant de la
+   retirer, la réponse est mise en cache dans `sessionStorage` et appliquée
+   immédiatement au chargement suivant. Conséquence : après un changement
+   d'offre, la première page affichée peut encore montrer l'ancien menu. La
+   suivante est juste, et le serveur, lui, était déjà à jour.
+   ============================================================================= */
+
+(function () {
+  'use strict';
+
+  /* Quelle page dépend de quelle fonctionnalité.
+     Une page absente de cette table reste visible dans les quatre offres —
+     c'est le bon défaut : une page oubliée ici reste accessible, alors qu'un
+     verrou posé par erreur masquerait une fonction essentielle. */
+  var PAGES_CONDITIONNEES = {
+    'comptabilite.html':       'comptabilite',
+    'emploi-du-temps.html':    'emploi_du_temps',
+    'discipline.html':         'discipline',
+    'inscriptions.html':       'concours_admission',
+    'orientation.html':        'orientation',
+    'repechage.html':          'repechage',
+    'rapports.html':           'rapports_avances',
+    'generateur-modeles.html': 'modeles_personnalises'
+  };
+
+  /* Comment nommer une fonctionnalité à un directeur. Le code technique
+     (`ia_reglement_discipline`) ne veut rien dire pour lui. */
+  var LIBELLES = {
+    comptabilite:            'la comptabilité',
+    paie:                    'la paie du personnel',
+    emploi_du_temps:         "l'emploi du temps",
+    discipline:              'la discipline',
+    concours_admission:      "les concours d'admission",
+    orientation:             "l'orientation des élèves",
+    repechage:               'la session de repêchage',
+    rapports_avances:        'les rapports avancés',
+    modeles_personnalises:   "l'éditeur de modèles de bulletins",
+    communication_masse:     'la diffusion de messages aux parents',
+    site_public:             "le site public de l'école",
+    whatsapp:                "l'assistant WhatsApp",
+    ia_analyse_donnees:      "l'analyse des données par l'IA",
+    ia_reglement_discipline: "la lecture du règlement intérieur par l'IA"
+  };
+
+  var CLE_CACHE = 'ardoise_droits_offre';
+
+  function baseApi() {
+    if (typeof API_BASE_URL === 'string' && API_BASE_URL) return API_BASE_URL;
+    return window.API_BASE_URL || 'https://scolaire-saas-backend.onrender.com';
+  }
+
+  /* Même lecture que session.js : sessionStorage d'abord, localStorage ensuite.
+     Recopier la logique plutôt que de l'exporter est un choix discutable ; ces
+     deux lignes suivraient un changement de nom de clé sans qu'on y pense, et
+     c'est le genre de dette qu'on paie un jour. */
+  function jeton() {
+    try {
+      return sessionStorage.getItem('ardoise_access_token')
+          || localStorage.getItem('ardoise_access_token');
+    } catch (e) { return null; }
+  }
+
+  function lireCache() {
+    try {
+      var brut = sessionStorage.getItem(CLE_CACHE);
+      return brut ? JSON.parse(brut) : null;
+    } catch (e) { return null; }
+  }
+
+  function ecrireCache(droits) {
+    try { sessionStorage.setItem(CLE_CACHE, JSON.stringify(droits)); } catch (e) { /* mode privé */ }
+  }
+
+  /* ------------------------------------------------------------- Le menu */
+
+  function appliquer(droits) {
+    if (!droits) return;
+
+    Object.keys(PAGES_CONDITIONNEES).forEach(function (page) {
+      if (droits[PAGES_CONDITIONNEES[page]] === true) return;
+
+      document.querySelectorAll('.nav-item[href="' + page + '"]').forEach(function (lien) {
+        var li = lien.closest('li');
+        // `style.display = 'none'` et non `remove()` : c'est exactement ce que
+        // fait déjà le masquage par rôle plus haut dans ce fichier, et le
+        // réducteur de rail (`reduireRail`) s'appuie sur cette convention pour
+        // écarter les entrées. Retirer l'élément du DOM lui ferait recompter un
+        // menu dont il garde des références.
+        if (li) li.style.display = 'none'; else lien.hidden = true;
+      });
+
+      // Le tiroir « Tous les menus » a capturé sa liste avant nous : on l'y
+      // retire aussi, sans quoi une entrée masquée y resterait cliquable.
+      if (window.ArdoiseRail && Array.isArray(window.ArdoiseRail.elements)) {
+        window.ArdoiseRail.elements = window.ArdoiseRail.elements.filter(function (e) {
+          return e.page !== page;
+        });
+        if (window.ArdoiseRail.disponibles) delete window.ArdoiseRail.disponibles[page];
+      }
+    });
+  }
+
+  function chargerDroits() {
+    // Le cache d'abord : le menu est juste dès la deuxième page.
+    appliquer(lireCache());
+
+    var t = jeton();
+    if (!t) return;
+
+    fetch(baseApi() + '/abonnements/courant', { headers: { Authorization: 'Bearer ' + t } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (abonnement) {
+        // Pas d'abonnement lisible : on ne masque RIEN et on ne touche pas au
+        // cache. Une panne de facturation ne doit pas vider le menu d'une école
+        // qui a payé — c'est la même règle que côté serveur.
+        if (!abonnement || !abonnement.offre || !abonnement.offre.fonctionnalites) return;
+        ecrireCache(abonnement.offre.fonctionnalites);
+        appliquer(abonnement.offre.fonctionnalites);
+      })
+      .catch(function () { /* silencieux : le menu reste tel quel */ });
+  }
+
+  /* ---------------------------------------------------------- Les refus */
+
+  function intercepter402() {
+    var fetchOrigine = window.fetch;
+
+    window.fetch = function () {
+      return fetchOrigine.apply(this, arguments).then(function (reponse) {
+        if (reponse.status !== 402) return reponse;
+
+        // On lit une COPIE : le corps d'une réponse ne se lit qu'une fois, et
+        // la page appelante a le droit de le lire à son tour.
+        reponse.clone().json().then(function (corps) {
+          if (!corps) return;
+          if (corps.code !== 'offre_insuffisante' && corps.code !== 'plafond_atteint') return;
+
+          var message;
+          if (corps.code === 'plafond_atteint') {
+            message = corps.message
+                    + ' Vos données restent intactes et modifiables : seules les créations '
+                    + 'supplémentaires sont suspendues.';
+          } else {
+            var quoi = LIBELLES[corps.fonctionnalite] || 'ce module';
+            message = 'Votre abonnement ne comprend pas ' + quoi + '. '
+                    + 'Rien n\u2019est perdu : il s\u2019ouvre dès le changement d\u2019offre.';
+          }
+
+          if (window.ArdoiseUI && window.ArdoiseUI.confirmer) {
+            window.ArdoiseUI.confirmer(message, {
+              danger: false,
+              libelleValider: 'Voir mon abonnement',
+              libelleAnnuler: 'Fermer'
+            }).then(function (ok) {
+              // `#details-abonnement` est l'identifiant RÉEL du bloc dans
+              // parametres.html. `#abonnement` n'existe pas : le lien aurait
+              // ouvert la page en haut, et le directeur aurait cherché son
+              // abonnement au milieu de dix autres réglages.
+              if (ok) window.location.href = 'parametres.html#details-abonnement';
+            });
+          } else {
+            alert(message);
+          }
+        }).catch(function () { /* corps illisible : on n'invente pas de message */ });
+
+        return reponse;
+      });
+    };
+  }
+
+  function demarrer() {
+    intercepter402();
+    chargerDroits();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', demarrer);
+  } else {
+    demarrer();
+  }
+})();

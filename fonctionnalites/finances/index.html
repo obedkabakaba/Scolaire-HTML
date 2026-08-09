@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<title>Frais scolaires, caisse et paie de l'école — Ardoise</title>
+<meta name="description" content="Grille des frais par classe, encaissements en francs et en dollars, reçus numérotés, suivi des impayés, comptabilité de caisse et salaires." />
+<link rel="canonical" href="https://myardoise.com/fonctionnalites/finances/" />
+<meta name="robots" content="index, follow, max-image-preview:large" />
+<meta name="author" content="Ardoise" />
+<meta name="theme-color" content="#F6F2E7" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#141C18" media="(prefers-color-scheme: dark)" />
+
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Ardoise" />
+<meta property="og:locale" content="fr_CD" />
+<meta property="og:url" content="https://myardoise.com/fonctionnalites/finances/" />
+<meta property="og:title" content="Frais scolaires, caisse et paie de l'école — Ardoise" />
+<meta property="og:description" content="Grille des frais par classe, encaissements en francs et en dollars, reçus numérotés, suivi des impayés, comptabilité de caisse et salaires." />
+<meta property="og:image" content="https://myardoise.com/icone-512.png" />
+<meta property="og:image:alt" content="Ardoise, plateforme de gestion scolaire" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Frais scolaires, caisse et paie de l'école — Ardoise" />
+<meta name="twitter:description" content="Grille des frais par classe, encaissements en francs et en dollars, reçus numérotés, suivi des impayés, comptabilité de caisse et salaires." />
+<meta name="twitter:image" content="https://myardoise.com/icone-512.png" />
+
+<link rel="icon" type="image/png" sizes="192x192" href="/icone-192.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="/icone-ios-180.png" />
+<link rel="manifest" href="/manifest.json" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="preconnect" href="https://scolaire-saas-backend.onrender.com" />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/site.css" />
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Accueil",
+          "item": "https://myardoise.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Fonctionnalités",
+          "item": "https://myardoise.com/fonctionnalites/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Finances de l'école"
+        }
+      ],
+      "@id": "https://myardoise.com/fonctionnalites/finances/#n0"
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Peut-on encaisser en francs et en dollars ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Oui, et c'est prévu dès la première offre. L'école fixe sa devise de référence et son taux de change ; chaque paiement est enregistré dans la devise réellement reçue, avec le taux appliqué ce jour-là. Les totaux restent justes même quand le taux bouge en cours d'année, parce que chaque encaissement conserve le sien."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Le reçu est-il numéroté ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Chaque encaissement donne lieu à un reçu numéroté, portant le nom de l'élève, le montant, la devise, la date et la personne qui a encaissé. Le numéro est attribué par la plateforme : deux reçus ne peuvent pas porter le même, et un reçu ne peut pas exister sans paiement."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Ardoise gère-t-elle les arriérés d'une année sur l'autre ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Oui. Les dettes antérieures d'un élève sont visibles à côté de sa situation de l'année en cours, et le solde total apparaît lors de l'encaissement. Le secrétariat n'a pas à consulter le cahier de l'année précédente pour savoir où en est une famille."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "La comptabilité est-elle une vraie comptabilité ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "C'est une comptabilité de caisse, adaptée à un établissement scolaire, pas un logiciel comptable certifié. Elle enregistre les entrées et les sorties par catégorie, tient la trésorerie en francs et en dollars, conserve les pièces justificatives et produit la paie du personnel. Elle répond à la question « où est passé l'argent », pas à celle d'un bilan fiscal."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Qui peut voir les chiffres ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "La direction et les personnes qu'elle habilite. Un professeur ne voit aucun montant ; un secrétaire encaisse sans accéder à la caisse générale. Chaque écriture porte le nom de celui qui l'a passée."
+          }
+        }
+      ],
+      "@id": "https://myardoise.com/fonctionnalites/finances/#n1"
+    }
+  ]
+}
+</script>
+</head>
+
+<body>
+<a class="saut-contenu" href="#contenu">Aller au contenu</a>
+
+<header class="entete">
+  <div class="conteneur">
+    <a class="marque" href="/">Ardoise</a>
+
+    <nav class="nav-site" aria-label="Navigation principale">
+      <ul class="nav-niveau1">
+<li class="a-sous-menu" data-actif="oui">
+<button type="button" class="declencheur" aria-expanded="false" aria-controls="sm-produit">Produit<span class="chevron" aria-hidden="true"></span></button>
+<div class="sous-menu" id="sm-produit" hidden>
+<div class="sm-conteneur">
+<div class="sm-colonne">
+<p class="sm-titre">Vue d'ensemble</p>
+<ul>
+<li><a href="/fonctionnalites/"><span class="sm-lien">Toutes les fonctionnalités</span><span class="sm-note">Ce qu'Ardoise couvre, module par module</span></a></li>
+<li><a href="/fonctionnalites/ia/"><span class="sm-lien">Intelligence artificielle</span><span class="sm-note">Assistance, appréciations, analyse des données</span></a></li>
+<li><a href="/securite/"><span class="sm-lien">Sécurité et données</span><span class="sm-note">Isolation, rôles, traçabilité, sauvegardes</span></a></li>
+</ul></div>
+<div class="sm-colonne">
+<p class="sm-titre">Par domaine</p>
+<ul>
+<li><a href="/fonctionnalites/gestion-scolaire/"><span class="sm-lien">Gestion scolaire</span><span class="sm-note">Élèves, classes, cours, années scolaires</span></a></li>
+<li><a href="/fonctionnalites/notes-et-bulletins/"><span class="sm-lien">Notes et bulletins</span><span class="sm-note">Cotes, moyennes, bulletins officiels RDC</span></a></li>
+<li><a href="/fonctionnalites/vie-scolaire/"><span class="sm-lien">Vie scolaire</span><span class="sm-note">Présences, discipline, emploi du temps</span></a></li>
+<li><a href="/fonctionnalites/finances/"><span class="sm-lien">Finances de l'école</span><span class="sm-note">Frais scolaires, caisse, paie</span></a></li>
+<li><a href="/fonctionnalites/admissions-et-orientation/"><span class="sm-lien">Admissions et orientation</span><span class="sm-note">Concours, candidats, vœux, affectation</span></a></li>
+<li><a href="/fonctionnalites/direction-et-pilotage/"><span class="sm-lien">Direction et pilotage</span><span class="sm-note">Rapports, communication, archives</span></a></li>
+</ul></div>
+</div></div></li>
+<li class="a-sous-menu">
+<button type="button" class="declencheur" aria-expanded="false" aria-controls="sm-tarifs">Tarifs<span class="chevron" aria-hidden="true"></span></button>
+<div class="sous-menu" id="sm-tarifs" hidden>
+<div class="sm-conteneur">
+<div class="sm-colonne">
+<p class="sm-titre">Abonnement</p>
+<ul>
+<li><a href="/tarifs/"><span class="sm-lien">Les quatre offres</span><span class="sm-note">Ascension, Prime, Pilote, Infinite</span></a></li>
+<li><a href="/tarifs/comparer/"><span class="sm-lien">Comparer les offres</span><span class="sm-note">Le tableau ligne par ligne</span></a></li>
+</ul></div>
+</div></div></li>
+<li class="a-sous-menu">
+<button type="button" class="declencheur" aria-expanded="false" aria-controls="sm-services">Services<span class="chevron" aria-hidden="true"></span></button>
+<div class="sous-menu" id="sm-services" hidden>
+<div class="sm-conteneur">
+<div class="sm-colonne">
+<p class="sm-titre">Accompagnement</p>
+<ul>
+<li><a href="/services/"><span class="sm-lien">Tous les services</span><span class="sm-note">Ce que notre équipe fait pour vous</span></a></li>
+<li><a href="/services/installation/"><span class="sm-lien">Installation et configuration</span><span class="sm-note">60 $, forfait unique</span></a></li>
+<li><a href="/services/formation/"><span class="sm-lien">Formation du personnel</span><span class="sm-note">30, 60 ou 100 $</span></a></li>
+<li><a href="/services/campagne-de-capture/"><span class="sm-lien">Campagne de capture</span><span class="sm-note">0,50 $ par élève</span></a></li>
+</ul></div>
+</div></div></li>
+<li class="a-sous-menu">
+<button type="button" class="declencheur" aria-expanded="false" aria-controls="sm-ressources">Ressources<span class="chevron" aria-hidden="true"></span></button>
+<div class="sous-menu" id="sm-ressources" hidden>
+<div class="sm-conteneur">
+<div class="sm-colonne">
+<p class="sm-titre">Comprendre Ardoise</p>
+<ul>
+<li><a href="/faq/"><span class="sm-lien">Questions fréquentes</span><span class="sm-note">Les 25 questions posées avant de signer</span></a></li>
+<li><a href="/securite/"><span class="sm-lien">Sécurité et données</span><span class="sm-note">Où sont les données, qui y accède</span></a></li>
+<li><a href="/contact/"><span class="sm-lien">Parler à quelqu'un</span><span class="sm-note">Demander un accompagnement</span></a></li>
+</ul></div>
+</div></div></li>
+</ul>
+    </nav>
+
+    <div class="actions-entete">
+      <button class="bascule-theme" data-bascule-theme type="button" aria-label="Changer de thème">☾</button>
+      <a class="lien-connexion" href="/connexion.html">Se connecter</a>
+      <a class="bouton ocre petit" href="/contact/">Découvrir Ardoise</a>
+      <button class="bascule-menu" type="button" aria-expanded="false"
+              aria-controls="panneau-mobile" aria-label="Ouvrir le menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+  <div class="panneau-mobile" id="panneau-mobile" hidden>
+<div class="conteneur">
+<section class="bloc-mobile">
+<h2>Produit</h2>
+<ul>
+<li><a href="/fonctionnalites/">Toutes les fonctionnalités</a></li>
+<li><a href="/fonctionnalites/ia/">Intelligence artificielle</a></li>
+<li><a href="/securite/">Sécurité et données</a></li>
+</ul>
+<ul>
+<li><a href="/fonctionnalites/gestion-scolaire/">Gestion scolaire</a></li>
+<li><a href="/fonctionnalites/notes-et-bulletins/">Notes et bulletins</a></li>
+<li><a href="/fonctionnalites/vie-scolaire/">Vie scolaire</a></li>
+<li><a href="/fonctionnalites/finances/">Finances de l'école</a></li>
+<li><a href="/fonctionnalites/admissions-et-orientation/">Admissions et orientation</a></li>
+<li><a href="/fonctionnalites/direction-et-pilotage/">Direction et pilotage</a></li>
+</ul>
+</section>
+<section class="bloc-mobile">
+<h2>Tarifs</h2>
+<ul>
+<li><a href="/tarifs/">Les quatre offres</a></li>
+<li><a href="/tarifs/comparer/">Comparer les offres</a></li>
+</ul>
+</section>
+<section class="bloc-mobile">
+<h2>Services</h2>
+<ul>
+<li><a href="/services/">Tous les services</a></li>
+<li><a href="/services/installation/">Installation et configuration</a></li>
+<li><a href="/services/formation/">Formation du personnel</a></li>
+<li><a href="/services/campagne-de-capture/">Campagne de capture</a></li>
+</ul>
+</section>
+<section class="bloc-mobile">
+<h2>Ressources</h2>
+<ul>
+<li><a href="/faq/">Questions fréquentes</a></li>
+<li><a href="/securite/">Sécurité et données</a></li>
+<li><a href="/contact/">Parler à quelqu'un</a></li>
+</ul>
+</section>
+<div class="actions-mobile"><a class="bouton secondaire pleine-largeur" href="/connexion.html">Se connecter</a><a class="bouton ocre pleine-largeur" href="/contact/">Découvrir Ardoise</a></div>
+</div></div>
+</header>
+
+<main id="contenu">
+
+<nav class="fil-ariane" aria-label="Fil d'Ariane"><div class="conteneur"><ol>
+<li><a href="/">Accueil</a></li>
+<li><a href="/fonctionnalites/">Fonctionnalités</a></li>
+<li aria-current="page">Finances de l'école</li>
+</ol></div></nav><section class="hero-page regle">
+  <div class="conteneur ">
+    <div>
+      <p class="eyebrow">Fonctionnalités · Finances</p>
+      <h1>Les frais scolaires, la caisse et la paie&nbsp;: l'argent de l'école, au clair</h1>
+      <p class="chapeau">Une grille de frais par classe, des encaissements en francs comme en dollars, un reçu à chaque paiement, et — pour les établissements qui tiennent une comptabilité — la caisse, les dépenses et les salaires dans la même plateforme que les élèves.</p>
+      <div class="groupe-cta"><a class="bouton ocre" href="/tarifs/">Frais dès Ascension · comptabilité et paie dès Pilote</a><a class="bouton secondaire" href="/tarifs/comparer/">Comparer les offres</a></div>
+    </div>
+    
+  </div>
+</section>
+<section class="section" id="frais">
+  <div class="conteneur">
+    <div class="section-entete">
+      <span class="eyebrow">Frais scolaires</span>
+      <h2>Qui a payé quoi, combien il reste, et depuis quand</h2>
+      <p class="chapeau">
+        Trois questions auxquelles un cahier d'encaissement répond mal, et qu'une
+        direction se pose chaque semaine.
+      </p>
+    </div>
+
+    <div class="grille-cartes trois">
+      <article class="carte">
+        <h3>La grille des frais</h3>
+        <p>Un ou plusieurs frais par année scolaire, avec leur libellé — minerval,
+           frais d'examen, uniforme — et leur montant, applicables à toute l'école
+           ou à une classe précise. Le montant est exprimé en francs ou en
+           dollars, avec le taux du jour.</p>
+      </article>
+      <article class="carte">
+        <h3>Les encaissements</h3>
+        <p>Paiement partiel ou total, dans la devise réellement reçue, avec mode
+           de paiement, référence et note. Le solde de l'élève se met à jour, les
+           dettes antérieures comprises. Un reçu numéroté est produit.</p>
+      </article>
+      <article class="carte">
+        <h3>La vue d'ensemble</h3>
+        <p>Recettes de l'école, taux de recouvrement, liste des élèves en retard,
+           situation classe par classe. Le directeur n'attend plus un état
+           manuscrit pour savoir où en est le minerval.</p>
+      </article>
+    </div>
+
+    <div class="encart" id="devises">
+      <h3>Deux devises, un seul solde juste</h3>
+      <p>La double devise n'est pas un affichage : chaque paiement conserve le
+         taux de change appliqué au moment où il a été reçu. Une famille qui paie
+         une moitié en francs en octobre et l'autre en dollars en février voit un
+         solde exact, et l'école conserve la traçabilité du taux utilisé pour
+         chaque écriture. Le taux de référence de l'école est modifiable, daté, et
+         porte le nom de celui qui l'a changé.</p>
+    </div>
+  </div>
+</section>
+
+<section class="section alt" id="impayes">
+  <div class="conteneur">
+    <div class="section-entete">
+      <span class="eyebrow">Impayés</span>
+      <h2>Conditionner le bulletin au paiement — si votre école le décide</h2>
+    </div>
+    <div class="grille-cartes trois">
+      <article class="carte">
+        <h3>Un réglage, pas une règle</h3>
+        <p>Le blocage du bulletin pour impayé est désactivé par défaut. Une école
+           qui ne souhaite pas le pratiquer n'a rien à faire.</p>
+      </article>
+      <article class="carte">
+        <h3>Un seuil de tolérance</h3>
+        <p>Vous fixez le pourcentage d'impayé au-delà duquel le bulletin est
+           retenu. Une famille à jour à 90 % n'est pas traitée comme une famille
+           qui n'a rien versé.</p>
+      </article>
+      <article class="carte">
+        <h3>Des dérogations nominatives</h3>
+        <p>Un élève dont la situation le justifie reçoit une dérogation motivée,
+           enregistrée avec son motif. La décision reste celle de la direction, et
+           elle est écrite.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="comptabilite">
+  <div class="conteneur">
+    <div class="section-entete">
+      <span class="eyebrow">Comptabilité et paie</span>
+      <h2>La caisse de l'établissement, au-delà du minerval</h2>
+      <p class="chapeau">
+        À partir de l'offre Pilote, Ardoise cesse de ne compter que les recettes
+        scolaires et tient la caisse complète : ce qui entre, ce qui sort, et ce
+        que coûte le personnel.
+      </p>
+    </div>
+
+    <div class="grille-cartes deux">
+      <article class="carte etoffee">
+        <h3>Caisse et dépenses</h3>
+        <ul class="mini-liste">
+          <li>Catégories d'entrée et de sortie propres à votre école</li>
+          <li>Mouvement daté, avec bénéficiaire, référence et mode de paiement</li>
+          <li>Pièce justificative attachée à l'écriture</li>
+          <li>Trésorerie tenue en francs et en dollars</li>
+          <li>Chaque écriture porte le nom de son auteur</li>
+        </ul>
+      </article>
+      <article class="carte etoffee">
+        <h3>Contrats et salaires</h3>
+        <ul class="mini-liste">
+          <li>Contrat par membre du personnel : poste, salaire de base, devise</li>
+          <li>Paie mensuelle préparée en une fois pour tout l'établissement</li>
+          <li>Primes et retenues ligne par ligne, net calculé</li>
+          <li>Salaire payé qui génère automatiquement sa sortie de caisse</li>
+          <li>États mensuels et historique par personne</li>
+        </ul>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section alt">
+  <div class="conteneur">
+    <div class="encart-offre">
+  <p><strong>Dans quelle offre&nbsp;?</strong> Frais scolaires, encaissements, reçus numérotés et double devise sont dans les quatre offres, y compris Ascension. La comptabilité de caisse, les dépenses et la paie du personnel arrivent avec l'offre Pilote.</p>
+  <p class="liens-encart">
+    <a href="/tarifs/">Voir les offres</a> ·
+    <a href="/tarifs/comparer/">Comparer ligne par ligne</a>
+  </p>
+</div>
+  </div>
+</section>
+<section class="section alt" id="questions">
+  <div class="conteneur">
+    <div class="section-entete">
+      <span class="eyebrow">Questions</span>
+      <h2>Argent, devises et reçus</h2>
+      
+    </div>
+    <div class="faq"><details><summary>Peut-on encaisser en francs et en dollars&nbsp;?</summary><div><p>Oui, et c'est prévu dès la première offre. L'école fixe sa devise de référence et son taux de change ; chaque paiement est enregistré dans la devise réellement reçue, avec le taux appliqué ce jour-là. Les totaux restent justes même quand le taux bouge en cours d'année, parce que chaque encaissement conserve le sien.</p></div></details><details><summary>Le reçu est-il numéroté&nbsp;?</summary><div><p>Chaque encaissement donne lieu à un reçu numéroté, portant le nom de l'élève, le montant, la devise, la date et la personne qui a encaissé. Le numéro est attribué par la plateforme : deux reçus ne peuvent pas porter le même, et un reçu ne peut pas exister sans paiement.</p></div></details><details><summary>Ardoise gère-t-elle les arriérés d'une année sur l'autre&nbsp;?</summary><div><p>Oui. Les dettes antérieures d'un élève sont visibles à côté de sa situation de l'année en cours, et le solde total apparaît lors de l'encaissement. Le secrétariat n'a pas à consulter le cahier de l'année précédente pour savoir où en est une famille.</p></div></details><details><summary>La comptabilité est-elle une vraie comptabilité&nbsp;?</summary><div><p>C'est une comptabilité de caisse, adaptée à un établissement scolaire, pas un logiciel comptable certifié. Elle enregistre les entrées et les sorties par catégorie, tient la trésorerie en francs et en dollars, conserve les pièces justificatives et produit la paie du personnel. Elle répond à la question « où est passé l'argent », pas à celle d'un bilan fiscal.</p></div></details><details><summary>Qui peut voir les chiffres&nbsp;?</summary><div><p>La direction et les personnes qu'elle habilite. Un professeur ne voit aucun montant ; un secrétaire encaisse sans accéder à la caisse générale. Chaque écriture porte le nom de celui qui l'a passée.</p></div></details></div>
+  </div>
+</section><section class="section serree" aria-labelledby="plus-loin">
+  <div class="conteneur">
+    <h2 id="plus-loin" class="titre-maillage">Pour aller plus loin</h2>
+    <div class="grille-liens"><a class="carte-lien" href="/fonctionnalites/notes-et-bulletins/"><span class="titre">Notes et bulletins</span><span class="texte">Le lien entre solde impayé et remise du bulletin.</span></a><a class="carte-lien" href="/fonctionnalites/direction-et-pilotage/"><span class="titre">Rapports financiers</span><span class="texte">Recouvrement, recettes par classe, exports.</span></a><a class="carte-lien" href="/securite/"><span class="titre">Qui voit quoi</span><span class="texte">Comment l'accès aux montants est restreint et tracé.</span></a><a class="carte-lien" href="/tarifs/"><span class="titre">Les offres</span><span class="texte">À partir de quel niveau la comptabilité est incluse.</span></a></div>
+  </div>
+</section><section class="cta-final">
+  <div class="conteneur">
+    <h2>Savoir où en est le minerval ne devrait pas prendre trois jours.</h2>
+    <p>Nous reprenons votre grille de frais actuelle et vous montrons ce que donne une semaine d'encaissements dans Ardoise.</p>
+    <div class="groupe-cta" style="justify-content:center"><a class="bouton principal" href="/contact/">Demander une présentation</a><a class="bouton secondaire" href="/tarifs/comparer/">Comparer les offres</a></div>
+  </div>
+</section>
+
+</main>
+
+<footer class="pied">
+  <div class="conteneur">
+    <div class="grille">
+      <div>
+        <div class="marque">Ardoise</div>
+        <p class="description">
+          Plateforme de gestion scolaire pour les établissements de la République
+          démocratique du Congo et d'Afrique francophone.
+        </p>
+      </div>
+      <div>
+        <h2>Produit</h2>
+        <ul>
+          <li><a href="/fonctionnalites/">Fonctionnalités</a></li>
+          <li><a href="/fonctionnalites/ia/">Intelligence artificielle</a></li>
+          <li><a href="/securite/">Sécurité</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Par domaine</h2>
+        <ul>
+          <li><a href="/fonctionnalites/gestion-scolaire/">Gestion scolaire</a></li>
+          <li><a href="/fonctionnalites/notes-et-bulletins/">Notes et bulletins</a></li>
+          <li><a href="/fonctionnalites/vie-scolaire/">Vie scolaire</a></li>
+          <li><a href="/fonctionnalites/finances/">Finances</a></li>
+          <li><a href="/fonctionnalites/admissions-et-orientation/">Admissions et orientation</a></li>
+          <li><a href="/fonctionnalites/direction-et-pilotage/">Direction et pilotage</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Offres et services</h2>
+        <ul>
+          <li><a href="/tarifs/">Tarifs</a></li>
+          <li><a href="/tarifs/comparer/">Comparer les offres</a></li>
+          <li><a href="/services/installation/">Installation</a></li>
+          <li><a href="/services/formation/">Formation</a></li>
+          <li><a href="/services/campagne-de-capture/">Campagne de capture</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Ressources</h2>
+        <ul>
+          <li><a href="/faq/">Questions fréquentes</a></li>
+          <li><a href="/contact/">Nous contacter</a></li>
+          <li><a href="/connexion.html">Se connecter</a></li>
+          <li><a href="/confidentialite.html">Confidentialité</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="bas">
+      <div>© 2026 Ardoise — Logiciel de gestion scolaire.</div>
+      <div>Fait pour les écoles de la RDC.</div>
+    </div>
+  </div>
+</footer>
+
+<script src="/catalogue.js" defer></script>
+<script src="/nav.js" defer></script>
+</body>
+</html>

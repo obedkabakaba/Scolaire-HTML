@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<title>Rapports, communication et archives scolaires — Ardoise</title>
+<meta name="description" content="Tableau de bord du directeur, rapports d'effectifs, de réussite et d'assiduité, messages groupés aux parents, archives et journal d'activité." />
+<link rel="canonical" href="https://myardoise.com/fonctionnalites/direction-et-pilotage/" />
+<meta name="robots" content="index, follow, max-image-preview:large" />
+<meta name="author" content="Ardoise" />
+<meta name="theme-color" content="#F6F2E7" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#141C18" media="(prefers-color-scheme: dark)" />
+
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Ardoise" />
+<meta property="og:locale" content="fr_CD" />
+<meta property="og:url" content="https://myardoise.com/fonctionnalites/direction-et-pilotage/" />
+<meta property="og:title" content="Rapports, communication et archives scolaires — Ardoise" />
+<meta property="og:description" content="Tableau de bord du directeur, rapports d'effectifs, de réussite et d'assiduité, messages groupés aux parents, archives et journal d'activité." />
+<meta property="og:image" content="https://myardoise.com/icone-512.png" />
+<meta property="og:image:alt" content="Ardoise, plateforme de gestion scolaire" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Rapports, communication et archives scolaires — Ardoise" />
+<meta name="twitter:description" content="Tableau de bord du directeur, rapports d'effectifs, de réussite et d'assiduité, messages groupés aux parents, archives et journal d'activité." />
+<meta name="twitter:image" content="https://myardoise.com/icone-512.png" />
+
+<link rel="icon" type="image/png" sizes="192x192" href="/icone-192.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="/icone-ios-180.png" />
+<link rel="manifest" href="/manifest.json" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="preconnect" href="https://scolaire-saas-backend.onrender.com" />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/site.css" />
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Accueil",
+          "item": "https://myardoise.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Fonctionnalités",
+          "item": "https://myardoise.com/fonctionnalites/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Direction et pilotage"
+        }
+      ],
+      "@id": "https://myardoise.com/fonctionnalites/direction-et-pilotage/#n0"
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Les parents reçoivent-ils vraiment les messages ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Un message part vers les canaux dont vous disposez : notification dans la plateforme pour le personnel, courriel pour les responsables dont l'adresse est connue, et assistant WhatsApp en offre Infinite. L'historique indique pour chaque envoi le nombre de destinataires atteints et le nombre d'échecs — vous savez ce qui est parti et ce qui n'est pas parti."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Que voit une famille sur le site public de l'école ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Ce que l'école publie : présentation, annonces, calendrier, et, avec le code d'accès de l'élève, ses résultats. Aucune donnée d'un autre élève n'est accessible, et le site se désactive d'un réglage."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Peut-on récupérer ses données ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Oui. Les archives s'exportent par année scolaire ou par classe. Les bulletins déjà produits restent téléchargeables. Vos données ne sont pas otages de l'abonnement."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Que trouve-t-on dans le journal d'activité ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Les actions qui engagent : création et modification de dossiers, validation et dévalidation de notes, signature de bulletins, encaissements, clôture et réouverture de période, changements de paramètres. Chaque ligne porte son auteur, sa cible et sa date."
+          }
+        }
+      ],
+      "@id": "https://myardoise.com/fonctionnalites/direction-et-pilotage/#n1"
+    }
+  ]
+}
+</script>
+</head>
+
+<body>
+<a class="saut-contenu" href="#contenu">Aller au contenu</a>
+
+<header class="entete">
+  <div class="conteneur">
+    <a class="marque" href="/">Ardoise</a>
+
+    <nav class="nav-site" aria-label="Navigation principale">
+      <ul class="nav-niveau1">
+<li class="a-sous-menu" data-actif="oui">
+<button type="button" class="declencheur" aria-expanded="false" aria-controls="sm-produit">Produit<span class="chevron" aria-hidden="true"></span></button>
+<div class="sous-menu" id="sm-produit" hidden>
+<div class="sm-conteneur">
+<div class="sm-colonne">
+<p class="sm-titre">Vue d'ensemble</p>
+<ul>
+<li><a href="/fonctionnalites/"><span class="sm-lien">Toutes les fonctionnalités</span><span class="sm-note">Ce qu'Ardoise couvre, module par module</span></a></li>
+<li><a href="/fonctionnalites/ia/"><span class="sm-lien">Intelligence artificielle</span><span class="sm-note">Assistance, appréciations, analyse des données</span></a></li>
+<li><a href="/securite/"><span class="sm-lien">Sécurité et données</span><span class="sm-note">Isolation, rôles, traçabilité, sauvegardes</span></a></li>
+</ul></div>
+<div class="sm-colonne">
+<p class="sm-titre">Par domaine</p>
+<ul>
+<li><a href="/fonctionnalites/gestion-scolaire/"><span class="sm-lien">Gestion scolaire</span><span class="sm-note">Élèves, classes, cours, années scolaires</span></a></li>
+<li><a href="/fonctionnalites/notes-et-bulletins/"><span class="sm-lien">Notes et bulletins</span><span class="sm-note">Cotes, moyennes, bulletins officiels RDC</span></a></li>
+<li><a href="/fonctionnalites/vie-scolaire/"><span class="sm-lien">Vie scolaire</span><span class="sm-note">Présences, discipline, emploi du temps</span></a></li>
+<li><a href="/fonctionnalites/finances/"><span class="sm-lien">Finances de l'école</span><span class="sm-note">Frais scolaires, caisse, paie</span></a></li>
+<li><a href="/fonctionnalites/admissions-et-orientation/"><span class="sm-lien">Admissions et orientation</span><span class="sm-note">Concours, candidats, vœux, affectation</span></a></li>
+<li><a href="/fonctionnalites/direction-et-pilotage/"><span class="sm-lien">Direction et pilotage</span><span class="sm-note">Rapports, communication, archives</span></a></li>
+</ul></div>
+</div></div></li>
+<li class="a-sous-menu">
+<button type="button" class="declencheur" aria-expanded="false" aria-controls="sm-tarifs">Tarifs<span class="chevron" aria-hidden="true"></span></button>
+<div class="sous-menu" id="sm-tarifs" hidden>
+<div class="sm-conteneur">
+<div class="sm-colonne">
+<p class="sm-titre">Abonnement</p>
+<ul>
+<li><a href="/tarifs/"><span class="sm-lien">Les quatre offres</span><span class="sm-note">Ascension, Prime, Pilote, Infinite</span></a></li>
+<li><a href="/tarifs/comparer/"><span class="sm-lien">Comparer les offres</span><span class="sm-note">Le tableau ligne par ligne</span></a></li>
+</ul></div>
+</div></div></li>
+<li class="a-sous-menu">
+<button type="button" class="declencheur" aria-expanded="false" aria-controls="sm-services">Services<span class="chevron" aria-hidden="true"></span></button>
+<div class="sous-menu" id="sm-services" hidden>
+<div class="sm-conteneur">
+<div class="sm-colonne">
+<p class="sm-titre">Accompagnement</p>
+<ul>
+<li><a href="/services/"><span class="sm-lien">Tous les services</span><span class="sm-note">Ce que notre équipe fait pour vous</span></a></li>
+<li><a href="/services/installation/"><span class="sm-lien">Installation et configuration</span><span class="sm-note">60 $, forfait unique</span></a></li>
+<li><a href="/services/formation/"><span class="sm-lien">Formation du personnel</span><span class="sm-note">30, 60 ou 100 $</span></a></li>
+<li><a href="/services/campagne-de-capture/"><span class="sm-lien">Campagne de capture</span><span class="sm-note">0,50 $ par élève</span></a></li>
+</ul></div>
+</div></div></li>
+<li class="a-sous-menu">
+<button type="button" class="declencheur" aria-expanded="false" aria-controls="sm-ressources">Ressources<span class="chevron" aria-hidden="true"></span></button>
+<div class="sous-menu" id="sm-ressources" hidden>
+<div class="sm-conteneur">
+<div class="sm-colonne">
+<p class="sm-titre">Comprendre Ardoise</p>
+<ul>
+<li><a href="/faq/"><span class="sm-lien">Questions fréquentes</span><span class="sm-note">Les 25 questions posées avant de signer</span></a></li>
+<li><a href="/securite/"><span class="sm-lien">Sécurité et données</span><span class="sm-note">Où sont les données, qui y accède</span></a></li>
+<li><a href="/contact/"><span class="sm-lien">Parler à quelqu'un</span><span class="sm-note">Demander un accompagnement</span></a></li>
+</ul></div>
+</div></div></li>
+</ul>
+    </nav>
+
+    <div class="actions-entete">
+      <button class="bascule-theme" data-bascule-theme type="button" aria-label="Changer de thème">☾</button>
+      <a class="lien-connexion" href="/connexion.html">Se connecter</a>
+      <a class="bouton ocre petit" href="/contact/">Découvrir Ardoise</a>
+      <button class="bascule-menu" type="button" aria-expanded="false"
+              aria-controls="panneau-mobile" aria-label="Ouvrir le menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+  <div class="panneau-mobile" id="panneau-mobile" hidden>
+<div class="conteneur">
+<section class="bloc-mobile">
+<h2>Produit</h2>
+<ul>
+<li><a href="/fonctionnalites/">Toutes les fonctionnalités</a></li>
+<li><a href="/fonctionnalites/ia/">Intelligence artificielle</a></li>
+<li><a href="/securite/">Sécurité et données</a></li>
+</ul>
+<ul>
+<li><a href="/fonctionnalites/gestion-scolaire/">Gestion scolaire</a></li>
+<li><a href="/fonctionnalites/notes-et-bulletins/">Notes et bulletins</a></li>
+<li><a href="/fonctionnalites/vie-scolaire/">Vie scolaire</a></li>
+<li><a href="/fonctionnalites/finances/">Finances de l'école</a></li>
+<li><a href="/fonctionnalites/admissions-et-orientation/">Admissions et orientation</a></li>
+<li><a href="/fonctionnalites/direction-et-pilotage/">Direction et pilotage</a></li>
+</ul>
+</section>
+<section class="bloc-mobile">
+<h2>Tarifs</h2>
+<ul>
+<li><a href="/tarifs/">Les quatre offres</a></li>
+<li><a href="/tarifs/comparer/">Comparer les offres</a></li>
+</ul>
+</section>
+<section class="bloc-mobile">
+<h2>Services</h2>
+<ul>
+<li><a href="/services/">Tous les services</a></li>
+<li><a href="/services/installation/">Installation et configuration</a></li>
+<li><a href="/services/formation/">Formation du personnel</a></li>
+<li><a href="/services/campagne-de-capture/">Campagne de capture</a></li>
+</ul>
+</section>
+<section class="bloc-mobile">
+<h2>Ressources</h2>
+<ul>
+<li><a href="/faq/">Questions fréquentes</a></li>
+<li><a href="/securite/">Sécurité et données</a></li>
+<li><a href="/contact/">Parler à quelqu'un</a></li>
+</ul>
+</section>
+<div class="actions-mobile"><a class="bouton secondaire pleine-largeur" href="/connexion.html">Se connecter</a><a class="bouton ocre pleine-largeur" href="/contact/">Découvrir Ardoise</a></div>
+</div></div>
+</header>
+
+<main id="contenu">
+
+<nav class="fil-ariane" aria-label="Fil d'Ariane"><div class="conteneur"><ol>
+<li><a href="/">Accueil</a></li>
+<li><a href="/fonctionnalites/">Fonctionnalités</a></li>
+<li aria-current="page">Direction et pilotage</li>
+</ol></div></nav><section class="hero-page regle">
+  <div class="conteneur ">
+    <div>
+      <p class="eyebrow">Fonctionnalités · Direction et pilotage</p>
+      <h1>Ce que le directeur regarde, et ce qu'il envoie</h1>
+      <p class="chapeau">Effectifs, taux de réussite, assiduité, recouvrement, palmarès : les chiffres d'un établissement, disponibles sans les demander à personne. Et de l'autre côté, les messages aux parents, les annonces et les résultats publiés en ligne.</p>
+      <div class="groupe-cta"><a class="bouton ocre" href="/tarifs/">Tableau de bord dès Ascension · rapports avancés dès Pilote</a><a class="bouton secondaire" href="/tarifs/comparer/">Comparer les offres</a></div>
+    </div>
+    
+  </div>
+</section>
+<section class="section" id="rapports">
+  <div class="conteneur">
+    <div class="section-entete">
+      <span class="eyebrow">Rapports</span>
+      <h2>Sept états, produits à la demande</h2>
+      <p class="chapeau">
+        Aucun ne demande de préparation : ils lisent les données du jour et
+        s'exportent.
+      </p>
+    </div>
+
+    <div class="grille-cartes trois">
+      <article class="carte">
+        <h3>Effectifs</h3>
+        <p>Nombre d'élèves par classe, par section, par option, par sexe, et
+           évolution sur l'année. Le chiffre qu'on vous demande en premier à
+           chaque réunion.</p>
+      </article>
+      <article class="carte">
+        <h3>Réussite</h3>
+        <p>Taux de réussite par classe et par période, nombre d'élèves au-dessus
+           et en dessous du seuil de promotion, comparaison entre classes de même
+           niveau.</p>
+      </article>
+      <article class="carte">
+        <h3>Palmarès</h3>
+        <p>Les meilleurs élèves par classe et par période, prêts pour la
+           proclamation, sans qu'un titulaire ait à trier une liste à la main.</p>
+      </article>
+      <article class="carte">
+        <h3>Moyennes par cours</h3>
+        <p>La moyenne obtenue dans chaque branche, classe par classe. Un cours où
+           toute une classe s'effondre se voit immédiatement.</p>
+      </article>
+      <article class="carte">
+        <h3>Portées et progression</h3>
+        <p>L'évolution des résultats d'une période à l'autre, pour distinguer une
+           classe faible d'une classe qui décroche.</p>
+      </article>
+      <article class="carte">
+        <h3>Finances et assiduité</h3>
+        <p>Recouvrement des frais, recettes par classe, et taux de présence par
+           classe et par période — les deux indicateurs qui annoncent les
+           abandons.</p>
+      </article>
+    </div>
+    <p class="note-tableau">Tous les rapports s'exportent en fichier, pour être
+       joints à un procès-verbal ou transmis à l'inspection.</p>
+  </div>
+</section>
+
+<section class="section alt" id="communication">
+  <div class="conteneur">
+    <div class="section-entete">
+      <span class="eyebrow">Communication</span>
+      <h2>Parler à toute une classe sans écrire soixante messages</h2>
+    </div>
+
+    <div class="grille-cartes deux">
+      <article class="carte etoffee">
+        <h3>Messages groupés</h3>
+        <p>Vous choisissez une cible — une classe, un niveau, tous les
+           responsables, le personnel, un rôle précis — vous écrivez une fois, et
+           Ardoise envoie. L'historique conserve le message, sa cible, le nombre
+           de destinataires et le nombre d'échecs.</p>
+        <ul class="mini-liste">
+          <li>Notification interne pour le personnel</li>
+          <li>Courriel aux responsables dont l'adresse est connue</li>
+          <li>Assistant WhatsApp en offre Infinite</li>
+        </ul>
+      </article>
+      <article class="carte etoffee">
+        <h3>Site public de l'école</h3>
+        <p>Chaque établissement dispose d'une page publique : présentation,
+           message d'accueil, annonces, calendrier. Les familles y consultent les
+           résultats de leur enfant à l'aide de son code d'accès, sans compte à
+           créer.</p>
+        <ul class="mini-liste">
+          <li>Activation et contenu réglés par l'école</li>
+          <li>Codes d'accès générés et réinitialisables</li>
+          <li>Annonces publiées ou retirées en un clic</li>
+        </ul>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="memoire">
+  <div class="conteneur">
+    <div class="section-entete">
+      <span class="eyebrow">Mémoire de l'établissement</span>
+      <h2>Archives, journal, et la possibilité de tout ressortir</h2>
+    </div>
+
+    <div class="grille-cartes trois">
+      <article class="carte">
+        <h3>Archives par année</h3>
+        <p>Une année clôturée reste navigable : ses classes, ses élèves, leurs
+           notes et leurs bulletins. On y retrouve le dossier d'un ancien élève
+           qui demande une attestation.</p>
+      </article>
+      <article class="carte">
+        <h3>Exports</h3>
+        <p>Export d'une année entière ou d'une classe, en un fichier. Vos données
+           vous appartiennent et sortent de la plateforme quand vous le
+           souhaitez.</p>
+      </article>
+      <article class="carte">
+        <h3>Journal d'activité</h3>
+        <p>Qui a saisi, validé, dévalidé, signé, encaissé, clôturé, modifié un
+           paramètre — avec la date. Le journal règle les discussions au lieu de
+           les nourrir.</p>
+      </article>
+    </div>
+
+    <div class="encart">
+      <h3>Tableau de bord et support</h3>
+      <p>La page d'accueil du directeur rassemble les chiffres du jour : effectifs,
+         présences, saisies en cours, situation financière, alertes de fin de
+         période. Depuis la même plateforme, l'école ouvre un ticket de support et
+         suit sa réponse ; les incidents techniques rencontrés sont remontés
+         automatiquement à l'équipe Ardoise.</p>
+    </div>
+  </div>
+</section>
+
+<section class="section alt">
+  <div class="conteneur">
+    <div class="encart-offre">
+  <p><strong>Dans quelle offre&nbsp;?</strong> Tableau de bord, archives et journal d'activité sont dans les quatre offres. Les messages groupés et le site public de l'école arrivent avec Prime ; les rapports avancés avec Pilote ; l'assistant WhatsApp et le support prioritaire avec Infinite.</p>
+  <p class="liens-encart">
+    <a href="/tarifs/">Voir les offres</a> ·
+    <a href="/tarifs/comparer/">Comparer ligne par ligne</a>
+  </p>
+</div>
+  </div>
+</section>
+<section class="section alt" id="questions">
+  <div class="conteneur">
+    <div class="section-entete">
+      <span class="eyebrow">Questions</span>
+      <h2>Pilotage, communication et archives</h2>
+      
+    </div>
+    <div class="faq"><details><summary>Les parents reçoivent-ils vraiment les messages&nbsp;?</summary><div><p>Un message part vers les canaux dont vous disposez : notification dans la plateforme pour le personnel, courriel pour les responsables dont l'adresse est connue, et assistant WhatsApp en offre Infinite. L'historique indique pour chaque envoi le nombre de destinataires atteints et le nombre d'échecs — vous savez ce qui est parti et ce qui n'est pas parti.</p></div></details><details><summary>Que voit une famille sur le site public de l'école&nbsp;?</summary><div><p>Ce que l'école publie : présentation, annonces, calendrier, et, avec le code d'accès de l'élève, ses résultats. Aucune donnée d'un autre élève n'est accessible, et le site se désactive d'un réglage.</p></div></details><details><summary>Peut-on récupérer ses données&nbsp;?</summary><div><p>Oui. Les archives s'exportent par année scolaire ou par classe. Les bulletins déjà produits restent téléchargeables. Vos données ne sont pas otages de l'abonnement.</p></div></details><details><summary>Que trouve-t-on dans le journal d'activité&nbsp;?</summary><div><p>Les actions qui engagent : création et modification de dossiers, validation et dévalidation de notes, signature de bulletins, encaissements, clôture et réouverture de période, changements de paramètres. Chaque ligne porte son auteur, sa cible et sa date.</p></div></details></div>
+  </div>
+</section><section class="section serree" aria-labelledby="plus-loin">
+  <div class="conteneur">
+    <h2 id="plus-loin" class="titre-maillage">Pour aller plus loin</h2>
+    <div class="grille-liens"><a class="carte-lien" href="/fonctionnalites/ia/"><span class="titre">Questions en langage naturel</span><span class="texte">Interroger vos données sans passer par un rapport.</span></a><a class="carte-lien" href="/securite/"><span class="titre">Traçabilité et sauvegardes</span><span class="texte">Ce qui garantit que le journal dit vrai.</span></a><a class="carte-lien" href="/fonctionnalites/finances/"><span class="titre">Finances</span><span class="texte">D'où viennent les chiffres du rapport de recouvrement.</span></a><a class="carte-lien" href="/tarifs/comparer/"><span class="titre">Comparer les offres</span><span class="texte">Quels rapports dans quelle offre.</span></a></div>
+  </div>
+</section><section class="cta-final">
+  <div class="conteneur">
+    <h2>Diriger sur des chiffres, pas sur des impressions.</h2>
+    <p>Nous vous montrons le tableau de bord avec une école de votre taille.</p>
+    <div class="groupe-cta" style="justify-content:center"><a class="bouton principal" href="/contact/">Demander une présentation</a><a class="bouton secondaire" href="/tarifs/">Voir les offres</a></div>
+  </div>
+</section>
+
+</main>
+
+<footer class="pied">
+  <div class="conteneur">
+    <div class="grille">
+      <div>
+        <div class="marque">Ardoise</div>
+        <p class="description">
+          Plateforme de gestion scolaire pour les établissements de la République
+          démocratique du Congo et d'Afrique francophone.
+        </p>
+      </div>
+      <div>
+        <h2>Produit</h2>
+        <ul>
+          <li><a href="/fonctionnalites/">Fonctionnalités</a></li>
+          <li><a href="/fonctionnalites/ia/">Intelligence artificielle</a></li>
+          <li><a href="/securite/">Sécurité</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Par domaine</h2>
+        <ul>
+          <li><a href="/fonctionnalites/gestion-scolaire/">Gestion scolaire</a></li>
+          <li><a href="/fonctionnalites/notes-et-bulletins/">Notes et bulletins</a></li>
+          <li><a href="/fonctionnalites/vie-scolaire/">Vie scolaire</a></li>
+          <li><a href="/fonctionnalites/finances/">Finances</a></li>
+          <li><a href="/fonctionnalites/admissions-et-orientation/">Admissions et orientation</a></li>
+          <li><a href="/fonctionnalites/direction-et-pilotage/">Direction et pilotage</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Offres et services</h2>
+        <ul>
+          <li><a href="/tarifs/">Tarifs</a></li>
+          <li><a href="/tarifs/comparer/">Comparer les offres</a></li>
+          <li><a href="/services/installation/">Installation</a></li>
+          <li><a href="/services/formation/">Formation</a></li>
+          <li><a href="/services/campagne-de-capture/">Campagne de capture</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Ressources</h2>
+        <ul>
+          <li><a href="/faq/">Questions fréquentes</a></li>
+          <li><a href="/contact/">Nous contacter</a></li>
+          <li><a href="/connexion.html">Se connecter</a></li>
+          <li><a href="/confidentialite.html">Confidentialité</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="bas">
+      <div>© 2026 Ardoise — Logiciel de gestion scolaire.</div>
+      <div>Fait pour les écoles de la RDC.</div>
+    </div>
+  </div>
+</footer>
+
+<script src="/catalogue.js" defer></script>
+<script src="/nav.js" defer></script>
+</body>
+</html>

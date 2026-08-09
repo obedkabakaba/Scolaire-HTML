@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<title>Gestion des élèves, classes et cours — Ardoise</title>
+<meta name="description" content="Dossiers d'élèves et matricules, classes par section et option, cours et coefficients, années en trimestres ou semestres, rôles du personnel." />
+<link rel="canonical" href="https://myardoise.com/fonctionnalites/gestion-scolaire/" />
+<meta name="robots" content="index, follow, max-image-preview:large" />
+<meta name="author" content="Ardoise" />
+<meta name="theme-color" content="#F6F2E7" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#141C18" media="(prefers-color-scheme: dark)" />
+
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Ardoise" />
+<meta property="og:locale" content="fr_CD" />
+<meta property="og:url" content="https://myardoise.com/fonctionnalites/gestion-scolaire/" />
+<meta property="og:title" content="Gestion des élèves, classes et cours — Ardoise" />
+<meta property="og:description" content="Dossiers d'élèves et matricules, classes par section et option, cours et coefficients, années en trimestres ou semestres, rôles du personnel." />
+<meta property="og:image" content="https://myardoise.com/icone-512.png" />
+<meta property="og:image:alt" content="Ardoise, plateforme de gestion scolaire" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Gestion des élèves, classes et cours — Ardoise" />
+<meta name="twitter:description" content="Dossiers d'élèves et matricules, classes par section et option, cours et coefficients, années en trimestres ou semestres, rôles du personnel." />
+<meta name="twitter:image" content="https://myardoise.com/icone-512.png" />
+
+<link rel="icon" type="image/png" sizes="192x192" href="/icone-192.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="/icone-ios-180.png" />
+<link rel="manifest" href="/manifest.json" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="preconnect" href="https://scolaire-saas-backend.onrender.com" />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/site.css" />
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Accueil",
+          "item": "https://myardoise.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Fonctionnalités",
+          "item": "https://myardoise.com/fonctionnalites/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Gestion scolaire"
+        }
+      ],
+      "@id": "https://myardoise.com/fonctionnalites/gestion-scolaire/#n0"
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Peut-on importer une liste d'élèves depuis Excel ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Oui. Vous déposez votre fichier, Ardoise l'analyse et vous montre ce qu'il a compris colonne par colonne : quelle colonne contient le nom, laquelle le matricule, laquelle la classe. Vous corrigez ce qui est mal interprété, puis vous appliquez. Les doublons et les lignes incomplètes sont signalés avant l'import, pas après."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Que devient un élève qui quitte l'école en cours d'année ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Il passe en sortie avec un motif — transfert, abandon, exclusion, départ volontaire, diplômé — et une date. Il disparaît des listes d'appel et des grilles de cotes, mais son dossier, ses notes et ses paiements restent consultables dans les archives. Rien n'est effacé."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Une même personne peut-elle être professeur et titulaire ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Oui, c'est l'une des deux combinaisons de rôles autorisées, avec Préfet et Directeur. En dehors de ces deux cas, une personne n'a qu'un seul rôle : c'est ce qui rend le contrôle d'accès lisible et les responsabilités traçables."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Faut-il tout ressaisir chaque année ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Non. La reconduction reprend la structure de l'année précédente — classes, cours, coefficients, frais — et fait passer les élèves dans la classe suivante selon leurs résultats et le seuil de promotion que vous avez fixé. Vous relisez et vous ajustez ; vous ne recréez pas."
+          }
+        }
+      ],
+      "@id": "https://myardoise.com/fonctionnalites/gestion-scolaire/#n1"
+    }
+  ]
+}
+</script>
+</head>
+
+<body>
+<a class="saut-contenu" href="#contenu">Aller au contenu</a>
+
+<header class="entete">
+  <div class="conteneur">
+    <a class="marque" href="/">Ardoise</a>
+
+    <nav class="nav-site" aria-label="Navigation principale">
+      <ul class="nav-niveau1">
+<li class="a-sous-menu" data-actif="oui">
+<button type="button" class="declencheur" aria-expanded="false" aria-controls="sm-produit">Produit<span class="chevron" aria-hidden="true"></span></button>
+<div class="sous-menu" id="sm-produit" hidden>
+<div class="sm-conteneur">
+<div class="sm-colonne">
+<p class="sm-titre">Vue d'ensemble</p>
+<ul>
+<li><a href="/fonctionnalites/"><span class="sm-lien">Toutes les fonctionnalités</span><span class="sm-note">Ce qu'Ardoise couvre, module par module</span></a></li>
+<li><a href="/fonctionnalites/ia/"><span class="sm-lien">Intelligence artificielle</span><span class="sm-note">Assistance, appréciations, analyse des données</span></a></li>
+<li><a href="/securite/"><span class="sm-lien">Sécurité et données</span><span class="sm-note">Isolation, rôles, traçabilité, sauvegardes</span></a></li>
+</ul></div>
+<div class="sm-colonne">
+<p class="sm-titre">Par domaine</p>
+<ul>
+<li><a href="/fonctionnalites/gestion-scolaire/"><span class="sm-lien">Gestion scolaire</span><span class="sm-note">Élèves, classes, cours, années scolaires</span></a></li>
+<li><a href="/fonctionnalites/notes-et-bulletins/"><span class="sm-lien">Notes et bulletins</span><span class="sm-note">Cotes, moyennes, bulletins officiels RDC</span></a></li>
+<li><a href="/fonctionnalites/vie-scolaire/"><span class="sm-lien">Vie scolaire</span><span class="sm-note">Présences, discipline, emploi du temps</span></a></li>
+<li><a href="/fonctionnalites/finances/"><span class="sm-lien">Finances de l'école</span><span class="sm-note">Frais scolaires, caisse, paie</span></a></li>
+<li><a href="/fonctionnalites/admissions-et-orientation/"><span class="sm-lien">Admissions et orientation</span><span class="sm-note">Concours, candidats, vœux, affectation</span></a></li>
+<li><a href="/fonctionnalites/direction-et-pilotage/"><span class="sm-lien">Direction et pilotage</span><span class="sm-note">Rapports, communication, archives</span></a></li>
+</ul></div>
+</div></div></li>
+<li class="a-sous-menu">
+<button type="button" class="declencheur" aria-expanded="false" aria-controls="sm-tarifs">Tarifs<span class="chevron" aria-hidden="true"></span></button>
+<div class="sous-menu" id="sm-tarifs" hidden>
+<div class="sm-conteneur">
+<div class="sm-colonne">
+<p class="sm-titre">Abonnement</p>
+<ul>
+<li><a href="/tarifs/"><span class="sm-lien">Les quatre offres</span><span class="sm-note">Ascension, Prime, Pilote, Infinite</span></a></li>
+<li><a href="/tarifs/comparer/"><span class="sm-lien">Comparer les offres</span><span class="sm-note">Le tableau ligne par ligne</span></a></li>
+</ul></div>
+</div></div></li>
+<li class="a-sous-menu">
+<button type="button" class="declencheur" aria-expanded="false" aria-controls="sm-services">Services<span class="chevron" aria-hidden="true"></span></button>
+<div class="sous-menu" id="sm-services" hidden>
+<div class="sm-conteneur">
+<div class="sm-colonne">
+<p class="sm-titre">Accompagnement</p>
+<ul>
+<li><a href="/services/"><span class="sm-lien">Tous les services</span><span class="sm-note">Ce que notre équipe fait pour vous</span></a></li>
+<li><a href="/services/installation/"><span class="sm-lien">Installation et configuration</span><span class="sm-note">60 $, forfait unique</span></a></li>
+<li><a href="/services/formation/"><span class="sm-lien">Formation du personnel</span><span class="sm-note">30, 60 ou 100 $</span></a></li>
+<li><a href="/services/campagne-de-capture/"><span class="sm-lien">Campagne de capture</span><span class="sm-note">0,50 $ par élève</span></a></li>
+</ul></div>
+</div></div></li>
+<li class="a-sous-menu">
+<button type="button" class="declencheur" aria-expanded="false" aria-controls="sm-ressources">Ressources<span class="chevron" aria-hidden="true"></span></button>
+<div class="sous-menu" id="sm-ressources" hidden>
+<div class="sm-conteneur">
+<div class="sm-colonne">
+<p class="sm-titre">Comprendre Ardoise</p>
+<ul>
+<li><a href="/faq/"><span class="sm-lien">Questions fréquentes</span><span class="sm-note">Les 25 questions posées avant de signer</span></a></li>
+<li><a href="/securite/"><span class="sm-lien">Sécurité et données</span><span class="sm-note">Où sont les données, qui y accède</span></a></li>
+<li><a href="/contact/"><span class="sm-lien">Parler à quelqu'un</span><span class="sm-note">Demander un accompagnement</span></a></li>
+</ul></div>
+</div></div></li>
+</ul>
+    </nav>
+
+    <div class="actions-entete">
+      <button class="bascule-theme" data-bascule-theme type="button" aria-label="Changer de thème">☾</button>
+      <a class="lien-connexion" href="/connexion.html">Se connecter</a>
+      <a class="bouton ocre petit" href="/contact/">Découvrir Ardoise</a>
+      <button class="bascule-menu" type="button" aria-expanded="false"
+              aria-controls="panneau-mobile" aria-label="Ouvrir le menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+  <div class="panneau-mobile" id="panneau-mobile" hidden>
+<div class="conteneur">
+<section class="bloc-mobile">
+<h2>Produit</h2>
+<ul>
+<li><a href="/fonctionnalites/">Toutes les fonctionnalités</a></li>
+<li><a href="/fonctionnalites/ia/">Intelligence artificielle</a></li>
+<li><a href="/securite/">Sécurité et données</a></li>
+</ul>
+<ul>
+<li><a href="/fonctionnalites/gestion-scolaire/">Gestion scolaire</a></li>
+<li><a href="/fonctionnalites/notes-et-bulletins/">Notes et bulletins</a></li>
+<li><a href="/fonctionnalites/vie-scolaire/">Vie scolaire</a></li>
+<li><a href="/fonctionnalites/finances/">Finances de l'école</a></li>
+<li><a href="/fonctionnalites/admissions-et-orientation/">Admissions et orientation</a></li>
+<li><a href="/fonctionnalites/direction-et-pilotage/">Direction et pilotage</a></li>
+</ul>
+</section>
+<section class="bloc-mobile">
+<h2>Tarifs</h2>
+<ul>
+<li><a href="/tarifs/">Les quatre offres</a></li>
+<li><a href="/tarifs/comparer/">Comparer les offres</a></li>
+</ul>
+</section>
+<section class="bloc-mobile">
+<h2>Services</h2>
+<ul>
+<li><a href="/services/">Tous les services</a></li>
+<li><a href="/services/installation/">Installation et configuration</a></li>
+<li><a href="/services/formation/">Formation du personnel</a></li>
+<li><a href="/services/campagne-de-capture/">Campagne de capture</a></li>
+</ul>
+</section>
+<section class="bloc-mobile">
+<h2>Ressources</h2>
+<ul>
+<li><a href="/faq/">Questions fréquentes</a></li>
+<li><a href="/securite/">Sécurité et données</a></li>
+<li><a href="/contact/">Parler à quelqu'un</a></li>
+</ul>
+</section>
+<div class="actions-mobile"><a class="bouton secondaire pleine-largeur" href="/connexion.html">Se connecter</a><a class="bouton ocre pleine-largeur" href="/contact/">Découvrir Ardoise</a></div>
+</div></div>
+</header>
+
+<main id="contenu">
+
+<nav class="fil-ariane" aria-label="Fil d'Ariane"><div class="conteneur"><ol>
+<li><a href="/">Accueil</a></li>
+<li><a href="/fonctionnalites/">Fonctionnalités</a></li>
+<li aria-current="page">Gestion scolaire</li>
+</ol></div></nav><section class="hero-page regle">
+  <div class="conteneur ">
+    <div>
+      <p class="eyebrow">Fonctionnalités · Gestion scolaire</p>
+      <h1>Élèves, classes et cours&nbsp;: la structure de l'école, tenue une fois pour toutes</h1>
+      <p class="chapeau">Le dossier d'un élève, la composition d'une classe, la liste des cours et leurs coefficients, le découpage de l'année : c'est le socle sur lequel reposent les notes, les bulletins, les présences et les frais. Ardoise le tient à jour à un seul endroit.</p>
+      <div class="groupe-cta"><a class="bouton ocre" href="/tarifs/">Disponible dès l'offre Ascension</a><a class="bouton secondaire" href="/fonctionnalites/notes-et-bulletins/">Voir les notes et bulletins</a></div>
+    </div>
+    
+  </div>
+</section>
+<section class="section">
+  <div class="conteneur">
+    <div class="section-entete">
+      <span class="eyebrow">Élèves</span>
+      <h2>Un dossier par élève, et une seule liste dans toute l'école</h2>
+      <p class="chapeau">
+        Dans la plupart des établissements, la liste des élèves existe en quatre
+        exemplaires qui ne concordent pas : celle du secrétariat, celle du
+        titulaire, celle du comptable et celle affichée au mur. Ardoise n'en tient
+        qu'une.
+      </p>
+    </div>
+
+    <div class="grille-cartes deux">
+      <article class="carte">
+        <h3>Ce que contient le dossier</h3>
+        <ul class="mini-liste">
+          <li>Nom, postnom, prénom, sexe, date et lieu de naissance</li>
+          <li>Matricule attribué par l'école, unique et vérifié</li>
+          <li>Adresse, téléphone, photo</li>
+          <li>Responsable : nom, téléphone, adresse, courriel</li>
+          <li>Classe de l'année en cours et historique des années passées</li>
+          <li>Code d'accès pour la consultation des résultats en ligne</li>
+        </ul>
+      </article>
+      <article class="carte">
+        <h3>Inscription, réinscription, sortie</h3>
+        <p>Un élève est inscrit, réinscrit d'une année à l'autre, ou sorti avec un
+           motif daté. Les trois mouvements laissent une trace : l'historique
+           classe par classe et année par année reste attaché au dossier.</p>
+        <p>Un élève resté sans aucune note sur l'année peut être sorti
+           automatiquement en fin d'exercice — un réglage que l'école active ou
+           non selon ses habitudes.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section alt">
+  <div class="conteneur">
+    <div class="section-entete">
+      <span class="eyebrow">Structure</span>
+      <h2>Sections, options, classes&nbsp;: l'organisation réelle d'un établissement congolais</h2>
+    </div>
+
+    <div class="grille-cartes trois">
+      <article class="carte">
+        <h3>Sections et options</h3>
+        <p>Une section regroupe des options — Scientifique, Commerciale, Pédagogie
+           générale, Coupe et couture. Chaque option peut porter un critère
+           d'accès : moyenne globale minimale, ou résultat minimal dans une
+           branche précise. Ce critère sert ensuite à l'orientation.</p>
+      </article>
+      <article class="carte">
+        <h3>Classes</h3>
+        <p>Une classe appartient à un cycle (primaire ou secondaire), à une
+           section et à une option, porte un niveau et une division, un titulaire,
+           une capacité, et éventuellement une vacation — matin, après-midi — pour
+           les écoles qui tournent en deux services.</p>
+      </article>
+      <article class="carte">
+        <h3>Cours et coefficients</h3>
+        <p>Chaque cours porte son maximum de points, son maximum d'examen, son
+           coefficient, son domaine et son groupe de domaine. Une classe peut
+           déroger au maximum d'un cours sans toucher au reste : la 6e année n'est
+           pas obligée de coter comme la 1re.</p>
+      </article>
+    </div>
+
+    <div class="deux-colonnes-texte">
+      <div>
+        <h3>Le primaire et le secondaire ne se ressemblent pas</h3>
+        <p>Ardoise le sait. Le cycle primaire dispose de sa liste de cours
+           officiels, de son bulletin propre et de ses règles de calcul ; le
+           secondaire des siennes, avec les classes terminales traitées à part.
+           Une école qui fait les deux gère les deux dans la même plateforme,
+           sans mélanger les modèles.</p>
+      </div>
+      <div>
+        <h3>Trimestres ou semestres, au choix</h3>
+        <p>L'année scolaire se découpe en périodes — trimestres ou semestres —
+           avec leurs dates. Une période se clôture quand tout est saisi, ce qui
+           gèle les notes ; elle peut être rouverte par la direction, et
+           l'opération est journalisée. Les semestres regroupent leurs périodes
+           pour produire les bulletins semestriels.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="roles">
+  <div class="conteneur">
+    <div class="section-entete">
+      <span class="eyebrow">Personnel</span>
+      <h2>Six rôles, et personne ne se promène chez les autres</h2>
+      <p class="chapeau">
+        Le contrôle d'accès n'est pas un réglage d'affichage : il est appliqué à
+        chaque requête, jusque dans la base de données.
+      </p>
+    </div>
+
+    <div class="enveloppe-tableau">
+      <table class="comparatif">
+        <caption class="sr-only">Les rôles d'Ardoise et leur périmètre</caption>
+        <thead>
+          <tr><th scope="col">Rôle</th><th scope="col">Ce qu'il fait</th></tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">Directeur</th>
+            <td>Vue complète de l'établissement : structure, personnel, notes,
+                finances, rapports, paramètres, clôtures et signatures.</td></tr>
+          <tr><th scope="row">Préfet</th>
+            <td>Le pilotage pédagogique et disciplinaire, avec les mêmes droits que
+                la direction sur la scolarité.</td></tr>
+          <tr><th scope="row">Secrétaire</th>
+            <td>Inscriptions, dossiers d'élèves, encaissements et reçus, courriers
+                et messages.</td></tr>
+          <tr><th scope="row">Titulaire</th>
+            <td>Sa classe : appel, discipline, appréciations, suivi des bulletins,
+                et selon le réglage de l'école, leur génération.</td></tr>
+          <tr><th scope="row">Professeur</th>
+            <td>Ses cours dans ses classes, et rien d'autre : travaux, cotes,
+                récapitulatifs.</td></tr>
+          <tr><th scope="row">Famille</th>
+            <td>Consultation des résultats de son enfant, par code d'accès, sur le
+                site public de l'école.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note-tableau">
+      Une personne ne cumule qu'exceptionnellement deux rôles : Professeur et
+      Titulaire, ou Préfet et Directeur. Toute autre combinaison est refusée par
+      la plateforme.
+    </p>
+  </div>
+</section>
+
+<section class="section alt" id="annee">
+  <div class="conteneur">
+    <div class="section-entete">
+      <span class="eyebrow">Fin d'année</span>
+      <h2>Passer d'une année à l'autre sans tout recommencer</h2>
+    </div>
+    <div class="grille-cartes trois">
+      <article class="carte">
+        <h3>Reconduction</h3>
+        <p>Les classes, les cours, les coefficients et la grille des frais de
+           l'année qui s'achève servent de modèle à la suivante. Vous ajustez au
+           lieu de ressaisir.</p>
+      </article>
+      <article class="carte">
+        <h3>Passage de classe</h3>
+        <p>Chaque élève est proposé au passage, au redoublement ou à la sortie
+           selon sa moyenne annuelle et les seuils de promotion et de redoublement
+           fixés par l'école. Vous voyez l'aperçu avant d'exécuter.</p>
+      </article>
+      <article class="carte">
+        <h3>Archives</h3>
+        <p>L'année close reste consultable : classes, élèves, notes, bulletins,
+           paiements. Elle s'exporte par année ou par classe, en un fichier.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="conteneur">
+    <div class="encart-offre">
+  <p><strong>Dans quelle offre&nbsp;?</strong> La gestion scolaire est incluse dans les quatre offres, sans restriction fonctionnelle. Ce qui change d'une offre à l'autre est le volume : 250 élèves et 12 classes en Ascension, 600 élèves et 40 classes en Prime, 1 500 élèves en Pilote, aucune limite en Infinite.</p>
+  <p class="liens-encart">
+    <a href="/tarifs/">Voir les offres</a> ·
+    <a href="/tarifs/comparer/">Comparer ligne par ligne</a>
+  </p>
+</div>
+  </div>
+</section>
+<section class="section alt" id="questions">
+  <div class="conteneur">
+    <div class="section-entete">
+      <span class="eyebrow">Questions</span>
+      <h2>Ce qu'on nous demande sur la gestion des élèves</h2>
+      
+    </div>
+    <div class="faq"><details><summary>Peut-on importer une liste d'élèves depuis Excel&nbsp;?</summary><div><p>Oui. Vous déposez votre fichier, Ardoise l'analyse et vous montre ce qu'il a compris colonne par colonne : quelle colonne contient le nom, laquelle le matricule, laquelle la classe. Vous corrigez ce qui est mal interprété, puis vous appliquez. Les doublons et les lignes incomplètes sont signalés avant l'import, pas après.</p></div></details><details><summary>Que devient un élève qui quitte l'école en cours d'année&nbsp;?</summary><div><p>Il passe en sortie avec un motif — transfert, abandon, exclusion, départ volontaire, diplômé — et une date. Il disparaît des listes d'appel et des grilles de cotes, mais son dossier, ses notes et ses paiements restent consultables dans les archives. Rien n'est effacé.</p></div></details><details><summary>Une même personne peut-elle être professeur et titulaire&nbsp;?</summary><div><p>Oui, c'est l'une des deux combinaisons de rôles autorisées, avec Préfet et Directeur. En dehors de ces deux cas, une personne n'a qu'un seul rôle : c'est ce qui rend le contrôle d'accès lisible et les responsabilités traçables.</p></div></details><details><summary>Faut-il tout ressaisir chaque année&nbsp;?</summary><div><p>Non. La reconduction reprend la structure de l'année précédente — classes, cours, coefficients, frais — et fait passer les élèves dans la classe suivante selon leurs résultats et le seuil de promotion que vous avez fixé. Vous relisez et vous ajustez ; vous ne recréez pas.</p></div></details></div>
+  </div>
+</section><section class="section serree" aria-labelledby="plus-loin">
+  <div class="conteneur">
+    <h2 id="plus-loin" class="titre-maillage">Pour aller plus loin</h2>
+    <div class="grille-liens"><a class="carte-lien" href="/fonctionnalites/notes-et-bulletins/"><span class="titre">Notes et bulletins</span><span class="texte">Ce que devient un élève une fois inscrit : cotes, moyennes, bulletin.</span></a><a class="carte-lien" href="/fonctionnalites/vie-scolaire/"><span class="titre">Vie scolaire</span><span class="texte">Présences, discipline et emploi du temps de la classe.</span></a><a class="carte-lien" href="/services/campagne-de-capture/"><span class="titre">Campagne de capture</span><span class="texte">Nous saisissons vos élèves à partir de vos registres, 0,50 $ par élève.</span></a><a class="carte-lien" href="/services/installation/"><span class="titre">Installation et configuration</span><span class="texte">Nous paramétrons classes, cours et coefficients à votre place.</span></a></div>
+  </div>
+</section><section class="cta-final">
+  <div class="conteneur">
+    <h2>Votre structure est déjà écrite quelque part.</h2>
+    <p>Sur des registres, dans un classeur Excel, dans la tête de votre secrétaire. Nous savons la transformer en école paramétrée.</p>
+    <div class="groupe-cta" style="justify-content:center"><a class="bouton principal" href="/contact/">Nous en parler</a><a class="bouton secondaire" href="/services/installation/">Voir l'installation</a></div>
+  </div>
+</section>
+
+</main>
+
+<footer class="pied">
+  <div class="conteneur">
+    <div class="grille">
+      <div>
+        <div class="marque">Ardoise</div>
+        <p class="description">
+          Plateforme de gestion scolaire pour les établissements de la République
+          démocratique du Congo et d'Afrique francophone.
+        </p>
+      </div>
+      <div>
+        <h2>Produit</h2>
+        <ul>
+          <li><a href="/fonctionnalites/">Fonctionnalités</a></li>
+          <li><a href="/fonctionnalites/ia/">Intelligence artificielle</a></li>
+          <li><a href="/securite/">Sécurité</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Par domaine</h2>
+        <ul>
+          <li><a href="/fonctionnalites/gestion-scolaire/">Gestion scolaire</a></li>
+          <li><a href="/fonctionnalites/notes-et-bulletins/">Notes et bulletins</a></li>
+          <li><a href="/fonctionnalites/vie-scolaire/">Vie scolaire</a></li>
+          <li><a href="/fonctionnalites/finances/">Finances</a></li>
+          <li><a href="/fonctionnalites/admissions-et-orientation/">Admissions et orientation</a></li>
+          <li><a href="/fonctionnalites/direction-et-pilotage/">Direction et pilotage</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Offres et services</h2>
+        <ul>
+          <li><a href="/tarifs/">Tarifs</a></li>
+          <li><a href="/tarifs/comparer/">Comparer les offres</a></li>
+          <li><a href="/services/installation/">Installation</a></li>
+          <li><a href="/services/formation/">Formation</a></li>
+          <li><a href="/services/campagne-de-capture/">Campagne de capture</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Ressources</h2>
+        <ul>
+          <li><a href="/faq/">Questions fréquentes</a></li>
+          <li><a href="/contact/">Nous contacter</a></li>
+          <li><a href="/connexion.html">Se connecter</a></li>
+          <li><a href="/confidentialite.html">Confidentialité</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="bas">
+      <div>© 2026 Ardoise — Logiciel de gestion scolaire.</div>
+      <div>Fait pour les écoles de la RDC.</div>
+    </div>
+  </div>
+</footer>
+
+<script src="/catalogue.js" defer></script>
+<script src="/nav.js" defer></script>
+</body>
+</html>

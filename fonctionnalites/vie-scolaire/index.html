@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<title>Présences, discipline et emploi du temps — Ardoise</title>
+<meta name="description" content="Appel quotidien utilisable hors connexion, absences justifiées, incidents de discipline rapportés au règlement intérieur, capital conduite et emploi du temps." />
+<link rel="canonical" href="https://myardoise.com/fonctionnalites/vie-scolaire/" />
+<meta name="robots" content="index, follow, max-image-preview:large" />
+<meta name="author" content="Ardoise" />
+<meta name="theme-color" content="#F6F2E7" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#141C18" media="(prefers-color-scheme: dark)" />
+
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Ardoise" />
+<meta property="og:locale" content="fr_CD" />
+<meta property="og:url" content="https://myardoise.com/fonctionnalites/vie-scolaire/" />
+<meta property="og:title" content="Présences, discipline et emploi du temps — Ardoise" />
+<meta property="og:description" content="Appel quotidien utilisable hors connexion, absences justifiées, incidents de discipline rapportés au règlement intérieur, capital conduite et emploi du temps." />
+<meta property="og:image" content="https://myardoise.com/icone-512.png" />
+<meta property="og:image:alt" content="Ardoise, plateforme de gestion scolaire" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Présences, discipline et emploi du temps — Ardoise" />
+<meta name="twitter:description" content="Appel quotidien utilisable hors connexion, absences justifiées, incidents de discipline rapportés au règlement intérieur, capital conduite et emploi du temps." />
+<meta name="twitter:image" content="https://myardoise.com/icone-512.png" />
+
+<link rel="icon" type="image/png" sizes="192x192" href="/icone-192.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="/icone-ios-180.png" />
+<link rel="manifest" href="/manifest.json" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="preconnect" href="https://scolaire-saas-backend.onrender.com" />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/site.css" />
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Accueil",
+          "item": "https://myardoise.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Fonctionnalités",
+          "item": "https://myardoise.com/fonctionnalites/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Vie scolaire"
+        }
+      ],
+      "@id": "https://myardoise.com/fonctionnalites/vie-scolaire/#n0"
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "L'appel fonctionne-t-il sans connexion ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Oui. Ardoise s'installe comme une application et conserve ce qui est nécessaire à l'appel. Un titulaire peut faire sa liste dans une classe sans réseau ; la saisie part dès que la connexion revient. C'est la raison pour laquelle le mode hors ligne a été construit en premier : l'appel est quotidien et ne peut pas attendre."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Qui fait l'appel : le titulaire ou chaque professeur ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "C'est un réglage de l'école. Trois modes existent : appel par le titulaire une fois par jour, appel par chaque professeur à son heure, ou appel confié à une personne chargée de la discipline. Vous choisissez celui qui correspond à votre organisation, pas l'inverse."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "D'où viennent les points de discipline ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "De votre règlement intérieur. Vous l'importez, l'IA en extrait les manquements et les sanctions, et vous validez la grille obtenue avant qu'elle serve. Rien n'est appliqué sur la base d'un barème que vous n'avez pas relu. Les règles peuvent aussi être saisies à la main, sans aucun recours à l'IA."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Le capital conduite descend-il tout seul ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Chaque élève démarre la période avec le capital fixé par l'école — vingt points par défaut. Les incidents enregistrés le font varier selon la grille validée, dans les deux sens : un fait positif peut en rendre. Le résultat alimente la note de conduite du bulletin, que la direction applique en un geste ou corrige à la main."
+          }
+        }
+      ],
+      "@id": "https://myardoise.com/fonctionnalites/vie-scolaire/#n1"
+    }
+  ]
+}
+</script>
+</head>
+
+<body>
+<a class="saut-contenu" href="#contenu">Aller au contenu</a>
+
+<header class="entete">
+  <div class="conteneur">
+    <a class="marque" href="/">Ardoise</a>
+
+    <nav class="nav-site" aria-label="Navigation principale">
+      <ul class="nav-niveau1">
+<li class="a-sous-menu" data-actif="oui">
+<button type="button" class="declencheur" aria-expanded="false" aria-controls="sm-produit">Produit<span class="chevron" aria-hidden="true"></span></button>
+<div class="sous-menu" id="sm-produit" hidden>
+<div class="sm-conteneur">
+<div class="sm-colonne">
+<p class="sm-titre">Vue d'ensemble</p>
+<ul>
+<li><a href="/fonctionnalites/"><span class="sm-lien">Toutes les fonctionnalités</span><span class="sm-note">Ce qu'Ardoise couvre, module par module</span></a></li>
+<li><a href="/fonctionnalites/ia/"><span class="sm-lien">Intelligence artificielle</span><span class="sm-note">Assistance, appréciations, analyse des données</span></a></li>
+<li><a href="/securite/"><span class="sm-lien">Sécurité et données</span><span class="sm-note">Isolation, rôles, traçabilité, sauvegardes</span></a></li>
+</ul></div>
+<div class="sm-colonne">
+<p class="sm-titre">Par domaine</p>
+<ul>
+<li><a href="/fonctionnalites/gestion-scolaire/"><span class="sm-lien">Gestion scolaire</span><span class="sm-note">Élèves, classes, cours, années scolaires</span></a></li>
+<li><a href="/fonctionnalites/notes-et-bulletins/"><span class="sm-lien">Notes et bulletins</span><span class="sm-note">Cotes, moyennes, bulletins officiels RDC</span></a></li>
+<li><a href="/fonctionnalites/vie-scolaire/"><span class="sm-lien">Vie scolaire</span><span class="sm-note">Présences, discipline, emploi du temps</span></a></li>
+<li><a href="/fonctionnalites/finances/"><span class="sm-lien">Finances de l'école</span><span class="sm-note">Frais scolaires, caisse, paie</span></a></li>
+<li><a href="/fonctionnalites/admissions-et-orientation/"><span class="sm-lien">Admissions et orientation</span><span class="sm-note">Concours, candidats, vœux, affectation</span></a></li>
+<li><a href="/fonctionnalites/direction-et-pilotage/"><span class="sm-lien">Direction et pilotage</span><span class="sm-note">Rapports, communication, archives</span></a></li>
+</ul></div>
+</div></div></li>
+<li class="a-sous-menu">
+<button type="button" class="declencheur" aria-expanded="false" aria-controls="sm-tarifs">Tarifs<span class="chevron" aria-hidden="true"></span></button>
+<div class="sous-menu" id="sm-tarifs" hidden>
+<div class="sm-conteneur">
+<div class="sm-colonne">
+<p class="sm-titre">Abonnement</p>
+<ul>
+<li><a href="/tarifs/"><span class="sm-lien">Les quatre offres</span><span class="sm-note">Ascension, Prime, Pilote, Infinite</span></a></li>
+<li><a href="/tarifs/comparer/"><span class="sm-lien">Comparer les offres</span><span class="sm-note">Le tableau ligne par ligne</span></a></li>
+</ul></div>
+</div></div></li>
+<li class="a-sous-menu">
+<button type="button" class="declencheur" aria-expanded="false" aria-controls="sm-services">Services<span class="chevron" aria-hidden="true"></span></button>
+<div class="sous-menu" id="sm-services" hidden>
+<div class="sm-conteneur">
+<div class="sm-colonne">
+<p class="sm-titre">Accompagnement</p>
+<ul>
+<li><a href="/services/"><span class="sm-lien">Tous les services</span><span class="sm-note">Ce que notre équipe fait pour vous</span></a></li>
+<li><a href="/services/installation/"><span class="sm-lien">Installation et configuration</span><span class="sm-note">60 $, forfait unique</span></a></li>
+<li><a href="/services/formation/"><span class="sm-lien">Formation du personnel</span><span class="sm-note">30, 60 ou 100 $</span></a></li>
+<li><a href="/services/campagne-de-capture/"><span class="sm-lien">Campagne de capture</span><span class="sm-note">0,50 $ par élève</span></a></li>
+</ul></div>
+</div></div></li>
+<li class="a-sous-menu">
+<button type="button" class="declencheur" aria-expanded="false" aria-controls="sm-ressources">Ressources<span class="chevron" aria-hidden="true"></span></button>
+<div class="sous-menu" id="sm-ressources" hidden>
+<div class="sm-conteneur">
+<div class="sm-colonne">
+<p class="sm-titre">Comprendre Ardoise</p>
+<ul>
+<li><a href="/faq/"><span class="sm-lien">Questions fréquentes</span><span class="sm-note">Les 25 questions posées avant de signer</span></a></li>
+<li><a href="/securite/"><span class="sm-lien">Sécurité et données</span><span class="sm-note">Où sont les données, qui y accède</span></a></li>
+<li><a href="/contact/"><span class="sm-lien">Parler à quelqu'un</span><span class="sm-note">Demander un accompagnement</span></a></li>
+</ul></div>
+</div></div></li>
+</ul>
+    </nav>
+
+    <div class="actions-entete">
+      <button class="bascule-theme" data-bascule-theme type="button" aria-label="Changer de thème">☾</button>
+      <a class="lien-connexion" href="/connexion.html">Se connecter</a>
+      <a class="bouton ocre petit" href="/contact/">Découvrir Ardoise</a>
+      <button class="bascule-menu" type="button" aria-expanded="false"
+              aria-controls="panneau-mobile" aria-label="Ouvrir le menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+  <div class="panneau-mobile" id="panneau-mobile" hidden>
+<div class="conteneur">
+<section class="bloc-mobile">
+<h2>Produit</h2>
+<ul>
+<li><a href="/fonctionnalites/">Toutes les fonctionnalités</a></li>
+<li><a href="/fonctionnalites/ia/">Intelligence artificielle</a></li>
+<li><a href="/securite/">Sécurité et données</a></li>
+</ul>
+<ul>
+<li><a href="/fonctionnalites/gestion-scolaire/">Gestion scolaire</a></li>
+<li><a href="/fonctionnalites/notes-et-bulletins/">Notes et bulletins</a></li>
+<li><a href="/fonctionnalites/vie-scolaire/">Vie scolaire</a></li>
+<li><a href="/fonctionnalites/finances/">Finances de l'école</a></li>
+<li><a href="/fonctionnalites/admissions-et-orientation/">Admissions et orientation</a></li>
+<li><a href="/fonctionnalites/direction-et-pilotage/">Direction et pilotage</a></li>
+</ul>
+</section>
+<section class="bloc-mobile">
+<h2>Tarifs</h2>
+<ul>
+<li><a href="/tarifs/">Les quatre offres</a></li>
+<li><a href="/tarifs/comparer/">Comparer les offres</a></li>
+</ul>
+</section>
+<section class="bloc-mobile">
+<h2>Services</h2>
+<ul>
+<li><a href="/services/">Tous les services</a></li>
+<li><a href="/services/installation/">Installation et configuration</a></li>
+<li><a href="/services/formation/">Formation du personnel</a></li>
+<li><a href="/services/campagne-de-capture/">Campagne de capture</a></li>
+</ul>
+</section>
+<section class="bloc-mobile">
+<h2>Ressources</h2>
+<ul>
+<li><a href="/faq/">Questions fréquentes</a></li>
+<li><a href="/securite/">Sécurité et données</a></li>
+<li><a href="/contact/">Parler à quelqu'un</a></li>
+</ul>
+</section>
+<div class="actions-mobile"><a class="bouton secondaire pleine-largeur" href="/connexion.html">Se connecter</a><a class="bouton ocre pleine-largeur" href="/contact/">Découvrir Ardoise</a></div>
+</div></div>
+</header>
+
+<main id="contenu">
+
+<nav class="fil-ariane" aria-label="Fil d'Ariane"><div class="conteneur"><ol>
+<li><a href="/">Accueil</a></li>
+<li><a href="/fonctionnalites/">Fonctionnalités</a></li>
+<li aria-current="page">Vie scolaire</li>
+</ol></div></nav><section class="hero-page regle">
+  <div class="conteneur ">
+    <div>
+      <p class="eyebrow">Fonctionnalités · Vie scolaire</p>
+      <h1>Présences, discipline et emploi du temps&nbsp;: ce qui se passe entre deux bulletins</h1>
+      <p class="chapeau">L'appel quotidien, les absences et leurs motifs, les incidents rapportés au règlement de l'établissement, les heures de cours de chaque classe. Trois registres qui, sur papier, ne se croisent jamais — et qui, dans Ardoise, alimentent le bulletin et les rapports.</p>
+      <div class="groupe-cta"><a class="bouton ocre" href="/tarifs/">Présences dès Ascension · discipline et horaire dès Prime</a><a class="bouton secondaire" href="/tarifs/comparer/">Comparer les offres</a></div>
+    </div>
+    
+  </div>
+</section>
+<section class="section" id="presences">
+  <div class="conteneur">
+    <div class="section-entete">
+      <span class="eyebrow">Présences</span>
+      <h2>L'appel, fait en classe, sans papier et sans réseau</h2>
+      <p class="chapeau">
+        Un registre d'appel papier remplit son office jusqu'au jour où il faut
+        savoir combien de fois un élève a manqué depuis septembre. Ardoise répond
+        à cette question en une seconde, parce que la question est posée à une
+        base de données et non à une pile de cahiers.
+      </p>
+    </div>
+
+    <div class="grille-cartes trois">
+      <article class="carte">
+        <h3>Une liste, quatre statuts</h3>
+        <p>Présent, absent, retard, absence justifiée, avec un motif libre. La
+           liste du jour se remplit d'un doigt sur téléphone, classe entière en
+           une minute.</p>
+      </article>
+      <article class="carte">
+        <h3>Les jours de cours de votre école</h3>
+        <p>Ardoise ne compte pas les jours où l'école ne travaille pas : jours de
+           la semaine ouvrés, congés, fêtes et jours spéciaux du calendrier sont
+           exclus des statistiques d'assiduité.</p>
+      </article>
+      <article class="carte">
+        <h3>Correction tracée</h3>
+        <p>Une présence modifiée après coup conserve le nom de celui qui l'avait
+           saisie d'abord, le motif de la modification et sa date. Un parent qui
+           conteste obtient une réponse, pas une hypothèse.</p>
+      </article>
+    </div>
+
+    <div class="encart" id="hors-ligne">
+      <h3>Le mode hors ligne, en pratique</h3>
+      <p>Ardoise s'installe sur le téléphone ou l'ordinateur comme une
+         application. Les écrans utilisés récemment restent disponibles sans
+         réseau, l'appel et la consultation continuent, et ce qui a été saisi
+         part au retour de la connexion. Dans un pays où la coupure est un
+         événement de la semaine et non de l'année, ce n'est pas un raffinement.</p>
+    </div>
+  </div>
+</section>
+
+<section class="section alt" id="discipline">
+  <div class="conteneur">
+    <div class="section-entete">
+      <span class="eyebrow">Discipline</span>
+      <h2>Votre règlement intérieur, appliqué de la même façon à tout le monde</h2>
+      <p class="chapeau">
+        La difficulté de la discipline scolaire n'est pas de sanctionner : c'est de
+        sanctionner deux élèves identiquement pour le même fait, six mois d'écart,
+        par deux surveillants différents.
+      </p>
+    </div>
+
+    <div class="grille-cartes deux">
+      <article class="carte etoffee">
+        <h3>Du texte au barème</h3>
+        <p>Vous importez votre règlement intérieur. Ardoise en tire une liste de
+           règles — code, libellé, catégorie, sens positif ou négatif, points,
+           mesure associée — que vous relisez et validez. Tant que vous n'avez pas
+           validé, rien ne s'applique.</p>
+        <ul class="mini-liste">
+          <li>Règles éditables une par une après validation</li>
+          <li>Barème saisi à la main si vous préférez</li>
+          <li>Le règlement validé reste la référence, archivé</li>
+        </ul>
+      </article>
+      <article class="carte etoffee">
+        <h3>Du barème au bulletin</h3>
+        <p>Un incident est enregistré avec sa date, sa règle, son élève, sa classe
+           et sa période. Le capital conduite de l'élève évolue en conséquence, et
+           la direction peut appliquer d'un geste les notes de conduite de toute
+           une classe sur le bulletin.</p>
+        <ul class="mini-liste">
+          <li>Faits positifs reconnus autant que les manquements</li>
+          <li>Historique complet par élève</li>
+          <li>Résumé par classe pour le conseil de discipline</li>
+        </ul>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="emploi-du-temps">
+  <div class="conteneur">
+    <div class="section-entete">
+      <span class="eyebrow">Emploi du temps et calendrier</span>
+      <h2>Les heures de cours, vues du bon côté selon qui regarde</h2>
+    </div>
+
+    <div class="grille-cartes trois">
+      <article class="carte">
+        <h3>Créneaux et vacations</h3>
+        <p>Vous définissez vos créneaux horaires — libellé, heure de début, heure
+           de fin — éventuellement par vacation, pour les écoles qui font matin et
+           après-midi. L'emploi du temps se construit ensuite classe par classe,
+           jour par jour, sur ces créneaux.</p>
+      </article>
+      <article class="carte">
+        <h3>Trois lectures du même horaire</h3>
+        <p>La grille de la classe pour le titulaire, « mon emploi du temps » pour
+           chaque professeur, et « aujourd'hui » pour savoir ce qui se passe
+           maintenant. Une seule saisie, trois vues.</p>
+      </article>
+      <article class="carte">
+        <h3>Exceptions et jours spéciaux</h3>
+        <p>Un créneau raccourci un jour donné, une classe qui décale son horaire,
+           un jour férié, une semaine de congé, une journée pédagogique : les
+           exceptions sont enregistrées et prises en compte par les présences.</p>
+      </article>
+    </div>
+
+    <div class="deux-colonnes-texte">
+      <div>
+        <h3>Le calendrier de l'établissement</h3>
+        <p>Examens, réunions de parents, journées portes ouvertes, congés : les
+           événements de l'année sont placés sur un calendrier partagé, visible
+           par le personnel et publiable sur le site de l'école.</p>
+      </div>
+      <div>
+        <h3>Ce que la vie scolaire alimente</h3>
+        <p>Les présences produisent le taux d'assiduité des rapports ; la
+           discipline produit la conduite du bulletin ; l'emploi du temps sert
+           l'appel par professeur. Rien de tout cela n'est un registre isolé.
+           <a href="/fonctionnalites/direction-et-pilotage/">Voir les rapports</a>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section alt">
+  <div class="conteneur">
+    <div class="encart-offre">
+  <p><strong>Dans quelle offre&nbsp;?</strong> Les présences sont dans les quatre offres. L'emploi du temps, la discipline avec capital conduite et la lecture du règlement intérieur par l'IA arrivent avec l'offre Prime.</p>
+  <p class="liens-encart">
+    <a href="/tarifs/">Voir les offres</a> ·
+    <a href="/tarifs/comparer/">Comparer ligne par ligne</a>
+  </p>
+</div>
+  </div>
+</section>
+<section class="section alt" id="questions">
+  <div class="conteneur">
+    <div class="section-entete">
+      <span class="eyebrow">Questions</span>
+      <h2>Présences et discipline, en pratique</h2>
+      
+    </div>
+    <div class="faq"><details><summary>L'appel fonctionne-t-il sans connexion&nbsp;?</summary><div><p>Oui. Ardoise s'installe comme une application et conserve ce qui est nécessaire à l'appel. Un titulaire peut faire sa liste dans une classe sans réseau ; la saisie part dès que la connexion revient. C'est la raison pour laquelle le mode hors ligne a été construit en premier : l'appel est quotidien et ne peut pas attendre.</p></div></details><details><summary>Qui fait l'appel&nbsp;: le titulaire ou chaque professeur&nbsp;?</summary><div><p>C'est un réglage de l'école. Trois modes existent : appel par le titulaire une fois par jour, appel par chaque professeur à son heure, ou appel confié à une personne chargée de la discipline. Vous choisissez celui qui correspond à votre organisation, pas l'inverse.</p></div></details><details><summary>D'où viennent les points de discipline&nbsp;?</summary><div><p>De votre règlement intérieur. Vous l'importez, l'IA en extrait les manquements et les sanctions, et vous validez la grille obtenue avant qu'elle serve. Rien n'est appliqué sur la base d'un barème que vous n'avez pas relu. Les règles peuvent aussi être saisies à la main, sans aucun recours à l'IA.</p></div></details><details><summary>Le capital conduite descend-il tout seul&nbsp;?</summary><div><p>Chaque élève démarre la période avec le capital fixé par l'école — vingt points par défaut. Les incidents enregistrés le font varier selon la grille validée, dans les deux sens : un fait positif peut en rendre. Le résultat alimente la note de conduite du bulletin, que la direction applique en un geste ou corrige à la main.</p></div></details></div>
+  </div>
+</section><section class="section serree" aria-labelledby="plus-loin">
+  <div class="conteneur">
+    <h2 id="plus-loin" class="titre-maillage">Pour aller plus loin</h2>
+    <div class="grille-liens"><a class="carte-lien" href="/fonctionnalites/notes-et-bulletins/"><span class="titre">Notes et bulletins</span><span class="texte">Où la conduite et l'assiduité finissent par apparaître.</span></a><a class="carte-lien" href="/fonctionnalites/ia/"><span class="titre">Lecture du règlement par l'IA</span><span class="texte">Comment un texte devient une grille de discipline validée.</span></a><a class="carte-lien" href="/fonctionnalites/direction-et-pilotage/"><span class="titre">Rapports d'assiduité</span><span class="texte">Absences par classe, par période, par élève.</span></a><a class="carte-lien" href="/securite/"><span class="titre">Traçabilité</span><span class="texte">Qui a saisi, qui a modifié, quand — sur chaque registre.</span></a></div>
+  </div>
+</section><section class="cta-final">
+  <div class="conteneur">
+    <h2>L'appel de demain matin peut déjà se faire ici.</h2>
+    <p>Un titulaire formé en dix minutes fait sa classe entière en une minute, réseau ou pas.</p>
+    <div class="groupe-cta" style="justify-content:center"><a class="bouton principal" href="/contact/">Demander une présentation</a><a class="bouton secondaire" href="/tarifs/">Voir les offres</a></div>
+  </div>
+</section>
+
+</main>
+
+<footer class="pied">
+  <div class="conteneur">
+    <div class="grille">
+      <div>
+        <div class="marque">Ardoise</div>
+        <p class="description">
+          Plateforme de gestion scolaire pour les établissements de la République
+          démocratique du Congo et d'Afrique francophone.
+        </p>
+      </div>
+      <div>
+        <h2>Produit</h2>
+        <ul>
+          <li><a href="/fonctionnalites/">Fonctionnalités</a></li>
+          <li><a href="/fonctionnalites/ia/">Intelligence artificielle</a></li>
+          <li><a href="/securite/">Sécurité</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Par domaine</h2>
+        <ul>
+          <li><a href="/fonctionnalites/gestion-scolaire/">Gestion scolaire</a></li>
+          <li><a href="/fonctionnalites/notes-et-bulletins/">Notes et bulletins</a></li>
+          <li><a href="/fonctionnalites/vie-scolaire/">Vie scolaire</a></li>
+          <li><a href="/fonctionnalites/finances/">Finances</a></li>
+          <li><a href="/fonctionnalites/admissions-et-orientation/">Admissions et orientation</a></li>
+          <li><a href="/fonctionnalites/direction-et-pilotage/">Direction et pilotage</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Offres et services</h2>
+        <ul>
+          <li><a href="/tarifs/">Tarifs</a></li>
+          <li><a href="/tarifs/comparer/">Comparer les offres</a></li>
+          <li><a href="/services/installation/">Installation</a></li>
+          <li><a href="/services/formation/">Formation</a></li>
+          <li><a href="/services/campagne-de-capture/">Campagne de capture</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Ressources</h2>
+        <ul>
+          <li><a href="/faq/">Questions fréquentes</a></li>
+          <li><a href="/contact/">Nous contacter</a></li>
+          <li><a href="/connexion.html">Se connecter</a></li>
+          <li><a href="/confidentialite.html">Confidentialité</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="bas">
+      <div>© 2026 Ardoise — Logiciel de gestion scolaire.</div>
+      <div>Fait pour les écoles de la RDC.</div>
+    </div>
+  </div>
+</footer>
+
+<script src="/catalogue.js" defer></script>
+<script src="/nav.js" defer></script>
+</body>
+</html>

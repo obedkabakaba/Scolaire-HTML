@@ -1,0 +1,376 @@
+/* =============================================================================
+   ARDOISE — CATALOGUE COMMERCIAL (client du site public)
+   =============================================================================
+
+   CE QU'IL FAIT
+   -------------
+   Un seul objet, `Catalogue`, partagé par index.html, tarifs.html et
+   services.html. Il sait trois choses et rien d'autre :
+
+     · lire les offres et les services depuis l'API ;
+     · les mettre en forme (prix, économies, plafonds) ;
+     · calculer l'estimation d'une campagne de capture.
+
+   POURQUOI LES PRIX SONT DÉJÀ DANS LE HTML
+   ----------------------------------------
+   Parce qu'un moteur de recherche ne lit pas ce fichier. Les tarifs sont donc
+   écrits dans les pages, ET rafraîchis ici au chargement. En cas de baisse de
+   prix, le visiteur voit le nouveau tarif immédiatement ; le HTML est
+   régénéré ensuite par `scripts/generer-tarifs-statiques.js`, côté serveur, à
+   partir de la même API. La page n'invente jamais un chiffre, et si l'API est
+   injoignable elle affiche le dernier prix publié plutôt qu'un trou.
+
+   LE CALCUL DE LA CAMPAGNE NE SE FAIT PAS ICI
+   -------------------------------------------
+   Le simulateur affiche un résultat immédiat pendant la frappe — sans quoi il
+   paraît cassé sur une connexion lente — puis le remplace par la réponse du
+   serveur. C'est le serveur qui fait foi : c'est lui qui facturera.
+   ============================================================================= */
+
+(function (global) {
+  'use strict';
+
+  var API = (global.API_BASE_URL || 'https://scolaire-saas-backend.onrender.com')
+              .replace(/\/+$/, '');
+
+  var etat = { offres: null, services: null };
+
+  /* ------------------------------------------------------------- Formatage */
+
+  /**
+   * Un montant, tel qu'on l'écrit sur une facture.
+   *
+   * Espace insécable avant le symbole et séparateur de milliers à la
+   * française : « 1 110 $ », jamais « 1110$ ». Sur une grille où figurent
+   * 190, 570 et 1 110, l'œil doit distinguer les ordres de grandeur d'un
+   * coup — c'est précisément là que le directeur compare.
+   */
+  function montant(valeur, devise) {
+    if (valeur === null || valeur === undefined || isNaN(valeur)) return '—';
+    var n = Number(valeur);
+    var entier = Math.round(n) === n;
+    var texte = entier
+      ? String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '\u202F')
+      : n.toFixed(2).replace('.', ',');
+    return texte + '\u00A0' + (devise === 'USD' || !devise ? '$' : devise);
+  }
+
+  /** Un plafond. `null` veut dire « sans limite », pas « inconnu ». */
+  function plafond(valeur) {
+    if (valeur === null || valeur === undefined) return 'Sans limite';
+    return String(valeur).replace(/\B(?=(\d{3})+(?!\d))/g, '\u202F');
+  }
+
+  /* ---------------------------------------------------------------- Réseau */
+
+  function recuperer(chemin) {
+    return fetch(API + chemin, { headers: { Accept: 'application/json' } })
+      .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      });
+  }
+
+  /**
+   * Charge les offres. Échoue en silence : la page garde ses prix publiés.
+   *
+   * Un bandeau « impossible de charger les tarifs » sur une page de vente
+   * ferait fuir un visiteur pour un incident qui ne le concerne pas, alors
+   * que les prix affichés sont exacts dans l'immense majorité des cas.
+   */
+  function chargerOffres() {
+    if (etat.offres) return Promise.resolve(etat.offres);
+    return recuperer('/catalogue/offres')
+      .then(function (d) { etat.offres = d; return d; })
+      .catch(function () { return null; });
+  }
+
+  function chargerServices() {
+    if (etat.services) return Promise.resolve(etat.services);
+    return recuperer('/catalogue/services')
+      .then(function (d) { etat.services = d; return d; })
+      .catch(function () { return null; });
+  }
+
+  /* -------------------------------------------------- Sélecteur de période */
+
+  /**
+   * Branche le sélecteur Mensuel / Semestriel / Annuel sur les cartes.
+   *
+   * Chaque carte porte ses trois prix en attributs `data-` écrits dans le
+   * HTML : basculer de période ne demande donc aucun appel réseau, et
+   * fonctionne même si l'API n'a pas répondu. Le rafraîchissement par l'API,
+   * quand il arrive, réécrit ces mêmes attributs.
+   */
+  function brancherSelecteurPeriode(racine) {
+    racine = racine || document;
+    var boutons = racine.querySelectorAll('[data-periode]');
+    var note = racine.querySelector('[data-note-periode]');
+
+    /*
+     * Pas de sélecteur sur toutes les pages.
+     * ---------------------------------------------------------------------
+     * Depuis le passage à un site multi-pages, la page d'accueil affiche
+     * quatre cartes d'offres SANS le sélecteur Mensuel / Semestriel / Annuel :
+     * elle donne un aperçu, le choix de périodicité se fait sur /tarifs/.
+     *
+     * Renvoyer ici, comme le faisait la version précédente, laissait ces
+     * cartes hors du rafraîchissement : `rafraichirTarifs` réécrivait bien
+     * leurs attributs `data-` depuis l'API, mais personne ne les repeignait,
+     * et un changement de prix restait invisible sur la page la plus vue du
+     * site. On continue donc, en neutralisant simplement ce qui suppose un
+     * sélecteur.
+     */
+
+    function appliquer(periode) {
+      boutons.forEach(function (b) {
+        b.setAttribute('aria-pressed', String(b.dataset.periode === periode));
+      });
+
+      racine.querySelectorAll('[data-offre]').forEach(function (carte) {
+        var total = carte.dataset['prix' + majuscule(periode)];
+        var parMois = carte.dataset['mois' + majuscule(periode)];
+        var eco = carte.dataset['eco' + majuscule(periode)];
+        var pct = carte.dataset['pct' + majuscule(periode)];
+        var devise = carte.dataset.devise || 'USD';
+
+        var elPrix = carte.querySelector('[data-prix]');
+        var elParMois = carte.querySelector('[data-par-mois]');
+        var elFact = carte.querySelector('[data-facturation]');
+        var elEco = carte.querySelector('[data-economie]');
+
+        if (elPrix) {
+          elPrix.innerHTML = '<span class="devise">' + (devise === 'USD' ? '$' : devise)
+            + '</span>' + Number(parMois || total).toLocaleString('fr-FR');
+        }
+        if (elParMois) elParMois.textContent = 'par mois';
+
+        if (elFact) {
+          elFact.textContent = periode === 'mensuel'
+            ? 'Facturé ' + montant(total, devise) + ' chaque mois.'
+            : 'Facturé ' + montant(total, devise) + ' '
+              + (periode === 'semestriel' ? 'tous les six mois.' : 'une fois par an.');
+        }
+
+        if (elEco) {
+          if (Number(eco) > 0) {
+            elEco.hidden = false;
+            elEco.textContent = 'Vous économisez ' + montant(eco, devise)
+              + ' (' + pct + '\u00A0%)';
+          } else {
+            elEco.hidden = true;
+          }
+        }
+      });
+
+      if (note) {
+        note.textContent = periode === 'mensuel'
+          ? 'Sans engagement : vous pouvez arrêter, changer d\u2019offre ou passer au semestriel à tout moment.'
+          : periode === 'semestriel'
+            ? 'Réglé en une fois pour six mois. Le montant économisé est calculé par rapport au tarif mensuel.'
+            : 'Réglé en une fois pour douze mois. Le montant économisé est calculé par rapport au tarif mensuel.';
+      }
+
+      // Seule une page qui PROPOSE le choix a le droit de le mémoriser.
+      if (boutons.length) {
+        try { global.localStorage.setItem('ardoise.periode', periode); } catch (e) { /* mode privé */ }
+      }
+    }
+
+    boutons.forEach(function (b) {
+      b.addEventListener('click', function () { appliquer(b.dataset.periode); });
+    });
+
+    var memorisee = null;
+    try { memorisee = global.localStorage.getItem('ardoise.periode'); } catch (e) { /* */ }
+    appliquer(memorisee || 'mensuel');
+
+    return appliquer;
+  }
+
+  function majuscule(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+  /**
+   * Réécrit les attributs de prix des cartes à partir de l'API, puis
+   * réapplique la période affichée. Rien ne bouge si l'API n'a pas répondu.
+   */
+  function rafraichirTarifs(racine, reappliquer) {
+    return chargerOffres().then(function (donnees) {
+      if (!donnees || !donnees.offres) return;
+      (racine || document).querySelectorAll('[data-offre]').forEach(function (carte) {
+        var offre = donnees.offres.find(function (o) { return o.code === carte.dataset.offre; });
+        if (!offre) return;
+        carte.dataset.devise = offre.devise;
+        ['mensuel', 'semestriel', 'annuel'].forEach(function (p) {
+          var t = offre.tarifs[p];
+          if (!t) return;
+          carte.dataset['prix' + majuscule(p)] = t.total;
+          carte.dataset['mois' + majuscule(p)] = t.par_mois;
+          carte.dataset['eco' + majuscule(p)] = t.economie;
+          carte.dataset['pct' + majuscule(p)] = t.economie_pourcentage;
+        });
+      });
+      if (typeof reappliquer === 'function') {
+        var actif = (racine || document).querySelector('[data-periode][aria-pressed="true"]');
+        reappliquer(actif ? actif.dataset.periode : 'mensuel');
+      }
+    });
+  }
+
+  /* ------------------------------------------------------------ Simulateur */
+
+  /**
+   * Simulateur de campagne de capture.
+   *
+   * Il porte son propre tarif de repli en `data-prix-unitaire`, écrit dans le
+   * HTML depuis la base : le curseur répond instantanément même hors ligne.
+   * Le serveur est ensuite interrogé, en le laissant décider — c'est lui qui
+   * connaît le minimum facturable et les éventuelles règles à venir.
+   */
+  function brancherSimulateur(racine) {
+    var bloc = (racine || document).querySelector('[data-simulateur-capture]');
+    if (!bloc) return;
+
+    var nombre = bloc.querySelector('[data-nb-eleves]');
+    var curseur = bloc.querySelector('[data-curseur-eleves]');
+    var sortie = bloc.querySelector('[data-montant-capture]');
+    var detail = bloc.querySelector('[data-detail-capture]');
+    var prixUnitaire = Number(bloc.dataset.prixUnitaire || 0.5);
+    var devise = bloc.dataset.devise || 'USD';
+    var minutier = null;
+
+    function afficher(valeur) {
+      var n = Math.max(0, Math.floor(Number(valeur) || 0));
+      if (nombre && document.activeElement !== nombre) nombre.value = n;
+      if (curseur && document.activeElement !== curseur) curseur.value = Math.min(n, Number(curseur.max));
+
+      sortie.textContent = montant(n * prixUnitaire, devise);
+      detail.textContent = n === 0
+        ? 'Indiquez le nombre d\u2019élèves à saisir.'
+        : plafond(n) + ' élèves × ' + montant(prixUnitaire, devise) + ' par élève';
+
+      clearTimeout(minutier);
+      if (n <= 0) return;
+      minutier = setTimeout(function () { confirmerAupresDuServeur(n); }, 450);
+    }
+
+    function confirmerAupresDuServeur(n) {
+      recuperer('/catalogue/estimation?service=campagne_capture&quantite=' + n)
+        .then(function (r) {
+          sortie.textContent = montant(r.montant_total, r.devise);
+          var texte = plafond(r.quantite) + ' élèves × ' + montant(r.prix_unitaire, r.devise)
+                    + ' par élève';
+          if (r.minimum_applique) {
+            texte += ' — minimum facturé : ' + plafond(r.minimum_applique) + ' élèves';
+          }
+          detail.textContent = texte;
+        })
+        .catch(function () { /* l'estimation locale reste affichée */ });
+    }
+
+    if (nombre)  nombre.addEventListener('input', function () { afficher(nombre.value); });
+    if (curseur) curseur.addEventListener('input', function () { afficher(curseur.value); });
+    afficher(nombre ? nombre.value : 300);
+  }
+
+  /* ------------------------------------------------- Formulaire de contact */
+
+  function brancherFormulaireContact(racine) {
+    var form = (racine || document).querySelector('[data-formulaire-accompagnement]');
+    if (!form) return;
+    var retour = form.querySelector('[data-retour]');
+    var bouton = form.querySelector('button[type="submit"]');
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var donnees = Object.fromEntries(new FormData(form).entries());
+      donnees.services_souhaites = Array.from(
+        form.querySelectorAll('input[name="services_souhaites"]:checked')
+      ).map(function (c) { return c.value; });
+      delete donnees['services_souhaites[]'];
+
+      bouton.disabled = true;
+      var texteInitial = bouton.textContent;
+      bouton.textContent = 'Envoi…';
+      retour.hidden = true;
+
+      fetch(API + '/catalogue/demande-accompagnement', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(donnees)
+      })
+        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+        .then(function (res) {
+          retour.hidden = false;
+          retour.className = 'message-retour ' + (res.ok ? 'succes' : 'erreur');
+          retour.textContent = res.d.message
+            || (res.ok ? 'Demande envoyée.' : 'Votre demande n\u2019a pas pu être envoyée.');
+          if (res.ok) form.reset();
+        })
+        .catch(function () {
+          retour.hidden = false;
+          retour.className = 'message-retour erreur';
+          retour.textContent = 'Connexion impossible. Vérifiez votre réseau et réessayez.';
+        })
+        .finally(function () {
+          bouton.disabled = false;
+          bouton.textContent = texteInitial;
+        });
+    });
+  }
+
+  /* ------------------------------------------------------ Bascule de thème */
+
+  function brancherTheme() {
+    var bouton = document.querySelector('[data-bascule-theme]');
+    var racine = document.documentElement;
+    var memorise = null;
+    try { memorise = localStorage.getItem('ardoise.theme'); } catch (e) { /* */ }
+    if (memorise) racine.setAttribute('data-theme', memorise);
+    if (!bouton) return;
+
+    function etiqueter() {
+      var sombre = racine.getAttribute('data-theme') === 'sombre'
+        || (!racine.getAttribute('data-theme')
+            && global.matchMedia('(prefers-color-scheme: dark)').matches);
+      bouton.textContent = sombre ? '☀' : '☾';
+      bouton.setAttribute('aria-label',
+        sombre ? 'Passer en mode clair' : 'Passer en mode sombre');
+    }
+
+    bouton.addEventListener('click', function () {
+      var sombre = racine.getAttribute('data-theme') === 'sombre'
+        || (!racine.getAttribute('data-theme')
+            && global.matchMedia('(prefers-color-scheme: dark)').matches);
+      var suivant = sombre ? 'clair' : 'sombre';
+      racine.setAttribute('data-theme', suivant);
+      try { localStorage.setItem('ardoise.theme', suivant); } catch (e) { /* */ }
+      etiqueter();
+    });
+    etiqueter();
+  }
+
+  /* ------------------------------------------------------------ Démarrage */
+
+  function demarrer() {
+    brancherTheme();
+    var reappliquer = brancherSelecteurPeriode(document);
+    rafraichirTarifs(document, reappliquer);
+    brancherSimulateur(document);
+    brancherFormulaireContact(document);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', demarrer);
+  } else {
+    demarrer();
+  }
+
+  global.Catalogue = {
+    montant: montant,
+    plafond: plafond,
+    chargerOffres: chargerOffres,
+    chargerServices: chargerServices,
+    rafraichirTarifs: rafraichirTarifs
+  };
+})(window);

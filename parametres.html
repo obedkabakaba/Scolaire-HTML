@@ -372,7 +372,7 @@
         </div>
 
         <div class="champ" style="display:flex; align-items:center; gap:10px;">
-          <input type="checkbox" id="champ-autoriser-bulletins-titulaires" style="width:auto;" />
+          <input type="checkbox" id="champ-autoriser-bulletins-titulaires" />
           <label for="champ-autoriser-bulletins-titulaires" style="margin:0;">Autoriser les titulaires à générer les bulletins de leur classe</label>
         </div>
 
@@ -393,7 +393,7 @@
         <hr style="border:none; border-top:1px solid var(--bordure); margin:20px 0;" />
 
         <div class="champ" style="display:flex; align-items:center; gap:10px;">
-          <input type="checkbox" id="champ-multi-classes" style="width:auto;" />
+          <input type="checkbox" id="champ-multi-classes" />
           <label for="champ-multi-classes" style="margin:0;">Autoriser un même titulaire à gérer plusieurs classes à la fois</label>
         </div>
         <p style="color:var(--texte-att); font-size:0.82rem; margin:6px 0 16px 0;">Par défaut, un titulaire ne peut être assigné qu'à une seule classe.</p>
@@ -401,7 +401,7 @@
         <hr style="border:none; border-top:1px solid var(--bordure); margin:20px 0;" />
 
         <div class="champ" style="display:flex; align-items:center; gap:10px;">
-          <input type="checkbox" id="champ-modif-apres-signature" style="width:auto;" />
+          <input type="checkbox" id="champ-modif-apres-signature" />
           <label for="champ-modif-apres-signature" style="margin:0;">Autoriser les titulaires à modifier les observations même après avoir signé un bulletin</label>
         </div>
         <p style="color:var(--texte-att); font-size:0.82rem; margin:6px 0 16px 0;">Par défaut, un bulletin signé (ou une période clôturée) ne peut plus être modifié par le titulaire.</p>
@@ -1028,7 +1028,7 @@
       ? '<p style="color:var(--texte-att); font-size:0.85rem;">Aucun titulaire pour l\'instant.</p>'
       : titulaires.map(t => `
           <label style="display:flex; align-items:center; gap:8px; font-size:0.88rem;">
-            <input type="checkbox" value="${t.id}" ${t.autorise_generation ? 'checked' : ''} style="width:auto;" />
+            <input type="checkbox" value="${t.id}" ${t.autorise_generation ? 'checked' : ''} />
             ${t.nom} ${t.prenom || ''}
           </label>
         `).join('');

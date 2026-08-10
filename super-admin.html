@@ -169,7 +169,11 @@
     user-select: none;
   }
   .sa-case-souvenir > input {
-    width: auto;
+    /* Une taille explicite plutôt que `width: auto` : la feuille partagée
+       fixe désormais la hauteur des cases à 18 px pour la rendre cliquable
+       au doigt, et un `auto` en largeur donnait une case de 13 sur 18. */
+    width: 18px;
+    height: 18px;
     margin: 0;
     accent-color: var(--ocre, #C08A3E);
     cursor: pointer;

@@ -38,12 +38,19 @@ def profondeur(chemin, racine):
 
 
 def traiter(chemin, racine):
-    with open(chemin, encoding='utf-8') as f:
+    # `newline=''` désactive la traduction universelle des fins de ligne.
+    # Sans lui, Python lit les CRLF de Windows, les rend en LF, et réécrit tout
+    # le fichier en LF : deux balises ajoutées font alors apparaître les 1040
+    # lignes de la page comme modifiées, et la revue du diff devient impossible.
+    with open(chemin, encoding='utf-8', newline='') as f:
         source = f.read()
 
     # Une page sans <head> ni <body> n'est pas une page : on n'y touche pas.
     if '</head>' not in source.lower() or '</body>' not in source.lower():
         return None
+
+    # On adopte la fin de ligne majoritaire du fichier pour les lignes ajoutées.
+    saut = '\r\n' if source.count('\r\n') > source.count('\n') - source.count('\r\n') else '\n'
 
     prefixe = profondeur(chemin, racine)
     css = LIEN_CSS.format(prefixe=prefixe)
@@ -54,19 +61,18 @@ def traiter(chemin, racine):
     if 'mobile.css' not in modifie:
         # Juste avant la fermeture du <head> : après toute autre feuille.
         i = modifie.lower().rindex('</head>')
-        # On respecte l'indentation de la ligne existante.
-        modifie = modifie[:i] + css + '\n' + modifie[i:]
+        modifie = modifie[:i] + css + saut + modifie[i:]
         actions.append('css')
 
     if 'mobile.js' not in modifie:
         i = modifie.lower().rindex('</body>')
-        modifie = modifie[:i] + js + '\n' + modifie[i:]
+        modifie = modifie[:i] + js + saut + modifie[i:]
         actions.append('js')
 
     if not actions:
         return []
 
-    with open(chemin, 'w', encoding='utf-8') as f:
+    with open(chemin, 'w', encoding='utf-8', newline='') as f:
         f.write(modifie)
     return actions
 

@@ -132,6 +132,12 @@
     barre.appendChild(pastilleEl);
     document.body.insertBefore(barre, document.body.firstChild);
 
+    /* Drapeau lu par `mobile.css`. C'est lui, et non la simple largeur de
+       l'écran, qui autorise la feuille à réserver 56 px en haut et 58 px en
+       bas de <body>. Les pages sans barre latérale — tout le site public —
+       n'arrivent jamais ici et gardent donc leur mise en page intacte. */
+    document.documentElement.classList.add('ard-mob-coque');
+
     voile = document.createElement('div');
     voile.className = 'ard-mob-voile';
     voile.addEventListener('click', function () { basculer(false); });

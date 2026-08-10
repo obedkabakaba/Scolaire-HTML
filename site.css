@@ -177,7 +177,19 @@ h3 { font-size: 1.18rem; letter-spacing: -0.01em; }
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--bordure);
 }
-.entete .conteneur {
+/* LE SÉLECTEUR EST UN ENFANT DIRECT, ET C'EST ESSENTIEL.
+
+   Écrit `.entete .conteneur`, il visait TOUT `.conteneur` situé sous l'en-tête
+   — donc aussi celui du panneau mobile, qui est un frère de cette barre à
+   l'intérieur du même <header>. Le panneau se retrouvait en `display: flex`
+   sur une hauteur imposée de 66 px : ses sections « Produit », « Tarifs »,
+   « Services » se rangeaient côte à côte au lieu de l'une sous l'autre,
+   débordaient à droite, et l'ensemble était rogné à la hauteur d'une barre de
+   titre. C'est le menu « vraiment bizarre » constaté au doigt.
+
+   Le combinateur `>` limite la règle à la barre elle-même ; le panneau
+   redevient un bloc ordinaire. */
+.entete > .conteneur {
   display: flex; align-items: center; gap: 8px;
   height: 66px;
 }
@@ -533,6 +545,59 @@ table.comparatif tbody tr.groupe th {
 }
 .formulaire textarea { min-height: 100px; resize: vertical; }
 .formulaire .aide { font-size: .8rem; color: var(--texte-att); }
+
+/* --------------------------------------------------- Groupes de cases à cocher
+
+   LA CASE À COCHER LARGE DE 534 PIXELS
+   ------------------------------------
+   La règle `.formulaire input` ci-dessus vise TOUS les `<input>` du
+   formulaire — donc aussi les cases à cocher des services. Une case étirée à
+   `width: 100%` occupe toute la largeur du formulaire : son libellé est
+   repoussé à la ligne suivante, et plus rien n'indique quelle case appartient
+   à quel service. C'est le désalignement constaté sur « Nous contacter ».
+
+   Les cases sortent donc de la règle générale, et le groupe reçoit la même
+   mise en forme que les autres champs — le `<fieldset>` nu, avec sa bordure
+   grise de navigateur et sa légende qui chevauche le trait, était le seul
+   élément du site à ne ressembler à rien.
+   -------------------------------------------------------------------------- */
+.formulaire input[type="checkbox"],
+.formulaire input[type="radio"] {
+  /* Une taille explicite, et carrée. `width: auto` suffirait à annuler
+     l'étirement, mais la couche mobile fixe une hauteur pour la cible
+     tactile : la case se retrouverait haute de 19 px et large de 13. */
+  width: 18px;
+  height: 18px;
+  flex: none;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--ocre, #c98a3e);
+}
+
+.groupe-cases {
+  border: 1px solid var(--bordure-forte);
+  border-radius: var(--r-bouton);
+  background: var(--fond);
+  padding: 6px 14px 12px;
+  margin: 0;
+  min-width: 0;
+}
+.groupe-cases legend {
+  font-size: .87rem; font-weight: 500;
+  padding: 0 6px;
+  color: var(--texte);
+}
+.case {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+  font-size: .93rem;
+  cursor: pointer;
+}
+.case + .case { border-top: 1px solid var(--bordure); }
+.case span { min-width: 0; }
+
 .message-retour {
   padding: 13px 16px; border-radius: var(--r-bouton); font-size: .9rem;
   border: 1px solid var(--bordure-forte); background: var(--fond-3);
@@ -611,7 +676,7 @@ table.comparatif tbody tr.groupe th {
 
 /* ------------------------------------------------------------ Entête v2 */
 
-.entete .conteneur { gap: 6px; }
+.entete > .conteneur { gap: 6px; }
 
 .actions-entete { display: flex; align-items: center; gap: 8px; margin-left: auto; }
 .lien-connexion {
@@ -652,6 +717,25 @@ table.comparatif tbody tr.groupe th {
   padding: 16px;
   min-width: 320px;
   z-index: 60;
+}
+
+/* LA PASSERELLE INVISIBLE
+
+   Les 10 px de `top: calc(100% + 10px)` sont une respiration voulue : le
+   panneau ne doit pas coller au bouton. Mais ces 10 px sont du vide, et le vide
+   n'appartient à personne. La souris qui descend du déclencheur vers le premier
+   lien traverse cette bande, sort du groupe, déclenche `mouseleave`, et le menu
+   se referme sous le curseur. D'où l'obligation de viser vite et droit.
+
+   Ce pseudo-élément occupe la bande sans se voir. Il fait partie du sous-menu,
+   donc du groupe : la souris ne quitte plus jamais la zone. L'écart visuel
+   reste, la coupure disparaît. */
+.sous-menu::before {
+  content: '';
+  position: absolute;
+  left: 0; right: 0;
+  top: -12px;
+  height: 12px;
 }
 .sous-menu[hidden] { display: none; }
 .sm-conteneur { display: flex; gap: 26px; }

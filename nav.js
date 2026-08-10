@@ -32,12 +32,30 @@
     groupes.forEach(function (g) { if (g !== sauf) ouvrir(g, false); });
   }
 
+  /* FERMETURE DIFFÉRÉE
+     La passerelle de `site.css` couvre le vide sous le bouton. Reste le geste
+     réel : personne ne descend en ligne droite. On coupe le coin, on sort du
+     panneau par le côté pendant un dixième de seconde, on y revient. Sans
+     délai, ce dixième de seconde suffit à tout refermer.
+
+     140 ms : assez pour absorber un écart de trajectoire, trop peu pour qu'un
+     menu paraisse s'attarder après qu'on l'a quitté pour de bon. Toute
+     nouvelle entrée annule la fermeture en attente. */
+  var DELAI_FERMETURE = 140;
+  var minuteries = new WeakMap();
+
+  function annulerFermeture(groupe) {
+    var t = minuteries.get(groupe);
+    if (t) { clearTimeout(t); minuteries.delete(groupe); }
+  }
+
   groupes.forEach(function (groupe) {
     var bouton = groupe.querySelector('.declencheur');
     if (!bouton) return;
 
     bouton.addEventListener('click', function () {
       var ouvertMaintenant = bouton.getAttribute('aria-expanded') === 'true';
+      annulerFermeture(groupe);
       toutFermer(groupe);
       ouvrir(groupe, !ouvertMaintenant);
     });
@@ -45,12 +63,17 @@
     // Survol : uniquement là où il y a un pointeur fin et de la place.
     groupe.addEventListener('mouseenter', function () {
       if (!GRAND_ECRAN.matches) return;
+      annulerFermeture(groupe);
       toutFermer(groupe);
       ouvrir(groupe, true);
     });
     groupe.addEventListener('mouseleave', function () {
       if (!GRAND_ECRAN.matches) return;
-      ouvrir(groupe, false);
+      annulerFermeture(groupe);
+      minuteries.set(groupe, setTimeout(function () {
+        minuteries.delete(groupe);
+        ouvrir(groupe, false);
+      }, DELAI_FERMETURE));
     });
 
     // Le panneau se ferme dès que le focus quitte le groupe : sans cela, un

@@ -85,8 +85,15 @@ body { overflow-wrap: break-word; }
      ligne, reprise de session) en tête de <body>, AVANT la mise en page : sur
      `.mise-en-page` seule, ces bandeaux passaient sous la barre fixe et
      devenaient illisibles au moment précis où ils avaient quelque chose à
-     dire. */
-  body {
+     dire.
+
+     CONDITIONNÉ À `html.ard-mob-coque`, drapeau posé par `mobile.js` au moment
+     où il construit RÉELLEMENT la barre. Sans cette condition, les vingt
+     pages du site public — qui n'ont pas de barre latérale, donc pas de coque
+     — recevaient quand même 56 px de vide en haut et 58 px en bas : un bandeau
+     mort au-dessus de l'en-tête, et un en-tête `sticky` décalé au chargement
+     puis remontant d'un coup au premier défilement. */
+  html.ard-mob-coque body {
     padding-top: calc(var(--mob-barre, 56px) + env(safe-area-inset-top, 0px)) !important;
   }
 
@@ -330,8 +337,9 @@ body { overflow-wrap: break-word; }
   .ard-mob-pied a.actif { color: var(--ocre, #c98a3e); font-weight: 600; }
   .ard-mob-pied a:active { background: rgba(0, 0, 0, 0.04); }
 
-  /* La page se termine au-dessus de la barre, jamais dessous. */
-  body {
+  /* La page se termine au-dessus de la barre, jamais dessous. Réservé, là
+     encore, aux écrans qui ont réellement une barre inférieure. */
+  html.ard-mob-coque body {
     padding-bottom: calc(58px + env(safe-area-inset-bottom, 0px)) !important;
   }
 
@@ -485,11 +493,27 @@ body { overflow-wrap: break-word; }
     min-height: 44px;
     width: 100%;
   }
+  /* CASES À COCHER ET BOUTONS RADIO
+     ------------------------------------------------------------------------
+     La taille (18 px) et l'alignement vertical sont posés une fois pour toutes
+     dans `ui.css`, parce que le défaut qu'ils corrigent — la case étirée par
+     `.champ input { width: 100% }` — existe à TOUTES les largeurs, et se voit
+     même mieux sur un grand écran. Il ne reste ici que ce qui relève du doigt :
+     la rangée cliquable de 44 px. */
   input[type="checkbox"], input[type="radio"] {
-    width: 20px; height: 20px;
     min-height: 0;
   }
-  label { font-size: 0.82rem; }
+
+  /* Un libellé qui enveloppe sa case devient une cible tactile complète :
+     case ET texte, sur 44 px de haut. */
+  label.case, label.case-a-cocher, label.champ-case, .groupe-cases label {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    cursor: pointer;
+  }
+  .groupe-cases { min-width: 0; }
+  html.ard-mob-coque label { font-size: 0.82rem; }
 }
 
 /* =============================================================================

@@ -1434,3 +1434,54 @@ html[data-theme="nuit"] .message-flash.info   { background: #16223d; color: #9db
   gap: 10px;
   margin-top: 14px;
 }
+
+/* ==========================================================================
+   UNE CASE À COCHER N'EST PAS UN CHAMP DE SAISIE
+
+   LE DÉFAUT
+   ---------
+   Presque toutes les pages écrivent une règle du type :
+
+       .champ input, .champ select { width: 100%; … }
+
+   Elle est juste pour un nom, une date, un montant. Elle est destructrice
+   pour une case à cocher : la case s'étire sur toute la largeur du
+   formulaire — 618 px sur `parametres.html`, 446 px sur `repechage.html`,
+   534 px sur le formulaire de contact — et son libellé, chassé, se retrouve
+   à la ligne suivante. Plus rien n'indique alors quelle case correspond à
+   quelle option ; on coche à l'aveugle.
+
+   Le défaut se voyait mal parce que le sélecteur d'attribut `[type="checkbox"]`
+   et le sélecteur `.champ input` ont EXACTEMENT la même spécificité (0,1,1) :
+   c'est l'ordre de lecture qui tranche. Écrite ici, en fin de la feuille
+   partagée — donc après les styles en ligne de chaque page — la règle
+   ci-dessous l'emporte partout, sans qu'aucune des trente-huit pages soit
+   touchée.
+
+   POURQUOI 18 PX ET UN ALIGNEMENT NÉGATIF
+   ---------------------------------------
+   18 px plutôt que les 13 px du navigateur : au doigt, 13 px se rate. Et une
+   case reste un élément EN LIGNE, posé sur la ligne de base du texte :
+   l'agrandir sans corriger `vertical-align` la fait flotter au-dessus de son
+   libellé. Les deux vont ensemble, toujours.
+   ========================================================================== */
+input[type="checkbox"],
+input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  flex: none;                 /* ne s'étire pas dans une rangée flexible */
+  margin: 0 8px 0 0;
+  padding: 0;
+  vertical-align: -0.22em;    /* centrée sur la ligne de texte, pas posée dessus */
+  accent-color: var(--ocre, #c98a3e);
+  cursor: pointer;
+}
+
+/* Un libellé qui enveloppe sa case devient une rangée : le texte qui passe à
+   la ligne s'aligne sur la case plutôt que sous elle, et toute la surface
+   reste une seule cible. */
+label:where(.case, .case-a-cocher, .champ-case, .interrupteur-controle) {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}

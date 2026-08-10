@@ -542,6 +542,9 @@
 </script>
 
 <!-- Didacticiel d'installation : bouton d'aide contextuel, partagé par toutes les pages. -->
+<!-- Session partagée : renouvellement du jeton et rejeu des requêtes
+     expirées. Doit rester AVANT les autres scripts. -->
+<script src="session.js"></script>
 <script src="didacticiel.js" data-ecran="Ecole"></script>
 <script src="mobile.js"></script>
 </body>

@@ -260,7 +260,15 @@ def fil(items):
     return "\n".join(html), {"@type": "BreadcrumbList", "itemListElement": elements}
 
 
-def hero(eyebrow, h1, chapeau, boutons=None, mention=None, aparte=None):
+def hero(eyebrow, h1, chapeau, boutons=None, mention=None, aparte=None,
+         illustration=None):
+    """Hero d'une page fille.
+
+    `illustration` prend un couple (clé, libellé) et remplit la seconde
+    colonne de la grille — celle qui restait vide sur toutes les pages de
+    domaine. C'est une alternative à `aparte`, pas un ajout : les deux
+    occupent la même colonne, et aucune page n'a besoin des deux.
+    """
     b = ""
     if boutons:
         liens = "".join(
@@ -269,8 +277,14 @@ def hero(eyebrow, h1, chapeau, boutons=None, mention=None, aparte=None):
         )
         b = f'<div class="groupe-cta">{liens}</div>'
     m = f'<p class="mention-cta">{mention}</p>' if mention else ""
-    droite = f'<div class="hero-aparte">{aparte}</div>' if aparte else ""
-    classe_grille = "grille" if aparte else ""
+    if aparte:
+        droite = f'<div class="hero-aparte">{aparte}</div>'
+    elif illustration:
+        import illustrations
+        droite = illustrations.figure(illustration[0], illustration[1])
+    else:
+        droite = ""
+    classe_grille = "grille" if (aparte or illustration) else ""
     return f"""<section class="hero-page regle">
   <div class="conteneur {classe_grille}">
     <div>

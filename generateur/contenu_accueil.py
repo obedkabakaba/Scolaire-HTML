@@ -8,6 +8,16 @@ Rien n'est expliqué deux fois sur le site — l'accueil renvoie, il ne détaill
 """
 
 from base import SITE, rendre, cta_final
+import illustrations
+
+# Les deux illustrations de l'accueil sont posées ici plutôt qu'au fil du
+# texte : le corps de la page est une longue chaîne littérale, et y interpoler
+# 2 ko de SVG rendrait le contenu rédactionnel illisible pour qui vient
+# corriger une phrase.
+ILLUS_ECOLE = illustrations.figure(
+    "ecole", "Une école utilisant Ardoise", "illus-accueil")
+ILLUS_CAHIERS = illustrations.figure(
+    "cahiers", "Des registres épars réunis en un seul dossier", "illus-valeur")
 
 CORPS = """
 <!-- ==================================================================== HERO -->
@@ -32,6 +42,8 @@ CORPS = """
       </p>
     </div>
 
+    <div class="colonne-hero">
+    @ILLUS_ECOLE@
     <div class="etages" aria-label="Les deux étages de l'offre Ardoise">
       <div class="etage abonnement">
         <div class="titre">L'abonnement <span class="rythme">récurrent</span></div>
@@ -46,6 +58,7 @@ CORPS = """
            équipe, saisir vos élèves. Optionnel, avec n'importe quelle offre.</p>
         <a class="lien-fleche" href="/services/">Voir les services</a>
       </div>
+    </div>
     </div>
   </div>
 </section>
@@ -74,6 +87,7 @@ CORPS = """
 <!-- ============================================================== VALEUR -->
 <section class="section">
   <div class="conteneur">
+    <div class="entete-illustre">
     <div class="section-entete">
       <span class="eyebrow">Pourquoi Ardoise</span>
       <h2>Une école tient dans un seul dossier, pas dans douze cahiers</h2>
@@ -83,6 +97,8 @@ CORPS = """
         chez les professeurs, les paiements dans un cahier, et personne ne sait
         lequel des trois a raison. Ardoise met les trois au même endroit.
       </p>
+    </div>
+    @ILLUS_CAHIERS@
     </div>
 
     <div class="grille-cartes trois">
@@ -393,6 +409,13 @@ JSONLD = [
         "publisher": {"@id": f"{SITE}/#organisation"},
     },
 ]
+
+
+# Les marqueurs sont remplacés une seule fois, après que le corps ait été
+# entièrement assemblé (le bloc CTA final s'y ajoute plus haut).
+CORPS = (CORPS
+         .replace("@ILLUS_ECOLE@", ILLUS_ECOLE)
+         .replace("@ILLUS_CAHIERS@", ILLUS_CAHIERS))
 
 
 def construire():

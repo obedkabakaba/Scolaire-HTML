@@ -1,0 +1,100 @@
+/* =============================================================================
+   ARDOISE — ILLUSTRATIONS
+   =============================================================================
+
+   Neuf dessins sur dix-huit pages. Ce bloc ne fait que les mettre en page :
+   le dessin lui-même vit dans `generateur/illustrations.py` et arrive posé
+   dans le HTML, sans requête réseau.
+
+   TROIS RÈGLES
+   ------------
+   1. Le trait suit le texte. `color: var(--texte-att)` plutôt qu'une couleur
+      en dur : le dessin change de mode en même temps que la page, et personne
+      n'a à maintenir une version claire et une version sombre.
+   2. Le dessin ne pousse rien. Il occupe une colonne déjà présente dans la
+      grille (le second membre de `.hero .grille`, `.hero-page .grille`) ;
+      aucune section n'a été rallongée pour lui faire de la place.
+   3. Sur un téléphone, il s'efface. En dessous de 900 px les colonnes
+      s'empilent : l'illustration passerait entre le titre et le premier
+      bouton, c'est-à-dire au milieu du chemin de conversion. Elle est donc
+      masquée sous 700 px et réduite entre les deux.
+   ============================================================================= */
+
+.illus {
+  margin: 0;
+  color: var(--texte-att);
+}
+
+.illus svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+/* Le cadre n'est pas décoratif : sans lui, un dessin en traits fins posé sur
+   le fond de la page flotte sans appui et paraît inachevé. La bordure est la
+   même que celle des cartes — l'illustration appartient au même système. */
+.illus-cadre {
+  border: 1px solid var(--bordure);
+  border-radius: var(--r-carte);
+  background: var(--fond-2);
+  padding: 22px;
+}
+
+/* ------------------------------------------------------- Hero de l'accueil */
+
+.colonne-hero { display: grid; gap: 22px; }
+.colonne-hero .etages { margin: 0; }
+
+/* Dans le hero de l'accueil, l'illustration cohabite avec les deux cartes
+   « étages ». Trois blocs encadrés d'affilée feraient bloc administratif :
+   celui du dessin perd donc sa bordure et son fond. */
+.illus-accueil .illus-cadre {
+  border: 0;
+  background: none;
+  padding: 0;
+}
+.illus-accueil { opacity: .92; }
+
+/* ---------------------------------------------------- Hero des pages filles */
+
+.hero-page .illus-hero { margin-top: 6px; }
+
+/* ------------------------------------------------------------ En-tête illustré
+   Utilisé une seule fois, sur « Pourquoi Ardoise ». La colonne de texte garde
+   sa mesure de lecture (62ch) ; le dessin prend le vide qui restait à droite. */
+
+.entete-illustre {
+  display: grid;
+  grid-template-columns: 1.1fr .9fr;
+  gap: 48px;
+  align-items: center;
+  margin-bottom: 44px;
+}
+.entete-illustre .section-entete { margin-bottom: 0; }
+
+@media (max-width: 900px) {
+  .entete-illustre { grid-template-columns: 1fr; gap: 28px; }
+}
+
+/* ------------------------------------------------------------------ Mobile */
+
+@media (max-width: 900px) {
+  .illus-cadre { padding: 18px; }
+  .illus { max-width: 420px; }
+}
+
+/* Sous 700 px, le dessin coûte plus qu'il ne rapporte : il repousse le
+   premier bouton sous la ligne de flottaison sur un téléphone d'entrée de
+   gamme, celui-là même que visent les écoles à qui Ardoise s'adresse. */
+@media (max-width: 700px) {
+  .illus-hero, .illus-accueil { display: none; }
+  .entete-illustre .illus { display: none; }
+}
+
+/* --------------------------------------------------------- Impression */
+
+@media print {
+  .illus { display: none; }
+}

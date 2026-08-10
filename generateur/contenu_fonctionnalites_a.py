@@ -226,6 +226,8 @@ def gestion_scolaire():
         "tient à jour à un seul endroit.",
         [("/tarifs/", "Disponible dès l'offre Ascension", "ocre"),
          ("/fonctionnalites/notes-et-bulletins/", "Voir les notes et bulletins", "secondaire")],
+    
+        illustration=("roles", "Les six roles et leurs perimetres"),
     ) + """
 <section class="section">
   <div class="conteneur">
@@ -476,6 +478,8 @@ def notes_bulletins():
         "le plus de temps.",
         [("/tarifs/", "Disponible dès l'offre Ascension", "ocre"),
          ("/tarifs/comparer/", "Comparer les offres", "secondaire")],
+    
+        illustration=("bulletin", "Un bulletin scolaire genere par Ardoise"),
     ) + """
 <section class="section">
   <div class="conteneur">

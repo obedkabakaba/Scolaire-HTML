@@ -7,8 +7,12 @@ import re
 import sys
 from html.parser import HTMLParser
 
-SORTIE = "/home/claude/work/site"
-SOURCE_HTML = "/home/claude/work/html/Scolaire-HTML-main"
+SORTIE = os.environ.get("SORTIE", "/home/claude/work/site")
+# Le chemin du dépôt est lu dans l'environnement, comme dans build.py :
+# la valeur en dur pointait vers un répertoire propre à la machine sur
+# laquelle le script a été écrit, et audit.py s'arrêtait ailleurs.
+SOURCE_HTML = os.environ.get("SOURCE_HTML",
+                             os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 pages = []
 for racine, _, fichiers in os.walk(SORTIE):

@@ -92,13 +92,33 @@ def construire_redirections():
 # ------------------------------------------------------------- Ressources
 
 def construire_ressources():
-    """site.css = feuille d'origine + bloc multi-pages. nav.js copié tel quel."""
+    """site.css = feuille d'origine + bloc multi-pages + bloc illustrations.
+
+    Les ajouts sont conditionnels. `site.css` du dépôt est lui-même un produit
+    de ce script : le relire tel quel et lui recoller le bloc multi-pages
+    dupliquerait 13 ko de règles à chaque reconstruction, et la feuille
+    grossirait d'un bloc entier à chaque passage. On ne concatène donc que ce
+    qui manque, ce qui rend `build.py` rejouable sur sa propre sortie.
+    """
     origine = os.path.join(SOURCE_HTML, "site.css")
-    ajout = os.path.join(ICI, "site-pages.css")
     with open(origine, encoding="utf-8") as f:
         css = f.read()
-    with open(ajout, encoding="utf-8") as f:
-        css += "\n" + f.read()
+
+    # On coupe sur le titre du bloc, pas sur son contenu. Comparer les
+    # contenus ne marche pas : le `site.css` du dépôt a été produit par une
+    # version antérieure de `site-pages.css`, et les deux textes ont depuis
+    # divergé de quelques commentaires. Le titre, lui, est stable — c'est le
+    # seul repère qui survive aux retouches rédactionnelles.
+    for marqueur in ("ARDOISE — SITE MULTI-PAGES", "ARDOISE — ILLUSTRATIONS"):
+        pos = css.find(marqueur)
+        if pos != -1:
+            debut = css.rfind("/*", 0, pos)
+            css = css[:debut].rstrip() + "\n"
+
+    for fichier in ("site-pages.css", "site-illustrations.css"):
+        with open(os.path.join(ICI, fichier), encoding="utf-8") as f:
+            css += "\n" + f.read()
+
     with open(os.path.join(SORTIE, "site.css"), "w", encoding="utf-8") as f:
         f.write(css)
 

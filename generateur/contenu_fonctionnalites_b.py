@@ -46,6 +46,8 @@ def vie_scolaire():
         "alimentent le bulletin et les rapports.",
         [("/tarifs/", "Présences dès Ascension · discipline et horaire dès Prime", "ocre"),
          ("/tarifs/comparer/", "Comparer les offres", "secondaire")],
+    
+        illustration=("appel", "Une feuille d'appel remplie hors ligne"),
     ) + """
 <section class="section" id="presences">
   <div class="conteneur">
@@ -264,6 +266,8 @@ def finances():
         "plateforme que les élèves.",
         [("/tarifs/", "Frais dès Ascension · comptabilité et paie dès Pilote", "ocre"),
          ("/tarifs/comparer/", "Comparer les offres", "secondaire")],
+    
+        illustration=("recu", "Un recu numerote en francs et en dollars"),
     ) + """
 <section class="section" id="frais">
   <div class="conteneur">

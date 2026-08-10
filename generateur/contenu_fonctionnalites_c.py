@@ -45,6 +45,8 @@ def admissions():
         "places disponibles.",
         [("/tarifs/", "Disponible avec l'offre Pilote", "ocre"),
          ("/tarifs/comparer/", "Comparer les offres", "secondaire")],
+    
+        illustration=("concours", "Un classement de candidats et son affectation"),
     ) + """
 <section class="section" id="concours">
   <div class="conteneur">
@@ -216,6 +218,8 @@ def direction():
         "ligne.",
         [("/tarifs/", "Tableau de bord dès Ascension · rapports avancés dès Pilote", "ocre"),
          ("/tarifs/comparer/", "Comparer les offres", "secondaire")],
+    
+        illustration=("pilotage", "Le tableau de bord de la direction"),
     ) + """
 <section class="section" id="rapports">
   <div class="conteneur">
@@ -425,6 +429,8 @@ def ia():
         "questions posées à vos données en français ordinaire.",
         [("/tarifs/", "Incluse dans les quatre offres", "ocre"),
          ("/tarifs/comparer/", "Voir les quotas par offre", "secondaire")],
+    
+        illustration=("ia", "Une appreciation proposee, relue puis validee"),
     ) + """
 <section class="section">
   <div class="conteneur">

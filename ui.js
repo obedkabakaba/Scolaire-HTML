@@ -691,6 +691,31 @@
       if (li.style.display === 'none') continue;      // écarté par le rôle
       var lien = li.querySelector('.nav-item[href]');
       if (!lien) continue;
+
+      /* LES ENTRÉES D'ACTION NE SE REPLIENT PAS
+         ------------------------------------------------------------------
+         Toute cette fonction raisonne en PAGES : elle range chaque entrée par
+         son `href`, décide de l'afficher selon les épingles, et reconstruit un
+         lien vers cette page dans le tiroir « Tous les menus ».
+
+         « Aide & Tutoriels » (posée par `didacticiel.js`) n'est pas une page :
+         c'est un bouton déguisé en lien, avec `href="#"`. Elle entrait donc
+         ici sous l'identité « page # », qui n'est évidemment épinglée nulle
+         part — d'où `display: none`, l'entrée invisible dans le menu. Et
+         quand on la retrouvait dans le tiroir, elle y était redessinée comme
+         un lien ordinaire : sans icône (aucune entrée `ICONES['#']`) et
+         pointant vers `#`, c'est-à-dire nulle part. C'est très exactement le
+         défaut signalé : « pas d'icône, et quand on clique ça n'entre pas ».
+
+         Une entrée d'action est donc écartée du mécanisme : elle reste
+         affichée en permanence, avec l'icône et le gestionnaire de clic que
+         lui a donnés le fichier qui l'a créée. */
+      var cible = lien.getAttribute('href');
+      if (!cible || cible.charAt(0) === '#' || li.dataset.permanent === 'oui') {
+        li.style.display = '';
+        continue;
+      }
+
       elements.push({
         li: li,
         page: lien.getAttribute('href'),

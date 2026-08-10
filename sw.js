@@ -13,7 +13,7 @@
    ils continueraient d'utiliser l'ancienne version des pages.
    ========================================================================== */
 
-const VERSION = 'ardoise-v39';
+const VERSION = 'ardoise-v40';
 const CACHE_COQUILLE = `${VERSION}-coquille`;
 const CACHE_DONNEES = `${VERSION}-donnees`;
 
@@ -65,6 +65,11 @@ const COQUILLE = [
   'super-admin.html',
   'theme.css',
   'ui.css',
+  // La couche mobile est mise en cache avec le reste de la coquille : sans
+  // elle, une ouverture hors ligne sur téléphone retomberait sur la mise en
+  // page de bureau — exactement le défaut qu'elle corrige.
+  'mobile.css',
+  'mobile.js',
   'theme.js',
   'ui.js',
   'acces-presences.js',

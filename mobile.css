@@ -1,0 +1,689 @@
+/* =============================================================================
+   ARDOISE — COUCHE MOBILE
+   =============================================================================
+
+   POURQUOI CE FICHIER EXISTE
+   --------------------------
+   La plateforme avait déjà des media queries — dans les trente-sept pages, dans
+   `theme.css` et dans `ui.css`. Elles corrigeaient des symptômes un par un.
+   Mesuré dans un vrai navigateur à 360 px de large (le téléphone d'entrée de
+   gamme qui sert de référence), le résultat était le suivant :
+
+     · treize pages dépassaient la largeur de l'écran — jusqu'à 817 px pour
+       `annee-scolaire.html`, soit plus du double. C'est exactement ce que
+       décrit « on doit redimensionner » : le navigateur dézoome, le texte
+       devient minuscule, et il faut faire glisser la page latéralement ;
+     · le menu, sur téléphone, était un accordéon qui poussait le contenu vers
+       le bas ; il n'affichait que cinq entrées sur trente-deux, les autres
+       étant enfermées dans un second tiroir ;
+     · l'entrée « Aide & Tutoriels » était purement et simplement masquée
+       (voir `ui.js`, section 14).
+
+   LA CAUSE COMMUNE DU DÉBORDEMENT
+   -------------------------------
+   `.contenu` est une cellule de grille (`.mise-en-page`). Une cellule de
+   grille a `min-width: auto`, c'est-à-dire « au moins la largeur minimale de
+   mon contenu ». Une seule barre d'onglets non sécable suffisait donc à
+   élargir la colonne — et avec elle toute la page. Un `min-width: 0` sur les
+   cellules règle treize pages d'un coup ; c'est la première règle du fichier.
+
+   PRINCIPE D'ÉCRITURE
+   -------------------
+   Cette feuille est chargée EN DERNIER, après `theme.css` et `ui.css`. Elle
+   n'écrase rien au-dessus de 780 px : tout ce qui suit la section 1 vit dans
+   une media query. Le `!important` y est fréquent et assumé — les trente-sept
+   pages portent leurs propres styles en ligne, et une couche corrective qui
+   perdrait la moitié de ses arbitrages ne corrigerait rien.
+   ============================================================================= */
+
+/* =============================================================================
+   1. FILET GLOBAL — valable à toutes les largeurs
+   ============================================================================= */
+
+/* La règle qui vaut à elle seule treize pages : une cellule de grille ou un
+   élément flexible n'a pas le droit d'imposer sa largeur minimale au reste. */
+.mise-en-page > *,
+.contenu,
+.contenu > * {
+  min-width: 0;
+}
+
+/* Rien ne dépasse : ni une image large, ni un tableau, ni un bloc de code. */
+img, svg, video, canvas, iframe, table, pre {
+  max-width: 100%;
+}
+img, video { height: auto; }
+
+/* Un matricule de trente caractères ou une adresse électronique longue ne
+   doivent pas élargir leur colonne. */
+body { overflow-wrap: break-word; }
+
+/* Les trois éléments de la coque mobile sont posés dans le document par
+   `mobile.js` quelle que soit la largeur — les construire à chaque rotation
+   d'écran produirait un clignotement. Au-dessus de 780 px ils n'existent tout
+   simplement pas visuellement ; la section 2 les rallume. */
+.ard-mob-barre, .ard-mob-pied, .ard-mob-voile, .ard-mob-fermer,
+.ard-mob-famille { display: none; }
+
+/* =============================================================================
+   2. COQUE APPLICATIVE SUR TÉLÉPHONE
+   La barre latérale devient un tiroir qui glisse par-dessus le contenu, et
+   une barre d'application fixe prend sa place en haut de l'écran.
+   ============================================================================= */
+@media (max-width: 780px) {
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    /* `clip` plutôt que `hidden` : il coupe le débordement sans créer de
+       conteneur de défilement, donc sans casser les `position: sticky`. */
+    overflow-x: clip;
+  }
+
+  /* Le décalage sous la barre est porté par <body> et non par `.mise-en-page`.
+     Plusieurs écrans insèrent des bandeaux (erreur de chargement, mode hors
+     ligne, reprise de session) en tête de <body>, AVANT la mise en page : sur
+     `.mise-en-page` seule, ces bandeaux passaient sous la barre fixe et
+     devenaient illisibles au moment précis où ils avaient quelque chose à
+     dire. */
+  body {
+    padding-top: calc(var(--mob-barre, 56px) + env(safe-area-inset-top, 0px)) !important;
+  }
+
+  /* La grille à deux colonnes n'a plus lieu d'être : le tiroir est hors flux. */
+  .mise-en-page {
+    display: block !important;
+    min-height: calc(100vh - var(--mob-barre, 56px));
+    min-height: calc(100dvh - var(--mob-barre, 56px));
+  }
+
+  /* ------------------------------------------------------- Barre supérieure */
+  .ard-mob-barre {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: calc(var(--mob-barre, 56px) + env(safe-area-inset-top, 0px));
+    padding: env(safe-area-inset-top, 0px) 12px 0 6px;
+    background: var(--nav-fond, #1f2b24);
+    color: var(--nav-texte-fort, #f6f2e7);
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.16);
+  }
+  /* La barre s'efface à l'impression : elle n'appartient pas au document. */
+  @media print { .ard-mob-barre { display: none !important; } }
+
+  .ard-mob-bouton {
+    flex: none;
+    width: 44px; height: 44px;          /* cible tactile confortable */
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 5px;
+    background: none; border: 0; padding: 0;
+    cursor: pointer; color: inherit;
+    border-radius: 10px;
+  }
+  .ard-mob-bouton:active { background: rgba(255, 255, 255, 0.1); }
+  .ard-mob-bouton span {
+    display: block; width: 20px; height: 2px;
+    background: currentColor; border-radius: 2px;
+    transition: transform 0.22s ease, opacity 0.16s ease;
+  }
+  html.ard-mob-ouvert .ard-mob-bouton span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  html.ard-mob-ouvert .ard-mob-bouton span:nth-child(2) { opacity: 0; }
+  html.ard-mob-ouvert .ard-mob-bouton span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+  .ard-mob-titre {
+    flex: 1; min-width: 0;
+    font-family: var(--police-titre, inherit);
+    font-weight: 600; font-size: 1.05rem;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  /* Pastille de messages non lus, reprise sur la barre. */
+  .ard-mob-pastille {
+    flex: none;
+    min-width: 18px; height: 18px; padding: 0 5px;
+    border-radius: 20px; background: var(--rouge, #b23a2e);
+    color: #fff; font-size: 0.7rem; font-weight: 700;
+    display: none; align-items: center; justify-content: center;
+  }
+  .ard-mob-pastille.visible { display: flex; }
+
+  /* ------------------------------------------------------------- Le tiroir */
+  .barre-laterale,
+  html[data-nav-position] .barre-laterale,
+  html[data-nav-compact="oui"] .barre-laterale {
+    position: fixed !important;
+    top: 0; bottom: 0; left: 0; right: auto;
+    width: min(86vw, 320px) !important;
+    max-width: 320px;
+    height: 100% !important;
+    margin: 0 !important;
+    padding: calc(18px + env(safe-area-inset-top, 0px)) 14px
+             calc(18px + env(safe-area-inset-bottom, 0px)) 14px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+    flex-wrap: nowrap !important;
+    gap: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    z-index: 1101;
+    transform: translateX(-100%);
+    transition: transform 0.26s cubic-bezier(0.22, 0.61, 0.36, 1);
+    box-shadow: none;
+  }
+  /* `!important` obligatoire ici, et non par confort : la règle ci-dessus vise
+     aussi `html[data-nav-position] .barre-laterale`, dont la spécificité (0,2,1)
+     dépasse celle de `.barre-laterale.nav-ouverte` (0,2,0). Sans cela, le
+     tiroir restait replié même la classe posée — il s'ouvrait dans le DOM et
+     jamais à l'écran. */
+  .barre-laterale.nav-ouverte {
+    transform: none !important;
+    box-shadow: 0 0 34px rgba(0, 0, 0, 0.36);
+  }
+  /* Le conteneur intermédiaire redevient un bloc ordinaire : dans le tiroir,
+     l'ordre du document est le bon. */
+  .barre-laterale > div { display: block !important; }
+
+  /* Le voile derrière le tiroir. */
+  .ard-mob-voile {
+    display: block;
+    position: fixed; inset: 0;
+    background: rgba(15, 22, 18, 0.5);
+    z-index: 1100;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.26s ease;
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+  }
+  html.ard-mob-ouvert .ard-mob-voile { opacity: 1; pointer-events: auto; }
+  /* Le fond ne défile plus derrière le tiroir ouvert. */
+  html.ard-mob-ouvert, html.ard-mob-ouvert body { overflow: hidden !important; }
+
+  /* Le bouton d'origine de `ui.js` vit maintenant dans la barre supérieure ;
+     celui resté dans le tiroir ferait doublon. */
+  .barre-laterale .bouton-menu { display: none !important; }
+
+  /* ---------------------------------------------- Le menu dans le tiroir */
+  .ard-mob-fermer {
+    display: flex;
+    position: absolute;
+    top: calc(12px + env(safe-area-inset-top, 0px));
+    right: 10px;
+    width: 42px; height: 42px;
+    display: flex; align-items: center; justify-content: center;
+    background: none; border: 0; padding: 0;
+    color: var(--nav-texte, rgba(246, 242, 231, 0.75));
+    border-radius: 50%;
+    cursor: pointer;
+  }
+  .ard-mob-fermer:active { background: rgba(255, 255, 255, 0.1); }
+  .ard-mob-fermer svg {
+    width: 20px; height: 20px;
+    stroke: currentColor; fill: none;
+    stroke-width: 1.9; stroke-linecap: round;
+  }
+
+  .barre-laterale .marque {
+    margin: 0 0 16px 4px !important;
+    font-size: 1.35rem !important;
+    text-align: left !important;
+  }
+
+  .nav-liste {
+    display: flex !important;
+    visibility: visible !important;
+    flex-direction: column;
+    width: 100%;
+    margin: 0 0 12px 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    animation: none !important;
+    gap: 2px;
+  }
+
+  /* Sur un téléphone, le rail réduit n'a plus de raison d'être : le tiroir a
+     toute la hauteur de l'écran. On rend donc au menu les entrées que
+     `reduireRail()` avait repliées — repérables à leur `data-epingle`, que lui
+     seul pose. Les entrées écartées par le RÔLE, elles, n'en portent pas :
+     elles restent masquées, ce qui est le comportement voulu. */
+  .nav-liste li[data-epingle] { display: block !important; }
+  /* « Tous les menus » n'ouvrirait qu'un tiroir dans un tiroir. */
+  .nav-liste li.ard-mob-sans-objet { display: none !important; }
+
+  .nav-item, .nav-item:visited {
+    padding: 12px 12px !important;
+    font-size: 0.95rem !important;
+    min-height: 46px;
+    border-radius: 10px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .nav-item:active { background: rgba(255, 255, 255, 0.08); }
+  .nav-icone { width: 20px !important; height: 20px !important; }
+
+  /* Séparateurs de famille, posés par `mobile.js`. */
+  .ard-mob-famille {
+    display: block;
+    list-style: none;
+    margin: 14px 0 4px 12px;
+    font-family: var(--police-mono, monospace);
+    font-size: 0.64rem;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--nav-texte-faible, rgba(246, 242, 231, 0.45));
+  }
+
+  .nav-deconnexion {
+    display: flex !important;
+    width: 100%;
+    margin-top: auto !important;
+    padding: 13px 12px !important;
+    border-top: 1px solid var(--nav-separateur, rgba(255, 255, 255, 0.12)) !important;
+  }
+}
+
+/* =============================================================================
+   3. BARRE INFÉRIEURE — les quatre écrans les plus utilisés, au pouce
+   Un téléphone se tient d'une main : ce qui est en bas est atteignable, ce qui
+   est en haut ne l'est pas. Les destinations fréquentes descendent donc.
+   ============================================================================= */
+@media (max-width: 780px) {
+  .ard-mob-pied {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 999;
+    display: flex;
+    background: var(--craie-2, #fbf9f3);
+    border-top: 1px solid var(--bordure, #e4dfcf);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    transition: transform 0.24s ease;
+  }
+  html.ard-mob-ouvert .ard-mob-pied { transform: translateY(110%); }
+  @media print { .ard-mob-pied { display: none !important; } }
+
+  .ard-mob-pied a {
+    flex: 1 1 0; min-width: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 3px;
+    padding: 8px 2px;
+    min-height: 54px;
+    text-decoration: none;
+    color: var(--texte-att, #6b7269);
+    font-size: 0.66rem;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .ard-mob-pied a span {
+    max-width: 100%;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .ard-mob-pied a svg {
+    width: 21px; height: 21px;
+    stroke: currentColor; fill: none;
+    stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round;
+  }
+  .ard-mob-pied a.actif { color: var(--ocre, #c98a3e); font-weight: 600; }
+  .ard-mob-pied a:active { background: rgba(0, 0, 0, 0.04); }
+
+  /* La page se termine au-dessus de la barre, jamais dessous. */
+  body {
+    padding-bottom: calc(58px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  /* Les éléments flottants remontent d'autant. */
+  .ard-di-bouton {
+    bottom: calc(70px + env(safe-area-inset-bottom, 0px)) !important;
+    right: 14px !important;
+  }
+  .ard-di-relance { bottom: calc(128px + env(safe-area-inset-bottom, 0px)) !important; }
+  #bandeau-hors-ligne {
+    bottom: calc(58px + env(safe-area-inset-bottom, 0px)) !important;
+    z-index: 1250 !important;
+  }
+}
+
+/* =============================================================================
+   4. ONGLETS — la première cause de débordement
+   Une rangée d'onglets non sécables plus large que l'écran élargissait la page
+   entière. Elle devient une bande qui défile horizontalement, comme dans une
+   application native, avec accrochage.
+   ============================================================================= */
+@media (max-width: 780px) {
+  .onglets,
+  .barre-onglets,
+  .onglets-secondaires {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    max-width: 100%;
+    min-width: 0;
+    margin-left: -16px;                  /* la bande touche les deux bords */
+    margin-right: -16px;
+    padding: 0 16px 2px 16px;
+  }
+  .onglets::-webkit-scrollbar,
+  .barre-onglets::-webkit-scrollbar,
+  .onglets-secondaires::-webkit-scrollbar { display: none; }
+
+  .onglet {
+    flex: 0 0 auto !important;
+    scroll-snap-align: start;
+    white-space: nowrap;
+    min-height: 42px;
+    display: flex !important;
+    align-items: center;
+  }
+}
+
+/* =============================================================================
+   5. EN-TÊTE DE PAGE, FILTRES ET ACTIONS
+   ============================================================================= */
+@media (max-width: 780px) {
+  .contenu {
+    padding: 18px 16px calc(28px + env(safe-area-inset-bottom, 0px)) 16px !important;
+  }
+
+  /* L'ANIMATION D'ENTRÉE EST RETIRÉE SUR TÉLÉPHONE — et ce n'est pas une
+     question de goût.
+
+     `theme.css` anime `transform` sur `.contenu`. Tout élément qui anime
+     `transform` devient un « bloc de confinement » pour ses descendants en
+     `position: fixed`, y compris après la fin de l'animation avec
+     `fill-mode: both`. Or les modales (`.voile`) sont des enfants de
+     `.contenu` dans les trente-sept pages : leur `inset: 0` se calculait donc
+     par rapport au CONTENU DE LA PAGE et non par rapport à l'écran. Sur une
+     page longue, la boîte de dialogue s'ouvrait quelque part au-dessus de la
+     position courante — invisible, et donnant l'impression que le bouton ne
+     faisait rien.
+
+     `ui.js` avait déjà dû déplacer `#message-flash` hors de `.contenu` pour la
+     même raison. Une modale, elle, ne peut pas être déplacée sans casser le
+     code de chaque page : on supprime donc la cause. Le fondu reste, seul le
+     déplacement de six pixels disparaît. */
+  html .contenu { animation: none !important; transform: none !important; }
+
+  .entete-page {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+  .entete-page h1 { font-size: 1.45rem !important; line-height: 1.25; }
+  .entete-page .sous-titre { font-size: 0.88rem; }
+
+  /* Une rangée de boutons devient une colonne : trois boutons côte à côte sur
+     360 px, ce sont trois cibles trop étroites pour un pouce. */
+  .groupe-boutons { width: 100%; }
+  .groupe-boutons > .bouton,
+  .barre-actions > .bouton { flex: 1 1 auto; justify-content: center; }
+
+  .bouton {
+    min-height: 44px;
+    padding: 11px 16px !important;
+  }
+
+  .barre-selecteurs,
+  .barre-filtres,
+  .barre-filtres-compta,
+  .barre-filtres-resultats {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .barre-selecteurs > *,
+  .barre-filtres > *,
+  .barre-filtres-compta > * { width: 100%; min-width: 0; }
+
+  /* Toutes les grilles de la plateforme repassent en une colonne. */
+  .grille-stats, .grille-recap, .grille-widgets, .grille-2col,
+  .grille-formulaire, .grille-periodes, .grille-liens, .grille-tresorerie,
+  .ligne-champs, .grille-correspondance, .grille-cartes {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Ramener une grille à une colonne ne suffit pas. Plusieurs pages écrivent
+     `style="grid-column: span 2"` sur un champ qui doit occuper toute la
+     largeur — c'est juste sur deux colonnes, c'est destructeur sur une : le
+     navigateur CRÉE une deuxième colonne implicite, dimensionnée sur le
+     contenu, et la grille redevient plus large que l'écran. C'était le dernier
+     débordement d'`inscriptions.html`. Chaque enfant reprend donc une colonne
+     et une seule. */
+  .grille-stats > *, .grille-recap > *, .grille-widgets > *, .grille-2col > *,
+  .grille-formulaire > *, .grille-periodes > *, .grille-liens > *,
+  .grille-tresorerie > *, .ligne-champs > *, .grille-correspondance > *,
+  .grille-cartes > * {
+    grid-column: auto !important;
+    min-width: 0;
+  }
+
+  .carte, .widget, .carte-config { padding: 16px !important; }
+}
+
+/* =============================================================================
+   6. CHAMPS DE SAISIE
+   Sous 16 px, iOS zoome automatiquement à la mise au point du champ — et ne
+   dézoome jamais. C'est la cause la plus fréquente de « la page a bougé toute
+   seule et je dois la remettre en place ».
+   ============================================================================= */
+@media (max-width: 780px) {
+  input, select, textarea {
+    font-size: 16px !important;
+    max-width: 100%;
+  }
+  input[type="text"], input[type="search"], input[type="email"],
+  input[type="password"], input[type="number"], input[type="date"],
+  input[type="tel"], select, textarea {
+    min-height: 44px;
+    width: 100%;
+  }
+  input[type="checkbox"], input[type="radio"] {
+    width: 20px; height: 20px;
+    min-height: 0;
+  }
+  label { font-size: 0.82rem; }
+}
+
+/* =============================================================================
+   7. MODALES — en feuille montante
+   Une boîte centrée avec des marges gaspille une surface déjà rare, et son
+   pied de page part sous le clavier virtuel.
+   ============================================================================= */
+@media (max-width: 780px) {
+  .voile {
+    padding: 0 !important;
+    align-items: flex-end !important;
+    /* Au-dessus de la barre d'application et du tiroir : une modale ouverte
+       est le seul objet avec lequel on interagit. */
+    z-index: 1200 !important;
+  }
+  .modale, .modale-large {
+    max-width: 100% !important;
+    width: 100% !important;
+    max-height: 92dvh !important;
+    border-radius: 16px 16px 0 0 !important;
+    padding: 20px 16px calc(20px + env(safe-area-inset-bottom, 0px)) 16px !important;
+    animation: ard-mob-monte 0.24s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  }
+  .modale h2 { font-size: 1.2rem !important; }
+
+  /* Poignée de préhension : le signal visuel qu'on peut refermer. */
+  .modale::before {
+    content: '';
+    display: block;
+    width: 38px; height: 4px;
+    margin: -6px auto 14px auto;
+    border-radius: 4px;
+    background: var(--bordure, #e4dfcf);
+  }
+
+  .actions-modale {
+    flex-direction: column-reverse;
+    gap: 8px;
+    position: sticky;
+    bottom: 0;
+    padding-top: 12px;
+    background: inherit;
+  }
+  .actions-modale .bouton { width: 100%; justify-content: center; }
+
+  /* Le guide et le tiroir « tous les menus » passent au-dessus de la coque. */
+  .ard-di-voile { z-index: 1300 !important; }
+  .voile-tiroir { z-index: 1210 !important; }
+  #message-flash, .message-flash {
+    z-index: 1400 !important;
+    left: 12px !important; right: 12px !important;
+    width: auto !important; max-width: none !important;
+    top: calc(var(--mob-barre, 56px) + env(safe-area-inset-top, 0px) + 8px) !important;
+  }
+}
+
+@keyframes ard-mob-monte {
+  from { transform: translateY(14px); opacity: 0.6; }
+  to { transform: none; opacity: 1; }
+}
+
+/* =============================================================================
+   8. TABLEAUX
+   `ui.css` transforme déjà les lignes en cartes sous 700 px. Ce qui manquait :
+   le même traitement pour les tableaux qu'aucune page n'avait enveloppés, et
+   une cible tactile correcte sur les actions de ligne.
+   ============================================================================= */
+@media (max-width: 780px) {
+  .conteneur-tableau { max-width: 100%; }
+  .conteneur-tableau td .lien-action,
+  .conteneur-tableau td .bouton {
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+  }
+  /* Un tableau resté hors conteneur défile au lieu d'élargir la page. */
+  .contenu > table,
+  .carte > table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* =============================================================================
+   9. APERÇUS DE BULLETIN
+   Ces quatre pages sont des feuilles A4 exprimées en millimètres : elles ne
+   peuvent pas « devenir responsives » sans cesser d'être des bulletins. On les
+   met donc à l'échelle de l'écran, comme le ferait un lecteur de PDF.
+   `mobile.js` calcule le facteur ; ici, seule la mécanique.
+   ============================================================================= */
+@media (max-width: 780px) {
+  body.ard-mob-feuille { overflow-x: hidden; padding-bottom: 0 !important; }
+  body.ard-mob-feuille .page {
+    transform: scale(var(--mob-echelle, 1));
+    transform-origin: top left;
+  }
+}
+@media print {
+  body.ard-mob-feuille .page { transform: none !important; }
+}
+
+/* =============================================================================
+   9 bis. SITE PUBLIC
+   Les pages de vente tenaient déjà dans l'écran à une exception près : le
+   simulateur de campagne de capture, dont les deux champs côte à côte
+   totalisent plus que la largeur disponible. Ils passent l'un sous l'autre.
+   ============================================================================= */
+@media (max-width: 780px) {
+  .conteneur { max-width: 100%; }
+  .grille-deux, .grille-trois, .simulateur {
+    grid-template-columns: 1fr !important;
+  }
+  .grille-deux > *, .grille-trois > *, .simulateur > * { min-width: 0; }
+  .simulateur .champ { flex-wrap: wrap; gap: 8px; }
+  .simulateur .champ > * { min-width: 0; flex: 1 1 140px; }
+
+  /* Le sélecteur Mensuel / Semestriel / Annuel de la page des tarifs.
+     Trois boutons à 20 px de marge intérieure font 303 px à eux seuls : la
+     pilule tenait sur un iPhone récent et débordait de vingt pixels sur un
+     écran de 320 px — la moitié du parc en RDC. Le bloc devient une pilule
+     pleine largeur dont les trois parts se partagent la place. */
+  .selecteur-periode {
+    display: flex !important;
+    width: 100%;
+    max-width: 100%;
+  }
+  .selecteur-periode button {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 10px 6px !important;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 380px) {
+  .selecteur-periode button { font-size: 0.8rem !important; }
+}
+
+/* =============================================================================
+   9 ter. CONSOLE SUPER-ADMIN
+   Cet écran a sa propre coque (`.sa-navigation`, tiroir à 980 px) : la coque
+   de `mobile.js` ne s'y applique pas et ne doit pas s'y appliquer. Restent les
+   mêmes pièges de largeur qu'ailleurs — une cellule flex à `min-width: auto`,
+   une grille à colonne minimale de 360 px, un tableau non contraint.
+   ============================================================================= */
+@media (max-width: 780px) {
+  .sa-application > *, .sa-principal, .sa-principal > * { min-width: 0; }
+  .sa-grille-2, .sa-grille-3, .sa-grille-themes {
+    grid-template-columns: 1fr !important;
+  }
+  .sa-grille-2 > *, .sa-grille-3 > * { min-width: 0; grid-column: auto !important; }
+  .sa-conteneur-tableau {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+  }
+  .sa-tronque { max-width: 100%; }
+  .sa-barre-filtres { flex-wrap: wrap; }
+  .sa-barre-filtres > * { min-width: 0; }
+  .sa-modale { max-width: 100% !important; }
+}
+
+/* =============================================================================
+   10. TRÈS PETITS ÉCRANS (≤ 380 px)
+   ============================================================================= */
+@media (max-width: 380px) {
+  .contenu { padding-left: 13px !important; padding-right: 13px !important; }
+  .onglets, .barre-onglets, .onglets-secondaires {
+    margin-left: -13px; margin-right: -13px;
+    padding-left: 13px; padding-right: 13px;
+  }
+  .entete-page h1 { font-size: 1.32rem !important; }
+  .ard-mob-pied a { font-size: 0.62rem; }
+}
+
+/* =============================================================================
+   11. PAYSAGE COURT
+   Sur un téléphone couché, la hauteur devient la ressource rare : la barre
+   inférieure mangerait un quart de l'écran.
+   ============================================================================= */
+@media (max-width: 900px) and (max-height: 460px) and (orientation: landscape) {
+  .ard-mob-pied { display: none !important; }
+  body { padding-bottom: 12px !important; }
+  .ard-di-bouton { bottom: 14px !important; }
+}
+
+/* =============================================================================
+   12. MOUVEMENT RÉDUIT
+   ============================================================================= */
+@media (prefers-reduced-motion: reduce) {
+  .barre-laterale, .ard-mob-voile, .ard-mob-pied,
+  .ard-mob-bouton span, .modale {
+    transition: none !important;
+    animation: none !important;
+  }
+}

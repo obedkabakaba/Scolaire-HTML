@@ -256,6 +256,11 @@
     if (!liste || document.getElementById('ard-di-nav')) return;
     var li = document.createElement('li');
     li.id = 'ard-di-nav';
+    /* Le rail réduit de `ui.js` masque toute entrée qui n'est pas une page
+       épinglée. Cette entrée-ci n'est pas une page du tout : ce drapeau la
+       fait sortir du tri, et elle reste visible dans le menu quel que soit
+       l'état des épingles. Voir la note dans `reduireRail()`. */
+    li.dataset.permanent = 'oui';
     var lien = document.createElement('a');
     lien.className = 'nav-item';
     lien.href = '#';
@@ -276,10 +281,16 @@
 
     lien.addEventListener('click', function (e) {
       e.preventDefault();
+      e.stopPropagation();
       ouvrirDepuisMenu();
     });
     li.appendChild(lien);
     liste.appendChild(li);
+
+    /* Point d'entrée nommé : la coque mobile (`mobile.js`) déplace cette
+       entrée dans le tiroir, et une future barre d'outils pourrait vouloir
+       ouvrir le guide sans avoir à simuler un clic sur un lien. */
+    window.ArdoiseAide = { ouvrir: ouvrirDepuisMenu };
   })();
 
   /**

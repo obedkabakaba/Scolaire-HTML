@@ -80,10 +80,51 @@ python3 audit.py        # titres uniques, H1, hiérarchie, JSON-LD, liens morts
 `build.py` reconstruit tout : pages, `sitemap.xml`, `robots.txt`, redirections,
 `site.css` recomposé. Le contenu rédactionnel vit dans les fichiers
 `contenu_*.py`, l'ossature commune (head, navigation, pied de page) dans
-`base.py`. Ajouter une page dédiée = une entrée dans `MENU` de `base.py` et une
-fonction dans un fichier de contenu ; le menu, le pied de page, le plan du site
-et `robots.txt` se mettent à jour seuls.
+`base.py`, et les illustrations dans `illustrations.py`. Ajouter une page
+dédiée = une entrée dans `MENU` de `base.py` et une fonction dans un fichier
+de contenu ; le menu, le pied de page, le plan du site et `robots.txt` se
+mettent à jour seuls.
+
+`build.py` est rejouable : relancé avec sa propre sortie comme `SOURCE_HTML`,
+il produit un résultat identique. Il tronque les blocs qu'il a lui-même
+ajoutés à `site.css` (repérés par leur titre) avant de les recoller. Sans
+cela, la feuille grossissait d'un bloc entier à chaque reconstruction.
 
 `audit.py` doit sortir sans erreur avant toute mise en ligne. Il vérifie
 notamment qu'aucun lien interne ne pointe vers une page inexistante — l'erreur
 la plus facile à commettre en passant de 3 à 18 pages.
+
+## Les illustrations
+
+`generateur/illustrations.py` contient neuf dessins SVG écrits à la main :
+deux sur l'accueil, un dans le hero de chaque page de domaine. Ils sont posés
+directement dans le HTML — aucune requête réseau, environ 1,4 ko par page.
+
+Ils n'ont **pas** de couleurs en dur. Le trait suit `currentColor` et les
+accents lisent `var(--accent)`, ce qui leur permet de basculer entre le mode
+clair et le mode sombre sans qu'il existe deux versions à maintenir. Une image
+matricielle aurait exigé deux fichiers par dessin.
+
+Pour ajouter une illustration : une entrée dans `DESSINS`, puis
+`illustration=("clé", "libellé")` passé à `hero()`. Le libellé part dans
+`aria-label` ; il doit rester court, le dessin étant décoratif.
+
+Neuf pages sur dix-huit n'en portent aucune, volontairement : tarifs,
+comparatif, les quatre pages de services, sécurité, FAQ et contact sont déjà
+structurés par des prix, des tableaux ou des questions.
+
+## Les états vides de l'application
+
+`ui.js` pose `data-ecran` sur `<html>` d'après le nom du fichier ; `ui.css`
+s'en sert pour changer `--illustration-vide` écran par écran. « Aucune classe
+créée » et « aucun mouvement de caisse » n'ont donc plus le même pictogramme,
+sans qu'aucune des 38 pages n'ait été modifiée.
+
+Deux points de vigilance :
+
+  · le bloc qui pose l'attribut est placé **en tête** de `ui.js`. Une exception
+    levée plus haut dans le fichier arrêterait tout ce qui suit — le fichier
+    documente déjà ce risque pour la réparation de `#message-flash` ;
+  · `super-admin.html` charge `ui.css` sans `ui.js` : il garde donc le dessin
+    par défaut. C'est le bon comportement, et il ne concerne pas les écoles.
+

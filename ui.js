@@ -53,6 +53,40 @@
      3. Squelettes de chargement à la place des lignes « Chargement… »
    ========================================================================== */
 
+/* =============================================================================
+   ÉCRAN COURANT — étiquette lue par ui.css
+
+   POURQUOI UNE LIGNE DE JAVASCRIPT PLUTÔT QUE 30 MODIFICATIONS HTML
+   -----------------------------------------------------------------
+   Les états vides méritent une illustration qui parle de ce qui manque : une
+   liste de classes vide n'appelle pas le même dessin qu'une caisse sans
+   mouvement. Mais ces états sont écrits en dur dans les `innerHTML` de chaque
+   écran, parfois dix fois par fichier ; y ajouter un attribut à la main serait
+   des centaines de retouches, dont la moitié seraient oubliées à la première
+   évolution.
+
+   L'écran, lui, se déduit de l'URL. On le pose une fois sur <html>, et
+   `ui.css` fait le reste en changeant `--illustration-vide` selon la valeur.
+   Aucun fichier de page n'est touché, et un écran ajouté demain hérite
+   simplement du dessin par défaut.
+
+   POURQUOI CE BLOC EST LE PREMIER DU FICHIER
+   ------------------------------------------
+   L'avertissement en tête de `ui.js` vaut ici : une exception levée dans
+   un bloc arrête le fichier, et tout ce qui suit ne s'exécute jamais.
+   Placé en dernier, cet appel dépendait donc de la bonne santé des 1600
+   lignes qui le précédaient — et il ne partait pas, dès qu'un écran
+   n'exposait pas un conteneur attendu plus haut. En tête, il ne dépend de
+   rien : deux lignes qui lisent l'URL et posent un attribut.
+   ============================================================================= */
+
+(function () {
+  'use strict';
+  var fichier = window.location.pathname.split('/').pop() || 'dashboard-directeur.html';
+  document.documentElement.setAttribute('data-ecran', fichier.replace(/\.html$/, ''));
+})();
+
+
 (function () {
   'use strict';
 

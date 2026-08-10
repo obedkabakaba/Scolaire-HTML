@@ -134,6 +134,128 @@ html[data-theme="nuit"] .etat-vide::before,
 html[data-theme="nuit"] .etat-vide-tableau::before { opacity: 0.42; }
 
 /* ==========================================================================
+   2 bis. L'illustration d'état vide dit CE QUI manque
+
+   LE DÉFAUT QU'ON CORRIGE
+   -----------------------
+   Jusqu'ici les 38 écrans partageaient la même feuille de classeur. « Aucune
+   classe créée », « aucun mouvement de caisse » et « aucun message » se
+   ressemblaient donc trait pour trait, alors que ce sont trois situations
+   sans rapport et trois gestes différents à faire ensuite. Un dessin qui
+   n'informe pas est un dessin de trop.
+
+   COMMENT
+   -------
+   `ui.js` pose `data-ecran` sur <html> ; chaque écran redéfinit
+   `--illustration-vide`. Rien à changer dans les pages, et le mécanisme du
+   masque reste celui d'origine : une seule couleur, celle du thème actif.
+
+   CE QU'ON N'A PAS FAIT
+   ---------------------
+   Ces dessins restent des pictogrammes de 84 px à 30 % d'opacité, pas des
+   scènes. Un écran de travail n'est pas une page d'accueil : le directeur qui
+   ouvre sa comptabilité veut voir ses chiffres, pas une illustration.
+   ========================================================================== */
+
+/* Classes, cours, emploi du temps : la grille de l'établissement. */
+html[data-ecran="classes"],
+html[data-ecran="cours"],
+html[data-ecran="cours-classe-titulaire"],
+html[data-ecran="emploi-du-temps"] {
+  --illustration-vide: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='9' y='14' width='46' height='36' rx='4'/%3E%3Cpath d='M9 26h46M25 26v24M41 26v24'/%3E%3C/svg%3E");
+}
+
+/* Élèves, inscriptions, utilisateurs : des personnes. */
+html[data-ecran="eleves"],
+html[data-ecran="inscriptions"],
+html[data-ecran="utilisateurs"] {
+  --illustration-vide: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='24' cy='24' r='9'/%3E%3Cpath d='M9 47a15 15 0 0 1 30 0'/%3E%3Ccircle cx='45' cy='27' r='7'/%3E%3Cpath d='M38 47a12 12 0 0 1 19-9'/%3E%3C/svg%3E");
+}
+
+/* Notes : la grille de cotes. */
+html[data-ecran="notes"] {
+  --illustration-vide: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='11' y='10' width='42' height='44' rx='4'/%3E%3Cpath d='M11 22h42M39 22v32'/%3E%3Cpath d='M19 32h13M19 42h9'/%3E%3C/svg%3E");
+}
+
+/* Bulletins et archives : la feuille remise à la famille. */
+html[data-ecran="bulletins"],
+html[data-ecran="bulletin-annuel"],
+html[data-ecran="generateur-modeles"],
+html[data-ecran="archives"] {
+  --illustration-vide: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 8h22l12 12v36H15z'/%3E%3Cpath d='M37 8v12h12'/%3E%3Cpath d='M23 32h18M23 40h18M23 48h10'/%3E%3C/svg%3E");
+}
+
+/* Présences et discipline : l'appel coché. */
+html[data-ecran="presences"],
+html[data-ecran="discipline"] {
+  --illustration-vide: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='13' y='9' width='38' height='46' rx='4'/%3E%3Cpath d='M25 5h14v8H25z'/%3E%3Cpath d='M21 28l4 4 8-8M21 42l4 4 8-8'/%3E%3Cpath d='M39 28h6M39 42h6'/%3E%3C/svg%3E");
+}
+
+/* Argent : frais scolaires, comptabilité. Un billet, pas une pièce : c'est
+   sous cette forme que l'écrasante majorité du minerval est encaissée. */
+html[data-ecran="frais-scolaires"],
+html[data-ecran="comptabilite"] {
+  --illustration-vide: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='6' y='19' width='52' height='28' rx='3'/%3E%3Cpath d='M32 27v12M35 30a4 4 0 0 0-3-2h-1a3 3 0 0 0 0 6h2a3 3 0 0 1 0 6h-1a4 4 0 0 1-3-2'/%3E%3Cpath d='M14 27v12M50 27v12'/%3E%3C/svg%3E");
+}
+
+/* Calendrier et année scolaire. */
+html[data-ecran="calendrier"],
+html[data-ecran="annee-scolaire"] {
+  --illustration-vide: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='10' y='14' width='44' height='40' rx='4'/%3E%3Cpath d='M10 26h44'/%3E%3Cpath d='M21 10v8M43 10v8'/%3E%3Cpath d='M21 38h6M37 38h6'/%3E%3C/svg%3E");
+}
+
+/* Messages. */
+html[data-ecran="messages"] {
+  --illustration-vide: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='8' y='15' width='48' height='34' rx='5'/%3E%3Cpath d='M8 20l24 16 24-16'/%3E%3C/svg%3E");
+}
+
+/* Rapports et pilotage : des chiffres, pas une page. */
+html[data-ecran="rapports"],
+html[data-ecran="dashboard-directeur"] {
+  --illustration-vide: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10 52h44'/%3E%3Cpath d='M19 52V34M31 52V20M43 52V28'/%3E%3C/svg%3E");
+}
+
+/* Journal d'activité : la trace horodatée. */
+html[data-ecran="journal"] {
+  --illustration-vide: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='32' cy='32' r='22'/%3E%3Cpath d='M32 18v14l10 6'/%3E%3C/svg%3E");
+}
+
+/* Concours et orientation : le classement. */
+html[data-ecran="orientation"],
+html[data-ecran="repechage"] {
+  --illustration-vide: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M13 52h38'/%3E%3Crect x='13' y='30' width='11' height='22'/%3E%3Crect x='26' y='18' width='11' height='34'/%3E%3Crect x='39' y='38' width='11' height='14'/%3E%3C/svg%3E");
+}
+
+/* ==========================================================================
+   2 ter. Pas d'illustration pendant le chargement ni dans les panneaux serrés
+
+   Le `::before` s'appliquait indistinctement à tout `.etat-vide`, y compris
+   au « Chargement… » qui porte un spinner et aux lignes de trois mots des
+   colonnes latérales du tableau de bord. Résultat : un dessin de 84 px
+   apparaissait une demi-seconde puis disparaissait, et les encarts étroits
+   du dashboard étaient occupés à 80 % par une icône décorative.
+
+   `:has()` permet de distinguer l'attente du vide réel. Sur un navigateur
+   qui l'ignore, la règle est simplement sautée et le comportement reste
+   celui d'avant — aucune régression possible.
+   ========================================================================== */
+
+.etat-vide:has(.spinner)::before,
+.etat-vide-tableau:has(.spinner)::before {
+  display: none;
+}
+
+/* Les espaces de travail des enseignants et le tableau de bord affichent
+   leurs états vides dans des colonnes de 300 px. L'illustration y est
+   réduite de moitié : elle situe, sans meubler. */
+html[data-ecran="dashboard-directeur"] .etat-vide::before,
+html[data-ecran="espace-secretaire"] .etat-vide::before {
+  height: 40px;
+  margin-bottom: 10px;
+  opacity: 0.22;
+}
+
+/* ==========================================================================
    3. Chargement : le squelette remplace l'attente vide
    ========================================================================== */
 .squelette {

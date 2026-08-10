@@ -1,0 +1,55 @@
+
+/* =============================================================================
+   DEMANDES D'ACCOMPAGNEMENT — à ajouter à la fin de super-admin-styles.css
+   -----------------------------------------------------------------------------
+   Cinq classes, toutes nouvelles : la feuille existante n'avait ni barre de
+   filtres, ni encart d'alerte, ni fiche en deux colonnes. Elles réutilisent
+   les variables déjà déclarées en tête de fichier — aucune couleur n'est
+   écrite en dur.
+   ============================================================================= */
+
+/* Barre de filtres : pastilles de statut à gauche, recherche qui prend le
+   reste. En dessous de 640 px, la recherche passe seule sur sa ligne (règle
+   déjà présente pour .sa-champ-recherche). */
+.sa-filtres {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  margin-bottom: 16px;
+}
+
+/* Encart d'alerte en tête de liste. Le liseré ocre à gauche est le même
+   vocabulaire que les cartes d'avertissement du reste de l'espace. */
+.sa-encart {
+  padding: 12px 16px; margin-bottom: 16px;
+  background: color-mix(in srgb, var(--ocre) 8%, transparent);
+  border-left: 3px solid var(--ocre);
+  border-radius: 8px;
+  font-size: 0.9rem; line-height: 1.5;
+}
+.sa-encart strong { color: var(--ocre-dark); }
+
+/* Étiquette de service souhaité. Plus discrète qu'un badge de statut :
+   elle informe, elle ne signale pas. */
+.sa-etiquette {
+  display: inline-block; padding: 2px 9px; margin: 2px 2px 2px 0;
+  background: color-mix(in srgb, var(--encre) 10%, transparent);
+  color: var(--encre);
+  border-radius: 999px; font-size: 0.78rem; white-space: nowrap;
+}
+
+/* Fiche d'une demande, en libellé / valeur. Une seule colonne sous 560 px :
+   des coordonnées coupées en deux ne se lisent pas. */
+.sa-fiche { display: grid; gap: 12px; }
+.sa-fiche-ligne {
+  display: grid; grid-template-columns: 180px 1fr; gap: 14px; align-items: start;
+  font-size: 0.9rem; line-height: 1.55;
+}
+.sa-fiche-ligne > .sa-muet { padding-top: 1px; }
+.sa-fiche-ligne a { color: var(--encre); text-decoration: underline; text-underline-offset: 2px; }
+@media (max-width: 560px) {
+  .sa-fiche-ligne { grid-template-columns: 1fr; gap: 2px; }
+}
+
+.sa-separateur {
+  border: 0; border-top: 1px solid var(--bordure);
+  margin: 20px 0 16px;
+}

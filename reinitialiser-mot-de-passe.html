@@ -66,6 +66,29 @@
     color: var(--texte-att);
     font-family: var(--police-corps); font-size: 0.85rem; text-decoration: underline;
   }
+
+  /* -------------------------------------------------------------------------
+     ÉCRAN ÉTROIT
+
+     La carte utilise déjà `max-width` + `width: 100%` : elle ne DÉBORDE pas,
+     et la mesure dans Chromium à 360px le confirme. Ce qui manquait est plus
+     discret et tout aussi gênant : un `padding: 36px` conserve, sur un
+     téléphone, 72px de marge intérieure prise sur 360px de large. Il reste
+     288px pour un champ de mot de passe et sa liste d'exigences — le texte
+     se casse mot à mot et la page paraît mal faite.
+
+     On rend donc les marges à la lecture, sans toucher à la structure.
+     ------------------------------------------------------------------------- */
+  @media screen and (max-width: 480px) {
+    body { padding: 12px; }
+    .carte { padding: 22px 18px; border-radius: 10px; }
+    .exigences { font-size: 0.85rem; }
+    /* 44px : cible tactile minimale confortable. Un bouton de validation
+       raté au premier essai sur un écran de connexion est une frustration
+       immédiate, et la personne n'a aucun moyen de savoir si c'est elle ou
+       la page. */
+    button, .bouton { min-height: 44px; }
+  }
 </style>
 <link rel="stylesheet" href="mobile.css" />
 </head>

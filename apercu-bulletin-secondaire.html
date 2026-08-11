@@ -164,8 +164,68 @@
   .ee-signature .ee-libelle { display: block; }
   .ee-espace-sceau { height: 16mm; }
 
-  </style><link rel="stylesheet" href="mobile.css" />
+  
+  /* =========================================================================
+     APERÇU SUR ÉCRAN ÉTROIT — SANS TOUCHER À L'IMPRESSION
+     =========================================================================
+
+     LE PROBLÈME
+     -----------
+     Ce document est dessiné en millimètres pour une feuille A4. Sur un
+     téléphone de 360px, la page sortait du cadre : le directeur devait
+     défiler latéralement pour lire une ligne, et les tableaux de cotes
+     étaient inutilisables.
+
+     CE QU'IL NE FALLAIT SURTOUT PAS FAIRE
+     -------------------------------------
+     Rendre la mise en page « fluide » — passer les millimètres en
+     pourcentages, laisser les colonnes se réorganiser. Le bulletin est un
+     DOCUMENT OFFICIEL de la RDC : sa géométrie est imposée, et un bulletin
+     dont les colonnes ont bougé n'est pas conforme. Le PDF généré et la
+     sortie papier doivent rester au millimètre.
+
+     LA SOLUTION RETENUE
+     -------------------
+     La page garde sa largeur A4 EXACTE et n'est que MISE À L'ÉCHELLE, comme
+     une photo qu'on réduit. Aucune proportion ne change ; seul le facteur de
+     zoom varie. C'est visuellement identique au papier, en plus petit.
+
+     `transform: scale()` ne réserve pas d'espace : sans compensation, un
+     grand vide resterait sous le bulletin. `--facteur` sert donc deux fois —
+     à l'échelle, et à la hauteur du conteneur.
+
+     TOUT CECI EST SOUS `@media screen`. À l'impression, aucune de ces règles
+     ne s'applique : `@page` et les dimensions en millimètres reprennent la
+     main intégralement, et le PDF est bit pour bit celui d'avant.
+     ========================================================================= */
+  @media screen and (max-width: 820px) {
+    body { background: #f3f4f6; padding: 8px 0; }
+    .cadre-apercu-mobile {
+      /* 210mm = largeur A4. Le facteur ramène la page dans le viewport,
+         plafonné à 1 pour ne jamais AGRANDIR sur une tablette large. */
+      --facteur: min(1, calc((100vw - 16px) / 210mm));
+      width: 100%;
+      overflow: hidden;
+    }
+    .cadre-apercu-mobile > .page {
+      width: 210mm;
+      transform: scale(var(--facteur));
+      transform-origin: top left;
+      background: #fff;
+      box-shadow: 0 1px 6px rgba(0,0,0,.15);
+      margin-bottom: 10px;
+    }
+  }
+
+  /* Ceinture et bretelles : si le navigateur ne comprend pas `min()` dans une
+     variable — cas de quelques WebView anciennes encore répandues en RDC — la
+     page reste au moins défilable horizontalement plutôt que coupée. */
+  @media screen and (max-width: 820px) {
+    .cadre-apercu-mobile { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  }
+</style><link rel="stylesheet" href="mobile.css" />
 </head><body>
+<div class="cadre-apercu-mobile">
     <div class="page">
       <div class="entete">
         <div class="drapeau"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 90" preserveAspectRatio="xMidYMid meet">
@@ -518,6 +578,7 @@
     
   </div>
     </div><!-- Didacticiel d'installation : bouton d'aide contextuel, partagé par toutes les pages. -->
+</div>
 <script src="didacticiel.js" data-ecran="Apercu bulletin secondaire"></script>
 <script src="mobile.js"></script>
 </body></html>

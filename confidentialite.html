@@ -44,6 +44,31 @@
 
   footer { border-top: 1px solid var(--bordure); padding: 26px 0 46px 0; color: var(--texte-att); font-size: 0.86rem; }
   footer a { color: var(--encre); }
+
+  /* -------------------------------------------------------------------------
+     ÉCRAN ÉTROIT
+
+     Page de texte long. Deux réglages seulement, et ils suffisent :
+
+       · les marges latérales (22px de chaque côté) reprennent 12 % de la
+         largeur utile d'un téléphone ;
+       · le TABLEAU est le vrai point de rupture. Les tableaux de cette page
+         décrivent les données collectées et leur durée de conservation : ils
+         ont trois colonnes qui ne se réduisent pas. On leur donne un
+         conteneur de défilement horizontal plutôt que d'essayer de les
+         empiler — un tableau réorganisé en cartes perd la correspondance
+         colonne/valeur, qui est précisément ce qu'on vient y lire.
+     ------------------------------------------------------------------------- */
+  @media screen and (max-width: 640px) {
+    .contenant { padding: 0 14px; }
+    header { padding: 30px 0 26px 0; }
+    main { padding: 26px 0 48px 0; }
+    .encadre { padding: 14px 16px; }
+
+    /* Le tableau garde sa géométrie et devient défilable dans son cadre. */
+    table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch;
+            white-space: nowrap; }
+  }
 </style>
 <link rel="stylesheet" href="mobile.css" />
 </head>

@@ -7,12 +7,71 @@ import re
 import sys
 from html.parser import HTMLParser
 
-SORTIE = os.environ.get("SORTIE", "/home/claude/work/site")
+# Le dossier de sortie n'a PAS de valeur par défaut plausible, et c'est
+# volontaire. La version précédente proposait "/home/claude/work/site" : un
+# chemin propre à une machine, qui n'existe nulle part ailleurs. `os.walk` sur
+# un dossier inexistant ne lève pas — il ne produit simplement aucun résultat.
+# Le script parcourait donc zéro page et concluait :
+#
+#     0 fichiers HTML analysés
+#     Aucun problème détecté.
+#
+# avec un code de sortie 0. Un site jamais construit se présentait comme un
+# site parfaitement conforme.
+SORTIE = os.environ.get("SORTIE")
 # Le chemin du dépôt est lu dans l'environnement, comme dans build.py :
 # la valeur en dur pointait vers un répertoire propre à la machine sur
 # laquelle le script a été écrit, et audit.py s'arrêtait ailleurs.
 SOURCE_HTML = os.environ.get("SOURCE_HTML",
                              os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import audit_commun as commun   # noqa: E402
+
+
+def _resoudre_sortie():
+    """Détermine le dossier du site GÉNÉRÉ, ou explique quoi faire.
+
+    Ce dossier n'existe qu'APRÈS `build.py`. Auditer avant génération n'a aucun
+    sens : il faut le dire, pas répondre « aucun problème ».
+    """
+    if len(sys.argv) > 1 and not sys.argv[1].startswith('-'):
+        candidat = sys.argv[1]
+    elif SORTIE:
+        candidat = SORTIE
+    else:
+        # Emplacement conventionnel produit par build.py, à côté du générateur.
+        candidat = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'site')
+
+    if not os.path.isdir(candidat):
+        raise commun.EchecTechnique(
+            f"Dossier du site généré introuvable :\n"
+            f"    {candidat}\n\n"
+            f"  Ce dossier n'existe qu'APRÈS la génération. Construisez le site\n"
+            f"  d'abord, puis relancez l'audit :\n\n"
+            f"      python3 generateur/build.py\n"
+            f"      python3 generateur/audit.py <dossier-de-sortie>\n\n"
+            f"  Ou indiquez le dossier : SORTIE=/chemin/vers/site python3 generateur/audit.py")
+
+    pages_trouvees = [os.path.join(r, f)
+                      for r, _, fs in os.walk(candidat)
+                      for f in fs if f.endswith('.html')]
+    if not pages_trouvees:
+        raise commun.EchecTechnique(
+            f"Aucune page HTML dans {candidat}.\n\n"
+            f"  L'audit n'a RIEN analysé. « 0 fichiers HTML analysés — aucun\n"
+            f"  problème détecté » n'est pas un succès : c'est un site qui n'a\n"
+            f"  pas été construit, ou un dossier de sortie erroné.")
+    return candidat
+
+
+try:
+    SORTIE = _resoudre_sortie()
+except commun.EchecTechnique as _e:
+    print("ÉCHEC TECHNIQUE — l'audit du générateur n'a pas pu s'exécuter.\n")
+    for _l in str(_e).split('\n'):
+        print('  ' + _l)
+    sys.exit(2)
 
 pages = []
 for racine, _, fichiers in os.walk(SORTIE):
@@ -143,10 +202,19 @@ for source, href in liens_internes:
 for source, href in sorted(manquants):
     problemes.append(f"lien mort : {source} → {href}")
 
-print(f"{len(pages)} fichiers HTML analysés")
-if problemes:
-    print(f"\n{len(problemes)} problème(s) :")
-    for p in problemes:
-        print("  · " + p)
-    sys.exit(1)
-print("Aucun problème détecté.")
+_rapport = commun.Rapport('generateur', depot='Scolaire-HTML-main', chemin_depot=SOURCE_HTML)
+_rapport.fichier_examine(len(pages))
+for _p in problemes:
+    _rapport.constat(SORTIE, 'site_genere', _p, gravite='importante')
+_rapport.message = f"{len(pages)} page(s) générée(s) analysée(s) dans {SORTIE}."
+_rapport.afficher()
+
+# Publication et JSON facultatifs, comme les autres audits.
+if '--json' in sys.argv:
+    _cible = sys.argv[sys.argv.index('--json') + 1]
+    _rapport.ecrire_json(_cible)
+    print(f"\nRapport JSON : {_cible}")
+if '--publier' in sys.argv:
+    commun.publier(_rapport.en_dict())
+
+sys.exit(_rapport.code_sortie)

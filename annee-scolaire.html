@@ -166,6 +166,7 @@
   <!-- Session partagée : renouvellement du jeton et rejeu des requêtes
        expirées. Doit rester AVANT les autres scripts. -->
   <script src="session.js"></script>
+  <script src="remontee-erreurs.js"></script>
   <script src="acces-presences.js"></script>
   <script src="filtre-cycle.js"></script>
 <link rel="stylesheet" href="mobile.css" />
@@ -422,7 +423,29 @@ document.addEventListener('DOMContentLoaded', function() {
   async function chargerAnnees() {
     const r = await appelApi('/annees-scolaires');
     if (!r || !r.ok) return;
-    anneesCache = await r.json();
+
+    /* GARDE DE FORME.
+       `/annees-scolaires` renvoie un tableau (`res.json(result.rows)`). Mais
+       si un jour la réponse change — pagination enveloppée, objet d'erreur
+       servi en 200 par un intermédiaire — `anneesCache.map` lève, et la
+       page reste À MOITIÉ DESSINÉE, sans message. C'est la panne la plus
+       coûteuse à diagnostiquer par téléphone : la personne dit « ça ne
+       s'affiche pas », et il n'y a rien à l'écran pour l'orienter.
+
+       Deux lignes évitent ça : on retombe sur une liste vide, l'écran affiche
+       « aucune année », et l'incident part au centre de bugs plutôt que de
+       disparaître dans la console. */
+    const donnees = await r.json().catch(() => null);
+    if (!Array.isArray(donnees)) {
+      if (window.ArdoiseErreurs) {
+        window.ArdoiseErreurs.signaler(
+          new Error('/annees-scolaires : réponse inattendue (tableau attendu)'),
+          { ou: 'chargement des années scolaires', gravite: 'haute' });
+      }
+      anneesCache = [];
+    } else {
+      anneesCache = donnees;
+    }
 
     const conteneur = document.getElementById('liste-annees');
     conteneur.innerHTML = anneesCache.length === 0

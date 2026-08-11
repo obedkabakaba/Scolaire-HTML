@@ -1344,6 +1344,59 @@
     }
   }
 
+  /**
+   * Bannière de repli quand `ArdoiseUI` n'est pas disponible.
+   *
+   * Volontairement sans dépendance : elle doit fonctionner précisément là où
+   * les scripts partagés ne sont pas chargés. Styles en ligne pour la même
+   * raison — la feuille de styles applicative peut être absente.
+   */
+  function afficherBanniereOffre(message) {
+    try {
+      var existante = document.getElementById('ard-banniere-offre');
+      if (existante) existante.remove();
+
+      var boite = document.createElement('div');
+      boite.id = 'ard-banniere-offre';
+      boite.setAttribute('role', 'status');
+      boite.setAttribute('aria-live', 'polite');
+      boite.style.cssText = [
+        'position:fixed', 'left:50%', 'transform:translateX(-50%)',
+        'top:16px', 'z-index:99999',
+        'max-width:min(520px, calc(100vw - 32px))',
+        'box-sizing:border-box', 'padding:14px 44px 14px 16px',
+        'background:#1f2937', 'color:#f9fafb',
+        'border-radius:10px', 'border:1px solid #374151',
+        'box-shadow:0 8px 24px rgba(0,0,0,.28)',
+        'font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif'
+      ].join(';');
+      boite.textContent = message;
+
+      var fermer = document.createElement('button');
+      fermer.type = 'button';
+      fermer.setAttribute('aria-label', 'Fermer');
+      fermer.textContent = '\u00D7';
+      fermer.style.cssText = [
+        'position:absolute', 'top:8px', 'right:10px',
+        'background:none', 'border:0', 'color:inherit',
+        'font-size:22px', 'line-height:1', 'cursor:pointer',
+        // 44px : la cible tactile minimale recommandée. Une croix de 16px sur
+        // un téléphone se rate une fois sur deux.
+        'min-width:32px', 'min-height:32px'
+      ].join(';');
+      fermer.onclick = function () { boite.remove(); };
+      boite.appendChild(fermer);
+
+      document.body.appendChild(boite);
+      // Douze secondes : le temps de lire deux phrases sans que la bannière
+      // reste indéfiniment devant l'écran.
+      setTimeout(function () { if (boite.parentNode) boite.remove(); }, 12000);
+    } catch (e) {
+      // Dernier recours seulement : mieux vaut une console qu'un silence.
+      if (window.console) console.warn('[offre]', message);
+    }
+  }
+
   function demarrer() {
     try { injecterIcones(); } catch (e) { /* la navigation reste utilisable sans icônes */ }
     try { installerMenuMobile(); } catch (e) { /* la barre reste affichée sans bouton */ }
@@ -1823,7 +1876,19 @@
               if (ok) window.location.href = 'parametres.html#details-abonnement';
             });
           } else {
-            alert(message);
+            /* REPLI SANS `alert()`.
+               `alert()` bloque le fil d'exécution, ignore le thème sombre, et
+               plusieurs navigateurs mobiles la suppriment purement et
+               simplement quand elle n'est pas déclenchée par un geste de
+               l'utilisateur — ce qui est exactement le cas ici, puisqu'on
+               réagit à une réponse HTTP. Sur ces navigateurs, le directeur ne
+               voyait RIEN : ni modale, ni message, juste un écran qui ne
+               réagit pas.
+
+               `ArdoiseUI` n'est pas chargé sur quelques pages hors session
+               (connexion, mot de passe oublié). On y injecte une bannière
+               autonome, sans dépendance, qui se ferme d'elle-même. */
+            afficherBanniereOffre(message);
           }
         }).catch(function () { /* corps illisible : on n'invente pas de message */ });
 

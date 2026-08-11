@@ -27,24 +27,62 @@ USAGE
     python3 audit-mobile.py                 # toutes les pages du dossier
     python3 audit-mobile.py . eleves.html   # une page précise
 """
-import http.server, socketserver, threading, functools, sys, os, json
-from playwright.sync_api import sync_playwright
+import http.server, socketserver, threading, functools, sys, os, json, socket, re
 
-RACINE = sys.argv[1] if len(sys.argv) > 1 else 'work/Scolaire-HTML-main'
-PORT = 8099
+import audit_commun as commun
+
+# ---------------------------------------------------------------------------
+# PLAYWRIGHT : ABSENCE = ÉCHEC TECHNIQUE, PAS PLANTAGE
+#
+# `from playwright.sync_api import sync_playwright` en tête de fichier faisait
+# tomber le script sur un `ModuleNotFoundError` avant même d'avoir affiché
+# quoi que ce soit — une trace d'appels Python pour dire « il manque un
+# paquet ». Et Chromium peut manquer alors que le paquet est installé : le
+# message d'erreur de Playwright est alors encore moins parlant.
+#
+# L'import est donc différé, et les deux cas produisent une consigne
+# d'installation exacte, avec un code de sortie 2 qui les distingue d'un
+# dépôt sain.
+# ---------------------------------------------------------------------------
+def _charger_playwright():
+    try:
+        from playwright.sync_api import sync_playwright
+        return sync_playwright
+    except ImportError:
+        raise commun.EchecTechnique(
+            "Playwright n'est pas installé.\n\n"
+            "  Cet audit mesure le débordement dans un vrai navigateur : il ne\n"
+            "  peut pas s'exécuter sans lui, et NE DOIT PAS être considéré comme\n"
+            "  réussi en son absence.\n\n"
+            "      pip install playwright\n"
+            "      python3 -m playwright install chromium\n\n"
+            "  En intégration continue, ajoutez ces deux lignes avant l'audit.")
+
+
+def _port_libre(prefere=8099):
+    """Trouve un port disponible.
+
+    Le port 8099 était figé. Deux audits lancés en parallèle — ou un serveur
+    laissé ouvert par une exécution précédente interrompue — produisaient un
+    `OSError: Address already in use` que rien ne rattrapait. On essaie le port
+    habituel, puis on laisse le système en choisir un.
+    """
+    for candidat in (prefere, prefere + 1, prefere + 2):
+        with socket.socket() as s:
+            try:
+                s.bind(('', candidat))
+                return candidat
+            except OSError:
+                continue
+    with socket.socket() as s:
+        s.bind(('', 0))
+        return s.getsockname()[1]
+
+
 LARGEUR, HAUTEUR = 360, 780
 
 class Silencieux(http.server.SimpleHTTPRequestHandler):
     def log_message(self, *a): pass
-
-Handler = functools.partial(Silencieux, directory=RACINE)
-socketserver.TCPServer.allow_reuse_address = True
-srv = socketserver.TCPServer(("", PORT), Handler)
-threading.Thread(target=srv.serve_forever, daemon=True).start()
-
-PAGES = [f for f in sorted(os.listdir(RACINE)) if f.endswith('.html')]
-if len(sys.argv) > 2:
-    PAGES = sys.argv[2:]
 
 SESSION = """
 localStorage.setItem('ardoise_access_token','faux-jeton-de-test');
@@ -114,29 +152,155 @@ SONDE = """
 }
 """
 
-resultats = {}
-with sync_playwright() as p:
-    nav = p.chromium.launch()
-    ctx = nav.new_context(viewport={'width': LARGEUR, 'height': HAUTEUR},
-                          device_scale_factor=2, is_mobile=True, has_touch=True,
-                          user_agent='Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148')
-    ctx.add_init_script(SESSION)
-    # Le backend n'existe pas ici : on répond du vide plutôt que d'attendre.
-    ctx.route('**://scolaire-saas-backend.onrender.com/**',
-              lambda route: route.fulfill(status=200, content_type='application/json', body='{}'))
-    ctx.route('**://fonts.googleapis.com/**', lambda route: route.abort())
-    ctx.route('**://fonts.gstatic.com/**', lambda route: route.abort())
-    page = ctx.new_page()
-    page.on('pageerror', lambda e: resultats.setdefault('__erreurs__', []).append(str(e)[:120]))
+def auditer_mobile(racine, pages_demandees=None):
+    sync_playwright = _charger_playwright()
 
-    for f in PAGES:
+    pages = pages_demandees or [f for f in sorted(os.listdir(racine)) if f.endswith('.html')]
+    if not pages:
+        raise commun.EchecTechnique(
+            f"Aucune page HTML dans {racine}.\n"
+            f"  Vérifiez le chemin du dépôt frontend.")
+
+    port = _port_libre()
+    Handler = functools.partial(Silencieux, directory=racine)
+    socketserver.TCPServer.allow_reuse_address = True
+    srv = socketserver.TCPServer(("", port), Handler)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+
+    rapport = commun.Rapport('mobile', depot='Scolaire-HTML-main', chemin_depot=racine)
+    erreurs_page = []
+
+    try:
         try:
-            page.goto(f'http://localhost:{PORT}/{f}', wait_until='networkidle', timeout=20000)
-            page.wait_for_timeout(700)
-            resultats[f] = page.evaluate(SONDE)
+            contexte_pw = sync_playwright().start()
         except Exception as e:
-            resultats[f] = {'erreur': str(e)[:150]}
-    nav.close()
-srv.shutdown()
+            raise commun.EchecTechnique(
+                f"Playwright n'a pas pu démarrer : {e}\n\n"
+                f"      python3 -m playwright install chromium")
+        try:
+            try:
+                nav = contexte_pw.chromium.launch()
+            except Exception as e:
+                raise commun.EchecTechnique(
+                    f"Chromium est absent ou ne démarre pas : {str(e)[:200]}\n\n"
+                    f"  Le paquet Playwright est installé mais pas son navigateur :\n"
+                    f"      python3 -m playwright install chromium\n\n"
+                    f"  Sur une machine sans interface, ajoutez aussi les bibliothèques :\n"
+                    f"      python3 -m playwright install-deps chromium")
 
-print(json.dumps(resultats, ensure_ascii=False, indent=1))
+            ctx = nav.new_context(
+                viewport={'width': LARGEUR, 'height': HAUTEUR},
+                device_scale_factor=2, is_mobile=True, has_touch=True,
+                user_agent='Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) '
+                           'AppleWebKit/605.1.15 Mobile/15E148')
+            ctx.add_init_script(SESSION)
+            # Le backend n'existe pas ici : on répond du vide plutôt que d'attendre.
+            def _repondre(route):
+                """Réponse simulée du backend, de FORME plausible.
+
+                Le simulateur répondait `{}` à tout. Les nombreuses pages qui
+                font `(await r.json()).map(...)` sur une route de LISTE
+                plantaient donc systématiquement — et l'audit signalait une
+                « erreur JavaScript critique » sur du code parfaitement sain.
+                Un audit qui invente des défauts fait perdre plus de temps
+                qu'il n'en fait gagner.
+
+                Heuristique volontairement simple : une route sans identifiant
+                terminal renvoie une liste, sinon un objet. Elle ne prétend pas
+                être exacte — elle évite juste de fabriquer de faux positifs.
+                Les vraies incohérences de contrat sont l'affaire de
+                `audit-contrat-api.py`, qui lit les deux dépôts.
+                """
+                chemin = route.request.url.split('?')[0].rstrip('/')
+                dernier = chemin.split('/')[-1]
+                ressemble_a_un_id = bool(re.match(r'^[0-9a-f-]{8,}$|^\d+$', dernier))
+                corps = '{}' if ressemble_a_un_id else '[]'
+                route.fulfill(status=200, content_type='application/json', body=corps)
+
+            ctx.route('**://scolaire-saas-backend.onrender.com/**', _repondre)
+            ctx.route('**://fonts.googleapis.com/**', lambda route: route.abort())
+            ctx.route('**://fonts.gstatic.com/**', lambda route: route.abort())
+
+            page = ctx.new_page()
+            page.on('pageerror', lambda e: erreurs_page.append(str(e)[:160]))
+
+            for f in pages:
+                rapport.fichier_examine()
+                erreurs_page.clear()
+                try:
+                    page.goto(f'http://localhost:{port}/{f}',
+                              wait_until='networkidle', timeout=20000)
+                    page.wait_for_timeout(700)
+                    mesure = page.evaluate(SONDE)
+                except Exception as e:
+                    # Une page qui ne se charge pas EST une anomalie produit,
+                    # pas un incident d'outillage : le serveur local répond, le
+                    # navigateur fonctionne, c'est la page qui échoue.
+                    rapport.constat(f, 'page_incharcheable',
+                                    f"chargement impossible : {str(e)[:150]}",
+                                    gravite='critique')
+                    continue
+
+                # --- Débordement horizontal : LA mesure qui compte -----------
+                if mesure['scrollW'] > mesure['vw'] + 1:
+                    depassement = mesure['scrollW'] - mesure['vw']
+                    coupables = ', '.join(
+                        f"{d['tag']}{('.' + d['cls'].split()[0]) if d['cls'] else ''}"
+                        f"{('#' + d['id']) if d['id'] else ''} ({d['largeur']}px)"
+                        for d in mesure['debord'][:3]) or 'élément non identifié'
+                    rapport.constat(
+                        f, 'debordement_horizontal',
+                        f"déborde de {depassement}px à {LARGEUR}px de large — {coupables}",
+                        gravite='importante' if depassement < 60 else 'critique',
+                        contexte={'scrollW': mesure['scrollW'], 'debord': mesure['debord'][:5]})
+
+                # --- Cibles tactiles trop petites ---------------------------
+                if mesure.get('ciblesPetites', 0) > 0:
+                    rapport.constat(
+                        f, 'cible_tactile_petite',
+                        f"{mesure['ciblesPetites']} cible(s) de moins de 36px de haut",
+                        gravite='moyenne')
+
+                if mesure.get('petitTexte', 0) > 0:
+                    rapport.constat(
+                        f, 'texte_illisible',
+                        f"{mesure['petitTexte']} élément(s) sous 11,5px",
+                        gravite='faible')
+
+                for err in erreurs_page[:3]:
+                    rapport.constat(f, 'erreur_javascript',
+                                    f"exception au chargement : {err}", gravite='critique')
+
+            nav.close()
+        finally:
+            contexte_pw.stop()
+    finally:
+        srv.shutdown()
+
+    rapport.message = f"{len(pages)} page(s) mesurée(s) à {LARGEUR}px dans Chromium."
+    return rapport
+
+
+def main():
+    p = commun.analyseur(__doc__, besoin_frontend=True)
+    p.add_argument('pages', nargs='*', help='Pages précises (par défaut : toutes)')
+    args = p.parse_args()
+
+    positionnels = list(args.pages)
+    racine = args.frontend
+    if not racine and positionnels and os.path.isdir(positionnels[0]):
+        racine, positionnels = positionnels[0], positionnels[1:]
+    racine = commun.trouver_depot('frontend', racine, 'ARDOISE_FRONTEND')
+
+    return commun.executer(lambda: auditer_mobile(racine, positionnels or None), args)
+
+
+if __name__ == '__main__':
+    try:
+        sys.exit(main())
+    except commun.EchecTechnique as e:
+        print("ÉCHEC TECHNIQUE — l'audit mobile n'a pas pu s'exécuter.\n")
+        for ligne in str(e).split('\n'):
+            print('  ' + ligne)
+        print("\nCe n'est PAS un rapport de conformité : aucune page n'a été mesurée.")
+        sys.exit(2)

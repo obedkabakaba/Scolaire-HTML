@@ -43,8 +43,22 @@ import os
 import re
 import sys
 
-RACINE_FRONT = os.path.dirname(os.path.abspath(__file__))
-RACINE_BACK = os.path.join(os.path.dirname(RACINE_FRONT), 'scolaire-saas-backend-main')
+import audit_commun as commun
+
+# Renseignés par `main()` à partir de --backend / --frontend / des variables
+# d'environnement / de la détection. JAMAIS calculés au chargement du module :
+# la version précédente posait
+#
+#     RACINE_BACK = os.path.join(os.path.dirname(RACINE_FRONT),
+#                                'scolaire-saas-backend-main')
+#
+# c'est-à-dire « le backend est forcément le dossier frère, et il porte
+# forcément ce nom-là ». Dès que les deux dépôts étaient clonés séparément —
+# ce qui est le cas dans l'intégration continue, où chacun arrive dans son
+# propre espace de travail — le script s'arrêtait sur un `FileNotFoundError`
+# brut désignant `server.js`, sans dire lequel ni pourquoi.
+RACINE_FRONT = None
+RACINE_BACK = None
 
 # Fonctions fournies par les scripts partagés, jamais définies dans une page.
 PARTAGEES = {
@@ -69,6 +83,12 @@ NATIF = {
 def prefixes_montes():
     """Lit server.js : quel fichier de routes est monté sous quel préfixe."""
     chemin = os.path.join(RACINE_BACK, 'server.js')
+    if not os.path.exists(chemin):
+        raise commun.EchecTechnique(
+            f"server.js est introuvable dans le dépôt backend :\n"
+            f"    {chemin}\n"
+            f"  Sans lui, aucune route n'est connue et TOUS les appels du frontend\n"
+            f"  seraient signalés comme sans route — un rapport catastrophiste et faux.")
     source = open(chemin, encoding='utf-8').read()
     # Retire les commentaires de ligne : `// app.use('/vieux', ...)` ne compte pas.
     source = re.sub(r'^\s*//.*$', '', source, flags=re.M)
@@ -139,16 +159,61 @@ def appels_frontend(source):
     la valeur — c'est tout ce qu'une analyse statique peut affirmer.
     """
     trouves = []
-    for m in re.finditer(r"appelApi\(\s*([`'\"])([^`'\"]*)\1", source):
+    for m in re.finditer(r"appelApi\(\s*([`\'\"])([^`\'\"]*)\1", source):
         brut = m.group(2)
         chemin = brut.split('?')[0]
         chemin = re.sub(r'\$\{[^}]*\}', 'X', chemin)
         if not chemin.startswith('/'):
             continue
-        # Méthode : cherchée dans les ~200 caractères qui suivent l'appel.
+
+        """MÉTHODE HTTP — POURQUOI LA FENÊTRE NE SUFFIT PAS
+
+        La version précédente cherchait `method: 'X'` dans les 220 caractères
+        SUIVANT l'appel. Elle rate la forme la plus répandue du dépôt :
+
+            options = { method: 'POST', body: formulaire };   // ← 10 lignes plus haut
+            ...
+            const r = await appelApi('/discipline/reglement/importer', options);
+
+        Ici la méthode est DÉCLARÉE AVANT, dans une variable passée en second
+        argument. La fenêtre ne voit rien, le script suppose GET, et signale
+        une méthode incorrecte sur un appel parfaitement correct.
+
+        Un audit qui produit de faux positifs est plus nuisible qu'un audit
+        absent : on apprend à ignorer ses sorties, et le jour où il a raison
+        personne ne lit. On regarde donc aussi EN AMONT, et on remonte à la
+        variable quand le second argument en est une.
+        """
         suite = source[m.end():m.end() + 220]
-        meth = re.search(r"method\s*:\s*'(\w+)'", suite)
-        trouves.append((meth.group(1).upper() if meth else 'GET', chemin.rstrip('/') or '/', brut))
+        methode = None
+
+        meth = re.search(r"method\s*:\s*['\"](\w+)['\"]", suite)
+        if meth:
+            methode = meth.group(1)
+        else:
+            # Second argument : `appelApi('/x', options)` → nom de la variable.
+            arg = re.match(r"\s*,\s*([A-Za-z_$][\w$]*)\s*\)", suite)
+            if arg:
+                # Dernière affectation de cette variable AVANT l'appel.
+                amont = source[:m.start()]
+                affectations = re.findall(
+                    r"%s\s*=\s*\{[^{}]*method\s*:\s*['\"](\w+)['\"]" % re.escape(arg.group(1)),
+                    amont)
+                if affectations:
+                    methode = affectations[-1]
+
+        trouves.append((
+            (methode or 'GET').upper(),
+            chemin.rstrip('/') or '/',
+            brut,
+            # Vrai si le chemin se termine par une interpolation COLLÉE au
+            # dernier segment (`/eleves/export${params}`). Dans ce cas, la
+            # partie interpolée est presque toujours une chaîne de requête
+            # (`?classeId=…`), pas un segment de plus — et `/eleves/export`
+            # est le chemin réellement appelé. Sans cette distinction,
+            # `/eleves/exportX` allait se faire capturer par `DELETE /eleves/:id`
+            # et le script annonçait une méthode incorrecte inexistante.
+            bool(re.search(r'[^/]\$\{[^}]*\}$', brut))))
     return trouves
 
 
@@ -156,31 +221,67 @@ def appels_frontend(source):
 # 3. Contrôles
 # --------------------------------------------------------------------------
 
-def main():
+def auditer_contrat():
     motifs = chemins_backend()
+    rapport = commun.Rapport('contrat_api', depot='Scolaire-HTML-main',
+                             chemin_depot=RACINE_FRONT)
     regex_par_methode = {}
     for methode, motif in motifs:
         regex_par_methode.setdefault(methode, []).append((en_regex(motif), motif))
 
-    anomalies = []
     pages = sorted(glob.glob(os.path.join(RACINE_FRONT, '*.html'))
                    + glob.glob(os.path.join(RACINE_FRONT, '*.js')))
 
+    # Les extraits de documentation portent l'extension `.js` sans être du
+    # code monté : les analyser produirait des anomalies sur des lignes qui ne
+    # s'exécutent nulle part.
+    pages = [p for p in pages if '.EXTRAIT.' not in os.path.basename(p)]
+
     for page in pages:
         nom = os.path.basename(page)
+        rapport.fichier_examine()
         source = open(page, encoding='utf-8').read()
         locales = []
 
         # ---- 1. Appels API sans route correspondante ----
-        for methode, chemin, brut in appels_frontend(source):
-            candidats = regex_par_methode.get(methode, [])
-            if any(rx.match(chemin.replace('X', 'aaa')) for rx, _ in candidats):
+        #
+        # LE REPLI « TOUTES MÉTHODES » A ÉTÉ SUPPRIMÉ, ET C'ÉTAIT LE PLUS
+        # DANGEREUX DES TROIS DÉFAUTS DE CE SCRIPT.
+        #
+        # L'ancienne version, ne trouvant pas `POST /eleves/import`, réessayait
+        # sur TOUTES les méthodes ; elle tombait sur `GET /eleves/import`,
+        # concluait que le contrat était honoré et se taisait. Or une route GET
+        # ne satisfait pas un appel POST : le serveur répond 404, la page reste
+        # muette, et l'audit vient d'affirmer que tout va bien.
+        #
+        # Un chemin qui existe avec une AUTRE méthode est désormais signalé
+        # comme tel — avec sa propre gravité, parce que le diagnostic n'est pas
+        # le même. « La route n'existe pas » se corrige côté backend ; « la
+        # route existe en GET » se corrige presque toujours côté frontend, et
+        # savoir lequel des deux fait gagner l'essentiel du temps.
+        for methode, chemin, brut, suffixe_colle in appels_frontend(source):
+            # Deux formes à essayer quand l'interpolation est collée : avec, et
+            # sans — c'est-à-dire en la traitant comme une chaîne de requête.
+            cibles = [chemin.replace('X', 'aaa')]
+            if suffixe_colle:
+                cibles.append(re.sub(r'X$', '', chemin).rstrip('/') or '/')
+
+            def existe(meth):
+                return any(rx.match(c) for c in cibles
+                           for rx, _ in regex_par_methode.get(meth, []))
+
+            if existe(methode):
                 continue
-            # La méthode peut être mal devinée ; on retente toutes méthodes.
-            toutes = [c for liste in regex_par_methode.values() for c in liste]
-            if any(rx.match(chemin.replace('X', 'aaa')) for rx, _ in toutes):
-                continue
-            locales.append(f"appel API sans route : {methode} {brut}")
+
+            autres = sorted(m for m in regex_par_methode if m != methode and existe(m))
+            if autres:
+                locales.append(
+                    (f"méthode HTTP incorrecte : le frontend appelle {methode} {brut}, "
+                     f"le backend n'expose ce chemin qu'en {', '.join(autres)}",
+                     'importante', 'methode_http_incorrecte'))
+            else:
+                locales.append((f"appel API sans route : {methode} {brut}",
+                                'critique', 'appel_api_sans_route'))
 
         # ---- 2. Gestionnaires du balisage sans fonction définie ----
         js = '\n'.join(re.findall(
@@ -197,7 +298,8 @@ def main():
                 fonction = appel.group(1)
                 if fonction in definies or fonction in PARTAGEES or fonction in NATIF:
                     continue
-                locales.append(f"gestionnaire sans fonction : on…=\"{fonction}(…)\"")
+                locales.append((f"gestionnaire sans fonction : on…=\"{fonction}(…)\"",
+                                'importante', 'gestionnaire_sans_fonction'))
 
         # ---- 3. Boîtes de dialogue natives ----
         #
@@ -221,25 +323,39 @@ def main():
         propre = blanchir(source)
         for m in re.finditer(r'(?<![.\w])(confirm|prompt|alert)\s*\(', propre):
             ligne = propre[:m.start()].count('\n') + 1
-            locales.append(f"boîte native {m.group(1)}() ligne {ligne}")
+            locales.append((f"boîte native {m.group(1)}()", 'moyenne',
+                            'boite_native', ligne))
 
-        if locales:
-            anomalies.append((nom, sorted(set(locales))))
+        for constat in sorted(set(locales)):
+            message, gravite, code = constat[0], constat[1], constat[2]
+            ligne = constat[3] if len(constat) > 3 else None
+            rapport.constat(nom, code, message, gravite=gravite, ligne=ligne)
 
-    if not anomalies:
-        print(f"{len(pages)} fichiers : contrat frontend/backend cohérent.")
-        return 0
+    rapport.message = f"{len(motifs)} routes backend recensées."
+    return rapport
 
-    total = 0
-    for nom, liste in anomalies:
-        print(f"\n{nom}")
-        for a in liste:
-            total += 1
-            print(f"   - {a}")
-    print(f"\n{len(pages)} fichiers analysés, {total} anomalie(s).")
-    print(f"({len(motifs)} routes backend recensées)")
-    return 1
+
+def main():
+    global RACINE_FRONT, RACINE_BACK
+
+    args = commun.analyseur(
+        __doc__, besoin_frontend=True, besoin_backend=True).parse_args()
+
+    RACINE_FRONT = commun.trouver_depot('frontend', args.frontend, 'ARDOISE_FRONTEND')
+    RACINE_BACK = commun.trouver_depot('backend', args.backend, 'ARDOISE_BACKEND')
+
+    return commun.executer(lambda: auditer_contrat(), args)
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except commun.EchecTechnique as e:
+        # Attrapé ICI aussi : la résolution des chemins a lieu AVANT
+        # `commun.executer`, qui ne peut donc pas la couvrir. Sans ce bloc, une
+        # variable d'environnement mal renseignée redonnerait la trace d'appels
+        # illisible que ce correctif avait justement pour objet de supprimer.
+        print("ÉCHEC TECHNIQUE — l'audit n'a pas pu s'exécuter.\n")
+        for ligne in str(e).split('\n'):
+            print('  ' + ligne)
+        sys.exit(2)

@@ -18,7 +18,23 @@ littéral. Il n'est signalé que lorsqu'il est lisible sans ambiguïté.
 """
 import re, sys, glob, os
 
-RACINE = '/home/claude/work/back/scolaire-saas-backend-main'
+import audit_commun as commun
+
+# LE CHEMIN EN DUR A ÉTÉ SUPPRIMÉ.
+#
+# Ce fichier portait :
+#
+#     RACINE = '/home/claude/work/back/scolaire-saas-backend-main'
+#
+# c'est-à-dire l'arborescence de la machine sur laquelle il a été écrit. Chez
+# quiconque d'autre, `glob.glob` sur un dossier inexistant ne LÈVE PAS : il
+# renvoie une liste vide. Le script parcourait donc zéro fichier, examinait
+# zéro requête, et imprimait fièrement « 0 requêtes examinées, 0 en défaut. »
+# avec un code de sortie 0.
+#
+# C'est la forme la plus coûteuse de faux succès : elle est indiscernable d'un
+# audit réussi, et elle se produit sur TOUTES les machines sauf une.
+RACINE = None
 
 
 def extraire_requetes(source):
@@ -129,26 +145,74 @@ def controler_parametres(sql, suite):
     return []
 
 
-def main():
-    cibles = sys.argv[1:] or (
-        glob.glob(os.path.join(RACINE, 'controllers', '*.js'))
-        + glob.glob(os.path.join(RACINE, 'utils', '*.js'))
-    )
-    total, fautives = 0, 0
+def auditer_sql(cibles):
+    rapport = commun.Rapport('sql', depot='scolaire-saas-backend-main', chemin_depot=RACINE)
+
+    total = 0
     for chemin in sorted(cibles):
-        source = open(chemin, encoding='utf-8').read()
+        try:
+            source = open(chemin, encoding='utf-8').read()
+        except OSError as e:
+            raise commun.EchecTechnique(f"Lecture impossible de {chemin} : {e}")
+
         for ligne, sql, suite in extraire_requetes(source):
             total += 1
-            anomalies = controler(sql) + controler_parametres(sql, suite)
-            if anomalies:
-                fautives += 1
-                print(f"\n{os.path.relpath(chemin, RACINE)}:{ligne}")
-                for a in anomalies:
-                    print(f"    ✗ {a}")
-                print('   ', ' '.join(sql.split())[:110], '…')
-    print(f"\n{total} requêtes examinées, {fautives} en défaut.")
-    return 1 if fautives else 0
+            for a in controler(sql) + controler_parametres(sql, suite):
+                rapport.constat(
+                    os.path.relpath(chemin, RACINE), 'sql_incorrect', a,
+                    gravite='critique', ligne=ligne,
+                    contexte={'extrait': ' '.join(sql.split())[:200]})
+
+    """ZÉRO REQUÊTE EXAMINÉE = AUDIT NON EXÉCUTÉ.
+
+    Le compteur de fichiers du rapport est alimenté avec le nombre de REQUÊTES,
+    pas de fichiers : c'est la bonne unité ici. Un dépôt dont on aurait lu
+    cinquante fichiers sans y trouver une seule requête SQL signale tout autant
+    un problème d'outillage — mauvais dossier, mauvaise extension — qu'un
+    dossier vide. Dans les deux cas, l'audit n'a rien vérifié.
+    """
+    rapport.fichier_examine(total)
+    if total == 0:
+        rapport.echec_technique(
+            f"Aucune requête SQL trouvée dans {RACINE}.\n"
+            f"  L'audit n'a donc RIEN vérifié — ce n'est pas un dépôt sain,\n"
+            f"  c'est un audit qui n'a pas tourné. Vérifiez le chemin fourni :\n"
+            f"  les requêtes sont attendues dans controllers/ et utils/.")
+    else:
+        rapport.message = f"{total} requête(s) SQL examinée(s)."
+    return rapport
+
+
+def main():
+    global RACINE
+
+    p = commun.analyseur(__doc__, besoin_backend=True)
+    p.add_argument('fichiers', nargs='*',
+                   help='Fichiers à examiner (par défaut : controllers/ et utils/ du backend)')
+    args = p.parse_args()
+
+    # Compatibilité : le premier argument positionnel peut être le dépôt
+    # lui-même, comme le documentait l'ancien mode d'emploi
+    # (`python3 audit-sql.py <chemin-backend>`).
+    positionnels = list(args.fichiers)
+    backend = args.backend
+    if not backend and len(positionnels) == 1 and os.path.isdir(positionnels[0]):
+        backend, positionnels = positionnels[0], []
+
+    RACINE = commun.trouver_depot('backend', backend, 'ARDOISE_BACKEND')
+
+    cibles = positionnels or (
+        glob.glob(os.path.join(RACINE, 'controllers', '*.js'))
+        + glob.glob(os.path.join(RACINE, 'utils', '*.js')))
+
+    return commun.executer(lambda: auditer_sql(cibles), args)
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except commun.EchecTechnique as e:
+        print("ÉCHEC TECHNIQUE — l'audit n'a pas pu s'exécuter.\n")
+        for ligne in str(e).split('\n'):
+            print('  ' + ligne)
+        sys.exit(2)

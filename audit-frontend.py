@@ -19,6 +19,8 @@ Sortie  : liste des problèmes, code de retour 1 s'il y en a.
 """
 
 import glob
+
+import audit_commun as commun
 import os
 import re
 import sys
@@ -146,28 +148,55 @@ def auditer(fichier):
     return problemes
 
 
-def main():
-    racine = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+def auditer_frontend(racine):
+    rapport = commun.Rapport('frontend', depot='Scolaire-HTML-main', chemin_depot=racine)
+
     pages = sorted(glob.glob(os.path.join(racine, '*.html')))
     if not pages:
-        pages = sorted(glob.glob('*.html'))
+        rapport.echec_technique(
+            f"Aucune page HTML dans {racine}.\n"
+            f"  L'audit n'a rien examiné. Vérifiez le chemin : les pages sont\n"
+            f"  attendues à la RACINE du dépôt Scolaire-HTML-main.")
+        return rapport
 
-    total = 0
     for page in pages:
-        problemes = auditer(page)
-        if problemes:
-            total += len(problemes)
-            print(f"\n{os.path.basename(page)}")
-            for p in problemes:
-                print(f"   - {p}")
+        rapport.fichier_examine()
+        for probleme in auditer(page):
+            rapport.constat(os.path.basename(page), 'incoherence_page', probleme,
+                            gravite='importante')
+    return rapport
 
-    print()
-    if total == 0:
-        print(f"{len(pages)} pages auditées : aucun problème détecté.")
-        return 0
-    print(f"{len(pages)} pages auditées : {total} problème(s) détecté(s).")
-    return 1
+
+def main():
+    """LE CHEMIN DE TRAVAIL ÉTAIT FAUX, ET LE REPLI LE MASQUAIT.
+
+    La version précédente calculait :
+
+        racine = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+    Deux `dirname` depuis un fichier situé À LA RACINE du dépôt : on remontait
+    donc AU-DESSUS du dépôt, là où il n'y a aucune page. Le script ne s'en
+    apercevait pas grâce à son repli `glob.glob('*.html')`, qui retombait sur
+    le dossier courant — et ne fonctionnait donc que si on le lançait depuis
+    le bon endroit, par coïncidence.
+
+    Deux conséquences : la documentation demandait `scripts/audit-frontend.py`
+    alors que le fichier est à la racine, et lancé depuis ailleurs le script
+    annonçait « 0 pages auditées : aucun problème détecté ».
+
+    Le chemin est désormais explicite, et zéro page est un échec technique.
+    """
+    p = commun.analyseur(__doc__, besoin_frontend=True)
+    args = p.parse_args()
+    racine = commun.trouver_depot('frontend', args.frontend, 'ARDOISE_FRONTEND')
+    return commun.executer(lambda: auditer_frontend(racine), args)
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except commun.EchecTechnique as e:
+        print("ÉCHEC TECHNIQUE — l'audit n'a pas pu s'exécuter.\n")
+        for ligne in str(e).split('\n'):
+            print('  ' + ligne)
+        sys.exit(2)

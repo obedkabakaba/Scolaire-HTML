@@ -65,6 +65,8 @@
 <link rel="stylesheet" href="super-admin-styles.css" />
 <!-- Styles du centre Finance : fichier additif, chargé APRÈS le principal. -->
 <link rel="stylesheet" href="super-admin-styles-finance.css" />
+<!-- Styles de la file commerciale : filtres, délai de rappel et fiche prospect. -->
+<link rel="stylesheet" href="super-admin-styles-prospects.css" />
 
 <style>
   /* ------------------------------------------------------------------
@@ -293,6 +295,8 @@
 
       <li><a href="#/utilisateurs" data-route="utilisateurs"><span class="sa-icone">👥</span> Utilisateurs</a></li>
 
+      <li><a href="#/prospects" data-route="prospects"><span class="sa-icone">🤝</span> Prospects</a></li>
+
       <li class="sa-groupe" data-groupe="explorer">
         <button type="button" class="sa-groupe-titre">
           <span class="sa-icone">🔍</span> Explorer <span class="sa-chevron">›</span>
@@ -403,6 +407,7 @@
 <script src="super-admin-vues-finance.js"></script>
 <script src="super-admin-vues-offres.js"></script>
 <script src="super-admin-vues-couts.js"></script>
+<script src="super-admin-vues-prospects.js"></script>
 
 <script>
 (function () {
@@ -423,7 +428,8 @@
   const SCRIPTS_REQUIS = [
     'super-admin-noyau.js', 'super-admin-vues-pilotage.js', 'super-admin-vues-ecoles.js',
     'super-admin-vues-explorer.js', 'super-admin-vues-systeme.js',
-    'super-admin-vues-finance.js', 'super-admin-vues-offres.js', 'super-admin-vues-couts.js'
+    'super-admin-vues-finance.js', 'super-admin-vues-offres.js', 'super-admin-vues-couts.js',
+    'super-admin-vues-prospects.js'
   ];
 
   function scriptsCharges() {
@@ -440,7 +446,8 @@
       'Ils doivent se trouver <strong>à la racine</strong> du dépôt, à côté de ' +
       'super-admin.html :<br>' +
       '<code style="font-size:.78rem;display:block;margin-top:7px;line-height:1.7">'
-      + SCRIPTS_REQUIS.join('<br>') + '<br>super-admin-styles.css</code>' +
+      + SCRIPTS_REQUIS.join('<br>')
+      + '<br>super-admin-styles.css<br>super-admin-styles-prospects.css</code>' +
       '<span style="display:block;margin-top:8px">' +
       'Le serveur n\'est pas en cause : ouvrez la console du navigateur, ' +
       'les fichiers manquants y apparaissent en 404.</span>';

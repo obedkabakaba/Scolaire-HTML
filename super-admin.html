@@ -67,6 +67,11 @@
 <link rel="stylesheet" href="super-admin-styles-finance.css" />
 <!-- Styles de la file commerciale : filtres, délai de rappel et fiche prospect. -->
 <link rel="stylesheet" href="super-admin-styles-prospects.css" />
+<!-- Styles du Control Center : scores, log explorer, matrice, copilote, palette.
+     Feuille ADDITIVE : toutes ses classes portent le préfixe `cc-` et elle
+     n'écrase aucune règle existante. Chargée en dernier pour la même raison
+     que les deux précédentes. -->
+<link rel="stylesheet" href="super-admin-control-center.css" />
 
 <style>
   /* ------------------------------------------------------------------
@@ -282,6 +287,74 @@
     <ul class="sa-menu">
       <li><a href="#/tableau-de-bord" data-route="tableau-de-bord"><span class="sa-icone">📊</span> Tableau de bord</a></li>
 
+      <!-- ===== ARDOISE CONTROL CENTER =====
+           Placé EN TÊTE, juste après le tableau de bord commercial, et pas en
+           bas avec les écrans techniques : c'est l'écran qu'on ouvre le matin.
+           Une arborescence dit ce qui compte par l'ordre autant que par les mots.
+
+           Quatre groupes plutôt qu'un seul menu de quarante entrées : Contrôle
+           (ce qui se passe), Audit (ce qui devrait être), IA (ce qu'on en
+           déduit), Système (ce qu'on peut changer). Les écrans existants —
+           Écoles, Finance, Offres, Support — ne bougent pas d'un pixel. -->
+      <li><a href="#/cc" data-route="cc"><span class="sa-icone">◎</span> Control Center</a></li>
+
+      <li class="sa-groupe" data-groupe="cc-controle">
+        <button type="button" class="sa-groupe-titre">
+          <span class="sa-icone">🛰</span> Contrôle <span class="sa-chevron">›</span>
+        </button>
+        <ul class="sa-sous-menu">
+          <li><a href="#/cc/constats" data-route="cc/constats">Écarts constatés</a></li>
+          <li><a href="#/cc/erreurs" data-route="cc/erreurs">Erreurs</a></li>
+          <li><a href="#/cc/logs" data-route="cc/logs">Journaux</a></li>
+          <li><a href="#/cc/performance" data-route="cc/performance">Performance</a></li>
+          <li><a href="#/cc/incidents" data-route="cc/incidents">Incidents</a></li>
+          <li><a href="#/cc/alertes" data-route="cc/alertes">Alertes</a></li>
+          <li><a href="#/cc/verifications" data-route="cc/verifications">Vérifications</a></li>
+        </ul>
+      </li>
+
+      <li class="sa-groupe" data-groupe="cc-audit">
+        <button type="button" class="sa-groupe-titre">
+          <span class="sa-icone">📐</span> Audit <span class="sa-chevron">›</span>
+        </button>
+        <ul class="sa-sous-menu">
+          <li><a href="#/cc/regles" data-route="cc/regles">Règles métier</a></li>
+          <li><a href="#/cc/matrice" data-route="cc/matrice">Matrice des permissions</a></li>
+          <li><a href="#/cc/roles" data-route="cc/roles">Audit par rôle</a></li>
+          <li><a href="#/cc/audits" data-route="cc/audits">Lancer les audits</a></li>
+          <li><a href="#/cc/routes" data-route="cc/routes">Carte des routes</a></li>
+        </ul>
+      </li>
+
+      <li class="sa-groupe" data-groupe="cc-ia">
+        <button type="button" class="sa-groupe-titre">
+          <span class="sa-icone">🤖</span> Intelligence <span class="sa-chevron">›</span>
+        </button>
+        <ul class="sa-sous-menu">
+          <li><a href="#/cc/copilote" data-route="cc/copilote">Copilote</a></li>
+          <li><a href="#/cc/conseil" data-route="cc/conseil">Conseil stratégique</a></li>
+          <li><a href="#/cc/cause-racine" data-route="cc/cause-racine">Cause racine</a></li>
+          <li><a href="#/cc/correctifs" data-route="cc/correctifs">Correctifs proposés</a></li>
+          <li><a href="#/cc/rapports" data-route="cc/rapports">Rapports</a></li>
+          <li><a href="#/cc/couts-ia" data-route="cc/couts-ia">Coût de l'IA</a></li>
+        </ul>
+      </li>
+
+      <li class="sa-groupe" data-groupe="cc-systeme">
+        <button type="button" class="sa-groupe-titre">
+          <span class="sa-icone">⚙️</span> Système <span class="sa-chevron">›</span>
+        </button>
+        <ul class="sa-sous-menu">
+          <li><a href="#/cc/drapeaux" data-route="cc/drapeaux">Drapeaux</a></li>
+          <li><a href="#/cc/maintenance" data-route="cc/maintenance">Maintenance</a></li>
+          <li><a href="#/cc/decisions" data-route="cc/decisions">Décisions</a></li>
+          <li><a href="#/cc/connaissance" data-route="cc/connaissance">Base de connaissance</a></li>
+          <li><a href="#/cc/dependances" data-route="cc/dependances">Dépendances</a></li>
+          <li><a href="#/cc/base" data-route="cc/base">Inspecteur de base</a></li>
+          <li><a href="#/cc/infrastructure" data-route="cc/infrastructure">Infrastructure</a></li>
+        </ul>
+      </li>
+
       <li class="sa-groupe" data-groupe="ecoles">
         <button type="button" class="sa-groupe-titre">
           <span class="sa-icone">🏫</span> Écoles <span class="sa-chevron">›</span>
@@ -408,6 +481,15 @@
 <script src="super-admin-vues-offres.js"></script>
 <script src="super-admin-vues-couts.js"></script>
 <script src="super-admin-vues-prospects.js"></script>
+<!-- Vues du Control Center. Chargées APRÈS les vues existantes : elles
+     n'enregistrent que des clés commençant par `cc/`, donc aucune ne peut
+     remplacer une vue actuelle. La palette vient en dernier, elle référence
+     les routes des quatre fichiers précédents. -->
+<script src="super-admin-vues-controle.js"></script>
+<script src="super-admin-vues-audit.js"></script>
+<script src="super-admin-vues-cc-ia.js"></script>
+<script src="super-admin-vues-cc-systeme.js"></script>
+<script src="super-admin-palette.js"></script>
 
 <script>
 (function () {
@@ -429,7 +511,9 @@
     'super-admin-noyau.js', 'super-admin-vues-pilotage.js', 'super-admin-vues-ecoles.js',
     'super-admin-vues-explorer.js', 'super-admin-vues-systeme.js',
     'super-admin-vues-finance.js', 'super-admin-vues-offres.js', 'super-admin-vues-couts.js',
-    'super-admin-vues-prospects.js'
+    'super-admin-vues-prospects.js',
+    'super-admin-vues-controle.js', 'super-admin-vues-audit.js',
+    'super-admin-vues-cc-ia.js', 'super-admin-vues-cc-systeme.js', 'super-admin-palette.js'
   ];
 
   function scriptsCharges() {

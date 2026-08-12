@@ -354,8 +354,9 @@ GROUPES = [
          "<a href=\"/services/formation/\">Voir les formules</a>.</p>"),
         ("Qu'est-ce qu'une campagne de capture&nbsp;?",
          "<p>Le travail de saisie qui transforme vos registres papier en base de "
-         "données : identité, responsable, classe, matricule, contrôle des "
-         "doublons. 0,50 $ par élève, soit 250 $ pour 500 élèves. "
+         "données : identité, responsable, classe, matricule, photographie de "
+         "chaque élève et contrôle des doublons. La prise et l'intégration des "
+         "photos sont comprises dans les 0,50 $ par élève, soit 250 $ pour 500 élèves. "
          "<a href=\"/services/campagne-de-capture/\">Voir le détail</a>.</p>"),
         ("Comment obtenir de l'aide une fois en service&nbsp;?",
          "<p>Par l'assistant d'aide dans l'écran où la question se pose, par le "

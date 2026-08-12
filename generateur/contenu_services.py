@@ -110,9 +110,10 @@ def hub():
         <div class="rythme-facturation">Comptez une semaine pour 500 élèves</div>
         <p>Nous transformons vos registres papier en base de données : identité
            complète, responsable et coordonnées, affectation en classe, matricules
-           et codes d'accès, contrôle des doublons.</p>
+           et codes d'accès, photographie de chaque élève, contrôle des doublons.</p>
         <ul>
           <li>250 $ pour 500 élèves, 600 $ pour 1 200</li>
+          <li>Prise et intégration de la photo de chaque élève incluse</li>
           <li>Liste de vérification remise à la fin</li>
           <li>Vous passez d'une armoire de fiches à une école consultable</li>
         </ul>
@@ -550,9 +551,10 @@ def capture():
          "doublons probables et les fiches incomplètes. Vous tranchez ; nous ne "
          "devinons pas.</p>"),
         ("Les photos et les actes de naissance sont-ils saisis&nbsp;?",
-         "<p>Non. La campagne couvre les données d'identité et de scolarité, pas la "
-         "photographie des élèves ni la numérisation des pièces d'état civil. Les "
-         "notes des années antérieures n'en font pas partie non plus.</p>"),
+         "<p>La photographie est comprise : nous prenons et intégrons la photo de "
+         "chaque élève dans son dossier, sans supplément au tarif de 0,50 $ par "
+         "élève. En revanche, la numérisation des pièces d'état civil et la saisie "
+         "des notes des années antérieures ne sont pas comprises.</p>"),
         ("Puis-je saisir moi-même&nbsp;?",
          "<p>Bien sûr. Ardoise accepte un import de fichier, analysé par l'IA "
          "colonne par colonne avant écriture, et la saisie manuelle reste "
@@ -611,7 +613,7 @@ def capture():
   <div class="conteneur">
     <div class="section-entete">
       <span class="eyebrow">Le déroulé</span>
-      <h2>Sept opérations, de vos registres à votre première liste d'appel</h2>
+      <h2>Huit opérations, de vos registres à votre première liste d'appel</h2>
     </div>
     <div class="grille-etapes">
       <article class="etape"><span class="num">1</span><h3>Récupération</h3>
@@ -627,10 +629,13 @@ def capture():
       <article class="etape"><span class="num">5</span><h3>Matricules et codes</h3>
         <p>Attribution des matricules et des codes d'accès permettant aux familles
            de consulter les résultats.</p></article>
-      <article class="etape"><span class="num">6</span><h3>Contrôle</h3>
+      <article class="etape"><span class="num">6</span><h3>Photographie</h3>
+        <p>Prise de la photo de chaque élève et intégration directe dans son dossier
+           Ardoise, comprise dans le tarif de 0,50 $ par élève.</p></article>
+      <article class="etape"><span class="num">7</span><h3>Contrôle</h3>
         <p>Détection des doublons, des dates impossibles et des fiches
            incomplètes.</p></article>
-      <article class="etape"><span class="num">7</span><h3>Chargement</h3>
+      <article class="etape"><span class="num">8</span><h3>Chargement</h3>
         <p>Mise en base et remise d'une liste de vérification à la direction.</p></article>
     </div>
   </div>
@@ -649,9 +654,18 @@ def capture():
         </ul>
       </article>
       <article class="carte etoffee">
+        <h3>Ce qui est compris</h3>
+        <ul class="mini-liste">
+          <li>La prise de la photographie de chaque élève</li>
+          <li>L'intégration de la photo dans son dossier Ardoise</li>
+          <li>La saisie et le contrôle des informations de l'élève</li>
+        </ul>
+        <p class="apres-liste">Tout cela est inclus dans le tarif de 0,50 $ par élève,
+           sans supplément pour la photographie.</p>
+      </article>
+      <article class="carte etoffee">
         <h3>Ce qui n'est pas compris</h3>
         <ul class="mini-liste">
-          <li>La photographie des élèves</li>
           <li>La numérisation des pièces d'état civil</li>
           <li>La saisie des notes des années antérieures</li>
         </ul>

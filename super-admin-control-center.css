@@ -1,0 +1,745 @@
+/* ==========================================================================
+   ARDOISE CONTROL CENTER — feuille additive
+   --------------------------------------------------------------------------
+   Chargée APRÈS super-admin-styles.css. Elle n'écrase aucune règle existante :
+   toutes ses classes portent le préfixe `cc-`, et les composants du panneau
+   (`sa-panneau`, `sa-tableau`, `sa-badge`…) sont RÉUTILISÉS tels quels.
+
+   Aucune couleur en dur : tout passe par les variables de theme.css, pour que
+   les six thèmes d'Ardoise s'appliquent ici comme ailleurs. Un repli est
+   fourni sur chaque variable, au cas où theme.css ne serait pas chargé — c'est
+   la précaution déjà prise par l'écran de connexion, pour la même raison.
+   ========================================================================== */
+
+/* ==========================================================================
+   1. SCORES — le bloc qu'on regarde le matin
+   ========================================================================== */
+
+.cc-scores {
+  display: grid;
+  grid-template-columns: 1.4fr repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+@media (max-width: 1100px) {
+  .cc-scores { grid-template-columns: repeat(2, 1fr); }
+  .cc-score-principal { grid-column: 1 / -1; }
+}
+@media (max-width: 560px) {
+  .cc-scores { grid-template-columns: 1fr; }
+}
+
+.cc-score {
+  position: relative;
+  background: var(--craie-2, #FFFDF8);
+  border: 1px solid var(--bordure, #E2DACA);
+  border-radius: var(--r-carte, 14px);
+  padding: 18px 18px 16px;
+  overflow: hidden;
+}
+
+/* Filet de couleur en tête : l'état se lit avant le chiffre. */
+.cc-score::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: var(--vert-ok, #4A7C59);
+}
+.cc-score.etat-attention::before { background: var(--ocre, #C08A3E); }
+.cc-score.etat-critique::before { background: var(--rouge, #B23A2E); }
+
+.cc-score-libelle {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--texte-att, #7A7466);
+  margin-bottom: 8px;
+}
+
+.cc-score-valeur {
+  font-family: var(--police-titre, "Fraunces", Georgia, serif);
+  font-size: 2.1rem;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--texte-sombre, #2B2A26);
+}
+.cc-score-valeur .cc-sur { font-size: 0.9rem; color: var(--texte-att, #7A7466); }
+
+.cc-score-principal .cc-score-valeur { font-size: 3.2rem; }
+
+.cc-score-tendance {
+  margin-top: 8px;
+  font-size: 0.78rem;
+  color: var(--texte-att, #7A7466);
+}
+.cc-score-tendance.hausse { color: var(--vert-ok, #4A7C59); }
+.cc-score-tendance.baisse { color: var(--rouge, #B23A2E); }
+
+/* Barre de niveau sous le chiffre. */
+.cc-jauge {
+  margin-top: 10px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--bordure, #E2DACA);
+  overflow: hidden;
+}
+.cc-jauge > span {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--vert-ok, #4A7C59);
+  transition: width 0.4s ease;
+}
+.cc-score.etat-attention .cc-jauge > span { background: var(--ocre, #C08A3E); }
+.cc-score.etat-critique .cc-jauge > span { background: var(--rouge, #B23A2E); }
+
+/* Le score est cliquable : il ouvre sa décomposition. Un score qu'on ne peut
+   pas expliquer ne sert qu'à décorer — l'affordance doit donc être visible. */
+.cc-score.cc-cliquable { cursor: pointer; transition: border-color 0.15s ease; }
+.cc-score.cc-cliquable:hover { border-color: var(--ocre, #C08A3E); }
+.cc-score.cc-cliquable::after {
+  content: 'Voir le détail';
+  position: absolute;
+  right: 14px; bottom: 12px;
+  font-size: 0.68rem;
+  color: var(--texte-att, #7A7466);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.cc-score.cc-cliquable:hover::after { opacity: 1; }
+
+/* ==========================================================================
+   2. PÉNALITÉS — la décomposition d'un score
+   ========================================================================== */
+
+.cc-penalite {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--bordure, #E2DACA);
+}
+.cc-penalite:last-child { border-bottom: none; }
+
+.cc-penalite-points {
+  flex: 0 0 auto;
+  min-width: 46px;
+  font-family: var(--police-mono, "IBM Plex Mono", monospace);
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--rouge, #B23A2E);
+  text-align: right;
+}
+.cc-penalite-corps { flex: 1 1 auto; min-width: 0; }
+.cc-penalite-motif { font-size: 0.88rem; line-height: 1.45; color: var(--texte-sombre, #2B2A26); }
+.cc-penalite-source {
+  margin-top: 3px;
+  font-size: 0.74rem;
+  color: var(--texte-att, #7A7466);
+  font-style: italic;
+}
+
+.cc-aucune-penalite {
+  padding: 14px;
+  font-size: 0.88rem;
+  color: var(--vert-ok, #4A7C59);
+}
+
+/* ==========================================================================
+   3. PRIORITÉS
+   ========================================================================== */
+
+.cc-paliers {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 18px;
+}
+@media (max-width: 700px) { .cc-paliers { grid-template-columns: repeat(2, 1fr); } }
+
+.cc-palier {
+  padding: 12px 14px;
+  border-radius: var(--r-bouton, 9px);
+  border: 1px solid var(--bordure, #E2DACA);
+  background: var(--craie-2, #FFFDF8);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.cc-palier:hover { border-color: var(--ocre, #C08A3E); }
+.cc-palier.actif { border-color: var(--ocre, #C08A3E); background: rgba(192, 138, 62, 0.07); }
+
+.cc-palier-nombre {
+  font-family: var(--police-titre, "Fraunces", Georgia, serif);
+  font-size: 1.6rem;
+  font-weight: 600;
+  line-height: 1;
+}
+.cc-palier-libelle {
+  margin-top: 5px;
+  font-size: 0.76rem;
+  color: var(--texte-att, #7A7466);
+  line-height: 1.35;
+}
+.cc-palier.immediat .cc-palier-nombre { color: var(--rouge, #B23A2E); }
+.cc-palier.aujourd_hui .cc-palier-nombre { color: var(--ocre, #C08A3E); }
+
+/* Une ligne de priorité, dans la liste du tableau de bord. */
+.cc-priorite {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 13px 14px;
+  border: 1px solid var(--bordure, #E2DACA);
+  border-radius: var(--r-bouton, 9px);
+  background: var(--craie-2, #FFFDF8);
+  margin-bottom: 9px;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+.cc-priorite:hover { border-color: var(--ocre, #C08A3E); }
+.cc-priorite-rang {
+  flex: 0 0 auto;
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.78rem; font-weight: 600;
+  background: var(--bordure, #E2DACA);
+  color: var(--texte-sombre, #2B2A26);
+}
+.cc-priorite.gravite-critique .cc-priorite-rang { background: var(--rouge, #B23A2E); color: #fff; }
+.cc-priorite.gravite-haute .cc-priorite-rang { background: var(--ocre, #C08A3E); color: #fff; }
+.cc-priorite-corps { flex: 1 1 auto; min-width: 0; }
+.cc-priorite-titre { font-size: 0.92rem; font-weight: 500; line-height: 1.4; }
+.cc-priorite-meta {
+  margin-top: 5px;
+  display: flex; flex-wrap: wrap; gap: 7px; align-items: center;
+  font-size: 0.75rem; color: var(--texte-att, #7A7466);
+}
+
+/* ==========================================================================
+   4. FAIT / HYPOTHÈSE — la distinction la plus importante de l'interface
+   ==========================================================================
+   Elles ne doivent JAMAIS se ressembler. Une hypothèse affichée comme un
+   constat envoie corriger le mauvais fichier.
+   ========================================================================== */
+
+.cc-confiance {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.cc-confiance.fait {
+  background: rgba(74, 124, 89, 0.12);
+  color: var(--vert-ok, #4A7C59);
+  border: 1px solid rgba(74, 124, 89, 0.3);
+}
+.cc-confiance.hypothese {
+  background: transparent;
+  color: var(--texte-att, #7A7466);
+  border: 1px dashed var(--texte-att, #7A7466);
+}
+
+/* Bloc d'avertissement d'hypothèse, sur une fiche. */
+.cc-encart-hypothese {
+  margin: 14px 0;
+  padding: 12px 14px;
+  border-left: 3px dashed var(--texte-att, #7A7466);
+  background: rgba(122, 116, 102, 0.06);
+  border-radius: 0 var(--r-bouton, 9px) var(--r-bouton, 9px) 0;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: var(--texte-att, #7A7466);
+}
+.cc-encart-fait {
+  margin: 14px 0;
+  padding: 12px 14px;
+  border-left: 3px solid var(--vert-ok, #4A7C59);
+  background: rgba(74, 124, 89, 0.06);
+  border-radius: 0 var(--r-bouton, 9px) var(--r-bouton, 9px) 0;
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+.cc-encart-danger {
+  margin: 14px 0;
+  padding: 12px 14px;
+  border-left: 3px solid var(--rouge, #B23A2E);
+  background: rgba(178, 58, 46, 0.07);
+  border-radius: 0 var(--r-bouton, 9px) var(--r-bouton, 9px) 0;
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+
+/* ==========================================================================
+   5. LOG EXPLORER
+   ========================================================================== */
+
+.cc-logs {
+  font-family: var(--police-mono, "IBM Plex Mono", monospace);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  background: var(--craie-2, #FFFDF8);
+  border: 1px solid var(--bordure, #E2DACA);
+  border-radius: var(--r-carte, 14px);
+  overflow: hidden;
+}
+
+.cc-log-ligne {
+  display: grid;
+  grid-template-columns: 130px 84px 74px 1fr;
+  gap: 10px;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--bordure, #E2DACA);
+  cursor: pointer;
+  align-items: start;
+}
+.cc-log-ligne:last-child { border-bottom: none; }
+.cc-log-ligne:hover { background: rgba(192, 138, 62, 0.06); }
+
+@media (max-width: 760px) {
+  .cc-log-ligne { grid-template-columns: 1fr; gap: 3px; }
+}
+
+.cc-log-heure { color: var(--texte-att, #7A7466); white-space: nowrap; }
+.cc-log-categorie {
+  font-weight: 600;
+  font-size: 0.7rem;
+  letter-spacing: 0.03em;
+  color: var(--texte-att, #7A7466);
+}
+.cc-log-message {
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--texte-sombre, #2B2A26);
+}
+
+.cc-log-niveau {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 3px;
+  font-size: 0.66rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  text-align: center;
+}
+.cc-log-niveau.debug { background: var(--bordure, #E2DACA); color: var(--texte-att, #7A7466); }
+.cc-log-niveau.info { background: rgba(74, 124, 89, 0.15); color: var(--vert-ok, #4A7C59); }
+.cc-log-niveau.warning { background: rgba(192, 138, 62, 0.18); color: var(--ocre-dark, #A5722F); }
+.cc-log-niveau.error { background: rgba(178, 58, 46, 0.15); color: var(--rouge, #B23A2E); }
+.cc-log-niveau.critical { background: var(--rouge, #B23A2E); color: #fff; }
+
+/* Barre de filtres, commune au Log Explorer et aux constats. */
+.cc-filtres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  align-items: flex-end;
+  margin-bottom: 16px;
+  padding: 13px 14px;
+  background: var(--craie-2, #FFFDF8);
+  border: 1px solid var(--bordure, #E2DACA);
+  border-radius: var(--r-carte, 14px);
+}
+.cc-filtre { display: flex; flex-direction: column; gap: 4px; }
+.cc-filtre > span {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--texte-att, #7A7466);
+}
+.cc-filtre-large { flex: 1 1 220px; min-width: 160px; }
+
+/* ==========================================================================
+   6. MATRICE DES PERMISSIONS
+   ========================================================================== */
+
+.cc-matrice-conteneur { overflow-x: auto; }
+
+.cc-matrice {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+.cc-matrice th, .cc-matrice td {
+  padding: 8px 10px;
+  border: 1px solid var(--bordure, #E2DACA);
+  text-align: center;
+}
+.cc-matrice th { background: var(--craie, #F6F1E7); font-weight: 600; }
+.cc-matrice th.cc-col-ressource,
+.cc-matrice td.cc-col-ressource {
+  text-align: left;
+  white-space: nowrap;
+  position: sticky;
+  left: 0;
+  background: var(--craie-2, #FFFDF8);
+  z-index: 1;
+}
+.cc-matrice th.cc-col-ressource { background: var(--craie, #F6F1E7); }
+
+/* Une case cochée : le rôle a la permission selon la matrice. */
+.cc-case-oui { color: var(--vert-ok, #4A7C59); font-weight: 600; }
+.cc-case-non { color: var(--bordure, #E2DACA); }
+
+/* Une ligne en écart avec le code. */
+.cc-matrice tr.cc-ecart td { background: rgba(178, 58, 46, 0.05); }
+.cc-matrice tr.cc-ecart td.cc-col-ressource { background: rgba(178, 58, 46, 0.08); }
+
+.cc-comparaison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 10px 0;
+}
+@media (max-width: 640px) { .cc-comparaison { grid-template-columns: 1fr; } }
+
+.cc-comparaison-bloc {
+  padding: 11px 13px;
+  border-radius: var(--r-bouton, 9px);
+  border: 1px solid var(--bordure, #E2DACA);
+  font-size: 0.84rem;
+}
+.cc-comparaison-bloc h4 {
+  margin: 0 0 7px;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--texte-att, #7A7466);
+}
+.cc-comparaison-bloc.attendu { border-left: 3px solid var(--vert-ok, #4A7C59); }
+.cc-comparaison-bloc.trouve { border-left: 3px solid var(--ocre, #C08A3E); }
+
+/* ==========================================================================
+   7. COPILOTE IA
+   ========================================================================== */
+
+.cc-copilote {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 210px);
+  min-height: 420px;
+  border: 1px solid var(--bordure, #E2DACA);
+  border-radius: var(--r-carte, 14px);
+  background: var(--craie-2, #FFFDF8);
+  overflow: hidden;
+}
+
+.cc-conversation {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.cc-message { max-width: 88%; }
+.cc-message.utilisateur { align-self: flex-end; }
+.cc-message.assistant { align-self: flex-start; max-width: 96%; }
+
+.cc-message-corps {
+  padding: 12px 15px;
+  border-radius: var(--r-carte, 14px);
+  font-size: 0.89rem;
+  line-height: 1.62;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.cc-message.utilisateur .cc-message-corps {
+  background: var(--ocre, #C08A3E);
+  color: var(--craie-2, #FFFDF8);
+  border-bottom-right-radius: 4px;
+}
+.cc-message.assistant .cc-message-corps {
+  background: var(--craie, #F6F1E7);
+  border: 1px solid var(--bordure, #E2DACA);
+  border-bottom-left-radius: 4px;
+}
+
+.cc-message-meta {
+  margin-top: 6px;
+  font-size: 0.71rem;
+  color: var(--texte-att, #7A7466);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.cc-outil-appele {
+  font-family: var(--police-mono, "IBM Plex Mono", monospace);
+  font-size: 0.68rem;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--bordure, #E2DACA);
+}
+
+.cc-saisie {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 9px;
+  padding: 13px;
+  border-top: 1px solid var(--bordure, #E2DACA);
+  background: var(--craie-2, #FFFDF8);
+}
+.cc-saisie textarea {
+  flex: 1 1 auto;
+  resize: none;
+  min-height: 44px;
+  max-height: 140px;
+  padding: 11px 13px;
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--texte-sombre, #2B2A26);
+  background: var(--craie-2, #FFFDF8);
+  border: 1.5px solid var(--bordure, #E2DACA);
+  border-radius: var(--r-bouton, 9px);
+}
+.cc-saisie textarea:focus { outline: none; border-color: var(--ocre, #C08A3E); }
+
+/* Suggestions de départ : une page vide ne dit pas ce qu'on peut demander. */
+.cc-suggestions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.cc-suggestion {
+  padding: 7px 12px;
+  border: 1px solid var(--bordure, #E2DACA);
+  border-radius: 20px;
+  background: var(--craie-2, #FFFDF8);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+.cc-suggestion:hover { border-color: var(--ocre, #C08A3E); }
+
+/* Point de chargement pendant que le modèle répond. */
+.cc-reflexion { display: inline-flex; gap: 4px; align-items: center; }
+.cc-reflexion span {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--texte-att, #7A7466);
+  animation: cc-pulse 1.2s infinite ease-in-out;
+}
+.cc-reflexion span:nth-child(2) { animation-delay: 0.18s; }
+.cc-reflexion span:nth-child(3) { animation-delay: 0.36s; }
+@keyframes cc-pulse {
+  0%, 60%, 100% { opacity: 0.25; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-3px); }
+}
+
+/* ==========================================================================
+   8. PALETTE DE COMMANDES (Ctrl/Cmd + K)
+   ========================================================================== */
+
+.cc-palette-voile {
+  position: fixed;
+  inset: 0;
+  background: rgba(43, 42, 38, 0.45);
+  backdrop-filter: blur(2px);
+  z-index: 900;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 12vh 20px 20px;
+}
+
+.cc-palette {
+  width: 100%;
+  max-width: 620px;
+  background: var(--craie-2, #FFFDF8);
+  border: 1px solid var(--bordure, #E2DACA);
+  border-radius: var(--r-carte, 14px);
+  box-shadow: 0 20px 60px rgba(43, 42, 38, 0.25);
+  overflow: hidden;
+}
+
+.cc-palette input {
+  width: 100%;
+  padding: 16px 18px;
+  font: inherit;
+  font-size: 1rem;
+  color: var(--texte-sombre, #2B2A26);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--bordure, #E2DACA);
+}
+.cc-palette input:focus { outline: none; }
+
+.cc-palette-resultats { max-height: 52vh; overflow-y: auto; }
+
+.cc-palette-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 18px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.cc-palette-item.actif { background: rgba(192, 138, 62, 0.1); }
+.cc-palette-item .cc-palette-icone { flex: 0 0 auto; width: 20px; text-align: center; }
+.cc-palette-item .cc-palette-libelle { flex: 1 1 auto; }
+.cc-palette-item .cc-palette-groupe {
+  flex: 0 0 auto;
+  font-size: 0.7rem;
+  color: var(--texte-att, #7A7466);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.cc-palette-pied {
+  padding: 9px 18px;
+  border-top: 1px solid var(--bordure, #E2DACA);
+  font-size: 0.72rem;
+  color: var(--texte-att, #7A7466);
+  display: flex;
+  gap: 14px;
+}
+.cc-touche {
+  display: inline-block;
+  padding: 1px 6px;
+  border: 1px solid var(--bordure, #E2DACA);
+  border-radius: 4px;
+  font-family: var(--police-mono, "IBM Plex Mono", monospace);
+  font-size: 0.68rem;
+}
+
+/* ==========================================================================
+   9. CHRONOLOGIE D'INCIDENT
+   ========================================================================== */
+
+.cc-timeline { position: relative; padding-left: 26px; }
+.cc-timeline::before {
+  content: '';
+  position: absolute;
+  left: 7px; top: 6px; bottom: 6px;
+  width: 2px;
+  background: var(--bordure, #E2DACA);
+}
+.cc-timeline-item { position: relative; padding-bottom: 18px; }
+.cc-timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -23px; top: 5px;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--craie-2, #FFFDF8);
+  border: 2px solid var(--ocre, #C08A3E);
+}
+.cc-timeline-item.type-ouverture::before { background: var(--ocre, #C08A3E); }
+.cc-timeline-item.type-resolution::before { border-color: var(--vert-ok, #4A7C59); background: var(--vert-ok, #4A7C59); }
+.cc-timeline-heure { font-size: 0.73rem; color: var(--texte-att, #7A7466); }
+.cc-timeline-contenu { margin-top: 3px; font-size: 0.88rem; line-height: 1.5; }
+
+/* ==========================================================================
+   10. DIVERS
+   ========================================================================== */
+
+/* Bloc de code : extraits de contrôleurs, diffs proposés, requêtes SQL. */
+.cc-code {
+  font-family: var(--police-mono, "IBM Plex Mono", monospace);
+  font-size: 0.76rem;
+  line-height: 1.55;
+  padding: 12px 14px;
+  border-radius: var(--r-bouton, 9px);
+  background: var(--craie, #F6F1E7);
+  border: 1px solid var(--bordure, #E2DACA);
+  overflow-x: auto;
+  white-space: pre;
+}
+
+/* Étiquette de règle métier. Cliquable : elle mène à l'énoncé. */
+.cc-regle {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 4px;
+  font-family: var(--police-mono, "IBM Plex Mono", monospace);
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: rgba(192, 138, 62, 0.14);
+  color: var(--ocre-dark, #A5722F);
+  text-decoration: none;
+  cursor: pointer;
+}
+.cc-regle:hover { background: rgba(192, 138, 62, 0.26); }
+
+/* Voyant d'état d'un service ou d'une vérification. */
+.cc-voyant {
+  display: inline-block;
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  margin-right: 7px;
+  vertical-align: middle;
+  background: var(--bordure, #E2DACA);
+}
+.cc-voyant.ok { background: var(--vert-ok, #4A7C59); }
+.cc-voyant.degrade { background: var(--ocre, #C08A3E); }
+.cc-voyant.echec { background: var(--rouge, #B23A2E); }
+/* `ignore` doit se distinguer de `ok` : un contrôle non exécuté n'a rien
+   prouvé, et l'afficher en vert serait le mensonge le plus dangereux du
+   dispositif. Un anneau creux dit « pas de réponse », pas « tout va bien ». */
+.cc-voyant.ignore {
+  background: transparent;
+  border: 2px solid var(--texte-att, #7A7466);
+  width: 9px; height: 9px;
+  box-sizing: border-box;
+}
+
+/* Source d'une donnée, affichée sous une carte ou un tableau. */
+.cc-source {
+  margin-top: 10px;
+  font-size: 0.73rem;
+  line-height: 1.5;
+  color: var(--texte-att, #7A7466);
+  font-style: italic;
+}
+
+/* Bandeau de maintenance active, visible sur tous les écrans. */
+.cc-bandeau-maintenance {
+  padding: 11px 16px;
+  margin-bottom: 18px;
+  border-radius: var(--r-bouton, 9px);
+  background: var(--rouge, #B23A2E);
+  color: #fff;
+  font-size: 0.88rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Grille de fiches à deux ou trois colonnes. */
+.cc-grille-3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+/* Ligne clé/valeur dense, pour les fiches techniques. */
+.cc-champ {
+  display: flex;
+  gap: 12px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--bordure, #E2DACA);
+  font-size: 0.85rem;
+}
+.cc-champ:last-child { border-bottom: none; }
+.cc-champ > dt {
+  flex: 0 0 190px;
+  color: var(--texte-att, #7A7466);
+  margin: 0;
+}
+.cc-champ > dd {
+  flex: 1 1 auto;
+  margin: 0;
+  min-width: 0;
+  word-break: break-word;
+}
+@media (max-width: 620px) {
+  .cc-champ { flex-direction: column; gap: 2px; }
+  .cc-champ > dt { flex-basis: auto; }
+}

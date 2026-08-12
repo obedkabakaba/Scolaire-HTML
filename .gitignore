@@ -1,0 +1,20 @@
+# Le dépôt n'avait aucun .gitignore. Celui-ci ne retire rien de ce qui est
+# déjà versionné — un fichier suivi le reste — il évite seulement que de
+# nouveaux artefacts s'y ajoutent par inadvertance.
+
+# Archives de sauvegarde. Deux sont déjà versionnées à la racine
+# (Scolaire-HTML-main-corrige.zip, scolaire-saas-backend-main-corrige.zip) et
+# pèsent plus de 5 Mo à elles deux. Les retirer de l'historique est une
+# décision qui appartient au propriétaire du dépôt, pas à cette livraison :
+# cette règle empêche simplement les suivantes d'arriver.
+*.zip
+
+# Dépendances, si un outil de construction est introduit un jour.
+node_modules/
+
+# Fichiers de système d'exploitation et d'éditeur
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/

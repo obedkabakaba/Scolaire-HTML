@@ -453,4 +453,7 @@ def rendre(chemin, url, titre, description, corps, actif=None,
     return url
 
 
-SORTIE = os.environ.get("SORTIE", "/home/claude/work/site")
+SORTIE = os.environ.get(
+    "SORTIE",
+    os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "_site"),
+)

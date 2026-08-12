@@ -12,7 +12,7 @@ import json
 import os
 
 SITE = "https://myardoise.com"
-DATE = "2026-08-09"
+DATE = "2026-08-12"
 
 POLICES = ("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;"
            "9..144,600;9..144,700&family=Inter:wght@400;500;600;700&"
@@ -97,8 +97,11 @@ MENU = [
             {
                 "titre": "Comprendre Ardoise",
                 "liens": [
+                    ("/guides/", "Guides de gestion scolaire",
+                     "Choisir, budgéter et réussir sa digitalisation"),
                     ("/faq/", "Questions fréquentes", "Les 25 questions posées avant de signer"),
                     ("/securite/", "Sécurité et données", "Où sont les données, qui y accède"),
+                    ("/a-propos/", "À propos d'Ardoise", "Le projet, son éditeur et ses engagements"),
                     ("/contact/", "Parler à quelqu'un", "Demander un accompagnement"),
                 ],
             },
@@ -220,7 +223,9 @@ PIED = """<footer class="pied">
       <div>
         <h2>Ressources</h2>
         <ul>
+          <li><a href="/guides/">Guides de gestion scolaire</a></li>
           <li><a href="/faq/">Questions fréquentes</a></li>
+          <li><a href="/a-propos/">À propos</a></li>
           <li><a href="/contact/">Nous contacter</a></li>
           <li><a href="/connexion.html">Se connecter</a></li>
           <li><a href="/confidentialite.html">Confidentialité</a></li>
@@ -405,6 +410,7 @@ def rendre(chemin, url, titre, description, corps, actif=None,
 <meta name="twitter:image" content="{SITE}/icone-512.png" />
 
 <link rel="icon" type="image/png" sizes="192x192" href="/icone-192.png" />
+<link rel="icon" href="/favicon.ico" sizes="any" />
 <link rel="apple-touch-icon" sizes="180x180" href="/icone-ios-180.png" />
 <link rel="manifest" href="/manifest.json" />
 
@@ -434,6 +440,10 @@ def rendre(chemin, url, titre, description, corps, actif=None,
 </body>
 </html>
 """
+    # Les fragments facultatifs (CTA, illustration, aparté) peuvent laisser
+    # une ligne composée uniquement d'espaces. Normaliser la sortie garantit
+    # un HTML stable et un `git diff --check` propre à chaque génération.
+    html = "\n".join(ligne.rstrip() for ligne in html.splitlines()) + "\n"
     dest = os.path.join(SORTIE, chemin)
     os.makedirs(os.path.dirname(dest), exist_ok=True)
     with open(dest, "w", encoding="utf-8") as f:

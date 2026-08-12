@@ -17,7 +17,7 @@
 
 /* ------------------------------------------------------------ Entête v2 */
 
-.entete .conteneur { gap: 6px; }
+.entete > .conteneur { gap: 6px; }
 
 .actions-entete { display: flex; align-items: center; gap: 8px; margin-left: auto; }
 .lien-connexion {
@@ -58,6 +58,25 @@
   padding: 16px;
   min-width: 320px;
   z-index: 60;
+}
+
+/* LA PASSERELLE INVISIBLE
+
+   Les 10 px de `top: calc(100% + 10px)` sont une respiration voulue : le
+   panneau ne doit pas coller au bouton. Mais ces 10 px sont du vide, et le vide
+   n'appartient à personne. La souris qui descend du déclencheur vers le premier
+   lien traverse cette bande, sort du groupe, déclenche `mouseleave`, et le menu
+   se referme sous le curseur. D'où l'obligation de viser vite et droit.
+
+   Ce pseudo-élément occupe la bande sans se voir. Il fait partie du sous-menu,
+   donc du groupe : la souris ne quitte plus jamais la zone. L'écart visuel
+   reste, la coupure disparaît. */
+.sous-menu::before {
+  content: '';
+  position: absolute;
+  left: 0; right: 0;
+  top: -12px;
+  height: 12px;
 }
 .sous-menu[hidden] { display: none; }
 .sm-conteneur { display: flex; gap: 26px; }
@@ -324,3 +343,34 @@ table.comparatif td a, .enveloppe-tableau a { text-decoration: underline; text-u
 
 .faq details > div a { color: var(--accent-texte); text-decoration: underline; text-underline-offset: 2px; }
 .faq details > div ul { display: grid; gap: 7px; margin-top: 10px; }
+
+/* ------------------------------------------------ Guides et contenus éditoriaux */
+
+.conteneur.etroit { max-width: 850px; }
+.meta-guide {
+  margin-bottom: 8px;
+  font-family: var(--police-data); font-size: .72rem; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--accent-texte);
+}
+.sommaire-guide {
+  max-width: 850px; margin: 0 auto 10px; padding: 22px 24px;
+  background: var(--fond-2); border: 1px solid var(--bordure);
+  border-radius: var(--r-carte);
+}
+.sommaire-guide > p {
+  margin-bottom: 10px; font-family: var(--police-data); font-size: .72rem;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--texte-att);
+}
+.sommaire-guide ol { display: grid; gap: 7px; padding-left: 20px; }
+.sommaire-guide a { color: var(--accent-texte); text-decoration: underline; text-underline-offset: 3px; }
+.article-guide .etroit > p { color: var(--texte-att); font-size: 1rem; line-height: 1.75; }
+.article-guide .etroit > p + p { margin-top: 16px; }
+.article-guide .etroit > h2 { max-width: 25ch; margin-bottom: 20px; }
+.article-guide .etroit > .liste-points { margin-top: 24px; }
+.article-guide .etroit > .liste-points + p { margin-top: 24px; }
+.article-guide a:not(.bouton) { text-decoration: underline; text-underline-offset: 3px; }
+.article-guide .carte a, .article-guide .lien-fleche { text-decoration: none; }
+.tableau-guide th, .tableau-guide td { min-width: 190px; }
+@media (max-width: 620px) {
+  .sommaire-guide { margin-inline: 16px; padding: 18px 20px; }
+}

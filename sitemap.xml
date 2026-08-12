@@ -9,10 +9,16 @@
   `lastmod` doit être mis à jour lors d'une modification réelle du
   contenu. Une date fausse est ignorée après quelques passages.
 -->
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
 
   <url>
     <loc>https://myardoise.com/</loc>
+    <image:image>
+      <image:loc>https://myardoise.com/logo-ardoise-clair.jpg</image:loc>
+      <image:title>Ardoise — logiciel de gestion scolaire</image:title>
+      <image:caption>Logo officiel d'Ardoise, plateforme de gestion scolaire pour les écoles de la RDC.</image:caption>
+    </image:image>
     <lastmod>2026-08-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>1.0</priority>

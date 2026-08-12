@@ -28,7 +28,8 @@ import contenu_divers
 import contenu_guides
 
 ICI = os.path.dirname(os.path.abspath(__file__))
-SOURCE_HTML = os.environ.get("SOURCE_HTML", "/home/claude/work/html/Scolaire-HTML-main")
+RACINE_DEPOT = os.path.dirname(ICI)
+SOURCE_HTML = os.environ.get("SOURCE_HTML", RACINE_DEPOT)
 
 
 # ------------------------------------------------------------------ Pages

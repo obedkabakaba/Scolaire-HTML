@@ -13,6 +13,7 @@ import os
 
 SITE = "https://myardoise.com"
 DATE = "2026-08-12"
+RESSOURCES_VERSION = "20260812-2"
 
 POLICES = ("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;"
            "9..144,600;9..144,700&family=Inter:wght@400;500;600;700&"
@@ -378,7 +379,8 @@ def rendre(chemin, url, titre, description, corps, actif=None,
                                 ensure_ascii=False, indent=2)
                    + "\n</script>")
 
-    js = '<script src="/catalogue.js" defer></script>\n<script src="/nav.js" defer></script>'
+    js = (f'<script src="/catalogue.js?v={RESSOURCES_VERSION}" defer></script>\n'
+          f'<script src="/nav.js?v={RESSOURCES_VERSION}" defer></script>')
     if scripts:
         js += "\n" + scripts
 
@@ -418,7 +420,7 @@ def rendre(chemin, url, titre, description, corps, actif=None,
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="preconnect" href="https://scolaire-saas-backend.onrender.com" />
 <link href="{POLICES}" rel="stylesheet" />
-<link rel="stylesheet" href="/site.css" />
+<link rel="stylesheet" href="/site.css?v={RESSOURCES_VERSION}" />
 
 {bloc_ld}
 </head>

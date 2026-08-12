@@ -495,6 +495,14 @@
         if (!racine.getAttribute('data-theme')) adapterIllustrations(evenement.matches);
       });
     }
+
+    /* La source suit aussi tout changement de thème déclenché ailleurs que
+       par ce bouton (préférence restaurée, autre commande ou futur réglage). */
+    new MutationObserver(function () {
+      var sombre = racine.getAttribute('data-theme') === 'sombre'
+        || (!racine.getAttribute('data-theme') && preferenceSysteme.matches);
+      adapterIllustrations(sombre);
+    }).observe(racine, { attributes: true, attributeFilter: ['data-theme'] });
   }
 
   /* ------------------------------------------------------------ Démarrage */

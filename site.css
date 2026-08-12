@@ -1079,7 +1079,7 @@ table.comparatif td a, .enveloppe-tableau a { text-decoration: underline; text-u
   display: block;
   width: 100%;
   aspect-ratio: 4 / 3;
-  object-fit: contain;
+  object-fit: cover;
   background: var(--fond);
 }
 

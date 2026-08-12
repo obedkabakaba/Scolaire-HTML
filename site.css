@@ -357,6 +357,29 @@ h3 { font-size: 1.18rem; letter-spacing: -0.01em; }
 @media (max-width: 1080px) { .grille-offres { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 620px)  { .grille-offres { grid-template-columns: 1fr; } }
 
+/* Offres dépubliées depuis l'espace Super Admin.
+   ---------------------------------------------------------------------------
+   `catalogue.js` masque la carte et écrit ici le nombre de cartes restantes.
+   Sans ces règles, la grille garderait ses quatre colonnes et laisserait un
+   vide à droite, à l'endroit exact de l'offre retirée.
+
+   Deux détails de mise en cascade, tous deux nécessaires :
+     · le bloc est borné à `min-width: 1081px` pour ne pas écraser les grilles
+       à deux puis une colonne des petits écrans, qu'un sélecteur plus
+       spécifique gagnerait quel que soit l'ordre des règles ;
+     · la variante `.compacte` (page d'accueil) est nommée explicitement, sa
+       propre règle à quatre colonnes étant déclarée plus bas dans la feuille. */
+@media (min-width: 1081px) {
+  .grille-offres[data-visibles="3"],
+  .grille-offres.compacte[data-visibles="3"] { grid-template-columns: repeat(3, 1fr); }
+  .grille-offres[data-visibles="2"],
+  .grille-offres.compacte[data-visibles="2"] { grid-template-columns: repeat(2, 1fr); }
+  .grille-offres[data-visibles="1"],
+  .grille-offres.compacte[data-visibles="1"] {
+    grid-template-columns: minmax(0, 380px); justify-content: center;
+  }
+}
+
 .offre {
   display: flex; flex-direction: column;
   border: 1px solid var(--bordure); border-radius: var(--r-carte);

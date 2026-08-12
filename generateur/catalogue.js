@@ -190,13 +190,145 @@
 
   function majuscule(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 
+  /* ------------------------------------------------- Offres dépubliées */
+
+  /**
+   * Retire de la page ce que le Super Admin a dépublié.
+   *
+   * POURQUOI CE N'EST PAS OPTIONNEL
+   * -------------------------------
+   * Les cartes d'offres sont écrites dans le HTML (voir l'en-tête de ce
+   * fichier). `rafraichirTarifs` en réécrivait les prix et ne faisait rien
+   * d'autre : une offre désactivée ou retirée du site disparaissait bien de
+   * l'API — donc de `/catalogue/offres` — mais sa carte restait affichée, avec
+   * son dernier prix connu et son bouton « Demander cette offre ». Depuis
+   * l'espace Super Admin, la bascule « Visible publiquement » paraissait donc
+   * sans effet : elle en avait un, personne ne pouvait le voir.
+   *
+   * Trois endroits à traiter, parce que ce sont les trois où une offre
+   * apparaît nommément : les cartes de /tarifs/ et de l'accueil, les colonnes
+   * du tableau comparatif, et la liste déroulante du formulaire de contact.
+   *
+   * PRUDENCE VOLONTAIRE : on ne retire quelque chose que si l'API a répondu ET
+   * a renvoyé au moins une offre. Une API injoignable, ou momentanément vide,
+   * ne doit pas vider la page des tarifs — c'est la seule panne qui coûterait
+   * plus cher que le bug qu'on corrige ici.
+   */
+  function appliquerDepublications(racine, offres) {
+    if (!offres || !offres.length) return;
+
+    var publies = {};
+    offres.forEach(function (o) { if (o.code) publies[o.code] = true; });
+
+    var doc = racine || document;
+    masquerCartes(doc, publies);
+    masquerColonnesComparatif(doc, publies);
+    nettoyerListeDeroulante(doc, publies);
+  }
+
+  /** Les cartes d'offre, sur /tarifs/ comme sur l'accueil. */
+  function masquerCartes(doc, publies) {
+    var grilles = [];
+
+    doc.querySelectorAll('[data-offre]').forEach(function (carte) {
+      var retiree = !publies[carte.dataset.offre];
+      // `hidden` seul ne suffit pas : la règle `.offre { display: … }` de la
+      // feuille de style l'emporte sur le style par défaut du navigateur.
+      carte.hidden = retiree;
+      carte.style.display = retiree ? 'none' : '';
+      if (retiree) carte.setAttribute('data-depubliee', 'oui');
+      else carte.removeAttribute('data-depubliee');
+
+      if (carte.parentNode && grilles.indexOf(carte.parentNode) === -1) grilles.push(carte.parentNode);
+    });
+
+    /* La grille est figée à quatre colonnes. Masquer une carte sans le dire à
+       la feuille de style laisserait les trois autres serrées à gauche, avec
+       un vide à droite exactement là où l'offre retirée se trouvait — ce qui
+       se lit comme une page cassée plutôt que comme une offre en moins. */
+    grilles.forEach(function (grille) {
+      var visibles = 0;
+      for (var i = 0; i < grille.children.length; i++) {
+        var enfant = grille.children[i];
+        if (enfant.hasAttribute('data-offre') && !enfant.hidden) visibles++;
+      }
+      grille.setAttribute('data-visibles', String(visibles));
+    });
+  }
+
+  /**
+   * Les colonnes du tableau comparatif.
+   *
+   * Le code de chaque offre se lit dans l'en-tête, qui pointe déjà vers
+   * `/tarifs/#<code>`. Aucun attribut à ajouter au HTML : la page dit déjà
+   * quelle colonne parle de quelle offre.
+   *
+   * Les lignes de groupe portent un `colspan` qui couvre tout le tableau ; il
+   * faut le réduire d'autant, sinon le titre de groupe déborde d'une cellule
+   * et décale visuellement toute la section.
+   */
+  function masquerColonnesComparatif(doc, publies) {
+    doc.querySelectorAll('table.comparatif').forEach(function (table) {
+      var entetes = table.querySelectorAll('thead th');
+      var aRetirer = [];
+
+      for (var i = 0; i < entetes.length; i++) {
+        var lien = entetes[i].querySelector('a[href*="/tarifs/#"]');
+        if (!lien) continue;
+        var code = lien.getAttribute('href').split('#')[1];
+        if (code && !publies[code]) aRetirer.push(i);
+      }
+      if (!aRetirer.length) return;
+
+      table.querySelectorAll('tr').forEach(function (ligne) {
+        var cellules = ligne.children;
+        var groupe = cellules.length === 1 && cellules[0].hasAttribute('colspan');
+
+        if (groupe) {
+          /* Le colspan d'origine est mémorisé au premier passage : le déduire
+             de la valeur courante ferait rétrécir la ligne un peu plus à
+             chaque appel, et un second rafraîchissement suffirait à décaler
+             tout le tableau. */
+          if (!cellules[0].hasAttribute('data-colspan-origine')) {
+            cellules[0].setAttribute('data-colspan-origine', cellules[0].getAttribute('colspan') || '1');
+          }
+          var origine = Number(cellules[0].getAttribute('data-colspan-origine'));
+          cellules[0].setAttribute('colspan', String(Math.max(1, origine - aRetirer.length)));
+          return;
+        }
+        aRetirer.forEach(function (index) {
+          if (cellules[index]) {
+            cellules[index].hidden = true;
+            cellules[index].style.display = 'none';
+          }
+        });
+      });
+    });
+  }
+
+  /** La liste « Offre envisagée » du formulaire de contact. */
+  function nettoyerListeDeroulante(doc, publies) {
+    var select = doc.querySelector('#offre_envisagee');
+    if (!select) return;
+
+    [].slice.call(select.options).forEach(function (option) {
+      if (!option.value || publies[option.value]) return;
+      if (option.selected) select.value = '';
+      option.parentNode.removeChild(option);
+    });
+  }
+
   /**
    * Réécrit les attributs de prix des cartes à partir de l'API, puis
    * réapplique la période affichée. Rien ne bouge si l'API n'a pas répondu.
+   *
+   * Retire aussi les offres dépubliées : un prix juste sur une offre qui n'est
+   * plus vendue reste une offre qui n'est plus vendue.
    */
   function rafraichirTarifs(racine, reappliquer) {
     return chargerOffres().then(function (donnees) {
       if (!donnees || !donnees.offres) return;
+      appliquerDepublications(racine, donnees.offres);
       (racine || document).querySelectorAll('[data-offre]').forEach(function (carte) {
         var offre = donnees.offres.find(function (o) { return o.code === carte.dataset.offre; });
         if (!offre) return;

@@ -1080,19 +1080,8 @@ table.comparatif td a, .enveloppe-tableau a { text-decoration: underline; text-u
   width: 100%;
   aspect-ratio: 4 / 3;
   object-fit: contain;
+  background: var(--fond);
 }
-
-.illus-image-claire { background: #F6F2E7; }
-.illus-image-sombre { background: #141C18; }
-.illus-image-sombre { display: none; }
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="clair"]) .illus-image-claire { display: none; }
-  :root:not([data-theme="clair"]) .illus-image-sombre { display: block; }
-}
-
-:root[data-theme="sombre"] .illus-image-claire { display: none; }
-:root[data-theme="sombre"] .illus-image-sombre { display: block; }
 
 /* ------------------------------------------------------- Hero de l'accueil */
 

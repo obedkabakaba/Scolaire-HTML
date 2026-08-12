@@ -15,15 +15,14 @@ def figure(cle, alt, classe="illus-hero"):
     prioritaire = classe == "illus-accueil"
     chargement = "eager" if prioritaire else "lazy"
     priorite = ' fetchpriority="high"' if prioritaire else ""
+    source_claire = f"{CHEMIN}/light/{cle}.webp"
+    source_sombre = f"{CHEMIN}/dark/{cle}.webp"
     return (
         f'<figure class="illus {classe} illus-{cle}">'
         '<div class="illus-cadre">'
-        f'<img class="illus-image illus-image-claire" '
-        f'src="{CHEMIN}/light/{cle}.webp" alt="{alt}" '
+        f'<img class="illus-image" src="{source_claire}" alt="{alt}" '
+        f'data-src-clair="{source_claire}" data-src-sombre="{source_sombre}" '
         f'width="800" height="800" loading="{chargement}" '
         f'decoding="async"{priorite}>'
-        f'<img class="illus-image illus-image-sombre" '
-        f'src="{CHEMIN}/dark/{cle}.webp" alt="" aria-hidden="true" '
-        f'width="800" height="800" loading="lazy" decoding="async">'
         '</div></figure>'
     )

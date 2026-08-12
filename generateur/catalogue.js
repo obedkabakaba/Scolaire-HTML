@@ -453,6 +453,13 @@
 
   /* ------------------------------------------------------ Bascule de thème */
 
+  function adapterIllustrations(sombre) {
+    document.querySelectorAll('[data-src-clair][data-src-sombre]').forEach(function (image) {
+      var source = sombre ? image.dataset.srcSombre : image.dataset.srcClair;
+      if (source && image.getAttribute('src') !== source) image.setAttribute('src', source);
+    });
+  }
+
   function brancherTheme() {
     var bouton = document.querySelector('[data-bascule-theme]');
     var racine = document.documentElement;
@@ -465,6 +472,7 @@
       var sombre = racine.getAttribute('data-theme') === 'sombre'
         || (!racine.getAttribute('data-theme')
             && global.matchMedia('(prefers-color-scheme: dark)').matches);
+      adapterIllustrations(sombre);
       bouton.textContent = sombre ? '☀' : '☾';
       bouton.setAttribute('aria-label',
         sombre ? 'Passer en mode clair' : 'Passer en mode sombre');
@@ -480,6 +488,13 @@
       etiqueter();
     });
     etiqueter();
+
+    var preferenceSysteme = global.matchMedia('(prefers-color-scheme: dark)');
+    if (preferenceSysteme.addEventListener) {
+      preferenceSysteme.addEventListener('change', function (evenement) {
+        if (!racine.getAttribute('data-theme')) adapterIllustrations(evenement.matches);
+      });
+    }
   }
 
   /* ------------------------------------------------------------ Démarrage */

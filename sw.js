@@ -13,7 +13,7 @@
    ils continueraient d'utiliser l'ancienne version des pages.
    ========================================================================== */
 
-const VERSION = 'ardoise-v43';
+const VERSION = 'ardoise-v44';
 const CACHE_COQUILLE = `${VERSION}-coquille`;
 const CACHE_DONNEES = `${VERSION}-donnees`;
 

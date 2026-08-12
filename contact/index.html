@@ -26,6 +26,7 @@
 <meta name="twitter:image" content="https://myardoise.com/icone-512.png" />
 
 <link rel="icon" type="image/png" sizes="192x192" href="/icone-192.png" />
+<link rel="icon" href="/favicon.ico" sizes="any" />
 <link rel="apple-touch-icon" sizes="180x180" href="/icone-ios-180.png" />
 <link rel="manifest" href="/manifest.json" />
 
@@ -59,7 +60,6 @@
   ]
 }
 </script>
-<link rel="stylesheet" href="../mobile.css" />
 </head>
 
 <body>
@@ -124,8 +124,10 @@
 <div class="sm-colonne">
 <p class="sm-titre">Comprendre Ardoise</p>
 <ul>
+<li><a href="/guides/"><span class="sm-lien">Guides de gestion scolaire</span><span class="sm-note">Choisir, budgéter et réussir sa digitalisation</span></a></li>
 <li><a href="/faq/"><span class="sm-lien">Questions fréquentes</span><span class="sm-note">Les 25 questions posées avant de signer</span></a></li>
 <li><a href="/securite/"><span class="sm-lien">Sécurité et données</span><span class="sm-note">Où sont les données, qui y accède</span></a></li>
+<li><a href="/a-propos/"><span class="sm-lien">À propos d'Ardoise</span><span class="sm-note">Le projet, son éditeur et ses engagements</span></a></li>
 <li><a href="/contact/"><span class="sm-lien">Parler à quelqu'un</span><span class="sm-note">Demander un accompagnement</span></a></li>
 </ul></div>
 </div></div></li>
@@ -179,8 +181,10 @@
 <section class="bloc-mobile">
 <h2>Ressources</h2>
 <ul>
+<li><a href="/guides/">Guides de gestion scolaire</a></li>
 <li><a href="/faq/">Questions fréquentes</a></li>
 <li><a href="/securite/">Sécurité et données</a></li>
+<li><a href="/a-propos/">À propos d'Ardoise</a></li>
 <li><a href="/contact/">Parler à quelqu'un</a></li>
 </ul>
 </section>
@@ -199,15 +203,15 @@
       <p class="eyebrow">Parler à quelqu'un</p>
       <h1>Dites-nous où en est votre école</h1>
       <p class="chapeau">Nous vous rappelons sous 48 heures ouvrées pour vous orienter vers l'offre qui convient — et vous dire si un service d'accompagnement vous serait vraiment utile, ou non. Il nous arrive souvent de conseiller l'offre la moins chère.</p>
-      
+
     </div>
-    
+
   </div>
 </section>
 <section class="section" style="padding-top:24px">
   <div class="conteneur grille-deux">
     <div>
-      
+
     <form class="formulaire" data-formulaire-accompagnement novalidate>
       <div class="duo">
         <div>
@@ -254,20 +258,11 @@
         </select>
       </div>
 
-      <fieldset class="groupe-cases">
-        <legend>Services qui vous intéressent (facultatif)</legend>
-        <label class="case">
-          <input type="checkbox" name="services_souhaites" value="installation" />
-          <span>Installation &amp; configuration</span>
-        </label>
-        <label class="case">
-          <input type="checkbox" name="services_souhaites" value="formation_complete" />
-          <span>Formation du personnel</span>
-        </label>
-        <label class="case">
-          <input type="checkbox" name="services_souhaites" value="campagne_capture" />
-          <span>Campagne de capture</span>
-        </label>
+      <fieldset style="border:0">
+        <legend class="aide" style="margin-bottom:8px">Services qui vous intéressent (facultatif)</legend>
+        <label style="font-weight:400"><input type="checkbox" name="services_souhaites" value="installation" /> Installation &amp; configuration</label>
+        <label style="font-weight:400"><input type="checkbox" name="services_souhaites" value="formation_complete" /> Formation du personnel</label>
+        <label style="font-weight:400"><input type="checkbox" name="services_souhaites" value="campagne_capture" /> Campagne de capture</label>
       </fieldset>
 
       <div>
@@ -281,6 +276,14 @@
 
     </div>
     <aside class="colonne-aside">
+      <div class="encart">
+        <h2>Contact direct</h2>
+        <ul class="mini-liste">
+          <li><a href="mailto:myardoise@gmail.com">myardoise@gmail.com</a></li>
+          <li><a href="https://wa.me/243855035693" rel="noopener">WhatsApp : 0855 035 693</a></li>
+          <li>Kinshasa, République démocratique du Congo</li>
+        </ul>
+      </div>
       <div class="encart">
         <h2>Ce qui nous aide à répondre vite</h2>
         <ul class="mini-liste">
@@ -354,7 +357,9 @@
       <div>
         <h2>Ressources</h2>
         <ul>
+          <li><a href="/guides/">Guides de gestion scolaire</a></li>
           <li><a href="/faq/">Questions fréquentes</a></li>
+          <li><a href="/a-propos/">À propos</a></li>
           <li><a href="/contact/">Nous contacter</a></li>
           <li><a href="/connexion.html">Se connecter</a></li>
           <li><a href="/confidentialite.html">Confidentialité</a></li>
@@ -391,6 +396,5 @@
   }
 })();
 </script>
-<script src="../mobile.js"></script>
 </body>
 </html>

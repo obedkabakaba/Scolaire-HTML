@@ -28,6 +28,13 @@ Allow: /services/campagne-de-capture/
 Allow: /securite/
 Allow: /faq/
 Allow: /contact/
+Allow: /guides/
+Allow: /guides/choisir-logiciel-gestion-scolaire-rdc/
+Allow: /guides/digitaliser-ecole-rdc/
+Allow: /guides/excel-ou-logiciel-gestion-scolaire/
+Allow: /guides/logiciel-scolaire-connexion-instable/
+Allow: /guides/prix-logiciel-gestion-scolaire-rdc/
+Allow: /a-propos/
 Allow: /site-public.html
 Allow: /confidentialite.html
 

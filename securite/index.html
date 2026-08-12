@@ -26,6 +26,7 @@
 <meta name="twitter:image" content="https://myardoise.com/icone-512.png" />
 
 <link rel="icon" type="image/png" sizes="192x192" href="/icone-192.png" />
+<link rel="icon" href="/favicon.ico" sizes="any" />
 <link rel="apple-touch-icon" sizes="180x180" href="/icone-ios-180.png" />
 <link rel="manifest" href="/manifest.json" />
 
@@ -105,7 +106,6 @@
   ]
 }
 </script>
-<link rel="stylesheet" href="../mobile.css" />
 </head>
 
 <body>
@@ -170,8 +170,10 @@
 <div class="sm-colonne">
 <p class="sm-titre">Comprendre Ardoise</p>
 <ul>
+<li><a href="/guides/"><span class="sm-lien">Guides de gestion scolaire</span><span class="sm-note">Choisir, budgéter et réussir sa digitalisation</span></a></li>
 <li><a href="/faq/"><span class="sm-lien">Questions fréquentes</span><span class="sm-note">Les 25 questions posées avant de signer</span></a></li>
 <li><a href="/securite/"><span class="sm-lien">Sécurité et données</span><span class="sm-note">Où sont les données, qui y accède</span></a></li>
+<li><a href="/a-propos/"><span class="sm-lien">À propos d'Ardoise</span><span class="sm-note">Le projet, son éditeur et ses engagements</span></a></li>
 <li><a href="/contact/"><span class="sm-lien">Parler à quelqu'un</span><span class="sm-note">Demander un accompagnement</span></a></li>
 </ul></div>
 </div></div></li>
@@ -225,8 +227,10 @@
 <section class="bloc-mobile">
 <h2>Ressources</h2>
 <ul>
+<li><a href="/guides/">Guides de gestion scolaire</a></li>
 <li><a href="/faq/">Questions fréquentes</a></li>
 <li><a href="/securite/">Sécurité et données</a></li>
+<li><a href="/a-propos/">À propos d'Ardoise</a></li>
 <li><a href="/contact/">Parler à quelqu'un</a></li>
 </ul>
 </section>
@@ -247,7 +251,7 @@
       <p class="chapeau">Une plateforme scolaire manipule des informations sur des mineurs, des résultats qui décident d'une orientation et des sommes d'argent. Cette page décrit comment l'accès à ces données est contrôlé, tracé et limité — concrètement, pas en principe.</p>
       <div class="groupe-cta"><a class="bouton secondaire" href="/contact/">Poser une question précise</a></div>
     </div>
-    
+
   </div>
 </section>
 <section class="section">
@@ -400,7 +404,7 @@
     <div class="section-entete">
       <span class="eyebrow">Questions</span>
       <h2>Les questions qu'on nous pose sur les données</h2>
-      
+
     </div>
     <div class="faq"><details><summary>Où sont hébergées les données&nbsp;?</summary><div><p>Sur une infrastructure d'hébergement professionnelle, dans des centres de données gérés par des opérateurs spécialisés, avec sauvegardes régulières. Les données ne sont pas stockées sur un serveur installé dans une école ni sur l'ordinateur d'un membre du personnel.</p></div></details><details><summary>Une autre école peut-elle voir mes élèves&nbsp;?</summary><div><p>Non, et la garantie n'est pas seulement applicative. Chaque requête s'exécute dans un contexte lié à l'école connectée, et les règles de sécurité de la base filtrent les lignes accessibles table par table. Même une erreur de programmation qui oublierait un filtre ne ferait pas apparaître les données d'un autre établissement.</p></div></details><details><summary>Que voit exactement l'équipe Ardoise&nbsp;?</summary><div><p>Un administrateur de la plateforme peut, pour porter assistance, observer l'interface d'une école. Cet accès est délibérément contraint : il est limité dans le temps, strictement en lecture — aucune écriture n'est possible — et il est enregistré avec le motif, l'adresse et l'horaire. Le journal continue par ailleurs de nommer la personne réelle, jamais l'identité observée.</p></div></details><details><summary>Que se passe-t-il si je résilie&nbsp;?</summary><div><p>Vos données restent exportables : archives par année et par classe, bulletins déjà produits. Nous considérons qu'un logiciel qui retient les données d'une école pour l'empêcher de partir ne mérite pas qu'on lui confie celles d'un enfant.</p></div></details><details><summary>Les mots de passe sont-ils protégés&nbsp;?</summary><div><p>Ils ne sont jamais stockés en clair : seule une empreinte cryptographique est conservée, calculée avec un algorithme conçu pour résister aux tentatives de retrouver le mot de passe d'origine. Personne, chez Ardoise, ne peut lire le mot de passe d'un directeur.</p></div></details></div>
   </div>
@@ -461,7 +465,9 @@
       <div>
         <h2>Ressources</h2>
         <ul>
+          <li><a href="/guides/">Guides de gestion scolaire</a></li>
           <li><a href="/faq/">Questions fréquentes</a></li>
+          <li><a href="/a-propos/">À propos</a></li>
           <li><a href="/contact/">Nous contacter</a></li>
           <li><a href="/connexion.html">Se connecter</a></li>
           <li><a href="/confidentialite.html">Confidentialité</a></li>
@@ -477,6 +483,5 @@
 
 <script src="/catalogue.js" defer></script>
 <script src="/nav.js" defer></script>
-<script src="../mobile.js"></script>
 </body>
 </html>

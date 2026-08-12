@@ -527,6 +527,14 @@ def contact():
     </div>
     <aside class="colonne-aside">
       <div class="encart">
+        <h2>Contact direct</h2>
+        <ul class="mini-liste">
+          <li><a href="mailto:myardoise@gmail.com">myardoise@gmail.com</a></li>
+          <li><a href="https://wa.me/243855035693" rel="noopener">WhatsApp : 0855 035 693</a></li>
+          <li>Kinshasa, République démocratique du Congo</li>
+        </ul>
+      </div>
+      <div class="encart">
         <h2>Ce qui nous aide à répondre vite</h2>
         <ul class="mini-liste">
           <li>Le nombre approximatif d'élèves</li>

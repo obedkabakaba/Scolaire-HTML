@@ -347,6 +347,40 @@ CORPS = """
 </section>
 """
 
+CORPS += """
+<section class="section alt" aria-labelledby="guides-accueil">
+  <div class="conteneur">
+    <div class="section-entete">
+      <span class="eyebrow">Guides de gestion scolaire</span>
+      <h2 id="guides-accueil">Préparer la décision avant de choisir l'outil</h2>
+      <p class="chapeau">Des ressources pratiques, écrites pour les directions
+         d'école qui veulent comparer, budgéter et déployer sans improviser.</p>
+    </div>
+    <div class="grille-cartes trois">
+      <article class="carte">
+        <h3>Choisir un logiciel en RDC</h3>
+        <p>Sept critères à tester : bulletins, rôles, sécurité, réseau, données,
+           accompagnement et coût complet.</p>
+        <a class="lien-fleche" href="/guides/choisir-logiciel-gestion-scolaire-rdc/">Lire le guide</a>
+      </article>
+      <article class="carte">
+        <h3>Excel ou logiciel scolaire ?</h3>
+        <p>Les cas où Excel suffit encore et les signaux qui indiquent qu'il est
+           devenu risqué pour l'école.</p>
+        <a class="lien-fleche" href="/guides/excel-ou-logiciel-gestion-scolaire/">Voir le comparatif</a>
+      </article>
+      <article class="carte">
+        <h3>Calculer le budget réel</h3>
+        <p>Abonnement, installation, formation, saisie initiale et temps interne,
+           avec trois exemples chiffrés.</p>
+        <a class="lien-fleche" href="/guides/prix-logiciel-gestion-scolaire-rdc/">Calculer le budget</a>
+      </article>
+    </div>
+    <p class="apres-grille"><a class="bouton secondaire" href="/guides/">Voir tous les guides</a></p>
+  </div>
+</section>
+"""
+
 CORPS += cta_final(
     "Votre école, tenue à jour toute seule.",
     "Choisissez l'offre qui correspond à sa taille. L'accompagnement viendra si "
@@ -397,6 +431,12 @@ JSONLD = [
         "name": "Ardoise",
         "url": f"{SITE}/",
         "logo": f"{SITE}/icone-512.png",
+        "founder": {"@type": "Person", "name": "Obed Kabakaba"},
+        "email": "myardoise@gmail.com",
+        "address": {"@type": "PostalAddress", "addressLocality": "Kinshasa",
+                    "addressCountry": "CD"},
+        "contactPoint": {"@type": "ContactPoint", "telephone": "+243855035693",
+                         "contactType": "customer support", "availableLanguage": "fr"},
         "areaServed": [{"@type": "Country", "name": "République démocratique du Congo"}],
         "knowsAbout": ["gestion scolaire", "bulletins scolaires RDC", "digitalisation des écoles"],
     },

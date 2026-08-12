@@ -25,6 +25,7 @@ import contenu_fonctionnalites_c
 import contenu_tarifs
 import contenu_services
 import contenu_divers
+import contenu_guides
 
 ICI = os.path.dirname(os.path.abspath(__file__))
 SOURCE_HTML = os.environ.get("SOURCE_HTML", "/home/claude/work/html/Scolaire-HTML-main")
@@ -38,6 +39,7 @@ def construire_pages():
                    contenu_fonctionnalites_c, contenu_tarifs,
                    contenu_services, contenu_divers):
         urls.extend(module.construire())
+    urls.extend(contenu_guides.construire())
     return urls
 
 
@@ -67,6 +69,7 @@ def gabarit_redirection(vers, titre):
 <meta http-equiv="refresh" content="0; url={vers}" />
 <link rel="stylesheet" href="/site.css" />
 <script>location.replace("{vers}" + location.hash);</script>
+<link rel="stylesheet" href="mobile.css" />
 </head>
 <body>
 <main id="contenu" class="section">
@@ -77,6 +80,11 @@ def gabarit_redirection(vers, titre):
     <p class="groupe-cta"><a class="bouton ocre" href="{vers}">Continuer</a></p>
   </div>
 </main>
+<!-- Session partagée : renouvellement du jeton et rejeu des requêtes
+     expirées. Doit rester AVANT les autres scripts. -->
+<script src="session.js"></script>
+<script src="remontee-erreurs.js"></script>
+<script src="mobile.js"></script>
 </body>
 </html>
 """
@@ -141,6 +149,8 @@ PRIORITES = {
     "/tarifs/comparer/": ("0.9", "monthly"),
     "/fonctionnalites/": ("0.8", "monthly"),
     "/services/": ("0.8", "monthly"),
+    "/guides/": ("0.8", "monthly"),
+    "/a-propos/": ("0.7", "yearly"),
     "/contact/": ("0.7", "yearly"),
 }
 DEFAUT = ("0.7", "monthly")

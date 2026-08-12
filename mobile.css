@@ -197,16 +197,26 @@ body { overflow-wrap: break-word; }
      l'ordre du document est le bon. */
   .barre-laterale > div { display: block !important; }
 
-  /* Le voile derrière le tiroir. */
+  /* Le voile derrière le tiroir.
+
+     Il commence APRES le tiroir au lieu de couvrir tout l'écran. C'est une
+     garantie fonctionnelle, pas seulement visuelle : certains navigateurs en
+     mode application installée composent `backdrop-filter` dans un calque qui
+     peut passer devant le panneau malgré son z-index. Le voile interceptait
+     alors les touchers destinés aux liens du menu et floutait aussi le tiroir.
+
+     La largeur de départ reprend exactement celle du panneau. Le reste de la
+     page est simplement assombri et reste une grande cible pour refermer le
+     menu, tandis que la navigation ne peut plus être recouverte. */
   .ard-mob-voile {
     display: block;
-    position: fixed; inset: 0;
-    background: rgba(15, 22, 18, 0.5);
+    position: fixed;
+    top: 0; right: 0; bottom: 0;
+    left: min(86vw, 320px);
+    background: rgba(15, 22, 18, 0.42);
     z-index: 1100;
     opacity: 0; pointer-events: none;
     transition: opacity 0.26s ease;
-    -webkit-backdrop-filter: blur(2px);
-    backdrop-filter: blur(2px);
   }
   html.ard-mob-ouvert .ard-mob-voile { opacity: 1; pointer-events: auto; }
   /* Le fond ne défile plus derrière le tiroir ouvert. */

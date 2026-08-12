@@ -13,7 +13,7 @@ import os
 
 SITE = "https://myardoise.com"
 DATE = "2026-08-12"
-RESSOURCES_VERSION = "20260812-2"
+RESSOURCES_VERSION = "20260812-3"
 
 POLICES = ("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;"
            "9..144,600;9..144,700&family=Inter:wght@400;500;600;700&"

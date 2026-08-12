@@ -1061,27 +1061,46 @@ table.comparatif td a, .enveloppe-tableau a { text-decoration: underline; text-u
    ARDOISE — ILLUSTRATIONS
    =============================================================================
 
-   Neuf scènes WebP remplacent les anciens dessins SVG du site public.
-   Chaque scène possède une version claire et une version sombre. Les règles
-   ci-dessous suivent à la fois la préférence système et le choix manuel.
+   Les scènes WebP sont réellement détourées : le fond du thème reste visible.
+   Elles sont toujours contenues en entier, sans recadrage ni déformation.
    ============================================================================= */
 
 .illus { margin: 0; }
 
 .illus-cadre {
-  overflow: hidden;
-  border: 1px solid var(--bordure);
-  border-radius: var(--r-carte);
-  background: var(--fond-2);
+  overflow: visible;
+  border: 0;
+  background: transparent;
 }
 
 .illus-image {
   display: block;
   width: 100%;
-  aspect-ratio: 4 / 3;
-  object-fit: cover;
-  background: var(--fond);
+  height: auto;
+  object-fit: contain;
+  object-position: center;
+  background: transparent;
+  filter: drop-shadow(0 18px 24px rgba(31, 42, 36, .12));
 }
+
+:root[data-theme="sombre"] .illus-image {
+  filter: drop-shadow(0 20px 28px rgba(0, 0, 0, .34));
+}
+
+/* Les cartes tarifaires reçoivent un emblème compact, sans fond ajouté. */
+.illustration-offre {
+  display: block;
+  width: 100%;
+  height: 118px;
+  margin: 0 auto 14px;
+  object-fit: contain;
+  object-position: center;
+  filter: drop-shadow(0 10px 14px rgba(31, 42, 36, .10));
+}
+:root[data-theme="sombre"] .illustration-offre {
+  filter: drop-shadow(0 12px 18px rgba(0, 0, 0, .30));
+}
+.grille-offres.compacte .illustration-offre { height: 92px; margin-bottom: 10px; }
 
 /* ------------------------------------------------------- Hero de l'accueil */
 

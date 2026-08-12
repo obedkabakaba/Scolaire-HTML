@@ -48,6 +48,7 @@ def securite():
         "décrit comment l'accès à ces données est contrôlé, tracé et limité — "
         "concrètement, pas en principe.",
         [("/contact/", "Poser une question précise", "secondaire")],
+        illustration=("securite", "La protection et la traçabilité des données"),
     ) + """
 <section class="section">
   <div class="conteneur">

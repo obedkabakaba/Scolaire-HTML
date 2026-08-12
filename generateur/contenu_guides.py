@@ -47,6 +47,7 @@ def hub():
         "instable et calculer le vrai budget : ces guides répondent aux décisions "
         "qu'une direction doit prendre avant de changer ses habitudes.",
         [("/contact/", "Poser une question", "secondaire")],
+        illustration=("guides", "Des guides pour digitaliser une école en RDC"),
     ) + '''
 <section class="section">
   <div class="conteneur">
@@ -752,6 +753,7 @@ def a_propos():
         "Elle part de contraintes concrètes des écoles congolaises : bulletins RDC, "
         "double devise, connexion irrégulière et responsabilités clairement séparées.",
         [("/contact/", "Parler avec Ardoise", "principal")],
+        illustration=("a-propos", "L'équipe et la mission d'Ardoise à Kinshasa"),
     ) + '''
 <section class="section">
   <div class="conteneur grille-deux">

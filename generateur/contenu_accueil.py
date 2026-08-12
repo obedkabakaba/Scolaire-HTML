@@ -18,6 +18,10 @@ ILLUS_ECOLE = illustrations.figure(
     "ecole", "Une école utilisant Ardoise", "illus-accueil")
 ILLUS_CAHIERS = illustrations.figure(
     "cahiers", "Des registres épars réunis en un seul dossier", "illus-valeur")
+ILLUS_ASCENSION = illustrations.offre("ascension", "L'offre Ardoise Ascension")
+ILLUS_PRIME = illustrations.offre("prime", "L'offre Ardoise Prime")
+ILLUS_PILOTE = illustrations.offre("pilote", "L'offre Ardoise Pilote")
+ILLUS_INFINITE = illustrations.offre("infinite", "L'offre Ardoise Infinite")
 
 CORPS = """
 <!-- ==================================================================== HERO -->
@@ -227,6 +231,7 @@ CORPS = """
         data-prix-mensuel="35"  data-mois-mensuel="35"    data-eco-mensuel="0"  data-pct-mensuel="0"
         data-prix-semestriel="193" data-mois-semestriel="32.17" data-eco-semestriel="17" data-pct-semestriel="8"
         data-prix-annuel="350"  data-mois-annuel="29.17"  data-eco-annuel="70"  data-pct-annuel="17">
+        @ILLUS_ASCENSION@
         <h3 class="nom">Ascension</h3>
         <div class="positionnement">Digitaliser l'essentiel</div>
         <div class="prix" data-prix><span class="devise">$</span>35</div>
@@ -240,6 +245,7 @@ CORPS = """
         data-prix-semestriel="325" data-mois-semestriel="54.17" data-eco-semestriel="29" data-pct-semestriel="8"
         data-prix-annuel="590"  data-mois-annuel="49.17"  data-eco-annuel="118" data-pct-annuel="17">
         <span class="badge">Le plus choisi</span>
+        @ILLUS_PRIME@
         <h3 class="nom">Prime</h3>
         <div class="positionnement">Automatiser et communiquer</div>
         <div class="prix" data-prix><span class="devise">$</span>59</div>
@@ -252,6 +258,7 @@ CORPS = """
         data-prix-mensuel="99"  data-mois-mensuel="99"    data-eco-mensuel="0"  data-pct-mensuel="0"
         data-prix-semestriel="545" data-mois-semestriel="90.83" data-eco-semestriel="49" data-pct-semestriel="8"
         data-prix-annuel="990"  data-mois-annuel="82.50"  data-eco-annuel="198" data-pct-annuel="17">
+        @ILLUS_PILOTE@
         <h3 class="nom">Pilote</h3>
         <div class="positionnement">Piloter l'établissement</div>
         <div class="prix" data-prix><span class="devise">$</span>99</div>
@@ -264,6 +271,7 @@ CORPS = """
         data-prix-mensuel="159" data-mois-mensuel="159"   data-eco-mensuel="0"  data-pct-mensuel="0"
         data-prix-semestriel="875" data-mois-semestriel="145.83" data-eco-semestriel="79" data-pct-semestriel="8"
         data-prix-annuel="1590" data-mois-annuel="132.50" data-eco-annuel="318" data-pct-annuel="17">
+        @ILLUS_INFINITE@
         <h3 class="nom">Infinite</h3>
         <div class="positionnement">Exploiter Ardoise sans limite</div>
         <div class="prix" data-prix><span class="devise">$</span>159</div>
@@ -455,7 +463,11 @@ JSONLD = [
 # entièrement assemblé (le bloc CTA final s'y ajoute plus haut).
 CORPS = (CORPS
          .replace("@ILLUS_ECOLE@", ILLUS_ECOLE)
-         .replace("@ILLUS_CAHIERS@", ILLUS_CAHIERS))
+         .replace("@ILLUS_CAHIERS@", ILLUS_CAHIERS)
+         .replace("@ILLUS_ASCENSION@", ILLUS_ASCENSION)
+         .replace("@ILLUS_PRIME@", ILLUS_PRIME)
+         .replace("@ILLUS_PILOTE@", ILLUS_PILOTE)
+         .replace("@ILLUS_INFINITE@", ILLUS_INFINITE))
 
 
 def construire():

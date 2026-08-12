@@ -34,6 +34,8 @@ def hub():
         "chacun sur sa propre page — celle-ci sert à choisir par où commencer.",
         [("/tarifs/", "Voir les offres", "ocre"),
          ("/contact/", "Demander une présentation", "secondaire")],
+        illustration=("fonctionnalites",
+                      "Les domaines fonctionnels réunis dans Ardoise"),
     ) + """
 <section class="section">
   <div class="conteneur">

@@ -13,6 +13,7 @@ continue de fonctionner.
 
 from base import (rendre, fil, hero, cta_final, faq_bloc, faq_jsonld,
                   pour_aller_plus_loin, SITE)
+import illustrations
 
 SELECTEUR = """
 <div class="selecteur-periode" role="group" aria-label="Périodicité de facturation">
@@ -32,11 +33,13 @@ def carte(code, nom, positionnement, prix, mois, semestriel, annuel,
     lim = "".join(f"<span>{l}</span>" for l in limites)
     classe = "offre mise-en-avant" if badge else "offre"
     bouton = "ocre" if ocre else "secondaire"
+    visuel = illustrations.offre(code, f"L'offre Ardoise {nom.split()[-1]}")
     return f"""<article class="{classe}" id="{code}" data-offre="{code}" data-devise="USD"
   data-prix-mensuel="{prix}" data-mois-mensuel="{mois}" data-eco-mensuel="0" data-pct-mensuel="0"
   data-prix-semestriel="{semestriel}" data-mois-semestriel="{mois_sem}" data-eco-semestriel="{eco_sem}" data-pct-semestriel="8"
   data-prix-annuel="{annuel}" data-mois-annuel="{mois_an}" data-eco-annuel="{eco_an}" data-pct-annuel="17">
   {b}
+  {visuel}
   <h2 class="nom">{nom}</h2>
   <div class="positionnement">{positionnement}</div>
   <div class="prix" data-prix><span class="devise">$</span>{prix}</div>

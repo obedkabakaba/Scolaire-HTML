@@ -68,6 +68,8 @@ def hub():
         "quatre offres.",
         [("/contact/", "Demander un accompagnement", "ocre"),
          ("/tarifs/", "Voir les offres d'abonnement", "secondaire")],
+        illustration=("services",
+                      "L'installation, la formation et la capture Ardoise"),
     ) + """
 <section class="section">
   <div class="conteneur">
@@ -231,6 +233,7 @@ def installation():
         [("/contact/", "Commander l'installation", "ocre"),
          ("/services/", "Voir les autres services", "secondaire")],
         mention="60 $, forfait unique · une intervention, généralement sous 72 heures",
+        illustration=("installation", "Le paramétrage complet d'une école"),
     ) + """
 <section class="section">
   <div class="conteneur grille-deux">
@@ -389,6 +392,7 @@ def formation():
         [("/contact/", "Demander une formation", "ocre"),
          ("/services/", "Voir les autres services", "secondaire")],
         mention="30, 60 ou 100 $ selon la profondeur · une école déjà paramétrée est requise",
+        illustration=("formation", "Une équipe scolaire formée à Ardoise"),
     ) + """
 <section class="section">
   <div class="conteneur">
@@ -565,6 +569,7 @@ def capture():
         [("/contact/", "Demander une estimation", "ocre"),
          ("/services/", "Voir les autres services", "secondaire")],
         mention="0,50 $ par élève · comptez une semaine pour 500 élèves",
+        illustration=("capture", "La capture des portraits et dossiers élèves"),
     ) + """
 <section class="section">
   <div class="conteneur grille-deux">

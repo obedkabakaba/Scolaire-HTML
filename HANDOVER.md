@@ -2656,3 +2656,680 @@ Le risque principal restant est un déploiement partiel : backend mis à jour
 avant les images, migration `030` non jouée, ou mélange d'anciens et de nouveaux
 correctifs. Dans ce cas, le code peut être correct localement tout en affichant
 encore des images cassées ou en laissant le centre de bugs vide en production.
+
+
+---
+
+## 27. SUPER ADMIN INTELLIGENCE & CONTROL CENTER
+
+*Section ajoutée par la livraison « Ardoise Control Center ». Elle documente une
+couche ADDITIVE : aucune table existante n'a été modifiée, aucun écran actuel
+n'a été touché, aucune route existante n'a changé de comportement.*
+
+---
+
+### 27.1 Ce qui existait déjà, et pourquoi on n'y a pas touché
+
+L'espace Super Admin était loin d'être vide. Avant cette livraison, il
+comportait déjà :
+
+| Existant | Fichier | Ce qu'il fait |
+|---|---|---|
+| Santé de la plateforme | `super-admin-systeme.controller.js` → `sante` | API, PostgreSQL, mémoire, cache, messagerie |
+| Centre de bugs | `super-admin-support.controller.js` + `bugs_plateforme` | Exceptions de production, regroupées par empreinte |
+| Capture des erreurs | `middleware/erreurs.middleware.js` | Capteur 5xx + gestionnaire final, masquage des secrets |
+| Métriques d'API | `middleware/metriques.middleware.js` | Anneau en mémoire, latences, taux d'erreur |
+| Journal d'activité | `middleware/journal.middleware.js` | Toute écriture, toute connexion |
+| Audits statiques | `audits.controller.js` + `audit_runs`/`audit_findings` | Ingestion CI par secret technique |
+| Sécurité | `super-admin-systeme.controller.js` → `securite` | Connexions échouées, sessions, appareils |
+| Finance / Offres / Coûts | 3 contrôleurs + 3 fichiers de vues | Centre commercial complet |
+| Explorateur | `super-admin-explorer.controller.js` | Données d'école en lecture seule stricte |
+| Mode « Voir comme » | `verrouObservation` | Jeton d'observation, lecture seule globale |
+
+**Rien de tout cela n'a été remplacé.** Le Control Center s'appuie dessus :
+
+- il LIT `bugs_plateforme` (il ne crée pas un second centre de bugs) ;
+- il LIT le collecteur de `metriques.middleware.js` (il n'en pose pas un autre) ;
+- il RÉUTILISE `masquer()` / `masquerObjet()` de `journal-erreurs.utils.js`
+  (une seule liste de motifs pour toute la plateforme) ;
+- il RÉUTILISE `mesurer()` / `lignes()` / `pagination()` de `super-admin.utils.js` ;
+- côté interface, il RÉUTILISE `SA.ui.*`, `SA.fmt.*`, `SA.graphe.*` du noyau.
+
+### Pourquoi de nouvelles tables plutôt qu'étendre les existantes
+
+`bugs_plateforme` répond à « quelle exception s'est produite ». Le Control
+Center pose quatre questions d'une autre nature :
+
+- cette permission correspond-elle à la règle métier ? → **constat d'audit**
+- qu'a fait le système, pas seulement ce qui a planté ? → **journal technique**
+- plusieurs symptômes viennent-ils d'une même panne ? → **incident**
+- la plateforme va-t-elle bien, globalement ? → **score**
+
+Aucune n'est une exception. Les loger dans `bugs_plateforme` aurait obligé à
+inventer des colonnes vides pour chacune et à filtrer en permanence pour
+retrouver les vrais bugs — c'est-à-dire à dégrader l'outil qui fonctionne.
+
+---
+
+### 27.2 Architecture — la chaîne complète
+
+```
+  RÈGLE MÉTIER          utils/regles-metier.registry.js     (45 règles, versionnées)
+        ↓
+  MATRICE               utils/matrice-permissions.utils.js  (rôle × ressource × action)
+        ↓
+  CODE RÉEL             utils/analyse-code.utils.js         (399 routes extraites de routes/*.js)
+        ↓
+  ÉCART                 utils/audit-*.utils.js              (3 auditeurs)
+        ↓
+  CONSTAT               table constats_audit                (dédupliqué, priorisé, cycle de vie)
+        ↓
+  DÉCISION HUMAINE      propositions_correctifs             (statut « proposee » → validation)
+```
+
+Chaque maillon est consultable séparément dans l'interface. C'est ce qui permet
+de répondre à « pourquoi ce constat ? » en remontant jusqu'à l'énoncé de la
+règle, plutôt qu'en faisant confiance.
+
+### Le registre des règles est la pièce centrale
+
+Sans lui, une IA à qui l'on montre `notes.controller.js` peut au mieux dire
+« cette permission me semble étrange ». Avec lui :
+
+```
+règle RULE-GRADE-002 : un professeur ne modifie que les notes de ses cours
+implémentation       : POST /notes/grille — requireRole(professeur, directeur, prefet)
+écart                : le contrôleur ne vérifie pas enseignant_cours avant l'écriture
+```
+
+On passe d'une impression à une comparaison.
+
+Le registre vit **dans le code** (`utils/regles-metier.registry.js`), versionné
+et relu en revue. La base en garde une copie synchronisée au démarrage, pour
+trois usages qui, eux, ont besoin de la base : jointures avec les constats,
+historique des modifications, et règles ajoutées depuis l'interface
+(`source = 'admin'`, jamais écrasées par un déploiement).
+
+---
+
+### 27.3 Tables ajoutées — migration `030-control-center.sql`
+
+21 tables, toutes réservées au Super Admin (policy `super_admin_seul`,
+`current_setting('app.is_superadmin', true) = 'true'` — le nom en un seul mot,
+celui de `config/db.js`, pas celui qui avait causé la migration 029).
+
+| Table | Rôle | Volume attendu |
+|---|---|---|
+| `journal_technique` | Log Explorer — ce que le système fait | **Fort** — purge par rétention |
+| `regles_metier` + `_historique` | Registre synchronisé + versions | ~45 lignes |
+| `constats_audit` + `_evenements` | Écarts détectés, dédupliqués par empreinte | Dizaines |
+| `propositions_correctifs` | Correctifs IA en attente de validation | Faible |
+| `incidents` + `_evenements` | Incidents et chronologie | Faible |
+| `scores_plateforme` | Relevé horaire des 4 scores | 24 lignes/jour |
+| `verifications_resultats` | Résultats des contrôles automatiques | ~500/jour |
+| `drapeaux_fonctionnalites` + `_historique` | Feature flags + retour arrière | ~10 lignes |
+| `maintenance_plateforme` | Mode maintenance (index unique partiel : une seule active) | Faible |
+| `alertes_plateforme` + `alertes_regles` | Alertes groupées par fenêtre + configuration | Faible |
+| `ia_consommation` + `ia_budgets` | Jetons, coût, modèle, budget | Modéré |
+| `base_connaissance` | Fiches lues par l'IA avant de répondre | Faible |
+| `decisions_techniques` | Journal des décisions | Faible |
+| `rapports_automatiques` | Rapports journaliers/hebdomadaires conservés | Faible |
+| `reauthentifications_super_admin` | Fenêtres d'actions critiques + trace d'usage | Faible |
+
+**Rétention différenciée** de `journal_technique`, appliquée par la purge
+quotidienne (`utils/journal-technique.utils.js` → `purger`) :
+
+```
+SECURITY 365 j · PAYMENT 365 j · TENANT 365 j · AUTH 180 j
+BUSINESS 90 j · AI 90 j · CRON 60 j · EMAIL 60 j
+DATABASE 30 j · FRONTEND 30 j · SYSTEM 30 j · API 14 j
+```
+
+On ne cherche pas une intrusion dans la même fenêtre de temps qu'une lenteur.
+
+**Le rôle `ia_lecture` est explicitement révoqué** sur 9 de ces tables. Il n'a
+de toute façon pas le contexte super admin, mais un `REVOKE` se modifie plus
+difficilement qu'une policy.
+
+---
+
+### 27.4 Fichiers créés
+
+### Backend (16 fichiers)
+
+| Fichier | Rôle |
+|---|---|
+| `migrations/030-control-center.sql` | 21 tables, index, RLS, amorçage |
+| `utils/regles-metier.registry.js` | **45 règles métier** + synchronisation |
+| `utils/analyse-code.utils.js` | Analyseur statique — 399 routes, 55 contrôleurs |
+| `utils/matrice-permissions.utils.js` | Matrice théorique rôle × ressource × action |
+| `utils/audit-permissions.utils.js` | Auditeur des permissions |
+| `utils/audit-multitenant.utils.js` | Auditeur d'isolation (3 angles) |
+| `utils/audit-donnees.utils.js` | 18 contrôles de qualité et de workflow |
+| `utils/constats.utils.js` | Persistance, déduplication, cycle de vie |
+| `utils/priorites.utils.js` | Moteur de priorité |
+| `utils/score-sante.utils.js` | 4 scores + décomposition + historique |
+| `utils/verifications-sante.utils.js` | 11 vérifications + parcours synthétiques |
+| `utils/journal-technique.utils.js` | Log Explorer — écriture par lots |
+| `utils/alertes.utils.js` | Alertes groupées par fenêtre |
+| `utils/drapeaux.utils.js` | Feature flags, hachage stable |
+| `utils/ia-superadmin.utils.js` | Copilote — 16 outils, tous en lecture |
+| `test/control-center.test.js` | **43 tests**, sans base ni réseau |
+
+Middlewares : `reauthentification.middleware.js`, `maintenance.middleware.js`.
+Contrôleurs : `control-center.controller.js`, `-audit`, `-ia`, `-systeme`.
+Routes : `control-center.routes.js` (57 routes).
+
+### Frontend (6 fichiers)
+
+`super-admin-control-center.css`, `super-admin-vues-controle.js`,
+`super-admin-vues-audit.js`, `super-admin-vues-cc-ia.js`,
+`super-admin-vues-cc-systeme.js`, `super-admin-palette.js`.
+
+### Fichiers modifiés
+
+| Fichier | Modification |
+|---|---|
+| `server.js` | Middleware de maintenance + amorçage et 4 tâches périodiques |
+| `routes/super-admin.routes.js` | Une ligne : montage sur `/control-center` |
+| `package.json` | `test/control-center.test.js` dans `npm test` + 2 scripts |
+| `test/prospects-page.test.js` | Chemin frontend tolérant (`Scolaire-HTML` **ou** `-main`) |
+| `super-admin.html` | Menu (4 groupes), 1 feuille de styles, 5 scripts, `SCRIPTS_REQUIS` |
+| `.gitignore` (les deux dépôts) | Créés — `node_modules` n'était retenu par rien |
+
+---
+
+### 27.5 L'analyseur statique — ce qu'il sait, ce qu'il ne sait pas
+
+`utils/analyse-code.utils.js` lit `server.js`, `routes/*.js`, `controllers/*.js`
+et en extrait :
+
+- **399 routes** : méthode, chemin absolu résolu, rôles effectifs
+  (intersection ligne × branche), middlewares, contrôleur et fonction visés ;
+- **278 fonctions de contrôleur** : signaux d'isolation multi-écoles.
+
+C'est de l'analyse textuelle, pas un arbre syntaxique : le projet compte
+quatorze dépendances au total et tourne sur une instance Render d'entrée de
+gamme. **Les limites sont énoncées dans le fichier**, pas cachées, et chacune
+produit une ABSENCE de constat — jamais un faux constat.
+
+### Deux pièges corrigés pendant l'écriture
+
+Ils méritent d'être documentés, car ils sont exactement le genre de défaut qui
+tue un outil d'audit :
+
+1. **Gardes hoistées.** Cinq fichiers de routes déclarent
+   `const PEUT_GERER = requireRole('directeur', 'prefet', 'secretaire');`
+   Sans résolution, l'analyseur concluait que `router.post('/', PEUT_GERER, …)`
+   n'imposait **aucun rôle**, et produisait un constat critique parfaitement
+   faux sur une route parfaitement gardée. Huit routes concernées.
+
+2. **Collision de motif de route.** Le libellé `PATCH /utilisateurs/:id`
+   capturait aussi `PATCH /utilisateurs/moi`, et l'auditeur signalait en
+   critique que « modifier son propre profil n'impose aucun rôle ». La
+   correspondance exacte l'emporte désormais toujours.
+
+**Trois faux constats suffisent à ce qu'un écran d'audit ne soit plus jamais
+ouvert.** Les deux cas sont couverts par des tests dédiés.
+
+### Ce que l'analyseur ne voit pas
+
+- une route construite dynamiquement (`router[methode](...)`) — il n'y en a
+  aucune aujourd'hui, et `routes_non_analysables` la signalerait ;
+- un `requireRole` dont la liste de rôles serait calculée ;
+- une accolade non échappée dans une chaîne peut tronquer un corps de fonction.
+
+---
+
+### 27.6 Les trois auditeurs
+
+### Permissions — `utils/audit-permissions.utils.js`
+
+Compare matrice ↔ routes réelles. Quatre familles de contrôles :
+
+1. **écarts de rôles** — en distinguant « rôle en trop » (risque de sécurité,
+   gravité élevée) de « rôle manquant » (gêne fonctionnelle, gravité modérée,
+   et parfois c'est la matrice qui a tort). Les afficher pareil ferait passer un
+   inconfort d'ergonomie pour une faille ;
+2. **middlewares exigés** — une règle qui exige `superAdminSeul` ou
+   `autoriserGenerationBulletinsTitulaire` vérifie qu'il est bien traversé ;
+3. **contrôle fin annoncé** — quand la matrice déclare que le filtre de rôle
+   est large À DESSEIN parce qu'une fonction du contrôleur applique la vraie
+   règle (`verifierAccesClasse` pour les présences), l'auditeur **vérifie que
+   cette fonction existe**. Un filtre large adossé à un contrôle fin est une
+   architecture ; adossé à rien, c'est une porte ouverte. Dans le fichier de
+   routes, les deux sont indiscernables ;
+4. **routes d'écriture non gardées** — avec une liste `PUBLIQUES_LEGITIMES` de
+   19 entrées, chacune portant SA justification (webhook signé, secret cron…).
+
+**Couverture actuelle : 18,8 %** des 165 routes d'écriture métier. C'est
+affiché à côté du verdict, jamais dissimulé — annoncer « 0 anomalie » sur un
+périmètre non examiné serait le seul vrai mensonge que cet outil puisse dire.
+
+### Multi-tenant — `utils/audit-multitenant.utils.js`
+
+Trois angles, parce qu'aucun ne suffit seul :
+
+| Angle | Question | Preuve |
+|---|---|---|
+| Statique | Que dit le code ? | `req.body.ecole_id` sans `req.auth.ecoleId` |
+| Schéma | Que dit la base ? | Table portant `ecole_id` sans RLS |
+| Données | Que montrent les lignes ? | Paiement dont l'école ≠ celle de son élève |
+
+Le troisième **prouve** ; les deux premiers **préviennent**.
+
+**La nuance la plus utile de cet auditeur** : il distingue trois situations que
+le code fait se ressembler.
+
+- *Aucun périmètre* — ni `runWithTenant(tenantContextFromReq(req))`, ni filtre
+  `ecole_id` : **critique**.
+- *RLS seule* — le contexte est posé, donc les policies s'appliquent, mais la
+  requête ne mentionne pas `ecole_id`. Pas de fuite aujourd'hui ; **dépendance
+  totale à une policy**. Une policy retirée ou mal recréée par une migration
+  transforme silencieusement l'écriture en écriture inter-écoles. Classé
+  **moyenne**, comme dette de défense en profondeur — **12 fonctions** sont
+  dans ce cas dans le dépôt actuel.
+- *Défense en profondeur* — les deux : rien à signaler.
+
+Confondre « une seule barrière » et « aucune barrière » ferait perdre de vue le
+premier cas, qui est le grave.
+
+### Qualité des données — `utils/audit-donnees.utils.js`
+
+18 contrôles déclaratifs, séparés en `donnees` (structure : orphelins,
+doublons, références mortes) et `workflow` (processus : abonnements actifs
+multiples, factures payées sans transaction, doublons de paiement, file de
+notifications bloquée). Corriger la ligne sans corriger le code la fait revenir
+la semaine suivante — d'où les deux types.
+
+Un contrôle qui ne peut pas s'exécuter (colonne absente — le HANDOVER §11
+quater documente des dérives de schéma) est déclaré **NON MESURABLE**, jamais
+« conforme ».
+
+**Ce module LIT.** Il ne supprime pas un doublon, ne rattache pas un orphelin.
+La requête de correction suggérée est affichée pour relecture ; son exécution
+est une décision humaine, hors de cet outil.
+
+---
+
+### 27.7 Le score de santé
+
+```
+Santé 94 · Sécurité 91 · Performance 86 · Données 98
+```
+
+**La règle qui gouverne tout le module** : un score dont on ne peut pas
+expliquer la composition ne sert qu'à décorer. Chaque pénalité est nommée,
+chiffrée, justifiée, et rattachée à sa source. L'interface montre la liste
+complète au clic sur la carte.
+
+### Sources — aucune donnée inventée
+
+| Axe | Sources |
+|---|---|
+| Santé | collecteur de métriques, `verifications_resultats`, file du journal, `pg_stat_activity`, incidents critiques ouverts |
+| Sécurité | constats `securite`/`permission`/`multitenant`, variables d'environnement, CORS, connexions échouées 24 h |
+| Performance | p95/p99, requêtes lentes, `pg_locks`, requêtes longues en cours, constats de performance |
+| Données | constats `donnees` et `workflow` |
+
+Si une source est indisponible, **l'axe le dit** (`sources_indisponibles`) et sa
+pénalité n'est pas appliquée. Un score calculé sur des données absentes
+afficherait 100 et signifierait « je n'ai rien mesuré ».
+
+### Pourquoi quatre scores, et un global plafonné
+
+Le global est une moyenne pondérée (santé 30 %, sécurité 30 %, performance
+20 %, données 20 %) **plafonnée au plus faible des axes + 10**. Sans ce
+plafond, on pourrait afficher 88 avec une sécurité à 55, compensée par trois
+axes à 99. Une plateforme qui fuit n'est pas « bonne à 88 ».
+
+Relevé **toutes les heures** dans `scores_plateforme` : « 86 » ne dit rien,
+« 86 contre 94 lundi » dit tout.
+
+---
+
+### 27.8 Moteur de priorité
+
+Un auditeur quotidien produit vite 150 constats. Présentés à plat, ils ont tous
+l'air également urgents, donc aucun ne l'est, et l'écran se ferme.
+
+Score = `(gravité + écoles + utilisateurs + fréquence + récurrence + financier
++ ancienneté) × multiplicateur_de_type`, puis quatre paliers : **immédiat ·
+aujourd'hui · cette semaine · plus tard**.
+
+Trois décisions qui comptent :
+
+- **Impact logarithmique ET plafonné** (écoles ≤ 40 pts, fréquence ≤ 25 pts).
+  Un test a trouvé le défaut : sans plafond, un constat de performance touchant
+  500 écoles (133 pts) devançait une fuite d'isolation critique (117 pts).
+  L'ampleur module la priorité, elle ne la détermine jamais seule.
+- **Le multiplicateur s'applique à l'ensemble**, pas à la seule gravité : un
+  défaut d'isolation compte double sous tous ses aspects.
+- **Règle absolue** : un constat `multitenant` de gravité haute ou critique est
+  **toujours** en « immédiat », indépendamment du calcul. Aucune pondération ne
+  peut le rétrograder.
+- **Une hypothèse est décotée de 30 %** : l'IA et l'analyse par motifs
+  proposent ; elles ne préemptent pas l'attention.
+
+---
+
+### 27.9 L'IA — architecture contrôlée
+
+### Le modèle ne voit jamais la base
+
+Il demande l'exécution d'un **outil nommé** ; le backend l'exécute avec le
+périmètre décidé et renvoie le résultat. Pas de SQL, pas de connexion, pas
+d'élargissement possible.
+
+**16 outils, tous en lecture** :
+
+```
+getSystemHealth      getScores           getConstats        inspectConstat
+getRecentErrors      inspectError        getRegleMetier     getPermissionMatrix
+auditRole            getRoutes           getLogs            getIncidents
+getBusinessMetrics   getSchoolStatistics getSystemDocumentation  getCoutsIA
+```
+
+Un test vérifie qu'aucun nom ne commence par un verbe d'écriture et que tous
+commencent par `get`/`inspect`/`audit`. **C'est vérifiable en trente secondes
+de lecture** — la meilleure garantie possible.
+
+### Protection contre les injections d'invite (RULE-SEC-003)
+
+Trois mesures cumulées, parce qu'aucune ne suffit seule :
+
+1. tout contenu utilisateur est encadré par `<donnees_non_fiables>` ;
+2. les séquences ressemblant à des instructions système sont **neutralisées**
+   (annotées, pas supprimées : une tentative d'injection doit rester visible,
+   c'est en soi une information de sécurité) ; les chevrons sont remplacés pour
+   qu'un contenu ne puisse pas refermer son propre encadrement ;
+3. **le modèle n'a aucun outil d'écriture.** Même convaincu, il ne peut rien
+   faire. C'est la mesure la plus solide : elle ne dépend pas de la capacité du
+   modèle à résister.
+
+### Détection / proposition / exécution (RULE-SEC-004)
+
+```
+  auditeurs        ce fichier          humain, dans le dépôt
+  DÉTECTION   →    PROPOSITION    →    EXÉCUTION
+```
+
+Une proposition de correctif est écrite dans `propositions_correctifs` au
+statut `proposee`. **Aucune route de cette plateforme n'écrit dans un fichier
+source.** Accepter une proposition change son statut, rien d'autre.
+
+Détail volontaire : marquer un correctif « appliqué » **ne clôt pas** le
+constat. C'est le prochain audit qui dira si l'écart a disparu — le fermer sur
+déclaration reviendrait à croire le correctif sur parole.
+
+### FAIT / HYPOTHÈSE / RECOMMANDATION
+
+Imposé par l'invite système, rappelé dans chaque résultat d'outil, et **affiché
+différemment** dans l'interface (pastille verte pleine contre contour pointillé
+gris). Une IA qui présente une hypothèse comme un constat envoie corriger le
+mauvais fichier.
+
+### Coût
+
+Chaque appel est mesuré dans `ia_consommation` : modèle, jetons, coût estimé,
+outils appelés, durée, succès.
+
+**Les jetons sont ESTIMÉS** à 4 caractères par jeton — `conversationAvecOutils`
+ne remonte pas le champ `usage` d'OpenAI. C'est un ordre de grandeur pour le
+pilotage, pas une facture, et l'interface le dit.
+
+---
+
+### 27.10 Sécurité de l'espace lui-même
+
+### Ré-authentification (RULE-ADMIN-003)
+
+Un onglet Super Admin resté ouvert sur un poste partagé ne doit pas suffire à
+couper la plateforme. Une confirmation de mot de passe ouvre une fenêtre de
+**15 minutes** (`REAUTH_DUREE_MINUTES`, borné 2–60), **stockée en base** — les
+instances Render redémarrent souvent, et une fenêtre en mémoire produirait un
+comportement apparemment capricieux. Une protection qui paraît capricieuse
+finit par être désactivée.
+
+Exigée sur : `POST /control-center/maintenance`, et la bascule d'un drapeau
+vers `tous` (contrôle fait dans le contrôleur, car il dépend de la VALEUR
+envoyée, pas du chemin appelé).
+
+Chaque usage inscrit l'action dans `reauthentifications_super_admin.actions`.
+
+**Ce n'est pas du MFA.** C'est une preuve de présence. Le TOTP reste à faire —
+voir §27.14.
+
+### Deux sens de défaillance, délibérément opposés
+
+| Middleware | En cas de panne de lecture | Pourquoi |
+|---|---|---|
+| `reauthentification` | **refuse** (503) | Laisser passer transformerait une panne de base en contournement de la protection |
+| `maintenance` | **laisse passer** | Refuser fermerait la plateforme entière à cause d'un incident de lecture |
+
+Se tromper de sens sur l'un des deux serait une faute grave.
+
+### Maintenance — les exemptions qui évitent de se verrouiller dehors
+
+`/auth`, `/super-admin`, `/jobs`, les webhooks et `/incidents` restent
+toujours ouverts, et **le Super Admin n'est jamais bloqué**. Sans ces
+exemptions, activer la maintenance couperait l'accès à l'écran permettant de la
+lever — exactement la situation qu'un mode maintenance est censé éviter.
+
+### Alertes — pourquoi elles ne passent pas par `notifications_plateforme`
+
+Cette table est celle des annonces **destinées aux écoles** : sa colonne
+`cible` ne connaît que `toutes`, `ecole` et `role`. Y écrire « fuite
+d'isolation détectée » avec `cible = 'toutes'` enverrait le diagnostic interne
+de la plateforme à tous ses clients. Le canal « notification Super Admin » est
+donc `alertes_plateforme` elle-même, lisible uniquement sous contexte super
+admin.
+
+---
+
+### 27.11 Endpoints ajoutés (57, tous sous `/super-admin/control-center`)
+
+```text
+SUPERVISION
+  GET    /synthese                       scores + priorités + état
+  GET    /scores                         détail et historique
+  GET    /recherche?q=                   recherche système
+  GET    /performance
+  GET    /logs                           filtres, regroupement, pagination
+  GET    /logs/:empreinte                fiche d'un groupe
+  GET    /erreurs                        erreurs rattachées à leur contrôleur
+  GET    /erreurs/:id
+  GET  POST /incidents
+  GET  PATCH /incidents/:id
+  GET    /alertes
+  PATCH  /alertes/regles/:categorie
+  POST   /alertes/:id/acquitter
+  GET    /verifications
+  POST   /verifications/executer
+  POST   /verifications/parcours
+
+AUDIT
+  GET  POST /regles
+  GET  PATCH /regles/:code
+  GET    /matrice
+  GET    /matrice/role/:role
+  GET    /routes
+  GET    /audits
+  POST   /audits/:famille                permissions | multitenant | donnees | tout
+  GET    /constats
+  GET  PATCH /constats/:id
+
+IA  (limiteur : 12 appels/minute)
+  GET    /ia/outils                      liste vérifiable des 16 outils
+  GET    /ia/domaines-conseil
+  GET    /ia/couts
+  POST   /ia/demander                    copilote
+  POST   /ia/analyser-erreur/:id
+  POST   /ia/analyser-constat/:id
+  POST   /ia/proposer-correctif/:constatId
+  POST   /ia/cause-racine
+  POST   /ia/conseil
+  POST   /ia/rapport
+  GET    /correctifs
+  PATCH  /correctifs/:id
+  GET    /rapports
+
+SYSTÈME
+  GET  POST /reauthentifier
+  GET    /drapeaux
+  PATCH  /drapeaux/:cle
+  POST   /drapeaux/:cle/retour-arriere
+  GET    /maintenance
+  POST   /maintenance                    ← exigerReauthentification
+  GET  POST /decisions
+  GET    /connaissance
+  PUT    /connaissance/:cle
+  GET    /dependances
+  GET    /base
+  GET    /infrastructure
+```
+
+---
+
+### 27.12 Variables d'environnement
+
+**Aucune n'est obligatoire.** Le Control Center fonctionne sans, en mode
+dégradé annoncé.
+
+| Variable | Défaut | Effet si absente |
+|---|---|---|
+| `CONTROL_CENTER` | activé | `non` désactive amorçage et tâches périodiques |
+| `SUPER_ADMIN_EMAIL` | — | Les alertes par email ne partent pas. **Journalisé explicitement** : on doit pouvoir le découvrir avant l'incident |
+| `REAUTH_DUREE_MINUTES` | `15` | Borné 2–60 |
+| `JOURNAL_TECHNIQUE_NIVEAU` | `info` en prod | `debug` gonflerait le volume |
+| `OPENAI_API_KEY` | — | Copilote et analyses IA indisponibles ; **tout le reste fonctionne** |
+| `AUDIT_INGEST_SECRET` | — | (existante) Ingestion CI fermée |
+
+---
+
+### 27.13 Tests
+
+`npm test` → **63 tests, 0 échec** (43 pour le Control Center).
+
+Aucun n'exige de base ni de réseau : ils portent sur l'analyse statique, les
+fonctions pures et les structures de données. C'est délibéré — **ils tournent
+vraiment**.
+
+Ils protègent les propriétés dont la violation serait grave ET silencieuse :
+
+- l'analyseur ne produit pas de faux constat (gardes hoistées, collision `/moi`
+  contre `/:id`, rôles pris pour des middlewares) ;
+- toute route `/super-admin` traverse `superAdminSeul` ; les 57 du Control
+  Center sont réservées au Super Admin ; la maintenance exige la
+  ré-authentification ; l'Explorateur ne déclare aucune écriture ;
+- le masquage attrape les secrets, y compris **en JSON** et **imbriqués** ;
+- aucun outil d'IA n'écrit ; les injections d'invite sont neutralisées ;
+  l'encadrement ne peut pas être refermé de l'intérieur ;
+- la matrice ne cite ni règle ni rôle inexistant, et **toutes ses routes
+  existent réellement** ;
+- le tirage de pourcentage est stable et bien réparti ;
+- **contrat frontend ↔ backend** : chaque chemin appelé correspond à une route
+  montée, chaque entrée de menu mène à une vue, aucune vue n'en écrase une
+  autre, les scripts sont chargés ET listés dans `SCRIPTS_REQUIS`.
+
+### Deux tests ont trouvé de vrais défauts pendant l'écriture
+
+1. `const { ecole_id } = req.body` — la déstructuration, forme idiomatique,
+   n'était pas détectée par l'analyseur d'isolation ;
+2. un constat de performance touchant 500 écoles passait devant une fuite
+   inter-écoles critique.
+
+Les deux sont corrigés, et les tests qui les ont trouvés restent en place.
+
+---
+
+### 27.14 Limites actuelles — à lire avant de promettre quoi que ce soit
+
+**Ce qui n'est pas fait, et qui n'est pas prétendu fait :**
+
+1. **Aucune analyse de vulnérabilités des dépendances.** Cela exige
+   d'interroger une base d'avis (npm audit, OSV), donc un appel réseau sortant.
+   L'écran le DIT au lieu d'afficher un voyant vert non mesuré. Chemin
+   recommandé : `npm audit --json` en CI → `POST /audits/executions` avec
+   `AUDIT_INGEST_SECRET` (le mécanisme existe déjà).
+2. **Pas de MFA/TOTP.** La ré-authentification est une preuve de présence, pas
+   un second facteur.
+3. **Coûts d'infrastructure saisis à la main.** Render, Supabase et Resend
+   n'exposent pas d'API de facturation exploitable sans identifiants
+   supplémentaires. Les montants affichés sont ceux saisis dans « Services &
+   coûts », pas des relevés. Seul le coût IA est calculé — et estimé.
+4. **Un seul parcours synthétique** (école → année → classe → élève →
+   relecture). Les parcours bulletin et abonnement restent à écrire.
+5. **Couverture de la matrice : 18,8 %.** Elle couvre les ressources sensibles.
+   L'étendre est du travail de saisie, guidé par
+   `couverture.non_couvertes`.
+6. **Métriques d'API en mémoire.** Un redéploiement Render remet le collecteur
+   à zéro. Le relevé horaire dans `scores_plateforme` conserve l'essentiel ;
+   la synthèse affiche l'uptime du processus pour qu'on ne confonde pas « peu
+   de trafic » et « redéployé il y a dix minutes ».
+7. **Les rapports ne sont pas encore planifiés** : `POST /ia/rapport` existe,
+   son déclenchement quotidien reste à câbler (cron Render → route `/jobs`).
+8. **La conversation du copilote n'est pas conservée** entre deux visites : elle
+   peut contenir des noms d'écoles et des détails d'incidents, et la garder
+   demanderait une politique de rétention qui n'existe pas encore.
+
+---
+
+### 27.15 Ce que le premier audit a trouvé sur le dépôt actuel
+
+Résultats réels, sur le code tel qu'il est :
+
+**Permissions — 6 constats**, tous `moyenne`, tous marqués **hypothèse** :
+six routes d'écriture authentifiées sans aucune restriction de rôle
+(`POST /assistant/question`, `PATCH /assistant/onboarding`,
+`POST /assistant/aide-contextuelle`, `PATCH /notifications/:id/lu`,
+`POST /notifications/tout-marquer-lu`,
+`POST /uploads/photo-utilisateur/:utilisateurId`).
+
+Les routes `/moi` sont exclues par un critère écrit. **La dernière mérite un
+regard** : le chemin porte un `:utilisateurId`, et rien dans la route ne
+restreint qui peut envoyer une photo pour qui.
+
+**Multi-tenant — 12 constats**, tous `moyenne`, tous **faits** : douze fonctions
+posent bien le contexte de cloisonnement mais n'écrivent aucun `ecole_id` dans
+leurs requêtes (`calendrier.modifier`, `comptabilite.modifierCategorie`,
+`discipline.supprimerIncident`, `emploi-du-temps.retirerSeance`,
+`frais.supprimerConfig`, `ia.appliquerAppreciations`,
+`inscriptions.modifierSession`, `inscriptions.publierSession`,
+`modeles-bulletins.supprimerModele`, `structure.retirerCoursDeClasse`,
+`structure.modifierPeriode`, `travaux.supprimer`).
+
+**Aucune fuite aujourd'hui** : RLS s'applique. Mais l'isolation de ces douze
+écritures repose entièrement sur la policy de leur table. Le correctif est d'un
+paramètre : `AND ecole_id = $n`.
+
+**Aucun constat critique**, et aucune route d'écriture non authentifiée hors
+liste documentée.
+
+**Qualité des données** : nécessite une connexion à la base — non exécuté ici.
+
+---
+
+### 27.16 Comment démarrer
+
+```bash
+# 1. Appliquer la migration (obligatoire)
+psql "$DATABASE_URL" -f migrations/030-control-center.sql
+
+# 2. Redémarrer le backend
+#    → synchronise les 45 règles métier vers la base
+#    → arme les tâches périodiques (scores, vérifications, purge)
+
+# 3. Dans l'espace Super Admin : « Control Center » puis « Lancer un audit complet »
+```
+
+Sans la migration, le serveur démarre normalement et affiche un avertissement
+nommant le fichier à appliquer. Les écrans du Control Center répondront en
+erreur, **le reste de la plateforme n'est pas affecté**.
+
+Vérification :
+
+```sql
+SELECT count(*) FROM regles_metier;   -- 45 attendues
+SELECT count(*) FROM alertes_regles;  -- 12 attendues
+```

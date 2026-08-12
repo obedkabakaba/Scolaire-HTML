@@ -196,6 +196,14 @@
      1. Offres
      ====================================================================== */
 
+  /**
+   * Les trois prix ne passent QUE par la route tracée `/offres/:id/prix`.
+   * Le serveur les refuse ailleurs — silencieusement, faute de mieux : il
+   * ignore un champ qu'il ne connaît pas. Le formulaire de modification les
+   * retire donc plutôt que de les proposer pour rien.
+   */
+  const PRIX_TRACES = ['prix', 'prix_semestriel', 'prix_annuel'];
+
   const CHAMPS_OFFRE = (o = {}) => [
     { cle: 'nom', libelle: "Nom de l'offre", requis: true, valeur: o.nom, exemple: 'Ex. Formule Découverte' },
     { cle: 'code', libelle: 'Code interne', valeur: o.code, longueurMax: 40, aide: 'Repère stable pour les exports. Facultatif.' },
@@ -346,9 +354,31 @@
         ${peut ? `
           <button class="sa-bouton sa-bouton-secondaire sa-bouton-petit" data-modifier="${esc(o.id)}">Modifier</button>
           <button class="sa-bouton sa-bouton-secondaire sa-bouton-petit" data-prix="${esc(o.id)}">Changer le prix</button>
-          <button class="sa-bouton sa-bouton-secondaire sa-bouton-petit" data-statut="${esc(o.id)}">Statut</button>` : ''}
+          <button class="sa-bouton sa-bouton-secondaire sa-bouton-petit" data-statut="${esc(o.id)}">Statut</button>
+          <button class="sa-bouton sa-bouton-secondaire sa-bouton-petit" data-visibilite="${esc(o.id)}">
+            ${o.visible_public === false ? 'Publier sur le site' : 'Retirer du site'}</button>
+          ${boutonSupprimer(o)}` : ''}
       </div>
     </div>`;
+  }
+
+  /**
+   * Le bouton de suppression, et pourquoi il est parfois désactivé.
+   *
+   * Le serveur renvoie `supprimable` et, quand il vaut faux, la phrase qui
+   * l'explique. On l'affiche en infobulle plutôt que de masquer le bouton :
+   * un bouton absent laisse chercher la commande — c'est exactement ce qui
+   * s'est produit ici — alors qu'un bouton grisé qui dit « 12 abonnements y
+   * sont rattachés » répond à la question sans qu'on ait à la poser.
+   */
+  function boutonSupprimer(o) {
+    const possible = o.supprimable !== false;
+    const explication = o.blocage_suppression
+      || 'Une offre qui a déjà servi ne se supprime pas : désactivez-la, puis archivez-la.';
+    return `<button class="sa-bouton sa-bouton-danger sa-bouton-petit"
+              data-supprimer="${esc(o.id)}" ${possible ? '' : 'disabled'}
+              title="${esc(possible ? 'Suppression définitive — offre jamais souscrite.' : explication)}">
+              Supprimer</button>`;
   }
 
   function brancherActionsOffres(conteneur, d) {
@@ -356,10 +386,15 @@
 
     conteneur.querySelectorAll('[data-modifier]').forEach((b) => b.addEventListener('click', () => {
       const o = trouver(b.dataset.modifier);
-      const champs = CHAMPS_OFFRE(o).filter((c) => c.cle !== 'prix');
+      // Les trois prix sortent du formulaire de modification : le serveur ne
+      // les accepte que par la route dédiée. Les laisser affichés donnait un
+      // champ qu'on remplit, qu'on enregistre, et qui revient inchangé au
+      // rechargement — sans un mot d'explication.
+      const champs = CHAMPS_OFFRE(o).filter((c) => !PRIX_TRACES.includes(c.cle));
       formulaire({
         titre: `Modifier « ${o.nom} »`,
-        sousTitre: 'Le prix ne se modifie pas ici : il exige un motif et alimente un historique.',
+        sousTitre: 'Les prix ne se modifient pas ici : ils exigent un motif et alimentent un historique. '
+                 + 'Utilisez « Changer le prix ».',
         champs,
         soumettre: (v) => envoyer(`/super-admin/offres/${o.id}`, 'PATCH', regrouperLimites(v), 'Offre mise à jour.')
       });
@@ -390,6 +425,82 @@
           Object.assign({ confirmation: true }, v), 'Statut mis à jour.')
       });
     }));
+
+    /* Publication sur le site public, en un clic.
+       C'est le même champ que la bascule du formulaire de modification, mais
+       c'est le geste qu'on cherche quand on veut « enlever une offre du
+       site » — et le chercher dans un formulaire de vingt champs faisait
+       douter qu'il existe. */
+    conteneur.querySelectorAll('[data-visibilite]').forEach((b) => b.addEventListener('click', async () => {
+      const o = trouver(b.dataset.visibilite);
+      const retirer = o.visible_public !== false;
+
+      const ok = await SA.confirmer({
+        titre: retirer ? `Retirer « ${o.nom} » du site public ?` : `Publier « ${o.nom} » sur le site ?`,
+        message: retirer
+          ? 'L\'offre disparaît de la page des tarifs et du comparatif. Les écoles déjà abonnées '
+            + 'ne sont pas touchées et continuent d\'être facturées normalement.'
+          : (o.statut === 'actif'
+              ? 'L\'offre réapparaît sur la page des tarifs avec son prix actuel.'
+              : `L'offre est ${o.statut === 'archive' ? 'archivée' : 'désactivée'} : elle restera absente `
+                + 'du site tant que son statut n\'est pas repassé à « active ».'),
+        libelleValider: retirer ? 'Retirer du site' : 'Publier',
+        danger: retirer
+      });
+      if (!ok) return;
+
+      try {
+        await envoyer(`/super-admin/offres/${o.id}`, 'PATCH', { visible_public: !retirer },
+          retirer ? 'Offre retirée du site public.' : 'Offre publiée sur le site.');
+      } catch (e) {
+        SA.toast(e.message || 'Modification refusée.', 'danger');
+      }
+    }));
+
+    /* Suppression définitive. */
+    conteneur.querySelectorAll('[data-supprimer]').forEach((b) => b.addEventListener('click', () => {
+      const o = trouver(b.dataset.supprimer);
+      if (!o || o.supprimable === false) return;
+      ouvrirSuppression(o);
+    }));
+  }
+
+  /**
+   * Suppression d'une offre : nom à recopier, puis appel DELETE.
+   *
+   * Le nom recopié est demandé par le serveur, pas seulement affiché ici. La
+   * modale ne fait donc que rendre lisible une règle qui existe des deux
+   * côtés : sans elle, l'appel repart en 400 et l'utilisateur croit à une
+   * panne. Le message d'erreur du serveur — « 12 abonnements y sont
+   * rattachés » — est réaffiché tel quel, parce qu'il est plus précis que
+   * tout ce qu'on pourrait deviner ici.
+   */
+  function ouvrirSuppression(o) {
+    formulaire({
+      titre: `Supprimer « ${o.nom} » ?`,
+      sousTitre: 'Suppression définitive. L\'offre et son historique de prix disparaissent. '
+               + 'Elle n\'est possible que parce qu\'aucune école n\'y a jamais été abonnée.',
+      large: false,
+      danger: true,
+      libelleValider: 'Supprimer définitivement',
+      champs: [
+        { cle: 'nom_confirmation', libelle: 'Recopiez le nom de l\'offre', requis: true,
+          longueurMax: 120, exemple: o.nom,
+          aide: `Tapez exactement « ${o.nom} » pour confirmer.` },
+        { cle: 'raison', libelle: 'Motif', type: 'zone', lignes: 2,
+          aide: 'Conservé au journal financier : la suppression, elle, ne se relit pas.' }
+      ],
+      async soumettre(v) {
+        if (String(v.nom_confirmation || '').trim().toLowerCase() !== String(o.nom).trim().toLowerCase()) {
+          throw new Error(`Le nom recopié ne correspond pas à « ${o.nom} ».`);
+        }
+        await envoyer(`/super-admin/offres/${o.id}`, 'DELETE', {
+          confirmation: true,
+          nom_confirmation: v.nom_confirmation,
+          raison: v.raison
+        }, `Offre « ${o.nom} » supprimée.`);
+      }
+    });
   }
 
   /**

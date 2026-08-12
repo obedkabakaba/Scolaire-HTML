@@ -2714,7 +2714,7 @@ retrouver les vrais bugs — c'est-à-dire à dégrader l'outil qui fonctionne.
 ### 27.2 Architecture — la chaîne complète
 
 ```
-  RÈGLE MÉTIER          utils/regles-metier.registry.js     (45 règles, versionnées)
+  RÈGLE MÉTIER          utils/regles-metier.registry.js     (46 règles, versionnées)
         ↓
   MATRICE               utils/matrice-permissions.utils.js  (rôle × ressource × action)
         ↓
@@ -2800,7 +2800,7 @@ difficilement qu'une policy.
 | Fichier | Rôle |
 |---|---|
 | `migrations/030-control-center.sql` | 21 tables, index, RLS, amorçage |
-| `utils/regles-metier.registry.js` | **45 règles métier** + synchronisation |
+| `utils/regles-metier.registry.js` | **46 règles métier** + synchronisation |
 | `utils/analyse-code.utils.js` | Analyseur statique — 399 routes, 55 contrôleurs |
 | `utils/matrice-permissions.utils.js` | Matrice théorique rôle × ressource × action |
 | `utils/audit-permissions.utils.js` | Auditeur des permissions |
@@ -3317,7 +3317,7 @@ liste documentée.
 psql "$DATABASE_URL" -f migrations/030-control-center.sql
 
 # 2. Redémarrer le backend
-#    → synchronise les 45 règles métier vers la base
+#    → synchronise les 46 règles métier vers la base
 #    → arme les tâches périodiques (scores, vérifications, purge)
 
 # 3. Dans l'espace Super Admin : « Control Center » puis « Lancer un audit complet »
@@ -3330,6 +3330,6 @@ erreur, **le reste de la plateforme n'est pas affecté**.
 Vérification :
 
 ```sql
-SELECT count(*) FROM regles_metier;   -- 45 attendues
+SELECT count(*) FROM regles_metier;   -- 46 attendues
 SELECT count(*) FROM alertes_regles;  -- 12 attendues
 ```

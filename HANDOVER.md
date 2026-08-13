@@ -3333,3 +3333,135 @@ Vérification :
 SELECT count(*) FROM regles_metier;   -- 46 attendues
 SELECT count(*) FROM alertes_regles;  -- 12 attendues
 ```
+
+---
+
+# ARDOISE QUALITY GATE — MATURITÉ & RELEASE ENGINEERING
+
+> Le chantier d'industrialisation a porté sur le dépôt **backend**
+> (`scolaire-saas-backend`). Cette section dit ce que cela change pour
+> `Scolaire-HTML`, et ce qui reste à faire **ici**.
+
+## 1. Pourquoi l'orchestration vit dans le dépôt privé
+
+`Scolaire-HTML` est **public**, le backend est **privé**. Une GitHub Action
+déclenchée par une Pull Request venue d'un fork ne doit jamais pouvoir lire
+`DATABASE_URL`, la clé de service Supabase, `AUDIT_INGEST_SECRET`, la clé OpenAI
+ou celle de Resend.
+
+Conséquence, et c'est une règle à ne pas contourner :
+
+- le Quality Gate croisé est orchestré **côté backend privé** ;
+- ce dépôt-ci n'exécute que ce qui n'a besoin d'**aucun secret** ;
+- **aucun secret GitHub ne doit être ajouté à `Scolaire-HTML`.**
+
+Le `Release Gate` du backend fait un `checkout` **en lecture seule** de ce dépôt
+au SHA annoncé, et le rapport final nomme les **deux** commits — backend et
+frontend. Un backend sain avec un frontend d'une autre version est une release
+cassée que personne ne mesure.
+
+## 2. Ce qui est réutilisé de ce dépôt, sans réécriture
+
+`audit-all.py`, `audit-frontend.py`, `audit-contrat-api.py`, `audit-sql.py`,
+`audit-responsive.py`, `audit-mobile.py`, `audit_commun.py` restent la référence
+des audits statiques et responsive. `audit-contrat-api.py` est appelé par le
+Release Gate pour vérifier que chaque appel API du frontend correspond à une
+route réellement montée côté backend.
+
+Leurs résultats s'ingèrent par l'API existante (`POST /audits/executions`,
+secret `AUDIT_INGEST_SECRET`) — aucune seconde API n'a été créée.
+
+## 3. Ce qui vous concerne DIRECTEMENT — une action requise
+
+### Idempotence des encaissements : le serveur est prêt, le client non
+
+Le backend **sait** désormais refuser un double encaissement, à condition que
+l'appelant fournisse une clé stable. C'est testé et vérifié en base.
+
+Mais **`Scolaire-HTML` n'envoie pas encore cette clé**. Tant que c'est le cas, un
+double clic sur « Enregistrer le paiement », un retry réseau ou un timeout suivi
+d'une nouvelle tentative créent **toujours deux paiements** — dette faussée et
+reçu en trop.
+
+Le serveur ne peut pas deviner l'intention : deux versements de 50 $ par le même
+parent le même jour sont parfaitement légitimes. Seul le client sait que sa
+seconde requête est la **même** que la première.
+
+À faire, sur chaque écran de paiement (`frais.html`, `comptabilite.html`, tout
+formulaire appelant `POST /frais/paiements`) :
+
+```js
+// UNE clé par intention de paiement — générée à l'OUVERTURE du formulaire,
+// jamais à l'envoi. Générée à l'envoi, chaque clic produirait une clé
+// différente et l'idempotence ne servirait à rien.
+const cleIdempotence = crypto.randomUUID();
+
+await fetch(`${API}/frais/paiements`, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${jeton}`,
+    'Idempotence-Cle': cleIdempotence      // ou cle_idempotence dans le corps
+  },
+  body: JSON.stringify({ eleve_id, montant, devise, methode })
+});
+```
+
+Le rejeu répond **200** avec `{ rejeu: true }` — et non une erreur. À traiter
+comme un succès : le paiement *est* enregistré. Afficher une erreur pousserait
+l'utilisateur à réessayer, donc à aggraver le problème.
+
+**Ne pas générer la clé à nouveau après un échec réseau** : c'est exactement le
+cas que la clé sert à couvrir.
+
+## 4. Deux risques audités côté backend, NON traités ici
+
+Les deux relèvent de ce dépôt et n'ont **pas** été corrigés. Ils sont déclarés
+NON MESURÉS par le Quality Gate — ni réussis, ni échoués.
+
+### `hors-ligne.js` — file d'attente trop large
+
+La logique met en attente **toute écriture sauf exceptions**, puis les rejoue.
+Pratique, mais dangereux appliqué sans discernement : une opération ne devrait
+être différable que si elle a été **conçue** pour l'être.
+
+À passer d'une liste d'exclusions à une **liste explicite d'opérations
+autorisées hors ligne**, en examinant en particulier : paiements, comptabilité,
+suppressions, changements de permissions, actions Super Admin, abonnements,
+publication, clôture, promotion.
+
+### `sw.js` — cache non partitionné
+
+Le Service Worker met en cache des réponses `GET` du backend. Scénario à
+vérifier :
+
+```
+Directeur École A → consulte → se déconnecte
+Directeur École B sur le MÊME téléphone → réseau coupé → ouvre la même page
+```
+
+L'École B ne doit **jamais** voir une réponse mise en cache pour l'École A. Si la
+clé de cache ne dépend pas de l'utilisateur/école, la fuite est possible.
+
+Pistes : partition par utilisateur/école, purge complète à la déconnexion,
+exclusion des réponses financières et des résultats scolaires. **Sécuriser le
+bénéfice hors ligne, pas le supprimer.**
+
+Note : un `git revert` **ne suffit pas** à corriger une régression de `sw.js` —
+le cache survit. Faire évoluer le nom du cache pour forcer l'invalidation.
+
+## 5. Non réalisé dans ce dépôt
+
+Playwright E2E métier (personas Directeur → Secrétaire → Comptable → Professeur
+→ Titulaire → bulletin → famille) · axe (accessibilité) · snapshots visuels
+ciblés · audit offline · partition du cache PWA.
+
+`audit-mobile.py` utilise déjà Playwright pour le responsive et **reste la base**
+sur laquelle bâtir la suite E2E — inutile d'en installer une seconde à côté.
+
+## 6. Aucun secret ici
+
+Rappel qui vaut d'être répété : aucune clé API dans le frontend, dans les
+journaux, dans une conversation, dans une base de connaissance ou dans un
+rapport. `Scolaire-HTML` étant public, tout secret ajouté ici est un secret
+publié.

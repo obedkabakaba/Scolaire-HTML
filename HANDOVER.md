@@ -3465,3 +3465,59 @@ Rappel qui vaut d'être répété : aucune clé API dans le frontend, dans les
 journaux, dans une conversation, dans une base de connaissance ou dans un
 rapport. `Scolaire-HTML` étant public, tout secret ajouté ici est un secret
 publié.
+
+---
+
+# RELEASE READINESS — L'ÉCRAN DE VERDICT
+
+*Section ajoutée par l'audit du Quality Gate.*
+
+## Ce qui manquait
+
+L'endpoint `/super-admin/control-center/release-readiness` existait côté backend
+et appliquait déjà le moteur de verdict partagé (`utils/quality-gate.utils.js`).
+**Aucun écran ne le lisait.** Le verdict n'était donc consultable qu'en ligne de
+commande — c'est-à-dire par personne, au moment précis où l'on décide d'une
+livraison.
+
+## Ce qui a été ajouté
+
+`super-admin-vues-cc-release.js`, route `#/cc/release`, première entrée du groupe
+« Contrôle ».
+
+L'écran **ne mesure rien lui-même**. Il lit l'endpoint, qui agrège les passages de
+CI déjà ingérés dans `audit_runs`. Le même moteur rend le verdict ici et en ligne
+de commande : il ne peut donc pas y avoir deux vérités. Ce n'est pas un second
+Control Center — la mission l'interdisait explicitement.
+
+Sont affichés : SHA backend et frontend, environnement, date, tests **réellement
+exécutés** / réussis / échoués / ignorés, blocages durs, réserves, détail par
+catégorie avec sa source, derniers passages de CI, dix dernières releases.
+
+## La règle que cet écran existe pour tenir
+
+```
+NON MESURÉ N'EST PAS VERT.
+```
+
+C'est la règle qu'un tableau de bord viole le plus naturellement, parce qu'il est
+plus facile d'afficher « 0 anomalie » que « je n'ai pas pu regarder ». Une
+catégorie sans résultat est donc rendue avec un ton **distinct de « réussi » ET de
+« échoué »** — c'est un troisième état, pas une nuance de l'un des deux — puis
+listée nommément dans son propre encart, et comptée dans le résumé. Elle n'est
+jamais omise, et elle n'est jamais verte.
+
+Même exigence sur les compteurs : le nombre affiché est celui des tests
+**réellement exécutés**. Une suite qui rapporte zéro test n'a pas réussi : elle
+n'a rien fait.
+
+## Vérification de syntaxe de la CI
+
+Le contrôle `node --check` de `frontend-quality.yml` énumérait cinq fichiers à la
+main, sur les vingt-huit que porte le dépôt. Un fichier ajouté n'était vérifié par
+personne, et rien ne le signalait — exactement la dérive qui avait laissé cinq
+fichiers de test inexécutés côté backend.
+
+Il porte désormais sur `*.js`, avec un compteur qui **échoue** si le motif cesse de
+correspondre à quoi que ce soit : une étape qui ne lit rien ne prouve rien.
+Mesuré : 28 fichiers vérifiés, tous valides.

@@ -380,7 +380,7 @@
       <div class="champ"><label for="champ-notes-paiement">Note (optionnel)</label><input type="text" id="champ-notes-paiement" /></div>
       <div class="actions-modale">
         <button type="button" class="bouton bouton-secondaire" id="bouton-fermer-paiement">Fermer</button>
-        <button type="submit" class="bouton bouton-principal">Enregistrer le paiement</button>
+        <button type="submit" class="bouton bouton-principal" id="bouton-enregistrer-paiement">Enregistrer le paiement</button>
       </div>
     </form>
   </div>
@@ -689,9 +689,16 @@
   document.getElementById('bouton-afficher').addEventListener('click', chargerEleves);
 
   let eleveCourantPaiement = null;
+  let cleIdempotencePaiement = null;
+  let paiementEnCours = false;
+
+  function genererCleIdempotencePaiement() {
+    return crypto.randomUUID();
+  }
 
   async function ouvrirPaiements(eleveId, nom) {
     eleveCourantPaiement = eleveId;
+    cleIdempotencePaiement = genererCleIdempotencePaiement();
     document.getElementById('titre-modale-paiement').textContent = `Paiements — ${nom}`;
     document.getElementById('paiement-eleve-id').value = eleveId;
     document.getElementById('voile-paiement').classList.add('visible');
@@ -825,6 +832,12 @@
 
   document.getElementById('formulaire-paiement').addEventListener('submit', async (evt) => {
     evt.preventDefault();
+    if (paiementEnCours) return;
+
+    paiementEnCours = true;
+    const boutonEnregistrer = document.getElementById('bouton-enregistrer-paiement');
+    boutonEnregistrer.disabled = true;
+
     const r = await appelApi('/frais/paiements', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -833,17 +846,24 @@
         montant: parseFloat(document.getElementById('champ-montant-paiement').value),
         devise: document.getElementById('champ-devise-paiement').value,
         methode: document.getElementById('champ-methode-paiement').value,
-        notes: document.getElementById('champ-notes-paiement').value.trim()
+        notes: document.getElementById('champ-notes-paiement').value.trim(),
+        cle_idempotence: cleIdempotencePaiement
       })
     });
     const d = r ? await r.json().catch(() => ({})) : {};
+    paiementEnCours = false;
+    boutonEnregistrer.disabled = false;
     if (!r || !r.ok) { afficherMessage(d.message || "Erreur lors de l'enregistrement.", 'erreur'); return; }
+
     afficherMessage(
-      `Paiement de ${formaterMontant(d.montant, d.devise)} enregistré (${d.reference})`
-      + (d.equivalent !== null && d.equivalent !== undefined
-          ? ` — soit ${formaterMontant(d.equivalent, d.devise_attendue)}.` : '.'),
+      d.rejeu
+        ? 'Ce paiement avait déjà été enregistré. Aucun doublon créé.'
+        : `Paiement de ${formaterMontant(d.montant, d.devise)} enregistré (${d.reference})`
+          + (d.equivalent !== null && d.equivalent !== undefined
+              ? ` — soit ${formaterMontant(d.equivalent, d.devise_attendue)}.` : '.'),
       'succes');
     document.getElementById('formulaire-paiement').reset();
+    cleIdempotencePaiement = genererCleIdempotencePaiement();
     await chargerHistoriquePaiements(eleveCourantPaiement);
     chargerEleves();
   });

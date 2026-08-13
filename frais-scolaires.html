@@ -838,21 +838,29 @@
     const boutonEnregistrer = document.getElementById('bouton-enregistrer-paiement');
     boutonEnregistrer.disabled = true;
 
-    const r = await appelApi('/frais/paiements', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        eleve_id: eleveCourantPaiement,
-        frais_id: document.getElementById('champ-frais-regle').value || null,
-        montant: parseFloat(document.getElementById('champ-montant-paiement').value),
-        devise: document.getElementById('champ-devise-paiement').value,
-        methode: document.getElementById('champ-methode-paiement').value,
-        notes: document.getElementById('champ-notes-paiement').value.trim(),
-        cle_idempotence: cleIdempotencePaiement
-      })
-    });
+    let r;
+    try {
+      r = await appelApi('/frais/paiements', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          eleve_id: eleveCourantPaiement,
+          frais_id: document.getElementById('champ-frais-regle').value || null,
+          montant: parseFloat(document.getElementById('champ-montant-paiement').value),
+          devise: document.getElementById('champ-devise-paiement').value,
+          methode: document.getElementById('champ-methode-paiement').value,
+          notes: document.getElementById('champ-notes-paiement').value.trim(),
+          cle_idempotence: cleIdempotencePaiement
+        })
+      });
+    } catch (erreur) {
+      afficherMessage("Le paiement n'a pas pu être envoyé. Réessaie sans fermer la fenêtre.", 'erreur');
+      return;
+    } finally {
+      paiementEnCours = false;
+      boutonEnregistrer.disabled = false;
+    }
+
     const d = r ? await r.json().catch(() => ({})) : {};
-    paiementEnCours = false;
-    boutonEnregistrer.disabled = false;
     if (!r || !r.ok) { afficherMessage(d.message || "Erreur lors de l'enregistrement.", 'erreur'); return; }
 
     afficherMessage(

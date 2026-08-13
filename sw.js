@@ -3,7 +3,7 @@
    Les réponses API authentifiées NE SONT PLUS mises en cache tant qu'un cache
    partitionné par utilisateur + école n'a pas été conçu et testé. */
 
-const VERSION='ardoise-v47';
+const VERSION='ardoise-v48';
 const CACHE_COQUILLE=`${VERSION}-coquille`;
 const COQUILLE=[
   './','connexion.html','changer-mot-de-passe.html','dashboard-directeur.html',
@@ -16,7 +16,7 @@ const COQUILLE=[
   'apercu-bulletin-primaire.html','apercu-bulletin-secondaire.html',
   'apercu-bulletin-terminale.html','apercu-bulletin-semestre.html',
   'mon-profil.html','messages.html','site-public.html','discipline.html','cours.html',
-  'archives.html','rapports.html','super-admin.html','theme.css','ui.css','mobile.css',
+  'archives.html','rapports.html','super-admin.html','theme.css','theme-base.css','ui.css','mobile.css',
   'mobile.js','theme.js','ui.js','session.js','acces-presences.js','filtre-cycle.js',
   'hors-ligne.js','didacticiel.js','didacticiel.css','super-admin-styles.css',
   'super-admin-noyau.js','super-admin-vues-pilotage.js','super-admin-vues-ecoles.js',

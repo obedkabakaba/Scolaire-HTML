@@ -57,6 +57,32 @@
   }
 })();
 
+/* ==========================================================================
+   Contraste minimal WCAG du thème Ardoise
+   --------------------------------------------------------------------------
+   Le Quality Gate navigateur mesure les couleurs réellement composées par
+   Chromium. Deux jetons historiques étaient juste sous 4,5:1 sur le fond
+   craie : `--texte-att` (4,43) et `--vert-ok` (4,42). Les valeurs ci-dessous
+   restent visuellement très proches, mais passent respectivement à ~4,63 et
+   ~5,07. Les opacités du Super Admin étaient, elles, destructrices pour le
+   contraste : un texte déjà atténué à 65 % tombait à 2,4:1.
+
+   Ces règles sont injectées ici parce que `theme.js` est le point commun déjà
+   chargé par les espaces applicatifs et le Super Admin. On ne duplique donc
+   pas quatre correctifs locaux qui pourraient diverger au prochain redesign.
+   ========================================================================== */
+(function appliquerContrasteArdoise() {
+  var style = document.createElement('style');
+  style.id = 'ardoise-contraste-wcag';
+  style.textContent = [
+    'html[data-theme="ardoise"]{--texte-att:#686F66;--vert-ok:#467052;}',
+    'html[data-theme="ardoise"] .valider{color:var(--texte-sombre,#1F2B24)!important;}',
+    'html[data-theme="ardoise"] #sa-identite{color:var(--nav-texte-fort,#F6F2E7)!important;}',
+    'html[data-theme="ardoise"] .sa-muet,html[data-theme="ardoise"] .sa-carte-detail{opacity:1!important;color:var(--texte-att,#686F66)!important;}'
+  ].join('');
+  (document.head || document.documentElement).appendChild(style);
+})();
+
 window.ARDOISE_THEMES = [
   {
     cle: 'studio',

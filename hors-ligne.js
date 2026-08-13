@@ -1,263 +1,65 @@
-/* ==========================================================================
-   Ardoise — Fonctionnement hors ligne (côté page)
-   --------------------------------------------------------------------------
-   Trois rôles :
-
-     1. Installer le service worker (cache des pages et des données lues)
-     2. Mettre les écritures en file d'attente quand la connexion manque
-     3. Rejouer cette file dès le retour du réseau
-
-   Ce fichier n'exige aucune modification des pages : il enveloppe la
-   fonction appelApi() que chacune définit déjà.
-   ========================================================================== */
-
+/* Ardoise — file hors ligne sécurisée */
 (function () {
   'use strict';
+  var CLE_FILE = 'ardoise_file_hors_ligne_v2';
+  var AUTORISEES = [
+    { methode:'POST', motif:/^\/presences\/classe\/[^/]+$/ },
+    { methode:'POST', motif:/^\/notes\/grille$/ },
+    { methode:'POST', motif:/^\/notes\/grille-travaux$/ }
+  ];
 
-  var CLE_FILE = 'ardoise_file_hors_ligne';
-  var METHODES_ECRITURE = ['POST', 'PUT', 'PATCH', 'DELETE'];
-
-  // Ces appels ne doivent jamais être différés : les rejouer plus tard n'a
-  // aucun sens et pourrait produire des effets inattendus.
-  var JAMAIS_DIFFERE = ['/auth/', '/uploads/'];
-
-  // ------------------------------------------------------------------
-  //  File d'attente (localStorage : suffisant pour des charges légères
-  //  et bien plus simple à auditer qu'IndexedDB)
-  // ------------------------------------------------------------------
-  function lireFile() {
-    try { return JSON.parse(localStorage.getItem(CLE_FILE) || '[]'); }
-    catch (e) { return []; }
+  function differable(chemin, methode) {
+    return AUTORISEES.some(function (r) { return r.methode === methode && r.motif.test(chemin); });
+  }
+  function contexte() {
+    try {
+      var u = window.ArdoiseSession && window.ArdoiseSession.utilisateur ? window.ArdoiseSession.utilisateur() : null;
+      if (!u) return null;
+      return { utilisateur_id:u.id || u.utilisateur_id || null, ecole_id:u.ecole_id || (u.ecole && u.ecole.id) || null };
+    } catch (e) { return null; }
+  }
+  function memeContexte(a,b) {
+    return !!a && !!b && String(a.utilisateur_id||'') === String(b.utilisateur_id||'') && String(a.ecole_id||'') === String(b.ecole_id||'');
+  }
+  function lire() { try { var x=JSON.parse(localStorage.getItem(CLE_FILE)||'[]'); return Array.isArray(x)?x:[]; } catch(e){ return []; } }
+  function ecrire(x) { try { localStorage.setItem(CLE_FILE, JSON.stringify(x)); } catch(e){} }
+  function ajouter(entree) {
+    var c=contexte();
+    if (!c || !c.utilisateur_id || !c.ecole_id) throw new Error('Session non vérifiable hors ligne.');
+    var f=lire();
+    entree.contexte=c;
+    entree.operation_locale_id=(crypto && crypto.randomUUID)?crypto.randomUUID():String(Date.now())+'-'+Math.random();
+    f.push(entree); ecrire(f); maj();
   }
 
-  function ecrireFile(file) {
-    try { localStorage.setItem(CLE_FILE, JSON.stringify(file)); }
-    catch (e) { /* stockage plein ou navigation privée */ }
-  }
+  var bandeau=null;
+  function creer(){ if(bandeau||!document.body)return; bandeau=document.createElement('div'); bandeau.id='bandeau-hors-ligne'; bandeau.innerHTML='<span class="bhl-texte"></span><button type="button" class="bhl-action" style="display:none;">Synchroniser</button>'; document.body.appendChild(bandeau); bandeau.querySelector('.bhl-action').addEventListener('click', synchroniser); }
+  function maj(){ creer(); if(!bandeau)return; var n=lire().length,t=bandeau.querySelector('.bhl-texte'),a=bandeau.querySelector('.bhl-action'); if(!navigator.onLine){bandeau.className='visible hors-ligne';t.textContent=n?n+' saisie(s) autorisée(s) en attente.':'Hors ligne — seules certaines saisies pédagogiques sont différables.';a.style.display='none';}else if(n){bandeau.className='visible en-attente';t.textContent=n+' saisie(s) à synchroniser.';a.style.display='';}else bandeau.className=''; }
+  function annoncer(m,type){creer();if(!bandeau)return;bandeau.className='visible '+(type||'succes');bandeau.querySelector('.bhl-texte').textContent=m;bandeau.querySelector('.bhl-action').style.display='none';setTimeout(maj,5000);}
 
-  function ajouterAlaFile(entree) {
-    var file = lireFile();
-    file.push(entree);
-    ecrireFile(file);
-    majBandeau();
-  }
-
-  // ------------------------------------------------------------------
-  //  Bandeau d'état
-  // ------------------------------------------------------------------
-  var bandeau = null;
-
-  function creerBandeau() {
-    if (bandeau || !document.body) return;
-    bandeau = document.createElement('div');
-    bandeau.id = 'bandeau-hors-ligne';
-    bandeau.innerHTML =
-      '<span class="bhl-texte"></span>' +
-      '<button type="button" class="bhl-action" style="display:none;">Synchroniser</button>';
-    document.body.appendChild(bandeau);
-    bandeau.querySelector('.bhl-action').addEventListener('click', synchroniser);
-  }
-
-  function majBandeau() {
-    creerBandeau();
-    if (!bandeau) return;
-
-    var enAttente = lireFile().length;
-    var texte = bandeau.querySelector('.bhl-texte');
-    var action = bandeau.querySelector('.bhl-action');
-
-    if (!navigator.onLine) {
-      bandeau.className = 'visible hors-ligne';
-      texte.textContent = enAttente > 0
-        ? 'Hors ligne — ' + enAttente + ' modification(s) en attente d\'envoi.'
-        : 'Hors ligne — vous consultez les dernières données enregistrées.';
-      action.style.display = 'none';
-      return;
-    }
-
-    if (enAttente > 0) {
-      bandeau.className = 'visible en-attente';
-      texte.textContent = enAttente + ' modification(s) à envoyer.';
-      action.style.display = '';
-      return;
-    }
-
-    bandeau.className = '';
-  }
-
-  function annoncer(message, type) {
-    creerBandeau();
-    if (!bandeau) return;
-    bandeau.className = 'visible ' + (type || 'succes');
-    bandeau.querySelector('.bhl-texte').textContent = message;
-    bandeau.querySelector('.bhl-action').style.display = 'none';
-    setTimeout(majBandeau, 5000);
-  }
-
-  // ------------------------------------------------------------------
-  //  Enveloppe autour de appelApi()
-  // ------------------------------------------------------------------
-  function installerEnveloppe() {
-    if (typeof window.appelApi !== 'function' || window.appelApi.__ardoiseHorsLigne) return;
-
-    var original = window.appelApi;
-
-    async function appelApiHorsLigne(chemin, options) {
-      options = options || {};
-      var methode = (options.method || 'GET').toUpperCase();
-      var estEcriture = METHODES_ECRITURE.indexOf(methode) !== -1;
-      var differable = estEcriture && !JAMAIS_DIFFERE.some(function (m) { return chemin.indexOf(m) === 0; });
-
-      // Hors ligne + écriture différable : on met de côté et on répond
-      // comme si c'était passé, en le disant clairement à l'utilisateur.
-      if (differable && !navigator.onLine) {
-        ajouterAlaFile({
-          chemin: chemin,
-          methode: methode,
-          corps: typeof options.body === 'string' ? options.body : null,
-          entetes: options.headers || { 'Content-Type': 'application/json' },
-          horodatage: Date.now()
-        });
-        return new Response(
-          JSON.stringify({
-            message: 'Enregistré sur cet appareil — sera envoyé dès le retour de la connexion.',
-            hors_ligne: true
-          }),
-          { status: 200, headers: { 'Content-Type': 'application/json' } }
-        );
+  function installer(){
+    if(typeof window.appelApi!=='function'||window.appelApi.__ardoiseHorsLigne)return;
+    var original=window.appelApi;
+    async function enveloppe(chemin,options){
+      options=options||{}; var m=(options.method||'GET').toUpperCase(); var d=differable(chemin,m); var ecriture=['POST','PUT','PATCH','DELETE'].indexOf(m)!==-1;
+      if(!navigator.onLine){
+        if(ecriture&&!d) return new Response(JSON.stringify({message:'Cette opération exige une connexion et n’a pas été enregistrée.',hors_ligne:true,differee:false}),{status:503,headers:{'Content-Type':'application/json'}});
+        if(d){ ajouter({chemin:chemin,methode:m,corps:typeof options.body==='string'?options.body:JSON.stringify(options.body||null),entetes:options.headers||{'Content-Type':'application/json'},horodatage:Date.now()}); return new Response(JSON.stringify({message:'Saisie conservée localement.',hors_ligne:true,differee:true}),{status:202,headers:{'Content-Type':'application/json'}}); }
       }
-
-      try {
-        return await original(chemin, options);
-      } catch (erreur) {
-        // La connexion a lâché en cours de route : même traitement.
-        if (differable) {
-          ajouterAlaFile({
-            chemin: chemin, methode: methode,
-            corps: typeof options.body === 'string' ? options.body : null,
-            entetes: options.headers || { 'Content-Type': 'application/json' },
-            horodatage: Date.now()
-          });
-          return new Response(
-            JSON.stringify({
-              message: 'Connexion perdue — la modification est conservée et sera envoyée plus tard.',
-              hors_ligne: true
-            }),
-            { status: 200, headers: { 'Content-Type': 'application/json' } }
-          );
-        }
-        throw erreur;
-      }
+      try { return await original(chemin,options); }
+      catch(err){ if(!d)throw err; ajouter({chemin:chemin,methode:m,corps:typeof options.body==='string'?options.body:JSON.stringify(options.body||null),entetes:options.headers||{'Content-Type':'application/json'},horodatage:Date.now()}); return new Response(JSON.stringify({message:'Connexion perdue — saisie conservée.',hors_ligne:true,differee:true}),{status:202,headers:{'Content-Type':'application/json'}}); }
     }
-
-    appelApiHorsLigne.__ardoiseHorsLigne = true;
-    // On garde la fonction d'origine telle quelle : c'est elle qui sait
-    // rafraîchir le jeton d'accès. Le rejeu doit impérativement passer par
-    // elle, sinon une saisie hors ligne de plus de quinze minutes se ferait
-    // refuser pour jeton expiré — et serait perdue.
-    appelApiHorsLigne.__original = original;
-    window.appelApi = appelApiHorsLigne;
+    enveloppe.__ardoiseHorsLigne=true; enveloppe.__original=original; window.appelApi=enveloppe;
   }
 
-  // ------------------------------------------------------------------
-  //  Rejeu de la file
-  // ------------------------------------------------------------------
-  var synchronisationEnCours = false;
-
-  async function synchroniser() {
-    if (synchronisationEnCours || !navigator.onLine) return;
-    var file = lireFile();
-    if (file.length === 0) { majBandeau(); return; }
-
-    synchronisationEnCours = true;
-    annoncer('Envoi de ' + file.length + ' modification(s)…', 'en-attente');
-
-    var restantes = [];
-    var envoyees = 0;
-    var rejetees = 0;
-
-    // L'ordre chronologique est respecté : une correction saisie après une
-    // première version doit arriver après elle, jamais l'inverse.
-    file.sort(function (a, b) { return a.horodatage - b.horodatage; });
-
-    for (var i = 0; i < file.length; i++) {
-      var entree = file[i];
-      try {
-        var envoyer = (window.appelApi && window.appelApi.__original) || window.appelApi;
-        if (typeof envoyer !== 'function') { restantes.push(entree); continue; }
-        var reponse = await envoyer(entree.chemin, {
-          method: entree.methode,
-          headers: entree.entetes,
-          body: entree.corps
-        });
-        if (!reponse) { restantes.push(entree); continue; }
-
-        if (reponse.ok) {
-          envoyees++;
-        } else if (reponse.status >= 400 && reponse.status < 500) {
-          // Refus définitif du serveur (donnée devenue invalide, droits
-          // retirés…). La rejouer indéfiniment ne servirait à rien.
-          rejetees++;
-        } else {
-          restantes.push(entree);
-        }
-      } catch (e) {
-        restantes.push(entree);
-      }
-    }
-
-    ecrireFile(restantes);
-    synchronisationEnCours = false;
-
-    if (rejetees > 0) {
-      annoncer(
-        envoyees + ' modification(s) envoyée(s), ' + rejetees + ' refusée(s) par le serveur — à ressaisir.',
-        'erreur'
-      );
-    } else if (envoyees > 0) {
-      annoncer(envoyees + ' modification(s) envoyée(s).', 'succes');
-      // Les écrans affichent des données désormais périmées : on recharge.
-      setTimeout(function () { window.location.reload(); }, 1800);
-    } else {
-      majBandeau();
-    }
+  var synchro=false;
+  async function synchroniser(){
+    if(synchro||!navigator.onLine)return; var f=lire(); if(!f.length){maj();return;} var c=contexte(); if(!c){annoncer('Reconnectez-vous avant la synchronisation.','erreur');return;} synchro=true; var reste=[],ok=0,refus=0,autre=0; f.sort(function(a,b){return a.horodatage-b.horodatage;});
+    for(var i=0;i<f.length;i++){var e=f[i]; if(!memeContexte(e.contexte,c)){reste.push(e);autre++;continue;} if(!differable(e.chemin,e.methode)){refus++;continue;} try{var envoyer=(window.appelApi&&window.appelApi.__original)||window.appelApi;var r=await envoyer(e.chemin,{method:e.methode,headers:e.entetes,body:e.corps});if(r&&r.ok)ok++;else if(r&&r.status>=400&&r.status<500)refus++;else reste.push(e);}catch(x){reste.push(e);}}
+    ecrire(reste); synchro=false; if(autre)annoncer(autre+' saisie(s) appartiennent à une autre session/école et n’ont pas été envoyées.','erreur'); else if(refus)annoncer(ok+' envoyée(s), '+refus+' refusée(s).','erreur'); else if(ok){annoncer(ok+' modification(s) envoyée(s).','succes');setTimeout(function(){location.reload();},1800);} else maj();
   }
 
-  // ------------------------------------------------------------------
-  //  Service worker
-  // ------------------------------------------------------------------
-  function installerServiceWorker() {
-    if (!('serviceWorker' in navigator)) return;
-    // Chemin relatif : indispensable sur GitHub Pages, où le site vit dans
-    // un sous-dossier et non à la racine du domaine.
-    navigator.serviceWorker.register('sw.js').catch(function (e) {
-      console.warn('[Ardoise] service worker non installé :', e);
-    });
-  }
-
-  // ------------------------------------------------------------------
-  //  Démarrage
-  // ------------------------------------------------------------------
-  function demarrer() {
-    installerServiceWorker();
-    installerEnveloppe();
-
-    majBandeau();
-    if (navigator.onLine) synchroniser();
-
-    window.addEventListener('online', function () { majBandeau(); synchroniser(); });
-    window.addEventListener('offline', majBandeau);
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', demarrer);
-  } else {
-    demarrer();
-  }
-
-  window.ArdoiseHorsLigne = {
-    enAttente: function () { return lireFile().length; },
-    synchroniser: synchroniser,
-    vider: function () { ecrireFile([]); majBandeau(); }
-  };
+  function demarrer(){ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(function(){}); installer(); maj(); if(navigator.onLine)synchroniser(); addEventListener('online',function(){maj();synchroniser();});addEventListener('offline',maj); }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',demarrer);else demarrer();
+  window.ArdoiseHorsLigne={enAttente:function(){return lire().length;},synchroniser:synchroniser,vider:function(){ecrire([]);maj();}};
 })();

@@ -385,6 +385,7 @@ def faq():
         "Vingt-huit questions, classées par sujet, avec des réponses qui n'esquivent "
         "pas. Quand la réponse est « non », elle est écrite « non ».",
         [("/contact/", "Poser une autre question", "secondaire")],
+        illustration=("faq", "Les réponses aux questions fréquentes sur Ardoise"),
     ) + f"""
 <section class="section" style="padding-top:32px">
   <div class="conteneur">
@@ -521,6 +522,7 @@ def contact():
         "qui convient — et vous dire si un service d'accompagnement vous serait "
         "vraiment utile, ou non. Il nous arrive souvent de conseiller l'offre la "
         "moins chère.",
+        illustration=("contact", "Un directeur échange avec une conseillère Ardoise"),
     ) + f"""
 <section class="section" style="padding-top:24px">
   <div class="conteneur grille-deux">

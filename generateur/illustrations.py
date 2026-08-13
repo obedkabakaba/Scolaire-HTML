@@ -18,6 +18,13 @@ DIMENSIONS = {
     "installation": (1000, 890), "formation": (1000, 717),
     "capture": (1000, 854), "securite": (996, 1000),
     "guides": (1000, 772), "a-propos": (1000, 525),
+    "contact": (941, 1000), "faq": (1000, 914),
+    "comparer-offres": (1000, 667),
+    "guide-choisir": (1000, 926), "guide-digitaliser": (1000, 667),
+    "guide-excel": (1000, 667), "guide-hors-ligne": (1000, 667),
+    "guide-budget": (1000, 667),
+    "passage-annee": (1000, 667), "publication-resultats": (1000, 667),
+    "suivi-paiements": (1000, 667), "communication-parents": (1000, 667),
     "offre-ascension": (611, 640), "offre-prime": (640, 450),
     "offre-pilote": (640, 563), "offre-infinite": (640, 429),
 }

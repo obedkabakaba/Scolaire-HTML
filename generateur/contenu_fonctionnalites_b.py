@@ -4,6 +4,7 @@
 from base import (rendre, fil, hero, cta_final, faq_bloc, faq_jsonld,
                   pour_aller_plus_loin)
 from contenu_fonctionnalites_a import bloc_offres
+import illustrations
 
 
 # ======================================================== VIE SCOLAIRE
@@ -268,16 +269,19 @@ def finances():
          ("/tarifs/comparer/", "Comparer les offres", "secondaire")],
     
         illustration=("recu", "Un recu numerote en francs et en dollars"),
-    ) + """
+    ) + f"""
 <section class="section" id="frais">
   <div class="conteneur">
-    <div class="section-entete">
-      <span class="eyebrow">Frais scolaires</span>
-      <h2>Qui a payé quoi, combien il reste, et depuis quand</h2>
-      <p class="chapeau">
-        Trois questions auxquelles un cahier d'encaissement répond mal, et qu'une
-        direction se pose chaque semaine.
-      </p>
+    <div class="entete-illustre">
+      <div class="section-entete">
+        <span class="eyebrow">Frais scolaires</span>
+        <h2>Qui a payé quoi, combien il reste, et depuis quand</h2>
+        <p class="chapeau">
+          Trois questions auxquelles un cahier d'encaissement répond mal, et qu'une
+          direction se pose chaque semaine.
+        </p>
+      </div>
+      {illustrations.figure("suivi-paiements", "Le suivi des paiements, des soldes et des rappels", "illus-section")}
     </div>
 
     <div class="grille-cartes trois">

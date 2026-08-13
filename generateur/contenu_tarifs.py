@@ -374,6 +374,7 @@ def comparer():
         "Le premier bloc est le plus important — il ne contient que des ✓, et ce "
         "sont les fonctions qu'aucune offre ne retire.",
         [("/tarifs/", "Voir les prix et les cartes d'offres", "secondaire")],
+        illustration=("comparer-offres", "Les quatre niveaux des offres Ardoise"),
     ) + f"""
 <section class="section" style="padding-top:24px">
   <div class="conteneur">

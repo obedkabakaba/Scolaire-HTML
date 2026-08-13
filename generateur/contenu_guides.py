@@ -149,6 +149,7 @@ def choisir():
         "proclamation, l'encaissement des frais ou une coupure de réseau. Voici les "
         "vérifications à faire avec vos propres règles et vos propres documents.",
         [("/tarifs/comparer/", "Comparer les offres Ardoise", "secondaire")],
+        illustration=("guide-choisir", "Les critères pour choisir un logiciel scolaire"),
     ) + sommaire([
         ("besoin", "Partir des problèmes de l'école"),
         ("criteres", "Les sept critères à vérifier"),
@@ -286,6 +287,7 @@ def digitaliser():
         "registres, des habitudes et des responsabilités sans perdre une note, un "
         "paiement ou une journée de cours.",
         [("/services/installation/", "Voir l'installation accompagnée", "secondaire")],
+        illustration=("guide-digitaliser", "Le passage des registres papier à une école numérique"),
     ) + sommaire([
         ("diagnostic", "Faire l'inventaire"),
         ("equipe", "Nommer l'équipe de transition"),
@@ -423,6 +425,7 @@ def excel_ou_logiciel():
         "Excel n'est pas un mauvais outil. Il devient le mauvais outil quand plusieurs "
         "personnes doivent modifier les mêmes données, avec des droits différents et "
         "une trace fiable de chaque changement.",
+        illustration=("guide-excel", "La comparaison entre un tableur et un logiciel scolaire"),
     ) + sommaire([
         ("comparaison", "Comparer les deux approches"),
         ("excel-suffit", "Quand Excel peut suffire"),
@@ -537,6 +540,7 @@ def connexion_instable():
         "véritable saisie synchronisée. Une école doit savoir exactement ce qui reste "
         "possible pendant la coupure et ce qui se passe au retour du réseau.",
         [("/fonctionnalites/vie-scolaire/#hors-ligne", "Le hors-ligne dans Ardoise", "secondaire")],
+        illustration=("guide-hors-ligne", "Une saisie scolaire qui continue pendant une coupure Internet"),
     ) + sommaire([
         ("definition", "Définir le vrai besoin hors ligne"),
         ("tests", "Faire cinq tests"),
@@ -641,6 +645,7 @@ def prix_logiciel():
         "solutions, séparez l'usage récurrent du logiciel, la mise en place, la "
         "formation et le travail de préparation des données.",
         [("/tarifs/", "Voir les tarifs Ardoise", "secondaire")],
+        illustration=("guide-budget", "Les cinq postes du budget d'un logiciel scolaire"),
     ) + sommaire([
         ("postes", "Les cinq postes du budget"),
         ("ardoise", "Les prix Ardoise"),

@@ -10,6 +10,7 @@ l'application, pas d'une brochure.
 
 from base import (rendre, fil, hero, cta_final, faq_bloc, faq_jsonld,
                   pour_aller_plus_loin, SITE)
+import illustrations
 
 
 def bloc_offres(texte):
@@ -230,7 +231,7 @@ def gestion_scolaire():
          ("/fonctionnalites/notes-et-bulletins/", "Voir les notes et bulletins", "secondaire")],
     
         illustration=("roles", "Les six roles et leurs perimetres"),
-    ) + """
+    ) + f"""
 <section class="section">
   <div class="conteneur">
     <div class="section-entete">
@@ -370,9 +371,12 @@ def gestion_scolaire():
 
 <section class="section alt" id="annee">
   <div class="conteneur">
-    <div class="section-entete">
-      <span class="eyebrow">Fin d'année</span>
-      <h2>Passer d'une année à l'autre sans tout recommencer</h2>
+    <div class="entete-illustre">
+      <div class="section-entete">
+        <span class="eyebrow">Fin d'année</span>
+        <h2>Passer d'une année à l'autre sans tout recommencer</h2>
+      </div>
+      {illustrations.figure("passage-annee", "Le passage sécurisé d'une année scolaire à la suivante", "illus-section")}
     </div>
     <div class="grille-cartes trois">
       <article class="carte">
@@ -482,7 +486,7 @@ def notes_bulletins():
          ("/tarifs/comparer/", "Comparer les offres", "secondaire")],
     
         illustration=("bulletin", "Un bulletin scolaire genere par Ardoise"),
-    ) + """
+    ) + f"""
 <section class="section">
   <div class="conteneur">
     <div class="section-entete">
@@ -610,14 +614,17 @@ def notes_bulletins():
 
 <section class="section alt" id="fin-annee">
   <div class="conteneur">
-    <div class="section-entete">
-      <span class="eyebrow">Fin d'année</span>
-      <h2>Repêchage, décision de passage, proclamation</h2>
-      <p class="chapeau">
-        La partie de l'année où une erreur de calcul se paie le plus cher, et où
-        les additions se font traditionnellement à la main, la nuit, en salle des
-        professeurs.
-      </p>
+    <div class="entete-illustre">
+      <div class="section-entete">
+        <span class="eyebrow">Fin d'année</span>
+        <h2>Repêchage, décision de passage, proclamation</h2>
+        <p class="chapeau">
+          La partie de l'année où une erreur de calcul se paie le plus cher, et où
+          les additions se font traditionnellement à la main, la nuit, en salle des
+          professeurs.
+        </p>
+      </div>
+      {illustrations.figure("publication-resultats", "La validation et la publication contrôlée des résultats", "illus-section")}
     </div>
 
     <div class="grille-cartes trois">

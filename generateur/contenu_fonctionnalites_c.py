@@ -4,6 +4,7 @@
 from base import (rendre, fil, hero, cta_final, faq_bloc, faq_jsonld,
                   pour_aller_plus_loin)
 from contenu_fonctionnalites_a import bloc_offres
+import illustrations
 
 
 # ============================================ ADMISSIONS ET ORIENTATION
@@ -220,7 +221,7 @@ def direction():
          ("/tarifs/comparer/", "Comparer les offres", "secondaire")],
     
         illustration=("pilotage", "Le tableau de bord de la direction"),
-    ) + """
+    ) + f"""
 <section class="section" id="rapports">
   <div class="conteneur">
     <div class="section-entete">
@@ -274,9 +275,12 @@ def direction():
 
 <section class="section alt" id="communication">
   <div class="conteneur">
-    <div class="section-entete">
-      <span class="eyebrow">Communication</span>
-      <h2>Parler à toute une classe sans écrire soixante messages</h2>
+    <div class="entete-illustre">
+      <div class="section-entete">
+        <span class="eyebrow">Communication</span>
+        <h2>Parler à toute une classe sans écrire soixante messages</h2>
+      </div>
+      {illustrations.figure("communication-parents", "Une communication validée envoyée aux familles", "illus-section")}
     </div>
 
     <div class="grille-cartes deux">

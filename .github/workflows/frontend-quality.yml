@@ -17,13 +17,33 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22.11.0'
-      - name: Syntaxe JavaScript partagée
+      # Tous les JavaScript versionnés à la racine, et non une liste écrite à
+      # la main.
+      #
+      # L'énumération précédente couvrait cinq fichiers sur la quarantaine que
+      # porte le dépôt : un fichier ajouté n'était vérifié par personne, et rien
+      # ne le signalait. C'est la même dérive que celle qui avait laissé cinq
+      # fichiers de test inexécutés côté backend — elle se répare de la même
+      # façon, en décrivant un ENSEMBLE plutôt qu'une liste.
+      #
+      # Le compteur en fin d'étape n'est pas décoratif : si le motif cessait de
+      # correspondre à quoi que ce soit, la boucle réussirait sans rien vérifier
+      # et l'étape passerait au vert en n'ayant rien lu.
+      - name: Syntaxe JavaScript
         run: |
-          node --check session.js
-          node --check hors-ligne.js
-          node --check sw.js
-          node --check ui.js
-          node --check didacticiel.js
+          set -euo pipefail
+          n=0
+          for f in *.js; do
+            [ -e "$f" ] || continue
+            node --check "$f"
+            n=$((n + 1))
+          done
+          echo "$n fichier(s) JavaScript vérifié(s)."
+          if [ "$n" -lt 10 ]; then
+            echo "ÉCHEC : seulement $n fichier(s) trouvé(s). L'exploration est cassée," >&2
+            echo "et une étape qui ne lit rien ne prouve rien." >&2
+            exit 1
+          fi
       - name: Sécurité Offline / PWA
         run: |
           node - <<'NODE'

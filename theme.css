@@ -1,6 +1,9 @@
 @import url("theme-base.css");
 
-/* Correctif WCAG ciblé : bouton principal des cartes professeur sur fond ocre. */
 html[data-theme="ardoise"] .carte-cours .bouton {
   color: var(--texte-sombre, #1F2B24) !important;
+}
+
+html[data-theme="ardoise"] .sa-badge.ton-succes {
+  color: #456E50 !important;
 }

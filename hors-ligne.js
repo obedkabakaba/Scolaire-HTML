@@ -2,6 +2,9 @@
 (function () {
   'use strict';
   var CLE_FILE = 'ardoise_file_hors_ligne_v2';
+  var ANCIENNE_CLE = 'ardoise_file_hors_ligne';
+  try { localStorage.removeItem(ANCIENNE_CLE); } catch (e) {}
+
   var AUTORISEES = [
     { methode:'POST', motif:/^\/presences\/classe\/[^/]+$/ },
     { methode:'POST', motif:/^\/notes\/grille$/ },
@@ -28,7 +31,7 @@
     if (!c || !c.utilisateur_id || !c.ecole_id) throw new Error('Session non vérifiable hors ligne.');
     var f=lire();
     entree.contexte=c;
-    entree.operation_locale_id=(crypto && crypto.randomUUID)?crypto.randomUUID():String(Date.now())+'-'+Math.random();
+    entree.operation_locale_id=(window.crypto && window.crypto.randomUUID)?window.crypto.randomUUID():String(Date.now())+'-'+Math.random();
     f.push(entree); ecrire(f); maj();
   }
 

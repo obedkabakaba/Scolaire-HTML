@@ -1,220 +1,89 @@
-/* ==========================================================================
-   Ardoise — Service worker
-   --------------------------------------------------------------------------
-   Rend la plateforme utilisable sans connexion :
+/* Ardoise — Service worker sécurisé
+   Les ressources statiques restent disponibles hors ligne.
+   Les réponses API authentifiées NE SONT PLUS mises en cache tant qu'un cache
+   partitionné par utilisateur + école n'a pas été conçu et testé. */
 
-     · les pages et leurs ressources sont servies depuis le cache ;
-     · les dernières données consultées restent lisibles hors ligne ;
-     · les écritures ne passent JAMAIS par ici — elles sont mises en file
-       d'attente par hors-ligne.js, côté page.
-
-   IMPORTANT : à chaque déploiement, incrémentez VERSION. C'est ce qui
-   déclenche le remplacement du cache chez tous les utilisateurs ; sans ça,
-   ils continueraient d'utiliser l'ancienne version des pages.
-   ========================================================================== */
-
-const VERSION = 'ardoise-v46';
-const CACHE_COQUILLE = `${VERSION}-coquille`;
-const CACHE_DONNEES = `${VERSION}-donnees`;
-
-// Pages et ressources indispensables au fonctionnement hors ligne.
-const COQUILLE = [
-  './',
-  'connexion.html',
-  'changer-mot-de-passe.html',
-  'dashboard-directeur.html',
-  'espace-professeur.html',
-  'espace-titulaire.html',
-  'espace-secretaire.html',
-  'presences.html',
-  'emploi-du-temps.html',
-  'notes.html',
-  'bulletins.html',
-  'bulletin-annuel.html',
-  'cours-classe-titulaire.html',
-  'eleves.html',
-  'inscriptions.html',
-  'orientation.html',
-  'classes.html',
-  'utilisateurs.html',
-  'annee-scolaire.html',
-  'frais-scolaires.html',
-  'comptabilite.html',
-  'repechage.html',
-  'calendrier.html',
-  'journal.html',
-  'parametres.html',
-  'generateur-modeles.html',
-
-  // Ouvertes par generateur-modeles.html (voir la table de correspondance
-  // vers la ligne 399 de cette page). La page mère est pré-cachée : sans ses
-  // quatre aperçus, l'aperçu d'un modèle s'ouvre sur une page morte hors
-  // ligne, ce qui est plus déroutant qu'un bouton simplement inactif.
-  'apercu-bulletin-primaire.html',
-  'apercu-bulletin-secondaire.html',
-  'apercu-bulletin-terminale.html',
-  'apercu-bulletin-semestre.html',
-
-  'mon-profil.html',
-  'messages.html',
-  'site-public.html',
-  'discipline.html',
-  'cours.html',
-  'archives.html',
-  'rapports.html',
-  'super-admin.html',
-  'theme.css',
-  'ui.css',
-  // La couche mobile est mise en cache avec le reste de la coquille : sans
-  // elle, une ouverture hors ligne sur téléphone retomberait sur la mise en
-  // page de bureau — exactement le défaut qu'elle corrige.
-  'mobile.css',
-  'mobile.js',
-  'theme.js',
-  'ui.js',
-  'acces-presences.js',
-  'filtre-cycle.js',
-  'hors-ligne.js',
-  'didacticiel.js',
-  // La feuille du didacticiel est indissociable de son script : sans elle, le
-  // projecteur et la bulle s'affichent sans mise en forme — un pavé de texte
-  // brut par-dessus la page, plus déroutant qu'une aide absente. Elle rejoint
-  // donc la coquille, comme les scripts du Super Admin plus bas.
-  'didacticiel.css',
-
-  // Espace Super Admin. super-admin.html était déjà pré-caché, mais pas ses
-  // scripts : à la toute première ouverture hors ligne, la page s'affichait
-  // et affichait « Installation incomplète » — message qui accuse un mauvais
-  // déploiement alors que le seul problème est l'absence de réseau. Les cinq
-  // fichiers sont indissociables de la page (voir SCRIPTS_REQUIS dans
-  // super-admin.html) : ils vont donc au cache avec elle.
-  'super-admin-styles.css',
-  'super-admin-noyau.js',
-  'super-admin-vues-pilotage.js',
-  'super-admin-vues-ecoles.js',
-  'super-admin-vues-explorer.js',
-  'super-admin-vues-systeme.js',
-
-  'manifest.json',
-  'icone-192.png',
-  'icone-512.png',
-  'icone-ios-180.png',
-  'icone-maskable-512.png'
+const VERSION='ardoise-v48';
+const CACHE_COQUILLE=`${VERSION}-coquille`;
+const COQUILLE=[
+  './','connexion.html','changer-mot-de-passe.html','dashboard-directeur.html',
+  'espace-professeur.html','espace-titulaire.html','espace-secretaire.html',
+  'presences.html','emploi-du-temps.html','notes.html','bulletins.html',
+  'bulletin-annuel.html','cours-classe-titulaire.html','eleves.html','inscriptions.html',
+  'orientation.html','classes.html','utilisateurs.html','annee-scolaire.html',
+  'frais-scolaires.html','comptabilite.html','repechage.html','calendrier.html',
+  'journal.html','parametres.html','generateur-modeles.html',
+  'apercu-bulletin-primaire.html','apercu-bulletin-secondaire.html',
+  'apercu-bulletin-terminale.html','apercu-bulletin-semestre.html',
+  'mon-profil.html','messages.html','site-public.html','discipline.html','cours.html',
+  'archives.html','rapports.html','super-admin.html','theme.css','theme-base.css','ui.css','mobile.css',
+  'mobile.js','theme.js','ui.js','session.js','acces-presences.js','filtre-cycle.js',
+  'hors-ligne.js','didacticiel.js','didacticiel.css','super-admin-styles.css',
+  'super-admin-noyau.js','super-admin-vues-pilotage.js','super-admin-vues-ecoles.js',
+  'super-admin-vues-explorer.js','super-admin-vues-systeme.js','manifest.json',
+  'icone-192.png','icone-512.png','icone-ios-180.png','icone-maskable-512.png'
 ];
 
-// Jamais mis en cache : la sécurité ne doit pas dépendre d'une copie locale.
-const JAMAIS_EN_CACHE = ['/auth/', '/uploads/'];
-
-self.addEventListener('install', (evenement) => {
-  evenement.waitUntil((async () => {
-    const cache = await caches.open(CACHE_COQUILLE);
-    // addAll échoue en bloc si un seul fichier manque : on ajoute donc
-    // les ressources une par une pour qu'un oubli ne casse pas l'installation.
-    await Promise.all(COQUILLE.map(async (chemin) => {
-      try { await cache.add(new Request(chemin, { cache: 'reload' })); }
-      catch (e) { console.warn('[SW] ressource ignorée :', chemin); }
-    }));
+self.addEventListener('install',(event)=>{
+  event.waitUntil((async()=>{
+    const cache=await caches.open(CACHE_COQUILLE);
+    await Promise.all(COQUILLE.map(async(p)=>{try{await cache.add(new Request(p,{cache:'reload'}));}catch(e){console.warn('[SW] ressource ignorée',p);}}));
     await self.skipWaiting();
   })());
 });
 
-self.addEventListener('activate', (evenement) => {
-  evenement.waitUntil((async () => {
-    const noms = await caches.keys();
-    await Promise.all(
-      noms.filter((n) => !n.startsWith(VERSION)).map((n) => caches.delete(n))
-    );
+self.addEventListener('activate',(event)=>{
+  event.waitUntil((async()=>{
+    const noms=await caches.keys();
+    await Promise.all(noms.filter((n)=>!n.startsWith(VERSION)).map((n)=>caches.delete(n)));
     await self.clients.claim();
   })());
 });
 
-// Permet à la page de forcer l'activation d'une nouvelle version.
-self.addEventListener('message', (evenement) => {
-  if (evenement.data === 'ardoise:activer-maintenant') self.skipWaiting();
+self.addEventListener('message',(event)=>{
+  if(event.data==='ardoise:activer-maintenant')self.skipWaiting();
+  if(event.data==='ardoise:purger-donnees'){
+    event.waitUntil(caches.keys().then((noms)=>Promise.all(noms.filter((n)=>n!==CACHE_COQUILLE).map((n)=>caches.delete(n)))));
+  }
 });
 
-function estRessourceSensible(url) {
-  return JAMAIS_EN_CACHE.some((motif) => url.pathname.includes(motif));
+async function reseauPuisCacheLocal(req){
+  const cache=await caches.open(CACHE_COQUILLE);
+  try{const r=await fetch(req);if(r&&r.ok)cache.put(req,r.clone());return r;}
+  catch(e){const c=await cache.match(req);if(c)return c;throw e;}
+}
+async function cachePuisReseauLocal(req){
+  const cache=await caches.open(CACHE_COQUILLE);
+  const c=await cache.match(req);
+  const net=fetch(req).then((r)=>{if(r&&r.ok)cache.put(req,r.clone());return r;}).catch(()=>null);
+  return c||net.then((r)=>r||Promise.reject(new Error('hors ligne')));
 }
 
-/** Réseau d'abord, cache en secours. Utilisé pour les pages et les données. */
-async function reseauPuisCache(requete, nomCache) {
-  const cache = await caches.open(nomCache);
-  try {
-    const reponse = await fetch(requete);
-    if (reponse && reponse.ok) cache.put(requete, reponse.clone());
-    return reponse;
-  } catch (e) {
-    const enCache = await cache.match(requete);
-    if (enCache) {
-      // On signale à la page que la donnée vient du cache, afin qu'elle
-      // puisse afficher un avertissement plutôt que de faire croire au direct.
-      const entetes = new Headers(enCache.headers);
-      entetes.set('X-Ardoise-Cache', 'hors-ligne');
-      return new Response(enCache.body, {
-        status: enCache.status, statusText: enCache.statusText, headers: entetes
-      });
-    }
-    throw e;
-  }
-}
+self.addEventListener('fetch',(event)=>{
+  const req=event.request;
+  if(req.method!=='GET')return;
+  const url=new URL(req.url);
+  if(url.protocol!=='http:'&&url.protocol!=='https:')return;
 
-/** Cache d'abord, mise à jour en arrière-plan. Utilisé pour le CSS et le JS. */
-async function cachePuisReseau(requete, nomCache) {
-  const cache = await caches.open(nomCache);
-  const enCache = await cache.match(requete);
-  const promesseReseau = fetch(requete)
-    .then((reponse) => {
-      if (reponse && reponse.ok) cache.put(requete, reponse.clone());
-      return reponse;
-    })
-    .catch(() => null);
-  return enCache || promesseReseau.then((r) => r || Promise.reject(new Error('hors ligne')));
-}
-
-self.addEventListener('fetch', (evenement) => {
-  const requete = evenement.request;
-  const url = new URL(requete.url);
-
-  // Les écritures traversent sans interception : c'est hors-ligne.js qui
-  // décide de les mettre en file d'attente quand la connexion manque.
-  if (requete.method !== 'GET') return;
-  if (estRessourceSensible(url)) return;
-  if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
-
-  // Navigation entre pages : réseau d'abord pour recevoir les mises à jour,
-  // cache en secours pour que la coupure ne produise pas une page blanche.
-  if (requete.mode === 'navigate') {
-    evenement.respondWith((async () => {
-      try {
-        return await reseauPuisCache(requete, CACHE_COQUILLE);
-      } catch (e) {
-        const cache = await caches.open(CACHE_COQUILLE);
-        return (await cache.match(requete))
-          || (await cache.match('connexion.html'))
-          || new Response('Hors ligne', { status: 503, statusText: 'Hors ligne' });
-      }
-    })());
+  /* SÉCURITÉ MULTI-TENANT : toute requête cross-origin est potentiellement une
+     réponse de l'API Render. On la laisse au réseau et on ne la stocke jamais.
+     Ainsi A ne peut pas laisser dans CacheStorage une réponse que B lirait
+     ensuite hors ligne sur le même appareil. */
+  if(url.origin!==self.location.origin){
+    event.respondWith(fetch(req).catch(()=>new Response(JSON.stringify({
+      message:'Cette donnée nécessite une connexion. Aucune copie d’une autre session n’est servie.',
+      hors_ligne:true
+    }),{status:503,headers:{'Content-Type':'application/json','X-Ardoise-Cache':'desactive-donnees'}})));
     return;
   }
 
-  // Appels de données vers le backend.
-  if (url.origin !== self.location.origin) {
-    evenement.respondWith(
-      reseauPuisCache(requete, CACHE_DONNEES).catch(() =>
-        new Response(
-          JSON.stringify({ message: 'Vous êtes hors ligne et cette donnée n\'a jamais été consultée sur cet appareil.', hors_ligne: true }),
-          { status: 503, headers: { 'Content-Type': 'application/json' } }
-        )
-      )
-    );
+  if(req.mode==='navigate'){
+    event.respondWith(reseauPuisCacheLocal(req).catch(async()=>{
+      const cache=await caches.open(CACHE_COQUILLE);
+      return (await cache.match(req))||(await cache.match('connexion.html'))||new Response('Hors ligne',{status:503});
+    }));
     return;
   }
 
-  // Ressources locales : polices, styles, scripts, images.
-  evenement.respondWith(
-    cachePuisReseau(requete, CACHE_COQUILLE).catch(() =>
-      new Response('', { status: 503, statusText: 'Hors ligne' })
-    )
-  );
+  event.respondWith(cachePuisReseauLocal(req).catch(()=>new Response('',{status:503,statusText:'Hors ligne'})));
 });

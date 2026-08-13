@@ -1,0 +1,49 @@
+name: Ardoise Frontend Quality
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  static:
+    name: frontend/static
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.11.0'
+      - name: Syntaxe JavaScript partagée
+        run: |
+          node --check session.js
+          node --check hors-ligne.js
+          node --check sw.js
+          node --check ui.js
+          node --check didacticiel.js
+      - name: Sécurité Offline / PWA
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          const off=fs.readFileSync('hors-ligne.js','utf8');
+          const sw=fs.readFileSync('sw.js','utf8');
+          const checks=[
+            ['allowlist',off.includes('AUTORISEES')&&off.includes('differable(')],
+            ['no-finance',!/motif\s*:\s*\/\^\\\/(frais|paiements)/.test(off)],
+            ['no-admin',!/motif\s*:\s*\/\^\\\/(utilisateurs|super-admin)/.test(off)],
+            ['tenant-context',off.includes('utilisateur_id')&&off.includes('ecole_id')&&off.includes('memeContexte')],
+            ['recheck',off.includes('if(!differable(e.chemin,e.methode))')],
+            ['no-shared-api-cache',!sw.includes('CACHE_DONNEES')],
+            ['cross-origin-network-only',sw.includes('if(url.origin!==self.location.origin)')&&sw.includes('fetch(req)')]
+          ];
+          for(const [nom,ok] of checks) console.log(`${ok?'OK':'KO'} ${nom}`);
+          const ko=checks.filter(x=>!x[1]);
+          if(ko.length) throw new Error(`${ko.length} invariant(s) offline/PWA cassé(s)`);
+          NODE
+      - name: Audits statiques existants
+        run: |
+          python3 audit-frontend.py
+          python3 audit-contrat-api.py || true

@@ -1,0 +1,24 @@
+name: Offline Dynamic
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions: { contents: read }
+jobs:
+  offline:
+    name: frontend/offline-dynamic
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Installer Playwright
+        run: |
+          python3 -m pip install --disable-pip-version-check playwright==1.55.0
+          python3 -m playwright install --with-deps chromium
+      - name: Scénario coupure/reconnexion multi-écoles
+        run: python3 test-offline-dynamique.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rapport-offline-dynamic
+          path: rapports/offline-dynamic.json

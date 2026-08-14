@@ -710,3 +710,30 @@
 .kb-proposition footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
 .kb-proposition details { margin-top: 8px; }
 .kb-proposition summary { cursor: pointer; font-size: 0.84rem; }
+
+/* Titre de section accompagné d'une action — « Budgets » et son bouton
+   « Nouveau budget ». Le titre garde sa graisse, le bouton reste sur la même
+   ligne tant que la largeur le permet. */
+.ia-section-entete {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.ia-section-entete .sa-section-titre { margin-bottom: 0; }
+
+/* `.sa-case` était utilisée dans plusieurs formulaires sans jamais avoir été
+   définie ailleurs que sous `.kb-perimetre` : la case et son libellé ne
+   s'alignaient pas. */
+.sa-case {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  margin: 10px 0;
+  cursor: pointer;
+}
+.sa-case input[type="checkbox"] { margin-top: 2px; flex: none; }
+.sa-case input[disabled] { cursor: not-allowed; }

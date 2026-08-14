@@ -509,8 +509,25 @@
       for (const u of d.usages) {
         (parCategorie[u.categorie] = parCategorie[u.categorie] || []).push(u);
       }
+      const clesDisponibles = (d.fournisseurs || []).filter((f) => f.cle_presente);
 
       conteneur.innerHTML = `
+        <section class="sa-section">
+          <h3 class="sa-section-titre">Clés API disponibles sur ce serveur</h3>
+          <p class="sa-texte">
+            Ardoise affiche uniquement la présence réelle de la variable côté backend, jamais
+            sa valeur. Seuls les fournisseurs actifs avec une clé disponible alimentent les
+            sélecteurs de modèles.
+          </p>
+          <div class="ia-puces">
+            ${clesDisponibles.length ? clesDisponibles.map((f) => `
+              <span class="ia-puce">
+                <strong>${esc(f.nom)}</strong> · <code>${esc(f.variable_env || 'clé chiffrée')}</code>
+                ${f.selectionnable ? ui.badge('disponible', 'succes') : ui.badge('fournisseur désactivé', 'alerte')}
+              </span>`).join('') : '<span class="ia-indisponible">Aucune clé API détectée sur le backend.</span>'}
+          </div>
+        </section>
+
         <section class="sa-section">
           <h3 class="sa-section-titre">Profils</h3>
           <p class="sa-texte">
@@ -596,30 +613,63 @@
   }
 
   function ouvrirEditionProfil(p, modeles) {
+    const disponibles = modeles.filter((m) => m.selectionnable);
+    const fournisseurs = [...new Map(disponibles.map((m) => [
+      m.fournisseur_code,
+      { code: m.fournisseur_code, nom: m.fournisseur, variable: m.variable_env,
+        source: m.cle_source }
+    ])).values()];
+
     const modale = SA.modale({
       titre: `Profil ${p.code}`,
       sousTitre: p.libelle,
       contenu: `
+        <label class="sa-connexion-champ"><span>Filtrer par clé disponible</span>
+          <select class="sa-champ" id="ia-p-fournisseur">
+            <option value="">Toutes les clés disponibles</option>
+            ${fournisseurs.map((f) => `<option value="${esc(f.code)}">
+              ${esc(f.nom)} · ${esc(f.variable || (f.source === 'base_chiffree' ? 'clé chiffrée' : 'clé disponible'))}
+            </option>`).join('')}
+          </select>
+        </label>
+        <p class="sa-muet">
+          Le nom de la variable est visible ; sa valeur secrète ne quitte jamais le serveur.
+          Les fournisseurs sans clé ou désactivés sont exclus.
+        </p>
         <label class="sa-connexion-champ"><span>Modèle principal</span>
-          <select class="sa-champ" id="ia-p-modele">${optionsModeles(modeles, p.modele_id)}</select></label>
+          <select class="sa-champ" id="ia-p-modele">${optionsModeles(disponibles, p.modele_id)}</select></label>
         <label class="sa-connexion-champ"><span>Modèle de repli</span>
-          <select class="sa-champ" id="ia-p-repli">${optionsModeles(modeles, p.modele_repli_id)}</select></label>
+          <select class="sa-champ" id="ia-p-repli">${optionsModeles(disponibles, p.modele_repli_id)}</select></label>
         <p class="sa-muet">
           Le repli ne sert que pour les usages qui l'autorisent. Un usage critique n'en
           reçoit jamais, quel que soit ce réglage.
-        </p>`,
+        </p>
+        ${disponibles.length ? '' : '<p class="ia-indisponible">Aucun modèle sélectionnable : ajoutez une clé Render, redéployez, testez puis activez le fournisseur.</p>'}`,
       actions: `
         <button class="sa-bouton sa-bouton-secondaire" data-role="annuler">Annuler</button>
         <button class="sa-bouton sa-bouton-principal" data-role="ok">Enregistrer</button>`
     });
+
+    const filtre = modale.querySelector('#ia-p-fournisseur');
+    const principal = modale.querySelector('#ia-p-modele');
+    const repli = modale.querySelector('#ia-p-repli');
+    filtre.addEventListener('change', () => {
+      const code = filtre.value;
+      const choix = code ? disponibles.filter((m) => m.fournisseur_code === code) : disponibles;
+      const principalActuel = principal.value || p.modele_id;
+      const repliActuel = repli.value || p.modele_repli_id;
+      principal.innerHTML = optionsModeles(choix, principalActuel);
+      repli.innerHTML = optionsModeles(choix, repliActuel);
+    });
+
     modale.querySelector('[data-role="annuler"]').addEventListener('click', () => modale.fermer());
     modale.querySelector('[data-role="ok"]').addEventListener('click', async () => {
       try {
         await SA.api(`${BASE}/routage/profils/${p.code}`, {
           method: 'PATCH',
           body: JSON.stringify({
-            modele_id: modale.querySelector('#ia-p-modele').value || null,
-            modele_repli_id: modale.querySelector('#ia-p-repli').value || null
+            modele_id: principal.value || null,
+            modele_repli_id: repli.value || null
           })
         });
         modale.fermer();
@@ -656,7 +706,7 @@
             </select></label>
 
           <label class="sa-connexion-champ"><span>Modèle épinglé (prime sur le profil)</span>
-            <select class="sa-champ" id="ia-u-modele">${optionsModeles(d.modeles, u.modele_id)}</select></label>
+            <select class="sa-champ" id="ia-u-modele">${optionsModeles(d.modeles, u.modele_id, (m) => m.selectionnable)}</select></label>
 
           <label class="sa-connexion-champ"><span>Budget journalier ($)</span>
             <input type="number" min="0" step="0.01" class="sa-champ" id="ia-u-bj"

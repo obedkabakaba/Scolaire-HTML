@@ -928,16 +928,39 @@
 
   SA.rafraichirVue = rendre;
 
+  /**
+   * Marque l'entrée de menu correspondant au chemin courant.
+   *
+   * SEULE LA CORRESPONDANCE LA PLUS LONGUE EST RETENUE
+   * ---------------------------------------------------
+   * Un simple `startsWith` allumait plusieurs entrées à la fois dès qu'une
+   * route en préfixait une autre : sur `#/cc/regles`, « Control Center »
+   * (route `cc`) s'allumait en même temps que « Règles métier ». Deux entrées
+   * actives, c'est une indication qui n'en est plus une — on ne sait plus où
+   * l'on est.
+   *
+   * On calcule donc d'abord la route la plus SPÉCIFIQUE qui corresponde, puis
+   * on n'allume qu'elle. Le groupe parent, lui, s'ouvre bien : c'est ce qu'on
+   * veut, et c'est autre chose que d'être surligné.
+   */
   function marquerMenuActif(chemin) {
-    document.querySelectorAll('#sa-navigation a[data-route]').forEach((lien) => {
+    const liens = [...document.querySelectorAll('#sa-navigation a[data-route]')];
+
+    let meilleure = null;
+    for (const lien of liens) {
       const route = lien.getAttribute('data-route');
-      const actif = chemin === route || chemin.startsWith(route + '/');
+      if (chemin !== route && !chemin.startsWith(route + '/')) continue;
+      if (meilleure === null || route.length > meilleure.length) meilleure = route;
+    }
+
+    for (const lien of liens) {
+      const actif = lien.getAttribute('data-route') === meilleure;
       lien.classList.toggle('actif', actif);
       if (actif) {
         const groupe = lien.closest('.sa-groupe');
         if (groupe) groupe.classList.add('ouvert');
       }
-    });
+    }
   }
 
   /* ======================================================================

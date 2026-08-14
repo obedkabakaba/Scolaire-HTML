@@ -72,6 +72,7 @@
      n'écrase aucune règle existante. Chargée en dernier pour la même raison
      que les deux précédentes. -->
 <link rel="stylesheet" href="super-admin-control-center.css" />
+<link rel="stylesheet" href="super-admin-ia.css" />
 
 <style>
   /* ------------------------------------------------------------------
@@ -341,6 +342,40 @@
         </ul>
       </li>
 
+      <!-- ===== IA & MODÈLES =====
+           Le centre de configuration de TOUTES les intelligences artificielles
+           d'Ardoise. Distinct du groupe « Intelligence » ci-dessus : celui-là
+           UTILISE l'IA (copilote, conseil, analyses), celui-ci décide QUEL
+           modèle répond, à qui, avec quel budget et sous quelle autorisation.
+           Confondre les deux ferait chercher le réglage de WhatsApp dans
+           l'écran du copilote. -->
+      <li class="sa-groupe" data-groupe="ia">
+        <button type="button" class="sa-groupe-titre">
+          <span class="sa-icone">🧠</span> IA &amp; Modèles <span class="sa-chevron">›</span>
+        </button>
+        <ul class="sa-sous-menu">
+          <li><a href="#/ia/studio" data-route="ia/studio">AI Studio</a></li>
+          <li><a href="#/ia/fournisseurs" data-route="ia/fournisseurs">Fournisseurs</a></li>
+          <li><a href="#/ia/modeles" data-route="ia/modeles">Modèles</a></li>
+          <li><a href="#/ia/routage" data-route="ia/routage">Routage</a></li>
+          <li><a href="#/ia/couts" data-route="ia/couts">Coûts</a></li>
+          <li><a href="#/ia/autorisations" data-route="ia/autorisations">Autorisations</a></li>
+          <li><a href="#/ia/actions" data-route="ia/actions">Actions IA</a></li>
+          <li><a href="#/ia/journal" data-route="ia/journal">Historique</a></li>
+          <li><a href="#/ia/historique" data-route="ia/historique">Changements de routage</a></li>
+        </ul>
+      </li>
+
+      <li class="sa-groupe" data-groupe="knowledge">
+        <button type="button" class="sa-groupe-titre">
+          <span class="sa-icone">📚</span> Knowledge Hub <span class="sa-chevron">›</span>
+        </button>
+        <ul class="sa-sous-menu">
+          <li><a href="#/ia/connaissance" data-route="ia/connaissance">Bases de connaissance</a></li>
+          <li><a href="#/ia/connaissance/propositions" data-route="ia/connaissance/propositions">Propositions IA</a></li>
+        </ul>
+      </li>
+
       <li class="sa-groupe" data-groupe="cc-systeme">
         <button type="button" class="sa-groupe-titre">
           <span class="sa-icone">⚙️</span> Système <span class="sa-chevron">›</span>
@@ -491,6 +526,12 @@
 <script src="super-admin-vues-cc-ia.js"></script>
 <script src="super-admin-vues-cc-systeme.js"></script>
 <script src="super-admin-vues-cc-release.js"></script>
+<!-- IA & MODÈLES. Chargées après le Control Center : elles n'enregistrent que
+     des clés commençant par `ia/`, donc aucune ne peut remplacer une vue
+     existante — y compris celles du copilote, qui vivent sous `cc/`. -->
+<script src="super-admin-vues-ia-plateforme.js"></script>
+<script src="super-admin-vues-ai-studio.js"></script>
+<script src="super-admin-vues-knowledge.js"></script>
 <script src="super-admin-palette.js"></script>
 
 <script>
@@ -516,7 +557,10 @@
     'super-admin-vues-prospects.js',
     'super-admin-vues-controle.js', 'super-admin-vues-audit.js',
     'super-admin-vues-cc-ia.js', 'super-admin-vues-cc-systeme.js',
-    'super-admin-vues-cc-release.js', 'super-admin-palette.js'
+    'super-admin-vues-cc-release.js',
+    'super-admin-vues-ia-plateforme.js', 'super-admin-vues-ai-studio.js',
+    'super-admin-vues-knowledge.js',
+    'super-admin-palette.js'
   ];
 
   function scriptsCharges() {

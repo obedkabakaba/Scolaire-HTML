@@ -1666,7 +1666,7 @@
 
   SA.enregistrerVue('apparence', {
     titre: 'Apparence',
-    sousTitre: 'Le thème visuel de ce panneau d\'administration.',
+    sousTitre: 'Le thème visuel et la disposition de ce panneau d\'administration.',
 
     async rendu(conteneur) {
       if (!window.ArdoiseTheme) {
@@ -1701,6 +1701,23 @@
                 </button>
               `).join('')}
             </div>
+          </section>
+
+          <section class="sa-panneau" style="margin-top:18px;max-width:720px">
+            <div class="sa-section-titre">
+              <h2>Barre latérale</h2>
+            </div>
+            <label class="sa-interrupteur-disposition">
+              <input type="checkbox" id="sa-case-nav-compact" />
+              <span>
+                <strong>Activer la barre rétractable</strong>
+                <span class="sa-aide-disposition">
+                  Le menu n'affiche que les icônes au repos et se déploie lorsque vous
+                  le survolez ou l'utilisez au clavier. Ce réglage reste propre à cet appareil.
+                </span>
+              </span>
+            </label>
+            <p class="sa-confirmation-disposition" id="sa-confirmation-nav" aria-live="polite"></p>
           </section>`;
 
         conteneur.querySelectorAll('.sa-carte-theme').forEach((bouton) => {
@@ -1710,6 +1727,21 @@
             SA.toast('Thème appliqué.', 'succes');
           });
         });
+
+        const caseCompacte = conteneur.querySelector('#sa-case-nav-compact');
+        const confirmation = conteneur.querySelector('#sa-confirmation-nav');
+        if (caseCompacte && window.ArdoiseDisposition) {
+          caseCompacte.checked = ArdoiseDisposition.obtenir().compact;
+          caseCompacte.addEventListener('change', () => {
+            ArdoiseDisposition.definir(null, caseCompacte.checked);
+            confirmation.textContent = caseCompacte.checked
+              ? 'Barre rétractable activée : survolez le menu pour le déployer.'
+              : 'Barre rétractable désactivée : le menu reste entièrement affiché.';
+            SA.toast(caseCompacte.checked
+              ? 'Barre rétractable activée.'
+              : 'Barre rétractable désactivée.', 'succes');
+          });
+        }
       }
 
       dessiner();

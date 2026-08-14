@@ -3,7 +3,7 @@
    Les réponses API authentifiées NE SONT PLUS mises en cache tant qu'un cache
    partitionné par utilisateur + école n'a pas été conçu et testé. */
 
-const VERSION='ardoise-v48';
+const VERSION='ardoise-v49';
 const CACHE_COQUILLE=`${VERSION}-coquille`;
 const COQUILLE=[
   './','connexion.html','changer-mot-de-passe.html','dashboard-directeur.html',

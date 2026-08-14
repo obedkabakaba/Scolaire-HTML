@@ -264,6 +264,7 @@
     var lien = document.createElement('a');
     lien.className = 'nav-item';
     lien.href = '#';
+    lien.dataset.action = 'aide-tutoriels';
     lien.setAttribute('role', 'button');
 
     var icone = document.createElementNS('http://www.w3.org/2000/svg', 'svg');

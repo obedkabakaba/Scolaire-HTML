@@ -109,8 +109,8 @@ window.ARDOISE_THEMES = [
     apercu: { fond: '#12171A', surface: '#1B2226', accent: '#5FB08C', barre: '#0C1013', texte: '#E8EDE9' }
   },
   {
-    cle: 'kivu',
-    nom: 'Kivu',
+    cle: 'yohali',
+    nom: 'Yohali',
     description: 'Terracotta et vert profond, grands rayons. Expressif.',
     apercu: { fond: '#FDF6EE', surface: '#FFFFFF', accent: '#C2542F', barre: '#1E5B4F', texte: '#26201B' }
   }
@@ -120,13 +120,19 @@ window.ARDOISE_THEME_DEFAUT = 'ardoise';
 
 (function () {
   var CLE_STOCKAGE = 'ardoise_theme';
+  /* L'ancien nom « Kivu » a pu être mémorisé sur l'appareil ou dans le
+     profil serveur. On le migre silencieusement vers « Yohali » : renommer
+     un thème ne doit ni réinitialiser l'apparence ni faire perdre le choix
+     d'un utilisateur existant. */
+  var ALIASES = { kivu: 'yohali' };
 
   function clesValides() {
     return window.ARDOISE_THEMES.map(function (t) { return t.cle; });
   }
 
   function normaliser(cle) {
-    return clesValides().indexOf(cle) !== -1 ? cle : window.ARDOISE_THEME_DEFAUT;
+    var canonique = ALIASES[cle] || cle;
+    return clesValides().indexOf(canonique) !== -1 ? canonique : window.ARDOISE_THEME_DEFAUT;
   }
 
   /** Thème actuellement retenu sur cet appareil. */

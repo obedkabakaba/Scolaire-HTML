@@ -134,6 +134,123 @@
 }
 .sa-deconnexion:hover { color: var(--nav-texte-fort); border-color: var(--nav-texte); }
 
+/* --------------------------------------------------------------------------
+   Navigation rétractable du Super Admin
+
+   Le moteur commun (`theme.js`) mémorise déjà le réglage
+   `ardoise_nav_compact`. Le panneau Super Admin utilise toutefois des classes
+   volontairement isolées (`sa-*`) : les règles du menu applicatif normal ne
+   pouvaient donc jamais l'atteindre. Cette variante conserve une empreinte de
+   72 px et se déploie par-dessus le contenu au survol, sans faire sauter la
+   page. Sur mobile, le tiroir existant reste prioritaire.
+   -------------------------------------------------------------------------- */
+@media (min-width: 981px) {
+  html[data-nav-compact="oui"] .sa-navigation {
+    width: 72px;
+    padding-left: 12px;
+    padding-right: 12px;
+    overflow-x: hidden;
+    z-index: 70;
+    transition: width 0.22s cubic-bezier(0.22, 0.61, 0.36, 1),
+                margin-right 0.22s cubic-bezier(0.22, 0.61, 0.36, 1),
+                box-shadow 0.22s ease;
+  }
+
+  html[data-nav-compact="oui"] .sa-navigation:hover,
+  html[data-nav-compact="oui"] .sa-navigation:focus-within {
+    width: 252px;
+    margin-right: -180px;
+    box-shadow: 8px 0 32px rgba(16, 24, 40, 0.18);
+  }
+
+  html[data-nav-compact="oui"] .sa-marque {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+    white-space: nowrap;
+  }
+  html[data-nav-compact="oui"] .sa-marque > span:first-child { font-size: 0; }
+  html[data-nav-compact="oui"] .sa-marque > span:first-child::before {
+    content: 'A';
+    font-size: 1.2rem;
+  }
+  html[data-nav-compact="oui"] .sa-marque .sa-etiquette-admin { display: none; }
+
+  html[data-nav-compact="oui"] .sa-menu a,
+  html[data-nav-compact="oui"] .sa-groupe > .sa-groupe-titre {
+    font-size: 0;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  html[data-nav-compact="oui"] .sa-menu .sa-icone,
+  html[data-nav-compact="oui"] .sa-groupe > .sa-groupe-titre .sa-icone {
+    font-size: 0.95rem;
+  }
+  html[data-nav-compact="oui"] .sa-groupe .sa-chevron { opacity: 0; }
+  html[data-nav-compact="oui"] .sa-groupe .sa-sous-menu { display: none !important; }
+  html[data-nav-compact="oui"] .sa-identite { display: none; }
+  html[data-nav-compact="oui"] .sa-deconnexion {
+    font-size: 0;
+    padding-left: 0;
+    padding-right: 0;
+  }
+  html[data-nav-compact="oui"] .sa-deconnexion::before {
+    content: '↩';
+    font-size: 1rem;
+  }
+
+  html[data-nav-compact="oui"] .sa-navigation:hover .sa-marque,
+  html[data-nav-compact="oui"] .sa-navigation:focus-within .sa-marque {
+    justify-content: space-between;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  html[data-nav-compact="oui"] .sa-navigation:hover .sa-marque > span:first-child,
+  html[data-nav-compact="oui"] .sa-navigation:focus-within .sa-marque > span:first-child {
+    font-size: 1.35rem;
+  }
+  html[data-nav-compact="oui"] .sa-navigation:hover .sa-marque > span:first-child::before,
+  html[data-nav-compact="oui"] .sa-navigation:focus-within .sa-marque > span:first-child::before {
+    content: none;
+  }
+  html[data-nav-compact="oui"] .sa-navigation:hover .sa-marque .sa-etiquette-admin,
+  html[data-nav-compact="oui"] .sa-navigation:focus-within .sa-marque .sa-etiquette-admin {
+    display: inline;
+  }
+  html[data-nav-compact="oui"] .sa-navigation:hover .sa-menu a,
+  html[data-nav-compact="oui"] .sa-navigation:focus-within .sa-menu a,
+  html[data-nav-compact="oui"] .sa-navigation:hover .sa-groupe > .sa-groupe-titre,
+  html[data-nav-compact="oui"] .sa-navigation:focus-within .sa-groupe > .sa-groupe-titre {
+    font-size: 0.89rem;
+  }
+  html[data-nav-compact="oui"] .sa-navigation:hover .sa-sous-menu a,
+  html[data-nav-compact="oui"] .sa-navigation:focus-within .sa-sous-menu a {
+    font-size: 0.845rem;
+  }
+  html[data-nav-compact="oui"] .sa-navigation:hover .sa-groupe .sa-chevron,
+  html[data-nav-compact="oui"] .sa-navigation:focus-within .sa-groupe .sa-chevron {
+    opacity: 1;
+  }
+  html[data-nav-compact="oui"] .sa-navigation:hover .sa-groupe.ouvert .sa-sous-menu,
+  html[data-nav-compact="oui"] .sa-navigation:focus-within .sa-groupe.ouvert .sa-sous-menu {
+    display: flex !important;
+  }
+  html[data-nav-compact="oui"] .sa-navigation:hover .sa-identite,
+  html[data-nav-compact="oui"] .sa-navigation:focus-within .sa-identite {
+    display: block;
+  }
+  html[data-nav-compact="oui"] .sa-navigation:hover .sa-deconnexion,
+  html[data-nav-compact="oui"] .sa-navigation:focus-within .sa-deconnexion {
+    font-size: 0.82rem;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  html[data-nav-compact="oui"] .sa-navigation:hover .sa-deconnexion::before,
+  html[data-nav-compact="oui"] .sa-navigation:focus-within .sa-deconnexion::before {
+    content: none;
+  }
+}
+
 .sa-principal {
   flex: 1;
   min-width: 0;
@@ -221,6 +338,37 @@
 .sa-carte-theme .sa-pied-theme .sa-nom-theme { font-weight: 600; font-size: 0.93rem; color: var(--texte-sombre); display: flex; align-items: center; justify-content: space-between; gap: 6px; }
 .sa-carte-theme .sa-pied-theme .sa-desc-theme { font-size: 0.76rem; color: var(--texte-att); margin-top: 3px; line-height: 1.35; }
 .sa-carte-theme .sa-coche-theme { color: var(--ocre); font-size: 0.95rem; }
+
+/* Commande de la barre rétractable dans la vue Apparence. */
+.sa-interrupteur-disposition {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.sa-interrupteur-disposition input {
+  width: 18px;
+  height: 18px;
+  margin: 2px 0 0;
+  flex: none;
+  accent-color: var(--ocre);
+  cursor: pointer;
+}
+.sa-interrupteur-disposition strong { display: block; color: var(--texte-sombre); }
+.sa-interrupteur-disposition .sa-aide-disposition {
+  display: block;
+  margin-top: 4px;
+  color: var(--texte-att);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+.sa-confirmation-disposition {
+  min-height: 1.3em;
+  margin: 11px 0 0 29px;
+  color: var(--vert-ok);
+  font-size: 0.8rem;
+}
 
 .sa-grille-stats {
   display: grid;

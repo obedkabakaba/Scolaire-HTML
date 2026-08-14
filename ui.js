@@ -159,7 +159,9 @@
     'messages.html':
       '<path d="M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/><path d="m3.5 6.5 8.5 6 8.5-6"/>',
     'mon-profil.html':
-      '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="10" r="3"/><path d="M6.4 19.2a6.2 6.2 0 0 1 11.2 0"/>'
+      '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="10" r="3"/><path d="M6.4 19.2a6.2 6.2 0 0 1 11.2 0"/>',
+    '#':
+      '<circle cx="12" cy="12" r="9"/><path d="M9.6 9.2a2.5 2.5 0 1 1 3.2 3.1c-.6.3-.9.8-.9 1.4v.4"/><path d="M12 17.2h.01"/>'
   };
 
   function injecterIcones() {
@@ -506,7 +508,8 @@
     'utilisateurs.html': 'Comptes et rôles',
     'site-public.html': "Vitrine de l'école",
     'parametres.html': "Réglages de l'école",
-    'mon-profil.html': 'Compte et apparence'
+    'mon-profil.html': 'Compte et apparence',
+    '#': 'Guide, aide et tutoriels'
   };
 
   var CLE_USAGE = 'ardoise_usage_lanceur';
@@ -531,6 +534,7 @@
     // Les liens visibles font foi : ce sont ceux que le filtrage par rôle
     // a laissés en place. Une page interdite n'apparaît donc jamais ici.
     var disponibles = {};
+    var actions = {};
     var liens = document.querySelectorAll('.nav-liste .nav-item[href]');
     for (var i = 0; i < liens.length; i++) {
       var lien = liens[i];
@@ -538,7 +542,10 @@
       if (parent && parent.style.display === 'none') continue;
       var href = lien.getAttribute('href');
       var libelle = (lien.querySelector('.nav-libelle') || lien).textContent.trim();
-      if (href && libelle) disponibles[href] = libelle;
+      if (href && libelle) {
+        disponibles[href] = libelle;
+        if (lien.dataset.action) actions[href] = lien.dataset.action;
+      }
     }
     if (Object.keys(disponibles).length === 0) return;
 
@@ -566,13 +573,18 @@
 
     function tuile(page) {
       var icone = ICONES[page] || '';
-      return '<a class="tuile" href="' + page + '" data-page="' + page + '"'
+      var action = actions[page] || '';
+      var ouverture = action
+        ? '<button type="button" class="tuile" data-action="' + action + '"'
+        : '<a class="tuile" href="' + page + '"';
+      var fermeture = action ? '</button>' : '</a>';
+      return ouverture + ' data-page="' + page + '"'
         + ' data-recherche="' + (disponibles[page] + ' ' + (DESCRIPTIONS[page] || '')).toLowerCase() + '">'
         + '<span class="jeton"><svg viewBox="0 0 24 24" aria-hidden="true">' + icone + '</svg></span>'
         + '<span class="textes">'
         + '<span class="nom">' + disponibles[page] + '</span>'
         + '<span class="desc">' + (DESCRIPTIONS[page] || '') + '</span>'
-        + '</span></a>';
+        + '</span>' + fermeture;
     }
 
     var html = '<div class="lanceur-entete">'
@@ -588,7 +600,21 @@
     hote.dataset.construit = 'oui';
 
     hote.querySelectorAll('[data-page]').forEach(function (t) {
-      t.addEventListener('click', function () { noterUsage(t.dataset.page); });
+      t.addEventListener('click', function (e) {
+        noterUsage(t.dataset.page);
+        if (t.dataset.action !== 'aide-tutoriels') return;
+        e.preventDefault();
+        /* La tuile doit ouvrir exactement le même panneau que l'entrée de la
+           barre latérale. Avant ce branchement, elle n'était qu'un lien `#` :
+           le navigateur changeait le fragment, mais le guide ne recevait
+           jamais le clic. */
+        if (window.ArdoiseAide && typeof window.ArdoiseAide.ouvrir === 'function') {
+          window.ArdoiseAide.ouvrir();
+          return;
+        }
+        var entree = document.querySelector('#ard-di-nav .nav-item');
+        if (entree) entree.click();
+      });
     });
 
     document.getElementById('lanceur-tout').addEventListener('click', function () {

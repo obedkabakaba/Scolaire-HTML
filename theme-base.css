@@ -185,10 +185,11 @@ html[data-theme="nuit"] textarea::placeholder {
 html[data-theme="nuit"] { color-scheme: dark; }
 
 /* ==========================================================================
-   4. KIVU — expressif. Terracotta et vert profond, grands rayons,
+   4. YOHALI — expressif. Terracotta et vert profond, grands rayons,
       typographie généreuse. Le thème qui accueille les illustrations.
    ========================================================================== */
-html[data-theme="kivu"] {
+html[data-theme="yohali"],
+html[data-theme="kivu"] { /* alias temporaire pendant la migration locale */
   --ardoise: #1E5B4F;
   --ardoise-2: #17483F;
   --craie: #FDF6EE;
@@ -222,17 +223,17 @@ html[data-theme="kivu"] {
   --nav-separateur: rgba(253, 246, 238, 0.16);
 }
 
-/* Kivu respire davantage : barre latérale détachée du bord, coins arrondis. */
-html[data-theme="kivu"] .barre-laterale {
+/* Yohali respire davantage : barre latérale détachée du bord, coins arrondis. */
+:is(html[data-theme="yohali"], html[data-theme="kivu"]) .barre-laterale {
   border-radius: 0 var(--r-carte) var(--r-carte) 0;
 }
-html[data-theme="kivu"] .carte-cours,
-html[data-theme="kivu"] .carte-recap,
-html[data-theme="kivu"] .carte-evenements,
-html[data-theme="kivu"] .conteneur-tableau {
+:is(html[data-theme="yohali"], html[data-theme="kivu"]) .carte-cours,
+:is(html[data-theme="yohali"], html[data-theme="kivu"]) .carte-recap,
+:is(html[data-theme="yohali"], html[data-theme="kivu"]) .carte-evenements,
+:is(html[data-theme="yohali"], html[data-theme="kivu"]) .conteneur-tableau {
   box-shadow: var(--ombre-carte);
 }
-html[data-theme="kivu"] h1 {
+:is(html[data-theme="yohali"], html[data-theme="kivu"]) h1 {
   letter-spacing: -0.01em;
 }
 

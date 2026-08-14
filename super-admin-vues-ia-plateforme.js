@@ -373,6 +373,15 @@
       conteneur.innerHTML = `
         <div class="sa-bandeau ton-info">${esc(d.rappel)}</div>
 
+        <div class="ia-section-entete">
+          <p class="sa-muet">
+            Une fiche technique ne dit pas lequel répond le mieux à VOS questions.
+            Posez-leur la même.
+          </p>
+          <button class="sa-bouton sa-bouton-petit sa-bouton-secondaire"
+                  data-role="comparer">Comparer deux modèles</button>
+        </div>
+
         ${ui.tableau({
           colonnes: [
             { titre: 'Modèle', cle: 'nom', rendu: (m) => `
@@ -410,8 +419,104 @@
           ouvrirEditionModele(d.modeles.find((m) => m.id === b.dataset.modifier));
         });
       });
+
+      conteneur.querySelector('[data-role="comparer"]')
+        .addEventListener('click', () => ouvrirComparaison(d.modeles));
     }
   });
+
+  /**
+   * Comparer deux modèles sur la MÊME question.
+   *
+   * `POST /studio/comparer` existait côté serveur et aucun écran ne l'appelait.
+   * Or c'est l'écran des modèles qui pose la question à laquelle il répond :
+   * les capacités et les tarifs affichés ici ne disent pas lequel répond le
+   * mieux, et un tableau ne remplace pas une réponse lue.
+   *
+   * L'appel dépense réellement des jetons chez les deux fournisseurs : c'est
+   * écrit avant de cliquer, pas découvert sur la facture.
+   */
+  function ouvrirComparaison(modeles) {
+    const utilisables = modeles.filter((m) => m.actif && m.fournisseur_actif);
+    if (utilisables.length < 2) {
+      return SA.toast(
+        'Il faut au moins deux modèles actifs, chez des fournisseurs actifs, pour comparer.',
+        'info');
+    }
+    const options = (selection) => utilisables.map((m) =>
+      `<option value="${esc(m.id)}" ${m.id === selection ? 'selected' : ''}>`
+      + `${esc(m.fournisseur_nom)} — ${esc(m.nom)}</option>`).join('');
+
+    const modale = SA.modale({
+      titre: 'Comparer deux modèles',
+      sousTitre: 'La même question, posée aux deux en parallèle.',
+      large: true,
+      contenu: `
+        <div class="ia-comparaison-choix">
+          <label class="sa-connexion-champ"><span>Modèle A</span>
+            <select class="sa-champ" id="ia-cmp-a">${options(utilisables[0].id)}</select></label>
+          <label class="sa-connexion-champ"><span>Modèle B</span>
+            <select class="sa-champ" id="ia-cmp-b">${options(utilisables[1].id)}</select></label>
+        </div>
+        <label class="sa-connexion-champ"><span>Question</span>
+          <textarea class="sa-champ" id="ia-cmp-msg" rows="4"
+            placeholder="Ex. : explique en trois phrases pourquoi un élève décroche."></textarea></label>
+        <p class="sa-muet">
+          Cet essai consomme réellement des jetons chez les deux fournisseurs, et il est
+          compté dans les coûts au même titre qu'un usage normal. Aucun outil n'est
+          disponible dans ce mode : on compare des réponses, pas des actions.
+        </p>
+        <div id="ia-cmp-resultat"></div>`,
+      actions: `
+        <button class="sa-bouton sa-bouton-secondaire" data-role="fermer">Fermer</button>
+        <button class="sa-bouton sa-bouton-principal" data-role="lancer">Poser la question</button>`
+    });
+
+    modale.querySelector('[data-role="fermer"]').addEventListener('click', () => modale.fermer());
+
+    const colonne = (titre, r) => {
+      if (!r) return '';
+      if (!r.ok) {
+        return `<div class="ia-cmp-colonne">
+            <h4>${esc(titre)}</h4>
+            <div class="sa-bandeau ton-danger">${esc(r.message)}</div>
+            <footer class="sa-muet">${r.duree_ms} ms avant l'échec</footer>
+          </div>`;
+      }
+      return `<div class="ia-cmp-colonne">
+          <h4>${esc(titre)} <code>${esc(r.modele)}</code></h4>
+          <p class="sa-muet">${esc(r.fournisseur)} · ${r.duree_ms} ms ·
+            ${Number(r.cout || 0).toFixed(6)} $
+            ${r.estimation ? '<em>(ESTIMATION)</em>' : '<em>(mesuré)</em>'}</p>
+          <pre class="ia-cmp-texte">${esc(r.texte)}</pre>
+        </div>`;
+    };
+
+    modale.querySelector('[data-role="lancer"]').addEventListener('click', async (ev) => {
+      const message = modale.querySelector('#ia-cmp-msg').value.trim();
+      if (!message) return SA.toast('Écrivez la question à poser aux deux modèles.', 'erreur');
+      const a = modale.querySelector('#ia-cmp-a').value;
+      const b = modale.querySelector('#ia-cmp-b').value;
+      if (a === b) return SA.toast('Choisissez deux modèles différents.', 'erreur');
+
+      const zone = modale.querySelector('#ia-cmp-resultat');
+      ev.currentTarget.disabled = true;
+      zone.innerHTML = ui.squelette(3, 40);
+      try {
+        const r = await SA.api(`${BASE}/studio/comparer`, {
+          method: 'POST',
+          body: JSON.stringify({ message, modele_a: a, modele_b: b })
+        });
+        zone.innerHTML = `
+          <div class="ia-cmp-grille">${colonne('A', r.a)}${colonne('B', r.b)}</div>
+          <p class="sa-muet">${esc(r.note)}</p>`;
+      } catch (err) {
+        zone.innerHTML = ui.etatErreur(err.message);
+      } finally {
+        ev.currentTarget.disabled = false;
+      }
+    });
+  }
 
   function ouvrirEditionModele(m) {
     const modale = SA.modale({
@@ -735,6 +840,8 @@
 
         <p class="sa-muet">
           Zéro veut dire « aucun plafond ». Un budget à 0 n'est jamais « dépassé ».
+          Le plus petit plafond réel est donc 0,01 $ : en dessous, le montant
+          s'arrondirait à zéro et retirerait la limite au lieu de la poser.
         </p>
         <p class="sa-muet">Déclaré par : <code>${esc(u.declare_par || '—')}</code></p>`,
       actions: `
@@ -909,10 +1016,14 @@
 
         <div class="sa-bandeau ton-alerte">${esc(d.avertissement)}</div>
 
-        ${d.budgets.length ? `
-          <section class="sa-section">
-            <h3 class="sa-section-titre">Budgets</h3>
+        <section class="sa-section">
+            <div class="ia-section-entete">
+              <h3 class="sa-section-titre">Budgets</h3>
+              <button class="sa-bouton sa-bouton-petit sa-bouton-secondaire"
+                      data-role="nouveau-budget">Nouveau budget</button>
+            </div>
             ${ui.tableau({
+              cliquable: true,
               colonnes: [
                 { titre: 'Budget', cle: 'libelle' },
                 { titre: 'Portée', cle: 'portee', rendu: (b) => ui.badge(b.portee, 'neutre') },
@@ -928,9 +1039,10 @@
                 { titre: 'Dépassement', cle: 'bloquant',
                   rendu: (b) => (b.bloquant ? ui.badge('bloque', 'danger') : ui.badge('alerte seulement', 'neutre')) }
               ],
-              lignes: d.budgets, vide: 'Aucun budget.'
+              lignes: d.budgets,
+              vide: 'Aucun budget. Sans plafond, rien n’arrête une dépense.'
             })}
-          </section>` : ''}
+          </section>
 
         ${tableauSimple('Par fournisseur', d.par_fournisseur, 'Fournisseur')}
         ${tableauSimple('Par fonction', d.par_usage, 'Utilisation')}
@@ -941,8 +1053,97 @@
       conteneur.querySelectorAll('[data-jours]').forEach((b) => {
         b.addEventListener('click', () => SA.majParams({ jours: b.dataset.jours }) || SA.rafraichirVue());
       });
+
+      const boutonNouveau = conteneur.querySelector('[data-role="nouveau-budget"]');
+      if (boutonNouveau) boutonNouveau.addEventListener('click', () => ouvrirEditionBudget(null));
+
+      conteneur.querySelectorAll('.sa-ligne-cliquable').forEach((tr) => {
+        tr.addEventListener('click', () => {
+          const b = d.budgets[Number(tr.dataset.index)];
+          if (b) ouvrirEditionBudget(b);
+        });
+      });
     }
   });
+
+  /**
+   * Édition d'un budget.
+   *
+   * La route `PUT /budgets/:cle` existait depuis la première livraison, et
+   * aucun écran ne l'appelait : les budgets s'affichaient, sans qu'aucun
+   * plafond puisse être posé ni relevé depuis l'interface. Un plafond qu'on ne
+   * peut pas modifier n'est pas un contrôle, c'est une décoration.
+   */
+  function ouvrirEditionBudget(b) {
+    const creation = !b;
+    const v = b || { cle: '', libelle: '', budget_mensuel_usd: 0, budget_journalier_usd: 0,
+                     seuil_alerte_pct: 80, bloquant: false, portee: 'usage' };
+    // Ces valeurs sont celles de la contrainte CHECK sur `ia_budgets.portee`.
+    // En inventer une de plus ne produirait pas un budget plus fin : une 500.
+    const PORTEES = ['global', 'fonction', 'fournisseur', 'ecole', 'usage'];
+
+    const modale = SA.modale({
+      titre: creation ? 'Nouveau budget' : v.libelle,
+      sousTitre: creation ? '' : `clé : ${v.cle}`,
+      contenu: `
+        ${creation ? `
+          <label class="sa-connexion-champ"><span>Clé technique</span>
+            <input type="text" class="sa-champ" id="ia-b-cle" placeholder="ex. whatsapp_mensuel"></label>` : ''}
+        <label class="sa-connexion-champ"><span>Libellé</span>
+          <input type="text" class="sa-champ" id="ia-b-libelle" value="${esc(v.libelle)}"></label>
+
+        <label class="sa-connexion-champ"><span>Portée</span>
+          <select class="sa-champ" id="ia-b-portee">
+            ${PORTEES.map((p) => `<option value="${p}" ${p === v.portee ? 'selected' : ''}>${p}</option>`).join('')}
+          </select></label>
+
+        <label class="sa-connexion-champ"><span>Plafond mensuel ($)</span>
+          <input type="number" min="0" step="0.01" class="sa-champ" id="ia-b-bm"
+                 value="${v.budget_mensuel_usd ?? 0}"></label>
+        <label class="sa-connexion-champ"><span>Plafond journalier ($)</span>
+          <input type="number" min="0" step="0.01" class="sa-champ" id="ia-b-bj"
+                 value="${v.budget_journalier_usd ?? 0}"></label>
+        <label class="sa-connexion-champ"><span>Seuil d'alerte (%)</span>
+          <input type="number" min="1" max="200" step="1" class="sa-champ" id="ia-b-seuil"
+                 value="${v.seuil_alerte_pct ?? 80}"></label>
+
+        <label class="sa-case">
+          <input type="checkbox" id="ia-b-bloquant" ${v.bloquant ? 'checked' : ''}>
+          Bloquer les appels au dépassement (sinon : alerter seulement)
+        </label>
+
+        <p class="sa-muet">
+          Zéro veut dire « aucun plafond ». Le plus petit plafond réel est 0,01 $ :
+          en dessous, le montant s'arrondirait à zéro et retirerait la limite au
+          lieu de la poser.
+        </p>`,
+      actions: `
+        <button class="sa-bouton sa-bouton-secondaire" data-role="annuler">Annuler</button>
+        <button class="sa-bouton sa-bouton-principal" data-role="ok">Enregistrer</button>`
+    });
+
+    modale.querySelector('[data-role="annuler"]').addEventListener('click', () => modale.fermer());
+    modale.querySelector('[data-role="ok"]').addEventListener('click', async () => {
+      const cle = creation ? modale.querySelector('#ia-b-cle').value.trim() : v.cle;
+      if (!cle) return SA.toast('Une clé technique est obligatoire.', 'erreur');
+      try {
+        await SA.api(`${BASE}/budgets/${encodeURIComponent(cle)}`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            libelle: modale.querySelector('#ia-b-libelle').value.trim() || cle,
+            portee: modale.querySelector('#ia-b-portee').value,
+            budget_mensuel_usd: modale.querySelector('#ia-b-bm').value,
+            budget_journalier_usd: modale.querySelector('#ia-b-bj').value,
+            seuil_alerte_pct: Number(modale.querySelector('#ia-b-seuil').value) || 80,
+            bloquant: modale.querySelector('#ia-b-bloquant').checked
+          })
+        });
+        modale.fermer();
+        SA.toast(creation ? 'Budget créé.' : 'Budget mis à jour.', 'succes');
+        SA.rafraichirVue();
+      } catch (err) { SA.toast(err.message, 'erreur'); }
+    });
+  }
 
   /* ======================================================================
      6. AUTORISATIONS — politiques et niveaux d'autonomie

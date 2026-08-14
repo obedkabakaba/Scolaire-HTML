@@ -710,3 +710,54 @@
 .kb-proposition footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
 .kb-proposition details { margin-top: 8px; }
 .kb-proposition summary { cursor: pointer; font-size: 0.84rem; }
+
+/* Titre de section accompagné d'une action — « Budgets » et son bouton
+   « Nouveau budget ». Le titre garde sa graisse, le bouton reste sur la même
+   ligne tant que la largeur le permet. */
+.ia-section-entete {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.ia-section-entete .sa-section-titre { margin-bottom: 0; }
+
+/* `.sa-case` était utilisée dans plusieurs formulaires sans jamais avoir été
+   définie ailleurs que sous `.kb-perimetre` : la case et son libellé ne
+   s'alignaient pas. */
+.sa-case {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  margin: 10px 0;
+  cursor: pointer;
+}
+.sa-case input[type="checkbox"] { margin-top: 2px; flex: none; }
+.sa-case input[disabled] { cursor: not-allowed; }
+
+/* Comparaison de deux modèles sur la même question. */
+.ia-comparaison-choix { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.ia-cmp-grille { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+.ia-cmp-colonne {
+  border: 1px solid var(--bordure, #E2DACA);
+  border-radius: var(--r-carte, 12px);
+  background: var(--craie, #FFFDF7);
+  padding: 12px;
+  min-width: 0;
+}
+.ia-cmp-colonne h4 { margin: 0 0 4px; font-size: 0.94rem; display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; }
+.ia-cmp-texte {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  margin: 8px 0 0;
+  max-height: 40vh;
+  overflow-y: auto;
+}
+@media (max-width: 820px) {
+  .ia-comparaison-choix, .ia-cmp-grille { grid-template-columns: 1fr; }
+}

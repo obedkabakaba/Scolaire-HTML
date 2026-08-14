@@ -576,7 +576,11 @@
           })
         });
         modale.fermer();
-        SA.toast(`Moteur appliqué : ${resultat.moteur_prevu.provider} · ${resultat.moteur_prevu.model}.`, 'succes');
+        if (resultat.moteur_prevu.disponible === false) {
+          SA.toast(`Réglage enregistré, mais moteur indisponible : ${resultat.moteur_prevu.message}`, 'alerte', 10000);
+        } else {
+          SA.toast(`Moteur appliqué : ${resultat.moteur_prevu.provider} · ${resultat.moteur_prevu.model}.`, 'succes');
+        }
         SA.rafraichirVue();
       } catch (err) { SA.toast(err.message, 'erreur'); }
     });

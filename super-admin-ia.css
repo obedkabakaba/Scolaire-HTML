@@ -1,0 +1,712 @@
+/* ==========================================================================
+   ARDOISE — IA & MODÈLES, AI STUDIO, KNOWLEDGE HUB
+   --------------------------------------------------------------------------
+   Feuille séparée plutôt qu'ajout à `super-admin-control-center.css` : les
+   écrans IA forment un ensemble cohérent, avec des mises en page que le
+   Control Center n'a pas (conversation à trois colonnes, éditeur Markdown,
+   cartes d'autorisation). Les mélanger rendrait les deux plus difficiles à
+   relire, et une feuille chargée ne coûte rien à côté d'une feuille confuse.
+
+   Les variables (--craie, --ocre, --bordure…) sont celles de `theme-base.css`.
+   Aucune couleur en dur qui ne s'adapterait pas au thème sombre : les repères
+   d'un diff (vert/rouge) sont les seules exceptions, et ils portent leur propre
+   variante sombre.
+   ========================================================================== */
+
+/* ==========================================================================
+   1. ÉLÉMENTS PARTAGÉS
+   ========================================================================== */
+
+.ia-puces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.ia-puce {
+  display: inline-block;
+  padding: 2px 8px;
+  border: 1px solid var(--bordure, #E2DACA);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  color: var(--texte-att, #7A7466);
+  background: var(--craie-2, #FBF7EE);
+}
+
+.ia-grille-formulaire {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.ia-carte-champs { margin: 0; }
+.ia-carte-champs > div {
+  display: flex;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--bordure, #E2DACA);
+  font-size: 0.85rem;
+}
+.ia-carte-champs > div:last-child { border-bottom: none; }
+.ia-carte-champs dt {
+  flex: 0 0 170px;
+  color: var(--texte-att, #7A7466);
+  margin: 0;
+}
+.ia-carte-champs dd { flex: 1 1 auto; margin: 0; min-width: 0; word-break: break-word; }
+
+.ia-kv { white-space: nowrap; }
+.ia-kv em {
+  font-style: normal;
+  color: var(--texte-att, #7A7466);
+  margin-right: 3px;
+}
+
+/* ==========================================================================
+   2. FOURNISSEURS
+   ========================================================================== */
+
+.ia-cartes-fournisseurs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.ia-carte-fournisseur {
+  border: 1px solid var(--bordure, #E2DACA);
+  border-radius: var(--r-carte, 12px);
+  background: var(--craie, #FFFDF7);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.ia-carte-entete {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+.ia-carte-entete h3 {
+  margin: 0 0 2px;
+  font-family: var(--police-titre, inherit);
+  font-size: 1.05rem;
+}
+.ia-carte-entete p { margin: 0; font-size: 0.78rem; word-break: break-all; }
+
+.ia-cle {
+  font-family: var(--police-mono, monospace);
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
+}
+.ia-source-cle {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--texte-att, #7A7466);
+}
+
+.ia-etat-detail {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: var(--r-bouton, 8px);
+  background: var(--craie-2, #FBF7EE);
+  font-size: 0.8rem;
+  color: var(--texte-att, #7A7466);
+}
+
+.ia-carte-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.ia-resultat-test > div {
+  display: flex;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--bordure, #E2DACA);
+}
+.ia-resultat-test dt { flex: 0 0 150px; color: var(--texte-att, #7A7466); margin: 0; }
+.ia-resultat-test dd { margin: 0; }
+
+/* ==========================================================================
+   3. MODÈLES ET ROUTAGE
+   ========================================================================== */
+
+.ia-modele-nom { display: flex; flex-direction: column; gap: 2px; }
+.ia-modele-nom code { font-size: 0.75rem; color: var(--texte-att, #7A7466); }
+
+.ia-prix { display: flex; flex-direction: column; gap: 1px; white-space: nowrap; }
+.ia-prix em {
+  font-style: normal;
+  font-size: 0.7rem;
+  color: var(--rouge, #B4443C);
+}
+.ia-prix-douteux > span { text-decoration: underline dotted; }
+
+.ia-profils {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.ia-profil {
+  border: 1px solid var(--bordure, #E2DACA);
+  border-radius: var(--r-carte, 12px);
+  padding: 12px;
+  background: var(--craie, #FFFDF7);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ia-profil header { display: flex; gap: 8px; align-items: baseline; }
+.ia-profil p { margin: 0; font-size: 0.78rem; }
+.ia-profil dl { margin: 0; font-size: 0.8rem; }
+.ia-profil dl > div { display: flex; gap: 8px; }
+.ia-profil dt { color: var(--texte-att, #7A7466); margin: 0; flex: 0 0 60px; }
+.ia-profil dd { margin: 0; }
+.ia-profil button { margin-top: auto; align-self: flex-start; }
+
+.ia-usage-nom { display: flex; flex-direction: column; gap: 3px; }
+.ia-usage-nom .sa-muet { font-size: 0.78rem; }
+.ia-appele-par { font-size: 0.7rem; opacity: 0.7; }
+
+.ia-resolution { display: flex; flex-direction: column; gap: 2px; }
+.ia-resolution code { font-size: 0.75rem; }
+.ia-indisponible {
+  color: var(--rouge, #B4443C);
+  text-decoration: underline dotted;
+  cursor: help;
+}
+
+.ia-chaine { margin: 0; padding-left: 18px; }
+.ia-chaine li { margin-bottom: 10px; line-height: 1.5; }
+.ia-chaine .sa-muet { display: block; font-size: 0.78rem; }
+
+/* ==========================================================================
+   4. AUTORISATIONS ET AUTONOMIE
+   ========================================================================== */
+
+.ia-autonomies {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 12px;
+}
+.ia-autonomie {
+  border: 1px solid var(--bordure, #E2DACA);
+  border-radius: var(--r-carte, 12px);
+  padding: 12px;
+  background: var(--craie, #FFFDF7);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ia-autonomie.expiree { opacity: 0.72; border-style: dashed; }
+.ia-autonomie header { display: flex; gap: 8px; align-items: baseline; justify-content: space-between; }
+.ia-autonomie p { margin: 0; font-size: 0.8rem; }
+.ia-autonomie-nom { font-weight: 600; }
+.ia-echeance { font-size: 0.75rem; color: var(--rouge, #B4443C); }
+.ia-autonomie button { margin-top: auto; align-self: flex-start; }
+
+.ia-niveaux { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.ia-niveau {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border: 1px solid var(--bordure, #E2DACA);
+  border-radius: var(--r-bouton, 8px);
+  cursor: pointer;
+}
+.ia-niveau.choisi { border-color: var(--ocre, #C08B4E); background: var(--craie-2, #FBF7EE); }
+.ia-niveau p { margin: 2px 0 0; font-size: 0.8rem; }
+.ia-plafond { font-size: 0.75rem; color: var(--texte-att, #7A7466); }
+
+.ia-verrou { margin-left: 4px; cursor: help; }
+
+/* ==========================================================================
+   5. AI STUDIO
+   ========================================================================== */
+
+.ia-studio {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 16px;
+  align-items: start;
+  /* Hauteur bornée pour que la saisie reste visible sans faire défiler la
+     page entière : c'est le fil qui défile, pas l'écran. */
+  height: calc(100vh - 210px);
+  min-height: 460px;
+}
+@media (max-width: 1000px) {
+  .ia-studio { grid-template-columns: 1fr; height: auto; }
+  .ia-studio-panneau { order: -1; }
+}
+
+.ia-studio-conversation {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  border: 1px solid var(--bordure, #E2DACA);
+  border-radius: var(--r-carte, 12px);
+  background: var(--craie, #FFFDF7);
+  overflow: hidden;
+}
+
+.ia-moteur-barre { border-bottom: 1px solid var(--bordure, #E2DACA); }
+.ia-moteur {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: center;
+  padding: 8px 14px;
+  font-size: 0.78rem;
+  background: var(--craie-2, #FBF7EE);
+}
+.ia-moteur em {
+  font-style: normal;
+  color: var(--texte-att, #7A7466);
+  margin-right: 4px;
+}
+.ia-moteur.indisponible { color: var(--rouge, #B4443C); }
+.ia-moteur.indisponible a { margin-left: auto; }
+
+.ia-fil {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ia-accueil h3 { margin: 0 0 8px; font-family: var(--police-titre, inherit); }
+.ia-suggestions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.ia-suggestion {
+  border: 1px solid var(--bordure, #E2DACA);
+  background: var(--craie-2, #FBF7EE);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+}
+.ia-suggestion:hover { border-color: var(--ocre, #C08B4E); }
+
+.ia-message { max-width: 85%; }
+.ia-message.utilisateur { align-self: flex-end; }
+.ia-message.assistant { align-self: flex-start; max-width: 100%; }
+.ia-message.systeme, .ia-message.erreur {
+  align-self: center;
+  font-size: 0.82rem;
+  padding: 8px 12px;
+  border-radius: var(--r-bouton, 8px);
+  background: var(--craie-2, #FBF7EE);
+}
+.ia-message.erreur { color: var(--rouge, #B4443C); border: 1px solid currentColor; }
+
+.ia-message-corps {
+  padding: 11px 14px;
+  border-radius: var(--r-carte, 12px);
+  line-height: 1.6;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.ia-message.utilisateur .ia-message-corps {
+  background: var(--ocre, #C08B4E);
+  color: #fff;
+}
+.ia-message.assistant .ia-message-corps {
+  background: var(--craie-2, #FBF7EE);
+  border: 1px solid var(--bordure, #E2DACA);
+}
+
+.ia-message-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 5px;
+  padding: 0 4px;
+  font-size: 0.72rem;
+  color: var(--texte-att, #7A7466);
+}
+.ia-lien-sources {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--ocre-dark, #8A5F2C);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Les trois registres de langue de l'invite système, repérables d'un coup
+   d'œil : une hypothèse lue comme un fait fait perdre une heure. */
+.ia-registre { font-weight: 700; letter-spacing: 0.03em; }
+.ia-registre-FAIT { color: var(--vert-ok, #4C7A3E); }
+.ia-registre-HYPOTHÈSE { color: var(--ocre-dark, #8A5F2C); }
+.ia-registre-RECOMMANDATION { color: var(--texte-sombre, #2E2A24); }
+
+.ia-code, .ia-diff, .ia-pr-corps pre {
+  background: var(--texte-sombre, #2E2A24);
+  color: #F4EFE4;
+  padding: 12px;
+  border-radius: var(--r-bouton, 8px);
+  overflow-x: auto;
+  font-family: var(--police-mono, monospace);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.ia-reflexion { display: inline-flex; gap: 4px; }
+.ia-reflexion span {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--texte-att, #7A7466);
+  animation: ia-pulse 1.2s infinite ease-in-out;
+}
+.ia-reflexion span:nth-child(2) { animation-delay: 0.15s; }
+.ia-reflexion span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes ia-pulse {
+  0%, 80%, 100% { opacity: 0.25; transform: scale(0.8); }
+  40% { opacity: 1; transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ia-reflexion span { animation: none; opacity: 0.6; }
+}
+
+.ia-saisie {
+  border-top: 1px solid var(--bordure, #E2DACA);
+  padding: 12px 14px;
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  background: var(--craie, #FFFDF7);
+}
+.ia-saisie textarea {
+  flex: 1 1 auto;
+  resize: vertical;
+  min-height: 44px;
+  max-height: 200px;
+  padding: 10px 12px;
+  border: 1px solid var(--bordure, #E2DACA);
+  border-radius: var(--r-bouton, 8px);
+  font: inherit;
+  background: var(--craie-2, #FBF7EE);
+  color: inherit;
+}
+.ia-saisie-actions { display: flex; flex-direction: column; gap: 6px; }
+
+/* ---------- Panneau latéral ---------- */
+
+.ia-studio-panneau {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 100%;
+  overflow-y: auto;
+}
+.ia-panneau-bloc {
+  border: 1px solid var(--bordure, #E2DACA);
+  border-radius: var(--r-carte, 12px);
+  padding: 12px;
+  background: var(--craie, #FFFDF7);
+}
+.ia-panneau-bloc h4 {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--texte-att, #7A7466);
+}
+.ia-panneau-bloc p { margin: 0; font-size: 0.78rem; }
+.ia-compteur {
+  float: right;
+  background: var(--craie-2, #FBF7EE);
+  border: 1px solid var(--bordure, #E2DACA);
+  border-radius: 999px;
+  padding: 0 7px;
+  font-size: 0.72rem;
+}
+
+.ia-panneau-liste { margin: 0; font-size: 0.8rem; }
+.ia-panneau-liste > div { display: flex; gap: 8px; padding: 3px 0; }
+.ia-panneau-liste dt { color: var(--texte-att, #7A7466); margin: 0; flex: 0 0 80px; }
+.ia-panneau-liste dd { margin: 0; }
+
+.ia-actions-liste { margin: 0; padding: 0; list-style: none; }
+.ia-action { border-top: 1px solid var(--bordure, #E2DACA); padding: 8px 0; }
+.ia-action:first-child { border-top: none; }
+.ia-action-ouvrir {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.ia-action-rang { color: var(--texte-att, #7A7466); }
+.ia-action-titre { flex: 1 1 120px; font-size: 0.82rem; }
+.ia-action-suite { display: flex; gap: 6px; margin-top: 4px; font-size: 0.7rem; }
+.ia-panneau-resume {
+  margin-top: 8px !important;
+  padding-top: 8px;
+  border-top: 1px solid var(--bordure, #E2DACA);
+  font-weight: 600;
+}
+
+.ia-outils { margin: 0; padding-left: 16px; font-size: 0.78rem; }
+
+.ia-gate, .ia-gate-verdict {
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-align: center;
+  padding: 8px;
+  border-radius: var(--r-bouton, 8px);
+}
+.ia-gate-READY   { background: rgba(76, 122, 62, 0.15); color: var(--vert-ok, #4C7A3E); }
+.ia-gate-WARNING { background: rgba(192, 139, 78, 0.18); color: var(--ocre-dark, #8A5F2C); }
+.ia-gate-BLOCKED,
+.ia-gate-echec   { background: rgba(180, 68, 60, 0.15); color: var(--rouge, #B4443C); }
+.ia-gate-en_cours { background: var(--craie-2, #FBF7EE); }
+
+/* ---------- Liste des conversations ---------- */
+
+.ia-conversations { display: flex; flex-direction: column; gap: 8px; }
+.ia-conv-carte {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  border: 1px solid var(--bordure, #E2DACA);
+  border-radius: var(--r-carte, 12px);
+  background: var(--craie, #FFFDF7);
+  padding: 12px 14px;
+}
+.ia-conv-ouvrir {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  min-width: 0;
+}
+.ia-conv-ouvrir .sa-muet { font-size: 0.76rem; }
+.ia-conv-actions { display: flex; gap: 6px; flex: 0 0 auto; }
+
+/* ---------- Carte d'autorisation ---------- */
+
+.ia-carte-autorisation { display: flex; flex-direction: column; gap: 14px; }
+.ia-carte-fichiers h4, .ia-motifs-risque h4 {
+  margin: 0 0 5px;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--texte-att, #7A7466);
+}
+.ia-carte-fichiers ul, .ia-motifs-risque ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 0.84rem;
+  line-height: 1.7;
+}
+
+.ia-diff .d-ajout   { color: #8CD98C; display: block; }
+.ia-diff .d-retrait { color: #E58A82; display: block; }
+.ia-diff .d-section { color: #9BB8E0; display: block; }
+.ia-diff .d-entete  { color: #C9C1B0; display: block; }
+
+.ia-etape {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--bordure, #E2DACA);
+}
+.ia-etape:last-child { border-bottom: none; }
+.ia-etape p { margin: 2px 0 0; font-size: 0.8rem; color: var(--texte-att, #7A7466); }
+.ia-etape-puce {
+  flex: 0 0 auto;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  margin-top: 5px;
+  background: var(--texte-att, #7A7466);
+}
+.ia-etape.ok .ia-etape-puce { background: var(--vert-ok, #4C7A3E); }
+.ia-etape.echec .ia-etape-puce { background: var(--rouge, #B4443C); }
+.ia-etape.en-cours .ia-etape-puce { background: var(--ocre, #C08B4E); }
+
+.ia-gate-verdict { font-size: 1.1rem; margin-bottom: 10px; }
+
+.ia-contexte-externe { font-family: var(--police-mono, monospace); font-size: 0.78rem; }
+.ia-liens-externes { display: flex; gap: 8px; margin-top: 10px; }
+
+.ia-sources { margin: 0; padding-left: 18px; line-height: 1.8; }
+.ia-sources .sa-muet { display: block; font-size: 0.76rem; }
+
+/* ==========================================================================
+   6. KNOWLEDGE HUB
+   ========================================================================== */
+
+.kb-hub {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr) 280px;
+  gap: 16px;
+  align-items: start;
+}
+@media (max-width: 1100px) { .kb-hub { grid-template-columns: 190px minmax(0, 1fr); } }
+@media (max-width: 760px)  { .kb-hub { grid-template-columns: 1fr; } }
+
+.kb-bases { display: flex; flex-direction: column; gap: 2px; }
+.kb-base {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--r-bouton, 8px);
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+.kb-base:hover { background: var(--craie-2, #FBF7EE); }
+.kb-base.actif {
+  background: var(--craie-2, #FBF7EE);
+  border-color: var(--ocre, #C08B4E);
+  font-weight: 600;
+}
+.kb-base-icone { flex: 0 0 auto; }
+.kb-base-nom { flex: 1 1 auto; font-size: 0.86rem; min-width: 0; }
+.kb-base-compte {
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  color: var(--texte-att, #7A7466);
+}
+.kb-base-ajout { color: var(--texte-att, #7A7466); font-size: 0.82rem; margin-top: 6px; }
+
+.kb-centre {
+  border: 1px solid var(--bordure, #E2DACA);
+  border-radius: var(--r-carte, 12px);
+  background: var(--craie, #FFFDF7);
+  padding: 16px;
+  min-height: 300px;
+}
+.kb-base-entete {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.kb-base-entete h2 { margin: 0 0 4px; font-family: var(--police-titre, inherit); font-size: 1.15rem; }
+.kb-base-entete p { margin: 0; font-size: 0.82rem; }
+.kb-base-badges { display: flex; flex-direction: column; gap: 4px; align-items: flex-end; }
+
+.kb-fiches { list-style: none; margin: 0; padding: 0; }
+.kb-fiches li { border-top: 1px solid var(--bordure, #E2DACA); }
+.kb-fiches li:first-child { border-top: none; }
+.kb-fiche {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 100%;
+  padding: 10px 6px;
+  background: none;
+  border: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.kb-fiche:hover { background: var(--craie-2, #FBF7EE); }
+.kb-fiche .sa-muet { font-size: 0.75rem; }
+
+.kb-droite { display: flex; flex-direction: column; gap: 12px; }
+.kb-panneau {
+  border: 1px solid var(--bordure, #E2DACA);
+  border-radius: var(--r-carte, 12px);
+  padding: 12px;
+  background: var(--craie, #FFFDF7);
+}
+.kb-panneau h4 {
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--texte-att, #7A7466);
+}
+.kb-panneau button { margin-top: 10px; }
+
+.kb-hierarchie { margin: 0; padding-left: 18px; font-size: 0.78rem; line-height: 1.5; }
+.kb-hierarchie li { margin-bottom: 7px; }
+.kb-hierarchie li.actif { color: var(--ocre-dark, #8A5F2C); font-weight: 600; }
+.kb-hierarchie .sa-muet { display: block; font-weight: 400; }
+
+.kb-editeur { display: flex; flex-direction: column; gap: 12px; }
+.kb-editeur-champs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+.kb-markdown {
+  font-family: var(--police-mono, monospace);
+  font-size: 0.85rem;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.kb-historique summary { cursor: pointer; font-size: 0.84rem; }
+.kb-historique ul { list-style: none; margin: 8px 0 0; padding: 0; }
+.kb-historique li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 0;
+  border-top: 1px solid var(--bordure, #E2DACA);
+  font-size: 0.8rem;
+}
+.kb-motif { flex: 1 1 120px; color: var(--texte-att, #7A7466); }
+
+.kb-perimetre { border: 1px solid var(--bordure, #E2DACA); border-radius: var(--r-bouton, 8px); padding: 10px 12px; }
+.kb-perimetre legend { padding: 0 6px; font-size: 0.8rem; color: var(--texte-att, #7A7466); }
+.kb-perimetre .sa-case { display: block; padding: 3px 0; }
+.kb-perimetre .sa-case.desactive { opacity: 0.5; }
+
+.kb-liste-perimetre { list-style: none; margin: 0 0 12px; padding: 0; font-size: 0.84rem; }
+.kb-liste-perimetre li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--bordure, #E2DACA);
+}
+.kb-liste-perimetre.ecartees { opacity: 0.8; }
+
+.kb-proposition {
+  border: 1px solid var(--bordure, #E2DACA);
+  border-radius: var(--r-carte, 12px);
+  background: var(--craie, #FFFDF7);
+  padding: 14px;
+  margin-bottom: 12px;
+}
+.kb-proposition header { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; }
+.kb-proposition h3 { margin: 0; font-size: 1rem; font-family: var(--police-titre, inherit); }
+.kb-proposition footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
+.kb-proposition details { margin-top: 8px; }
+.kb-proposition summary { cursor: pointer; font-size: 0.84rem; }

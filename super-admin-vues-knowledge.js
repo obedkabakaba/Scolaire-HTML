@@ -75,6 +75,9 @@
               <button class="kb-base ${b.code === baseActive ? 'actif' : ''}" data-base="${esc(b.code)}">
                 <span class="kb-base-icone">${esc(b.icone || '📄')}</span>
                 <span class="kb-base-nom">${esc(b.titre)}</span>
+                <span title="${b.connectee_ia
+                  ? (b.nb_fiches ? 'Connectée aux IA' : 'Connectée, en attente de fiches')
+                  : 'Non connectée à une IA'}">${b.connectee_ia ? (b.nb_fiches ? '●' : '○') : '⚠'}</span>
                 <span class="kb-base-compte">${b.nb_fiches}</span>
               </button>`).join('')}
             <button class="kb-base kb-base-ajout" id="kb-nouvelle-base">+ Nouvelle base</button>
@@ -136,11 +139,18 @@
         </div>
         <div class="kb-base-badges">
           ${ui.badge(base.sensibilite, TON_SENSIBILITE[base.sensibilite])}
+          ${ui.badge(base.connectee_ia
+            ? (base.nb_fiches ? 'Connectée aux IA' : 'Connectée · base vide')
+            : 'Non connectée', base.connectee_ia ? (base.nb_fiches ? 'succes' : 'info') : 'danger')}
           <span class="sa-muet">priorité ${base.priorite}</span>
         </div>
       </header>
 
       ${base.note_sensibilite ? `<div class="sa-bandeau ton-alerte">${esc(base.note_sensibilite)}</div>` : ''}
+      ${(base.problemes_connexion || []).length ? `
+        <div class="sa-bandeau ton-danger">
+          ${base.problemes_connexion.map(esc).join(' ')} Ouvrez « Modifier le périmètre » pour resynchroniser.
+        </div>` : ''}
 
       ${fiches.fiches.length ? `
         <ul class="kb-fiches">
@@ -164,8 +174,8 @@
         <h4>Périmètre de cette base</h4>
         <p class="sa-muet">Assistants qui la reçoivent :</p>
         <div class="ia-puces">
-          ${(base.usages_autorises || []).length
-            ? base.usages_autorises.map((u) => `<span class="ia-puce">${esc(u)}</span>`).join('')
+          ${(base.usages_connectes || []).length
+            ? base.usages_connectes.map((u) => `<span class="ia-puce">${esc(u)}</span>`).join('')
             : '<span class="sa-muet">aucun — cette base n\'est transmise à personne</span>'}
         </div>
         <button class="sa-bouton sa-bouton-secondaire sa-bouton-petit" id="kb-editer-base">
@@ -356,8 +366,10 @@
         <label class="sa-connexion-champ"><span>Description</span>
           <textarea class="sa-champ" id="kb-n-desc" rows="2"></textarea></label>
         <p class="sa-muet">
-          Le périmètre — quels assistants la reçoivent — se règle après la création.
-          Une base sans périmètre n'est transmise à personne, ce qui est le bon défaut.
+          À la création, cette base sera automatiquement connectée aux IA Super Admin,
+          dont AI Studio. Elle ne sera jamais ouverte automatiquement aux écoles,
+          parents, élèves ou à WhatsApp. Ajoutez ensuite au moins une fiche : une base
+          vide est connectée, mais ne contient encore rien à apprendre.
         </p>`,
       actions: `
         <button class="sa-bouton sa-bouton-secondaire" data-role="annuler">Annuler</button>

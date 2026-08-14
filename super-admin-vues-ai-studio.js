@@ -541,9 +541,15 @@
         <label class="sa-connexion-champ"><span>Modèle (override pour cette conversation)</span>
           <select class="sa-champ" id="ia-c-modele">
             <option value="">Utiliser le modèle par défaut</option>
-            ${routage.modeles.map((x) => `<option value="${esc(x.id)}"
+            ${routage.modeles.filter((x) => x.selectionnable && x.supporte_outils)
+              .map((x) => `<option value="${esc(x.id)}"
               ${x.id === d.conversation.modele_id ? 'selected' : ''}>${esc(x.fournisseur)} · ${esc(x.nom)}</option>`).join('')}
           </select></label>
+        <p class="sa-muet">
+          Seuls les modèles dont la clé est réellement configurée et qui prennent en charge
+          les outils d'AI Studio sont proposés. Un override est strict : s'il échoue, AI Studio
+          affiche l'erreur au lieu de basculer silencieusement vers un autre modèle.
+        </p>
 
         <label class="sa-connexion-champ"><span>Niveau de raisonnement</span>
           <select class="sa-champ" id="ia-c-raison">
@@ -561,7 +567,7 @@
     modale.querySelector('[data-role="annuler"]').addEventListener('click', () => modale.fermer());
     modale.querySelector('[data-role="ok"]').addEventListener('click', async () => {
       try {
-        await SA.api(`${BASE}/studio/conversations/${d.conversation.id}`, {
+        const resultat = await SA.api(`${BASE}/studio/conversations/${d.conversation.id}`, {
           method: 'PATCH',
           body: JSON.stringify({
             profil_code: modale.querySelector('#ia-c-profil').value || null,
@@ -570,6 +576,7 @@
           })
         });
         modale.fermer();
+        SA.toast(`Moteur appliqué : ${resultat.moteur_prevu.provider} · ${resultat.moteur_prevu.model}.`, 'succes');
         SA.rafraichirVue();
       } catch (err) { SA.toast(err.message, 'erreur'); }
     });

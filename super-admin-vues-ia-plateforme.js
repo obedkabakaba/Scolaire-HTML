@@ -373,6 +373,15 @@
       conteneur.innerHTML = `
         <div class="sa-bandeau ton-info">${esc(d.rappel)}</div>
 
+        <div class="ia-section-entete">
+          <p class="sa-muet">
+            Une fiche technique ne dit pas lequel répond le mieux à VOS questions.
+            Posez-leur la même.
+          </p>
+          <button class="sa-bouton sa-bouton-petit sa-bouton-secondaire"
+                  data-role="comparer">Comparer deux modèles</button>
+        </div>
+
         ${ui.tableau({
           colonnes: [
             { titre: 'Modèle', cle: 'nom', rendu: (m) => `
@@ -410,8 +419,104 @@
           ouvrirEditionModele(d.modeles.find((m) => m.id === b.dataset.modifier));
         });
       });
+
+      conteneur.querySelector('[data-role="comparer"]')
+        .addEventListener('click', () => ouvrirComparaison(d.modeles));
     }
   });
+
+  /**
+   * Comparer deux modèles sur la MÊME question.
+   *
+   * `POST /studio/comparer` existait côté serveur et aucun écran ne l'appelait.
+   * Or c'est l'écran des modèles qui pose la question à laquelle il répond :
+   * les capacités et les tarifs affichés ici ne disent pas lequel répond le
+   * mieux, et un tableau ne remplace pas une réponse lue.
+   *
+   * L'appel dépense réellement des jetons chez les deux fournisseurs : c'est
+   * écrit avant de cliquer, pas découvert sur la facture.
+   */
+  function ouvrirComparaison(modeles) {
+    const utilisables = modeles.filter((m) => m.actif && m.fournisseur_actif);
+    if (utilisables.length < 2) {
+      return SA.toast(
+        'Il faut au moins deux modèles actifs, chez des fournisseurs actifs, pour comparer.',
+        'info');
+    }
+    const options = (selection) => utilisables.map((m) =>
+      `<option value="${esc(m.id)}" ${m.id === selection ? 'selected' : ''}>`
+      + `${esc(m.fournisseur_nom)} — ${esc(m.nom)}</option>`).join('');
+
+    const modale = SA.modale({
+      titre: 'Comparer deux modèles',
+      sousTitre: 'La même question, posée aux deux en parallèle.',
+      large: true,
+      contenu: `
+        <div class="ia-comparaison-choix">
+          <label class="sa-connexion-champ"><span>Modèle A</span>
+            <select class="sa-champ" id="ia-cmp-a">${options(utilisables[0].id)}</select></label>
+          <label class="sa-connexion-champ"><span>Modèle B</span>
+            <select class="sa-champ" id="ia-cmp-b">${options(utilisables[1].id)}</select></label>
+        </div>
+        <label class="sa-connexion-champ"><span>Question</span>
+          <textarea class="sa-champ" id="ia-cmp-msg" rows="4"
+            placeholder="Ex. : explique en trois phrases pourquoi un élève décroche."></textarea></label>
+        <p class="sa-muet">
+          Cet essai consomme réellement des jetons chez les deux fournisseurs, et il est
+          compté dans les coûts au même titre qu'un usage normal. Aucun outil n'est
+          disponible dans ce mode : on compare des réponses, pas des actions.
+        </p>
+        <div id="ia-cmp-resultat"></div>`,
+      actions: `
+        <button class="sa-bouton sa-bouton-secondaire" data-role="fermer">Fermer</button>
+        <button class="sa-bouton sa-bouton-principal" data-role="lancer">Poser la question</button>`
+    });
+
+    modale.querySelector('[data-role="fermer"]').addEventListener('click', () => modale.fermer());
+
+    const colonne = (titre, r) => {
+      if (!r) return '';
+      if (!r.ok) {
+        return `<div class="ia-cmp-colonne">
+            <h4>${esc(titre)}</h4>
+            <div class="sa-bandeau ton-danger">${esc(r.message)}</div>
+            <footer class="sa-muet">${r.duree_ms} ms avant l'échec</footer>
+          </div>`;
+      }
+      return `<div class="ia-cmp-colonne">
+          <h4>${esc(titre)} <code>${esc(r.modele)}</code></h4>
+          <p class="sa-muet">${esc(r.fournisseur)} · ${r.duree_ms} ms ·
+            ${Number(r.cout || 0).toFixed(6)} $
+            ${r.estimation ? '<em>(ESTIMATION)</em>' : '<em>(mesuré)</em>'}</p>
+          <pre class="ia-cmp-texte">${esc(r.texte)}</pre>
+        </div>`;
+    };
+
+    modale.querySelector('[data-role="lancer"]').addEventListener('click', async (ev) => {
+      const message = modale.querySelector('#ia-cmp-msg').value.trim();
+      if (!message) return SA.toast('Écrivez la question à poser aux deux modèles.', 'erreur');
+      const a = modale.querySelector('#ia-cmp-a').value;
+      const b = modale.querySelector('#ia-cmp-b').value;
+      if (a === b) return SA.toast('Choisissez deux modèles différents.', 'erreur');
+
+      const zone = modale.querySelector('#ia-cmp-resultat');
+      ev.currentTarget.disabled = true;
+      zone.innerHTML = ui.squelette(3, 40);
+      try {
+        const r = await SA.api(`${BASE}/studio/comparer`, {
+          method: 'POST',
+          body: JSON.stringify({ message, modele_a: a, modele_b: b })
+        });
+        zone.innerHTML = `
+          <div class="ia-cmp-grille">${colonne('A', r.a)}${colonne('B', r.b)}</div>
+          <p class="sa-muet">${esc(r.note)}</p>`;
+      } catch (err) {
+        zone.innerHTML = ui.etatErreur(err.message);
+      } finally {
+        ev.currentTarget.disabled = false;
+      }
+    });
+  }
 
   function ouvrirEditionModele(m) {
     const modale = SA.modale({

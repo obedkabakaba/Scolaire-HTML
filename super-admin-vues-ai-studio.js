@@ -855,13 +855,81 @@
                   <h4>${esc(p.titre)}</h4>
                   <pre>${esc(p.corps)}</pre>
                   <div class="sa-bandeau ton-alerte">${esc(p.prochaine_etape)}</div>
+                </div>
+                <div class="sa-bandeau ton-danger">
+                  L'autorisation d'ÉCRITURE que vous avez donnée s'arrête ici. La mise en
+                  production est une SECONDE décision, distincte : elle atteint les écoles.
+                </div>
+                <div id="ia-prod-zone">
+                  <button class="sa-bouton sa-bouton-danger" id="ia-prod">
+                    AUTORISER LA MISE EN PRODUCTION
+                  </button>
                 </div>`);
               pr.disabled = true;
+              brancherMiseEnProduction(modale, actionId, execution);
             } catch (err) { SA.toast(err.message, 'erreur'); }
           });
         }
       } catch (err) {
         gateZone.innerHTML = etape('Quality Gate', 'echec', esc(err.message));
+      }
+    });
+  }
+
+  /**
+   * La SECONDE autorisation (item 58).
+   *
+   * `POST /studio/executions/:id/mise-en-production` existait côté serveur —
+   * ré-authentification exigée par la route, jeton de portée
+   * `mise_en_production` exigé par le moteur — et aucun écran ne l'appelait.
+   * La chaîne s'arrêtait donc à la pull request : le second verrou était écrit,
+   * testé, et inatteignable.
+   *
+   * Autoriser l'écriture ne vaut pas autoriser la production. Ce sont deux
+   * jetons distincts, demandés séparément, et le mot de passe est redemandé
+   * pour le second : la seule action qui atteint les écoles ne s'obtient pas en
+   * prolongeant un clic déjà donné.
+   */
+  function brancherMiseEnProduction(modale, actionId, execution) {
+    const zone = modale.querySelector('#ia-prod-zone');
+    const bouton = modale.querySelector('#ia-prod');
+    if (!bouton) return;
+
+    bouton.addEventListener('click', async () => {
+      const confirme = await SA.confirmer({
+        titre: 'Mettre en production ?',
+        message: "Cette autorisation est distincte de celle qui a permis d'écrire le code. "
+          + "Elle porte sur le déploiement, et ce qui est déployé atteint les écoles.",
+        libelleValider: 'Autoriser la mise en production',
+        danger: true
+      });
+      if (!confirme) return;
+
+      bouton.disabled = true;
+      try {
+        // 1. Un jeton de portée `mise_en_production` — jamais celui de l'écriture.
+        const a = await avecReauth(() => SA.api(`${BASE}/studio/actions/${actionId}/autoriser`, {
+          method: 'POST', body: JSON.stringify({ portee: 'mise_en_production' })
+        }));
+        if (!a) { bouton.disabled = false; return; }
+
+        // 2. La route exige en plus une ré-authentification fraîche.
+        const r = await avecReauth(() => SA.api(
+          `${BASE}/studio/executions/${execution}/mise-en-production`, {
+            method: 'POST', body: JSON.stringify({ jeton: a.autorisation.jeton })
+          }));
+        if (!r) { bouton.disabled = false; return; }
+
+        zone.innerHTML = `
+          <div class="sa-bandeau ton-succes">
+            Mise en production autorisée pour <code>${esc(r.branche)}</code>
+            (<code>${esc(String(r.commit || '').slice(0, 12))}</code>).
+            L'autorisation est consommée : elle ne resservira pas.
+          </div>`;
+        SA.toast('Mise en production autorisée.', 'succes');
+      } catch (err) {
+        bouton.disabled = false;
+        SA.toast(err.message, 'erreur');
       }
     });
   }

@@ -622,15 +622,31 @@
     async rendu(conteneur) {
       conteneur.innerHTML = ui.squelette(6);
       let d;
+      let autonomie = null;
       try {
         d = await SA.api(`${BASE}/connaissance/propositions`);
+        // Pourquoi ces propositions ATTENDENT-elles ? La réponse est le niveau
+        // d'autonomie du domaine `connaissance`. La route existait et n'était
+        // appelée nulle part : la liste montrait l'effet sans jamais la cause.
+        // Un échec ici ne doit pas priver de la liste, qui est l'essentiel.
+        autonomie = await SA.api(`${BASE}/connaissance/autonomie`);
       } catch (err) {
-        conteneur.innerHTML = ui.etatErreur(err.message);
-        return;
+        if (!d) { conteneur.innerHTML = ui.etatErreur(err.message); return; }
       }
+
+      const c = autonomie && autonomie.domaines && autonomie.domaines.connaissance;
+      const niveaux = (autonomie && autonomie.niveaux) || {};
 
       conteneur.innerHTML = `
         <div class="sa-bandeau ton-info">${esc(d.rappel)}</div>
+        ${c ? `
+          <div class="sa-bandeau ${c.niveau >= 3 ? 'ton-alerte' : 'ton-info'}">
+            <strong>Connaissance — niveau ${c.niveau}
+            ${niveaux[c.niveau] ? `: ${esc(niveaux[c.niveau].nom)}` : ''}.</strong>
+            ${niveaux[c.niveau] ? esc(niveaux[c.niveau].resume) : ''}
+            ${c.expire ? ' <em>La session accordée a expiré : le niveau est retombé.</em>' : ''}
+            ${autonomie.note ? `<p class="sa-muet">${esc(autonomie.note)}</p>` : ''}
+          </div>` : ''}
         ${d.propositions.length ? d.propositions.map((p) => `
           <article class="kb-proposition" data-id="${esc(p.id)}">
             <header>

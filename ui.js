@@ -1856,7 +1856,14 @@
         // Pas d'abonnement lisible : on ne masque RIEN et on ne touche pas au
         // cache. Une panne de facturation ne doit pas vider le menu d'une école
         // qui a payé — c'est la même règle que côté serveur.
-        if (!abonnement || !abonnement.offre || !abonnement.offre.fonctionnalites) return;
+        if (!abonnement) return;
+
+        // Le bandeau de fin d'essai, s'il y a lieu. Placé avant le reste : il
+        // ne dépend pas des droits et doit s'afficher même si l'offre est
+        // illisible.
+        if (abonnement.etat_acces) afficherBandeauEssai(abonnement.etat_acces);
+
+        if (!abonnement.offre || !abonnement.offre.fonctionnalites) return;
         ecrireCache(abonnement.offre.fonctionnalites);
         appliquer(abonnement.offre.fonctionnalites);
       })
@@ -1876,6 +1883,41 @@
         // la page appelante a le droit de le lire à son tour.
         reponse.clone().json().then(function (corps) {
           if (!corps) return;
+
+          /* L'EXPIRATION EST TRAITÉE AVANT TOUT LE RESTE.
+             ---------------------------------------------------------------
+             Elle partage le code 402 avec « offre insuffisante », mais elle
+             n'appelle pas la même réponse : proposer de « voir mon
+             abonnement » à une école dont l'essai vient de se terminer serait
+             lui offrir un lien vers une page… qu'elle ne peut plus ouvrir.
+
+             L'écran plein est bloquant et sans bouton « Fermer », parce que
+             l'application derrière ne répond plus à rien d'utile. Il dit
+             surtout ce que le directeur veut savoir en premier : ses données
+             sont conservées. */
+          if (corps.code === 'essai_expire' || corps.code === 'abonnement_expire'
+              || corps.code === 'essai_suspendu' || corps.code === 'ecole_suspendue') {
+            afficherEcranExpiration(corps);
+            return;
+          }
+
+          if (corps.code === 'espace_indisponible') {
+            var messageEspace = corps.message
+              + (corps.action ? ' ' + corps.action : '');
+            if (window.ArdoiseUI && window.ArdoiseUI.confirmer) {
+              window.ArdoiseUI.confirmer(messageEspace, {
+                danger: false,
+                libelleValider: 'Voir mon abonnement',
+                libelleAnnuler: 'Fermer'
+              }).then(function (ok) {
+                if (ok) window.location.href = 'parametres.html#details-abonnement';
+              });
+            } else {
+              afficherBanniereOffre(messageEspace);
+            }
+            return;
+          }
+
           if (corps.code !== 'offre_insuffisante' && corps.code !== 'plafond_atteint') return;
 
           var message;
@@ -1921,6 +1963,174 @@
         return reponse;
       });
     };
+  }
+
+  /* ------------------------------------------------- Écran d'expiration */
+
+  /**
+   * L'écran affiché quand l'accès est terminé.
+   *
+   * POURQUOI UN ÉCRAN PLEIN ET PAS UNE MODALE
+   * -----------------------------------------
+   * Une modale se ferme, et derrière elle l'utilisateur retrouve une interface
+   * dont chaque bouton renverra le même 402. Il essaierait dix fois avant de
+   * comprendre. L'écran couvre la page parce que l'état est global, pas parce
+   * qu'on veut forcer la main.
+   *
+   * CE QU'IL NE FAIT SURTOUT PAS
+   * ----------------------------
+   * Afficher « 403 Forbidden », ni laisser croire que les données sont
+   * perdues. La première phrase après le titre dit qu'elles sont conservées —
+   * c'est la question que se pose un directeur, et il faut y répondre avant
+   * qu'il ait à la poser.
+   *
+   * Il est construit SANS dépendance : `ArdoiseUI` peut ne pas être chargé, et
+   * de toute façon un écran qui annonce que plus rien ne fonctionne ne doit
+   * pas dépendre du reste de l'application pour s'afficher.
+   */
+  var ecranExpirationAffiche = false;
+
+  function afficherEcranExpiration(corps) {
+    // Plusieurs requêtes échouent en même temps au chargement d'une page :
+    // sans ce garde, on empilerait cinq écrans identiques.
+    if (ecranExpirationAffiche) return;
+    ecranExpirationAffiche = true;
+
+    var titres = {
+      essai_expire:     'Votre période d’essai Ardoise est terminée',
+      abonnement_expire: 'Votre abonnement Ardoise a expiré',
+      essai_suspendu:   'Votre démonstration a été suspendue',
+      ecole_suspendue:  'L’accès à votre établissement est suspendu'
+    };
+
+    var voile = document.createElement('div');
+    voile.setAttribute('role', 'alertdialog');
+    voile.setAttribute('aria-modal', 'true');
+    voile.setAttribute('aria-labelledby', 'ardoise-expiration-titre');
+    voile.style.cssText = [
+      'position:fixed', 'inset:0', 'z-index:99999',
+      'display:flex', 'align-items:center', 'justify-content:center',
+      'padding:24px', 'background:rgba(17,26,25,.92)',
+      'backdrop-filter:blur(4px)',
+      '-webkit-backdrop-filter:blur(4px)',
+      'font-family:Inter,system-ui,-apple-system,sans-serif'
+    ].join(';');
+
+    var carte = document.createElement('div');
+    carte.style.cssText = [
+      'max-width:560px', 'width:100%', 'background:#F6F2E7', 'color:#1F2B24',
+      'border-radius:16px', 'padding:32px',
+      'box-shadow:0 24px 64px rgba(0,0,0,.45)',
+      'text-align:center', 'max-height:90vh', 'overflow-y:auto'
+    ].join(';');
+
+    var h = document.createElement('h2');
+    h.id = 'ardoise-expiration-titre';
+    h.textContent = titres[corps.code] || titres.abonnement_expire;
+    h.style.cssText = 'margin:0 0 16px;font-size:1.5rem;line-height:1.25;font-weight:700';
+
+    var p1 = document.createElement('p');
+    p1.textContent = corps.message || '';
+    p1.style.cssText = 'margin:0 0 12px;line-height:1.6;font-size:1rem';
+
+    var p2 = document.createElement('p');
+    p2.innerHTML = '<strong>Vos données sont conservées.</strong> Élèves, notes, '
+      + 'classes, bulletins et paramètres restent intacts et vous les retrouverez '
+      + 'exactement en l’état dès l’activation de votre abonnement.';
+    p2.style.cssText = 'margin:0 0 24px;line-height:1.6;font-size:.95rem;color:#4A554E';
+
+    var actions = document.createElement('div');
+    actions.style.cssText = 'display:flex;gap:12px;flex-wrap:wrap;justify-content:center';
+
+    var principal = document.createElement('a');
+    principal.href = 'parametres.html#details-abonnement';
+    principal.textContent = 'Voir les abonnements';
+    principal.style.cssText = 'display:inline-block;padding:12px 24px;border-radius:10px;'
+      + 'background:#C98A3E;color:#fff;text-decoration:none;font-weight:600';
+
+    var secondaire = document.createElement('a');
+    secondaire.href = 'https://myardoise.com/contact/';
+    secondaire.textContent = 'Contacter Ardoise';
+    secondaire.style.cssText = 'display:inline-block;padding:12px 24px;border-radius:10px;'
+      + 'border:1px solid #C7BFAC;color:#1F2B24;text-decoration:none;font-weight:600';
+
+    /* Se déconnecter reste POSSIBLE, et c'est important : un professeur qui
+       tombe sur cet écran doit pouvoir rendre l'appareil, et un directeur doit
+       pouvoir se reconnecter avec un autre compte. Enfermer l'utilisateur dans
+       une session qu'il ne peut pas quitter transformerait un problème de
+       facturation en appareil inutilisable. */
+    var deconnexion = document.createElement('button');
+    deconnexion.type = 'button';
+    deconnexion.textContent = 'Se déconnecter';
+    deconnexion.style.cssText = 'padding:12px 24px;border-radius:10px;border:0;background:none;'
+      + 'color:#4A554E;text-decoration:underline;cursor:pointer;font-weight:500;font:inherit';
+    deconnexion.addEventListener('click', function () {
+      try {
+        sessionStorage.clear();
+        localStorage.removeItem('ardoise_access_token');
+        localStorage.removeItem('ardoise_refresh_token');
+        localStorage.removeItem('ardoise_user');
+      } catch (e) { /* mode privé */ }
+      window.location.href = 'connexion.html';
+    });
+
+    actions.appendChild(principal);
+    actions.appendChild(secondaire);
+    carte.appendChild(h);
+    carte.appendChild(p1);
+    carte.appendChild(p2);
+    carte.appendChild(actions);
+    carte.appendChild(deconnexion);
+    voile.appendChild(carte);
+    document.body.appendChild(voile);
+
+    // Le cache des droits est vidé : au retour, le menu doit être reconstruit
+    // sur l'offre réellement souscrite, pas sur celle de l'essai terminé.
+    try { sessionStorage.removeItem(CLE_CACHE); } catch (e) { /* mode privé */ }
+  }
+
+  /* ------------------------------------------- Bandeau de fin d'essai */
+
+  /**
+   * « Votre démonstration expire dans 3 jours », en haut de l'application.
+   *
+   * Le nombre de jours vient du SERVEUR (`etat_acces.jours_restants`) et n'est
+   * jamais recalculé à partir de `Date.now()` : l'horloge d'un téléphone se
+   * règle, et un compte à rebours qu'on peut repousser en changeant la date de
+   * son appareil ne sert à rien.
+   */
+  function afficherBandeauEssai(etat) {
+    if (!etat || !etat.en_demo || etat.bloquant) return;
+    if (etat.jours_restants === null || etat.jours_restants === undefined) return;
+    if (etat.jours_restants > 3) return;          // trop tôt : ce serait du bruit
+    if (document.querySelector('[data-bandeau-essai]')) return;
+
+    var jours = Number(etat.jours_restants);
+    var bandeau = document.createElement('div');
+    bandeau.setAttribute('data-bandeau-essai', '');
+    bandeau.setAttribute('role', 'status');
+    bandeau.style.cssText = [
+      'position:sticky', 'top:0', 'z-index:9000',
+      'background:#C98A3E', 'color:#fff',
+      'padding:10px 16px', 'text-align:center',
+      'font-size:.9rem', 'font-weight:500',
+      'font-family:Inter,system-ui,sans-serif'
+    ].join(';');
+
+    var texte = jours <= 0
+      ? 'Votre démonstration Ardoise se termine aujourd’hui.'
+      : jours === 1
+        ? 'Votre démonstration Ardoise expire demain.'
+        : 'Votre démonstration Ardoise expire dans ' + jours + ' jours.';
+
+    bandeau.appendChild(document.createTextNode(texte + ' '));
+    var lien = document.createElement('a');
+    lien.href = 'parametres.html#details-abonnement';
+    lien.textContent = 'Choisir un abonnement';
+    lien.style.cssText = 'color:#fff;text-decoration:underline;font-weight:600';
+    bandeau.appendChild(lien);
+
+    document.body.insertBefore(bandeau, document.body.firstChild);
   }
 
   function demarrer() {

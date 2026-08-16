@@ -81,6 +81,13 @@
   </url>
 
   <url>
+    <loc>https://myardoise.com/essai/</loc>
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
     <loc>https://myardoise.com/tarifs/</loc>
     <lastmod>2026-08-12</lastmod>
     <changefreq>monthly</changefreq>

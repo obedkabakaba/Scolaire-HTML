@@ -390,7 +390,11 @@
         <select id="champ-classe-suivante"><option value="">— À définir plus tard —</option></select>
       </div>
       <div class="actions-modale">
-        <button type="button" class="bouton bouton-secondaire" onclick="fermerModale('voile-modale-classe')">Annuler</button>
+        <!-- `data-fermer` et non `onclick` : voir le gestionnaire délégué plus
+             bas. Un attribut `onclick` est évalué dans la portée GLOBALE, or
+             tout le script de cette page vit dans un rappel DOMContentLoaded —
+             `fermerModale` n'y était donc jamais visible. -->
+        <button type="button" class="bouton bouton-secondaire" data-fermer="voile-modale-classe">Annuler</button>
         <button type="submit" class="bouton bouton-principal" id="bouton-enregistrer-classe">Enregistrer</button>
       </div>
     </form>
@@ -608,8 +612,51 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(() => zone.classList.remove('visible'), 5000);
   }
   function fermerModale(idVoile) {
-    document.getElementById(idVoile).classList.remove('visible');
+    const voile = document.getElementById(idVoile);
+    if (voile) voile.classList.remove('visible');
   }
+
+  /* FERMETURE DES MODALES — trois chemins, un seul endroit.
+     -------------------------------------------------------------------------
+     LE BUG CORRIGÉ ICI : le bouton « Annuler » de la création de classe portait
+     `onclick="fermerModale('voile-modale-classe')"`. Un attribut `onclick` est
+     évalué dans la portée GLOBALE, alors que tout le script de cette page vit
+     dans un rappel `DOMContentLoaded`. `fermerModale` y était donc une fonction
+     locale, invisible depuis l'attribut : chaque clic levait un
+     `ReferenceError` dans la console et ne faisait rien d'autre.
+
+     Ce n'était pas un désagrément mineur. La modale « Ajouter une classe » n'a
+     ni croix, ni fermeture à l'Échap, ni clic extérieur : « Annuler » était son
+     UNIQUE sortie. L'utilisateur qui ouvrait le formulaire par erreur restait
+     enfermé dedans, et n'avait d'autre choix que de recharger la page — en
+     perdant sa saisie.
+
+     La délégation est posée sur `document` : elle couvre donc aussi les
+     boutons créés dynamiquement, qu'aucun `addEventListener` posé au
+     chargement n'aurait atteints.
+
+     Les deux autres chemins — Échap et clic sur le voile — sont ajoutés parce
+     qu'ils sont attendus de toute modale, et parce qu'ils garantissent qu'un
+     seul point de défaillance ne peut plus enfermer personne. */
+  document.addEventListener('click', (evt) => {
+    const declencheur = evt.target.closest('[data-fermer]');
+    if (declencheur) { fermerModale(declencheur.dataset.fermer); return; }
+
+    // Clic sur le voile lui-même, jamais sur la modale posée dessus.
+    if (evt.target.classList && evt.target.classList.contains('voile')
+        && evt.target.classList.contains('visible')) {
+      evt.target.classList.remove('visible');
+    }
+  });
+
+  document.addEventListener('keydown', (evt) => {
+    if (evt.key !== 'Escape') return;
+    // La dernière visible seulement : fermer toutes les modales d'un coup
+    // ferait disparaître une modale de confirmation ET celle qu'elle
+    // confirmait, ce que personne n'attend d'une touche Échap.
+    const visibles = document.querySelectorAll('.voile.visible');
+    if (visibles.length) visibles[visibles.length - 1].classList.remove('visible');
+  });
 
   // ---------- Onglets ----------
   document.querySelectorAll('.onglet').forEach((onglet) => {
@@ -855,7 +902,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             <div class="form-inline">
               <select data-classe-cours-id="${cc.classe_cours_id}" class="select-professeur-cours">${optionsProf}</select>
-              <button class="bouton bouton-secondaire bouton-petit" data-classe-cours-id="${cc.classe_cours_id}" onclick="assignerProfesseurCours(this)">Assigner le prof</button>
+              <button class="bouton bouton-secondaire bouton-petit" type="button" data-action="assigner-prof" data-classe-cours-id="${cc.classe_cours_id}">Assigner le prof</button>
             </div>
           </li>
         `).join('');
@@ -865,6 +912,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const select = document.querySelector(`.select-professeur-cours[data-classe-cours-id="${cc.classe_cours_id}"]`);
         if (select) select.value = cc.professeur_id;
       }
+    });
+
+    document.querySelectorAll('[data-action="assigner-prof"]').forEach(bouton => {
+      bouton.addEventListener('click', () => assignerProfesseurCours(bouton));
     });
 
     document.querySelectorAll('[data-action="retirer-cours"]').forEach(bouton => {

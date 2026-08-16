@@ -403,6 +403,24 @@ h3 { font-size: 1.18rem; letter-spacing: -0.01em; }
   line-height: 1; letter-spacing: -0.02em;
 }
 .offre .prix .devise { font-size: 1.05rem; vertical-align: super; margin-right: 2px; }
+
+/* La périodicité, accolée au montant.
+   ---------------------------------------------------------------------------
+   Le grand chiffre est désormais le TOTAL de la période choisie — 300 $ pour
+   l'annuel, plus son équivalent mensuel. Sans ce suffixe, « 300 » et « 30 »
+   se liraient de la même façon, et la carte annuelle passerait pour dix fois
+   plus chère au lieu de deux mois moins chère.
+
+   Volontairement plus petit et moins contrasté que le montant : il qualifie
+   le chiffre, il ne le concurrence pas. */
+.offre .prix .periode-prix {
+  font-size: .42em;
+  font-weight: 500;
+  color: var(--texte-att);
+  margin-left: 6px;
+  letter-spacing: .01em;
+  white-space: nowrap;
+}
 .offre .par-mois { font-size: .84rem; color: var(--texte-att); margin-top: 8px; }
 .offre .facturation {
   font-size: .82rem; color: var(--texte-att); margin-top: 4px; min-height: 2.6em;
@@ -430,6 +448,22 @@ h3 { font-size: 1.18rem; letter-spacing: -0.01em; }
   display: grid; gap: 4px; margin-bottom: 20px;
 }
 .offre .bouton { margin-top: auto; }
+
+/* Liste d'avantages en dehors d'une carte d'offre — page d'essai gratuit.
+   Reprend la coche de `.offre li` plutôt que d'inventer une puce : c'est le
+   même geste de lecture, il doit produire le même signe.
+
+   Le contenu de chaque `li` DOIT être enveloppé dans un `span` unique. Dans
+   une grille `18px 1fr`, chaque enfant devient un élément de grille : un
+   `<strong>` laissé nu au milieu du texte formerait une troisième colonne et
+   le reste de la phrase se retrouverait empilé lettre à lettre sous la coche.
+   `.offre li` n'a pas ce besoin parce que son contenu est du texte brut. */
+.liste-avantages { margin: 20px 0 0; display: grid; gap: 10px; list-style: none; padding: 0; }
+.liste-avantages li {
+  font-size: .95rem; display: grid; grid-template-columns: 18px 1fr; gap: 10px;
+  align-items: start; line-height: 1.5;
+}
+.liste-avantages li::before { content: '✓'; color: var(--accent-texte); font-weight: 600; }
 
 /* --------------------------------------------------------------- Comparatif */
 

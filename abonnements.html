@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="fr" data-theme="ardoise">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Abonnements — Ardoise</title>
+  <link rel="stylesheet" href="theme.css" />
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:var(--fond,#f6f2e7);color:var(--texte,#1f2b24);font-family:Inter,system-ui,sans-serif}
+    .top{position:sticky;top:0;z-index:20;background:var(--surface,#fbf9f3);border-bottom:1px solid var(--bordure,#ded8ca);padding:14px 5vw;display:flex;align-items:center;justify-content:space-between;gap:16px}.top strong{font-size:1.05rem}.top a{color:inherit;text-decoration:none}.nav{display:flex;gap:10px;flex-wrap:wrap}.btn{border:0;border-radius:10px;padding:11px 16px;font:inherit;font-weight:650;cursor:pointer;background:var(--accent,#c98a3e);color:white;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}.btn.secondaire{background:transparent;color:inherit;border:1px solid var(--bordure,#c7bfac)}.btn:disabled{opacity:.45;cursor:not-allowed}
+    main{max-width:1180px;margin:0 auto;padding:38px 24px 70px}.hero{display:grid;grid-template-columns:1.4fr .8fr;gap:20px;align-items:stretch}.panel{background:var(--surface,#fbf9f3);border:1px solid var(--bordure,#ded8ca);border-radius:18px;padding:24px}.hero h1{font-size:clamp(1.8rem,4vw,3rem);margin:.1em 0 .35em}.muted{color:var(--texte-att,#68706b);line-height:1.55}.code{font-family:ui-monospace,monospace}.badge{display:inline-block;border-radius:999px;padding:5px 10px;background:color-mix(in srgb,var(--accent,#c98a3e) 15%,transparent);font-size:.82rem;font-weight:700}.stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}.stat{padding:12px;border-radius:12px;background:color-mix(in srgb,var(--surface,#fff) 80%,var(--accent,#c98a3e) 8%)}.stat small{display:block;color:var(--texte-att,#68706b)}
+    h2{margin:38px 0 14px}.plans{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}.plan{position:relative;background:var(--surface,#fbf9f3);border:1px solid var(--bordure,#ded8ca);border-radius:18px;padding:20px;display:flex;flex-direction:column;min-height:330px}.plan.actuel{outline:2px solid var(--accent,#c98a3e)}.plan h3{margin:6px 0}.prix{font-size:1.55rem;font-weight:800;margin:12px 0}.features{padding-left:18px;line-height:1.55;flex:1}.features li{margin:6px 0}.plan .btn{width:100%;margin-top:12px}
+    #flux{margin-top:26px}.choix{display:grid;grid-template-columns:1fr 1fr;gap:16px}.option{border:1px solid var(--bordure,#ded8ca);border-radius:15px;padding:18px}.option h3{margin-top:0}.champ{display:grid;gap:6px;margin:12px 0}.champ input,.champ select,.champ textarea{width:100%;padding:11px;border:1px solid var(--bordure,#c7bfac);border-radius:9px;background:var(--surface,#fff);color:inherit;font:inherit}.depot{padding:14px;border-radius:12px;background:color-mix(in srgb,var(--accent,#c98a3e) 12%,transparent);margin:12px 0}.etat{border-left:4px solid var(--accent,#c98a3e);padding:14px 16px;background:var(--surface,#fff);border-radius:8px;margin-bottom:18px}.erreur{color:#a5342d}.succes{color:#2d7546}.cache{display:none!important}
+    @media(max-width:900px){.plans{grid-template-columns:repeat(2,1fr)}.hero{grid-template-columns:1fr}.choix{grid-template-columns:1fr}}@media(max-width:560px){.plans{grid-template-columns:1fr}.stats{grid-template-columns:1fr}.top{align-items:flex-start}.nav{justify-content:flex-end}main{padding:24px 14px 50px}}
+  </style>
+</head>
+<body>
+  <header class="top"><strong>Ardoise · Abonnements</strong><nav class="nav"><a class="btn secondaire" href="dashboard.html">Retour à l’école</a><a class="btn secondaire" href="support.html">Support</a></nav></header>
+  <main>
+    <section class="hero">
+      <div class="panel"><span class="badge">Gestion de l’abonnement</span><h1>Renouveler sans perdre votre travail</h1><p class="muted">Vos données restent attachées à votre école. Choisissez une offre, la durée souhaitée et votre mode de règlement. L’activation n’a lieu qu’après vérification du paiement par Ardoise.</p><div id="etat-demande"></div></div>
+      <div class="panel"><h3 style="margin-top:0">Votre école</h3><div id="ecole">Chargement…</div></div>
+    </section>
+
+    <h2>Les offres Ardoise</h2>
+    <div class="plans" id="plans"><div class="panel">Chargement des offres…</div></div>
+
+    <section class="panel cache" id="flux">
+      <h2 style="margin-top:0">Renouvellement</h2>
+      <p id="selection" class="muted"></p>
+      <label class="champ"><span>Périodicité</span><select id="periodicite"><option value="mensuel">Mensuel</option><option value="semestriel">Semestriel</option><option value="annuel" selected>Annuel</option></select></label>
+      <div class="choix">
+        <div class="option"><h3>Faire un dépôt</h3><p class="muted">Effectuez le dépôt sur le numéro Ardoise, puis transmettez la référence exacte de la transaction. L’abonnement reste en attente jusqu’à vérification.</p><div id="instructions-depot"></div><button class="btn" id="btn-depot">Choisir le dépôt</button></div>
+        <div class="option"><h3>Contacter un agent</h3><p class="muted">Ardoise reçoit immédiatement un e-mail avec les coordonnées et l’adresse de votre école afin d’organiser le passage d’un agent.</p><button class="btn" id="btn-agent">Demander le passage d’un agent</button></div>
+      </div>
+      <div id="reference-zone" class="cache" style="margin-top:18px"><div class="depot" id="depot-rappel"></div><label class="champ"><span>Numéro / référence de la transaction</span><input id="reference" maxlength="120" placeholder="Ex. PP260817.1234.ABC" /></label><button class="btn" id="btn-reference">Envoyer pour vérification</button></div>
+      <p id="message" class="muted"></p>
+    </section>
+  </main>
+
+  <script src="session.js"></script>
+  <script src="theme.js"></script>
+  <script>
+  (function(){
+    'use strict';
+    if(!window.ArdoiseSession||!ArdoiseSession.connecte()){location.replace('connexion.html');return;}
+    var data=null, planChoisi=null;
+    var $=function(id){return document.getElementById(id)};
+    function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]})}
+    function api(path,opt){return ArdoiseSession.appelApi(path,opt||{}).then(function(r){return r.json().catch(function(){return{}}).then(function(j){if(!r.ok)throw new Error(j.message||'Opération impossible.');return j})})}
+    function money(n,d){var v=Number(n);return Number.isFinite(v)?v.toLocaleString('fr-FR',{maximumFractionDigits:2})+' '+(d||'USD'):'—'}
+    function prix(p,per){if(per==='annuel')return p.prix_annuel==null?Number(p.prix)*12:Number(p.prix_annuel);if(per==='semestriel')return p.prix_semestriel==null?Number(p.prix)*6:Number(p.prix_semestriel);return Number(p.prix)}
+    function libStatut(s){return({en_attente_paiement:'Dépôt à effectuer',a_verifier:'Paiement en vérification',agent_demande:'Agent demandé',validee:'Abonnement activé',refusee:'Paiement à corriger',annulee:'Demande remplacée'})[s]||s}
+    function renduEtat(){var d=data&&data.demande;if(!d){$('etat-demande').innerHTML='';return}var cls=d.statut==='validee'?'succes':d.statut==='refusee'?'erreur':'';$('etat-demande').innerHTML='<div class="etat '+cls+'"><strong>'+esc(libStatut(d.statut))+'</strong><br><span class="muted">'+esc(d.plan_nom||'')+' · '+esc(d.periodicite||'')+' · '+money(d.montant_attendu,d.devise)+(d.reference_transaction?'<br>Référence : <span class="code">'+esc(d.reference_transaction)+'</span>':'')+(d.refuse_motif?'<br>Motif : '+esc(d.refuse_motif):'')+'</span></div>'}
+    function renduEcole(){var e=data.ecole||{};$('ecole').innerHTML='<strong>'+esc(e.nom||'—')+'</strong><div class="code muted">'+esc(e.code||'')+'</div><div class="stats"><div class="stat"><small>Bouquet actuel</small><strong>'+esc(e.plan_nom||'Aucun')+'</strong></div><div class="stat"><small>Statut</small><strong>'+esc(e.abonnement_statut||'Sans abonnement')+'</strong></div></div>'}
+    function features(p){var f=Array.isArray(p.fonctionnalites_incluses)?p.fonctionnalites_incluses:[];return f.slice(0,5).map(function(x){return'<li>'+esc(typeof x==='string'?x:(x.nom||x.cle||''))+'</li>'}).join('')}
+    function renduPlans(){var courant=(data.ecole||{}).abonnement_plan_id;$('plans').innerHTML=(data.plans||[]).map(function(p){var actuel=p.id===courant;return'<article class="plan '+(actuel?'actuel':'')+'">'+(actuel?'<span class="badge">Votre bouquet actuel</span>':'')+'<h3>'+esc(p.nom)+'</h3><p class="muted">'+esc(p.positionnement||p.description||'')+'</p><div class="prix">'+money(p.prix,p.devise)+' <small style="font-size:.8rem;font-weight:500">/ mois</small></div><ul class="features">'+features(p)+'</ul><button class="btn" data-plan="'+esc(p.id)+'">'+(actuel?'Renouveler':'Choisir cette offre')+'</button></article>'}).join('');document.querySelectorAll('[data-plan]').forEach(function(b){b.onclick=function(){planChoisi=data.plans.find(function(p){return p.id===b.dataset.plan});ouvrirFlux()}})}
+    function instructions(){var d=data.depot||{};if(!d.disponible){$('instructions-depot').innerHTML='<p class="erreur">Le numéro de dépôt n’est pas encore configuré. Utilisez « Contacter un agent ».</p>';$('btn-depot').disabled=true;return}$('btn-depot').disabled=false;$('instructions-depot').innerHTML='<div class="depot"><strong>'+esc(d.reseau||'Dépôt')+'</strong><br><span class="code">'+esc(d.numero)+'</span>'+(d.nom?'<br>'+esc(d.nom):'')+'</div>'}
+    function ouvrirFlux(){if(!planChoisi)return;$('flux').classList.remove('cache');$('selection').textContent='Offre choisie : '+planChoisi.nom;instructions();$('flux').scrollIntoView({behavior:'smooth',block:'start'})}
+    function creer(mode){if(!planChoisi)return;var per=$('periodicite').value;$('message').textContent='Envoi…';return api('/abonnements/renouvellements',{method:'POST',body:{plan_id:planChoisi.id,periodicite:per,mode_paiement:mode}}).then(function(r){$('message').textContent=r.message||'';if(mode==='depot'){$('reference-zone').classList.remove('cache');var d=data.depot||{};$('depot-rappel').innerHTML='Montant à déposer : <strong>'+money(prix(planChoisi,per),planChoisi.devise)+'</strong><br>'+esc(d.reseau||'')+' · <span class="code">'+esc(d.numero||'')+'</span>'}return charger()}).catch(function(e){$('message').textContent=e.message;$('message').className='erreur'})}
+    function charger(){return api('/abonnements/renouvellement').then(function(r){data=r;renduEtat();renduEcole();renduPlans();instructions();var d=r.demande;if(d&&d.statut==='en_attente_paiement'){planChoisi=r.plans.find(function(p){return p.id===d.plan_id})||null;if(planChoisi){$('periodicite').value=d.periodicite;ouvrirFlux();$('reference-zone').classList.remove('cache')}}return r}).catch(function(e){$('plans').innerHTML='<div class="panel erreur">'+esc(e.message)+'</div>'})}
+    $('btn-depot').onclick=function(){creer('depot')};$('btn-agent').onclick=function(){creer('agent')};$('btn-reference').onclick=function(){var d=data&&data.demande;var ref=$('reference').value.trim();if(!d){$('message').textContent='Créez d’abord une demande de dépôt.';return}api('/abonnements/renouvellements/'+encodeURIComponent(d.id)+'/reference',{method:'PATCH',body:{reference:ref}}).then(function(r){$('message').textContent=r.message;return charger()}).catch(function(e){$('message').textContent=e.message;$('message').className='erreur'})};
+    charger();setInterval(charger,10000);
+  })();
+  </script>
+</body>
+</html>

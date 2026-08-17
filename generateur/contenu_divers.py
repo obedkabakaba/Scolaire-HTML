@@ -242,32 +242,41 @@ GROUPES = [
          "primaire d'un côté, au secondaire de l'autre, avec un traitement à part "
          "pour les classes terminales.</p>"),
         ("Quelle offre choisir pour mon école&nbsp;?",
-         "<p>Le nombre d'élèves tranche dans la plupart des cas : Ascension jusqu'à "
-         "250, Prime jusqu'à 600, Pilote jusqu'à 1 500, Infinite au-delà. Si votre "
-         "école tient une comptabilité, organise un concours d'admission ou fait "
-         "de l'orientation, prenez Pilote même en dessous de 600 élèves. "
+         "<p>Ce sont les modules dont vous avez besoin qui tranchent, jamais votre "
+         "effectif : les quatre offres acceptent un nombre illimité d'élèves et de "
+         "comptes. Ascension couvre tout le cœur du métier. Prime ajoute l'emploi du "
+         "temps, la discipline, la communication aux parents et le site public. "
+         "Pilote ajoute la comptabilité, la paie, les concours d'admission, "
+         "l'orientation et le repêchage. Infinite ajoute l'assistant WhatsApp et le "
+         "support prioritaire. "
          "<a href=\"/tarifs/comparer/\">Comparer les offres</a>.</p>"),
         ("Peut-on essayer avant de payer&nbsp;?",
-         "<p>L'abonnement mensuel est sans engagement : c'est la façon la plus "
-         "simple d'essayer sans s'enfermer. Pour une présentation guidée sur une "
-         "école de votre taille, <a href=\"/contact/\">demandez à être rappelé</a>.</p>"),
+         "<p>Oui : <a href=\"/essai/\">l'essai gratuit de 7 jours</a> ouvre un espace "
+         "d'école complet, sans carte bancaire. Vos données sont conservées si vous "
+         "vous abonnez ensuite — dans la même école, avec l'offre de votre choix. "
+         "Passé l'essai, l'abonnement mensuel reste sans engagement.</p>"),
     ]),
     ("Prix et facturation", [
         ("Combien coûte Ardoise&nbsp;?",
-         "<p>De 35 à 159 $ par mois selon l'offre. Le semestriel vaut cinq "
-         "mensualités et demie (8 % de remise), l'annuel en vaut dix (deux mois "
-         "offerts, 17 %). <a href=\"/tarifs/\">Voir les tarifs</a>.</p>"),
+         "<p>De 30 à 159 $ par mois selon l'offre, quel que soit le nombre d'élèves. "
+         "Le semestriel vaut cinq mensualités et demie (8 % de remise), l'annuel en "
+         "vaut dix (deux mois offerts, 17 %) — soit 300 $ l'année pour Ascension. "
+         "<a href=\"/tarifs/\">Voir les tarifs</a>.</p>"),
         ("Y a-t-il des frais d'entrée obligatoires&nbsp;?",
          "<p>Non. L'installation, la formation et la campagne de capture sont des "
          "prestations facultatives. Une école peut se paramétrer seule à l'aide du "
          "didacticiel intégré et ne payer que son abonnement.</p>"),
         ("Peut-on changer d'offre en cours d'année&nbsp;?",
-         "<p>Oui. La montée est immédiate ; la descente prend effet à l'échéance en "
-         "cours et suppose que vos volumes tiennent dans les nouveaux plafonds.</p>"),
-        ("Que se passe-t-il si je dépasse le plafond d'élèves&nbsp;?",
-         "<p>Les données existantes restent consultables et modifiables ; seuls les "
-         "ajouts sont suspendus jusqu'au changement d'offre. Aucun trimestre n'est "
-         "interrompu par un plafond.</p>"),
+         "<p>Oui, et sans condition de volume puisqu'il n'y en a plus. La montée est "
+         "immédiate ; la descente prend effet à l'échéance en cours : les modules non "
+         "compris deviennent inaccessibles, mais aucune donnée n'est supprimée.</p>"),
+        ("Y a-t-il une limite au nombre d'élèves ou de comptes&nbsp;?",
+         "<p>Non, dans aucune des quatre offres. Élèves, comptes utilisateurs, "
+         "classes et années scolaires archivées sont illimités partout, Ascension "
+         "comprise : une école de 80 élèves et une école de 4 000 paient le même "
+         "prix pour la même offre. Seuls les générations d'IA et les e-mails "
+         "sortants restent chiffrés, parce qu'ils ont un coût réel à chaque "
+         "appel.</p>"),
         ("En quelle devise facture-t-on&nbsp;?",
          "<p>L'abonnement est libellé en dollars américains. À l'intérieur de la "
          "plateforme, les frais scolaires de l'école se gèrent en francs "
@@ -566,7 +575,7 @@ def contact():
         ("/fonctionnalites/", "Les fonctionnalités",
          "Pour préparer la conversation, ou vous en dispenser."),
         ("/tarifs/", "Les tarifs",
-         "De 35 à 159 $ par mois selon la taille de l'école."),
+         "De 30 à 159 $ par mois selon les modules, jamais selon le nombre d'élèves."),
         ("/services/", "Les services",
          "Installation, formation, saisie de vos élèves."),
         ("/securite/", "Sécurité",

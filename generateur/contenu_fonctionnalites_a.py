@@ -403,9 +403,10 @@ def gestion_scolaire():
 <section class="section">
   <div class="conteneur">
     {bloc_offres("La gestion scolaire est incluse dans les quatre offres, sans "
-                 "restriction fonctionnelle. Ce qui change d'une offre à l'autre est "
-                 "le volume : 250 élèves et 12 classes en Ascension, 600 élèves et "
-                 "40 classes en Prime, 1 500 élèves en Pilote, aucune limite en Infinite.")}
+                 "restriction fonctionnelle et sans limite de volume : élèves, "
+                 "classes et années archivées sont illimités partout, y compris en "
+                 "Ascension. Ce qui change d'une offre à l'autre, ce sont les modules "
+                 "et les espaces métiers ouverts — pas le nombre d'élèves.")}
   </div>
 </section>
 """

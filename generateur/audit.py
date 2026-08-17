@@ -187,6 +187,26 @@ for racine, _, fichiers in os.walk(SORTIE):
         existants.add("/" + os.path.relpath(os.path.join(racine, f), SORTIE))
 anciens = set("/" + f for f in os.listdir(SOURCE_HTML))
 
+
+def cible_existe(cible):
+    """Une cible valide vit dans la SORTIE, ou dans le dépôt tel qu'il est.
+
+    Les trois emplacements sont légitimes, et pour des raisons distinctes :
+
+      · `existants` — ce que ce générateur vient d'écrire ;
+      · `anciens`   — les pages historiques à la racine du dépôt
+                      (`connexion.html`, `confidentialite.html`…) ;
+      · le dépôt en profondeur — les pages publiques écrites à la MAIN, comme
+        `/essai/`, qui portent un formulaire appelant l'API et ne sont donc pas
+        générées. Sans ce troisième cas, chacune des 25 pages générées
+        rapportait un « lien mort » vers l'essai gratuit, et 25 fausses alertes
+        recouvrent une vraie.
+    """
+    if cible in existants or cible in anciens:
+        return True
+    return os.path.isfile(os.path.join(SOURCE_HTML, cible.lstrip("/")))
+
+
 manquants = set()
 for source, href in liens_internes:
     if not href or not href.startswith("/"):
@@ -196,7 +216,7 @@ for source, href in liens_internes:
     cible = href
     if cible.endswith("/"):
         cible += "index.html"
-    if cible not in existants and cible not in anciens:
+    if not cible_existe(cible):
         manquants.add((source, href))
 
 for source, href in sorted(manquants):

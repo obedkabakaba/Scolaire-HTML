@@ -1,76 +1,23 @@
 /* ==========================================================================
    Ardoise — Gestion des thèmes
-   --------------------------------------------------------------------------
-   Ce fichier ne s'occupe QUE de la persistance et de la synchronisation.
-   L'application visuelle immédiate est faite par le petit script synchrone
-   présent dans le <head> de chaque page (pour éviter tout clignotement).
-
-   AJOUTER UN THÈME : une entrée dans THEMES ci-dessous + un bloc dans
-   theme.css. Rien d'autre à modifier dans les 21 pages.
-   ========================================================================== */
-
-/* ==========================================================================
-   Disposition du rail de navigation
-   Position et compacité sont des préférences d'AFFICHAGE, conservées dans le
-   navigateur : elles suivent l'écran plutôt que le compte. Un même directeur
-   veut souvent un rail latéral sur son bureau et une barre haute sur son
-   portable.
    ========================================================================== */
 (function appliquerDisposition() {
   var POSITIONS = ['gauche', 'droite', 'haut', 'bas'];
   var CLE_POS = 'ardoise_nav_position';
   var CLE_COMPACT = 'ardoise_nav_compact';
-
-  function lire(cle, defaut) {
-    try { return localStorage.getItem(cle) || defaut; } catch (e) { return defaut; }
-  }
-
+  function lire(cle, defaut) { try { return localStorage.getItem(cle) || defaut; } catch (e) { return defaut; } }
   window.ArdoiseDisposition = {
     positions: POSITIONS,
-    obtenir: function () {
-      return {
-        position: lire(CLE_POS, 'gauche'),
-        compact: lire(CLE_COMPACT, 'non') === 'oui'
-      };
-    },
+    obtenir: function () { return { position: lire(CLE_POS, 'gauche'), compact: lire(CLE_COMPACT, 'non') === 'oui' }; },
     definir: function (position, compact) {
-      if (position && POSITIONS.indexOf(position) !== -1) {
-        try { localStorage.setItem(CLE_POS, position); } catch (e) {}
-        document.documentElement.setAttribute('data-nav-position', position);
-      }
-      if (typeof compact === 'boolean') {
-        try { localStorage.setItem(CLE_COMPACT, compact ? 'oui' : 'non'); } catch (e) {}
-        document.documentElement.setAttribute('data-nav-compact', compact ? 'oui' : 'non');
-      }
+      if (position && POSITIONS.indexOf(position) !== -1) { try { localStorage.setItem(CLE_POS, position); } catch (e) {} document.documentElement.setAttribute('data-nav-position', position); }
+      if (typeof compact === 'boolean') { try { localStorage.setItem(CLE_COMPACT, compact ? 'oui' : 'non'); } catch (e) {} document.documentElement.setAttribute('data-nav-compact', compact ? 'oui' : 'non'); }
     },
-    appliquer: function () {
-      var etat = window.ArdoiseDisposition.obtenir();
-      document.documentElement.setAttribute('data-nav-position', etat.position);
-      document.documentElement.setAttribute('data-nav-compact', etat.compact ? 'oui' : 'non');
-    }
+    appliquer: function () { var etat = window.ArdoiseDisposition.obtenir(); document.documentElement.setAttribute('data-nav-position', etat.position); document.documentElement.setAttribute('data-nav-compact', etat.compact ? 'oui' : 'non'); }
   };
-
-  // Appliqué immédiatement, avant le premier rendu : sinon la page
-  // s'afficherait un instant avec le rail au mauvais endroit.
-  if (document.documentElement.getAttribute('data-theme') !== 'public') {
-    window.ArdoiseDisposition.appliquer();
-  }
+  if (document.documentElement.getAttribute('data-theme') !== 'public') window.ArdoiseDisposition.appliquer();
 })();
 
-/* ==========================================================================
-   Contraste minimal WCAG du thème Ardoise
-   --------------------------------------------------------------------------
-   Le Quality Gate navigateur mesure les couleurs réellement composées par
-   Chromium. Deux jetons historiques étaient juste sous 4,5:1 sur le fond
-   craie : `--texte-att` (4,43) et `--vert-ok` (4,42). Les valeurs ci-dessous
-   restent visuellement très proches, mais passent respectivement à ~4,63 et
-   ~5,07. Les opacités du Super Admin étaient, elles, destructrices pour le
-   contraste : un texte déjà atténué à 65 % tombait à 2,4:1.
-
-   Ces règles sont injectées ici parce que `theme.js` est le point commun déjà
-   chargé par les espaces applicatifs et le Super Admin. On ne duplique donc
-   pas quatre correctifs locaux qui pourraient diverger au prochain redesign.
-   ========================================================================== */
 (function appliquerContrasteArdoise() {
   var style = document.createElement('style');
   style.id = 'ardoise-contraste-wcag';
@@ -84,157 +31,58 @@
 })();
 
 window.ARDOISE_THEMES = [
-  {
-    cle: 'studio',
-    nom: 'Studio',
-    description: 'Rail sombre déplaçable, accent indigo, cartes sans bordure. Le plus proche des outils professionnels actuels.',
-    apercu: { fond: '#F4F6FB', surface: '#FFFFFF', accent: '#4C5FD5', barre: '#1B2559', texte: '#101828' }
-  },
-  {
-    cle: 'ardoise',
-    nom: 'Ardoise',
-    description: 'Craie et ocre, titres en serif. Chaleureux et identitaire.',
-    apercu: { fond: '#F6F2E7', surface: '#FBF9F3', accent: '#C98A3E', barre: '#1F2B24', texte: '#1F2B24' }
-  },
-  {
-    cle: 'pure',
-    nom: 'Pure',
-    description: 'Fond blanc, angles nets, aucune ombre. Sobre et dense.',
-    apercu: { fond: '#FFFFFF', surface: '#FFFFFF', accent: '#2563A8', barre: '#FAFAFA', texte: '#14171A' }
-  },
-  {
-    cle: 'nuit',
-    nom: 'Nuit',
-    description: 'Thème sombre, reposant en soirée et économe en batterie.',
-    apercu: { fond: '#12171A', surface: '#1B2226', accent: '#5FB08C', barre: '#0C1013', texte: '#E8EDE9' }
-  },
-  {
-    cle: 'yohali',
-    nom: 'Yohali',
-    description: 'Terracotta et vert profond, grands rayons. Expressif.',
-    apercu: { fond: '#FDF6EE', surface: '#FFFFFF', accent: '#C2542F', barre: '#1E5B4F', texte: '#26201B' }
-  }
+  { cle: 'studio', nom: 'Studio', description: 'Rail sombre déplaçable, accent indigo, cartes sans bordure. Le plus proche des outils professionnels actuels.', apercu: { fond: '#F4F6FB', surface: '#FFFFFF', accent: '#4C5FD5', barre: '#1B2559', texte: '#101828' } },
+  { cle: 'ardoise', nom: 'Ardoise', description: 'Craie et ocre, titres en serif. Chaleureux et identitaire.', apercu: { fond: '#F6F2E7', surface: '#FBF9F3', accent: '#C98A3E', barre: '#1F2B24', texte: '#1F2B24' } },
+  { cle: 'pure', nom: 'Pure', description: 'Fond blanc, angles nets, aucune ombre. Sobre et dense.', apercu: { fond: '#FFFFFF', surface: '#FFFFFF', accent: '#2563A8', barre: '#FAFAFA', texte: '#14171A' } },
+  { cle: 'nuit', nom: 'Nuit', description: 'Thème sombre, reposant en soirée et économe en batterie.', apercu: { fond: '#12171A', surface: '#1B2226', accent: '#5FB08C', barre: '#0C1013', texte: '#E8EDE9' } },
+  { cle: 'yohali', nom: 'Yohali', description: 'Terracotta et vert profond, grands rayons. Expressif.', apercu: { fond: '#FDF6EE', surface: '#FFFFFF', accent: '#C2542F', barre: '#1E5B4F', texte: '#26201B' } }
 ];
-
 window.ARDOISE_THEME_DEFAUT = 'ardoise';
 
 (function () {
   var CLE_STOCKAGE = 'ardoise_theme';
-  /* L'ancien nom « Kivu » a pu être mémorisé sur l'appareil ou dans le
-     profil serveur. On le migre silencieusement vers « Yohali » : renommer
-     un thème ne doit ni réinitialiser l'apparence ni faire perdre le choix
-     d'un utilisateur existant. */
   var ALIASES = { kivu: 'yohali' };
-
-  function clesValides() {
-    return window.ARDOISE_THEMES.map(function (t) { return t.cle; });
-  }
-
-  function normaliser(cle) {
-    var canonique = ALIASES[cle] || cle;
-    return clesValides().indexOf(canonique) !== -1 ? canonique : window.ARDOISE_THEME_DEFAUT;
-  }
-
-  /** Thème actuellement retenu sur cet appareil. */
-  function themeActuel() {
-    return normaliser(
-      document.documentElement.getAttribute('data-theme') ||
-      localStorage.getItem(CLE_STOCKAGE) ||
-      sessionStorage.getItem(CLE_STOCKAGE)
-    );
-  }
-
-  /**
-   * Applique un thème immédiatement et le mémorise.
-   * @param {string} cle
-   * @param {{synchroniserServeur?: boolean}} options
-   */
+  function clesValides() { return window.ARDOISE_THEMES.map(function (t) { return t.cle; }); }
+  function normaliser(cle) { var canonique = ALIASES[cle] || cle; return clesValides().indexOf(canonique) !== -1 ? canonique : window.ARDOISE_THEME_DEFAUT; }
+  function themeActuel() { return normaliser(document.documentElement.getAttribute('data-theme') || localStorage.getItem(CLE_STOCKAGE) || sessionStorage.getItem(CLE_STOCKAGE)); }
   function appliquerTheme(cle, options) {
-    var theme = normaliser(cle);
-    var reglages = options || {};
-
+    var theme = normaliser(cle), reglages = options || {};
     document.documentElement.setAttribute('data-theme', theme);
-
-    // Mémorisation locale : le thème s'affiche instantanément au prochain
-    // chargement, sans attendre la réponse du serveur.
-    try {
-      localStorage.setItem(CLE_STOCKAGE, theme);
-      if (sessionStorage.getItem('ardoise_refresh_token')) {
-        sessionStorage.setItem(CLE_STOCKAGE, theme);
-      }
-    } catch (e) { /* navigation privée : on continue sans mémoriser */ }
-
-    // Studio suppose un rail compact. On ne l'impose qu'une fois : dès que
-    // l'utilisateur touche au réglage, son choix prime définitivement.
-    try {
-      if (theme === 'studio' && !localStorage.getItem('ardoise_nav_compact')) {
-        localStorage.setItem('ardoise_nav_compact', 'oui');
-      }
-      if (window.ArdoiseDisposition) ArdoiseDisposition.appliquer();
-    } catch (e) { /* navigation privée */ }
-
+    try { localStorage.setItem(CLE_STOCKAGE, theme); if (sessionStorage.getItem('ardoise_refresh_token')) sessionStorage.setItem(CLE_STOCKAGE, theme); } catch (e) {}
+    try { if (theme === 'studio' && !localStorage.getItem('ardoise_nav_compact')) localStorage.setItem('ardoise_nav_compact', 'oui'); if (window.ArdoiseDisposition) ArdoiseDisposition.appliquer(); } catch (e) {}
     document.dispatchEvent(new CustomEvent('ardoise:theme-change', { detail: { theme: theme } }));
-
-    if (reglages.synchroniserServeur !== false) {
-      enregistrerSurServeur(theme);
-    }
+    if (reglages.synchroniserServeur !== false) enregistrerSurServeur(theme);
     return theme;
   }
-
-  /**
-   * Enregistre le thème sur le compte de l'utilisateur pour qu'il le retrouve
-   * sur ses autres appareils. Échec silencieux : le thème local reste appliqué.
-   */
   function enregistrerSurServeur(theme) {
-    if (typeof appelApi !== 'function') return; // page publique (index, connexion)
-    try {
-      appelApi('/utilisateurs/moi', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ theme: theme })
-      });
-    } catch (e) { /* hors ligne ou backend en veille : sans conséquence */ }
+    if (typeof appelApi !== 'function') return;
+    try { appelApi('/utilisateurs/moi', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ theme: theme }) }); } catch (e) {}
   }
-
-  /**
-   * Aligne le thème local sur celui enregistré dans le compte.
-   * Utile quand l'utilisateur se connecte depuis un nouvel appareil.
-   */
   function synchroniserDepuisServeur() {
     if (typeof appelApi !== 'function') return;
-
-    // Un thème déjà mémorisé sur cet appareil FAIT FOI. Appliquer la valeur
-    // du serveur par-dessus provoquerait un changement d'apparence en cours
-    // de page, plusieurs centaines de millisecondes après l'affichage : c'est
-    // exactement le clignotement qu'on cherche à supprimer. Le serveur ne
-    // sert donc qu'à équiper un appareil qui n'a encore aucun réglage.
     var dejaChoisiIci = false;
-    try {
-      dejaChoisiIci = !!(localStorage.getItem(CLE_STOCKAGE) || sessionStorage.getItem(CLE_STOCKAGE));
-    } catch (e) { /* navigation privée */ }
+    try { dejaChoisiIci = !!(localStorage.getItem(CLE_STOCKAGE) || sessionStorage.getItem(CLE_STOCKAGE)); } catch (e) {}
     if (dejaChoisiIci) return;
-
-    appelApi('/utilisateurs/moi')
-      .then(function (r) { return r && r.ok ? r.json() : null; })
-      .then(function (profil) {
-        if (!profil || !profil.theme) return;
-        appliquerTheme(normaliser(profil.theme), { synchroniserServeur: false });
-      })
-      .catch(function () { /* sans conséquence */ });
+    appelApi('/utilisateurs/moi').then(function (r) { return r && r.ok ? r.json() : null; }).then(function (profil) { if (profil && profil.theme) appliquerTheme(normaliser(profil.theme), { synchroniserServeur: false }); }).catch(function () {});
   }
-
-  window.ArdoiseTheme = {
-    liste: window.ARDOISE_THEMES,
-    actuel: themeActuel,
-    appliquer: appliquerTheme,
-    synchroniser: synchroniserDepuisServeur
-  };
-
-  // Le thème est déjà posé par le script du <head> ; on se contente de vérifier
-  // qu'il est valide, puis de récupérer le réglage du compte en arrière-plan.
-  // Le script du <head> ne valide que la forme de la valeur ; c'est ici, une
-  // fois la vraie liste connue, qu'un thème inconnu est ramené au défaut.
-  // Immédiat et sans appel réseau : aucun clignotement possible.
+  window.ArdoiseTheme = { liste: window.ARDOISE_THEMES, actuel: themeActuel, appliquer: appliquerTheme, synchroniser: synchroniserDepuisServeur };
   appliquerTheme(themeActuel(), { synchroniserServeur: false });
   synchroniserDepuisServeur();
+})();
+
+/* Correctifs UX communs de l'abonnement. */
+(function chargerSubscriptionUX() {
+  if (document.querySelector('script[data-ardoise-subscription-ux]')) return;
+  var s = document.createElement('script');
+  s.src = 'subscription-ux.js'; s.defer = true; s.setAttribute('data-ardoise-subscription-ux', '');
+  (document.head || document.documentElement).appendChild(s);
+})();
+
+/* Le Super Admin charge sa vue de traitement sans modifier son noyau isolé. */
+(function chargerVueRenouvellements() {
+  if (!/super-admin\.html$/i.test(window.location.pathname)) return;
+  if (document.querySelector('script[data-ardoise-renouvellements-admin]')) return;
+  var s = document.createElement('script');
+  s.src = 'super-admin-vues-renouvellements.js'; s.defer = true; s.setAttribute('data-ardoise-renouvellements-admin', '');
+  (document.head || document.documentElement).appendChild(s);
 })();

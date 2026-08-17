@@ -12,7 +12,7 @@
    flou. C'est précisément le piège que le point 41 de la refonte signale.
 
    v50 : icônes PWA régénérées depuis le logo 1254 px, manifeste unifié. */
-const VERSION='ardoise-v50';
+const VERSION='ardoise-v51';
 const CACHE_COQUILLE=`${VERSION}-coquille`;
 const COQUILLE=[
   './','connexion.html','changer-mot-de-passe.html','dashboard-directeur.html',

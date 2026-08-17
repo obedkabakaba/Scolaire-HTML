@@ -832,3 +832,90 @@ textarea.sa-champ { font-family: var(--police-corps); resize: vertical; min-heig
   .sa-principal { padding: 0; }
   .sa-conteneur-tableau, .sa-panneau { border: none; }
 }
+
+/* ==========================================================================
+   RENOUVELLEMENTS — boîte de traitement
+   --------------------------------------------------------------------------
+   Des fiches plutôt qu'un tableau de neuf colonnes : la décision se prend en
+   lisant un bloc, pas en suivant une ligne jusqu'au bord de l'écran.
+
+   Tout est en tokens de thème (le mode Nuit doit rester lisible), et aucune
+   taille ne descend sous 0.72rem — soit 11,5px, le plancher que vérifie
+   `audit-mobile.py`. En dessous, un libellé devient illisible sur un
+   téléphone d'entrée de gamme, qui est l'appareil réel de la plupart des
+   directeurs.
+   ========================================================================== */
+
+.renouv-barre { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+.renouv-barre .sa-onglets { margin-bottom: 0; flex: 1; min-width: 0; }
+.renouv-maj { display: flex; align-items: center; gap: 10px; flex: none; }
+.renouv-maj .sa-muet { font-size: 0.76rem; white-space: nowrap; }
+
+.renouv-liste { display: grid; gap: 10px; margin-top: 16px; }
+.renouv-vide { padding: 30px 14px; text-align: center; }
+
+.renouv-carte {
+  border: 1px solid var(--bordure);
+  border-radius: var(--r-carte);
+  background: var(--craie-2);
+  padding: 15px 17px;
+}
+.renouv-carte-entete {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 12px; margin-bottom: 12px;
+}
+.renouv-ecole strong { display: block; font-size: 0.96rem; }
+.renouv-ecole span { font-size: 0.76rem; }
+
+.renouv-carte-corps {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px; margin-bottom: 13px;
+}
+.renouv-carte-corps small {
+  display: block; font-size: 0.72rem; text-transform: uppercase;
+  letter-spacing: 0.05em; color: var(--texte-att); margin-bottom: 3px;
+}
+.renouv-carte-corps span { font-size: 0.86rem; }
+.renouv-montant { font-weight: 700; }
+.renouv-carte-actions { display: flex; gap: 7px; flex-wrap: wrap; justify-content: flex-end; }
+
+/* Fiche détaillée (dans la modale) */
+.sa-fiche { display: grid; gap: 18px; }
+.sa-fiche-bloc h4 {
+  margin: 0 0 9px; font-size: 0.74rem; text-transform: uppercase;
+  letter-spacing: 0.07em; color: var(--texte-att); font-weight: 700;
+}
+.sa-fiche-bloc dl {
+  margin: 0; display: grid; gap: 1px; background: var(--bordure);
+  border: 1px solid var(--bordure); border-radius: var(--r-bouton); overflow: hidden;
+}
+.sa-fiche-bloc dl > div {
+  display: grid; grid-template-columns: minmax(120px, 0.4fr) 1fr;
+  gap: 12px; background: var(--craie-2); padding: 9px 13px;
+}
+.sa-fiche-bloc dt { color: var(--texte-att); font-size: 0.8rem; }
+.sa-fiche-bloc dd { margin: 0; font-size: 0.87rem; }
+.sa-fiche-actions { display: inline-flex; gap: 6px; margin-left: 8px; }
+.sa-fiche-ref { font-size: 0.95rem; font-weight: 600; }
+.sa-fiche-histo { margin: 0; padding-left: 18px; font-size: 0.82rem; line-height: 1.7; }
+
+.sa-rappel-montant {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px 14px; margin-bottom: 14px;
+  border: 1px solid var(--bordure); border-radius: var(--r-bouton); background: var(--craie);
+}
+.sa-rappel-montant span { color: var(--texte-att); font-size: 0.8rem; }
+.sa-rappel-montant strong { font-size: 1.1rem; }
+
+/* Mobile : jamais de défilement horizontal imposé, jamais de bouton hors écran. */
+@media (max-width: 780px) {
+  .renouv-barre { display: block; }
+  .renouv-maj { margin-top: 10px; justify-content: space-between; }
+  .renouv-carte-corps { grid-template-columns: 1fr 1fr; }
+  .renouv-carte-actions .sa-bouton { flex: 1; }
+  .sa-fiche-bloc dl > div { grid-template-columns: 1fr; gap: 3px; }
+  .sa-fiche-bloc dt { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.04em; }
+}
+@media (max-width: 400px) {
+  .renouv-carte-corps { grid-template-columns: 1fr; }
+}

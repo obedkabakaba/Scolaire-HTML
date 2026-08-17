@@ -67,3 +67,14 @@ jobs:
         run: |
           python3 audit-frontend.py
           python3 audit-contrat-api.py || true
+
+      # La divulgation progressive du tunnel d'abonnement ne se vérifie pas en
+      # lisant le code : elle porte sur ce qui est RÉELLEMENT visible une fois
+      # les styles et le script appliqués. Un `cache` retiré par mégarde
+      # remettrait le numéro de dépôt et le champ de référence en haut de page
+      # sans qu'aucun test statique ne s'en aperçoive.
+      - name: Parcours abonnement / support (navigateur réel)
+        run: |
+          pip install --quiet playwright
+          python3 -m playwright install --with-deps chromium
+          python3 audit-parcours-abonnement.py

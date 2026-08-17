@@ -44,6 +44,28 @@ def construire_pages():
     return urls
 
 
+# Pages publiques écrites à la main, hors générateur.
+#
+# `/essai/` porte un formulaire qui appelle l'API (`POST /demonstration/demander`)
+# et ne se réduit donc pas à du contenu rédactionnel : elle est versionnée
+# telle quelle. Elle reste néanmoins une page publique indexable, et doit
+# figurer dans le plan du site comme dans robots.txt — sans quoi la seule
+# porte d'entrée en libre-service du produit serait invisible pour un moteur.
+#
+# La valeur donne l'URL générée devant laquelle insérer la page manuelle, pour
+# que le plan du site garde l'ordre de lecture du menu plutôt que de reléguer
+# ces pages en fin de fichier.
+PAGES_MANUELLES = {"/essai/": "/tarifs/"}
+
+
+def avec_pages_manuelles(pages):
+    """Insère les pages manuelles à leur place dans la liste des URL."""
+    urls = list(pages)
+    for url, avant in PAGES_MANUELLES.items():
+        urls.insert(urls.index(avant) if avant in urls else len(urls), url)
+    return urls
+
+
 # ----------------------------------------------------------- Redirections
 #
 # GitHub Pages ne sait pas répondre 301. La redirection se fait donc en trois
@@ -148,6 +170,7 @@ PRIORITES = {
     "/": ("1.0", "monthly"),
     "/tarifs/": ("0.9", "monthly"),
     "/tarifs/comparer/": ("0.9", "monthly"),
+    "/essai/": ("0.9", "monthly"),
     "/fonctionnalites/": ("0.8", "monthly"),
     "/services/": ("0.8", "monthly"),
     "/guides/": ("0.8", "monthly"),
@@ -155,6 +178,18 @@ PRIORITES = {
     "/contact/": ("0.7", "yearly"),
 }
 DEFAUT = ("0.7", "monthly")
+
+# Extension image du protocole sitemap.
+#
+# Elle avait été ajoutée à la main dans `sitemap.xml`, et une régénération la
+# faisait disparaître sans que rien ne le signale : c'est exactement la dérive
+# que ce générateur existe pour empêcher. Elle vit donc ici, décrite une fois.
+IMAGES = {
+    "/": [("/logo-ardoise-clair.jpg",
+           "Ardoise — logiciel de gestion scolaire",
+           "Logo officiel d'Ardoise, plateforme de gestion scolaire pour les "
+           "écoles de la RDC.")],
+}
 
 
 def construire_sitemap(urls):
@@ -169,12 +204,19 @@ def construire_sitemap(urls):
               "  `lastmod` doit être mis à jour lors d'une modification réelle du",
               "  contenu. Une date fausse est ignorée après quelques passages.",
               "-->",
-              '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+              '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"',
+              '        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">']
     for url in urls:
         prio, freq = PRIORITES.get(url, DEFAUT)
         lignes += ["", "  <url>",
-                   f"    <loc>{SITE}{url}</loc>",
-                   f"    <lastmod>{DATE}</lastmod>",
+                   f"    <loc>{SITE}{url}</loc>"]
+        for src, titre, legende in IMAGES.get(url, []):
+            lignes += ["    <image:image>",
+                       f"      <image:loc>{SITE}{src}</image:loc>",
+                       f"      <image:title>{titre}</image:title>",
+                       f"      <image:caption>{legende}</image:caption>",
+                       "    </image:image>"]
+        lignes += [f"    <lastmod>{DATE}</lastmod>",
                    f"    <changefreq>{freq}</changefreq>",
                    f"    <priority>{prio}</priority>",
                    "  </url>"]
@@ -242,15 +284,20 @@ def main():
         shutil.rmtree(SORTIE)
     os.makedirs(SORTIE, exist_ok=True)
 
-    urls = construire_pages()
+    pages = construire_pages()
+    # Le plan du site et robots.txt couvrent aussi les pages publiques écrites à
+    # la main ; `pages` ne contient que ce que ce script a réellement écrit.
+    urls = avec_pages_manuelles(pages)
     construire_redirections()
     construire_ressources()
     construire_sitemap(urls)
     construire_robots(urls)
 
-    print(f"{len(urls)} pages construites dans {SORTIE}")
-    for u in urls:
+    print(f"{len(pages)} pages construites dans {SORTIE}")
+    for u in pages:
         print("  " + u)
+    for u in PAGES_MANUELLES:
+        print(f"  {u} (page manuelle — référencée dans sitemap.xml et robots.txt)")
 
 
 if __name__ == "__main__":

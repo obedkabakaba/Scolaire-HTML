@@ -514,7 +514,7 @@ def excel_ou_logiciel():
     ])
     corps += cta_final(
         "Vous pouvez nous montrer un fichier anonymisé.",
-        "Nous vous indiquerons ce qui peut être importé, ce qui doit être nettoyé et quelle offre correspond à l'effectif.",
+        "Nous vous indiquerons ce qui peut être importé, ce qui doit être nettoyé et quelle offre couvre vos besoins.",
         [("/contact/", "Évaluer mes fichiers", "principal"),
          ("/guides/", "Voir les guides", "secondaire")])
     return rendre(
@@ -671,10 +671,13 @@ def prix_logiciel():
   <section class="section alt" id="ardoise">
     <div class="conteneur etroit">
       <h2>2. Chez Ardoise, abonnement et services sont séparés</h2>
-      <p>Les offres mensuelles sont Ascension à 35 $, Prime à 59 $, Pilote à 99 $
+      <p>Les offres mensuelles sont Ascension à 30 $, Prime à 59 $, Pilote à 99 $
          et Infinite à 159 $. Le paiement annuel correspond à dix mensualités :
-         respectivement 350 $, 590 $, 990 $ et 1 590 $. Les fonctions et plafonds
-         exacts figurent dans le <a href="/tarifs/comparer/">tableau comparatif</a>.</p>
+         respectivement 300 $, 590 $, 990 $ et 1 590 $. Ce prix ne dépend pas de
+         l'effectif : élèves, comptes utilisateurs, classes et archives sont
+         illimités dans les quatre offres, et un budget établi aujourd'hui ne se
+         renchérit pas parce que l'école grandit. Les modules exacts figurent dans
+         le <a href="/tarifs/comparer/">tableau comparatif</a>.</p>
       <p>La configuration par l'équipe Ardoise coûte 60 $ en forfait unique. La
          formation coûte 30, 60 ou 100 $ selon la formule. La campagne de capture
          est facultative et facturée 0,50 $ par élève. Une école qui se configure,
@@ -687,28 +690,31 @@ def prix_logiciel():
       <div class="section-entete"><span class="eyebrow">Exemples transparents</span>
         <h2>3. Trois budgets de première année</h2>
         <p class="chapeau">Ces calculs utilisent les tarifs publiés d'Ardoise. Ils
-           ne comprennent pas le temps interne de l'école.</p></div>
+           ne comprennent pas le temps interne de l'école. L'abonnement ne dépend
+           pas de l'effectif ; seule la campagne de capture, facturée à l'élève,
+           varie avec le nombre de dossiers à saisir.</p></div>
       <div class="grille-cartes trois">
         <article class="carte etoffee">
-          <h3>École de 200 élèves</h3>
-          <p class="tarif-carte">350 $ seule · 570 $ accompagnée</p>
-          <p>Ascension annuelle : 350 $. Avec installation 60 $, formation complète
-             60 $ et capture de 200 élèves 100 $ : total 570 $.</p>
+          <h3>Le cœur du métier — 200 élèves à saisir</h3>
+          <p class="tarif-carte">300 $ seule · 520 $ accompagnée</p>
+          <p>Ascension annuelle : 300 $, quel que soit l'effectif. Avec installation
+             60 $, formation complète 60 $ et capture de 200 élèves 100 $ :
+             total 520 $.</p>
         </article>
         <article class="carte etoffee">
-          <h3>École de 500 élèves</h3>
+          <h3>Avec emploi du temps et discipline — 500 élèves à saisir</h3>
           <p class="tarif-carte">590 $ seule · 960 $ accompagnée</p>
           <p>Prime annuelle : 590 $. Avec installation 60 $, formation complète
              60 $ et capture de 500 élèves 250 $ : total 960 $.</p>
         </article>
         <article class="carte etoffee">
-          <h3>École de 1 200 élèves</h3>
+          <h3>Avec comptabilité et concours — 1 200 élèves à saisir</h3>
           <p class="tarif-carte">990 $ seule · 1 750 $ accompagnée</p>
           <p>Pilote annuelle : 990 $. Avec installation 60 $, formation personnalisée
              100 $ et capture de 1 200 élèves 600 $ : total 1 750 $.</p>
         </article>
       </div>
-      <p class="note-tableau">« Accompagnée » signifie ici que les trois services facultatifs sont pris. Une école peut en choisir un, deux ou aucun.</p>
+      <p class="note-tableau">« Accompagnée » signifie ici que les trois services facultatifs sont pris. Une école peut en choisir un, deux ou aucun. Le choix de l'offre vient des modules dont l'école a besoin, jamais de son effectif.</p>
     </div>
   </section>
 
@@ -723,22 +729,23 @@ def prix_logiciel():
          écarts de caisse non expliqués et dossiers incomplets. Ce sont eux qui diront
          si l'investissement améliore réellement le fonctionnement.</p>
       <div class="encart"><h3>Questions à poser avant de signer</h3>
-        <p>Le prix augmente-t-il pendant l'année ? Que se passe-t-il au dépassement ?
-           Les sauvegardes, mises à jour, exports et support sont-ils inclus ? Peut-on
-           arrêter sans payer la période suivante ?</p></div>
+        <p>Le prix augmente-t-il pendant l'année ? Est-il indexé sur le nombre
+           d'élèves, de comptes ou de classes — et que se passe-t-il quand l'école
+           grandit ? Les sauvegardes, mises à jour, exports et support sont-ils
+           inclus ? Peut-on arrêter sans payer la période suivante ?</p></div>
     </div>
   </section>
 </article>
 '''
     corps += pour_aller_plus_loin([
         ("/tarifs/", "Tarifs Ardoise", "Voir chaque offre et chaque périodicité."),
-        ("/tarifs/comparer/", "Comparer les offres", "Vérifier fonctions et plafonds."),
+        ("/tarifs/comparer/", "Comparer les offres", "Vérifier modules et espaces métier."),
         ("/services/", "Services facultatifs", "Installation, formation et capture séparées."),
         ("/guides/choisir-logiciel-gestion-scolaire-rdc/", "Choisir un logiciel", "Évaluer au-delà du prix."),
     ])
     corps += cta_final(
-        "Obtenez un budget adapté à votre effectif.",
-        "Indiquez le nombre d'élèves et les services souhaités ; nous détaillerons chaque ligne.",
+        "Obtenez un budget adapté à votre école.",
+        "Indiquez les modules dont vous avez besoin et les services souhaités ; nous détaillerons chaque ligne.",
         [("/contact/", "Demander un chiffrage", "principal"),
          ("/tarifs/", "Voir les offres", "secondaire")])
     return rendre(

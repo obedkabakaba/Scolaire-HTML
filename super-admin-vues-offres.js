@@ -137,44 +137,84 @@
   }
 
   /**
-   * Regroupe les champs `limite_*` du formulaire dans l'objet `limites`.
+   * Les sept espaces métiers, dans l'ordre où ils se lisent.
    * ----------------------------------------------------------------------
-   * Le générateur de formulaire ne connaît que des champs plats ; le serveur,
-   * lui, attend un objet jsonb. Cette fonction fait la traduction à un seul
-   * endroit, juste avant l'envoi.
+   * Ils remplacent l'ancien plafond `max_utilisateurs` : une offre ne vend
+   * plus un NOMBRE de comptes — il est illimité partout — mais des MÉTIERS.
+   * Une école qui n'a pas l'espace Comptabilité peut ouvrir mille comptes et
+   * aucun comptable.
    *
-   * Deux détails qui comptent :
-   *   · un champ vide devient `null`, c'est-à-dire « sans limite », et non 0.
-   *     Enregistrer 0 plafonnerait l'offre à zéro élève ;
-   *   · `max_eleves` et `max_utilisateurs` sont RECOPIÉS dans `limites`. Les
-   *     deux anciennes colonnes existent toujours et restent affichées ailleurs,
-   *     mais c'est `limites` que le serveur applique. Sans cette recopie, un
-   *     plafond saisi ici serait affiché partout et respecté nulle part.
+   * Les codes doivent rester identiques à `ESPACES` dans
+   * `utils/catalogue.utils.js` côté serveur : il refuse tout code inconnu.
+   */
+  const ESPACES = [
+    ['direction',    'Direction',    'Pilotage général de l\'établissement.'],
+    ['prefecture',   'Préfecture',   'Supervision académique.'],
+    ['secretariat',  'Secrétariat',  'Élèves, inscriptions et frais.'],
+    ['enseignement', 'Enseignement', 'Cours, notes et travaux.'],
+    ['titulariat',   'Titulariat',   'Suivi de classe et bulletins.'],
+    ['discipline',   'Discipline',   'Exige la fonctionnalité Discipline, et réciproquement.'],
+    ['comptabilite', 'Comptabilité', 'Exige la comptabilité ou la paie, et réciproquement.']
+  ];
+
+  /**
+   * Résume les espaces ouverts d'une offre en une ligne lisible.
+   *
+   * Une colonne `espaces` vide veut dire « offre créée avant la migration
+   * 045 » : le serveur la lit alors comme tout-ouvert (`normaliserEspaces`),
+   * et l'affichage doit dire la même chose que ce que le serveur applique.
+   */
+  function resumeEspaces(espaces) {
+    if (!espaces || Object.keys(espaces).length === 0) {
+      return '<span class="sa-muet">tous ouverts (non défini)</span>';
+    }
+    const ouverts = ESPACES.filter(([code]) => espaces[code] === true);
+    if (ouverts.length === ESPACES.length) return 'les sept espaces';
+    if (ouverts.length === 0) return '<span class="sa-muet">aucun</span>';
+    return ouverts.map(([, libelle]) => esc(libelle)).join(' · ');
+  }
+
+  /**
+   * Regroupe les champs plats du formulaire dans les objets jsonb attendus.
+   * ----------------------------------------------------------------------
+   * Le générateur de formulaire ne connaît que des champs plats ; le serveur
+   * attend `limites` et `espaces` comme objets. La traduction se fait ici, à
+   * un seul endroit, juste avant l'envoi.
+   *
+   * Un champ de limite vide devient `null`, c'est-à-dire « sans limite », et
+   * non 0 : enregistrer 0 plafonnerait l'offre à zéro génération d'IA.
+   *
+   * CE QUI N'EST PLUS ICI, ET POURQUOI
+   * ----------------------------------
+   * `max_eleves`, `max_utilisateurs`, `max_classes`, `historique_annees` et
+   * `stockage_mo` ont disparu du formulaire. Ce ne sont pas des champs qu'on
+   * a « oubliés » : le serveur les REFUSE désormais par un 400 explicite
+   * (`LIMITES_ABOLIES`, super-admin-offres.controller.js), parce qu'Ardoise ne
+   * vend plus de volume. Les laisser affichés aurait produit exactement ce
+   * qu'il faut éviter : un champ que l'on saisit, que l'on croit enregistré,
+   * et que rien n'applique.
    */
   function regrouperLimites(valeurs) {
     const limites = {};
-    let touche = false;
+    const espaces = {};
+    let toucheLimites = false;
+    let toucheEspaces = false;
 
     for (const cle of Object.keys(valeurs)) {
-      if (!cle.startsWith('limite_')) continue;
-      const v = valeurs[cle];
-      limites[cle.slice('limite_'.length)] = (v === '' || v === null || v === undefined) ? null : v;
-      delete valeurs[cle];
-      touche = true;
+      if (cle.startsWith('limite_')) {
+        const v = valeurs[cle];
+        limites[cle.slice('limite_'.length)] = (v === '' || v === null || v === undefined) ? null : v;
+        delete valeurs[cle];
+        toucheLimites = true;
+      } else if (cle.startsWith('espace_')) {
+        espaces[cle.slice('espace_'.length)] = valeurs[cle] === true;
+        delete valeurs[cle];
+        toucheEspaces = true;
+      }
     }
 
-    if ('max_eleves' in valeurs) {
-      limites.max_eleves = (valeurs.max_eleves === '' || valeurs.max_eleves === null
-                            || valeurs.max_eleves === undefined) ? null : valeurs.max_eleves;
-      touche = true;
-    }
-    if ('max_utilisateurs' in valeurs) {
-      limites.max_utilisateurs = (valeurs.max_utilisateurs === '' || valeurs.max_utilisateurs === null
-                                  || valeurs.max_utilisateurs === undefined) ? null : valeurs.max_utilisateurs;
-      touche = true;
-    }
-
-    if (touche) valeurs.limites = limites;
+    if (toucheLimites) valeurs.limites = limites;
+    if (toucheEspaces) valeurs.espaces = espaces;
     return valeurs;
   }
 
@@ -223,30 +263,32 @@
       aide: 'Affiché tel quel sur la page des tarifs. Décrivez l\'école, pas la fonctionnalité.' },
 
     /* ------------------------------------------------------------------
-       Les plafonds vivent désormais dans `limites` (migration 028), qui les
-       regroupe tous au même endroit et que le serveur applique réellement.
+       DEUX LIMITES, PAS SEPT.
 
-       `max_eleves` et `max_utilisateurs` restent affichés parce que les deux
-       anciennes colonnes existent toujours et sont lues par d'autres écrans.
-       Ils sont recopiés dans `limites` à l'enregistrement — voir plus bas —
-       pour qu'un plafond saisi ici soit celui que le serveur fait respecter,
-       et pas seulement celui qu'il affiche.
+       Toutes les offres Ardoise donnent des élèves, des comptes, des classes
+       et un archivage ILLIMITÉS. Ne subsistent que les deux compteurs qui
+       correspondent à un coût réel encouru à chaque appel — une génération
+       d'IA se paie au fournisseur, un e-mail au routeur. Le reste ne coûte
+       rien de plus à l'unité, et n'a donc aucune raison d'être vendu au
+       volume.
+
+       La différenciation entre offres se fait plus bas, par les espaces
+       métiers, et par les fonctionnalités.
        ------------------------------------------------------------------ */
-    { cle: 'max_eleves', libelle: "Plafond d'élèves", type: 'nombre', pas: '1', min: 0, valeur: o.max_eleves,
-      aide: 'Vide = illimité. Appliqué à la création d\'un élève et à l\'import.' },
-    { cle: 'max_utilisateurs', libelle: "Plafond d'utilisateurs", type: 'nombre', pas: '1', min: 0, valeur: o.max_utilisateurs,
-      aide: 'Vide = illimité.' },
-    { cle: 'limite_max_classes', libelle: 'Plafond de classes', type: 'nombre', pas: '1', min: 0,
-      valeur: (o.limites || {}).max_classes, aide: 'Vide = illimité.' },
     { cle: 'limite_ia_quota_mensuel', libelle: 'Générations IA par mois', type: 'nombre', pas: '1', min: 0,
       valeur: (o.limites || {}).ia_quota_mensuel,
       aide: 'Compteur remis à zéro le 1er de chaque mois. Vide = illimité.' },
-    { cle: 'limite_historique_annees', libelle: 'Années scolaires archivées', type: 'nombre', pas: '1', min: 0,
-      valeur: (o.limites || {}).historique_annees, aide: 'Vide = illimité.' },
-    { cle: 'limite_stockage_mo', libelle: 'Stockage (Mo)', type: 'nombre', pas: '1', min: 0,
-      valeur: (o.limites || {}).stockage_mo, aide: 'Vide = illimité.' },
     { cle: 'limite_notifications_email_mois', libelle: 'E-mails sortants par mois', type: 'nombre', pas: '1', min: 0,
       valeur: (o.limites || {}).notifications_email_mois, aide: 'Vide = illimité.' },
+
+    /* Les sept espaces métiers. Une bascule fermée retire à l'école le droit
+       de créer un compte de ce métier — immédiatement, sur toutes les écoles
+       abonnées, puisque les droits sont relus à chaque requête. */
+    ...ESPACES.map(([code, libelle, aide]) => ({
+      cle: `espace_${code}`, libelle: `Espace ${libelle}`, type: 'bascule',
+      texteBascule: 'Ouvert dans cette offre', aide,
+      valeur: (o.espaces || {})[code] === true
+    })),
     { cle: 'ordre_affichage', libelle: 'Ordre', type: 'nombre', pas: '1', min: 0, valeur: o.ordre_affichage || 0 },
     { cle: 'badge', libelle: 'Badge', valeur: o.badge, longueurMax: 40, exemple: 'Ex. Le plus choisi' },
     { cle: 'description', libelle: 'Description', type: 'zone', valeur: o.description },
@@ -342,9 +384,11 @@
         <div class="sa-ligne-info"><span>ARR généré</span><span>${argent(o.arr)}</span></div>
         <div class="sa-ligne-info"><span>Encaissé à ce jour</span><span>${argent(o.revenu_encaisse)}</span></div>
         <div class="sa-ligne-info"><span>Remises en cours</span><span>${Number(o.remises_mensuelles) ? `<span class="sa-negatif">−${fmt.decimal(o.remises_mensuelles, 2)}</span>` : '<span class="sa-muet">aucune</span>'}${Number(o.tarifs_negocies) ? ` <span class="sa-muet">· ${fmt.nombre(o.tarifs_negocies)} négocié(s)</span>` : ''}</span></div>
-        <div class="sa-ligne-info"><span>Plafonds</span><span>${o.max_eleves ? `${fmt.nombre(o.max_eleves)} élèves` : 'élèves illimités'}${o.max_utilisateurs ? ` · ${fmt.nombre(o.max_utilisateurs)} utilisateurs` : ''}</span></div>
+        <div class="sa-ligne-info"><span>Capacité</span><span>Élèves, comptes, classes et archives illimités</span></div>
+        <div class="sa-ligne-info"><span>Espaces métiers</span><span>${resumeEspaces(o.espaces)}</span></div>
         <div class="sa-ligne-info"><span>Semestriel / annuel</span><span>${o.prix_semestriel ? argent(o.prix_semestriel) : '<span class="sa-muet">non proposé</span>'} · ${o.prix_annuel ? argent(o.prix_annuel) : '<span class="sa-muet">non proposé</span>'}</span></div>
-        <div class="sa-ligne-info"><span>Quota IA mensuel</span><span>${(o.limites && o.limites.ia_quota_mensuel != null) ? `${fmt.nombre(o.limites.ia_quota_mensuel)} générations` : '<span class="sa-muet">non défini</span>'}</span></div>
+        <div class="sa-ligne-info"><span>Quota IA mensuel</span><span>${(o.limites && o.limites.ia_quota_mensuel != null) ? `${fmt.nombre(o.limites.ia_quota_mensuel)} générations` : '<span class="sa-muet">illimité</span>'}</span></div>
+        <div class="sa-ligne-info"><span>E-mails par mois</span><span>${(o.limites && o.limites.notifications_email_mois != null) ? fmt.nombre(o.limites.notifications_email_mois) : '<span class="sa-muet">illimité</span>'}</span></div>
       </div>
 
       ${o.description ? `<p class="sa-note">${esc(o.description)}</p>` : ''}

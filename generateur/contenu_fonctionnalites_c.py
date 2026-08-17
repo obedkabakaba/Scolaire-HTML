@@ -145,9 +145,10 @@ def admissions():
 <section class="section">
   <div class="conteneur">
     {bloc_offres("Le concours d'admission et l'orientation au mérite font partie de "
-                 "l'offre Pilote et de l'offre Infinite. Une école plus petite qui "
-                 "organise un test d'entrée a intérêt à prendre Pilote même en dessous "
-                 "de 600 élèves.")}
+                 "l'offre Pilote et de l'offre Infinite. Une école qui organise un "
+                 "test d'entrée a donc intérêt à prendre Pilote, quel que soit son "
+                 "effectif : ce sont ces deux modules qu'elle achète, jamais un quota "
+                 "d'élèves.")}
   </div>
 </section>
 """

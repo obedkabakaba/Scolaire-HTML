@@ -122,6 +122,9 @@
      * sélecteur.
      */
 
+    /* Comment nommer la période sous le prix principal. */
+    var SUFFIXE = { mensuel: '/ mois', semestriel: '/ semestre', annuel: '/ an' };
+
     function appliquer(periode) {
       boutons.forEach(function (b) {
         b.setAttribute('aria-pressed', String(b.dataset.periode === periode));
@@ -139,16 +142,40 @@
         var elFact = carte.querySelector('[data-facturation]');
         var elEco = carte.querySelector('[data-economie]');
 
+        /* LE PRIX PRINCIPAL EST LE MONTANT RÉELLEMENT PAYÉ.
+           -----------------------------------------------------------------
+           La version précédente affichait toujours l'équivalent MENSUEL
+           (`parMois || total`), quelle que soit la période choisie. Un
+           visiteur qui sélectionnait « Annuel » lisait donc « 25 $ » en gros
+           et découvrait 300 $ au paiement.
+
+           Ce n'était pas seulement trompeur : c'était illisible. Le prix le
+           plus visible de la page n'était un montant facturable dans aucune
+           des trois périodicités sauf la mensuelle.
+
+           Désormais le grand chiffre est le total de la période, suivi de
+           « / an » ou « / semestre », et l'équivalent mensuel passe en
+           mention secondaire — utile pour comparer, jamais confondu avec ce
+           qu'on va payer. */
         if (elPrix) {
           elPrix.innerHTML = '<span class="devise">' + (devise === 'USD' ? '$' : devise)
-            + '</span>' + Number(parMois || total).toLocaleString('fr-FR');
+            + '</span>' + Number(total).toLocaleString('fr-FR')
+            + '<span class="periode-prix">' + SUFFIXE[periode] + '</span>';
         }
-        if (elParMois) elParMois.textContent = 'par mois';
+
+        if (elParMois) {
+          if (periode === 'mensuel') {
+            // Répéter « par mois » sous « 30 $ / mois » n'apprend rien.
+            elParMois.textContent = 'Sans engagement.';
+          } else {
+            elParMois.textContent = 'soit ' + montant(parMois, devise) + ' par mois';
+          }
+        }
 
         if (elFact) {
           elFact.textContent = periode === 'mensuel'
             ? 'Facturé ' + montant(total, devise) + ' chaque mois.'
-            : 'Facturé ' + montant(total, devise) + ' '
+            : 'Facturé ' + montant(total, devise) + ' en une fois, '
               + (periode === 'semestriel' ? 'tous les six mois.' : 'une fois par an.');
         }
 
@@ -181,9 +208,20 @@
       b.addEventListener('click', function () { appliquer(b.dataset.periode); });
     });
 
+    /* ANNUEL PAR DÉFAUT.
+       -------------------------------------------------------------------
+       C'est la périodicité la plus avantageuse pour l'école — deux mois
+       offerts — et celle qui donne à Ardoise un engagement lisible. Ouvrir
+       sur « Mensuel » montrait d'abord le tarif le plus cher à l'année, ce
+       qui n'arrange personne.
+
+       Un choix déjà fait par le visiteur reste prioritaire : `localStorage`
+       l'emporte, et c'est le bon ordre — la valeur par défaut ne doit
+       s'appliquer qu'à ceux qui n'ont rien décidé. */
     var memorisee = null;
     try { memorisee = global.localStorage.getItem('ardoise.periode'); } catch (e) { /* */ }
-    appliquer(memorisee || 'mensuel');
+    var valides = ['mensuel', 'semestriel', 'annuel'];
+    appliquer(valides.indexOf(memorisee) !== -1 ? memorisee : 'annuel');
 
     return appliquer;
   }
@@ -344,7 +382,7 @@
       });
       if (typeof reappliquer === 'function') {
         var actif = (racine || document).querySelector('[data-periode][aria-pressed="true"]');
-        reappliquer(actif ? actif.dataset.periode : 'mensuel');
+        reappliquer(actif ? actif.dataset.periode : 'annuel');
       }
     });
   }
@@ -451,6 +489,129 @@
     });
   }
 
+  /* ---------------------------------------------------- Essai gratuit */
+
+  /**
+   * La page /essai/ : réglages affichés, puis création de l'espace.
+   *
+   * NI LA DURÉE NI L'OFFRE NE SONT ÉCRITES DANS LA PAGE.
+   * ---------------------------------------------------------------------
+   * Le HTML porte « 7 jours » et « Prime » comme valeurs publiées, et cette
+   * fonction les remplace par ce que dit le serveur. Passer l'essai à 14
+   * jours ou à Pilote depuis le Super Admin change donc la page publique
+   * sans toucher au dépôt — c'est la même règle de source de vérité unique
+   * que pour les prix.
+   *
+   * Si l'API ne répond pas, la page garde ses valeurs publiées plutôt que
+   * d'afficher un trou : elles sont exactes dans l'immense majorité des cas.
+   */
+  function brancherEssai(racine) {
+    var doc = racine || document;
+    var form = doc.querySelector('[data-formulaire-demo]');
+    if (!form) return;
+
+    var retour = form.querySelector('[data-retour]');
+    var bouton = form.querySelector('button[type="submit"]');
+    var banniereFermee = doc.querySelector('[data-demo-fermee]');
+
+    recuperer('/demonstration/reglages')
+      .then(function (r) {
+        if (!r) return;
+        if (r.duree_jours) {
+          doc.querySelectorAll('[data-duree-demo]').forEach(function (e) {
+            e.textContent = r.duree_jours;
+          });
+        }
+        if (r.offre && r.offre.nom) {
+          // « Ardoise Prime » → « Prime » : le nom de marque est déjà partout
+          // sur la page, le répéter dans chaque phrase l'alourdit.
+          var court = r.offre.nom.replace(/^Ardoise\s+/i, '');
+          doc.querySelectorAll('[data-offre-demo-nom]').forEach(function (e) {
+            e.textContent = court;
+          });
+        }
+        if (r.ouverte === false) {
+          if (banniereFermee) banniereFermee.hidden = false;
+          form.hidden = true;
+        }
+      })
+      .catch(function () { /* la page garde ses valeurs publiées */ });
+
+    function afficher(classe, texte, lien) {
+      retour.hidden = false;
+      retour.className = 'message-retour ' + classe;
+      retour.innerHTML = '';
+      retour.appendChild(document.createTextNode(texte));
+      if (lien) {
+        retour.appendChild(document.createTextNode(' '));
+        var a = document.createElement('a');
+        a.href = lien.href;
+        a.textContent = lien.texte;
+        retour.appendChild(a);
+      }
+      // Le message peut être hors écran sur mobile, sous le bouton : sans ce
+      // défilement, un refus passe pour un bouton qui ne fait rien.
+      retour.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      var donnees = Object.fromEntries(new FormData(form).entries());
+
+      bouton.disabled = true;
+      var texteInitial = bouton.textContent;
+      bouton.textContent = 'Création de votre espace…';
+      retour.hidden = true;
+
+      fetch(API + '/demonstration/demander', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(donnees)
+      })
+        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+        .then(function (res) {
+          if (res.ok) {
+            afficher('succes',
+              res.d.message + ' Vous allez être redirigé vers la connexion…');
+            form.reset();
+            /* On NE connecte PAS automatiquement.
+               La personne vient de choisir un mot de passe ; lui faire faire
+               une première connexion volontaire l'ancre, et évite d'avoir à
+               manipuler un jeton depuis une page publique — c'est-à-dire
+               depuis le seul contexte du site qui n'a jamais eu à en
+               manipuler. */
+            setTimeout(function () {
+              global.location.href = '/connexion.html?nouveau=1&email='
+                + encodeURIComponent(donnees.email || '');
+            }, 2200);
+            return;
+          }
+
+          // Un compte ou un établissement déjà connu n'est pas une erreur :
+          // c'est quelqu'un qui devrait se connecter. On le lui dit, et on
+          // lui donne le lien plutôt que de le laisser recommencer.
+          var lien = null;
+          if (res.d.code === 'compte_existant') {
+            lien = { href: '/connexion.html', texte: 'Se connecter' };
+          } else if (res.d.code === 'ecole_existante' || res.d.code === 'demo_fermee') {
+            lien = { href: '/contact/', texte: 'Nous contacter' };
+          }
+          afficher('erreur',
+            (res.d.message || "Votre espace n'a pas pu être créé.")
+            + (res.d.action ? ' ' + res.d.action : ''), lien);
+        })
+        .catch(function () {
+          afficher('erreur',
+            'Connexion impossible. Vérifiez votre réseau et réessayez.');
+        })
+        .finally(function () {
+          bouton.disabled = false;
+          bouton.textContent = texteInitial;
+        });
+    });
+  }
+
   /* ------------------------------------------------------ Bascule de thème */
 
   function adapterIllustrations(sombre) {
@@ -513,6 +674,7 @@
     rafraichirTarifs(document, reappliquer);
     brancherSimulateur(document);
     brancherFormulaireContact(document);
+    brancherEssai(document);
   }
 
   if (document.readyState === 'loading') {

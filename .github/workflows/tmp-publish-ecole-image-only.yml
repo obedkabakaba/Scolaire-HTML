@@ -1,0 +1,73 @@
+name: Temp publish ecole image only
+
+on:
+  push:
+    branches:
+      - agent/ecole-detourage-final-v2
+    paths:
+      - .github/workflows/tmp-publish-ecole-image-only.yml
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install image tools
+        run: pip install pillow numpy scipy
+      - name: Build clean image-only branch from main
+        run: |
+          git fetch origin main
+          git checkout -B agent/ecole-image-only origin/main
+          python - <<'PY'
+          from PIL import Image
+          import numpy as np
+          from scipy.ndimage import distance_transform_edt, minimum_filter
+          from pathlib import Path
+
+          src = Path('public/site/illustrations/ecole.webp')
+          im = Image.open(src).convert('RGBA')
+          arr = np.array(im)
+          rgb = arr[..., :3].copy()
+          a = arr[..., 3].astype(np.float32)
+
+          a[a < 18] = 0
+          opaque = a >= 235
+          if opaque.any():
+              _, inds = distance_transform_edt(~opaque, return_indices=True)
+              yy, xx = inds
+              fringe = (a > 0) & (a < 248)
+              rgb[fringe] = rgb[yy[fringe], xx[fringe]]
+
+          eroded3 = minimum_filter(a, size=3, mode='nearest')
+          edge = (a > 0) & (a < 250)
+          a[edge] = 0.42 * a[edge] + 0.58 * eroded3[edge]
+
+          tree = np.zeros_like(a, dtype=bool)
+          tree[:470, :520] = True
+          tree &= a > 0
+          eroded5 = minimum_filter(a, size=5, mode='nearest')
+          tree_edge = tree & (a < 252)
+          a[tree_edge] = 0.28 * a[tree_edge] + 0.72 * eroded5[tree_edge]
+
+          a[a < 28] = 0
+          partial = (a > 0) & (a < 235)
+          a[partial] = 255.0 * np.power(a[partial] / 255.0, 1.35)
+          a = np.clip(a, 0, 255).astype(np.uint8)
+
+          out = np.dstack([rgb, a]).astype(np.uint8)
+          cleaned = Image.fromarray(out, 'RGBA')
+          assert cleaned.size == (1000, 848)
+          cleaned.save(src, 'WEBP', lossless=True, method=6)
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/site/illustrations/ecole.webp
+          git commit -m "Remplace l’illustration école par le détourage final"
+          git push --force origin HEAD:agent/ecole-image-only

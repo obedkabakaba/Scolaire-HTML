@@ -1,0 +1,94 @@
+name: Temp clean ecole v2
+
+on:
+  push:
+    branches:
+      - agent/ecole-detourage-final-v2
+    paths:
+      - .github/workflows/tmp-clean-ecole-v2.yml
+
+jobs:
+  clean:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install image tools
+        run: pip install pillow numpy scipy
+      - name: Clean alpha matte and tree edges
+        run: |
+          python - <<'PY'
+          from PIL import Image
+          import numpy as np
+          from scipy.ndimage import distance_transform_edt, minimum_filter
+          from pathlib import Path
+
+          src = Path('public/site/illustrations/ecole.webp')
+          im = Image.open(src).convert('RGBA')
+          arr = np.array(im)
+          rgb = arr[..., :3].copy()
+          a = arr[..., 3].astype(np.float32)
+          h, w = a.shape
+
+          # Remove extremely faint matte residue everywhere.
+          a[a < 18] = 0
+
+          # Replace semi-transparent fringe RGB with the nearest opaque interior
+          # pixel. This removes pale/colored matte that becomes obvious on dark UI.
+          opaque = a >= 235
+          if opaque.any():
+              _, inds = distance_transform_edt(~opaque, return_indices=True)
+              yy, xx = inds
+              fringe = (a > 0) & (a < 248)
+              rgb[fringe] = rgb[yy[fringe], xx[fringe]]
+
+          # General 1px matte contraction, preserving solid interior.
+          eroded3 = minimum_filter(a, size=3, mode='nearest')
+          edge = (a > 0) & (a < 250)
+          a[edge] = 0.42 * a[edge] + 0.58 * eroded3[edge]
+
+          # Tree/foliage occupies the upper-left part of this asset. Contract its
+          # edge slightly more to remove the visible dark-mode halo between leaves.
+          tree = np.zeros_like(a, dtype=bool)
+          tree[:470, :520] = True
+          tree &= a > 0
+          eroded5 = minimum_filter(a, size=5, mode='nearest')
+          tree_edge = tree & (a < 252)
+          a[tree_edge] = 0.28 * a[tree_edge] + 0.72 * eroded5[tree_edge]
+
+          # Suppress residual low-opacity colored pixels, then make the remaining
+          # antialiasing steeper so it stays natural without a glowing outline.
+          a[a < 28] = 0
+          partial = (a > 0) & (a < 235)
+          a[partial] = 255.0 * np.power(a[partial] / 255.0, 1.35)
+          a = np.clip(a, 0, 255).astype(np.uint8)
+
+          out = np.dstack([rgb, a]).astype(np.uint8)
+          Image.fromarray(out, 'RGBA').save(src, 'WEBP', lossless=True, method=6)
+
+          # Verification composites on light and dark backgrounds.
+          cleaned = Image.open(src).convert('RGBA')
+          Path('verify').mkdir(exist_ok=True)
+          for name, bg in [('dark', (9, 14, 22, 255)), ('light', (246, 248, 251, 255))]:
+              canvas = Image.new('RGBA', cleaned.size, bg)
+              canvas.alpha_composite(cleaned)
+              canvas.convert('RGB').save(f'verify/preview-{name}.jpg', quality=94)
+          print('size=', cleaned.size, 'alpha=', cleaned.getchannel('A').getextrema())
+          PY
+      - name: Upload verification previews
+        uses: actions/upload-artifact@v4
+        with:
+          name: ecole-v2-verification
+          path: verify/
+          retention-days: 1
+      - name: Commit cleaned image to scratch branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/site/illustrations/ecole.webp
+          git commit -m "Prépare le détourage final de l’illustration école"
+          git push

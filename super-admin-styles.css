@@ -550,11 +550,37 @@ textarea.sa-champ { font-family: var(--police-corps); resize: vertical; min-heig
   white-space: nowrap;
   text-transform: capitalize;
 }
-.sa-badge.ton-succes    { background: #E9F1EC; background: color-mix(in srgb, var(--vert-ok) 15%, transparent); color: var(--vert-ok); }
-.sa-badge.ton-danger    { background: #F7E7E5; background: color-mix(in srgb, var(--rouge) 13%, transparent);   color: var(--rouge); }
-.sa-badge.ton-attention { background: #F5EAD9; background: color-mix(in srgb, var(--ocre) 16%, transparent);    color: var(--ocre-dark); }
-.sa-badge.ton-info      { background: #E6ECEE; background: color-mix(in srgb, var(--encre) 14%, transparent);   color: var(--encre); }
-.sa-badge.ton-neutre    { background: #EFEDE6; background: color-mix(in srgb, var(--texte-att) 13%, transparent); color: var(--texte-att); }
+/* CONTRASTE DU TEXTE DES PASTILLES — WCAG AA (4.5:1)
+   ---------------------------------------------------------------------------
+   Le texte reprenait la teinte d'accent telle quelle, posée sur un fond qui est
+   cette MÊME teinte à 13-16 % sur la carte. Deux couleurs si proches ne
+   contrastent pas : mesuré à 3,26:1 pour « attention » et 3,69:1 pour
+   « succès », là où 4,5:1 est exigé — d'autant que ce texte fait 11,5 px.
+
+   Quatre des cinq pastilles échouaient. Une seule était visible sur la page
+   auditée, donc une seule était signalée : corriger uniquement celle-là aurait
+   déplacé le problème vers la pastille affichée par l'écran suivant.
+
+   POURQUOI UN `color-mix` PLUTÔT QU'UNE COULEUR EN DUR
+   ---------------------------------------------------
+   Ardoise a six thèmes, dont « nuit » qui est sombre. Un texte assombri en dur
+   corrigerait les thèmes clairs et casserait le sombre, où il faut au
+   contraire ÉCLAIRCIR. On pousse donc la teinte de 35 % vers `--texte-sombre`,
+   la couleur de texte du thème courant — qui est par définition ce qui
+   contraste le mieux avec son fond. La même règle assombrit en clair et
+   éclaircit en sombre.
+
+   Marge retenue : 65 % d'accent donne 5,08:1 dans le pire cas des six thèmes.
+   72 % suffirait (4,64:1) mais ne laisse aucune réserve à un futur réglage de
+   palette.
+
+   La déclaration statique qui précède reste le repli des navigateurs sans
+   `color-mix` : ils gardent le rendu d'avant, jamais un texte illisible. */
+.sa-badge.ton-succes    { background: #E9F1EC; background: color-mix(in srgb, var(--vert-ok) 15%, transparent);   color: var(--vert-ok);   color: color-mix(in srgb, var(--vert-ok) 65%, var(--texte-sombre)); }
+.sa-badge.ton-danger    { background: #F7E7E5; background: color-mix(in srgb, var(--rouge) 13%, transparent);     color: var(--rouge);     color: color-mix(in srgb, var(--rouge) 65%, var(--texte-sombre)); }
+.sa-badge.ton-attention { background: #F5EAD9; background: color-mix(in srgb, var(--ocre) 16%, transparent);      color: var(--ocre-dark); color: color-mix(in srgb, var(--ocre-dark) 65%, var(--texte-sombre)); }
+.sa-badge.ton-info      { background: #E6ECEE; background: color-mix(in srgb, var(--encre) 14%, transparent);     color: var(--encre);     color: color-mix(in srgb, var(--encre) 65%, var(--texte-sombre)); }
+.sa-badge.ton-neutre    { background: #EFEDE6; background: color-mix(in srgb, var(--texte-att) 13%, transparent); color: var(--texte-att); color: color-mix(in srgb, var(--texte-att) 65%, var(--texte-sombre)); }
 
 .sa-pastille { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
 .sa-pastille.ton-succes { background: var(--vert-ok); }

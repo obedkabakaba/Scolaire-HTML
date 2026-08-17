@@ -50,8 +50,6 @@
     }
   };
 
-  // Appliqué immédiatement, avant le premier rendu : sinon la page
-  // s'afficherait un instant avec le rail au mauvais endroit.
   if (document.documentElement.getAttribute('data-theme') !== 'public') {
     window.ArdoiseDisposition.appliquer();
   }
@@ -59,17 +57,6 @@
 
 /* ==========================================================================
    Contraste minimal WCAG du thème Ardoise
-   --------------------------------------------------------------------------
-   Le Quality Gate navigateur mesure les couleurs réellement composées par
-   Chromium. Deux jetons historiques étaient juste sous 4,5:1 sur le fond
-   craie : `--texte-att` (4,43) et `--vert-ok` (4,42). Les valeurs ci-dessous
-   restent visuellement très proches, mais passent respectivement à ~4,63 et
-   ~5,07. Les opacités du Super Admin étaient, elles, destructrices pour le
-   contraste : un texte déjà atténué à 65 % tombait à 2,4:1.
-
-   Ces règles sont injectées ici parce que `theme.js` est le point commun déjà
-   chargé par les espaces applicatifs et le Super Admin. On ne duplique donc
-   pas quatre correctifs locaux qui pourraient diverger au prochain redesign.
    ========================================================================== */
 (function appliquerContrasteArdoise() {
   var style = document.createElement('style');
@@ -120,10 +107,6 @@ window.ARDOISE_THEME_DEFAUT = 'ardoise';
 
 (function () {
   var CLE_STOCKAGE = 'ardoise_theme';
-  /* L'ancien nom « Kivu » a pu être mémorisé sur l'appareil ou dans le
-     profil serveur. On le migre silencieusement vers « Yohali » : renommer
-     un thème ne doit ni réinitialiser l'apparence ni faire perdre le choix
-     d'un utilisateur existant. */
   var ALIASES = { kivu: 'yohali' };
 
   function clesValides() {
@@ -135,7 +118,6 @@ window.ARDOISE_THEME_DEFAUT = 'ardoise';
     return clesValides().indexOf(canonique) !== -1 ? canonique : window.ARDOISE_THEME_DEFAUT;
   }
 
-  /** Thème actuellement retenu sur cet appareil. */
   function themeActuel() {
     return normaliser(
       document.documentElement.getAttribute('data-theme') ||
@@ -144,83 +126,50 @@ window.ARDOISE_THEME_DEFAUT = 'ardoise';
     );
   }
 
-  /**
-   * Applique un thème immédiatement et le mémorise.
-   * @param {string} cle
-   * @param {{synchroniserServeur?: boolean}} options
-   */
   function appliquerTheme(cle, options) {
     var theme = normaliser(cle);
     var reglages = options || {};
-
     document.documentElement.setAttribute('data-theme', theme);
-
-    // Mémorisation locale : le thème s'affiche instantanément au prochain
-    // chargement, sans attendre la réponse du serveur.
     try {
       localStorage.setItem(CLE_STOCKAGE, theme);
-      if (sessionStorage.getItem('ardoise_refresh_token')) {
-        sessionStorage.setItem(CLE_STOCKAGE, theme);
-      }
-    } catch (e) { /* navigation privée : on continue sans mémoriser */ }
-
-    // Studio suppose un rail compact. On ne l'impose qu'une fois : dès que
-    // l'utilisateur touche au réglage, son choix prime définitivement.
+      if (sessionStorage.getItem('ardoise_refresh_token')) sessionStorage.setItem(CLE_STOCKAGE, theme);
+    } catch (e) {}
     try {
       if (theme === 'studio' && !localStorage.getItem('ardoise_nav_compact')) {
         localStorage.setItem('ardoise_nav_compact', 'oui');
       }
       if (window.ArdoiseDisposition) ArdoiseDisposition.appliquer();
-    } catch (e) { /* navigation privée */ }
-
+    } catch (e) {}
     document.dispatchEvent(new CustomEvent('ardoise:theme-change', { detail: { theme: theme } }));
-
-    if (reglages.synchroniserServeur !== false) {
-      enregistrerSurServeur(theme);
-    }
+    if (reglages.synchroniserServeur !== false) enregistrerSurServeur(theme);
     return theme;
   }
 
-  /**
-   * Enregistre le thème sur le compte de l'utilisateur pour qu'il le retrouve
-   * sur ses autres appareils. Échec silencieux : le thème local reste appliqué.
-   */
   function enregistrerSurServeur(theme) {
-    if (typeof appelApi !== 'function') return; // page publique (index, connexion)
+    if (typeof appelApi !== 'function') return;
     try {
       appelApi('/utilisateurs/moi', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ theme: theme })
       });
-    } catch (e) { /* hors ligne ou backend en veille : sans conséquence */ }
+    } catch (e) {}
   }
 
-  /**
-   * Aligne le thème local sur celui enregistré dans le compte.
-   * Utile quand l'utilisateur se connecte depuis un nouvel appareil.
-   */
   function synchroniserDepuisServeur() {
     if (typeof appelApi !== 'function') return;
-
-    // Un thème déjà mémorisé sur cet appareil FAIT FOI. Appliquer la valeur
-    // du serveur par-dessus provoquerait un changement d'apparence en cours
-    // de page, plusieurs centaines de millisecondes après l'affichage : c'est
-    // exactement le clignotement qu'on cherche à supprimer. Le serveur ne
-    // sert donc qu'à équiper un appareil qui n'a encore aucun réglage.
     var dejaChoisiIci = false;
     try {
       dejaChoisiIci = !!(localStorage.getItem(CLE_STOCKAGE) || sessionStorage.getItem(CLE_STOCKAGE));
-    } catch (e) { /* navigation privée */ }
+    } catch (e) {}
     if (dejaChoisiIci) return;
-
     appelApi('/utilisateurs/moi')
       .then(function (r) { return r && r.ok ? r.json() : null; })
       .then(function (profil) {
         if (!profil || !profil.theme) return;
         appliquerTheme(normaliser(profil.theme), { synchroniserServeur: false });
       })
-      .catch(function () { /* sans conséquence */ });
+      .catch(function () {});
   }
 
   window.ArdoiseTheme = {
@@ -230,11 +179,17 @@ window.ARDOISE_THEME_DEFAUT = 'ardoise';
     synchroniser: synchroniserDepuisServeur
   };
 
-  // Le thème est déjà posé par le script du <head> ; on se contente de vérifier
-  // qu'il est valide, puis de récupérer le réglage du compte en arrière-plan.
-  // Le script du <head> ne valide que la forme de la valeur ; c'est ici, une
-  // fois la vraie liste connue, qu'un thème inconnu est ramené au défaut.
-  // Immédiat et sans appel réseau : aucun clignotement possible.
   appliquerTheme(themeActuel(), { synchroniserServeur: false });
   synchroniserDepuisServeur();
+})();
+
+/* Correctifs UX communs de l'abonnement. Chargé depuis le seul fichier déjà
+   présent sur tous les écrans, afin de ne pas modifier chaque page une à une. */
+(function chargerSubscriptionUX() {
+  if (document.querySelector('script[data-ardoise-subscription-ux]')) return;
+  var s = document.createElement('script');
+  s.src = 'subscription-ux.js';
+  s.defer = true;
+  s.setAttribute('data-ardoise-subscription-ux', '');
+  (document.head || document.documentElement).appendChild(s);
 })();

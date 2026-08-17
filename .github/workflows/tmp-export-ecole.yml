@@ -1,4 +1,4 @@
-name: Temp export ecole asset
+name: Temp clean ecole alpha
 
 on:
   push:
@@ -8,20 +8,105 @@ on:
       - .github/workflows/tmp-export-ecole.yml
 
 jobs:
-  export:
+  clean:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
     steps:
       - uses: actions/checkout@v4
-      - name: Prepare exact asset
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install image tools
+        run: pip install --disable-pip-version-check pillow scipy
+      - name: Clean exact ecole asset
         run: |
-          mkdir -p export
-          cp public/site/illustrations/ecole.webp export/ecole-original.webp
-      - name: Upload exact asset
+          python - <<'PY'
+          from PIL import Image
+          import numpy as np
+          from scipy import ndimage
+          from pathlib import Path
+
+          path = Path('public/site/illustrations/ecole.webp')
+          img = Image.open(path).convert('RGBA')
+          data = np.array(img)
+          rgb = data[:, :, :3].astype(np.int16)
+          alpha = data[:, :, 3].copy()
+
+          def remove_connected_neutral(box, lum_min, chroma_max):
+              x0, y0, x1, y1 = box
+              sa = alpha[y0:y1, x0:x1]
+              sr = rgb[y0:y1, x0:x1]
+              lum = sr.mean(2)
+              chroma = sr.max(2) - sr.min(2)
+              candidate = (sa > 0) & (lum >= lum_min) & (chroma <= chroma_max)
+              transparent = sa == 0
+              passable = transparent | candidate
+              labels, _ = ndimage.label(passable, np.ones((3, 3), np.uint8))
+              exterior_labels = np.unique(labels[transparent])
+              remove = np.isin(labels, exterior_labels) & candidate
+              sa[remove] = 0
+              alpha[y0:y1, x0:x1] = sa
+
+          # Retire uniquement les résidus gris/blancs extérieurs visibles en mode sombre.
+          for box, lum_min, chroma_max in [
+              ((135, 495, 345, 555), 140, 12),
+              ((250, 460, 430, 485), 145, 22),
+              ((745, 462, 885, 492), 145, 22),
+              ((690, 550, 840, 635), 120, 12),
+              ((80, 555, 545, 760), 120, 12),
+              ((450, 645, 810, 745), 120, 12),
+          ]:
+              remove_connected_neutral(box, lum_min, chroma_max)
+
+          # Nettoyage du canal alpha et suppression des franges claires, sans redessiner l'image.
+          alpha[alpha <= 5] = 0
+          solid = alpha >= 250
+          dist, indices = ndimage.distance_transform_edt(~solid, return_indices=True)
+          wispy = (alpha > 0) & (alpha < 32) & (dist > 3.5)
+          alpha[wispy] = 0
+          edge = (alpha > 0) & (alpha < 255) & (dist <= 3.5)
+          yi, xi = indices
+          nearest_rgb = rgb[yi, xi]
+          out_rgb = rgb.copy()
+          out_rgb[edge] = nearest_rgb[edge]
+          alpha[(alpha > 0) & (alpha < 8)] = 0
+
+          out = np.dstack([
+              np.clip(out_rgb, 0, 255).astype(np.uint8),
+              alpha.astype(np.uint8),
+          ])
+          cleaned = Image.fromarray(out, 'RGBA')
+          cleaned.save(path, 'WEBP', quality=90, method=6, lossless=False, exact=True)
+
+          export = Path('export')
+          export.mkdir(exist_ok=True)
+          cleaned.save(export / 'ecole-corrige.png', optimize=True)
+          for name, bg in [('dark', (10, 18, 35, 255)), ('light', (245, 247, 250, 255))]:
+              canvas = Image.new('RGBA', cleaned.size, bg)
+              canvas.alpha_composite(cleaned)
+              canvas.convert('RGB').save(export / f'preview-{name}.jpg', quality=95)
+
+          print('output bytes:', path.stat().st_size)
+          PY
+      - name: Upload verification previews
         uses: actions/upload-artifact@v4
         with:
-          name: ecole-exact-asset
-          path: export/ecole-original.webp
+          name: ecole-cleaned-verification
+          path: |
+            public/site/illustrations/ecole.webp
+            export/ecole-corrige.png
+            export/preview-dark.jpg
+            export/preview-light.jpg
           if-no-files-found: error
           retention-days: 1
+      - name: Commit cleaned image to temp branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/site/illustrations/ecole.webp
+          git diff --cached --quiet && exit 0
+          git commit -m "Corrige le détourage de l'illustration école"
+          git push origin HEAD:tmp/ecole-detourage

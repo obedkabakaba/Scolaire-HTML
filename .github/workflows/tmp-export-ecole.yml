@@ -1,0 +1,27 @@
+name: Temp export ecole asset
+
+on:
+  push:
+    branches:
+      - tmp/ecole-detourage
+    paths:
+      - .github/workflows/tmp-export-ecole.yml
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare exact asset
+        run: |
+          mkdir -p export
+          cp public/site/illustrations/ecole.webp export/ecole-original.webp
+      - name: Upload exact asset
+        uses: actions/upload-artifact@v4
+        with:
+          name: ecole-exact-asset
+          path: export/ecole-original.webp
+          if-no-files-found: error
+          retention-days: 1

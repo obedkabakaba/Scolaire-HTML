@@ -2,6 +2,17 @@
 (function () {
   'use strict';
 
+  function sessionEcoleActive() {
+    try {
+      return Boolean(
+        sessionStorage.getItem('ardoise_access_token')
+        || localStorage.getItem('ardoise_access_token')
+      );
+    } catch (e) {
+      return Boolean(window.ArdoiseSession && ArdoiseSession.connecte && ArdoiseSession.connecte());
+    }
+  }
+
   function cleMessage(message) {
     var normalise = String(message || '').replace(/\s+/g, ' ').trim().slice(0, 180);
     return 'ardoise_avertissement_offre:' + normalise;
@@ -29,6 +40,7 @@
   }
 
   function installerConfirmation() {
+    if (!sessionEcoleActive()) return false;
     if (!window.ArdoiseUI || typeof window.ArdoiseUI.confirmer !== 'function') return false;
     if (window.ArdoiseUI.confirmer.__abonnementCorrige) return true;
 
@@ -54,6 +66,10 @@
   }
 
   function corrigerLiens(racine) {
+    // Le site public conserve son formulaire commercial. Ces redirections ne
+    // concernent que l'application d'une école déjà authentifiée.
+    if (!sessionEcoleActive()) return;
+
     var scope = racine && racine.querySelectorAll ? racine : document;
     scope.querySelectorAll('a').forEach(function (a) {
       var texte = String(a.textContent || '').trim().toLowerCase();

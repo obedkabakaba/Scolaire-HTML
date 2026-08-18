@@ -24,9 +24,13 @@
     async rendu(conteneur, params) {
       const actions = document.getElementById('sa-entete-actions');
       if (actions) {
-        actions.innerHTML = `<button class="sa-bouton sa-bouton-principal" id="btn-nouvelle-ecole">+ Nouvelle école</button>`;
+        actions.innerHTML = `
+          <button class="sa-bouton sa-bouton-secondaire" id="btn-ecole-test">🧪 École de test</button>
+          <button class="sa-bouton sa-bouton-principal" id="btn-nouvelle-ecole">+ Nouvelle école</button>`;
         document.getElementById('btn-nouvelle-ecole')
           .addEventListener('click', () => ouvrirCreationEcole());
+        document.getElementById('btn-ecole-test')
+          .addEventListener('click', () => ouvrirCreationEcole({ modeTest: true }));
       }
 
       conteneur.innerHTML = '';
@@ -61,6 +65,17 @@
           options: plans.map((p) => ({ valeur: p.id, libelle: p.nom }))
         },
         {
+          /* Trois états et non deux : on cherche tantôt ses bacs à sable,
+             tantôt une liste de clients qui n'en contienne aucun. Un filtre
+             binaire « masquer les écoles de test » ne répondrait qu'à la
+             seconde question. */
+          type: 'select', nom: 'mode_test', libelle: 'Test et clients', valeur: params.mode_test,
+          options: [
+            { valeur: '1', libelle: 'Écoles de test uniquement' },
+            { valeur: '0', libelle: 'Clients uniquement' }
+          ]
+        },
+        {
           type: 'select', nom: 'type_enseignement', libelle: 'Tous les cycles', valeur: params.type_enseignement,
           options: [
             { valeur: 'primaire', libelle: 'Primaire' },
@@ -87,13 +102,20 @@
             {
               cle: 'nom', titre: 'École', triable: true,
               rendu: (l) => `<strong>${esc(l.nom)}</strong>
+                             ${l.mode_test ? ' ' + ui.badge('test', 'info') : ''}
                              <div class="sa-muet" style="font-size:.76rem">${esc(l.code)}${l.ville ? ' · ' + esc(l.ville) : ''}</div>`
             },
             { cle: 'statut', titre: 'Statut', triable: true, rendu: (l) => ui.badgeStatut(l.statut) },
             {
               cle: 'plan_nom', titre: 'Abonnement',
-              rendu: (l) => `${l.plan_nom ? esc(l.plan_nom) : '<span class="sa-muet">aucun</span>'}
-                             <div style="margin-top:3px">${ui.badgeStatut(l.statut_abonnement)}</div>`
+              // Une école de test n'a pas d'abonnement « aucun » : elle n'en a
+              // pas besoin. Afficher le vide laisserait croire à un oubli de
+              // facturation là où il y a une décision assumée.
+              rendu: (l) => l.mode_test
+                ? '<span class="sa-muet">sans objet</span><div style="margin-top:3px">'
+                  + ui.badge('accès de test', 'info') + '</div>'
+                : `${l.plan_nom ? esc(l.plan_nom) : '<span class="sa-muet">aucun</span>'}
+                   <div style="margin-top:3px">${ui.badgeStatut(l.statut_abonnement)}</div>`
             },
             { cle: 'eleves', titre: 'Élèves', classe: 'sa-num', triable: true, rendu: (l) => fmt.nombre(l.nb_eleves) },
             { cle: 'utilisateurs', titre: 'Utilisateurs', classe: 'sa-num', triable: true, rendu: (l) => fmt.nombre(l.nb_utilisateurs) },
@@ -172,9 +194,19 @@
     const directeur = detail.directeur_principal;
     const plans = (SA.referentiels && SA.referentiels.plans) || [];
     const suspendue = ecole.statut === 'suspendu';
+    const enTest = ecole.mode_test === true;
 
-    modale.querySelector('.sa-modale-entete h2').textContent = ecole.nom;
+    modale.querySelector('.sa-modale-entete h2').textContent =
+      ecole.nom + (enTest ? '  🧪' : '');
     modale.querySelector('.sa-modale-corps').innerHTML = `
+      ${enTest ? `<div class="sa-note" style="margin-bottom:14px">
+        <strong>École de test.</strong> Accès complet à toutes les fonctionnalités,
+        sans abonnement et sans aucun paiement enregistré. Elle est exclue du
+        chiffre d'affaires, du MRR et du nombre d'écoles clientes.
+        ${ecole.mode_test_motif ? `<br><span class="sa-muet">Motif : ${esc(ecole.mode_test_motif)}</span>` : ''}
+        ${ecole.mode_test_active_at ? `<br><span class="sa-muet">Activé le ${esc(fmt.dateHeure(ecole.mode_test_active_at))}</span>` : ''}
+      </div>` : ''}
+
       <div class="sa-grille-stats" style="margin-bottom:18px">
         ${ui.carteStat({ valeur: fmt.nombre(detail.stats && detail.stats.nb_eleves), etiquette: 'Élèves actifs' })}
         ${ui.carteStat({ valeur: fmt.nombre(detail.stats && detail.stats.nb_utilisateurs), etiquette: 'Utilisateurs' })}
@@ -198,10 +230,14 @@
           <div class="sa-ligne-info"><span>Ville / Province</span><span>${esc([ecole.ville, ecole.province].filter(Boolean).join(' · ') || '—')}</span></div>
           <div class="sa-ligne-info"><span>Type d'enseignement</span><span>${esc(String(ecole.type_enseignement || '').replace('_', ' '))}</span></div>
           <div class="sa-ligne-info"><span>Créée le</span><span>${esc(fmt.date(ecole.created_at))}</span></div>
+          <div class="sa-ligne-info"><span>Mode test</span><span>${enTest ? ui.badge('activé', 'info') : '<span class="sa-muet">non</span>'}</span></div>
         </div>
         <div style="display:flex;gap:9px;margin-top:16px;flex-wrap:wrap">
           <button class="sa-bouton ${suspendue ? 'sa-bouton-principal' : 'sa-bouton-danger'} sa-bouton-petit" id="btn-statut">
             ${suspendue ? "Réactiver l'école" : "Suspendre l'école"}
+          </button>
+          <button class="sa-bouton ${enTest ? 'sa-bouton-secondaire' : 'sa-bouton-principal'} sa-bouton-petit" id="btn-mode-test">
+            ${enTest ? 'Désactiver le mode test' : '🧪 Passer en école de test'}
           </button>
           <button class="sa-bouton sa-bouton-secondaire sa-bouton-petit" id="btn-explorer">Explorer l'école</button>
           <button class="sa-bouton sa-bouton-secondaire sa-bouton-petit" id="btn-observer">Voir comme Directeur</button>
@@ -361,6 +397,70 @@
       }
     });
 
+    modale.querySelector('#btn-mode-test').addEventListener('click', async () => {
+      const applique = async (corps) => {
+        try {
+          await SA.api(`/admin/ecoles/${ecoleId}/mode-test`, {
+            method: 'PATCH',
+            body: JSON.stringify(corps)
+          });
+          SA.toast(corps.actif
+            ? 'Mode test activé : accès complet, sans abonnement ni paiement.'
+            : "Mode test désactivé : l'école repasse sous le régime des abonnements.",
+            'succes');
+          modale.fermer();
+          if (surChangement) surChangement();
+        } catch (erreur) {
+          SA.toast(erreur.message, 'erreur');
+        }
+      };
+
+      if (enTest) {
+        // La désactivation est le geste RISQUÉ des deux : une école de test
+        // sans abonnement se referme dès qu'on lui retire le drapeau. Le
+        // message le dit, plutôt que de laisser le Super Admin le découvrir
+        // en recevant l'appel du directeur.
+        const confirme = await SA.confirmer({
+          titre: 'Désactiver le mode test',
+          message: `« ${ecole.nom} » repassera sous le régime des abonnements. `
+                 + `Sans abonnement actif, son accès sera de nouveau bloqué. `
+                 + `Aucune donnée n'est supprimée.`,
+          libelleValider: 'Désactiver',
+          danger: true
+        });
+        if (confirme) await applique({ actif: false });
+        return;
+      }
+
+      // L'activation demande un motif. Il n'est pas obligatoire côté serveur,
+      // mais le champ est là parce que dans six mois, « pourquoi cette école
+      // a-t-elle un accès gratuit ? » sera une vraie question, et le journal
+      // sera le seul endroit à pouvoir y répondre.
+      const demande = SA.modale({
+        titre: 'Passer en école de test',
+        sousTitre: `« ${ecole.nom} » aura accès à toutes les fonctionnalités.`,
+        contenu: `
+          <p class="sa-texte">
+            Aucun abonnement ne sera créé et aucun paiement ne sera enregistré.
+            L'école est exclue du chiffre d'affaires, du MRR et du nombre
+            d'écoles clientes. Si elle était suspendue, elle est réactivée.
+          </p>
+          <label class="sa-champ-bloc"><span>Motif (recommandé)</span>
+            <input class="sa-champ" id="f-motif-test"
+                   placeholder="Démonstration commerciale, recette interne, formation…" />
+          </label>`,
+        actions: `
+          <button class="sa-bouton sa-bouton-secondaire" data-role="annuler">Annuler</button>
+          <button class="sa-bouton sa-bouton-principal" data-role="valider">Activer le mode test</button>`
+      });
+      demande.querySelector('[data-role="annuler"]').addEventListener('click', () => demande.fermer());
+      demande.querySelector('[data-role="valider"]').addEventListener('click', async () => {
+        const motif = demande.querySelector('#f-motif-test').value.trim();
+        demande.fermer();
+        await applique({ actif: true, motif: motif || undefined });
+      });
+    });
+
     const boutonEncaisser = modale.querySelector('#btn-encaisser');
     if (boutonEncaisser && abonnement) {
       boutonEncaisser.addEventListener('click', () => {
@@ -443,12 +543,24 @@
      Création d'une école
      ====================================================================== */
 
-  function ouvrirCreationEcole() {
+  /**
+   * Formulaire de création, en deux variantes.
+   *
+   * `{ modeTest: true }` ne masque pas seulement le choix du plan : il change
+   * ce qui est CRÉÉ. Une école de test naît sans aucune ligne dans
+   * `abonnements`, ce qui est précisément la raison d'être du mode — un
+   * abonnement offert resterait un abonnement, avec son échéance, ses relances
+   * de renouvellement et sa place dans le compte des écoles sous contrat.
+   */
+  function ouvrirCreationEcole(options = {}) {
+    const modeTest = options.modeTest === true;
     const plans = (SA.referentiels && SA.referentiels.plans) || [];
 
     const modale = SA.modale({
-      titre: 'Nouvelle école',
-      sousTitre: "Crée l'établissement, son abonnement et le premier compte Directeur.",
+      titre: modeTest ? 'Nouvelle école de test' : 'Nouvelle école',
+      sousTitre: modeTest
+        ? "Accès complet à toutes les fonctionnalités, sans abonnement ni paiement."
+        : "Crée l'établissement, son abonnement et le premier compte Directeur.",
       contenu: `
         <h4 class="sa-section-titre">École</h4>
         <div class="sa-grille-3">
@@ -465,12 +577,24 @@
               <option value="secondaire">Secondaire uniquement</option>
             </select>
           </label>
-          <label class="sa-champ-bloc"><span>Plan d'abonnement *</span>
-            <select class="sa-champ" id="f-plan" required>
-              ${plans.map((p) => `<option value="${esc(p.id)}">${esc(p.nom)} — ${esc(fmt.montant(p.prix, p.devise))}</option>`).join('')}
-            </select>
-          </label>
+          ${modeTest ? `
+            <label class="sa-champ-bloc"><span>Motif (recommandé)</span>
+              <input class="sa-champ" id="f-motif-test"
+                     placeholder="Démonstration commerciale, recette interne, formation…" />
+            </label>
+          ` : `
+            <label class="sa-champ-bloc"><span>Plan d'abonnement *</span>
+              <select class="sa-champ" id="f-plan" required>
+                ${plans.map((p) => `<option value="${esc(p.id)}">${esc(p.nom)} — ${esc(fmt.montant(p.prix, p.devise))}</option>`).join('')}
+              </select>
+            </label>
+          `}
         </div>
+        ${modeTest ? `<p class="sa-note">
+          Aucun abonnement n'est créé et aucun paiement n'est enregistré. L'école
+          est exclue du chiffre d'affaires, du MRR et du nombre d'écoles clientes.
+          Le mode test se désactive à tout moment depuis sa fiche.
+        </p>` : ''}
 
         <h4 class="sa-section-titre" style="margin-top:14px">Premier compte Directeur</h4>
         <div class="sa-grille-3">
@@ -484,7 +608,9 @@
         <p class="sa-note">Le directeur devra changer ce mot de passe à sa première connexion.</p>`,
       actions: `
         <button class="sa-bouton sa-bouton-secondaire" data-role="annuler">Annuler</button>
-        <button class="sa-bouton sa-bouton-principal" data-role="creer">Créer l'école</button>`,
+        <button class="sa-bouton sa-bouton-principal" data-role="creer">
+          ${modeTest ? "Créer l'école de test" : "Créer l'école"}
+        </button>`,
       large: true
     });
 
@@ -506,14 +632,22 @@
         nom: lire('#f-nom'), code: lire('#f-code'), ville: lire('#f-ville'),
         province: lire('#f-province'), email: lire('#f-email'),
         telephone: lire('#f-telephone'), type_enseignement: lire('#f-type'),
-        plan_id: lire('#f-plan'),
         directeur: {
           nom: lire('#f-dir-nom'), prenom: lire('#f-dir-prenom'),
           email: lire('#f-dir-email'), password: lire('#f-dir-mdp')
         }
       };
 
-      if (!corps.nom || !corps.code || !corps.plan_id || !corps.directeur.email || !corps.directeur.password) {
+      if (modeTest) {
+        corps.mode_test = true;
+        const motif = lire('#f-motif-test');
+        if (motif) corps.mode_test_motif = motif;
+      } else {
+        corps.plan_id = lire('#f-plan');
+      }
+
+      if (!corps.nom || !corps.code || !corps.directeur.email || !corps.directeur.password
+          || (!modeTest && !corps.plan_id)) {
         return SA.toast('Renseignez les champs marqués d\'une étoile.', 'attention');
       }
 
@@ -521,18 +655,31 @@
       bouton.textContent = 'Création…';
       try {
         await SA.api('/admin/ecoles', { method: 'POST', body: JSON.stringify(corps) });
-        SA.toast('École créée.', 'succes');
+        SA.toast(modeTest
+          ? 'École de test créée : accès complet, sans abonnement ni paiement.'
+          : 'École créée.', 'succes');
         modale.fermer();
         await SA.chargerReferentiels(true);
         SA.rafraichirVue();
       } catch (erreur) {
         SA.toast(erreur.message, 'erreur');
         bouton.disabled = false;
-        bouton.textContent = "Créer l'école";
+        bouton.textContent = modeTest ? "Créer l'école de test" : "Créer l'école";
       }
     });
   }
 
+
+  /* Exposé pour la palette de commandes (Ctrl/Cmd + K), qui ne connaît pas la
+     portée de ce module. C'est le seul point d'entrée public de ce fichier :
+     tout le reste passe par les vues enregistrées. */
+  SA.ouvrirEcoleDeTest = function () {
+    // La palette peut être ouverte depuis n'importe quel écran. On revient sur
+    // la liste des écoles pour que la création, une fois terminée, rafraîchisse
+    // quelque chose de visible plutôt que la page Finance.
+    if (!SA.routeCourante || SA.routeCourante.cle !== 'ecoles') SA.naviguer('ecoles');
+    ouvrirCreationEcole({ modeTest: true });
+  };
 
   /* ======================================================================
      Encaissement d'un paiement d'abonnement

@@ -69,6 +69,24 @@
 
     { groupe: 'Espace existant', icone: '📊', libelle: 'Tableau de bord', route: 'tableau-de-bord' },
     { groupe: 'Espace existant', icone: '🏫', libelle: 'Toutes les écoles', route: 'ecoles' },
+
+    /* École de test — la seule commande de cette palette qui ÉCRIT.
+       ------------------------------------------------------------------
+       Les autres entrées naviguent ; celle-ci ouvre un formulaire de
+       création. Elle est ici plutôt qu'enfouie dans un menu parce que c'est
+       une opération d'exploitation, faite en dépannage, souvent au téléphone
+       avec une école bloquée — on la cherche par son nom, pas par son
+       emplacement. */
+    { groupe: 'Écoles de test', icone: '🧪', libelle: 'Créer une école de test',
+      action: () => {
+        if (typeof SA.ouvrirEcoleDeTest === 'function') return SA.ouvrirEcoleDeTest();
+        SA.naviguer('ecoles', { mode_test: '1' });
+      } },
+    { groupe: 'Écoles de test', icone: '🧪', libelle: 'Voir les écoles de test',
+      route: 'ecoles', params: { mode_test: '1' } },
+    { groupe: 'Écoles de test', icone: '🏫', libelle: 'Voir les écoles clientes (hors test)',
+      route: 'ecoles', params: { mode_test: '0' } },
+
     { groupe: 'Espace existant', icone: '👥', libelle: 'Utilisateurs', route: 'utilisateurs' },
     { groupe: 'Espace existant', icone: '💰', libelle: 'Finance', route: 'finance' },
     { groupe: 'Espace existant', icone: '💳', libelle: 'Offres', route: 'offres' },

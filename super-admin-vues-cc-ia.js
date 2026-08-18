@@ -212,7 +212,7 @@ Je ne peux modifier ni le code, ni la configuration, ni les données : aucun de 
           <div class="cc-filtres">
             <label class="cc-filtre cc-filtre-large"><span>Votre question</span>
               <input class="sa-champ" id="cc-conseil-q"
-                     placeholder="ex. faut-il créer une offre intermédiaire entre 250 et 600 élèves ?"></label>
+                     placeholder="ex. faut-il ouvrir l'espace Comptabilité dès Prime ?"></label>
           </div>
         </section>
 

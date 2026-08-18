@@ -72,6 +72,8 @@ MENU = [
                      "Ascension, Prime, Pilote, Infinite"),
                     ("/tarifs/comparer/", "Comparer les offres",
                      "Le tableau ligne par ligne"),
+                    ("/essai/", "Essai gratuit 7 jours",
+                     "Ouvrir un espace d'école, sans carte bancaire"),
                 ],
             },
         ],
@@ -152,7 +154,7 @@ def _menu_mobile():
     parts.append(
         '<div class="actions-mobile">'
         '<a class="bouton secondaire pleine-largeur" href="/connexion.html">Se connecter</a>'
-        '<a class="bouton ocre pleine-largeur" href="/contact/">Découvrir Ardoise</a>'
+        '<a class="bouton ocre pleine-largeur" href="/essai/">Essayer gratuitement</a>'
         "</div>"
     )
     parts.append("</div></div>")
@@ -171,7 +173,7 @@ def entete(actif):
     <div class="actions-entete">
       <button class="bascule-theme" data-bascule-theme type="button" aria-label="Changer de thème">☾</button>
       <a class="lien-connexion" href="/connexion.html">Se connecter</a>
-      <a class="bouton ocre petit" href="/contact/">Découvrir Ardoise</a>
+      <a class="bouton ocre petit" href="/essai/">Essayer gratuitement</a>
       <button class="bascule-menu" type="button" aria-expanded="false"
               aria-controls="panneau-mobile" aria-label="Ouvrir le menu">
         <span></span><span></span><span></span>
@@ -214,6 +216,7 @@ PIED = """<footer class="pied">
       <div>
         <h2>Offres et services</h2>
         <ul>
+          <li><a href="/essai/">Essai gratuit</a></li>
           <li><a href="/tarifs/">Tarifs</a></li>
           <li><a href="/tarifs/comparer/">Comparer les offres</a></li>
           <li><a href="/services/installation/">Installation</a></li>

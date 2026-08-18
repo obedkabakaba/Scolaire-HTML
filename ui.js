@@ -1993,9 +1993,15 @@
 
           var message;
           if (corps.code === 'plafond_atteint') {
+            /* Depuis la refonte des abonnements, ce code ne concerne PLUS des
+               volumes de données — élèves, comptes, classes et archives sont
+               illimités partout. Il ne reste que les deux compteurs à coût
+               réel : générations d'IA et e-mails sortants. Le message ne doit
+               donc plus parler de « créations suspendues », qui ferait croire
+               à un plafond d'élèves rétabli. */
             message = corps.message
-                    + ' Vos données restent intactes et modifiables : seules les créations '
-                    + 'supplémentaires sont suspendues.';
+                    + ' Aucune donnée n’est touchée : le reste d’Ardoise '
+                    + 'continue de fonctionner normalement.';
           } else {
             var quoi = LIBELLES[corps.fonctionnalite] || 'ce module';
             message = 'Votre abonnement ne comprend pas ' + quoi + '. '

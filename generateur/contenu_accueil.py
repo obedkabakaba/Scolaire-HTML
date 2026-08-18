@@ -37,11 +37,12 @@ CORPS = """
         d'Afrique francophone qui travaillent avec les mêmes contraintes.
       </p>
       <div class="groupe-cta">
-        <a class="bouton ocre" href="/fonctionnalites/">Découvrir Ardoise</a>
+        <a class="bouton ocre" href="/essai/">Essayer gratuitement 7 jours</a>
         <a class="bouton secondaire" href="/tarifs/">Voir les offres</a>
       </div>
       <p class="mention-cta">
-        À partir de 35&nbsp;$ par mois. Sans engagement en mensuel.
+        Essai gratuit sans carte bancaire. Ensuite à partir de 30&nbsp;$ par mois,
+        sans engagement en mensuel, avec un nombre d'élèves et de comptes illimité.
         Fonctionne sur téléphone, et continue de fonctionner quand la connexion tombe.
       </p>
     </div>
@@ -221,22 +222,23 @@ CORPS = """
       <h2>Quatre offres, un seul produit</h2>
       <p class="chapeau">
         Aucune offre n'est une version amputée : le cœur du métier — élèves, notes,
-        bulletins, présences, frais — est dans les quatre. Ce qui change est la
-        taille de l'école et la profondeur de l'administration.
+        bulletins, présences, frais — est dans les quatre, sans limite de nombre
+        d'élèves ni de comptes. Ce qui change est l'étendue des métiers couverts
+        et la profondeur de l'administration.
       </p>
     </div>
 
     <div class="grille-offres compacte">
       <article class="offre" data-offre="ascension" data-devise="USD"
-        data-prix-mensuel="35"  data-mois-mensuel="35"    data-eco-mensuel="0"  data-pct-mensuel="0"
-        data-prix-semestriel="193" data-mois-semestriel="32.17" data-eco-semestriel="17" data-pct-semestriel="8"
-        data-prix-annuel="350"  data-mois-annuel="29.17"  data-eco-annuel="70"  data-pct-annuel="17">
+        data-prix-mensuel="30"  data-mois-mensuel="30"    data-eco-mensuel="0"  data-pct-mensuel="0"
+        data-prix-semestriel="165" data-mois-semestriel="27.50" data-eco-semestriel="15" data-pct-semestriel="8"
+        data-prix-annuel="300"  data-mois-annuel="25"  data-eco-annuel="60"  data-pct-annuel="17">
         @ILLUS_ASCENSION@
         <h3 class="nom">Ascension</h3>
         <div class="positionnement">Digitaliser l'essentiel</div>
-        <div class="prix" data-prix><span class="devise">$</span>35</div>
-        <div class="par-mois" data-par-mois>par mois</div>
-        <div class="cible">Jusqu'à 250 élèves.</div>
+        <div class="prix" data-prix><span class="devise">$</span>300<span class="periode-prix">/ an</span></div>
+        <div class="par-mois" data-par-mois>soit 25&nbsp;$ par mois</div>
+        <div class="cible">Le cœur du métier, élèves illimités.</div>
         <a class="bouton secondaire pleine-largeur" href="/tarifs/#ascension">Détail de l'offre</a>
       </article>
 
@@ -248,9 +250,9 @@ CORPS = """
         @ILLUS_PRIME@
         <h3 class="nom">Prime</h3>
         <div class="positionnement">Automatiser et communiquer</div>
-        <div class="prix" data-prix><span class="devise">$</span>59</div>
-        <div class="par-mois" data-par-mois>par mois</div>
-        <div class="cible">De 250 à 600 élèves.</div>
+        <div class="prix" data-prix><span class="devise">$</span>590<span class="periode-prix">/ an</span></div>
+        <div class="par-mois" data-par-mois>soit 49,17&nbsp;$ par mois</div>
+        <div class="cible">Emploi du temps, discipline, communication.</div>
         <a class="bouton ocre pleine-largeur" href="/tarifs/#prime">Détail de l'offre</a>
       </article>
 
@@ -261,9 +263,9 @@ CORPS = """
         @ILLUS_PILOTE@
         <h3 class="nom">Pilote</h3>
         <div class="positionnement">Piloter l'établissement</div>
-        <div class="prix" data-prix><span class="devise">$</span>99</div>
-        <div class="par-mois" data-par-mois>par mois</div>
-        <div class="cible">De 600 à 1 500 élèves.</div>
+        <div class="prix" data-prix><span class="devise">$</span>990<span class="periode-prix">/ an</span></div>
+        <div class="par-mois" data-par-mois>soit 82,50&nbsp;$ par mois</div>
+        <div class="cible">Comptabilité, concours, orientation.</div>
         <a class="bouton secondaire pleine-largeur" href="/tarifs/#pilote">Détail de l'offre</a>
       </article>
 
@@ -273,10 +275,10 @@ CORPS = """
         data-prix-annuel="1590" data-mois-annuel="132.50" data-eco-annuel="318" data-pct-annuel="17">
         @ILLUS_INFINITE@
         <h3 class="nom">Infinite</h3>
-        <div class="positionnement">Exploiter Ardoise sans limite</div>
-        <div class="prix" data-prix><span class="devise">$</span>159</div>
-        <div class="par-mois" data-par-mois>par mois</div>
-        <div class="cible">Au-delà de 1 500 élèves.</div>
+        <div class="positionnement">Exploiter Ardoise de bout en bout</div>
+        <div class="prix" data-prix><span class="devise">$</span>1&#8239;590<span class="periode-prix">/ an</span></div>
+        <div class="par-mois" data-par-mois>soit 132,50&nbsp;$ par mois</div>
+        <div class="cible">Analytique avancée, WhatsApp, support prioritaire.</div>
         <a class="bouton secondaire pleine-largeur" href="/tarifs/#infinite">Détail de l'offre</a>
       </article>
     </div>
@@ -423,7 +425,7 @@ JSONLD = [
             "Assistance par intelligence artificielle",
         ],
         "offers": [
-            {"@type": "Offer", "name": "Ardoise Ascension", "price": "35", "priceCurrency": "USD",
+            {"@type": "Offer", "name": "Ardoise Ascension", "price": "30", "priceCurrency": "USD",
              "url": f"{SITE}/tarifs/", "availability": "https://schema.org/InStock"},
             {"@type": "Offer", "name": "Ardoise Prime", "price": "59", "priceCurrency": "USD",
              "url": f"{SITE}/tarifs/", "availability": "https://schema.org/InStock"},
@@ -475,6 +477,6 @@ def construire():
         "index.html", "/",
         "Logiciel de gestion scolaire pour les écoles de la RDC — Ardoise",
         "Élèves, notes, bulletins officiels, présences et frais scolaires en une seule "
-        "plateforme, conçue pour les écoles de la RDC. À partir de 35 $ par mois.",
+        "plateforme pour les écoles de la RDC. Essai gratuit 7 jours, puis dès 30 $/mois.",
         CORPS, actif=None, jsonld=JSONLD,
     )

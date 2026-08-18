@@ -1,4 +1,4 @@
-name: Redetourer image cahiers
+name: Export cahiers for precise cutout
 
 on:
   push:
@@ -9,115 +9,18 @@ permissions:
   contents: write
 
 jobs:
-  redetourage:
+  export:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Installer Pillow
-        run: python -m pip install --upgrade pillow
-
-      - name: Nettoyer le fond raccordé aux bords
-        shell: bash
+      - name: Export image as base64 text
         run: |
-          python - <<'PY'
-          from PIL import Image, ImageFilter
-          from pathlib import Path
-          from collections import deque
-          import statistics, math, os
-
-          path = Path('public/site/illustrations/cahiers.webp')
-          before = path.stat().st_size
-          im = Image.open(path).convert('RGBA')
-          w, h = im.size
-          px = im.load()
-
-          # Échantillonne le fond sur les bords sans toucher au sujet central.
-          edge = []
-          step = max(1, min(w, h)//120)
-          for x in range(0, w, step):
-              for y in (0, h-1):
-                  r,g,b,a = px[x,y]
-                  if a > 180: edge.append((r,g,b))
-          for y in range(0, h, step):
-              for x in (0, w-1):
-                  r,g,b,a = px[x,y]
-                  if a > 180: edge.append((r,g,b))
-          if not edge:
-              raise SystemExit('Aucun fond opaque détecté sur les bords.')
-
-          bg = tuple(int(statistics.median([c[i] for c in edge])) for i in range(3))
-          print('Couleur de fond estimée:', bg)
-
-          def dist(rgb):
-              return math.sqrt(sum((rgb[i]-bg[i])**2 for i in range(3)))
-
-          # Flood-fill uniquement depuis les bords : les zones claires internes du dessin restent intactes.
-          q = deque()
-          seen = bytearray(w*h)
-          def push(x,y):
-              idx=y*w+x
-              if seen[idx]: return
-              r,g,b,a=px[x,y]
-              if a == 0 or dist((r,g,b)) <= 72:
-                  seen[idx]=1; q.append((x,y))
-          for x in range(w):
-              push(x,0); push(x,h-1)
-          for y in range(h):
-              push(0,y); push(w-1,y)
-
-          mask = Image.new('L',(w,h),255)
-          mp = mask.load()
-          while q:
-              x,y=q.popleft()
-              r,g,b,a=px[x,y]
-              d=dist((r,g,b))
-              # Fond proche = transparent. Zone de transition = bord doux.
-              if a == 0 or d <= 42:
-                  mp[x,y]=0
-              elif d <= 72:
-                  mp[x,y]=int(255*(d-42)/30)
-              else:
-                  continue
-              for nx,ny in ((x-1,y),(x+1,y),(x,y-1),(x,y+1)):
-                  if 0<=nx<w and 0<=ny<h:
-                      idx=ny*w+nx
-                      if not seen[idx]:
-                          rr,gg,bb,aa=px[nx,ny]
-                          if aa==0 or dist((rr,gg,bb))<=72:
-                              seen[idx]=1; q.append((nx,ny))
-
-          # Très léger lissage du masque pour supprimer les halos durs.
-          mask = mask.filter(ImageFilter.GaussianBlur(0.7))
-          original_alpha = im.getchannel('A')
-          # Ne jamais rendre plus opaque une zone déjà transparente.
-          import PIL.ImageChops as IC
-          final_alpha = IC.darker(original_alpha, mask)
-          im.putalpha(final_alpha)
-
-          if final_alpha.getextrema()[0] != 0:
-              raise SystemExit('Le fond n’est pas devenu transparent.')
-
-          tmp = path.with_suffix('.clean.webp')
-          im.save(tmp,'WEBP',quality=84,method=6,exact=True)
-          with Image.open(tmp) as check:
-              check.load()
-              if check.size != (w,h): raise SystemExit('Dimensions modifiées.')
-              alpha = check.convert('RGBA').getchannel('A')
-              if alpha.getextrema()[0] != 0: raise SystemExit('Transparence perdue après encodage.')
-          os.replace(tmp,path)
-          print(f'Détourage nettoyé : {before} -> {path.stat().st_size} octets; dimensions {(w,h)} conservées.')
-          PY
-
-      - name: Commit du détourage corrigé
-        shell: bash
-        run: |
+          base64 -w 0 public/site/illustrations/cahiers.webp > .github/cahiers-image.b64
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git rm .github/workflows/redetourer-cahiers.yml
-          git add public/site/illustrations/cahiers.webp
-          git commit -m "Fix cahiers image cutout"
+          git add .github/cahiers-image.b64
+          git commit -m "Export cahiers image for cutout repair"
           git push

@@ -2,90 +2,27 @@
    ARDOISE — SESSION PARTAGÉE
    =============================================================================
 
-   LE PROBLÈME QU'IL RÈGLE
-   -----------------------
-   L'access token vit quinze minutes. Passé ce délai, chaque page se rattrape
-   toute seule : son `appelApi()` reçoit un 401, appelle `/auth/refresh`, et
-   rejoue la requête. C'est écrit trente-sept fois, une par page, et ça marche.
+   Ce module est chargé avant les autres scripts applicatifs. Il centralise :
+   - la lecture/écriture des jetons ;
+   - le rafraîchissement d'un access token expiré ;
+   - le rejeu automatique des requêtes authentifiées après un 401 ;
+   - le traitement immédiat des 402 qui signifient que l'accès global de
+     l'établissement est terminé ou suspendu.
 
-   Mais QUATRE scripts sont partagés par ces trente-sept pages —
-   `didacticiel.js`, `ui.js`, `acces-presences.js`, `filtre-cycle.js` — et
-   aucun ne passe par ce `appelApi()`. Ils lisent le jeton dans le stockage et
-   font un `fetch` brut. Sur un jeton expiré, ils reçoivent un 401 et
-   s'arrêtent là, définitivement. Le commentaire de `didacticiel.js` l'assume
-   d'ailleurs explicitement : « il ne tente pas de rafraîchir le jeton : un 401
-   fait simplement taire le didacticiel ».
-
-   D'où la trace observée dans le navigateur, où TOUT part en 401 au chargement :
-
-     GET /assistant/onboarding?ecran=…   401   (didacticiel.js)
-     GET /notifications?limite=200       401   (ui.js)
-     GET /ecole/moi                      401   (acces-presences.js, filtre-cycle.js)
-     GET /ia/quota                       401   (page)
-
-   La page finit par se réparer, les scripts partagés non. Conséquences
-   visibles : le didacticiel « ne s'ouvre pas parfois », la pastille des
-   messages reste vide, le filtre de cycle ignore le type de l'école, et le
-   menu Présences se masque ou s'affiche à tort.
-
-   `filtre-cycle.js` apparaissait en tête de chaque pile d'appel — il enveloppe
-   `window.fetch` — ce qui le faisait passer pour le coupable. Il ne l'était
-   pas : il n'était que le dernier maillon visible.
-
-   CE QU'IL FAIT
-   -------------
-   Une seule chose, à un seul endroit : il enveloppe `fetch`. Toute réponse 401
-   provenant de l'API, sur une requête qui portait un en-tête Authorization,
-   déclenche un rafraîchissement, puis la requête est rejouée avec le nouveau
-   jeton. L'appelant, lui, ne voit qu'une réponse qui a fini par aboutir.
-
-   POURQUOI ENVELOPPER `fetch` PLUTÔT QUE CORRIGER LES QUATRE SCRIPTS
-   -----------------------------------------------------------------
-   Parce que la même correction recopiée quatre fois, c'est quatre versions qui
-   divergeront, et surtout : le cinquième script partagé écrit demain
-   retomberait exactement dans le même trou. En complétant `fetch` une fois, on
-   couvre ce qui existe et ce qui viendra. C'est le raisonnement que
-   `filtre-cycle.js` tenait déjà pour le paramètre de cycle, et il vaut ici
-   pour la même raison.
-
-   UN SEUL RAFRAÎCHISSEMENT À LA FOIS
-   ----------------------------------
-   Au chargement d'une page, cinq à sept requêtes partent ensemble et échouent
-   ensemble. Sans précaution, ce sont sept appels simultanés à `/auth/refresh`.
-   Le serveur ne fait pas tourner le refresh token — il les accepterait tous —
-   mais sept allers-retours sur une connexion congolaise à la rentrée, c'est
-   une seconde et demie perdue pour rien, et sept écritures concurrentes du
-   même jeton dans le stockage. La promesse est donc partagée : le premier
-   401 lance le rafraîchissement, les six autres attendent le même résultat.
-
-   ORDRE DE CHARGEMENT
-   -------------------
-   Ce fichier doit venir EN PREMIER, avant `filtre-cycle.js`, `ui.js`,
-   `acces-presences.js` et `didacticiel.js`. Il enveloppe `fetch` en premier,
-   les autres enveloppent par-dessus, et leur `fetchOrigine` capturé est donc
-   cette enveloppe-ci — y compris pour les appels que `filtre-cycle.js` fait
-   délibérément hors de son propre filtre.
-
-   CE QU'IL NE FAIT PAS
-   --------------------
-   Il ne touche pas au `appelApi()` des pages. Elles gardent leur logique, qui
-   fonctionne ; la seule différence est que leur premier 401 sera souvent déjà
-   résolu quand il leur parvient. Aucune page n'a besoin d'être réécrite.
-   ========================================================================== */
+   L'ordre de chargement est essentiel : les pages font souvent leur premier
+   appel API avant ui.js. Si un abonnement est expiré, attendre ui.js ferait
+   tomber la page dans son message générique « Vérifie ta connexion » alors
+   qu'il ne s'agit pas d'une panne réseau.
+   ============================================================================= */
 (function () {
   'use strict';
 
-  if (window.ArdoiseSession) return;   // déjà installé
+  if (window.ArdoiseSession) return;
 
   var REPLI_API = 'https://scolaire-saas-backend.onrender.com';
 
   /* ------------------------------------------------------------------
      1. Stockage
-
-     Même règle que partout ailleurs : sessionStorage d'abord (session non
-     persistante), localStorage ensuite (« Se souvenir de moi »). L'ordre
-     compte — le lire à l'envers ferait ressortir un jeton périmé laissé par
-     une connexion précédente.
      ------------------------------------------------------------------ */
   function lire(cle) {
     try { return sessionStorage.getItem(cle) || localStorage.getItem(cle); }
@@ -94,22 +31,27 @@
 
   function ecrire(cle, valeur) {
     try {
-      if (sessionStorage.getItem('ardoise_refresh_token')) sessionStorage.setItem(cle, valeur);
-      else localStorage.setItem(cle, valeur);
+      if (sessionStorage.getItem('ardoise_refresh_token')) {
+        sessionStorage.setItem(cle, valeur);
+      } else {
+        localStorage.setItem(cle, valeur);
+      }
     } catch (e) {}
   }
 
   function effacer() {
-    ['ardoise_access_token', 'ardoise_refresh_token', 'ardoise_user'].forEach(function (c) {
-      try { localStorage.removeItem(c); sessionStorage.removeItem(c); } catch (e) {}
+    ['ardoise_access_token', 'ardoise_refresh_token', 'ardoise_user'].forEach(function (cle) {
+      try {
+        localStorage.removeItem(cle);
+        sessionStorage.removeItem(cle);
+      } catch (e) {}
     });
+    try { sessionStorage.removeItem('ardoise_droits_offre'); } catch (e) {}
   }
 
   function jeton() { return lire('ardoise_access_token'); }
   function jetonRafraichissement() { return lire('ardoise_refresh_token'); }
 
-  /** Base de l'API, résolue à l'appel : chaque page déclare sa propre
-   *  constante `API_BASE_URL`, parfois après ce script. */
   function baseAPI() {
     try {
       if (typeof API_BASE_URL === 'string' && API_BASE_URL) return API_BASE_URL;
@@ -117,30 +59,23 @@
     return window.API_BASE_URL || REPLI_API;
   }
 
-  /** L'URL vise-t-elle notre API ? On ne rejoue rien qui parte ailleurs. */
   function versAPI(url) {
     try {
       var absolue = new URL(url, window.location.href);
       var base = new URL(baseAPI(), window.location.href);
       return absolue.origin === base.origin;
-    } catch (e) { return false; }
+    } catch (e) {
+      return false;
+    }
   }
 
   /* ------------------------------------------------------------------
-     2. Le rafraîchissement, partagé
+     2. Rafraîchissement partagé
      ------------------------------------------------------------------ */
-
   var fetchNatif = window.fetch ? window.fetch.bind(window) : null;
-  var enCours = null;          // promesse partagée du rafraîchissement
+  var enCours = null;
   var redirectionLancee = false;
 
-  /**
-   * Renvoie une promesse du nouveau jeton, ou de `null` si la session est
-   * réellement finie.
-   *
-   * Le `finally` remet `enCours` à null : sans lui, un rafraîchissement raté
-   * une fois interdirait tous les suivants pour la durée de vie de la page.
-   */
   function rafraichir() {
     if (enCours) return enCours;
 
@@ -152,32 +87,26 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refresh_token: refresh })
     })
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (d) {
-        if (!d || !d.access_token) return null;
-        ecrire('ardoise_access_token', d.access_token);
-        return d.access_token;
+      .then(function (reponse) {
+        return reponse.ok ? reponse.json() : null;
+      })
+      .then(function (donnees) {
+        if (!donnees || !donnees.access_token) return null;
+        ecrire('ardoise_access_token', donnees.access_token);
+        return donnees.access_token;
       })
       .catch(function () {
-        // Backend injoignable (Render en veille, coupure réseau) : ce n'est
-        // pas une session expirée. On ne déconnecte personne pour une panne
-        // de réseau — la requête échouera, et la prochaine réessaiera.
+        // Une panne réseau ne doit jamais être confondue avec une session finie.
         return null;
       })
-      .then(function (t) { enCours = null; return t; });
+      .then(function (nouveauJeton) {
+        enCours = null;
+        return nouveauJeton;
+      });
 
     return enCours;
   }
 
-  /**
-   * Session définitivement perdue.
-   *
-   * Volontairement NON automatique : ce module ne redirige que si la page le
-   * lui demande explicitement. Une redirection déclenchée depuis un script
-   * partagé arracherait l'utilisateur à un formulaire à moitié rempli parce
-   * que la pastille des messages n'a pas pu se charger — ce qui serait pire
-   * que le défaut qu'on corrige.
-   */
   function terminer() {
     if (redirectionLancee) return;
     redirectionLancee = true;
@@ -186,29 +115,166 @@
   }
 
   /* ------------------------------------------------------------------
-     3. L'enveloppe de fetch
+     3. Accès expiré / suspendu : traitement PRÉCOCE
      ------------------------------------------------------------------ */
+  var CODES_BLOQUANTS = {
+    essai_expire: true,
+    abonnement_expire: true,
+    essai_suspendu: true,
+    ecole_suspendue: true
+  };
 
-  /** Remplace l'en-tête Authorization d'une requête déjà construite. */
+  var ecranBlocageAffiche = false;
+
+  function afficherEcranBlocage(corps) {
+    if (!corps || !CODES_BLOQUANTS[corps.code]) return;
+    if (ecranBlocageAffiche || window.__ardoiseExpirationAffichee) return;
+
+    ecranBlocageAffiche = true;
+    window.__ardoiseExpirationAffichee = true;
+
+    function monter() {
+      if (!document.body) {
+        document.addEventListener('DOMContentLoaded', monter, { once: true });
+        return;
+      }
+      if (document.getElementById('ardoise-expiration-session')) return;
+
+      var titres = {
+        essai_expire: 'Votre période d’essai Ardoise est terminée',
+        abonnement_expire: 'Votre abonnement Ardoise a expiré',
+        essai_suspendu: 'Votre démonstration a été suspendue',
+        ecole_suspendue: 'L’accès à votre établissement est suspendu'
+      };
+
+      var voile = document.createElement('div');
+      voile.id = 'ardoise-expiration-session';
+      voile.setAttribute('role', 'alertdialog');
+      voile.setAttribute('aria-modal', 'true');
+      voile.setAttribute('aria-labelledby', 'ardoise-expiration-session-titre');
+      voile.style.cssText = [
+        'position:fixed', 'inset:0', 'z-index:2147483646',
+        'display:flex', 'align-items:center', 'justify-content:center',
+        'padding:24px', 'box-sizing:border-box',
+        'background:rgba(17,26,25,.92)',
+        'backdrop-filter:blur(4px)', '-webkit-backdrop-filter:blur(4px)',
+        'font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif'
+      ].join(';');
+
+      var carte = document.createElement('div');
+      carte.style.cssText = [
+        'max-width:560px', 'width:100%', 'box-sizing:border-box',
+        'background:#F6F2E7', 'color:#1F2B24',
+        'border-radius:16px', 'padding:32px',
+        'box-shadow:0 24px 64px rgba(0,0,0,.45)',
+        'text-align:center', 'max-height:90vh', 'overflow-y:auto'
+      ].join(';');
+
+      var titre = document.createElement('h2');
+      titre.id = 'ardoise-expiration-session-titre';
+      titre.textContent = titres[corps.code] || titres.abonnement_expire;
+      titre.style.cssText = 'margin:0 0 16px;font-size:1.5rem;line-height:1.25;font-weight:700';
+
+      var message = document.createElement('p');
+      message.textContent = corps.message || 'Votre accès à Ardoise est temporairement limité.';
+      message.style.cssText = 'margin:0 0 12px;line-height:1.6;font-size:1rem';
+
+      var conservation = document.createElement('p');
+      conservation.innerHTML = '<strong>Vos données sont conservées.</strong> Élèves, notes, classes, bulletins et paramètres restent intacts et seront disponibles dès le rétablissement de l’accès.';
+      conservation.style.cssText = 'margin:0 0 24px;line-height:1.6;font-size:.95rem;color:#4A554E';
+
+      var actions = document.createElement('div');
+      actions.style.cssText = 'display:flex;gap:12px;flex-wrap:wrap;justify-content:center';
+
+      var abonnements = document.createElement('a');
+      abonnements.href = 'abonnements.html';
+      abonnements.textContent = 'Voir les abonnements';
+      abonnements.style.cssText = [
+        'display:inline-block', 'padding:12px 24px', 'border-radius:10px',
+        'background:#C98A3E', 'color:#fff', 'text-decoration:none', 'font-weight:600'
+      ].join(';');
+
+      var support = document.createElement('a');
+      support.href = 'support.html';
+      support.textContent = 'Contacter le support';
+      support.style.cssText = [
+        'display:inline-block', 'padding:12px 24px', 'border-radius:10px',
+        'border:1px solid #C7BFAC', 'color:#1F2B24',
+        'text-decoration:none', 'font-weight:600'
+      ].join(';');
+
+      var deconnexion = document.createElement('button');
+      deconnexion.type = 'button';
+      deconnexion.textContent = 'Se déconnecter';
+      deconnexion.style.cssText = [
+        'display:block', 'margin:18px auto 0', 'padding:10px 18px',
+        'border:0', 'background:none', 'color:#4A554E',
+        'text-decoration:underline', 'cursor:pointer', 'font:inherit'
+      ].join(';');
+      deconnexion.addEventListener('click', terminer);
+
+      actions.appendChild(abonnements);
+      actions.appendChild(support);
+      carte.appendChild(titre);
+      carte.appendChild(message);
+      carte.appendChild(conservation);
+      carte.appendChild(actions);
+      carte.appendChild(deconnexion);
+      voile.appendChild(carte);
+      document.body.appendChild(voile);
+
+      try { sessionStorage.removeItem('ardoise_droits_offre'); } catch (e) {}
+    }
+
+    monter();
+  }
+
+  function traiter402(reponse) {
+    if (!reponse || reponse.status !== 402) return reponse;
+
+    try {
+      reponse.clone().json()
+        .then(function (corps) {
+          if (corps && CODES_BLOQUANTS[corps.code]) afficherEcranBlocage(corps);
+        })
+        .catch(function () {
+          // Corps illisible : on laisse la page traiter la réponse elle-même.
+        });
+    } catch (e) {}
+
+    return reponse;
+  }
+
+  /* ------------------------------------------------------------------
+     4. Enveloppe de fetch : 401 + 402
+     ------------------------------------------------------------------ */
   function avecJeton(options, token) {
-    var o = {};
-    for (var k in (options || {})) if (Object.prototype.hasOwnProperty.call(options, k)) o[k] = options[k];
+    var resultat = {};
+    for (var cle in (options || {})) {
+      if (Object.prototype.hasOwnProperty.call(options, cle)) resultat[cle] = options[cle];
+    }
+
     var entetes = {};
     var source = (options && options.headers) || {};
     if (source instanceof Headers) {
-      source.forEach(function (v, k) { entetes[k] = v; });
+      source.forEach(function (valeur, nom) { entetes[nom] = valeur; });
     } else {
-      for (var h in source) if (Object.prototype.hasOwnProperty.call(source, h)) entetes[h] = source[h];
+      for (var h in source) {
+        if (Object.prototype.hasOwnProperty.call(source, h)) entetes[h] = source[h];
+      }
     }
+
     entetes.Authorization = 'Bearer ' + token;
-    o.headers = entetes;
-    return o;
+    resultat.headers = entetes;
+    return resultat;
   }
 
   function portaitUnJeton(entree, options) {
     var source = (options && options.headers) || (entree && entree.headers) || null;
     if (!source) return false;
+
     if (source instanceof Headers) return !!source.get('Authorization');
+
     for (var h in source) {
       if (String(h).toLowerCase() === 'authorization') return true;
     }
@@ -217,11 +283,10 @@
 
   if (fetchNatif) {
     window.fetch = function (entree, options) {
-      var url = (typeof entree === 'string') ? entree : (entree && entree.url) || '';
+      var url = (typeof entree === 'string')
+        ? entree
+        : (entree && entree.url) || '';
 
-      // On ne s'occupe QUE des appels authentifiés vers notre API. Le reste —
-      // le login, le refresh lui-même, les fichiers statiques, les appels vers
-      // un tiers — passe sans être touché.
       var concerne = versAPI(url)
         && url.indexOf('/auth/refresh') === -1
         && url.indexOf('/auth/login') === -1
@@ -230,87 +295,84 @@
       if (!concerne) return fetchNatif(entree, options);
 
       return fetchNatif(entree, options).then(function (reponse) {
-        if (reponse.status !== 401) return reponse;
+        if (reponse.status !== 401) return traiter402(reponse);
         if (!jetonRafraichissement()) return reponse;
 
         return rafraichir().then(function (nouveau) {
-          // Pas de nouveau jeton : on rend le 401 tel quel. C'est la page qui
-          // décide de renvoyer vers la connexion — pas ce module.
           if (!nouveau) return reponse;
 
-          // Une Request déjà consommée ne se rejoue pas : on la reconstruit à
-          // partir de son URL, avec le nouvel en-tête.
           if (typeof entree === 'string') {
-            return fetchNatif(entree, avecJeton(options, nouveau));
+            return fetchNatif(entree, avecJeton(options, nouveau)).then(traiter402);
           }
+
           return fetchNatif(entree.url, avecJeton(options || {
             method: entree.method,
             headers: entree.headers
-          }, nouveau));
+          }, nouveau)).then(traiter402);
         });
       });
     };
   }
 
   /* ------------------------------------------------------------------
-     4. Rafraîchissement d'avance
-
-     Le rejeu ci-dessus suffit à la correction, mais il coûte un aller-retour
-     perdu à chaque première requête d'une page ouverte après une pause. Comme
-     le jeton est un JWT dont l'échéance est lisible, autant la regarder :
-     si elle est passée ou proche, on rafraîchit avant même que la page ne
-     commence à travailler.
-
-     En cas de doute — jeton illisible, horloge du poste décalée — on ne fait
-     rien : le rejeu reste le filet, et il fonctionne quelle que soit l'heure
-     qu'affiche la machine.
+     5. Rafraîchissement d'avance
      ------------------------------------------------------------------ */
-
   function echeance(token) {
     try {
-      var charge = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+      var charge = JSON.parse(
+        atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))
+      );
       return typeof charge.exp === 'number' ? charge.exp * 1000 : null;
-    } catch (e) { return null; }
+    } catch (e) {
+      return null;
+    }
   }
 
   function rafraichirSiProche() {
-    var t = jeton();
-    if (!t || !jetonRafraichissement()) return Promise.resolve(null);
-    var exp = echeance(t);
-    if (exp === null) return Promise.resolve(null);
-    // Marge d'une minute : rafraîchir un jeton qui expirera pendant que la
-    // requête voyage ne servirait à rien.
-    if (Date.now() < exp - 60000) return Promise.resolve(t);
+    var access = jeton();
+    if (!access || !jetonRafraichissement()) return Promise.resolve(null);
+
+    var expiration = echeance(access);
+    if (expiration === null) return Promise.resolve(null);
+    if (Date.now() < expiration - 60000) return Promise.resolve(access);
+
     return rafraichir();
   }
 
   /* ------------------------------------------------------------------
-     5. Interface publique
-
-     `appelApi` est offert aux scripts partagés qui n'ont pas de fonction
-     d'appel à eux. Les pages gardent la leur.
+     6. Interface publique
      ------------------------------------------------------------------ */
-
   function appelApi(chemin, options) {
-    var o = options || {};
+    var reglage = options || {};
+
     return rafraichirSiProche().then(function () {
-      var t = jeton();
-      if (!t) return Promise.reject(new Error('Aucune session.'));
+      var access = jeton();
+      if (!access) return Promise.reject(new Error('Aucune session.'));
+
       var entetes = {};
-      var source = o.headers || {};
-      for (var h in source) if (Object.prototype.hasOwnProperty.call(source, h)) entetes[h] = source[h];
-      entetes.Authorization = 'Bearer ' + t;
-      if (o.body && !entetes['Content-Type']) entetes['Content-Type'] = 'application/json';
+      var source = reglage.headers || {};
+      for (var h in source) {
+        if (Object.prototype.hasOwnProperty.call(source, h)) entetes[h] = source[h];
+      }
+
+      entetes.Authorization = 'Bearer ' + access;
+      if (reglage.body && !entetes['Content-Type']) {
+        entetes['Content-Type'] = 'application/json';
+      }
+
       return window.fetch(baseAPI() + chemin, {
-        method: o.method || 'GET',
+        method: reglage.method || 'GET',
         headers: entetes,
-        body: (o.body && typeof o.body !== 'string') ? JSON.stringify(o.body) : o.body
+        body: (reglage.body && typeof reglage.body !== 'string')
+          ? JSON.stringify(reglage.body)
+          : reglage.body
       });
     });
   }
 
   function utilisateur() {
-    try { return JSON.parse(lire('ardoise_user') || 'null'); } catch (e) { return null; }
+    try { return JSON.parse(lire('ardoise_user') || 'null'); }
+    catch (e) { return null; }
   }
 
   window.ArdoiseSession = {
@@ -319,16 +381,18 @@
     lire: lire,
     ecrire: ecrire,
     utilisateur: utilisateur,
-    roles: function () { var u = utilisateur(); return (u && u.roles) || []; },
+    roles: function () {
+      var user = utilisateur();
+      return (user && user.roles) || [];
+    },
     connecte: function () { return !!jeton(); },
     rafraichir: rafraichir,
     rafraichirSiProche: rafraichirSiProche,
     appelApi: appelApi,
-    terminer: terminer
+    terminer: terminer,
+    traiter402: traiter402,
+    afficherEcranBlocage: afficherEcranBlocage
   };
 
-  // Un rafraîchissement d'avance dès le chargement : les requêtes des scripts
-  // partagés partent souvent dans la même milliseconde que celui-ci, et
-  // trouveront la promesse déjà en vol plutôt qu'un jeton mort.
   rafraichirSiProche();
 })();

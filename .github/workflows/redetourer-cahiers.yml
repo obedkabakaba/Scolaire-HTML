@@ -17,82 +17,107 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Installer les outils de détourage
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install rembg pillow onnxruntime
+      - name: Installer Pillow
+        run: python -m pip install --upgrade pillow
 
-      - name: Refaire le détourage et optimiser
+      - name: Nettoyer le fond raccordé aux bords
         shell: bash
         run: |
           python - <<'PY'
-          from pathlib import Path
-          from io import BytesIO
           from PIL import Image, ImageFilter
-          from rembg import remove, new_session
-          import os
+          from pathlib import Path
+          from collections import deque
+          import statistics, math, os
 
           path = Path('public/site/illustrations/cahiers.webp')
-          original_size = path.stat().st_size
+          before = path.stat().st_size
+          im = Image.open(path).convert('RGBA')
+          w, h = im.size
+          px = im.load()
 
-          with Image.open(path) as src:
-              src.load()
-              dimensions = src.size
-              rgba = src.convert('RGBA')
+          # Échantillonne le fond sur les bords sans toucher au sujet central.
+          edge = []
+          step = max(1, min(w, h)//120)
+          for x in range(0, w, step):
+              for y in (0, h-1):
+                  r,g,b,a = px[x,y]
+                  if a > 180: edge.append((r,g,b))
+          for y in range(0, h, step):
+              for x in (0, w-1):
+                  r,g,b,a = px[x,y]
+                  if a > 180: edge.append((r,g,b))
+          if not edge:
+              raise SystemExit('Aucun fond opaque détecté sur les bords.')
 
-          # Détourage IA : isnet-general-use est plus précis sur les objets complexes.
-          session = new_session('isnet-general-use')
-          inp = BytesIO()
-          rgba.save(inp, format='PNG')
-          result = remove(
-              inp.getvalue(),
-              session=session,
-              alpha_matting=True,
-              alpha_matting_foreground_threshold=245,
-              alpha_matting_background_threshold=12,
-              alpha_matting_erode_size=4,
-              post_process_mask=True,
-          )
+          bg = tuple(int(statistics.median([c[i] for c in edge])) for i in range(3))
+          print('Couleur de fond estimée:', bg)
 
-          cut = Image.open(BytesIO(result)).convert('RGBA')
-          if cut.size != dimensions:
-              raise SystemExit(f'Dimensions modifiées: {dimensions} -> {cut.size}')
+          def dist(rgb):
+              return math.sqrt(sum((rgb[i]-bg[i])**2 for i in range(3)))
 
-          # Nettoyage très léger des pixels quasi transparents pour supprimer les halos.
-          alpha = cut.getchannel('A')
-          alpha = alpha.point(lambda a: 0 if a < 7 else a)
-          cut.putalpha(alpha)
+          # Flood-fill uniquement depuis les bords : les zones claires internes du dessin restent intactes.
+          q = deque()
+          seen = bytearray(w*h)
+          def push(x,y):
+              idx=y*w+x
+              if seen[idx]: return
+              r,g,b,a=px[x,y]
+              if a == 0 or dist((r,g,b)) <= 72:
+                  seen[idx]=1; q.append((x,y))
+          for x in range(w):
+              push(x,0); push(x,h-1)
+          for y in range(h):
+              push(0,y); push(w-1,y)
 
-          # Vérifications : il faut réellement avoir de la transparence et conserver du sujet.
-          amin, amax = alpha.getextrema()
-          if amin != 0 or amax != 255:
-              raise SystemExit(f'Détourage suspect (alpha min/max = {amin}/{amax})')
-          bbox = alpha.getbbox()
-          if not bbox:
-              raise SystemExit('Le sujet a disparu après détourage.')
+          mask = Image.new('L',(w,h),255)
+          mp = mask.load()
+          while q:
+              x,y=q.popleft()
+              r,g,b,a=px[x,y]
+              d=dist((r,g,b))
+              # Fond proche = transparent. Zone de transition = bord doux.
+              if a == 0 or d <= 42:
+                  mp[x,y]=0
+              elif d <= 72:
+                  mp[x,y]=int(255*(d-42)/30)
+              else:
+                  continue
+              for nx,ny in ((x-1,y),(x+1,y),(x,y-1),(x,y+1)):
+                  if 0<=nx<w and 0<=ny<h:
+                      idx=ny*w+nx
+                      if not seen[idx]:
+                          rr,gg,bb,aa=px[nx,ny]
+                          if aa==0 or dist((rr,gg,bb))<=72:
+                              seen[idx]=1; q.append((nx,ny))
 
-          tmp = path.with_suffix('.detouree.webp')
-          cut.save(tmp, 'WEBP', quality=84, method=6, exact=True, lossless=False)
+          # Très léger lissage du masque pour supprimer les halos durs.
+          mask = mask.filter(ImageFilter.GaussianBlur(0.7))
+          original_alpha = im.getchannel('A')
+          # Ne jamais rendre plus opaque une zone déjà transparente.
+          import PIL.ImageChops as IC
+          final_alpha = IC.darker(original_alpha, mask)
+          im.putalpha(final_alpha)
 
+          if final_alpha.getextrema()[0] != 0:
+              raise SystemExit('Le fond n’est pas devenu transparent.')
+
+          tmp = path.with_suffix('.clean.webp')
+          im.save(tmp,'WEBP',quality=84,method=6,exact=True)
           with Image.open(tmp) as check:
               check.load()
-              if check.size != dimensions:
-                  raise SystemExit('Dimensions modifiées après encodage WebP.')
-              if 'A' not in check.convert('RGBA').getbands():
-                  raise SystemExit('Canal alpha absent après encodage.')
-
-          new_size = tmp.stat().st_size
-          os.replace(tmp, path)
-          print(f'Image détourée: {dimensions}, {original_size} -> {new_size} octets')
-          print('Transparence conservée et halos de fond supprimés.')
+              if check.size != (w,h): raise SystemExit('Dimensions modifiées.')
+              alpha = check.convert('RGBA').getchannel('A')
+              if alpha.getextrema()[0] != 0: raise SystemExit('Transparence perdue après encodage.')
+          os.replace(tmp,path)
+          print(f'Détourage nettoyé : {before} -> {path.stat().st_size} octets; dimensions {(w,h)} conservées.')
           PY
 
-      - name: Commit du nouveau détourage
+      - name: Commit du détourage corrigé
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git rm .github/workflows/redetourer-cahiers.yml
           git add public/site/illustrations/cahiers.webp
-          git commit -m "Improve cahiers image cutout"
+          git commit -m "Fix cahiers image cutout"
           git push

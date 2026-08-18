@@ -7,12 +7,10 @@
    -----------------------------------------------------------------------
    `activate` supprime tout cache dont le nom ne commence pas par VERSION.
    Sans cet incrément, un téléphone où Ardoise est déjà installée continuerait
-   de servir les anciennes icônes depuis CacheStorage : les fichiers auraient
-   changé sur le serveur, et l'écran de lancement afficherait toujours le logo
-   flou. C'est précisément le piège que le point 41 de la refonte signale.
+   de servir les anciennes ressources depuis CacheStorage.
 
-   v50 : icônes PWA régénérées depuis le logo 1254 px, manifeste unifié. */
-const VERSION='ardoise-v51';
+   v52 : traitement précoce des accès expirés + garde du chargement mobile. */
+const VERSION='ardoise-v52';
 const CACHE_COQUILLE=`${VERSION}-coquille`;
 const COQUILLE=[
   './','connexion.html','changer-mot-de-passe.html','dashboard-directeur.html',

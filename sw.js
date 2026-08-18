@@ -9,8 +9,8 @@
    Sans cet incrément, un téléphone où Ardoise est déjà installée continuerait
    de servir les anciennes ressources depuis CacheStorage.
 
-   v53 : distingue l'activation initiale d'un abonnement réellement expiré. */
-const VERSION='ardoise-v53';
+   v54 : charge le parcours corrigé des écoles sans abonnement actif. */
+const VERSION='ardoise-v54';
 const CACHE_COQUILLE=`${VERSION}-coquille`;
 const COQUILLE=[
   './','connexion.html','changer-mot-de-passe.html','dashboard-directeur.html',

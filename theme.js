@@ -70,13 +70,19 @@ window.ARDOISE_THEME_DEFAUT = 'ardoise';
   synchroniserDepuisServeur();
 })();
 
-/* Correctifs UX communs de l'abonnement. */
-(function chargerSubscriptionUX() {
-  if (document.querySelector('script[data-ardoise-subscription-ux]')) return;
-  var s = document.createElement('script');
-  s.src = 'subscription-ux.js'; s.defer = true; s.setAttribute('data-ardoise-subscription-ux', '');
-  (document.head || document.documentElement).appendChild(s);
-})();
+/* `subscription-ux.js` a été retiré, et ce n'est pas une suppression de
+   fonctionnalité : son contenu vit désormais dans `ui.js`, à la source.
+
+   Ce fichier corrigeait APRÈS COUP ce que `ui.js` produisait mal : il
+   enveloppait `ArdoiseUI.confirmer` pour dédoublonner les avertissements
+   d'offre, et surveillait le DOM en permanence (MutationObserver sur tout le
+   document) pour réécrire les liens « Contacter Ardoise » et « Voir mon
+   abonnement » que `ui.js` pointait vers les mauvaises pages.
+
+   Deux implémentations du même écran, dont l'une réparait l'autre à chaud.
+   `ui.js` pose maintenant les bons liens directement et dédoublonne lui-même
+   ses avertissements — le correctif n'a plus rien à corriger, et la
+   surveillance permanente du DOM disparaît avec lui. */
 
 /* Le Super Admin charge sa vue de traitement sans modifier son noyau isolé. */
 (function chargerVueRenouvellements() {

@@ -1,72 +1,757 @@
-(function(){
+/**
+ * Ardoise — page Abonnements.
+ *
+ * LE PRINCIPE : ON NE MONTRE QUE L'ÉTAPE EN COURS
+ * ---------------------------------------------------------------------------
+ * La version précédente affichait simultanément l'état, les offres, la durée,
+ * les deux modes de règlement, le numéro de dépôt et le champ de référence.
+ * Un directeur qui voulait seulement savoir quand son abonnement expirait
+ * tombait sur un formulaire de paiement complet — et un directeur qui voulait
+ * payer devait deviner par où commencer.
+ *
+ * Ici, chaque étape n'apparaît qu'une fois la précédente franchie, et l'état
+ * courant reste toujours visible en haut. Les choix déjà faits ne sont jamais
+ * perdus quand on revient en arrière : `etat.plan` et `etat.periodicite`
+ * survivent aux allers-retours, et une référence refusée se corrige sans
+ * repasser par le choix d'offre.
+ *
+ * LA SYNCHRONISATION EST SILENCIEUSE, PAR CONSTRUCTION
+ * ---------------------------------------------------------------------------
+ * La page interroge le serveur régulièrement pour voir si Ardoise a validé le
+ * paiement. Elle ne redessine RIEN tant que la signature des données n'a pas
+ * changé (voir `signature()`), et elle ne touche jamais au DOM pendant qu'un
+ * champ est en cours de saisie. Pas de squelette, pas de clignotement, pas de
+ * défilement qui saute.
+ */
+(function () {
   'use strict';
-  if(!window.ArdoiseSession||!ArdoiseSession.connecte()){location.replace('connexion.html');return;}
+  if (!window.ArdoiseSession || !ArdoiseSession.connecte()) { location.replace('connexion.html'); return; }
 
-  var data=null, planChoisi=null, derniereVersionDemande='';
-  var $=function(id){return document.getElementById(id)};
-  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]})}
-  function api(path,opt){return ArdoiseSession.appelApi(path,opt||{}).then(function(r){return r.json().catch(function(){return{}}).then(function(j){if(!r.ok){var e=new Error(j.message||'Opération impossible.');e.status=r.status;throw e}return j})})}
-  function money(n,d){var v=Number(n);return Number.isFinite(v)?v.toLocaleString('fr-FR',{maximumFractionDigits:2})+' '+(d||'USD'):'—'}
-  function prix(p,per){if(per==='annuel')return p.prix_annuel==null?Number(p.prix)*12:Number(p.prix_annuel);if(per==='semestriel')return p.prix_semestriel==null?Number(p.prix)*6:Number(p.prix_semestriel);return Number(p.prix)}
-  function libPeriode(p){return p==='annuel'?'Annuel':p==='semestriel'?'6 mois':'Mensuel'}
-  function libStatut(s){return({en_attente_paiement:'Dépôt à effectuer',a_verifier:'Paiement en vérification',agent_demande:'Agent demandé',validee:'Abonnement activé',refusee:'Paiement à corriger',annulee:'Demande remplacée'})[s]||s}
-  function dateCourte(v){if(!v)return'—';try{return new Date(v).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'})}catch(e){return'—'}}
-  function flash(message,type){var e=$('message-flash');if(!e)return;e.textContent=message;e.style.background=type==='erreur'?'var(--rouge)':type==='succes'?'var(--vert-ok)':'var(--ardoise)';e.classList.add('visible');clearTimeout(e._t);e._t=setTimeout(function(){e.classList.remove('visible')},4200)}
-  function setBusy(btn,on,texte){if(!btn)return;if(on){btn.dataset.texte=btn.textContent;btn.disabled=true;btn.textContent=texte||'Traitement…'}else{btn.disabled=false;if(btn.dataset.texte)btn.textContent=btn.dataset.texte}}
-  function versionDemande(d){return d?[d.id,d.statut,d.updated_at,d.reference_transaction,d.refuse_motif].join('|'):''}
+  /* --------------------------------------------------------------- Outils */
 
-  function setStep(n){document.querySelectorAll('.tunnel-etape').forEach(function(e){var s=Number(e.dataset.step);e.classList.toggle('actif',s===n);e.classList.toggle('fait',s<n)})}
+  var $ = function (id) { return document.getElementById(id); };
 
-  function renduEcole(){var e=data.ecole||{};$('ecole').innerHTML=''
-    +'<div class="resume-case"><small>École</small><strong>'+esc(e.nom||'—')+'</strong><div class="muted code" style="margin-top:4px">'+esc(e.code||'')+'</div></div>'
-    +'<div class="resume-case"><small>Bouquet actuel</small><strong>'+esc(e.plan_nom||'Aucun')+'</strong></div>'
-    +'<div class="resume-case"><small>Échéance</small><strong>'+dateCourte(e.date_expiration)+'</strong></div>';
-    var compact=$('etat-compact');if(compact)compact.textContent=e.abonnement_statut?String(e.abonnement_statut).replace(/_/g,' '):'Sans abonnement';
+  function esc(v) {
+    return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
+    });
   }
 
-  function renduEtat(){var d=data&&data.demande, zone=$('etat-demande');if(!d||d.statut==='annulee'){zone.innerHTML='';return}var cls=d.statut==='validee'?' succes':d.statut==='refusee'?' erreur':'';var aide='';
-    if(d.statut==='en_attente_paiement')aide='Effectuez le dépôt puis envoyez la référence de transaction.';
-    if(d.statut==='a_verifier')aide='Ardoise a reçu votre référence. Le paiement doit maintenant être vérifié.';
-    if(d.statut==='agent_demande')aide='Ardoise a reçu votre demande et vos coordonnées pour organiser le passage.';
-    if(d.statut==='refusee')aide='Vous pouvez corriger la référence et la renvoyer sans recommencer tout le parcours.';
-    if(d.statut==='validee')aide='Votre renouvellement a été validé.';
-    zone.innerHTML='<div class="etat-demande'+cls+'"><div class="etat-demande-ligne"><strong>'+esc(libStatut(d.statut))+'</strong><span>'+esc(d.plan_nom||'')+' · '+esc(libPeriode(d.periodicite||''))+' · '+money(d.montant_attendu,d.devise)+'</span></div><p>'+esc(aide)+'</p>'+(d.reference_transaction?'<div class="etat-reference">Référence : <span class="code">'+esc(d.reference_transaction)+'</span></div>':'')+(d.refuse_motif?'<div class="etat-motif"><strong>Motif :</strong> '+esc(d.refuse_motif)+'</div>':'')+'</div>';
+  function api(path, opt) {
+    return ArdoiseSession.appelApi(path, opt || {}).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        if (!r.ok) { var e = new Error(j.message || 'Opération impossible.'); e.status = r.status; throw e; }
+        return j;
+      });
+    });
   }
 
-  function features(p){var f=Array.isArray(p.fonctionnalites_incluses)?p.fonctionnalites_incluses:[];return f.slice(0,5).map(function(x){var t=typeof x==='string'?x:(x.nom||x.cle||'');return t?'<li>'+esc(t.replace(/_/g,' '))+'</li>':''}).join('')}
-  function renduPlans(){var courant=(data.ecole||{}).abonnement_plan_id, plans=data.plans||[];if(!plans.length){$('plans').innerHTML='<div class="carte-section erreur">Aucune offre disponible pour le moment.</div>';return}$('plans').innerHTML=plans.map(function(p){var actuel=p.id===courant;return '<article class="plan '+(actuel?'actuel':'')+'">'+(actuel?'<span class="plan-badge">Votre bouquet actuel</span>':'')+'<h3>'+esc(p.nom)+'</h3><div class="plan-desc">'+esc(p.positionnement||p.description||'')+'</div><div class="plan-prix">'+money(p.prix,p.devise)+' <small>/ mois</small></div><ul>'+features(p)+'</ul><button type="button" class="bouton '+(actuel?'bouton-principal':'bouton-secondaire')+'" data-plan="'+esc(p.id)+'">'+(actuel?'Renouveler cette offre':'Choisir cette offre')+'</button></article>'}).join('');document.querySelectorAll('[data-plan]').forEach(function(b){b.addEventListener('click',function(){planChoisi=plans.find(function(p){return p.id===b.dataset.plan})||null;ouvrirFlux()})})}
+  function money(n, d) {
+    var v = Number(n);
+    return Number.isFinite(v)
+      ? v.toLocaleString('fr-FR', { maximumFractionDigits: 2 }) + ' ' + (d || 'USD')
+      : '—';
+  }
 
-  function actualiserPeriodes(){if(!planChoisi)return;['mensuel','semestriel','annuel'].forEach(function(per){var e=$('prix-'+per);if(e)e.textContent=money(prix(planChoisi,per),planChoisi.devise)});actualiserSelection()}
-  function choisirPeriode(per){$('periodicite').value=per;document.querySelectorAll('[data-periode]').forEach(function(b){b.classList.toggle('actif',b.dataset.periode===per)});actualiserSelection()}
-  function actualiserSelection(){if(!planChoisi)return;var per=$('periodicite').value;$('selection').innerHTML='<div><small>Offre choisie</small><strong>'+esc(planChoisi.nom)+'</strong></div><div><small>Durée</small><strong>'+esc(libPeriode(per))+'</strong></div><div><small>Montant</small><strong>'+money(prix(planChoisi,per),planChoisi.devise)+'</strong></div>'}
+  function libPeriode(p) { return p === 'annuel' ? 'Annuel' : p === 'semestriel' ? '6 mois' : 'Mensuel'; }
 
-  function renduDisponibiliteDepot(){var d=data.depot||{}, z=$('depot-disponibilite');if(!z)return;if(!d.disponible){z.innerHTML='<span class="indispo-point"></span>Dépôt temporairement indisponible : utilisez un agent.';$('btn-depot').disabled=true;return}$('btn-depot').disabled=false;z.innerHTML='<span class="dispo-point"></span>Dépôt disponible'+(d.reseau?' via '+esc(d.reseau):'')+'. Le numéro apparaît après « Continuer ».'}
+  function dateCourte(v) {
+    if (!v) return '—';
+    try { return new Date(v).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }); }
+    catch (e) { return '—'; }
+  }
 
-  function ouvrirFlux(){if(!planChoisi)return;$('flux').classList.remove('cache');$('choix-zone').classList.remove('cache');$('reference-zone').classList.add('cache');$('confirmation-zone').classList.add('cache');setStep(1);actualiserPeriodes();renduDisponibiliteDepot();setTimeout(function(){$('flux').scrollIntoView({behavior:'smooth',block:'start'})},30)}
+  /** Jours restants avant échéance. Négatif = déjà expiré. */
+  function joursRestants(v) {
+    if (!v) return null;
+    var d = new Date(v);
+    if (isNaN(d.getTime())) return null;
+    return Math.ceil((d.getTime() - Date.now()) / 86400000);
+  }
 
-  function afficherEtapeDepot(demande){var d=demande||data.demande||{}, dep=data.depot||{};$('choix-zone').classList.add('cache');$('confirmation-zone').classList.add('cache');$('reference-zone').classList.remove('cache');setStep(2);$('montant-depot').textContent=money(d.montant_attendu!=null?d.montant_attendu:prix(planChoisi,$('periodicite').value),d.devise||(planChoisi&&planChoisi.devise));$('reseau-depot').textContent=d.reseau_depot||dep.reseau||'Dépôt Ardoise';$('numero-depot').textContent=d.numero_depot||dep.numero||'—';$('nom-depot').textContent=d.nom_depot||dep.nom||'Ardoise';setTimeout(function(){$('reference-zone').scrollIntoView({behavior:'smooth',block:'start'});$('reference').focus({preventScroll:true})},40)}
+  function flash(message, type) {
+    var e = $('message-flash');
+    if (!e) return;
+    e.textContent = message;
+    e.style.background = type === 'erreur' ? 'var(--rouge)' : type === 'succes' ? 'var(--vert-ok)' : 'var(--ardoise)';
+    e.classList.add('visible');
+    clearTimeout(e._t);
+    e._t = setTimeout(function () { e.classList.remove('visible'); }, 4200);
+  }
 
-  function afficherConfirmation(type){$('choix-zone').classList.add('cache');$('reference-zone').classList.add('cache');$('confirmation-zone').classList.remove('cache');setStep(3);if(type==='agent'){$('confirmation-titre').textContent='Votre demande d’agent est envoyée';$('confirmation-texte').textContent='Ardoise a reçu les coordonnées et l’adresse de votre école. Un agent pourra vous contacter pour organiser le règlement.'}else{$('confirmation-titre').textContent='Référence envoyée pour vérification';$('confirmation-texte').textContent='Ardoise a été averti. Dès que le dépôt est vérifié, votre abonnement sera activé et vous serez notifié.'}setTimeout(function(){$('confirmation-zone').scrollIntoView({behavior:'smooth',block:'center'})},40)}
+  function setBusy(btn, on, texte) {
+    if (!btn) return;
+    if (on) { btn.dataset.texte = btn.textContent; btn.disabled = true; btn.textContent = texte || 'Traitement…'; }
+    else { btn.disabled = false; if (btn.dataset.texte) btn.textContent = btn.dataset.texte; }
+  }
 
-  function creer(mode,btn){if(!planChoisi)return;var per=$('periodicite').value;setBusy(btn,true,mode==='agent'?'Envoi de la demande…':'Préparation du dépôt…');api('/abonnements/renouvellements',{method:'POST',body:{plan_id:planChoisi.id,periodicite:per,mode_paiement:mode}}).then(function(r){data.demande=r.demande||data.demande;derniereVersionDemande=versionDemande(data.demande);renduEtat();if(mode==='depot'){afficherEtapeDepot(data.demande)}else{afficherConfirmation('agent')}flash(r.message||'Demande enregistrée.','succes')}).catch(function(e){flash(e.message,'erreur')}).finally(function(){setBusy(btn,false)})}
+  function montrer(id, visible) { var e = $(id); if (e) e.classList.toggle('cache', !visible); }
 
-  function envoyerReference(){var d=data&&data.demande, ref=$('reference').value.trim(), btn=$('btn-reference');if(!d||!['en_attente_paiement','refusee'].includes(d.statut)){flash('Cette demande n’attend pas de nouvelle référence.','erreur');return}if(ref.length<4){flash('Entrez la référence complète de la transaction.','erreur');$('reference').focus();return}setBusy(btn,true,'Envoi pour vérification…');var preparer=d.statut==='refusee'?api('/abonnements/renouvellements',{method:'POST',body:{plan_id:d.plan_id,periodicite:d.periodicite,mode_paiement:'depot'}}).then(function(n){data.demande=n.demande;return n.demande}):Promise.resolve(d);preparer.then(function(demande){return api('/abonnements/renouvellements/'+encodeURIComponent(demande.id)+'/reference',{method:'PATCH',body:{reference:ref}})}).then(function(r){data.demande=r.demande||data.demande;derniereVersionDemande=versionDemande(data.demande);$('reference').value='';renduEtat();if(r.validation_automatique||(data.demande&&data.demande.statut==='validee')){$('confirmation-zone').classList.add('cache');$('reference-zone').classList.add('cache');$('choix-zone').classList.add('cache');$('flux').classList.add('cache');flash(r.message||'Paiement validé : votre abonnement est actif.','succes');charger(false).catch(function(){});return}afficherConfirmation('reference');flash(r.message||'Référence transmise.','succes')}).catch(function(e){flash(e.message,'erreur')}).finally(function(){setBusy(btn,false)})}
+  /** Défilement doux vers une étape, sans jamais l'imposer sur mobile clavier ouvert. */
+  function amener(id) {
+    var e = $(id);
+    if (!e) return;
+    setTimeout(function () { e.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 40);
+  }
 
-  function restaurerDemande(){var d=data&&data.demande;if(!d||!d.plan_id)return;planChoisi=(data.plans||[]).find(function(p){return p.id===d.plan_id})||null;if(!planChoisi)return;$('periodicite').value=d.periodicite||'annuel';document.querySelectorAll('[data-periode]').forEach(function(b){b.classList.toggle('actif',b.dataset.periode===$('periodicite').value)});$('flux').classList.remove('cache');actualiserPeriodes();renduDisponibiliteDepot();if(d.statut==='en_attente_paiement'||d.statut==='refusee'){afficherEtapeDepot(d)}else if(d.statut==='a_verifier'){afficherConfirmation('reference')}else if(d.statut==='agent_demande'){afficherConfirmation('agent')}else{$('flux').classList.add('cache')}}
+  /* ---------------------------------------------------------------- État */
 
-  function charger(premier){if(premier){$('plans').innerHTML='<div class="carte-section muted">Chargement des offres…</div>'}$('erreur-chargement').classList.add('cache');return api('/abonnements/renouvellement').then(function(r){data=r;derniereVersionDemande=versionDemande(r.demande);renduEcole();renduEtat();renduPlans();renduDisponibiliteDepot();restaurerDemande();return r}).catch(function(e){$('erreur-chargement').classList.remove('cache');$('erreur-chargement').innerHTML='<strong>Impossible de charger les abonnements.</strong><br><span class="aide">'+esc(e.message)+'</span>';$('plans').innerHTML='';flash(e.message,'erreur');throw e})}
+  var data = null;
+  var etat = { plan: null, periodicite: 'annuel', etape: null };
+  var signatureActuelle = '';
+  var envoiEnCours = false;
 
-  function synchroniserSilencieusement(){if(document.hidden)return;api('/abonnements/renouvellement').then(function(r){var nouvelle=versionDemande(r.demande);var statutChange=nouvelle!==derniereVersionDemande;data.ecole=r.ecole;data.depot=r.depot;data.demande=r.demande;derniereVersionDemande=nouvelle;renduEcole();if(statutChange){renduEtat();if(r.demande&&r.demande.statut==='validee'){flash('Paiement validé : votre abonnement est actif.','succes');$('flux').classList.add('cache')}else if(r.demande&&r.demande.statut==='refusee'){restaurerDemande()}}}).catch(function(){})}
+  /* Une clé stable par tentative : deux clics sur « Continuer » envoient la
+     MÊME clé, et le serveur renvoie la demande déjà créée au lieu d'en ouvrir
+     une seconde. Elle est renouvelée dès qu'un choix change. */
+  var cleIdempotence = null;
+  function nouvelleCle() {
+    cleIdempotence = 'r-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+  }
 
-  document.querySelectorAll('[data-periode]').forEach(function(b){b.addEventListener('click',function(){choisirPeriode(b.dataset.periode)})});
-  $('btn-depot').addEventListener('click',function(){creer('depot',this)});
-  $('btn-agent').addEventListener('click',function(){creer('agent',this)});
-  $('btn-reference').addEventListener('click',envoyerReference);
-  $('changer-mode').addEventListener('click',function(){$('reference-zone').classList.add('cache');$('choix-zone').classList.remove('cache');setStep(1);flash('Choisissez un autre mode de règlement. La nouvelle demande remplacera la précédente.','info')});
-  $('copier-numero').addEventListener('click',function(){var numero=$('numero-depot').textContent.trim();if(!numero||numero==='—')return;var btn=this;function ok(){var ancien=btn.textContent;btn.textContent='Numéro copié ✓';setTimeout(function(){btn.textContent=ancien},1800)}if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(numero).then(ok).catch(function(){})}else{var t=document.createElement('textarea');t.value=numero;document.body.appendChild(t);t.select();try{document.execCommand('copy');ok()}catch(e){}t.remove()}});
-  $('reessayer').addEventListener('click',function(){charger(true).catch(function(){})});
-  $('bouton-deconnexion-nav').addEventListener('click',function(){ArdoiseSession.terminer()});
+  /** Les états où une demande est encore en cours côté école. */
+  var EN_COURS = ['en_attente_paiement', 'a_verifier', 'agent_demande',
+    'agent_pris_en_charge', 'agent_assigne', 'rdv_planifie', 'paiement_recupere'];
 
-  charger(true).catch(function(){});
-  setInterval(synchroniserSilencieusement,20000);
+  var LIB_STATUT = {
+    en_attente_paiement: 'Dépôt à effectuer',
+    a_verifier: 'Paiement en cours de vérification',
+    agent_demande: 'Demande reçue',
+    agent_pris_en_charge: 'Prise en charge',
+    agent_assigne: 'Agent assigné',
+    rdv_planifie: 'Rendez-vous prévu',
+    paiement_recupere: 'Paiement récupéré',
+    validee: 'Abonnement activé',
+    refusee: 'Paiement à corriger',
+    annulee: 'Demande remplacée'
+  };
+
+  /* ----------------------------------------------------- Étape 0 : état */
+
+  function renduEtat() {
+    var e = (data && data.ecole) || {};
+    var jours = joursRestants(e.date_expiration);
+    var expire = jours !== null && jours < 0;
+
+    $('ecole').innerHTML =
+      '<div class="resume-case"><small>École</small><strong>' + esc(e.nom || '—') + '</strong>'
+      + '<div class="muted code" style="margin-top:4px">' + esc(e.code || '') + '</div></div>'
+      + '<div class="resume-case"><small>Bouquet actuel</small><strong>' + esc(e.plan_nom || 'Aucun') + '</strong></div>'
+      + '<div class="resume-case"><small>' + (expire ? 'Expiré depuis' : 'Prochaine échéance') + '</small>'
+      + '<strong>' + dateCourte(e.date_expiration) + '</strong>'
+      + (jours !== null
+        ? '<div class="muted" style="margin-top:4px">'
+          + (expire ? Math.abs(jours) + ' jour' + (Math.abs(jours) > 1 ? 's' : '')
+            : 'dans ' + jours + ' jour' + (jours > 1 ? 's' : '')) + '</div>'
+        : '')
+      + '</div>';
+
+    var compact = $('etat-compact');
+    if (compact) {
+      compact.textContent = expire ? 'Expiré'
+        : e.abonnement_statut === 'actif' ? 'Actif'
+          : e.abonnement_statut ? String(e.abonnement_statut).replace(/_/g, ' ') : 'Sans abonnement';
+      compact.classList.toggle('ton-alerte', expire);
+      compact.classList.toggle('ton-ok', !expire && e.abonnement_statut === 'actif');
+    }
+
+    /* Message d'échéance : ferme sur le fait, jamais culpabilisant. Ce que le
+       directeur a besoin de lire en premier, c'est que rien n'est perdu. */
+    var zone = $('etat-message');
+    if (expire) {
+      zone.innerHTML = '<div class="etat-demande"><p style="margin:0">'
+        + '<strong>Votre abonnement est arrivé à échéance.</strong><br>'
+        + 'Vos données sont conservées. Renouvelez votre abonnement pour reprendre '
+        + 'l’utilisation complète d’Ardoise.</p></div>';
+    } else if (jours !== null && jours <= 30) {
+      zone.innerHTML = '<div class="etat-demande"><p style="margin:0">'
+        + 'Votre abonnement expire dans ' + jours + ' jour' + (jours > 1 ? 's' : '')
+        + '. Vous pouvez le renouveler dès maintenant : les jours restants sont conservés.</p></div>';
+    } else {
+      zone.innerHTML = '';
+    }
+  }
+
+  /** Le bouton principal — présent seulement quand aucune demande n'est en cours. */
+  function renduActions() {
+    var d = data && data.demande;
+    var enCours = d && EN_COURS.indexOf(d.statut) !== -1;
+    var zone = $('etat-actions');
+
+    if (enCours || (d && d.statut === 'refusee')) { zone.innerHTML = ''; return; }
+    if (etat.etape) { zone.innerHTML = ''; return; }
+
+    zone.innerHTML = '<button type="button" class="bouton bouton-principal" id="btn-renouveler">'
+      + 'Renouveler mon abonnement</button>';
+    $('btn-renouveler').addEventListener('click', function () {
+      ouvrirTunnel();
+      amener('etape-offre');
+    });
+  }
+
+  /* ------------------------------------------------- Suivi d'une demande */
+
+  /** Les jalons affichés à l'école, selon le mode de règlement. */
+  function jalons(d) {
+    if (d.mode_paiement === 'agent') {
+      return [
+        { cle: 'agent_demande', libelle: 'Demande reçue' },
+        { cle: 'agent_pris_en_charge', libelle: 'Prise en charge' },
+        { cle: 'agent_assigne', libelle: 'Agent assigné' },
+        { cle: 'rdv_planifie', libelle: 'Rendez-vous prévu' },
+        { cle: 'paiement_recupere', libelle: 'Paiement récupéré' },
+        { cle: 'validee', libelle: 'Terminé' }
+      ];
+    }
+    return [
+      { cle: 'en_attente_paiement', libelle: 'Dépôt effectué' },
+      { cle: 'a_verifier', libelle: 'Référence envoyée' },
+      { cle: 'verification', libelle: 'Vérification Ardoise' },
+      { cle: 'validee', libelle: 'Activation' }
+    ];
+  }
+
+  function indiceJalon(d) {
+    var liste = jalons(d);
+    if (d.statut === 'validee') return liste.length - 1;
+    // « Vérification Ardoise » et « Référence envoyée » se déclenchent ensemble :
+    // dès que la référence part, la vérification est en cours.
+    if (d.statut === 'a_verifier') return 2;
+    for (var i = 0; i < liste.length; i++) if (liste[i].cle === d.statut) return i;
+    return 0;
+  }
+
+  function renduSuivi() {
+    var d = data && data.demande;
+    var pertinent = d && (EN_COURS.indexOf(d.statut) !== -1 || d.statut === 'refusee'
+      || (d.statut === 'validee' && !etat.etape));
+
+    if (!pertinent) { montrer('suivi', false); return; }
+
+    // Une demande validée n'a plus rien à suivre une fois la page rechargée :
+    // l'état en haut dit déjà « Actif ».
+    if (d.statut === 'validee') { montrer('suivi', false); return; }
+
+    montrer('suivi', true);
+
+    if (d.statut === 'refusee') {
+      $('suivi').innerHTML =
+        '<div class="carte-titre-ligne"><div><span class="sur-titre">Renouvellement</span>'
+        + '<h2>Nous n’avons pas pu confirmer ce paiement.</h2></div></div>'
+        + '<div class="etat-demande erreur">'
+        + (d.refuse_motif ? '<div class="etat-motif"><strong>Motif :</strong> ' + esc(d.refuse_motif) + '</div>' : '')
+        + '<p style="margin:8px 0 0">Votre offre et votre durée sont conservées. '
+        + 'Vous n’avez qu’à corriger la référence de transaction.</p></div>'
+        + recapHTML(d)
+        + '<div class="etat-actions"><button type="button" class="bouton bouton-principal" id="btn-corriger">'
+        + 'Corriger la référence</button></div>';
+
+      $('btn-corriger').addEventListener('click', function () {
+        // On rouvre UNIQUEMENT l'étape dépôt : ni offre, ni durée à refaire.
+        restaurerChoixDepuisDemande(d);
+        ouvrirTunnel();
+        allerEtape('depot');
+        amener('etape-depot');
+      });
+      return;
+    }
+
+    var liste = jalons(d);
+    var courant = indiceJalon(d);
+    var etapes = liste.map(function (j, i) {
+      var cls = i < courant ? 'fait' : i === courant ? 'actif' : '';
+      return '<li class="' + cls + '"><span>' + (i < courant ? '✓' : i === courant ? '●' : '○')
+        + '</span><div>' + esc(j.libelle) + '</div></li>';
+    }).join('');
+
+    var complement = '';
+    if (d.statut === 'a_verifier' && d.reference_transaction) {
+      complement = '<div class="etat-reference">Référence : <span class="code">'
+        + esc(d.reference_transaction) + '</span></div>';
+    }
+    if (d.statut === 'rdv_planifie' && d.rdv_at) {
+      complement = '<div class="etat-reference">Rendez-vous : <strong>' + dateCourte(d.rdv_at) + '</strong></div>';
+    }
+    if (d.statut === 'agent_assigne' && d.agent_nom) {
+      complement = '<div class="etat-reference">Agent : <strong>' + esc(d.agent_nom) + '</strong></div>';
+    }
+
+    $('suivi').innerHTML =
+      '<div class="carte-titre-ligne"><div><span class="sur-titre">Renouvellement en cours</span>'
+      + '<h2>' + esc(LIB_STATUT[d.statut] || d.statut) + '</h2></div>'
+      + '<span class="etat-compact">' + esc(libPeriode(d.periodicite)) + '</span></div>'
+      + recapHTML(d)
+      + '<ol class="jalons">' + etapes + '</ol>'
+      + complement
+      + '<p class="aide" style="margin-top:12px">'
+      + (d.mode_paiement === 'agent'
+        ? 'L’équipe Ardoise vous contactera. Votre école sera avertie à chaque étape.'
+        : 'Votre école sera avertie dès que le paiement sera validé.')
+      + '</p>';
+  }
+
+  function recapHTML(d) {
+    return '<div class="recap-choix">'
+      + '<div><small>Offre</small><strong>' + esc(d.plan_nom || '—') + '</strong></div>'
+      + '<div><small>Durée</small><strong>' + esc(libPeriode(d.periodicite)) + '</strong></div>'
+      + '<div><small>Montant</small><strong>' + money(d.montant_attendu, d.devise) + '</strong></div>'
+      + '</div>';
+  }
+
+  /* ------------------------------------------------------- Étape 1 : offre */
+
+  function caracteristiques(p) {
+    var f = Array.isArray(p.fonctionnalites_incluses) ? p.fonctionnalites_incluses : [];
+    return f.slice(0, 4).map(function (x) {
+      var t = typeof x === 'string' ? x : (x.nom || x.cle || '');
+      return t ? '<li>' + esc(t.replace(/_/g, ' ')) + '</li>' : '';
+    }).join('');
+  }
+
+  function renduPlans() {
+    var courant = (data.ecole || {}).abonnement_plan_id;
+    var plans = data.plans || [];
+    if (!plans.length) {
+      $('plans').innerHTML = '<div class="carte-section erreur">Aucune offre disponible pour le moment.</div>';
+      return;
+    }
+
+    $('plans').innerHTML = plans.map(function (p) {
+      var actuel = p.id === courant;
+      var choisi = etat.plan && etat.plan.id === p.id;
+      return '<article class="plan' + (actuel ? ' actuel' : '') + (choisi ? ' choisi' : '') + '">'
+        + (actuel ? '<span class="plan-badge">Votre bouquet actuel</span>' : '')
+        + '<h3>' + esc(p.nom) + '</h3>'
+        + '<div class="plan-desc">' + esc(p.positionnement || p.description || '') + '</div>'
+        + '<div class="plan-prix">' + money(p.prix, p.devise) + ' <small>/ mois</small></div>'
+        + '<ul>' + caracteristiques(p) + '</ul>'
+        + '<button type="button" class="bouton ' + (actuel ? 'bouton-principal' : 'bouton-secondaire')
+        + '" data-plan="' + esc(p.id) + '">'
+        + (actuel ? 'Renouveler' : 'Passer à cette offre') + '</button>'
+        + '</article>';
+    }).join('');
+
+    Array.prototype.forEach.call($('plans').querySelectorAll('[data-plan]'), function (b) {
+      b.addEventListener('click', function () {
+        var plan = plans.find(function (p) { return p.id === b.dataset.plan; });
+        if (!plan) return;
+        choisirPlan(plan, plan.id !== courant);
+      });
+    });
+  }
+
+  function choisirPlan(plan, estChangement) {
+    etat.plan = plan;
+    nouvelleCle();
+    renduPlans();
+    renduPeriodes();
+    allerEtape('duree');
+
+    /* Changer de bouquet n'est pas anodin : on le dit, sans bloquer. */
+    if (estChangement) {
+      flash('Vous passez au bouquet ' + plan.nom + '. Votre offre actuelle sera remplacée après validation.', 'info');
+    }
+    amener('etape-duree');
+  }
+
+  /* ------------------------------------------------------ Étape 2 : durée */
+
+  function renduPeriodes() {
+    if (!etat.plan) return;
+    var p = etat.plan;
+    var tarifs = p.tarifs || {};
+    var economies = p.economies || {};
+
+    var options = [
+      { cle: 'mensuel', titre: 'Mensuel', mois: 1 },
+      { cle: 'semestriel', titre: '6 mois', mois: 6 },
+      { cle: 'annuel', titre: 'Annuel', mois: 12 }
+    ];
+
+    $('periodes').innerHTML = options.map(function (o) {
+      var total = tarifs[o.cle];
+      var eco = economies[o.cle] || 0;
+      var parMois = o.mois > 1 && Number.isFinite(Number(total)) ? Number(total) / o.mois : null;
+
+      return '<button type="button" class="periode-option' + (etat.periodicite === o.cle ? ' actif' : '')
+        + '" data-periode="' + o.cle + '">'
+        + '<span>' + o.titre + '</span>'
+        + '<strong>' + money(total, p.devise) + '</strong>'
+        // Le montant réellement à payer et l'équivalent mensuel sont montrés
+        // ensemble : c'est la confusion la plus fréquente sur ce type d'écran.
+        + (parMois !== null ? '<em>' + money(Math.round(parMois * 100) / 100, p.devise) + ' / mois équivalent</em>' : '')
+        // Aucune économie inventée : le serveur renvoie 0 quand il n'y a pas
+        // de remise réelle au catalogue, et rien ne s'affiche alors.
+        + (eco > 0 ? '<small>Économisez ' + money(eco, p.devise) + '</small>' : '')
+        + (o.cle === 'annuel' && eco > 0 ? '<i class="marque-reco">Recommandé</i>' : '')
+        + '</button>';
+    }).join('');
+
+    Array.prototype.forEach.call($('periodes').querySelectorAll('[data-periode]'), function (b) {
+      b.addEventListener('click', function () {
+        etat.periodicite = b.dataset.periode;
+        nouvelleCle();
+        renduPeriodes();
+        allerEtape('mode');
+        amener('etape-mode');
+      });
+    });
+  }
+
+  /* ------------------------------------------------------- Étape 3 : mode */
+
+  function renduDisponibiliteDepot() {
+    var d = (data && data.depot) || {};
+    var z = $('depot-disponibilite');
+    if (!z) return;
+    if (!d.disponible) {
+      z.innerHTML = '<span class="indispo-point"></span>Dépôt temporairement indisponible : demandez un agent.';
+      $('btn-depot').disabled = true;
+      return;
+    }
+    $('btn-depot').disabled = false;
+    z.innerHTML = '<span class="dispo-point"></span>Dépôt disponible'
+      + (d.reseau ? ' via ' + esc(d.reseau) : '') + '.';
+  }
+
+  /* ------------------------------------------------------ Étape 4 : dépôt */
+
+  function renduEtapeDepot() {
+    var d = (data && data.demande) || {};
+    var dep = (data && data.depot) || {};
+    var plan = etat.plan || {};
+
+    $('recap-depot').innerHTML =
+      '<div><small>Offre</small><strong>' + esc(d.plan_nom || plan.nom || '—') + '</strong></div>'
+      + '<div><small>Durée</small><strong>' + esc(libPeriode(d.periodicite || etat.periodicite)) + '</strong></div>'
+      + '<div><small>Montant</small><strong>'
+      + money(d.montant_attendu != null ? d.montant_attendu : (plan.tarifs || {})[etat.periodicite],
+        d.devise || plan.devise) + '</strong></div>';
+
+    $('montant-depot').textContent = money(
+      d.montant_attendu != null ? d.montant_attendu : (plan.tarifs || {})[etat.periodicite],
+      d.devise || plan.devise);
+    $('reseau-depot').textContent = d.reseau_depot || dep.reseau || 'Dépôt Ardoise';
+    $('numero-depot').textContent = d.numero_depot || dep.numero || '—';
+    $('nom-depot').textContent = d.nom_depot || dep.nom || 'Ardoise';
+  }
+
+  /* ------------------------------------------------- Machine à états */
+
+  var ETAPES = ['offre', 'duree', 'mode', 'depot'];
+
+  function ouvrirTunnel() {
+    montrer('tunnel', true);
+    if (!etat.etape) allerEtape('offre');
+  }
+
+  function fermerTunnel() {
+    montrer('tunnel', false);
+    etat.etape = null;
+    renduActions();
+  }
+
+  function allerEtape(nom) {
+    etat.etape = nom;
+    var atteint = ETAPES.indexOf(nom);
+
+    // Une étape n'est visible que si elle est atteinte. Revenir en arrière
+    // referme les suivantes sans effacer les choix qu'elles portaient.
+    montrer('etape-offre', atteint >= 0);
+    montrer('etape-duree', atteint >= 1);
+    montrer('etape-mode', atteint >= 2);
+    montrer('etape-depot', atteint >= 3);
+
+    if (atteint >= 1) renduPeriodes();
+    if (atteint >= 2) renduDisponibiliteDepot();
+    if (atteint >= 3) renduEtapeDepot();
+
+    renduFil();
+    renduActions();
+  }
+
+  function renduFil() {
+    var libelles = [
+      { cle: 'offre', titre: 'Offre' },
+      { cle: 'duree', titre: 'Durée' },
+      { cle: 'mode', titre: 'Règlement' },
+      { cle: 'depot', titre: 'Dépôt' }
+    ];
+    var courant = ETAPES.indexOf(etat.etape);
+    // L'étape « Dépôt » n'apparaît au fil que si elle est atteinte : elle ne
+    // concerne pas le parcours agent.
+    var visibles = libelles.slice(0, Math.max(3, courant + 1));
+
+    $('tunnel-fil').innerHTML = visibles.map(function (l, i) {
+      var cls = i < courant ? 'fait' : i === courant ? 'actif' : '';
+      return '<span class="fil-etape ' + cls + '"><b>' + (i < courant ? '✓' : (i + 1)) + '</b>'
+        + esc(l.titre) + '</span>';
+    }).join('<i class="fil-trait"></i>');
+  }
+
+  /** Rétablit offre et durée depuis une demande existante, sans rien redemander. */
+  function restaurerChoixDepuisDemande(d) {
+    if (!d) return;
+    var plan = (data.plans || []).find(function (p) { return p.id === d.plan_id; });
+    if (plan) etat.plan = plan;
+    if (d.periodicite) etat.periodicite = d.periodicite;
+  }
+
+  /* ------------------------------------------------------------ Actions */
+
+  function creerDemande(mode, btn) {
+    if (!etat.plan || envoiEnCours) return;
+    envoiEnCours = true;
+    setBusy(btn, true, mode === 'agent' ? 'Envoi de la demande…' : 'Préparation du dépôt…');
+
+    api('/abonnements/renouvellements', {
+      method: 'POST',
+      body: {
+        plan_id: etat.plan.id,
+        periodicite: etat.periodicite,
+        mode_paiement: mode,
+        cle_idempotence: cleIdempotence
+      }
+    }).then(function (r) {
+      data.demande = r.demande || data.demande;
+      signatureActuelle = signature(data);
+      if (mode === 'depot') {
+        allerEtape('depot');
+        renduSuivi();
+        amener('etape-depot');
+      } else {
+        fermerTunnel();
+        renduSuivi();
+        montrer('suivi', true);
+        amener('suivi');
+      }
+      renduEtat();
+      flash(r.message || 'Demande enregistrée.', 'succes');
+    }).catch(function (e) {
+      flash(e.message, 'erreur');
+    }).finally(function () {
+      envoiEnCours = false;
+      setBusy(btn, false);
+    });
+  }
+
+  function envoyerReference() {
+    var d = data && data.demande;
+    var ref = $('reference').value.trim();
+    var btn = $('btn-reference');
+
+    if (!d || ['en_attente_paiement', 'refusee'].indexOf(d.statut) === -1) {
+      flash('Cette demande n’attend pas de nouvelle référence.', 'erreur');
+      return;
+    }
+    if (ref.length < 4) {
+      flash('Entrez la référence complète de la transaction.', 'erreur');
+      $('reference').focus();
+      return;
+    }
+    if (envoiEnCours) return;
+    envoiEnCours = true;
+    setBusy(btn, true, 'Envoi pour vérification…');
+
+    /* Une référence refusée se corrige SUR LA MÊME DEMANDE : le serveur
+       accepte désormais la transition `refusee → a_verifier`. La version
+       précédente créait ici une seconde demande pour contourner un serveur qui
+       refusait — l'école changeait d'identifiant de dossier et l'historique du
+       refus disparaissait. */
+    api('/abonnements/renouvellements/' + encodeURIComponent(d.id) + '/reference', {
+      method: 'PATCH', body: { reference: ref }
+    }).then(function (r) {
+      data.demande = r.demande || data.demande;
+      signatureActuelle = signature(data);
+      $('reference').value = '';
+      fermerTunnel();
+
+      if (r.validation_automatique || (data.demande && data.demande.statut === 'validee')) {
+        flash(r.message || 'Paiement validé : votre abonnement est actif.', 'succes');
+        return charger(false);
+      }
+      renduSuivi();
+      renduEtat();
+      montrer('suivi', true);
+      amener('suivi');
+      flash(r.message || 'Référence transmise.', 'succes');
+    }).catch(function (e) {
+      flash(e.message, 'erreur');
+    }).finally(function () {
+      envoiEnCours = false;
+      setBusy(btn, false);
+    });
+  }
+
+  /* -------------------------------------------- Confirmation « agent » */
+
+  function ouvrirConfirmationAgent() {
+    if (!etat.plan) return;
+    var e = (data && data.ecole) || {};
+    var adresse = [e.adresse, e.commune, e.ville].filter(Boolean).join(', ');
+
+    $('recap-agent').innerHTML =
+      '<div><small>École</small><strong>' + esc(e.nom || '—') + '</strong></div>'
+      + '<div><small>Adresse</small><strong>' + esc(adresse || 'Non renseignée') + '</strong></div>'
+      + '<div><small>Téléphone</small><strong>' + esc(e.telephone || 'Non renseigné') + '</strong></div>'
+      + '<div><small>Offre</small><strong>' + esc(etat.plan.nom) + '</strong></div>'
+      + '<div><small>Durée</small><strong>' + esc(libPeriode(etat.periodicite)) + '</strong></div>'
+      + '<div><small>Montant</small><strong>'
+      + money((etat.plan.tarifs || {})[etat.periodicite], etat.plan.devise) + '</strong></div>';
+
+    montrer('voile-agent', true);
+    $('agent-confirmer').focus();
+  }
+
+  function fermerConfirmationAgent() { montrer('voile-agent', false); }
+
+  /* ------------------------------------------------------- Chargement */
+
+  /**
+   * Signature des données affichées. Tant qu'elle ne change pas, la
+   * synchronisation de fond ne touche à AUCUN nœud du DOM — c'est ce qui
+   * supprime le clignotement et les sauts de défilement.
+   */
+  function signature(d) {
+    if (!d) return '';
+    var e = d.ecole || {};
+    var de = d.demande || {};
+    return [
+      e.plan_nom, e.abonnement_statut, e.date_expiration,
+      de.id, de.statut, de.updated_at, de.reference_transaction,
+      de.refuse_motif, de.rdv_at, de.agent_nom
+    ].join('|');
+  }
+
+  function peindre() {
+    renduEtat();
+    renduSuivi();
+    renduActions();
+    if (etat.etape) renduPlans();
+  }
+
+  function charger(premier) {
+    if (premier) $('plans').innerHTML = '<div class="carte-section muted">Chargement des offres…</div>';
+    montrer('erreur-chargement', false);
+
+    return api('/abonnements/renouvellement').then(function (r) {
+      data = r;
+      signatureActuelle = signature(r);
+      renduPlans();
+      peindre();
+
+      /* Reprise d'un parcours interrompu : une demande de dépôt en attente
+         rouvre directement l'étape référence, avec offre et durée déjà
+         remplies. L'utilisateur ne recommence jamais ce qu'il a déjà fait. */
+      var d = r.demande;
+      if (d && d.statut === 'en_attente_paiement') {
+        restaurerChoixDepuisDemande(d);
+        ouvrirTunnel();
+        allerEtape('depot');
+      }
+      return r;
+    }).catch(function (e) {
+      montrer('erreur-chargement', true);
+      $('erreur-chargement').innerHTML = '<strong>Impossible de charger les abonnements.</strong><br>'
+        + '<span class="aide">' + esc(e.message) + '</span>';
+      $('plans').innerHTML = '';
+      flash(e.message, 'erreur');
+      throw e;
+    });
+  }
+
+  /**
+   * Synchronisation de fond.
+   *
+   * Trois garde-fous, dans cet ordre :
+   *   1. onglet caché         → on ne fait rien ;
+   *   2. saisie en cours      → on ne touche pas au DOM sous les doigts ;
+   *   3. signature inchangée  → on ne redessine rien.
+   */
+  function synchroniser() {
+    if (document.hidden) return;
+    if (envoiEnCours) return;
+
+    var champ = $('reference');
+    var saisieEnCours = champ && (document.activeElement === champ || champ.value.trim().length > 0);
+
+    api('/abonnements/renouvellement').then(function (r) {
+      var nouvelle = signature(r);
+      if (nouvelle === signatureActuelle) return;   // rien n'a changé : DOM intact
+
+      var ancienStatut = data && data.demande && data.demande.statut;
+      data.ecole = r.ecole;
+      data.depot = r.depot;
+      data.demande = r.demande;
+      data.plans = r.plans || data.plans;
+      signatureActuelle = nouvelle;
+
+      // L'état en haut est toujours sûr à redessiner : il ne contient aucun champ.
+      renduEtat();
+      if (saisieEnCours) return;
+
+      var statut = r.demande && r.demande.statut;
+      if (statut === 'validee' && ancienStatut !== 'validee') {
+        fermerTunnel();
+        flash('Paiement validé : votre abonnement est actif.', 'succes');
+      }
+      if (statut === 'refusee' && ancienStatut !== 'refusee') {
+        fermerTunnel();
+      }
+      renduSuivi();
+      renduActions();
+    }).catch(function () { /* une synchro ratée est sans conséquence */ });
+  }
+
+  /* ------------------------------------------------------------ Câblage */
+
+  $('btn-depot').addEventListener('click', function () { creerDemande('depot', this); });
+  $('btn-agent').addEventListener('click', ouvrirConfirmationAgent);
+  $('agent-annuler').addEventListener('click', fermerConfirmationAgent);
+  $('agent-confirmer').addEventListener('click', function () {
+    fermerConfirmationAgent();
+    creerDemande('agent', $('btn-agent'));
+  });
+  $('btn-reference').addEventListener('click', envoyerReference);
+  $('reference').addEventListener('keydown', function (ev) {
+    if (ev.key === 'Enter') { ev.preventDefault(); envoyerReference(); }
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll('[data-retour]'), function (b) {
+    b.addEventListener('click', function () {
+      allerEtape(b.dataset.retour);
+      amener('etape-' + b.dataset.retour);
+    });
+  });
+
+  $('copier-numero').addEventListener('click', function () {
+    var numero = $('numero-depot').textContent.trim();
+    if (!numero || numero === '—') return;
+    var btn = this;
+    var ok = function () {
+      var ancien = btn.textContent;
+      btn.textContent = 'Numéro copié ✓';
+      setTimeout(function () { btn.textContent = ancien; }, 1800);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(numero).then(ok).catch(function () {});
+    } else {
+      var t = document.createElement('textarea');
+      t.value = numero;
+      document.body.appendChild(t);
+      t.select();
+      try { document.execCommand('copy'); ok(); } catch (e) {}
+      t.remove();
+    }
+  });
+
+  $('reessayer').addEventListener('click', function () { charger(true).catch(function () {}); });
+  $('bouton-deconnexion-nav').addEventListener('click', function () { ArdoiseSession.terminer(); });
+  document.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Escape' && !$('voile-agent').classList.contains('cache')) fermerConfirmationAgent();
+  });
+
+  nouvelleCle();
+  charger(true).catch(function () {});
+  setInterval(synchroniser, 20000);
 })();

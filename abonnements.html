@@ -21,9 +21,36 @@
       <div class="marque">Ardo<span class="lettre-i">ı<span class="point-i-marque"></span></span>se</div>
       <ul class="nav-liste">
         <li><a class="nav-item" href="dashboard-directeur.html">Tableau de bord</a></li>
+        <li><a class="nav-item" href="annee-scolaire.html">Année scolaire</a></li>
+        <li><a class="nav-item" href="espace-secretaire.html">Accueil Secrétariat</a></li>
+        <li><a class="nav-item" href="espace-professeur.html">Mes cours</a></li>
+        <li><a class="nav-item" href="espace-titulaire.html">Ma classe</a></li>
+        <li><a class="nav-item" href="cours-classe-titulaire.html">Cours de la classe</a></li>
+        <li><a class="nav-item" href="eleves.html">Élèves</a></li>
+        <li><a class="nav-item" href="inscriptions.html">Inscriptions</a></li>
+        <li><a class="nav-item" href="orientation.html">Orientation</a></li>
+        <li><a class="nav-item" href="frais-scolaires.html">Frais scolaires</a></li>
+        <li><a class="nav-item" href="comptabilite.html">Comptabilité</a></li>
+        <li><a class="nav-item" href="utilisateurs.html">Utilisateurs</a></li>
+        <li><a class="nav-item" href="classes.html">Classes</a></li>
+        <li><a class="nav-item" href="cours.html">Cours</a></li>
+        <li><a class="nav-item" href="presences.html">Présences</a></li>
+        <li><a class="nav-item" href="emploi-du-temps.html">Emploi du temps</a></li>
+        <li><a class="nav-item" href="discipline.html">Discipline</a></li>
+        <li><a class="nav-item" href="site-public.html">Site public</a></li>
+        <li><a class="nav-item" href="notes.html">Notes</a></li>
+        <li><a class="nav-item" href="bulletins.html">Bulletins</a></li>
+        <li><a class="nav-item" href="bulletin-annuel.html">Bulletin annuel</a></li>
+        <li><a class="nav-item" href="repechage.html">Repêchage</a></li>
+        <li><a class="nav-item" href="generateur-modeles.html">Modèles de bulletins</a></li>
+        <li><a class="nav-item" href="calendrier.html">Calendrier</a></li>
+        <li><a class="nav-item" href="rapports.html">Rapports</a></li>
+        <li><a class="nav-item" href="archives.html">Archives</a></li>
+        <li><a class="nav-item" href="journal.html">Journal d'activité</a></li>
         <li><a class="nav-item actif" href="abonnements.html">Abonnements</a></li>
         <li><a class="nav-item" href="support.html">Support</a></li>
         <li><a class="nav-item" href="parametres.html">Paramètres</a></li>
+        <li><a class="nav-item" href="messages.html">Messages</a></li>
         <li><a class="nav-item" href="mon-profil.html">Mon profil</a></li>
       </ul>
     </div>
@@ -40,11 +67,16 @@
     </div>
 
     <div class="message-flash" id="message-flash" role="status"></div>
-    <div class="carte-section cache erreur" id="erreur-chargement"><strong>Impossible de charger les abonnements.</strong><br><button type="button" class="bouton bouton-secondaire" id="reessayer" style="margin-top:10px">Réessayer</button></div>
+    <div class="carte-section cache erreur" id="erreur-chargement">
+      <strong>Impossible de charger les abonnements.</strong><br>
+      <button type="button" class="bouton bouton-secondaire" id="reessayer" style="margin-top:10px">Réessayer</button>
+    </div>
 
-    <section class="carte-section abonnement-actuel">
+    <!-- ÉTAPE 0 — état actuel. Toujours visible : c'est la réponse à la
+         question que le directeur se pose en arrivant. -->
+    <section class="carte-section abonnement-actuel" id="carte-etat" aria-live="polite">
       <div class="carte-titre-ligne">
-        <div><span class="sur-titre">Votre école</span><h2>Abonnement actuel</h2></div>
+        <div><span class="sur-titre">Votre école</span><h2>Mon abonnement</h2></div>
         <span class="etat-compact" id="etat-compact">Chargement…</span>
       </div>
       <div class="resume-ecole" id="ecole">
@@ -52,71 +84,72 @@
         <div class="resume-case"><small>Bouquet actuel</small><strong>—</strong></div>
         <div class="resume-case"><small>Échéance</small><strong>—</strong></div>
       </div>
-      <div id="etat-demande"></div>
+      <div id="etat-message"></div>
+      <div id="etat-actions" class="etat-actions"></div>
     </section>
 
-    <div class="section-titre">
-      <div><h2>1. Choisissez votre offre</h2><p>Votre bouquet actuel est identifié. Vous pouvez le renouveler ou changer d’offre.</p></div>
-    </div>
-    <div class="plans" id="plans"><div class="carte-section muted">Chargement des offres…</div></div>
+    <!-- SUIVI — remplace le tunnel dès qu'une demande est en cours.
+         Un paiement déjà envoyé ne doit jamais réafficher le tunnel. -->
+    <section class="carte-section cache suivi-demande" id="suivi" aria-live="polite"></section>
 
-    <section class="carte-section cache tunnel-renouvellement" id="flux" style="margin-top:22px">
-      <div class="tunnel-etapes" aria-label="Étapes du renouvellement">
-        <div class="tunnel-etape actif" data-step="1"><span>1</span><div><strong>Choix</strong><small>Offre et durée</small></div></div>
-        <div class="tunnel-trait"></div>
-        <div class="tunnel-etape" data-step="2"><span>2</span><div><strong>Règlement</strong><small>Dépôt ou agent</small></div></div>
-        <div class="tunnel-trait"></div>
-        <div class="tunnel-etape" data-step="3"><span>3</span><div><strong>Vérification</strong><small>Activation Ardoise</small></div></div>
-      </div>
+    <!-- TUNNEL — masqué tant que le directeur n'a pas dit qu'il voulait
+         renouveler. Chaque étape n'apparaît qu'une fois la précédente faite. -->
+    <div class="cache" id="tunnel">
+      <div class="tunnel-fil" id="tunnel-fil" aria-label="Étapes du renouvellement"></div>
 
-      <div class="recap-renouvellement" id="selection"></div>
+      <!-- 1. Offre -->
+      <section class="carte-section etape-bloc" id="etape-offre">
+        <div class="etape-entete">
+          <div><span class="sur-titre">Étape 1</span><h2>Choisissez votre offre</h2>
+            <p class="aide">Votre bouquet actuel est identifié. Vous pouvez le renouveler ou changer d’offre.</p></div>
+        </div>
+        <div class="plans" id="plans"></div>
+      </section>
 
-      <div id="choix-zone">
-        <div class="bloc-tunnel">
-          <div class="bloc-numero">1</div>
-          <div class="bloc-contenu">
-            <h3>Pour combien de temps ?</h3>
-            <p class="aide">Le montant se met à jour immédiatement. Aucun paiement n’est lancé à cette étape.</p>
-            <div class="periodes" role="group" aria-label="Durée de l’abonnement">
-              <button type="button" class="periode-option" data-periode="mensuel"><span>Mensuel</span><strong id="prix-mensuel">—</strong></button>
-              <button type="button" class="periode-option" data-periode="semestriel"><span>6 mois</span><strong id="prix-semestriel">—</strong></button>
-              <button type="button" class="periode-option actif" data-periode="annuel"><span>Annuel</span><strong id="prix-annuel">—</strong><small>Choix recommandé</small></button>
-            </div>
-            <input type="hidden" id="periodicite" value="annuel" />
+      <!-- 2. Durée -->
+      <section class="carte-section etape-bloc cache" id="etape-duree">
+        <div class="etape-entete">
+          <div><span class="sur-titre">Étape 2</span><h2>Pour combien de temps ?</h2>
+            <p class="aide">Le montant se met à jour immédiatement. Aucun paiement n’est lancé à cette étape.</p></div>
+          <button type="button" class="lien-retour" data-retour="offre">Changer d’offre</button>
+        </div>
+        <div class="periodes" id="periodes" role="group" aria-label="Durée de l’abonnement"></div>
+      </section>
+
+      <!-- 3. Mode de règlement — volontairement sans numéro ni champ. -->
+      <section class="carte-section etape-bloc cache" id="etape-mode">
+        <div class="etape-entete">
+          <div><span class="sur-titre">Étape 3</span><h2>Comment souhaitez-vous régler ?</h2>
+            <p class="aide">Les instructions détaillées apparaîtront seulement après votre choix.</p></div>
+          <button type="button" class="lien-retour" data-retour="duree">Changer la durée</button>
+        </div>
+        <div class="renouvellement-grille">
+          <div class="mode-carte mode-depot">
+            <div class="mode-icone" aria-hidden="true">⌁</div>
+            <div class="mode-badge">Le plus rapide</div>
+            <h3>Faire un dépôt</h3>
+            <p>Effectuez vous-même le règlement, puis transmettez la référence reçue après la transaction.</p>
+            <div id="depot-disponibilite" class="aide"></div>
+            <button type="button" class="bouton bouton-principal" id="btn-depot">Continuer avec le dépôt</button>
+          </div>
+          <div class="mode-carte">
+            <div class="mode-icone" aria-hidden="true">↗</div>
+            <h3>Demander un agent</h3>
+            <p>Un agent Ardoise peut vous contacter pour organiser le règlement auprès de votre école.</p>
+            <button type="button" class="bouton bouton-secondaire" id="btn-agent">Demander un agent</button>
           </div>
         </div>
+      </section>
 
-        <div class="bloc-tunnel">
-          <div class="bloc-numero">2</div>
-          <div class="bloc-contenu">
-            <h3>Comment souhaitez-vous régler ?</h3>
-            <p class="aide">Choisissez une seule méthode. Les instructions détaillées apparaîtront seulement après votre choix.</p>
-            <div class="renouvellement-grille">
-              <div class="mode-carte mode-depot">
-                <div class="mode-icone" aria-hidden="true">⌁</div>
-                <div class="mode-badge">Le plus rapide</div>
-                <h3>Faire un dépôt</h3>
-                <p>Vous recevrez le numéro de dépôt, le montant exact et l’endroit où saisir la référence à l’étape suivante.</p>
-                <div id="depot-disponibilite" class="aide"></div>
-                <button type="button" class="bouton bouton-principal" id="btn-depot">Continuer avec le dépôt</button>
-              </div>
-              <div class="mode-carte">
-                <div class="mode-icone" aria-hidden="true">↗</div>
-                <h3>Demander un agent</h3>
-                <p>Ardoise reçoit vos coordonnées et votre adresse afin qu’un agent vous contacte pour organiser le règlement.</p>
-                <button type="button" class="bouton bouton-secondaire" id="btn-agent">Demander un agent</button>
-              </div>
-            </div>
-          </div>
+      <!-- 4. Dépôt — étape à part entière, pas un bloc sous les deux cartes. -->
+      <section class="carte-section etape-bloc cache" id="etape-depot">
+        <div class="etape-entete">
+          <div><span class="sur-titre">Étape 4</span><h2>Effectuez votre dépôt</h2>
+            <p class="aide">Ne saisissez la référence qu’après avoir réellement effectué le dépôt et reçu le message de votre opérateur.</p></div>
+          <button type="button" class="lien-retour" data-retour="mode">Modifier le mode de règlement</button>
         </div>
-      </div>
 
-      <div class="cache etape-depot" id="reference-zone">
-        <div class="etape-depot-entete">
-          <span class="sur-titre">Étape 2 · Dépôt</span>
-          <h3>Effectuez le dépôt, puis envoyez la référence</h3>
-          <p>Ne saisissez la référence qu’après avoir réellement effectué le dépôt et reçu le message de confirmation de votre opérateur.</p>
-        </div>
+        <div class="recap-choix" id="recap-depot"></div>
 
         <div class="paiement-fiche">
           <div class="paiement-montant"><small>Montant à déposer</small><strong id="montant-depot">—</strong></div>
@@ -129,31 +162,42 @@
         </div>
 
         <ol class="mini-etapes">
-          <li><span>1</span><div><strong>Faites le dépôt</strong><small>Utilisez exactement le numéro et le montant indiqués ci-dessus.</small></div></li>
-          <li><span>2</span><div><strong>Attendez la confirmation</strong><small>Votre opérateur vous enverra une référence de transaction.</small></div></li>
-          <li><span>3</span><div><strong>Envoyez la référence</strong><small>Ardoise vous avertira dès que le paiement sera validé.</small></div></li>
+          <li><span>1</span><div><strong>Effectuez le dépôt</strong><small>Utilisez exactement le numéro et le montant indiqués.</small></div></li>
+          <li><span>2</span><div><strong>Attendez le SMS</strong><small>Votre opérateur confirme la transaction.</small></div></li>
+          <li><span>3</span><div><strong>Copiez la référence</strong><small>Elle figure dans le message reçu.</small></div></li>
+          <li><span>4</span><div><strong>Saisissez-la ci-dessous</strong><small>Ardoise vérifie puis active votre abonnement.</small></div></li>
         </ol>
 
         <div class="reference-carte">
           <div class="champ">
-            <label for="reference">Référence de la transaction</label>
-            <input id="reference" maxlength="120" autocomplete="off" autocapitalize="characters" placeholder="Saisissez exactement la référence reçue" />
+            <label for="reference">Référence de transaction</label>
+            <input id="reference" maxlength="120" autocomplete="off" autocapitalize="characters"
+                   placeholder="Saisissez exactement la référence reçue" />
             <p class="aide">Exemple : PP260817.1234.ABC. Vérifiez les chiffres et les lettres avant l’envoi.</p>
           </div>
           <div class="actions-reference">
-            <button type="button" class="bouton bouton-principal" id="btn-reference">Envoyer la référence pour vérification</button>
-            <button type="button" class="bouton bouton-secondaire" id="changer-mode">Changer de mode de règlement</button>
+            <button type="button" class="bouton bouton-principal" id="btn-reference">Envoyer pour vérification</button>
           </div>
         </div>
-      </div>
-
-      <div class="cache confirmation-renouvellement" id="confirmation-zone" role="status">
-        <div class="confirmation-icone">✓</div>
-        <div><span class="sur-titre">Demande transmise</span><h3 id="confirmation-titre">Ardoise a été averti</h3><p id="confirmation-texte">Vous pouvez continuer à utiliser cette page pour suivre l’état du renouvellement.</p></div>
-      </div>
-    </section>
+      </section>
+    </div>
   </main>
 </div>
+
+<!-- Confirmation avant l'envoi d'une demande d'agent : l'école voit ce qui
+     sera transmis avant que ce le soit. -->
+<div class="voile cache" id="voile-agent" role="dialog" aria-modal="true" aria-labelledby="titre-agent">
+  <div class="fenetre">
+    <h3 id="titre-agent">Demander un agent Ardoise</h3>
+    <p class="aide">Ces informations permettront à l’équipe Ardoise de vous contacter.</p>
+    <div class="recap-choix" id="recap-agent"></div>
+    <div class="fenetre-actions">
+      <button type="button" class="bouton bouton-secondaire" id="agent-annuler">Annuler</button>
+      <button type="button" class="bouton bouton-principal" id="agent-confirmer">Confirmer la demande</button>
+    </div>
+  </div>
+</div>
+
 <script src="theme.js"></script>
 <script src="ui.js"></script>
 <script src="abonnements-page.js"></script>

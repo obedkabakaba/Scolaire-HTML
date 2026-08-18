@@ -179,7 +179,18 @@ def auditer_mobile(racine, pages_demandees=None):
                 f"      python3 -m playwright install chromium")
         try:
             try:
-                nav = contexte_pw.chromium.launch()
+                # Une image CI peut fournir Chromium à une version différente de
+                # celle que Playwright attend par défaut : il le cherche alors à
+                # un chemin qui n'existe pas et l'audit échoue en annonçant un
+                # navigateur « absent » alors qu'il est installé. On préfère
+                # celui qui est réellement présent quand il y en a un.
+                import glob as _glob
+                _fournis = sorted(_glob.glob('/opt/pw-browsers/chromium-*/chrome-linux/chrome'))
+                if _fournis:
+                    nav = contexte_pw.chromium.launch(
+                        executable_path=_fournis[0], args=['--no-sandbox'])
+                else:
+                    nav = contexte_pw.chromium.launch()
             except Exception as e:
                 raise commun.EchecTechnique(
                     f"Chromium est absent ou ne démarre pas : {str(e)[:200]}\n\n"

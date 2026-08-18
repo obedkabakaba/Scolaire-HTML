@@ -160,9 +160,59 @@
       '<path d="M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/><path d="m3.5 6.5 8.5 6 8.5-6"/>',
     'mon-profil.html':
       '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="10" r="3"/><path d="M6.4 19.2a6.2 6.2 0 0 1 11.2 0"/>',
+    'abonnements.html':
+      '<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10.5h18"/><path d="M7 15h3"/>',
+    'support.html':
+      '<path d="M21 15a2 2 0 0 1-2 2H8l-4 3V6a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/><path d="M9.8 9.3a2.3 2.3 0 1 1 2.9 2.8v.9"/><path d="M12.7 14.6h.01"/>',
     '#':
       '<circle cx="12" cy="12" r="9"/><path d="M9.6 9.2a2.5 2.5 0 1 1 3.2 3.1c-.6.3-.9.8-.9 1.4v.4"/><path d="M12 17.2h.01"/>'
   };
+
+  /* ------------------------------------------------------------------
+     1 bis. Abonnements et Support dans le rail
+
+     Ces deux pages existaient sans être accessibles : AUCUNE page de
+     l'application ne pointait vers `abonnements.html` ni `support.html`.
+     Un directeur ne pouvait donc les atteindre qu'en tapant l'URL — ce qui
+     explique en grande partie l'impression d'un module « ajouté à côté »
+     plutôt qu'intégré.
+
+     L'injection se fait ICI, une fois, plutôt que dans les trente pages qui
+     portent le rail : c'est le même choix que pour les icônes, et il évite
+     qu'une page ajoutée demain redevienne orpheline.
+
+     Les entrées sont posées juste avant « Paramètres », là où un directeur
+     cherche ce qui relève de son compte et non de sa classe.
+     ------------------------------------------------------------------ */
+  var ENTREES_COMPTE = [
+    { href: 'abonnements.html', libelle: 'Abonnements' },
+    { href: 'support.html', libelle: 'Support' }
+  ];
+
+  function injecterEntreesCompte() {
+    var liste = document.querySelector('.barre-laterale .nav-liste');
+    if (!liste) return;
+
+    // Le filtrage par rôle retire des entrées du rail : si « Paramètres » a
+    // disparu, c'est que l'utilisateur n'est pas censé gérer le compte de
+    // l'école, et abonnements/support n'ont rien à faire là non plus.
+    var ancre = liste.querySelector('.nav-item[href="parametres.html"]');
+    if (!ancre) return;
+    var avant = ancre.parentNode;
+
+    var courante = (window.location.pathname.split('/').pop() || '').toLowerCase();
+
+    ENTREES_COMPTE.forEach(function (entree) {
+      if (liste.querySelector('.nav-item[href="' + entree.href + '"]')) return;
+      var li = document.createElement('li');
+      var a = document.createElement('a');
+      a.className = 'nav-item' + (courante === entree.href ? ' actif' : '');
+      a.setAttribute('href', entree.href);
+      a.textContent = entree.libelle;
+      li.appendChild(a);
+      liste.insertBefore(li, avant);
+    });
+  }
 
   function injecterIcones() {
     var liens = document.querySelectorAll('.nav-item[href]');
@@ -1424,6 +1474,8 @@
   }
 
   function demarrer() {
+    // Avant les icônes : les entrées ajoutées doivent recevoir la leur.
+    try { injecterEntreesCompte(); } catch (e) { /* le rail reste utilisable sans ces deux entrées */ }
     try { injecterIcones(); } catch (e) { /* la navigation reste utilisable sans icônes */ }
     try { installerMenuMobile(); } catch (e) { /* la barre reste affichée sans bouton */ }
     // Le lanceur attend le filtrage par rôle des pages, qui s'exécute juste après.
@@ -1901,6 +1953,25 @@
             return;
           }
 
+          /* ------------------------------------------------------------
+             UN AVERTISSEMENT D'OFFRE NE SE RÉPÈTE PAS DANS LA MÊME SESSION
+
+             Ces réponses 402 arrivent à CHAQUE appel refusé. Une page qui
+             interroge trois points d'entrée fermés ouvrait trois modales
+             successives, et le directeur passait son temps à fermer une
+             fenêtre qui lui répétait ce qu'il savait déjà — au point de la
+             fermer par réflexe, y compris quand elle disait autre chose.
+
+             On mémorise donc le message EXACT déjà montré. Un message
+             différent (autre module, autre plafond) reste affiché : c'est
+             l'information nouvelle qui compte, pas l'insistance.
+
+             À noter, parce que c'est le point sensible : on ne réduit ici que
+             la RÉPÉTITION VISUELLE. Le serveur continue de refuser chaque
+             appel, et rien de ce qui suit ne rouvre un accès. Un avertissement
+             tu n'est pas une permission accordée. */
+          if (dejaAverti(corps.code + '|' + (corps.message || '') + '|' + (corps.fonctionnalite || ''))) return;
+
           if (corps.code === 'espace_indisponible') {
             var messageEspace = corps.message
               + (corps.action ? ' ' + corps.action : '');
@@ -1910,7 +1981,7 @@
                 libelleValider: 'Voir mon abonnement',
                 libelleAnnuler: 'Fermer'
               }).then(function (ok) {
-                if (ok) window.location.href = 'parametres.html#details-abonnement';
+                if (ok) window.location.href = 'abonnements.html';
               });
             } else {
               afficherBanniereOffre(messageEspace);
@@ -1947,7 +2018,7 @@
               // parametres.html. `#abonnement` n'existe pas : le lien aurait
               // ouvert la page en haut, et le directeur aurait cherché son
               // abonnement au milieu de dix autres réglages.
-              if (ok) window.location.href = 'parametres.html#details-abonnement';
+              if (ok) window.location.href = 'abonnements.html';
             });
           } else {
             /* REPLI SANS `alert()`.
@@ -1996,6 +2067,29 @@
    */
   var ecranExpirationAffiche = false;
 
+  /**
+   * Vrai si cet avertissement d'offre a DÉJÀ été montré dans cette session.
+   * Le premier appel enregistre et renvoie faux.
+   *
+   * `sessionStorage` plutôt que `localStorage` : au prochain jour de travail,
+   * ou après un changement d'offre, l'avertissement doit pouvoir réapparaître.
+   * Une session privée sans stockage retombe sur une variable en mémoire —
+   * moins durable, mais suffisante pour la durée d'une page.
+   */
+  var avertissementsVus = {};
+  function dejaAverti(signature) {
+    var cle = 'ardoise_avert_offre:' + String(signature).replace(/\s+/g, ' ').trim().slice(0, 180);
+    try {
+      if (sessionStorage.getItem(cle) === '1') return true;
+      sessionStorage.setItem(cle, '1');
+      return false;
+    } catch (e) {
+      if (avertissementsVus[cle]) return true;
+      avertissementsVus[cle] = true;
+      return false;
+    }
+  }
+
   function afficherEcranExpiration(corps) {
     // Plusieurs requêtes échouent en même temps au chargement d'une page :
     // sans ce garde, on empilerait cinq écrans identiques.
@@ -2043,22 +2137,30 @@
     p2.innerHTML = '<strong>Vos données sont conservées.</strong> Élèves, notes, '
       + 'classes, bulletins et paramètres restent intacts et vous les retrouverez '
       + 'exactement en l’état dès l’activation de votre abonnement.';
-    p2.style.cssText = 'margin:0 0 24px;line-height:1.6;font-size:.95rem;color:#4A554E';
+    p2.style.cssText = 'margin:0 0 24px;line-height:1.6;font-size:.95rem;color:var(--texte-att,#4A554E)';
 
     var actions = document.createElement('div');
     actions.style.cssText = 'display:flex;gap:12px;flex-wrap:wrap;justify-content:center';
 
     var principal = document.createElement('a');
-    principal.href = 'parametres.html#details-abonnement';
+    principal.href = 'abonnements.html';
     principal.textContent = 'Voir les abonnements';
     principal.style.cssText = 'display:inline-block;padding:12px 24px;border-radius:10px;'
-      + 'background:#C98A3E;color:#fff;text-decoration:none;font-weight:600';
+      + 'background:var(--ocre,#C98A3E);color:var(--craie-2,#fff);text-decoration:none;font-weight:600';
 
+    /* Support interne, PAS le formulaire commercial du site public.
+       L'utilisateur est déjà client et déjà authentifié : l'envoyer remplir un
+       formulaire de prospect pour signaler qu'il ne peut plus travailler serait
+       lui faire raconter deux fois qui il est. `support.html` reste accessible
+       quand l'abonnement est expiré — c'est précisément pour ce cas.
+       « Demander un accompagnement » (installation, formation, commercial)
+       reste, lui, sur le site public : les deux usages ne se confondent pas. */
     var secondaire = document.createElement('a');
-    secondaire.href = 'https://myardoise.com/contact/';
-    secondaire.textContent = 'Contacter Ardoise';
+    secondaire.href = 'support.html';
+    secondaire.textContent = 'Contacter le support';
     secondaire.style.cssText = 'display:inline-block;padding:12px 24px;border-radius:10px;'
-      + 'border:1px solid #C7BFAC;color:#1F2B24;text-decoration:none;font-weight:600';
+      + 'border:1px solid var(--bordure,#C7BFAC);color:var(--texte-sombre,#1F2B24);'
+      + 'text-decoration:none;font-weight:600';
 
     /* Se déconnecter reste POSSIBLE, et c'est important : un professeur qui
        tombe sur cet écran doit pouvoir rendre l'appareil, et un directeur doit
@@ -2069,7 +2171,7 @@
     deconnexion.type = 'button';
     deconnexion.textContent = 'Se déconnecter';
     deconnexion.style.cssText = 'padding:12px 24px;border-radius:10px;border:0;background:none;'
-      + 'color:#4A554E;text-decoration:underline;cursor:pointer;font-weight:500;font:inherit';
+      + 'color:var(--texte-att,#4A554E);text-decoration:underline;cursor:pointer;font-weight:500;font:inherit';
     deconnexion.addEventListener('click', function () {
       try {
         sessionStorage.clear();
@@ -2131,9 +2233,9 @@
 
     bandeau.appendChild(document.createTextNode(texte + ' '));
     var lien = document.createElement('a');
-    lien.href = 'parametres.html#details-abonnement';
+    lien.href = 'abonnements.html';
     lien.textContent = 'Choisir un abonnement';
-    lien.style.cssText = 'color:#fff;text-decoration:underline;font-weight:600';
+    lien.style.cssText = 'color:var(--craie-2,#fff);text-decoration:underline;font-weight:600';
     bandeau.appendChild(lien);
 
     document.body.insertBefore(bandeau, document.body.firstChild);

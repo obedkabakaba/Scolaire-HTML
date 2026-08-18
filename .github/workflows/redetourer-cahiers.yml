@@ -1,0 +1,98 @@
+name: Redetourer image cahiers
+
+on:
+  push:
+    paths:
+      - '.github/workflows/redetourer-cahiers.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  redetourage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Installer les outils de détourage
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install rembg pillow onnxruntime
+
+      - name: Refaire le détourage et optimiser
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from io import BytesIO
+          from PIL import Image, ImageFilter
+          from rembg import remove, new_session
+          import os
+
+          path = Path('public/site/illustrations/cahiers.webp')
+          original_size = path.stat().st_size
+
+          with Image.open(path) as src:
+              src.load()
+              dimensions = src.size
+              rgba = src.convert('RGBA')
+
+          # Détourage IA : isnet-general-use est plus précis sur les objets complexes.
+          session = new_session('isnet-general-use')
+          inp = BytesIO()
+          rgba.save(inp, format='PNG')
+          result = remove(
+              inp.getvalue(),
+              session=session,
+              alpha_matting=True,
+              alpha_matting_foreground_threshold=245,
+              alpha_matting_background_threshold=12,
+              alpha_matting_erode_size=4,
+              post_process_mask=True,
+          )
+
+          cut = Image.open(BytesIO(result)).convert('RGBA')
+          if cut.size != dimensions:
+              raise SystemExit(f'Dimensions modifiées: {dimensions} -> {cut.size}')
+
+          # Nettoyage très léger des pixels quasi transparents pour supprimer les halos.
+          alpha = cut.getchannel('A')
+          alpha = alpha.point(lambda a: 0 if a < 7 else a)
+          cut.putalpha(alpha)
+
+          # Vérifications : il faut réellement avoir de la transparence et conserver du sujet.
+          amin, amax = alpha.getextrema()
+          if amin != 0 or amax != 255:
+              raise SystemExit(f'Détourage suspect (alpha min/max = {amin}/{amax})')
+          bbox = alpha.getbbox()
+          if not bbox:
+              raise SystemExit('Le sujet a disparu après détourage.')
+
+          tmp = path.with_suffix('.detouree.webp')
+          cut.save(tmp, 'WEBP', quality=84, method=6, exact=True, lossless=False)
+
+          with Image.open(tmp) as check:
+              check.load()
+              if check.size != dimensions:
+                  raise SystemExit('Dimensions modifiées après encodage WebP.')
+              if 'A' not in check.convert('RGBA').getbands():
+                  raise SystemExit('Canal alpha absent après encodage.')
+
+          new_size = tmp.stat().st_size
+          os.replace(tmp, path)
+          print(f'Image détourée: {dimensions}, {original_size} -> {new_size} octets')
+          print('Transparence conservée et halos de fond supprimés.')
+          PY
+
+      - name: Commit du nouveau détourage
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/redetourer-cahiers.yml
+          git add public/site/illustrations/cahiers.webp
+          git commit -m "Improve cahiers image cutout"
+          git push

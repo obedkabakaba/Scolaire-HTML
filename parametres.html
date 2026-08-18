@@ -779,6 +779,17 @@
     }
 
     abonnementCourantId = abo.id;
+
+    // École de test : il n'y a ni prix, ni échéance, ni paiement possible.
+    // Afficher la ligne habituelle donnerait « null null · Expire le — », ce
+    // qui ressemble à une panne alors que c'est un état voulu.
+    if (abo.mode_test) {
+      zone.innerHTML = '<strong>École de test</strong> — accès complet à toutes '
+        + 'les fonctionnalités, sans abonnement. Aucun paiement n\'est attendu.';
+      document.getElementById('section-paiement').style.display = 'none';
+      return;
+    }
+
     const dateExpiration = abo.date_expiration ? new Date(abo.date_expiration).toLocaleDateString('fr-FR') : '—';
     zone.innerHTML = `
       <strong>${abo.plan_nom}</strong> — ${abo.prix} ${abo.devise} · Statut : ${LIBELLES_STATUT_ABONNEMENT[abo.statut] || abo.statut} · Expire le ${dateExpiration}

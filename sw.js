@@ -9,8 +9,12 @@
    Sans cet incrément, un téléphone où Ardoise est déjà installée continuerait
    de servir les anciennes ressources depuis CacheStorage.
 
-   v54 : charge le parcours corrigé des écoles sans abonnement actif. */
-const VERSION='ardoise-v54';
+   v54 : charge le parcours corrigé des écoles sans abonnement actif.
+   v55 : un seul écran de blocage, opaque, application réellement masquée —
+         sans cet incrément, les téléphones déjà installés continueraient de
+         servir depuis le cache les `session.js` et `ui.js` qui superposaient
+         deux voiles floutés, c'est-à-dire précisément le défaut corrigé. */
+const VERSION='ardoise-v55';
 const CACHE_COQUILLE=`${VERSION}-coquille`;
 const COQUILLE=[
   './','connexion.html','changer-mot-de-passe.html','dashboard-directeur.html',

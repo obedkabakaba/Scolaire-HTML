@@ -124,6 +124,16 @@ def definir_audits(frontend, backend, site_genere):
                 "    SORTIE=<dossier> python3 generateur/build.py"),
         },
         {
+            'nom': 'blocage_abonnement',
+            'titre': "Écran de blocage d'une école sans abonnement",
+            'commande': [sys.executable, 'audit-blocage-abonnement.py'],
+            'dossier': ICI,
+            'facultatif': True,
+            'prealable': (
+                'Exige Playwright :\n'
+                '    pip install playwright && python3 -m playwright install chromium'),
+        },
+        {
             'nom': 'mobile',
             'titre': 'Responsive (mesure dans Chromium)',
             'commande': [sys.executable, 'audit-mobile.py', '--frontend', frontend],

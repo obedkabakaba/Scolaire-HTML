@@ -1152,10 +1152,28 @@
     } catch (e) { /* lanceur pas encore construit : rien à faire */ }
   }
 
+  /**
+   * L'adresse de l'API, avec le MÊME repli que `session.js`.
+   *
+   * Les deux appels ci-dessous se rabattaient sur la chaîne vide, c'est-à-dire
+   * sur une URL RELATIVE. Or `abonnements.html` et `support.html` ne déclarent
+   * pas `API_BASE_URL` — et ce sont précisément les pages où atterrit une école
+   * bloquée. La requête partait donc vers le site statique, qui répondait sa
+   * page 404 : le badge y était toujours faux, et chaque chargement tirait une
+   * réponse inutile sur une connexion facturée au mégaoctet.
+   */
+  function adresseApi() {
+    if (window.ArdoiseSession && window.ArdoiseSession.baseAPI) {
+      return window.ArdoiseSession.baseAPI();
+    }
+    if (typeof API_BASE_URL !== 'undefined' && API_BASE_URL) return API_BASE_URL;
+    return window.API_BASE_URL || 'https://scolaire-saas-backend.onrender.com';
+  }
+
   function chargerBadgeMessages() {
     var jeton = jetonMessages();
     if (!jeton) return;
-    var base = (typeof API_BASE_URL !== 'undefined' && API_BASE_URL) || window.API_BASE_URL || '';
+    var base = adresseApi();
     fetch(base + '/notifications?limite=200', { headers: { Authorization: 'Bearer ' + jeton } })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (liste) {
@@ -1222,7 +1240,7 @@
       });
     if (!concerne) return;
 
-    var base = (typeof API_BASE_URL !== 'undefined' && API_BASE_URL) || window.API_BASE_URL || '';
+    var base = adresseApi();
     fetch(base + '/orientation/acces', { headers: { Authorization: 'Bearer ' + jeton } })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (d) {
@@ -1948,7 +1966,11 @@
              surtout ce que le directeur veut savoir en premier : ses données
              sont conservées. */
           if (corps.code === 'essai_expire' || corps.code === 'abonnement_expire'
-              || corps.code === 'essai_suspendu' || corps.code === 'ecole_suspendue') {
+              || corps.code === 'essai_suspendu' || corps.code === 'ecole_suspendue'
+              /* `abonnement_requis` manquait : une école qui n'a jamais activé
+                 son abonnement retombait dans la suite du traitement, où aucun
+                 cas ne la reconnaît. Elle ne voyait donc rien venir d'ici. */
+              || corps.code === 'abonnement_requis') {
             afficherEcranExpiration(corps);
             return;
           }
@@ -2096,7 +2118,27 @@
     if (ecranExpirationAffiche) return;
     ecranExpirationAffiche = true;
 
+    /* UN SEUL ÉCRAN, ET C'EST CELUI DE `session.js`.
+       -------------------------------------------------------------------
+       Les deux fichiers enveloppent `fetch` et réagissaient chacun au même
+       402 : deux voiles plein écran superposés, chacun avec son
+       `backdrop-filter`, par-dessus une application toujours vivante. Le
+       navigateur floutait donc deux fois la page entière à chaque image —
+       de quoi bloquer un téléphone d'entrée de gamme, et c'est exactement le
+       défaut rapporté.
+       `session.js` est chargé avant `ui.js` sur toutes les pages
+       applicatives et sait, lui, masquer l'application derrière : on lui
+       laisse la main, et ce fichier ne dessine que là où il est seul. */
+    if (window.__ardoiseExpirationAffichee
+        || document.getElementById('ardoise-expiration-session')) return;
+    if (window.ArdoiseSession && window.ArdoiseSession.afficherEcranBlocage) {
+      window.ArdoiseSession.afficherEcranBlocage(corps);
+      return;
+    }
+    window.__ardoiseExpirationAffichee = true;
+
     var titres = {
+      abonnement_requis: 'Choisissez un abonnement pour continuer',
       essai_expire:     'Votre période d’essai Ardoise est terminée',
       abonnement_expire: 'Votre abonnement Ardoise a expiré',
       essai_suspendu:   'Votre démonstration a été suspendue',
@@ -2110,9 +2152,9 @@
     voile.style.cssText = [
       'position:fixed', 'inset:0', 'z-index:99999',
       'display:flex', 'align-items:center', 'justify-content:center',
-      'padding:24px', 'background:rgba(17,26,25,.92)',
-      'backdrop-filter:blur(4px)',
-      '-webkit-backdrop-filter:blur(4px)',
+      'padding:24px',
+      // Opaque, sans `backdrop-filter` : voir session.js, même raison.
+      'background:#111A19',
       'font-family:Inter,system-ui,-apple-system,sans-serif'
     ].join(';');
 
@@ -2191,6 +2233,14 @@
     carte.appendChild(deconnexion);
     voile.appendChild(carte);
     document.body.appendChild(voile);
+
+    /* Rien ne doit continuer à peindre derrière : les pages laissées seules
+       avec ce repli gardaient un `.spinner` qui tournait pour un chargement
+       qui n'aboutirait jamais. */
+    var couches = document.querySelectorAll('.mise-en-page');
+    for (var i = 0; i < couches.length; i++) {
+      couches[i].style.setProperty('display', 'none', 'important');
+    }
 
     // Le cache des droits est vidé : au retour, le menu doit être reconstruit
     // sur l'offre réellement souscrite, pas sur celle de l'essai terminé.

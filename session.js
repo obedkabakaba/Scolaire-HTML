@@ -7,12 +7,12 @@
    - le rafraîchissement d'un access token expiré ;
    - le rejeu automatique des requêtes authentifiées après un 401 ;
    - le traitement immédiat des 402 qui signifient que l'accès global de
-     l'établissement est terminé ou suspendu.
+     l'établissement est terminé, suspendu ou pas encore activé.
 
    L'ordre de chargement est essentiel : les pages font souvent leur premier
-   appel API avant ui.js. Si un abonnement est expiré, attendre ui.js ferait
-   tomber la page dans son message générique « Vérifie ta connexion » alors
-   qu'il ne s'agit pas d'une panne réseau.
+   appel API avant ui.js. Si un abonnement est expiré — ou encore à activer —,
+   attendre ui.js ferait tomber la page dans son message générique « Vérifie ta
+   connexion » alors qu'il ne s'agit pas d'une panne réseau.
    ============================================================================= */
 (function () {
   'use strict';
@@ -140,9 +140,10 @@
   }
 
   /* ------------------------------------------------------------------
-     3. Accès expiré / suspendu : traitement PRÉCOCE
+     3. Accès bloquant : traitement PRÉCOCE
      ------------------------------------------------------------------ */
   var CODES_BLOQUANTS = {
+    abonnement_requis: true,
     essai_expire: true,
     abonnement_expire: true,
     essai_suspendu: true,
@@ -179,7 +180,9 @@
 
       masquerPageBloquee();
 
+      var activationRequise = corps.code === 'abonnement_requis';
       var titres = {
+        abonnement_requis: 'Choisissez un abonnement pour continuer',
         essai_expire: 'Votre période d’essai Ardoise est terminée',
         abonnement_expire: 'Votre abonnement Ardoise a expiré',
         essai_suspendu: 'Votre démonstration a été suspendue',
@@ -219,7 +222,9 @@
       message.style.cssText = 'margin:0 0 12px;line-height:1.6;font-size:1rem';
 
       var conservation = document.createElement('p');
-      conservation.innerHTML = '<strong>Vos données sont conservées.</strong> Élèves, notes, classes, bulletins et paramètres restent intacts et seront disponibles dès le rétablissement de l’accès.';
+      conservation.innerHTML = activationRequise
+        ? '<strong>Votre espace Ardoise est prêt.</strong> Choisissez une offre et un mode de règlement. Les fonctions de gestion s’ouvriront dès l’activation de votre abonnement.'
+        : '<strong>Vos données sont conservées.</strong> Élèves, notes, classes, bulletins et paramètres restent intacts et seront disponibles dès le rétablissement de l’accès.';
       conservation.style.cssText = 'margin:0 0 24px;line-height:1.6;font-size:.95rem;color:#4A554E';
 
       var actions = document.createElement('div');
@@ -227,7 +232,7 @@
 
       var abonnements = document.createElement('a');
       abonnements.href = 'abonnements.html';
-      abonnements.textContent = 'Voir les abonnements';
+      abonnements.textContent = activationRequise ? 'Choisir un abonnement' : 'Voir les abonnements';
       abonnements.style.cssText = [
         'display:inline-block', 'padding:12px 24px', 'border-radius:10px',
         'background:#C98A3E', 'color:#fff', 'text-decoration:none', 'font-weight:600'

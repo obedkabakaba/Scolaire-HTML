@@ -9,8 +9,8 @@
    Sans cet incrément, un téléphone où Ardoise est déjà installée continuerait
    de servir les anciennes ressources depuis CacheStorage.
 
-   v52 : traitement précoce des accès expirés + garde du chargement mobile. */
-const VERSION='ardoise-v52';
+   v53 : distingue l'activation initiale d'un abonnement réellement expiré. */
+const VERSION='ardoise-v53';
 const CACHE_COQUILLE=`${VERSION}-coquille`;
 const COQUILLE=[
   './','connexion.html','changer-mot-de-passe.html','dashboard-directeur.html',
@@ -24,7 +24,7 @@ const COQUILLE=[
   'apercu-bulletin-terminale.html','apercu-bulletin-semestre.html',
   'mon-profil.html','messages.html','site-public.html','discipline.html','cours.html',
   'archives.html','rapports.html','super-admin.html','theme.css','theme-base.css','ui.css','mobile.css',
-  'mobile.js','theme.js','ui.js','session.js','acces-presences.js','filtre-cycle.js',
+  'mobile.js','theme.js','ui.js','session.js','abonnements-page.js','acces-presences.js','filtre-cycle.js',
   'hors-ligne.js','didacticiel.js','didacticiel.css','super-admin-styles.css',
   'super-admin-noyau.js','super-admin-vues-pilotage.js','super-admin-vues-ecoles.js',
   'super-admin-vues-explorer.js','super-admin-vues-systeme.js','manifest.json',

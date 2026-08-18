@@ -22,6 +22,31 @@
   var REPLI_API = 'https://scolaire-saas-backend.onrender.com';
 
   /* ------------------------------------------------------------------
+     0. Garde de chargement mobile
+
+     `mobile.css` transforme `.mise-en-page` en bloc avec `!important` sous
+     780 px. C'est correct une fois la page prête, mais cela écrasait aussi le
+     `style="display:none"` utilisé par plusieurs écrans pendant leur premier
+     appel API. Résultat : le téléphone affichait simultanément « Chargement… »
+     ET l'interface encore vide/squelettique.
+
+     Ce garde ne change rien au layout final : il ne s'applique que tant que la
+     page porte explicitement `display:none`. Dès que son JavaScript remplace
+     cette valeur par `grid`, `block`, etc., la règle cesse de correspondre et
+     la couche mobile reprend normalement la main.
+     ------------------------------------------------------------------ */
+  (function installerGardeChargementMobile() {
+    if (document.getElementById('ardoise-garde-chargement-mobile')) return;
+    var style = document.createElement('style');
+    style.id = 'ardoise-garde-chargement-mobile';
+    style.textContent = '@media (max-width:780px){'
+      + '.mise-en-page[style*="display:none"],'
+      + '.mise-en-page[style*="display: none"]{display:none!important}'
+      + '}';
+    (document.head || document.documentElement).appendChild(style);
+  })();
+
+  /* ------------------------------------------------------------------
      1. Stockage
      ------------------------------------------------------------------ */
   function lire(cle) {
@@ -126,12 +151,24 @@
 
   var ecranBlocageAffiche = false;
 
+  function masquerPageBloquee() {
+    var ids = ['ecran-chargement', 'ecran-erreur'];
+    for (var i = 0; i < ids.length; i++) {
+      var element = document.getElementById(ids[i]);
+      if (element) element.style.setProperty('display', 'none', 'important');
+    }
+
+    var page = document.getElementById('mise-en-page');
+    if (page) page.style.setProperty('display', 'none', 'important');
+  }
+
   function afficherEcranBlocage(corps) {
     if (!corps || !CODES_BLOQUANTS[corps.code]) return;
     if (ecranBlocageAffiche || window.__ardoiseExpirationAffichee) return;
 
     ecranBlocageAffiche = true;
     window.__ardoiseExpirationAffichee = true;
+    window.__ardoiseAccesBloque = corps;
 
     function monter() {
       if (!document.body) {
@@ -139,6 +176,8 @@
         return;
       }
       if (document.getElementById('ardoise-expiration-session')) return;
+
+      masquerPageBloquee();
 
       var titres = {
         essai_expire: 'Votre période d’essai Ardoise est terminée',
@@ -230,19 +269,21 @@
   }
 
   function traiter402(reponse) {
-    if (!reponse || reponse.status !== 402) return reponse;
+    if (!reponse || reponse.status !== 402) return Promise.resolve(reponse);
 
     try {
-      reponse.clone().json()
+      return reponse.clone().json()
         .then(function (corps) {
           if (corps && CODES_BLOQUANTS[corps.code]) afficherEcranBlocage(corps);
+          return reponse;
         })
         .catch(function () {
           // Corps illisible : on laisse la page traiter la réponse elle-même.
+          return reponse;
         });
-    } catch (e) {}
-
-    return reponse;
+    } catch (e) {
+      return Promise.resolve(reponse);
+    }
   }
 
   /* ------------------------------------------------------------------

@@ -130,35 +130,54 @@
 
   function renduEtat() {
     var e = (data && data.ecole) || {};
-    var jours = joursRestants(e.date_expiration);
-    var expire = jours !== null && jours < 0;
+    /* `en_attente` est l'état AVANT le premier paiement. Ce n'est ni un
+       abonnement actif ni un abonnement expiré, même si l'ancienne ligne porte
+       déjà une date d'expiration technique. Cette date ne doit donc jamais être
+       montrée au client comme une échéance qu'il aurait ratée. */
+    var sansAbonnement = !e.abonnement_statut || e.abonnement_statut === 'en_attente';
+    var jours = sansAbonnement ? null : joursRestants(e.date_expiration);
+    var expire = !sansAbonnement && jours !== null && jours < 0;
+
+    var blocActivation = sansAbonnement
+      ? '<div class="resume-case"><small>Activation</small><strong>À choisir</strong></div>'
+      : '<div class="resume-case"><small>' + (expire ? 'Expiré depuis' : 'Prochaine échéance') + '</small>'
+        + '<strong>' + dateCourte(e.date_expiration) + '</strong>'
+        + (jours !== null
+          ? '<div class="muted" style="margin-top:4px">'
+            + (expire ? Math.abs(jours) + ' jour' + (Math.abs(jours) > 1 ? 's' : '')
+              : 'dans ' + jours + ' jour' + (jours > 1 ? 's' : '')) + '</div>'
+          : '')
+        + '</div>';
 
     $('ecole').innerHTML =
       '<div class="resume-case"><small>École</small><strong>' + esc(e.nom || '—') + '</strong>'
       + '<div class="muted code" style="margin-top:4px">' + esc(e.code || '') + '</div></div>'
-      + '<div class="resume-case"><small>Bouquet actuel</small><strong>' + esc(e.plan_nom || 'Aucun') + '</strong></div>'
-      + '<div class="resume-case"><small>' + (expire ? 'Expiré depuis' : 'Prochaine échéance') + '</small>'
-      + '<strong>' + dateCourte(e.date_expiration) + '</strong>'
-      + (jours !== null
-        ? '<div class="muted" style="margin-top:4px">'
-          + (expire ? Math.abs(jours) + ' jour' + (Math.abs(jours) > 1 ? 's' : '')
-            : 'dans ' + jours + ' jour' + (jours > 1 ? 's' : '')) + '</div>'
-        : '')
-      + '</div>';
+      + '<div class="resume-case"><small>Bouquet actuel</small><strong>'
+      + (sansAbonnement ? 'Aucun abonnement actif' : esc(e.plan_nom || '—')) + '</strong>'
+      + (sansAbonnement && e.plan_nom
+        ? '<div class="muted" style="margin-top:4px">Offre présélectionnée : ' + esc(e.plan_nom) + '</div>' : '')
+      + '</div>'
+      + blocActivation;
 
     var compact = $('etat-compact');
     if (compact) {
-      compact.textContent = expire ? 'Expiré'
-        : e.abonnement_statut === 'actif' ? 'Actif'
-          : e.abonnement_statut ? String(e.abonnement_statut).replace(/_/g, ' ') : 'Sans abonnement';
+      compact.textContent = sansAbonnement ? 'Sans abonnement'
+        : expire ? 'Expiré'
+          : e.abonnement_statut === 'actif' ? 'Actif'
+            : e.abonnement_statut ? String(e.abonnement_statut).replace(/_/g, ' ') : 'Sans abonnement';
       compact.classList.toggle('ton-alerte', expire);
-      compact.classList.toggle('ton-ok', !expire && e.abonnement_statut === 'actif');
+      compact.classList.toggle('ton-ok', !sansAbonnement && !expire && e.abonnement_statut === 'actif');
     }
 
-    /* Message d'échéance : ferme sur le fait, jamais culpabilisant. Ce que le
-       directeur a besoin de lire en premier, c'est que rien n'est perdu. */
+    /* Chaque état commercial a son propre message. Une école qui n'a jamais
+       payé ne doit surtout pas lire « votre abonnement est arrivé à échéance ». */
     var zone = $('etat-message');
-    if (expire) {
+    if (sansAbonnement) {
+      zone.innerHTML = '<div class="etat-demande"><p style="margin:0">'
+        + '<strong>Votre établissement n’a pas encore d’abonnement actif.</strong><br>'
+        + 'Choisissez une offre et un mode de règlement pour activer Ardoise. '
+        + 'Votre espace est déjà créé et sera disponible dès l’activation.</p></div>';
+    } else if (expire) {
       zone.innerHTML = '<div class="etat-demande"><p style="margin:0">'
         + '<strong>Votre abonnement est arrivé à échéance.</strong><br>'
         + 'Vos données sont conservées. Renouvelez votre abonnement pour reprendre '
@@ -181,8 +200,10 @@
     if (enCours || (d && d.statut === 'refusee')) { zone.innerHTML = ''; return; }
     if (etat.etape) { zone.innerHTML = ''; return; }
 
+    var e = (data && data.ecole) || {};
+    var sansAbonnement = !e.abonnement_statut || e.abonnement_statut === 'en_attente';
     zone.innerHTML = '<button type="button" class="bouton bouton-principal" id="btn-renouveler">'
-      + 'Renouveler mon abonnement</button>';
+      + (sansAbonnement ? 'Choisir mon abonnement' : 'Renouveler mon abonnement') + '</button>';
     $('btn-renouveler').addEventListener('click', function () {
       ouvrirTunnel();
       amener('etape-offre');
@@ -309,7 +330,9 @@
   }
 
   function renduPlans() {
-    var courant = (data.ecole || {}).abonnement_plan_id;
+    var ecole = data.ecole || {};
+    var sansAbonnement = !ecole.abonnement_statut || ecole.abonnement_statut === 'en_attente';
+    var courant = sansAbonnement ? null : ecole.abonnement_plan_id;
     var plans = data.plans || [];
     if (!plans.length) {
       $('plans').innerHTML = '<div class="carte-section erreur">Aucune offre disponible pour le moment.</div>';
@@ -319,6 +342,7 @@
     $('plans').innerHTML = plans.map(function (p) {
       var actuel = p.id === courant;
       var choisi = etat.plan && etat.plan.id === p.id;
+      var libelleBouton = actuel ? 'Renouveler' : (sansAbonnement ? 'Choisir cette offre' : 'Passer à cette offre');
       return '<article class="plan' + (actuel ? ' actuel' : '') + (choisi ? ' choisi' : '') + '">'
         + (actuel ? '<span class="plan-badge">Votre bouquet actuel</span>' : '')
         + '<h3>' + esc(p.nom) + '</h3>'
@@ -326,8 +350,7 @@
         + '<div class="plan-prix">' + money(p.prix, p.devise) + ' <small>/ mois</small></div>'
         + '<ul>' + caracteristiques(p) + '</ul>'
         + '<button type="button" class="bouton ' + (actuel ? 'bouton-principal' : 'bouton-secondaire')
-        + '" data-plan="' + esc(p.id) + '">'
-        + (actuel ? 'Renouveler' : 'Passer à cette offre') + '</button>'
+        + '" data-plan="' + esc(p.id) + '">' + libelleBouton + '</button>'
         + '</article>';
     }).join('');
 
@@ -347,8 +370,12 @@
     renduPeriodes();
     allerEtape('duree');
 
-    /* Changer de bouquet n'est pas anodin : on le dit, sans bloquer. */
-    if (estChangement) {
+    var e = (data && data.ecole) || {};
+    var sansAbonnement = !e.abonnement_statut || e.abonnement_statut === 'en_attente';
+    if (sansAbonnement) {
+      flash('Vous avez choisi le bouquet ' + plan.nom + '. Sélectionnez maintenant la durée.', 'info');
+    } else if (estChangement) {
+      /* Changer de bouquet n'est pas anodin : on le dit, sans bloquer. */
       flash('Vous passez au bouquet ' + plan.nom + '. Votre offre actuelle sera remplacée après validation.', 'info');
     }
     amener('etape-duree');

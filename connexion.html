@@ -423,6 +423,49 @@
    * rôles — qui ne peuvent rien y faire — reçoivent une explication plutôt
    * qu'un écran vide.
    */
+  /**
+   * L'état d'accès de l'école — que le serveur l'annonce ou non.
+   *
+   * POURQUOI CE REPLI EXISTE
+   * ------------------------
+   * `/auth/login` renvoie désormais un champ `acces`. Mais le backend et le
+   * site se déploient SÉPARÉMENT : entre les deux mises en ligne — et si l'une
+   * d'elles échoue, indéfiniment — le site est neuf et le serveur ne connaît
+   * pas encore ce champ. Le navigateur ne voyait alors aucun blocage, ouvrait
+   * le tableau de bord, et l'école retrouvait exactement le parcours qu'on
+   * venait de corriger. Un correctif qui dépend d'un déploiement qu'on ne
+   * contrôle pas n'est pas un correctif.
+   *
+   * On sonde donc une route que le verrou d'abonnement ferme — `/ecole/moi`,
+   * ouverte à tous les rôles et sans effet de bord. Son 402 porte le code et le
+   * message exacts que le serveur aurait mis dans `acces` : on lit la même
+   * vérité, par l'autre bout.
+   *
+   * Le champ absent et le champ à `null` sont deux choses différentes : `null`
+   * est la réponse d'un serveur à jour pour une école qui va bien, et ne doit
+   * déclencher aucune sonde. D'où le `hasOwnProperty` plutôt qu'un test de
+   * vérité.
+   */
+  async function accesDeLEcole(donnees) {
+    if (donnees && Object.prototype.hasOwnProperty.call(donnees, 'acces')) {
+      return donnees.acces;
+    }
+    if (!donnees || !donnees.access_token) return null;
+
+    try {
+      const reponse = await fetch(`${API_BASE_URL}/ecole/moi`, {
+        headers: { Authorization: `Bearer ${donnees.access_token}` }
+      });
+      if (reponse.status !== 402) return null;
+      const corps = await reponse.json().catch(() => ({}));
+      return corps && corps.code ? { bloquant: true, ...corps } : null;
+    } catch (e) {
+      // Réseau injoignable : on n'invente pas un blocage. L'écran de session
+      // prendra le relais si l'accès est réellement fermé.
+      return null;
+    }
+  }
+
   function routerAccesBloque(acces, roles) {
     if (!acces || !acces.bloquant) return false;
 
@@ -477,7 +520,7 @@
       if (!reponse.ok) { abandonner(); return; } // session expirée ou révoquée
       const donnees = await reponse.json();
       localStorage.setItem('ardoise_access_token', donnees.access_token);
-      if (routerAccesBloque(donnees.acces, utilisateur?.roles || [])) return;
+      if (routerAccesBloque(await accesDeLEcole(donnees), utilisateur?.roles || [])) return;
       window.location.href = destination;
     } catch (e) {
       // Backend injoignable (Render en veille, coupure réseau) : on laisse la
@@ -565,7 +608,7 @@
 
       // L'école n'a plus d'accès : on ne traverse pas l'application pour
       // l'apprendre.
-      if (routerAccesBloque(donnees.acces, roles)) return;
+      if (routerAccesBloque(await accesDeLEcole(donnees), roles)) return;
 
       const pageAtterrissage = pageAtterrissagePourRoles(roles);
 

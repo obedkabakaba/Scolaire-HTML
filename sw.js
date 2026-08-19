@@ -37,8 +37,12 @@
          jamais un navigateur ayant déjà ouvert cet écran.
    v58 : le garde-fou descend dans `super-admin-noyau.js`, qui figure, lui,
          dans la coquille précachée — il serait servi depuis le cache pendant
-         des semaines sans cet incrément. */
-const VERSION='ardoise-v58';
+         des semaines sans cet incrément.
+   v59 : la connexion constate elle-même un accès bloqué quand le serveur ne
+         l'annonce pas encore, et `cachePuisReseauLocal` relit à nouveau le
+         réseau derrière un fichier servi depuis le cache — sans cela, un
+         fichier corrigé n'atteignait le téléphone qu'au prochain incrément. */
+const VERSION='ardoise-v59';
 const CACHE_COQUILLE=`${VERSION}-coquille`;
 const COQUILLE=[
   './','connexion.html','changer-mot-de-passe.html','dashboard-directeur.html',
@@ -108,7 +112,15 @@ async function reseauPuisCacheLocal(req){
 async function cachePuisReseauLocal(req){
   const cache=await caches.open(CACHE_COQUILLE);
   const c=await cache.match(req);
-  if(c)return c;
+  if(c){
+    /* On sert le cache ET on rafraîchit derrière. Sans cette relecture, un
+       fichier n'était plus jamais remis à jour à l'intérieur d'une même
+       version : la correction d'un script n'atteignait le téléphone qu'au
+       prochain incrément de VERSION. Le `catch` est vide à dessein — un
+       rafraîchissement raté ne doit rien changer à la page déjà servie. */
+    fetch(req).then((r)=>{if(r&&r.ok)cache.put(req,r.clone());}).catch(()=>{});
+    return c;
+  }
   try{
     const r=await fetch(req);
     if(r&&r.ok)cache.put(req,r.clone());

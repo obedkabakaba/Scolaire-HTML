@@ -142,6 +142,9 @@ def repondre(route):
     return json_ok([])
 
 
+# Le défaut le plus grave que cet audit doit empêcher de revenir : une page
+# ENTIÈREMENT VIDE. Le masquage de l'application et le voile qui la remplace
+# doivent rester d'accord ; si le voile disparaît, l'application doit revenir.
 ETAT_DE_LA_PAGE = """
 () => {
   const voiles = [...document.querySelectorAll('[role="alertdialog"]')];
@@ -253,6 +256,49 @@ def auditer_ecran_de_blocage(navigateur, base):
     ctx.close()
 
 
+def auditer_absence_de_page_vide(navigateur, base):
+    """Retirer le voile ne doit jamais laisser un écran vide.
+
+    Le premier correctif posait un attribut sur `<html>` et masquait tout ce
+    qui n'était pas le voile. Attribut et élément devaient rester d'accord :
+    le voile manquant — retiré par un autre script, perdu au retour d'un
+    onglet mis en veille par le téléphone — il ne restait plus rien à l'écran,
+    pas même un bouton. C'est le défaut qui a été rapporté depuis le terrain,
+    et il ne se voit qu'en simulant la disparition du voile.
+    """
+    ctx = navigateur.new_context(viewport={"width": 390, "height": 780}, is_mobile=True,
+                                 has_touch=True, service_workers="block")
+    ctx.route(f"{API}/**", repondre)
+    page = ctx.new_page()
+    ouvrir_session(page, base)
+
+    page.goto(f"{base}/eleves.html", wait_until="domcontentloaded")
+    try:
+        page.wait_for_selector('[role="alertdialog"]', timeout=8000)
+    except Exception:
+        signaler("Page vide : impossible de tester, l'écran de blocage ne s'affiche pas.")
+        ctx.close()
+        return
+
+    page.evaluate("() => document.getElementById('ardoise-expiration-session').remove()")
+    page.wait_for_timeout(300)
+
+    lisible = page.evaluate(
+        "() => document.body.innerText.trim().length > 0"
+        " && [...document.body.children].some((e) => e.tagName !== 'SCRIPT'"
+        "      && getComputedStyle(e).display !== 'none')")
+    if not lisible:
+        signaler("Page vide : sans le voile, l'écran ne montre plus rien du tout — "
+                 "c'est l'écran blanc rapporté par les écoles.")
+
+    # Retour sur l'onglet : le blocage doit se rétablir de lui-même.
+    page.evaluate("() => document.dispatchEvent(new Event('visibilitychange'))")
+    page.wait_for_timeout(600)
+    if not page.evaluate("() => !!document.getElementById('ardoise-expiration-session')"):
+        signaler("Page vide : l'écran de blocage ne se rétablit pas au retour sur l'onglet.")
+    ctx.close()
+
+
 def auditer_pages_de_sortie(navigateur, base):
     """Payer, écrire au support, changer son mot de passe : jamais recouvert."""
     ctx = navigateur.new_context(viewport={"width": 390, "height": 780}, is_mobile=True,
@@ -298,6 +344,7 @@ def main():
                           if executable else p.chromium.launch(args=["--no-sandbox"]))
             auditer_connexion(navigateur, base)
             auditer_ecran_de_blocage(navigateur, base)
+            auditer_absence_de_page_vide(navigateur, base)
             auditer_pages_de_sortie(navigateur, base)
             navigateur.close()
     finally:
@@ -317,7 +364,8 @@ def main():
 
     print("  La connexion n'ouvre plus l'application quand l'accès est bloqué.")
     print("  Un seul écran de blocage, opaque, application réellement masquée.")
-    print("  Aucune animation ne tourne derrière ; les pages de sortie restent libres.\n")
+    print("  Aucune animation ne tourne derrière ; les pages de sortie restent libres.")
+    print("  Sans voile, la page redevient lisible : aucun écran vide possible.\n")
     return 0
 
 

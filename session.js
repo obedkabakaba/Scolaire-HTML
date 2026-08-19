@@ -186,34 +186,90 @@
   /**
    * Masque l'application derrière l'écran de blocage.
    *
-   * POURQUOI PAR UNE RÈGLE CSS ET NON ÉLÉMENT PAR ÉLÉMENT
-   * ----------------------------------------------------
-   * La version précédente masquait `getElementById('mise-en-page')`. Or une
+   * POURQUOI ON MASQUE
+   * ------------------
+   * La version d'origine masquait `getElementById('mise-en-page')`. Or une
    * SEULE page porte cet identifiant : les trente autres ne déclarent que la
-   * CLASSE `.mise-en-page`. Sur toutes ces pages, l'application restait donc
-   * entièrement rendue derrière le voile — menu, tableaux, et surtout les
-   * `.spinner` d'un chargement qui n'aboutirait jamais, qui tournaient
-   * indéfiniment. Chaque image de chaque seconde recomposait donc la page
-   * complète PUIS la floutait, en pleine résolution : c'est ce qui faisait
-   * chauffer, ramer, puis lâcher les téléphones d'entrée de gamme — le défaut
-   * décrit comme « ça plante le navigateur ».
+   * CLASSE. Sur toutes ces pages, l'application restait donc entièrement
+   * rendue derrière le voile — menu, tableaux, et surtout les `.spinner` d'un
+   * chargement qui n'aboutirait jamais, qui tournaient indéfiniment. Chaque
+   * image recomposait la page complète PUIS la floutait, en pleine
+   * résolution : c'est ce qui faisait chauffer puis lâcher les téléphones
+   * d'entrée de gamme.
    *
-   * Une règle sur `body > *` couvre tout ce que la page contient, y compris ce
-   * qui est ajouté APRÈS coup (barre haute mobile, bandeau hors ligne, bouton
-   * du didacticiel). Rien ne peint plus derrière le voile, donc rien ne coûte.
+   * POURQUOI LE MASQUAGE EST CONDITIONNÉ À LA PRÉSENCE DU VOILE
+   * ----------------------------------------------------------
+   * Le premier correctif posait un attribut sur `<html>` et masquait tout
+   * `body > *` sauf le voile. Un attribut et un élément qui doivent rester
+   * d'accord : si le voile venait à manquer — retiré par un autre script,
+   * perdu au retour d'un onglet mis en veille par le téléphone, ou jamais
+   * monté parce qu'une erreur a interrompu sa construction — il ne restait
+   * plus RIEN à l'écran. Une page entièrement vide, de la couleur du fond,
+   * sans même un bouton « retour » utile. C'est le défaut qui a été rapporté.
+   *
+   * Le sélecteur `:has()` supprime la classe entière de ce défaut : la règle
+   * ne s'applique QUE tant que le voile est réellement dans la page. S'il
+   * disparaît, l'application réapparaît d'elle-même. Et sur un navigateur qui
+   * ignore `:has()` — Chrome < 105, encore présent sur de vieux Android — la
+   * règle est simplement ignorée : on retombe alors sur le masquage
+   * JavaScript ci-dessous, ciblé, qui ne peut pas non plus vider la page.
+   *
+   * Une page blanche n'est donc plus atteignable par aucun des deux chemins.
    */
   function masquerPageBloquee() {
     if (!document.getElementById('ardoise-style-blocage')) {
       var style = document.createElement('style');
       style.id = 'ardoise-style-blocage';
-      style.textContent = 'html[data-ardoise-bloque],html[data-ardoise-bloque] body{'
+      var garde = 'html[data-ardoise-bloque]:has(#ardoise-expiration-session)';
+      style.textContent = garde + ',' + garde + ' body{'
         + 'background:#111A19!important;overflow:hidden!important}'
-        + 'html[data-ardoise-bloque] body>*:not(#ardoise-expiration-session){'
+        + garde + ' body>*:not(#ardoise-expiration-session){'
         + 'display:none!important}';
       (document.head || document.documentElement).appendChild(style);
     }
     document.documentElement.setAttribute('data-ardoise-bloque', '');
+
+    /* Le filet des navigateurs sans `:has()`. On ne masque que ce qui est
+       identifiable sans risque : la mise en page applicative et les deux
+       écrans d'état. Le voile n'est dans aucun des trois, il ne peut donc pas
+       être emporté. */
+    var couches = document.querySelectorAll(
+      '.mise-en-page, #mise-en-page, #ecran-chargement, #ecran-erreur');
+    for (var i = 0; i < couches.length; i++) {
+      couches[i].style.setProperty('display', 'none', 'important');
+    }
   }
+
+  /**
+   * Rend la page si le voile a disparu.
+   *
+   * Ceinture ET bretelles : `:has()` couvre déjà le cas côté style, mais le
+   * masquage JavaScript, lui, ne se défait pas tout seul. On le vérifie aux
+   * deux moments où un téléphone rend la main à une page qu'il avait mise de
+   * côté — c'est là que le vide avait été constaté.
+   */
+  function verifierEcranBloque() {
+    if (!document.documentElement.hasAttribute('data-ardoise-bloque')) return;
+    if (document.getElementById('ardoise-expiration-session')) return;
+
+    document.documentElement.removeAttribute('data-ardoise-bloque');
+    var couches = document.querySelectorAll(
+      '.mise-en-page, #mise-en-page, #ecran-chargement, #ecran-erreur');
+    for (var i = 0; i < couches.length; i++) {
+      couches[i].style.removeProperty('display');
+    }
+
+    // Le blocage, lui, n'a pas disparu : on remonte l'écran plutôt que de
+    // rendre une application dont chaque bouton renverra le même refus.
+    ecranBlocageAffiche = false;
+    window.__ardoiseExpirationAffichee = false;
+    if (window.__ardoiseAccesBloque) afficherEcranBlocage(window.__ardoiseAccesBloque);
+  }
+
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) verifierEcranBloque();
+  });
+  window.addEventListener('pageshow', verifierEcranBloque);
 
   /**
    * Bandeau discret, pour les pages qui sont elles-mêmes la sortie.

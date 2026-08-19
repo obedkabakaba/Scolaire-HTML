@@ -34,8 +34,11 @@
          `super-admin-vues-offres.js` ne figure pas dans la coquille ci-dessous,
          mais toute réponse valide est mise en cache à la première visite puis
          servie AVANT le réseau : sans incrément, le correctif n'atteindrait
-         jamais un navigateur ayant déjà ouvert cet écran. */
-const VERSION='ardoise-v57';
+         jamais un navigateur ayant déjà ouvert cet écran.
+   v58 : le garde-fou descend dans `super-admin-noyau.js`, qui figure, lui,
+         dans la coquille précachée — il serait servi depuis le cache pendant
+         des semaines sans cet incrément. */
+const VERSION='ardoise-v58';
 const CACHE_COQUILLE=`${VERSION}-coquille`;
 const COQUILLE=[
   './','connexion.html','changer-mot-de-passe.html','dashboard-directeur.html',

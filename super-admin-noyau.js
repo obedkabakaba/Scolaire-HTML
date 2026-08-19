@@ -217,7 +217,112 @@
   }
   SA.ErreurApi = ErreurApi;
 
+  /* ----------------------------------------------------------------------
+     REMETTRE L'ÉCRAN D'ACCORD AVEC LA BASE APRÈS UNE ÉCRITURE
+
+     LE DÉFAUT, TEL QU'IL S'EST PRÉSENTÉ
+     -----------------------------------
+     Une offre supprimée restait affichée. Le clic suivant sur « Supprimer »
+     répondait « offre introuvable » : l'écran affirmait l'inverse de la base,
+     et c'est l'écran qu'on croit.
+
+     La cause n'était pas dans la suppression. Chaque vue rafraîchissait après
+     une écriture RÉUSSIE, jamais après une écriture ÉCHOUÉE — or une écriture
+     qui échoue côté navigateur peut parfaitement avoir abouti côté serveur :
+     la transaction est validée, puis la réponse se perd. Connexion coupée,
+     délai dépassé, passerelle qui rend la main pendant le réveil de
+     l'hébergement : c'est le quotidien d'une connexion d'école.
+
+     POURQUOI ICI ET PAS DANS CHAQUE VUE
+     -----------------------------------
+     Le dépôt compte plus de quatre-vingt-dix points d'écriture répartis sur
+     quinze fichiers de vues. Les corriger un par un aurait demandé autant de
+     relectures que d'appels, avec la certitude d'en oublier — et la garantie
+     que le prochain écran écrit demain retomberait dans le même trou.
+     `SA.api` est le passage OBLIGÉ de toutes ces écritures : une seule
+     enveloppe les couvre toutes, y compris celles qui n'existent pas encore.
+
+     CE QU'ON NE FAIT PAS
+     -------------------
+     On ne rafraîchit PAS après une écriture réussie : les vues le font déjà,
+     et souvent mieux — elles referment une modale, naviguent ailleurs, ou
+     n'ont rien à redessiner. Doubler l'appel coûterait une requête à chaque
+     enregistrement pour ne rien changer à l'écran.
+     ---------------------------------------------------------------------- */
+  const METHODES_ECRITURE = { POST: true, PUT: true, PATCH: true, DELETE: true };
+
+  /**
+   * Les échecs après lesquels l'écran peut mentir.
+   *
+   *   0        la requête n'est jamais partie — ou sa réponse s'est perdue.
+   *            C'est le cas qui a produit le défaut : impossible de savoir,
+   *            depuis le navigateur, si le serveur a écrit ou non.
+   *   404      la cible n'existe plus : l'écran est périmé par définition.
+   *   408, 409 délai dépassé, conflit — souvent parce que l'écran est périmé.
+   *   >= 500   le serveur a échoué APRÈS avoir peut-être validé (une erreur
+   *            survenue après le COMMIT laisse l'écriture en place).
+   *
+   * Sont volontairement exclus : 400 et 422 (saisie refusée, rien n'a bougé
+   * côté serveur), 401 (on part vers l'écran de connexion, recharger la vue
+   * serait un appel perdu) et 403 (refus de permission, sans effet de bord —
+   * et une session en lecture seule en déclencherait à la chaîne).
+   */
+  function ecranPeutMentir(statut) {
+    return statut === 0 || statut === 404 || statut === 408 || statut === 409
+        || statut >= 500;
+  }
+
+  let resynchronisationEnCours = false;
+  let renduEnCours = false;
+
+  function resynchroniserApresEchec() {
+    if (resynchronisationEnCours) return;
+    /* Une vue qui écrit PENDANT son propre rendu — il n'y en a pas
+       aujourd'hui, rien n'interdit qu'il y en ait demain — relancerait le
+       rendu depuis le rendu. Ce garde ferme la boucle avant qu'elle existe. */
+    if (renduEnCours) return;
+    if (typeof SA.rafraichirVue !== 'function') return;
+
+    resynchronisationEnCours = true;
+    // Différé d'un tour de boucle : la vue appelante n'a pas encore fini de
+    // traiter son erreur, et redessiner sous ses pieds lui ferait écrire dans
+    // un DOM qu'on vient de remplacer.
+    Promise.resolve()
+      .then(() => SA.rafraichirVue())
+      .catch(() => { /* la vue affiche déjà son propre état d'erreur */ })
+      .then(() => { resynchronisationEnCours = false; });
+  }
+
+  /**
+   * Les référentiels partagés — écoles, offres, rôles — alimentent les menus
+   * déroulants de tous les écrans. Ils sont chargés une fois puis gardés en
+   * mémoire ; sans cette marque, une offre supprimée continuait d'y figurer
+   * jusqu'au rechargement complet de la page, et la choisir menait à un refus
+   * incompréhensible. On ne les recharge pas ici : c'est `rendre()` qui le
+   * fait, juste avant de redessiner, pour n'en payer le coût qu'une fois.
+   */
+  let referentielsPerimes = false;
+  SA.marquerReferentielsPerimes = function () { referentielsPerimes = true; };
+
   SA.api = async function (chemin, options = {}) {
+    const ecriture = METHODES_ECRITURE[String(options.method || 'GET').toUpperCase()] === true;
+
+    /* Toute écriture qui se termine mal repart d'une lecture : c'est la seule
+       façon, depuis le navigateur, de savoir ce que le serveur a réellement
+       retenu. Posé ici et pas dans chaque `catch` : il n'y a qu'une sortie en
+       erreur à ne pas oublier, celle-ci. */
+    const echouer = (erreur) => {
+      if (ecriture && ecranPeutMentir(erreur.statut)) {
+        /* Le doute porte sur la base entière, pas seulement sur la vue : si
+           l'écriture est passée malgré l'échec, les référentiels ont vieilli
+           eux aussi. Les marquer ici évite qu'un menu déroulant continue de
+           proposer ce que la liste, elle, vient de cesser d'afficher. */
+        referentielsPerimes = true;
+        resynchroniserApresEchec();
+      }
+      return erreur;
+    };
+
     const { acces } = SA.session.jetons();
     if (!acces) { SA.deconnecter({ message: 'Session expirée. Reconnectez-vous.' }); throw new ErreurApi('Session expirée.', 401); }
 
@@ -231,7 +336,7 @@
     try {
       reponse = await executer(acces);
     } catch (e) {
-      throw new ErreurApi('Serveur injoignable. Vérifiez la connexion réseau.', 0);
+      throw echouer(new ErreurApi('Serveur injoignable. Vérifiez la connexion réseau.', 0));
     }
 
     if (reponse.status === 401) {
@@ -243,13 +348,16 @@
     if (reponse.status === 401 || reponse.status === 403) {
       const corps = await reponse.json().catch(() => ({}));
       if (reponse.status === 401) SA.deconnecter({ message: 'Session expirée. Reconnectez-vous.' });
-      throw new ErreurApi(corps.message || 'Accès refusé.', reponse.status, corps);
+      throw echouer(new ErreurApi(corps.message || 'Accès refusé.', reponse.status, corps));
     }
 
     if (!reponse.ok) {
       const corps = await reponse.json().catch(() => ({}));
-      throw new ErreurApi(corps.message || `Erreur ${reponse.status}.`, reponse.status, corps);
+      throw echouer(new ErreurApi(corps.message || `Erreur ${reponse.status}.`, reponse.status, corps));
     }
+
+    // L'écriture a abouti : ce que portent les référentiels peut avoir changé.
+    if (ecriture) referentielsPerimes = true;
 
     const type = reponse.headers.get('content-type') || '';
     return type.includes('application/json') ? reponse.json() : reponse.text();
@@ -904,7 +1012,19 @@
 
     conteneur.innerHTML = SA.ui.squelette(6);
 
+    /* Les référentiels d'abord, s'ils ont vieilli. Une écriture vient de
+       modifier des écoles, des offres ou des rôles : les menus déroulants que
+       la vue va construire doivent les refléter, sinon on propose de choisir
+       une offre qui n'existe plus. Une seule relecture par cycle
+       écriture → rendu, et jamais sur le chemin normal. */
+    if (referentielsPerimes && SA.referentiels) {
+      referentielsPerimes = false;
+      try { await SA.chargerReferentiels(true); }
+      catch (e) { /* la vue se dessine avec les référentiels précédents */ }
+    }
+
     try {
+      renduEnCours = true;
       await vue.rendu(conteneur, params, reste);
     } catch (err) {
       console.error('Erreur de rendu de la vue', cle, err);
@@ -918,6 +1038,8 @@
       // Le panneau se signale à lui-même : un plantage d'interface arrive au
       // centre de bugs sans que personne n'ait à le recopier à la main.
       signalerErreur(err, `#/${chemin}`);
+    } finally {
+      renduEnCours = false;
     }
 
     // Sur mobile, la navigation se referme après un choix — sinon elle masque

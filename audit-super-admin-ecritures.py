@@ -20,12 +20,17 @@ lecture du code ne prouve ce qui reste affiché après un échec réseau :
   1. quand la réponse d'une suppression se perd, la liste est tout de même
      rechargée : la ligne fantôme disparaît ;
   2. quand on supprime une ligne fantôme, le « 404 » n'est pas présenté comme
-     un échec : c'est la preuve que le travail était déjà fait.
+     un échec : c'est la preuve que le travail était déjà fait ;
+  3. la même garantie vaut AILLEURS que sur les offres. Le garde-fou vit dans
+     `SA.api` — le passage obligé des quatre-vingt-dix points d'écriture du
+     Super Admin — et non dans l'écran des offres. Le troisième contrôle porte
+     donc sur une autre vue, écrite indépendamment : si quelqu'un déplaçait un
+     jour la protection dans la vue Offres, ce contrôle-là tomberait.
 
 L'API est simulée. Le parcours serveur est couvert côté backend.
 
     pip install playwright && python3 -m playwright install chromium
-    python3 audit-suppression-offre.py
+    python3 audit-super-admin-ecritures.py
 """
 
 import functools
@@ -75,11 +80,22 @@ def offre(identifiant, nom, prix):
     }
 
 
+def prospect(identifiant, nom, statut="nouvelle"):
+    return {
+        "id": identifiant, "contact_nom": nom, "ecole_nom": "École Test",
+        "contact_email": "test@example.cd", "contact_telephone": None, "ville": "Kinshasa",
+        "nb_eleves_estime": 300, "offre_envisagee": None, "offre_nom": None,
+        "services_souhaites": [], "message": "Bonjour.", "sujet": None,
+        "origine": "site_public", "statut": statut, "created_at": "2026-08-01T09:00:00Z",
+    }
+
+
 class Serveur:
     """L'état du serveur simulé, et la façon dont il répond."""
 
     def __init__(self, perdre_la_reponse=False):
         self.offres = [offre("o1", "Ascension", 30), offre("o2", "Prime", 60)]
+        self.prospects = [prospect("p1", "Directeur Test")]
         self.perdre_la_reponse = perdre_la_reponse
 
     def ids(self):
@@ -110,6 +126,27 @@ class Serveur:
         if chemin == "/super-admin/offres":
             return json_ok({"offres": self.offres, "peut_ecrire": True,
                             "devise_reference": "USD"})
+
+        if requete.method == "PATCH" and chemin.startswith("/super-admin/prospects/"):
+            identifiant = chemin.rsplit("/", 1)[-1]
+            corps = json.loads(requete.post_data or "{}")
+            for p in self.prospects:
+                if p["id"] == identifiant:
+                    p["statut"] = corps.get("statut") or p["statut"]
+            if self.perdre_la_reponse:
+                # La mise à jour a eu lieu ; la réponse n'arrivera jamais.
+                return route.abort("connectionfailed")
+            return json_ok({"message": "Demande mise à jour."})
+
+        if chemin == "/super-admin/prospects":
+            compteurs = {}
+            for p in self.prospects:
+                compteurs[p["statut"]] = compteurs.get(p["statut"], 0) + 1
+            return json_ok({"donnees": self.prospects, "compteurs": compteurs,
+                            "origines": {"site_public": {"total": len(self.prospects),
+                                                         "nouvelles": compteurs.get("nouvelle", 0)}},
+                            "pagination": {"page": 1, "taille": 30,
+                                           "total": len(self.prospects), "pages": 1}})
 
         return json_ok({"donnees": [], "offres": [], "ecoles": [], "plans": self.offres})
 
@@ -187,6 +224,55 @@ def auditer_ligne_fantome(navigateur, base):
     ctx.close()
 
 
+def auditer_autre_ecran(navigateur, base):
+    """La même garantie, sur une vue qui ignore tout de celle des offres.
+
+    L'écran Prospects enregistre un changement de statut par un `PATCH` écrit à
+    la main, sans passer par l'assistant d'écriture des offres. Si la
+    protection redescendait un jour dans cet assistant, ce contrôle tomberait —
+    c'est précisément ce qu'il surveille.
+    """
+    serveur = Serveur(perdre_la_reponse=True)
+    ctx = navigateur.new_context(viewport={"width": 1280, "height": 900},
+                                 service_workers="block")
+    ctx.route(f"{API}/**", serveur.router)
+    page = ctx.new_page()
+    page.goto(f"{base}/super-admin.html", wait_until="domcontentloaded")
+    page.wait_for_timeout(500)
+    page.fill("#champ-email", "admin@ardoise.cd")
+    page.fill("#champ-mot-de-passe", "motdepasse")
+    page.click("#formulaire-connexion [type=submit]")
+    page.wait_for_timeout(1200)
+    page.evaluate("() => { location.hash = '#/prospects'; }")
+
+    try:
+        page.wait_for_selector("[data-fiche]", timeout=10000)
+    except Exception:
+        signaler("Autre écran : la liste des demandes ne s'affiche pas, contrôle impossible.")
+        ctx.close()
+        return
+
+    page.click('[data-fiche="p1"]')
+    page.wait_for_timeout(500)
+    page.select_option("#fiche-statut", "contactee")
+    page.click('[data-role="valider"]')
+    page.wait_for_timeout(2500)
+
+    # On lit la LIGNE de la liste, pas la page entière : la modale restée
+    # ouverte contient un menu déroulant où « Contactée » figure, et se fier à
+    # body.innerText ferait passer le contrôle sans que la liste ait bougé d'un
+    # pixel.
+    affiche = page.evaluate(
+        "() => { const l = document.querySelector('tr[data-id=\"p1\"]');"
+        " return !!l && l.innerText.includes('Contactée'); }")
+    if serveur.prospects[0]["statut"] != "contactee":
+        signaler("Autre écran : le serveur n'a pas reçu la mise à jour, contrôle non concluant.")
+    elif not affiche:
+        signaler("Autre écran : la réponse perdue laisse l'ancien statut affiché. Le garde-fou "
+                 "ne couvre que l'écran des offres — il doit valoir pour toutes les écritures.")
+    ctx.close()
+
+
 def main():
     try:
         from playwright.sync_api import sync_playwright
@@ -209,12 +295,13 @@ def main():
                           if executable else p.chromium.launch(args=["--no-sandbox"]))
             auditer_reponse_perdue(navigateur, base)
             auditer_ligne_fantome(navigateur, base)
+            auditer_autre_ecran(navigateur, base)
             navigateur.close()
     finally:
         serveur.shutdown()
 
     print("=" * 70)
-    print("AUDIT — SUPPRESSION D'UNE OFFRE (espace Super Admin)")
+    print("AUDIT — LES ÉCRITURES DE L'ESPACE SUPER ADMIN")
     print("=" * 70)
 
     if anomalies:
@@ -224,7 +311,8 @@ def main():
         return 1
 
     print("\n  Une réponse perdue ne laisse pas de ligne fantôme à l'écran.")
-    print("  Supprimer une ligne déjà supprimée n'est pas présenté comme une panne.\n")
+    print("  Supprimer une ligne déjà supprimée n'est pas présenté comme une panne.")
+    print("  La garantie tient aussi hors de l'écran des offres.\n")
     return 0
 
 

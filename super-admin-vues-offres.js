@@ -220,49 +220,21 @@
 
   /** Raccourci : POST/PATCH/PUT JSON puis toast et rafraîchissement. */
   /**
-   * Envoie une écriture, puis remet l'écran d'accord avec le serveur.
+   * Envoie une écriture, puis redessine.
    *
-   * ON RAFRAÎCHIT AUSSI QUAND L'APPEL ÉCHOUE, ET C'EST LE POINT IMPORTANT
-   * ---------------------------------------------------------------------
-   * Une écriture qui échoue côté navigateur peut parfaitement avoir abouti
-   * côté serveur : la transaction est validée, puis la réponse se perd —
-   * connexion coupée, délai dépassé, passerelle qui rend la main pendant le
-   * réveil de l'hébergement. La suppression d'une offre en donnait la
-   * démonstration : la ligne disparaissait de la base, restait à l'écran, et
-   * le clic suivant répondait « offre introuvable ». L'écran affirmait
-   * l'inverse de la base, et c'est l'écran qu'on croit.
-   *
-   * Recharger dans les deux cas coûte un appel et supprime la classe entière
-   * de ce défaut : on n'affiche jamais un état supposé. Le message d'erreur,
-   * lui, reste affiché dans la modale — l'utilisateur doit savoir que quelque
-   * chose s'est mal passé, même si la liste, elle, est juste.
+   * Le cas de l'écriture qui ÉCHOUE n'est pas traité ici, et c'est délibéré :
+   * `SA.api` recharge lui-même la vue quand une écriture se termine par un
+   * échec dont on ne peut pas déduire que le serveur n'a rien fait — réponse
+   * perdue, délai dépassé, 404, erreur serveur. C'est ce qui laissait une
+   * offre supprimée affichée à l'écran, et le garde-fou vaut désormais pour
+   * les quatre-vingt-dix autres points d'écriture du Super Admin, pas
+   * seulement pour celui-ci.
    */
   async function envoyer(chemin, methode, corps, messageSucces) {
-    try {
-      const reponse = await SA.api(chemin, { method: methode, body: JSON.stringify(corps) });
-      SA.toast(messageSucces || (reponse && reponse.message) || 'Enregistré.', 'succes');
-      rafraichirTout();
-      return reponse;
-    } catch (e) {
-      rafraichirTout();
-      throw e;
-    }
-  }
-
-  /**
-   * Recharge la vue ET les référentiels partagés.
-   *
-   * `SA.referentiels` porte la liste des offres servie aux menus déroulants
-   * des autres écrans — rattacher une école à une offre, par exemple. Il est
-   * chargé une fois puis gardé en mémoire : sans cette invalidation, une offre
-   * supprimée continuait d'y figurer jusqu'au rechargement complet de la page,
-   * et la choisir menait à un refus incompréhensible.
-   */
-  function rafraichirTout() {
-    if (SA.chargerReferentiels) {
-      SA.chargerReferentiels(true).catch(() => { /* la vue se recharge quand même */ });
-    }
+    const reponse = await SA.api(chemin, { method: methode, body: JSON.stringify(corps) });
+    SA.toast(messageSucces || (reponse && reponse.message) || 'Enregistré.', 'succes');
     SA.rafraichirVue();
+    return reponse;
   }
 
   /** Liste d'options { valeur, libelle } à partir d'une collection. */
@@ -590,6 +562,7 @@
              `envoyer` ; on referme en le disant, plutôt que d'opposer un
              refus à quelqu'un qui demandait exactement ce qui est déjà fait. */
           if (e && e.statut === 404) {
+            // `SA.api` a déjà relancé le rendu : la ligne fantôme est partie.
             SA.toast(`L'offre « ${o.nom} » n'existait plus : la liste est à jour.`, 'succes');
             return;
           }

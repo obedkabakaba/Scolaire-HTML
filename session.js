@@ -563,6 +563,10 @@
       return window.fetch(baseAPI() + chemin, {
         method: reglage.method || 'GET',
         headers: entetes,
+        // `signal` est transmis tel quel : sans lui, aucun appelant ne peut
+        // poser de délai, et une requête partie vers un serveur endormi reste
+        // en attente indéfiniment — la page attend avec elle.
+        signal: reglage.signal,
         body: (reglage.body && typeof reglage.body !== 'string')
           ? JSON.stringify(reglage.body)
           : reglage.body

@@ -219,11 +219,50 @@
   }
 
   /** Raccourci : POST/PATCH/PUT JSON puis toast et rafraîchissement. */
+  /**
+   * Envoie une écriture, puis remet l'écran d'accord avec le serveur.
+   *
+   * ON RAFRAÎCHIT AUSSI QUAND L'APPEL ÉCHOUE, ET C'EST LE POINT IMPORTANT
+   * ---------------------------------------------------------------------
+   * Une écriture qui échoue côté navigateur peut parfaitement avoir abouti
+   * côté serveur : la transaction est validée, puis la réponse se perd —
+   * connexion coupée, délai dépassé, passerelle qui rend la main pendant le
+   * réveil de l'hébergement. La suppression d'une offre en donnait la
+   * démonstration : la ligne disparaissait de la base, restait à l'écran, et
+   * le clic suivant répondait « offre introuvable ». L'écran affirmait
+   * l'inverse de la base, et c'est l'écran qu'on croit.
+   *
+   * Recharger dans les deux cas coûte un appel et supprime la classe entière
+   * de ce défaut : on n'affiche jamais un état supposé. Le message d'erreur,
+   * lui, reste affiché dans la modale — l'utilisateur doit savoir que quelque
+   * chose s'est mal passé, même si la liste, elle, est juste.
+   */
   async function envoyer(chemin, methode, corps, messageSucces) {
-    const reponse = await SA.api(chemin, { method: methode, body: JSON.stringify(corps) });
-    SA.toast(messageSucces || (reponse && reponse.message) || 'Enregistré.', 'succes');
+    try {
+      const reponse = await SA.api(chemin, { method: methode, body: JSON.stringify(corps) });
+      SA.toast(messageSucces || (reponse && reponse.message) || 'Enregistré.', 'succes');
+      rafraichirTout();
+      return reponse;
+    } catch (e) {
+      rafraichirTout();
+      throw e;
+    }
+  }
+
+  /**
+   * Recharge la vue ET les référentiels partagés.
+   *
+   * `SA.referentiels` porte la liste des offres servie aux menus déroulants
+   * des autres écrans — rattacher une école à une offre, par exemple. Il est
+   * chargé une fois puis gardé en mémoire : sans cette invalidation, une offre
+   * supprimée continuait d'y figurer jusqu'au rechargement complet de la page,
+   * et la choisir menait à un refus incompréhensible.
+   */
+  function rafraichirTout() {
+    if (SA.chargerReferentiels) {
+      SA.chargerReferentiels(true).catch(() => { /* la vue se recharge quand même */ });
+    }
     SA.rafraichirVue();
-    return reponse;
   }
 
   /** Liste d'options { valeur, libelle } à partir d'une collection. */
@@ -538,11 +577,24 @@
         if (String(v.nom_confirmation || '').trim().toLowerCase() !== String(o.nom).trim().toLowerCase()) {
           throw new Error(`Le nom recopié ne correspond pas à « ${o.nom} ».`);
         }
-        await envoyer(`/super-admin/offres/${o.id}`, 'DELETE', {
-          confirmation: true,
-          nom_confirmation: v.nom_confirmation,
-          raison: v.raison
-        }, `Offre « ${o.nom} » supprimée.`);
+        try {
+          await envoyer(`/super-admin/offres/${o.id}`, 'DELETE', {
+            confirmation: true,
+            nom_confirmation: v.nom_confirmation,
+            raison: v.raison
+          }, `Offre « ${o.nom} » supprimée.`);
+        } catch (e) {
+          /* « Offre introuvable » n'est pas un échec à montrer comme tel :
+             c'est la preuve qu'une tentative précédente a abouti sans que
+             l'écran l'apprenne. La liste vient d'être rechargée par
+             `envoyer` ; on referme en le disant, plutôt que d'opposer un
+             refus à quelqu'un qui demandait exactement ce qui est déjà fait. */
+          if (e && e.statut === 404) {
+            SA.toast(`L'offre « ${o.nom} » n'existait plus : la liste est à jour.`, 'succes');
+            return;
+          }
+          throw e;
+        }
       }
     });
   }

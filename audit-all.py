@@ -124,6 +124,16 @@ def definir_audits(frontend, backend, site_genere):
                 "    SORTIE=<dossier> python3 generateur/build.py"),
         },
         {
+            'nom': 'suppression_offre',
+            'titre': "Suppression d'une offre (espace Super Admin)",
+            'commande': [sys.executable, 'audit-suppression-offre.py'],
+            'dossier': ICI,
+            'facultatif': True,
+            'prealable': (
+                'Exige Playwright :\n'
+                '    pip install playwright && python3 -m playwright install chromium'),
+        },
+        {
             'nom': 'blocage_abonnement',
             'titre': "Écran de blocage d'une école sans abonnement",
             'commande': [sys.executable, 'audit-blocage-abonnement.py'],

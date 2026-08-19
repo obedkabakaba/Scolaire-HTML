@@ -29,8 +29,13 @@
    toutes les écoles, et il grandissait avec la qualité du réseau. Deux
    garde-fous : on ne supprime l'ancien cache que si le nouveau est COMPLET,
    et un fichier introuvable est cherché dans les caches précédents avant
-   qu'on abandonne. */
-const VERSION='ardoise-v56';
+   qu'on abandonne.
+   v57 : suppression d'offre — l'écran Super Admin ne contredit plus la base.
+         `super-admin-vues-offres.js` ne figure pas dans la coquille ci-dessous,
+         mais toute réponse valide est mise en cache à la première visite puis
+         servie AVANT le réseau : sans incrément, le correctif n'atteindrait
+         jamais un navigateur ayant déjà ouvert cet écran. */
+const VERSION='ardoise-v57';
 const CACHE_COQUILLE=`${VERSION}-coquille`;
 const COQUILLE=[
   './','connexion.html','changer-mot-de-passe.html','dashboard-directeur.html',

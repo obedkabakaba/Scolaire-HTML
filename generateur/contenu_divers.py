@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""SÉCURITÉ, FAQ et CONTACT."""
+"""SÉCURITÉ, FAQ, CONTACT et ÉCRIVEZ-NOUS."""
 
 from base import (rendre, fil, hero, cta_final, faq_bloc, faq_jsonld,
                   pour_aller_plus_loin, SITE)
@@ -559,6 +559,7 @@ def contact():
       <div class="encart">
         <h2>Vous cherchez peut-être</h2>
         <ul class="mini-liste">
+          <li><a href="/ecrire/">Écrivez-nous</a> — une question simple, sans ce formulaire</li>
           <li><a href="/tarifs/">Les prix des quatre offres</a></li>
           <li><a href="/tarifs/comparer/">Le comparatif ligne par ligne</a></li>
           <li><a href="/services/">Les services d'accompagnement</a></li>
@@ -593,5 +594,138 @@ def contact():
     )
 
 
+# ============================================================ /ecrire/
+#
+# LA TROISIÈME PORTE.
+#
+# Le site n'en avait que deux, et toutes deux étroites. `/contact/` demande une
+# école, une ville, un effectif et une offre envisagée : c'est un formulaire qui
+# QUALIFIE un prospect, et il décourage quiconque n'en est pas un.
+# `support.html` exige un compte et une école dont l'abonnement est actif.
+#
+# Entre les deux, personne n'écoutait le parent qui cherche un bulletin, le
+# professeur qui signale un défaut, l'école qui pose une question avant de
+# savoir si elle achètera, ni le journaliste qui prépare un article. Cette page
+# ne demande que trois choses : qui vous êtes, où vous joindre, ce que vous avez
+# à dire.
+#
+# Elle nomme aussi, sans détour, les canaux directs — WhatsApp, e-mail. Une
+# partie des gens n'écriront jamais dans un formulaire, et les leur cacher
+# derrière un champ obligatoire ne les convertit pas : cela les fait partir.
+
+FORMULAIRE_MESSAGE = """
+    <form class="formulaire" data-formulaire-message novalidate>
+      <div>
+        <label for="msg_message">Votre message</label>
+        <textarea id="msg_message" name="message" rows="8" required
+                  placeholder="Dites-le avec vos mots. Une question, une remarque, un problème rencontré, une idée…"></textarea>
+      </div>
+
+      <div>
+        <label for="msg_sujet">Sujet (facultatif)</label>
+        <input type="text" id="msg_sujet" name="sujet" maxlength="120"
+               placeholder="Ex. : question sur les bulletins" />
+      </div>
+
+      <div class="duo">
+        <div>
+          <label for="msg_nom">Votre nom</label>
+          <input type="text" id="msg_nom" name="contact_nom" required autocomplete="name" />
+        </div>
+        <div>
+          <label for="msg_email">Adresse e-mail</label>
+          <input type="email" id="msg_email" name="contact_email" autocomplete="email" />
+        </div>
+      </div>
+
+      <div>
+        <label for="msg_telephone">Téléphone ou WhatsApp</label>
+        <input type="tel" id="msg_telephone" name="contact_telephone" autocomplete="tel" />
+      </div>
+      <p class="aide">Un e-mail ou un téléphone suffit — il en faut au moins un,
+      sinon nous ne pourrons pas vous répondre.</p>
+
+      <div class="message-retour" data-retour hidden></div>
+      <button class="bouton ocre" type="submit">Envoyer mon message</button>
+    </form>
+"""
+
+
+def ecrire():
+    f_html, f_ld = fil([("Accueil", "/"), ("Écrivez-nous", None)])
+
+    corps = f_html + hero(
+        "Écrivez-nous",
+        "Dites-nous ce que vous avez à dire",
+        "Pas de formulaire commercial, pas de compte à créer, pas de catégorie à "
+        "choisir. Vous écrivez, nous répondons — sous 48 heures ouvrées. Que vous "
+        "soyez directeur, professeur, parent, partenaire ou simplement curieux.",
+        aparte="<h2>Vous êtes déjà client&nbsp;?</h2>"
+               "<p>Depuis votre espace Ardoise, le "
+               "<a href=\"/support.html\">centre d'aide</a> ouvre un ticket rattaché "
+               "à votre école : nous voyons alors votre configuration, ce qui fait "
+               "gagner un aller-retour. Cette page-ci reste ouverte à tout le monde, "
+               "y compris à vous.</p>",
+    ) + f"""
+<section class="section" style="padding-top:24px">
+  <div class="conteneur grille-deux">
+    <div>
+      {FORMULAIRE_MESSAGE}
+    </div>
+    <aside class="colonne-aside">
+      <div class="encart">
+        <h2>Ou écrivez-nous directement</h2>
+        <ul class="mini-liste">
+          <li><a href="https://wa.me/243855035693" rel="noopener">WhatsApp : 0855 035 693</a></li>
+          <li><a href="mailto:myardoise@gmail.com">myardoise@gmail.com</a></li>
+          <li>Kinshasa, République démocratique du Congo</li>
+        </ul>
+        <p class="aide">Le formulaire n'est pas obligatoire. Ces canaux arrivent
+        chez les mêmes personnes.</p>
+      </div>
+      <div class="encart">
+        <h2>Vous cherchez peut-être</h2>
+        <ul class="mini-liste">
+          <li><a href="/contact/">Demander un accompagnement</a> — installation, formation, saisie des élèves</li>
+          <li><a href="/support.html">Le centre d'aide</a> — pour les écoles déjà clientes</li>
+          <li><a href="/faq/">Les questions fréquentes</a> — la réponse y est peut-être déjà</li>
+          <li><a href="/tarifs/">Les tarifs</a></li>
+          <li><a href="/connexion.html">Accéder à mon école</a></li>
+        </ul>
+      </div>
+      <div class="encart">
+        <h2>Ce que nous faisons de votre message</h2>
+        <ul class="mini-liste">
+          <li>Il arrive chez l'équipe Ardoise, pas dans une boîte automatique.</li>
+          <li>Vos coordonnées ne servent qu'à vous répondre.</li>
+          <li>Elles ne sont ni revendues, ni transmises à un tiers.</li>
+        </ul>
+        <p class="aide"><a href="/confidentialite.html">Politique de confidentialité</a></p>
+      </div>
+    </aside>
+  </div>
+</section>
+"""
+
+    corps += pour_aller_plus_loin([
+        ("/contact/", "Demander un accompagnement",
+         "Si votre question porte sur l'installation, la formation ou la saisie."),
+        ("/faq/", "Questions fréquentes",
+         "Les 25 questions posées avant de signer."),
+        ("/fonctionnalites/", "Les fonctionnalités",
+         "Ce qu'Ardoise couvre, module par module."),
+        ("/securite/", "Sécurité et données",
+         "Si votre question porte sur les données."),
+    ])
+
+    return rendre(
+        "ecrire/index.html", "/ecrire/",
+        "Écrire à Ardoise — une question, une remarque, un message libre",
+        "Écrivez à l'équipe Ardoise sans formulaire commercial ni compte : une "
+        "question, une remarque, un problème. Réponse sous 48 heures ouvrées.",
+        corps, actif="ressources", jsonld=[f_ld],
+    )
+
+
 def construire():
-    return [securite(), faq(), contact()]
+    return [securite(), faq(), contact(), ecrire()]

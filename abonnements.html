@@ -67,9 +67,22 @@
     </div>
 
     <div class="message-flash" id="message-flash" role="status"></div>
+    <!-- ÉCHEC DE CHARGEMENT — LE SEUL ÉCRAN QUI DOIT RESTER UTILISABLE.
+         Le message d'erreur était écrit DANS ce bloc, en `innerHTML` : il
+         emportait le bouton « Réessayer », seul moyen de sortir de l'écran.
+         L'école dont l'abonnement est terminé arrive ici depuis la connexion ;
+         une page où plus rien ne se clique la laisse sans aucun recours, et
+         c'est précisément la page qui sert à payer. Le texte a donc son propre
+         conteneur, et les recours vivent dans le HTML, hors de portée d'un
+         `innerHTML`. -->
     <div class="carte-section cache erreur" id="erreur-chargement">
-      <strong>Impossible de charger les abonnements.</strong><br>
-      <button type="button" class="bouton bouton-secondaire" id="reessayer" style="margin-top:10px">Réessayer</button>
+      <strong>Impossible de charger les abonnements.</strong>
+      <div id="erreur-chargement-detail" class="aide" style="margin-top:6px"></div>
+      <div class="support-form-actions" style="margin-top:12px">
+        <button type="button" class="bouton bouton-principal" id="reessayer">Réessayer</button>
+        <a class="bouton bouton-secondaire" href="support.html">Contacter le support</a>
+        <a class="bouton bouton-secondaire" href="https://wa.me/243855035693" rel="noopener">WhatsApp</a>
+      </div>
     </div>
 
     <!-- ÉTAPE 0 — état actuel. Toujours visible : c'est la réponse à la

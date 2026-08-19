@@ -657,6 +657,25 @@
     if (etat.etape) renduPlans();
   }
 
+  /**
+   * Ce qu'on dit quand le chargement échoue.
+   *
+   * Le message brut du serveur est conservé — il nomme la cause — mais il ne
+   * suffit pas : le plus fréquent, en RDC, n'est pas une panne mais un
+   * serveur endormi qui met quelques secondes à répondre, ou une connexion
+   * qui a lâché au mauvais moment. Sans cette phrase, le directeur conclut
+   * que son espace est cassé et appelle ; avec elle, il réessaie.
+   */
+  function messageDeCharge(e) {
+    var brut = (e && e.message) ? String(e.message) : '';
+    var reseau = !e || !e.status;
+    return (brut ? brut + ' ' : '')
+      + (reseau
+        ? 'Le serveur met parfois quelques secondes à se réveiller : réessayez, '
+          + 'ou écrivez-nous si cela persiste.'
+        : 'Réessayez dans un instant, ou écrivez-nous si cela persiste.');
+  }
+
   function charger(premier) {
     if (premier) $('plans').innerHTML = '<div class="carte-section muted">Chargement des offres…</div>';
     montrer('erreur-chargement', false);
@@ -679,8 +698,13 @@
       return r;
     }).catch(function (e) {
       montrer('erreur-chargement', true);
-      $('erreur-chargement').innerHTML = '<strong>Impossible de charger les abonnements.</strong><br>'
-        + '<span class="aide">' + esc(e.message) + '</span>';
+
+      /* On n'écrit QUE dans le conteneur de texte. Réécrire le bloc entier
+         emportait le bouton « Réessayer » avec le message : la page devenait
+         un cul-de-sac où plus rien ne se cliquait — sur l'écran même qui sert
+         à payer, et où arrive désormais toute école dont l'abonnement est
+         terminé. */
+      $('erreur-chargement-detail').textContent = messageDeCharge(e);
       $('plans').innerHTML = '';
       flash(e.message, 'erreur');
       throw e;
@@ -772,13 +796,30 @@
     }
   });
 
-  $('reessayer').addEventListener('click', function () { charger(true).catch(function () {}); });
+  $('reessayer').addEventListener('click', function () {
+    var btn = this;
+    setBusy(btn, true, 'Nouvelle tentative…');
+    charger(true).catch(function () {}).then(function () { setBusy(btn, false); });
+  });
   $('bouton-deconnexion-nav').addEventListener('click', function () { ArdoiseSession.terminer(); });
   document.addEventListener('keydown', function (ev) {
     if (ev.key === 'Escape' && !$('voile-agent').classList.contains('cache')) fermerConfirmationAgent();
   });
 
   nouvelleCle();
-  charger(true).catch(function () {});
+
+  /* UNE SECONDE TENTATIVE, AUTOMATIQUE, APRÈS TROIS SECONDES.
+     -------------------------------------------------------------------------
+     L'hébergement met le serveur en veille après une période d'inactivité : le
+     tout premier appel d'une école qui se connecte le matin peut donc échouer
+     ou traîner le temps du réveil. Le directeur, lui, ne sait rien de cela — il
+     voit une page vide sur l'écran où il vient payer.
+
+     Une seule reprise, et seulement si la première a échoué : ce n'est pas une
+     boucle de rattrapage, c'est le temps de réveil du serveur. Si la seconde
+     échoue aussi, l'écran d'erreur reste, avec son bouton et ses recours. */
+  charger(true).catch(function () {
+    setTimeout(function () { charger(true).catch(function () {}); }, 3000);
+  });
   setInterval(synchroniser, 20000);
 })();

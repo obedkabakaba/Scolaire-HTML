@@ -102,6 +102,11 @@ def servir():
     return serveur, f"http://127.0.0.1:{serveur.server_address[1]}"
 
 
+# Vrai quand le serveur ignore encore le champ `acces` — l'état réel entre le
+# déploiement du site et celui du backend, qui partent séparément.
+SERVEUR_ANCIEN = {"valeur": False}
+
+
 def repondre(route):
     """L'API simulée : ouverte là où le serveur l'est, 402 partout ailleurs."""
     chemin = route.request.url.split(API, 1)[-1].split("?")[0]
@@ -111,9 +116,11 @@ def repondre(route):
                       body=json.dumps(corps))
 
     if chemin == "/auth/login":
-        return json_ok({"access_token": JETON, "refresh_token": "r",
-                        "acces": {"bloquant": True, **BLOCAGE},
-                        "user": {"id": 1, "roles": ["directeur"], "ecole_id": 1}})
+        corps = {"access_token": JETON, "refresh_token": "r",
+                 "user": {"id": 1, "roles": ["directeur"], "ecole_id": 1}}
+        if not SERVEUR_ANCIEN["valeur"]:
+            corps["acces"] = {"bloquant": True, **BLOCAGE}
+        return json_ok(corps)
     if chemin == "/auth/refresh":
         return json_ok({"access_token": JETON, "acces": {"bloquant": True, **BLOCAGE}})
 
@@ -210,6 +217,44 @@ def auditer_connexion(navigateur, base):
         if etat["voiles"]:
             signaler("Connexion : la page de paiement est recouverte par l'écran de blocage.")
     ctx.close()
+
+
+def auditer_connexion_serveur_ancien(navigateur, base):
+    """Le site est déployé, le backend ne l'est pas encore.
+
+    Les deux dépôts se déploient SÉPARÉMENT. Entre les deux mises en ligne — et
+    indéfiniment si l'une échoue — le site est neuf et le serveur ne connaît pas
+    encore le champ `acces`. Un correctif qui dépend d'un déploiement qu'on ne
+    contrôle pas n'est pas un correctif : la connexion doit alors constater le
+    blocage par elle-même, en sondant une route que le verrou ferme.
+    """
+    SERVEUR_ANCIEN["valeur"] = True
+    try:
+        ctx = navigateur.new_context(viewport={"width": 390, "height": 780}, is_mobile=True,
+                                     has_touch=True, service_workers="block")
+        ctx.route(f"{API}/**", repondre)
+        page = ctx.new_page()
+
+        visitees = []
+        page.on("framenavigated",
+                lambda f: visitees.append(f.url.split("/")[-1]) if f == page.main_frame else None)
+
+        page.goto(f"{base}/connexion.html", wait_until="domcontentloaded")
+        page.fill("#code_ecole", "EC-001")
+        page.fill("#email", "directeur@test.cd")
+        page.fill("#mot_de_passe", "motdepasse")
+        page.click("#bouton-connexion")
+        page.wait_for_timeout(3000)
+
+        if "dashboard-directeur.html" in visitees:
+            signaler("Serveur ancien : le tableau de bord est ouvert alors que l'accès est "
+                     "bloqué. La protection dépend du déploiement du backend.")
+        if not page.url.endswith("abonnements.html"):
+            signaler(f"Serveur ancien : le directeur bloqué devrait arriver sur "
+                     f"abonnements.html, il est sur {page.url.split('/')[-1]}.")
+        ctx.close()
+    finally:
+        SERVEUR_ANCIEN["valeur"] = False
 
 
 def auditer_ecran_de_blocage(navigateur, base):
@@ -343,6 +388,7 @@ def main():
             navigateur = (p.chromium.launch(executable_path=executable, args=["--no-sandbox"])
                           if executable else p.chromium.launch(args=["--no-sandbox"]))
             auditer_connexion(navigateur, base)
+            auditer_connexion_serveur_ancien(navigateur, base)
             auditer_ecran_de_blocage(navigateur, base)
             auditer_absence_de_page_vide(navigateur, base)
             auditer_pages_de_sortie(navigateur, base)
@@ -362,7 +408,8 @@ def main():
             print(f"  · {anomalie}")
         return 1
 
-    print("  La connexion n'ouvre plus l'application quand l'accès est bloqué.")
+    print("  La connexion n'ouvre plus l'application quand l'accès est bloqué,")
+    print("  y compris face à un serveur qui ignore encore le champ « acces ».")
     print("  Un seul écran de blocage, opaque, application réellement masquée.")
     print("  Aucune animation ne tourne derrière ; les pages de sortie restent libres.")
     print("  Sans voile, la page redevient lisible : aucun écran vide possible.\n")

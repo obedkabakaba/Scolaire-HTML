@@ -152,15 +152,100 @@
 
   var ecranBlocageAffiche = false;
 
+  /* Les pages qui SONT la sortie de secours.
+
+     Elles n'ont rien à bloquer : `abonnements.html` est là pour payer,
+     `support.html` pour signaler, `mon-profil.html` et
+     `changer-mot-de-passe.html` pour reprendre la main sur son compte. Le
+     serveur les laisse d'ailleurs ouvertes (`CHEMINS_TOUJOURS_OUVERTS`).
+
+     Sans cette liste, il suffisait qu'un script partagé — `filtre-cycle.js` ou
+     `acces-presences.js`, qui interrogent `/ecole/moi` sur toutes les pages —
+     reçoive son 402 pour que l'écran de blocage recouvre la page de paiement
+     elle-même. Le directeur cliquait « Voir les abonnements », arrivait sur la
+     bonne page… et y retrouvait le même mur, avec le même bouton. */
+  var PAGES_DE_SORTIE = {
+    'abonnements.html': true,
+    'support.html': true,
+    'mon-profil.html': true,
+    'changer-mot-de-passe.html': true,
+    'reinitialiser-mot-de-passe.html': true,
+    'connexion.html': true
+  };
+
+  function pageCourante() {
+    try {
+      return (window.location.pathname.split('/').pop() || 'index.html').toLowerCase();
+    } catch (e) { return ''; }
+  }
+
+  function estPageDeSortie() {
+    return PAGES_DE_SORTIE[pageCourante()] === true;
+  }
+
+  /**
+   * Masque l'application derrière l'écran de blocage.
+   *
+   * POURQUOI PAR UNE RÈGLE CSS ET NON ÉLÉMENT PAR ÉLÉMENT
+   * ----------------------------------------------------
+   * La version précédente masquait `getElementById('mise-en-page')`. Or une
+   * SEULE page porte cet identifiant : les trente autres ne déclarent que la
+   * CLASSE `.mise-en-page`. Sur toutes ces pages, l'application restait donc
+   * entièrement rendue derrière le voile — menu, tableaux, et surtout les
+   * `.spinner` d'un chargement qui n'aboutirait jamais, qui tournaient
+   * indéfiniment. Chaque image de chaque seconde recomposait donc la page
+   * complète PUIS la floutait, en pleine résolution : c'est ce qui faisait
+   * chauffer, ramer, puis lâcher les téléphones d'entrée de gamme — le défaut
+   * décrit comme « ça plante le navigateur ».
+   *
+   * Une règle sur `body > *` couvre tout ce que la page contient, y compris ce
+   * qui est ajouté APRÈS coup (barre haute mobile, bandeau hors ligne, bouton
+   * du didacticiel). Rien ne peint plus derrière le voile, donc rien ne coûte.
+   */
   function masquerPageBloquee() {
-    var ids = ['ecran-chargement', 'ecran-erreur'];
-    for (var i = 0; i < ids.length; i++) {
-      var element = document.getElementById(ids[i]);
-      if (element) element.style.setProperty('display', 'none', 'important');
+    if (!document.getElementById('ardoise-style-blocage')) {
+      var style = document.createElement('style');
+      style.id = 'ardoise-style-blocage';
+      style.textContent = 'html[data-ardoise-bloque],html[data-ardoise-bloque] body{'
+        + 'background:#111A19!important;overflow:hidden!important}'
+        + 'html[data-ardoise-bloque] body>*:not(#ardoise-expiration-session){'
+        + 'display:none!important}';
+      (document.head || document.documentElement).appendChild(style);
+    }
+    document.documentElement.setAttribute('data-ardoise-bloque', '');
+  }
+
+  /**
+   * Bandeau discret, pour les pages qui sont elles-mêmes la sortie.
+   *
+   * On informe sans recouvrir : la page de paiement doit rester utilisable,
+   * c'est tout son intérêt.
+   */
+  function afficherBandeauBlocage(corps) {
+    function monter() {
+      if (!document.body) {
+        document.addEventListener('DOMContentLoaded', monter, { once: true });
+        return;
+      }
+      if (document.getElementById('ardoise-bandeau-blocage')) return;
+
+      var bandeau = document.createElement('div');
+      bandeau.id = 'ardoise-bandeau-blocage';
+      bandeau.setAttribute('role', 'status');
+      bandeau.style.cssText = [
+        'position:sticky', 'top:0', 'z-index:9000',
+        'background:#C98A3E', 'color:#fff',
+        'padding:10px 16px', 'text-align:center',
+        'font-size:.9rem', 'font-weight:500',
+        'font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif'
+      ].join(';');
+      bandeau.textContent = corps.message
+        || 'L’accès aux fonctions de gestion est suspendu. Vos données sont conservées.';
+
+      document.body.insertBefore(bandeau, document.body.firstChild);
     }
 
-    var page = document.getElementById('mise-en-page');
-    if (page) page.style.setProperty('display', 'none', 'important');
+    monter();
   }
 
   function afficherEcranBlocage(corps) {
@@ -171,14 +256,18 @@
     window.__ardoiseExpirationAffichee = true;
     window.__ardoiseAccesBloque = corps;
 
+    if (estPageDeSortie()) {
+      afficherBandeauBlocage(corps);
+      try { sessionStorage.removeItem('ardoise_droits_offre'); } catch (e) {}
+      return;
+    }
+
     function monter() {
       if (!document.body) {
         document.addEventListener('DOMContentLoaded', monter, { once: true });
         return;
       }
       if (document.getElementById('ardoise-expiration-session')) return;
-
-      masquerPageBloquee();
 
       var activationRequise = corps.code === 'abonnement_requis';
       var titres = {
@@ -198,8 +287,12 @@
         'position:fixed', 'inset:0', 'z-index:2147483646',
         'display:flex', 'align-items:center', 'justify-content:center',
         'padding:24px', 'box-sizing:border-box',
-        'background:rgba(17,26,25,.92)',
-        'backdrop-filter:blur(4px)', '-webkit-backdrop-filter:blur(4px)',
+        /* FOND OPAQUE, SANS `backdrop-filter`.
+           Le flou obligeait le navigateur à re-rastériser TOUTE la page
+           derrière le voile, à chaque image, en pleine résolution. Une fois
+           l'application masquée (`masquerPageBloquee`), il n'y a de toute
+           façon plus rien à flouter : la même image, pour un coût nul. */
+        'background:#111A19',
         'font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif'
       ].join(';');
 
@@ -266,6 +359,11 @@
       carte.appendChild(deconnexion);
       voile.appendChild(carte);
       document.body.appendChild(voile);
+
+      /* On masque l'application APRÈS avoir posé le voile, et jamais avant :
+         si la construction ci-dessus échouait, une page masquée sans voile ne
+         laisserait qu'un écran noir, sans explication ni moyen d'en sortir. */
+      masquerPageBloquee();
 
       try { sessionStorage.removeItem('ardoise_droits_offre'); } catch (e) {}
     }

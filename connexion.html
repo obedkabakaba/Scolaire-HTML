@@ -408,6 +408,41 @@
     return null;
   }
 
+  /**
+   * Où envoyer quelqu'un dont l'école n'a plus d'accès.
+   *
+   * POURQUOI ON N'ENTRE PLUS DANS L'APPLICATION
+   * -------------------------------------------
+   * Jusqu'ici la connexion réussissait, puis on ouvrait le tableau de bord —
+   * qui lançait une dizaine d'appels que le serveur refusait un par un, avant
+   * qu'un écran de blocage ne vienne se poser par-dessus une interface à
+   * moitié dessinée. Sur un téléphone d'entrée de gamme, ce détour coûtait
+   * cher pour rien : on ouvrait grand une porte qu'on savait fermée.
+   *
+   * Le directeur va donc droit à la page qui règle le problème, et les autres
+   * rôles — qui ne peuvent rien y faire — reçoivent une explication plutôt
+   * qu'un écran vide.
+   */
+  function routerAccesBloque(acces, roles) {
+    if (!acces || !acces.bloquant) return false;
+
+    if (roles.includes('directeur') || roles.includes('prefet')) {
+      window.location.href = 'abonnements.html';
+      return true;
+    }
+
+    formulaire.style.display = 'none';
+    document.getElementById('bandeau-reconnexion').style.display = 'none';
+    document.getElementById('succes-titre').textContent =
+      'L’accès de votre école est suspendu';
+    document.getElementById('succes-detail').textContent =
+      (acces.message || 'L’accès de votre établissement est suspendu.')
+      + ' Vos données sont conservées. Prévenez la direction de votre école :'
+      + ' elle seule peut réactiver l’abonnement.';
+    zoneSucces.classList.add('visible');
+    return true;
+  }
+
   // ---------- Reconnexion automatique ("Se souvenir de moi") ----------
   // L'access token ne vit que 15 minutes : au retour de l'utilisateur il est
   // toujours périmé. On repart donc du refresh token (valable 30 jours) pour
@@ -442,6 +477,7 @@
       if (!reponse.ok) { abandonner(); return; } // session expirée ou révoquée
       const donnees = await reponse.json();
       localStorage.setItem('ardoise_access_token', donnees.access_token);
+      if (routerAccesBloque(donnees.acces, utilisateur?.roles || [])) return;
       window.location.href = destination;
     } catch (e) {
       // Backend injoignable (Render en veille, coupure réseau) : on laisse la
@@ -526,6 +562,10 @@
       }
 
       const roles = donnees.user?.roles || [];
+
+      // L'école n'a plus d'accès : on ne traverse pas l'application pour
+      // l'apprendre.
+      if (routerAccesBloque(donnees.acces, roles)) return;
 
       const pageAtterrissage = pageAtterrissagePourRoles(roles);
 

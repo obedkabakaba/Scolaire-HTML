@@ -13,8 +13,24 @@
    v55 : un seul écran de blocage, opaque, application réellement masquée —
          sans cet incrément, les téléphones déjà installés continueraient de
          servir depuis le cache les `session.js` et `ui.js` qui superposaient
-         deux voiles floutés, c'est-à-dire précisément le défaut corrigé. */
-const VERSION='ardoise-v55';
+         deux voiles floutés, c'est-à-dire précisément le défaut corrigé.
+   v56 : une mise à jour ne peut plus laisser un téléphone sans rien.
+
+   CE QUE v56 CORRIGE, ET POURQUOI ÇA COMPTE ICI
+   -----------------------------------------------------------------------
+   `activate` supprimait l'ancien cache DÈS que le nouveau était déclaré
+   installé — or `install` ignore volontairement les ressources qu'il n'a pas
+   pu télécharger (`catch` par fichier). Sur une connexion d'école, quelques
+   fichiers manquent presque toujours. L'ancien cache parti, ces fichiers-là
+   n'existaient plus nulle part, et `fetch` renvoyait alors une réponse 503
+   VIDE : page sans style, sans script — ou entièrement blanche.
+
+   Autrement dit, chaque incrément de version faisait courir ce risque à
+   toutes les écoles, et il grandissait avec la qualité du réseau. Deux
+   garde-fous : on ne supprime l'ancien cache que si le nouveau est COMPLET,
+   et un fichier introuvable est cherché dans les caches précédents avant
+   qu'on abandonne. */
+const VERSION='ardoise-v56';
 const CACHE_COQUILLE=`${VERSION}-coquille`;
 const COQUILLE=[
   './','connexion.html','changer-mot-de-passe.html','dashboard-directeur.html',
@@ -46,8 +62,23 @@ self.addEventListener('install',(event)=>{
 
 self.addEventListener('activate',(event)=>{
   event.waitUntil((async()=>{
-    const noms=await caches.keys();
-    await Promise.all(noms.filter((n)=>!n.startsWith(VERSION)).map((n)=>caches.delete(n)));
+    const cache=await caches.open(CACHE_COQUILLE);
+
+    /* On ne jette l'ancien cache QUE si le nouveau tient debout tout seul.
+       Sinon on le garde : servir un fichier de la version précédente est un
+       inconvénient, ne rien servir du tout est une panne. Le cache neuf se
+       complétera de lui-même à la première visite en réseau correct — chaque
+       réponse valide y est déposée par `cachePuisReseauLocal`. */
+    const manquants=(await Promise.all(
+      COQUILLE.map(async(p)=>(await cache.match(p))?null:p))).filter(Boolean);
+
+    if(manquants.length){
+      console.warn('[SW] installation incomplète ('+manquants.length+' ressource(s)) :'
+        +' cache précédent conservé.');
+    }else{
+      const noms=await caches.keys();
+      await Promise.all(noms.filter((n)=>!n.startsWith(VERSION)).map((n)=>caches.delete(n)));
+    }
     await self.clients.claim();
   })());
 });
@@ -62,13 +93,28 @@ self.addEventListener('message',(event)=>{
 async function reseauPuisCacheLocal(req){
   const cache=await caches.open(CACHE_COQUILLE);
   try{const r=await fetch(req);if(r&&r.ok)cache.put(req,r.clone());return r;}
-  catch(e){const c=await cache.match(req);if(c)return c;throw e;}
+  // `caches.match` cherche dans TOUS les caches, y compris celui d'une version
+  // précédente resté en place faute d'installation complète.
+  catch(e){const c=(await cache.match(req))||(await caches.match(req));if(c)return c;throw e;}
 }
 async function cachePuisReseauLocal(req){
   const cache=await caches.open(CACHE_COQUILLE);
   const c=await cache.match(req);
-  const net=fetch(req).then((r)=>{if(r&&r.ok)cache.put(req,r.clone());return r;}).catch(()=>null);
-  return c||net.then((r)=>r||Promise.reject(new Error('hors ligne')));
+  if(c)return c;
+  try{
+    const r=await fetch(req);
+    if(r&&r.ok)cache.put(req,r.clone());
+    return r;
+  }catch(e){
+    /* DERNIER RECOURS AVANT LE VIDE. Un fichier absent du cache neuf et
+       injoignable par le réseau existe peut-être encore dans le cache d'hier.
+       Servir un `ui.js` d'hier n'est pas idéal ; renvoyer une réponse vide à
+       la place d'une feuille de style ou d'un script donne une page blanche,
+       et c'est bien pire. */
+    const ancien=await caches.match(req);
+    if(ancien)return ancien;
+    throw e;
+  }
 }
 
 self.addEventListener('fetch',(event)=>{

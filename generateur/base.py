@@ -13,7 +13,7 @@ import os
 
 SITE = "https://myardoise.com"
 DATE = "2026-08-12"
-RESSOURCES_VERSION = "20260812-3"
+RESSOURCES_VERSION = "20260819-1"
 
 POLICES = ("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;"
            "9..144,600;9..144,700&family=Inter:wght@400;500;600;700&"
@@ -106,6 +106,8 @@ MENU = [
                     ("/securite/", "Sécurité et données", "Où sont les données, qui y accède"),
                     ("/a-propos/", "À propos d'Ardoise", "Le projet, son éditeur et ses engagements"),
                     ("/contact/", "Parler à quelqu'un", "Demander un accompagnement"),
+                    ("/ecrire/", "Écrivez-nous",
+                     "Une question, une remarque : un message libre"),
                 ],
             },
         ],
@@ -231,6 +233,7 @@ PIED = """<footer class="pied">
           <li><a href="/faq/">Questions fréquentes</a></li>
           <li><a href="/a-propos/">À propos</a></li>
           <li><a href="/contact/">Nous contacter</a></li>
+          <li><a href="/ecrire/">Écrivez-nous</a></li>
           <li><a href="/connexion.html">Se connecter</a></li>
           <li><a href="/confidentialite.html">Confidentialité</a></li>
         </ul>

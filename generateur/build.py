@@ -176,6 +176,7 @@ PRIORITES = {
     "/guides/": ("0.8", "monthly"),
     "/a-propos/": ("0.7", "yearly"),
     "/contact/": ("0.7", "yearly"),
+    "/ecrire/": ("0.7", "yearly"),
 }
 DEFAUT = ("0.7", "monthly")
 

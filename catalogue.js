@@ -489,6 +489,71 @@
     });
   }
 
+  /* --------------------------------------------- Formulaire « Écrivez-nous »
+
+     POURQUOI UN SECOND BRANCHEMENT PLUTÔT QU'UN CHAMP DE PLUS
+
+     `brancherFormulaireContact` envoie tout ce que porte le formulaire vers
+     `/catalogue/demande-accompagnement`, qui range la ligne comme un PROSPECT.
+     Réutiliser cette fonction pour « Écrivez-nous » aurait déposé chaque
+     parent et chaque professeur dans la file de rappel commercial, où le
+     message serait resté à côté d'écoles à rappeler sous 48 heures. Deux
+     intentions différentes, deux points d'entrée, une seule file filtrable
+     côté Super Admin. */
+
+  function brancherFormulaireMessage(racine) {
+    var form = (racine || document).querySelector('[data-formulaire-message]');
+    if (!form) return;
+    var retour = form.querySelector('[data-retour]');
+    var bouton = form.querySelector('button[type="submit"]');
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var donnees = Object.fromEntries(new FormData(form).entries());
+
+      /* Le serveur refuse déjà un message sans coordonnée, mais il répond
+         après un aller-retour réseau — long sur une connexion d'école. On dit
+         la même chose tout de suite, avec les mêmes mots. */
+      if (!String(donnees.contact_email || '').trim()
+          && !String(donnees.contact_telephone || '').trim()) {
+        retour.hidden = false;
+        retour.className = 'message-retour erreur';
+        retour.textContent = 'Indiquez au moins une adresse e-mail ou un numéro '
+          + 'de téléphone, sinon nous ne pourrons pas vous répondre.';
+        return;
+      }
+
+      bouton.disabled = true;
+      var texteInitial = bouton.textContent;
+      bouton.textContent = 'Envoi…';
+      retour.hidden = true;
+
+      fetch(API + '/catalogue/message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(donnees)
+      })
+        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+        .then(function (res) {
+          retour.hidden = false;
+          retour.className = 'message-retour ' + (res.ok ? 'succes' : 'erreur');
+          retour.textContent = res.d.message
+            || (res.ok ? 'Message envoyé.' : 'Votre message n\u2019a pas pu être envoyé.');
+          if (res.ok) form.reset();
+        })
+        .catch(function () {
+          retour.hidden = false;
+          retour.className = 'message-retour erreur';
+          retour.textContent = 'Connexion impossible. Vous pouvez aussi nous écrire '
+            + 'sur WhatsApp au 0855 035 693.';
+        })
+        .finally(function () {
+          bouton.disabled = false;
+          bouton.textContent = texteInitial;
+        });
+    });
+  }
+
   /* ---------------------------------------------------- Essai gratuit */
 
   /**
@@ -674,6 +739,7 @@
     rafraichirTarifs(document, reappliquer);
     brancherSimulateur(document);
     brancherFormulaireContact(document);
+    brancherFormulaireMessage(document);
     brancherEssai(document);
   }
 

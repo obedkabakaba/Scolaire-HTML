@@ -29,6 +29,7 @@ Allow: /services/campagne-de-capture/
 Allow: /securite/
 Allow: /faq/
 Allow: /contact/
+Allow: /ecrire/
 Allow: /guides/
 Allow: /guides/choisir-logiciel-gestion-scolaire-rdc/
 Allow: /guides/digitaliser-ecole-rdc/

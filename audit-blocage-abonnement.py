@@ -102,6 +102,10 @@ def servir():
     return serveur, f"http://127.0.0.1:{serveur.server_address[1]}"
 
 
+# Vrai quand plus aucune offre n'est proposable — toutes supprimées, archivées
+# ou retirées du site depuis l'espace Super Admin.
+SANS_OFFRE = {"valeur": False}
+
 # Vrai quand le serveur ignore encore le champ `acces` — l'état réel entre le
 # déploiement du site et celui du backend, qui partent séparément.
 SERVEUR_ANCIEN = {"valeur": False}
@@ -135,6 +139,15 @@ def repondre(route):
                         "offre": {"code": "ascension", "nom": "Ascension",
                                   "fonctionnalites": {}}})
     if chemin.startswith("/abonnements/renouvellement"):
+        if SANS_OFFRE["valeur"]:
+            return json_ok({
+                "ecole": {"nom": "Institut Test", "code": "EC-001", "plan_nom": None,
+                          "abonnement_statut": "expire", "abonnement_plan_id": None,
+                          "date_expiration": "2026-06-01T00:00:00Z"},
+                "depot": {"disponible": True, "numero": "+243 900 000 000",
+                          "nom": "Ardoise SARL", "reseau": "Orange Money"},
+                "demande": None, "plans": [], "aucune_offre": True,
+            })
         return json_ok({
             "ecole": {"nom": "Institut Test", "code": "EC-001", "plan_nom": "Ascension",
                       "abonnement_statut": "expire", "date_expiration": "2026-06-01T00:00:00Z"},
@@ -386,6 +399,42 @@ def auditer_serveur_endormi(navigateur, base):
     ctx.close()
 
 
+def auditer_sans_offre_proposable(navigateur, base):
+    """Plus aucune offre à vendre : la page doit le dire, pas ouvrir le vide.
+
+    Le bouton « Choisir mon abonnement » ouvrait l'étape « Choisissez votre
+    offre » sur une liste vide. L'école bloquée cliquait, arrivait devant un
+    écran sans rien à choisir, et n'avait plus aucun moyen de payer — sur la
+    seule page d'où elle le peut. C'est ce qui arrive quand les offres ont été
+    supprimées ou retirées du site.
+    """
+    SANS_OFFRE["valeur"] = True
+    try:
+        ctx = navigateur.new_context(viewport={"width": 390, "height": 780}, is_mobile=True,
+                                     has_touch=True, service_workers="block")
+        ctx.route(f"{API}/**", repondre)
+        page = ctx.new_page()
+        ouvrir_session(page, base)
+        page.goto(f"{base}/abonnements.html", wait_until="domcontentloaded")
+        page.wait_for_timeout(2500)
+
+        etat = page.evaluate(
+            "() => ({ bouton: !!document.getElementById('btn-renouveler'),"
+            "  recours: !!document.querySelector('#etat-actions a[href=\"support.html\"]'),"
+            "  dit: (document.getElementById('etat-actions') || {}).textContent || '' })")
+
+        if etat["bouton"]:
+            signaler("Aucune offre : le bouton d'abonnement mène toujours à une étape vide. "
+                     "L'école ne peut ni choisir ni payer.")
+        if not etat["recours"]:
+            signaler("Aucune offre : aucun moyen de nous joindre depuis la page de paiement.")
+        if "Aucune offre" not in etat["dit"]:
+            signaler("Aucune offre : la page ne dit pas pourquoi rien n'est proposé.")
+        ctx.close()
+    finally:
+        SANS_OFFRE["valeur"] = False
+
+
 def auditer_pages_de_sortie(navigateur, base):
     """Payer, écrire au support, changer son mot de passe : jamais recouvert."""
     ctx = navigateur.new_context(viewport={"width": 390, "height": 780}, is_mobile=True,
@@ -434,6 +483,7 @@ def main():
             auditer_ecran_de_blocage(navigateur, base)
             auditer_absence_de_page_vide(navigateur, base)
             auditer_serveur_endormi(navigateur, base)
+            auditer_sans_offre_proposable(navigateur, base)
             auditer_pages_de_sortie(navigateur, base)
             navigateur.close()
     finally:
@@ -456,7 +506,8 @@ def main():
     print("  Un seul écran de blocage, opaque, application réellement masquée.")
     print("  Aucune animation ne tourne derrière ; les pages de sortie restent libres.")
     print("  Sans voile, la page redevient lisible : aucun écran vide possible.")
-    print("  Un serveur qui ne répond pas est annoncé, jamais laissé en silence.\n")
+    print("  Un serveur qui ne répond pas est annoncé, jamais laissé en silence.")
+    print("  Sans offre à vendre, la page le dit et donne un humain à joindre.\n")
     return 0
 
 

@@ -344,6 +344,48 @@ def auditer_absence_de_page_vide(navigateur, base):
     ctx.close()
 
 
+def auditer_serveur_endormi(navigateur, base):
+    """Le serveur ne répond pas : la page doit le DIRE, pas se figer.
+
+    L'hébergement met le serveur en veille après une période d'inactivité. Le
+    premier appel du matin paie le réveil — trente à cinquante secondes —
+    pendant lesquelles la requête est partie et ne revient pas. Ce n'est pas
+    une erreur : c'est une attente, et `fetch` patiente sans limite.
+
+    La page d'abonnement restait donc sur un « Chargement… » muet, sans bouton
+    et sans message. C'est le défaut décrit depuis le terrain : « la page
+    d'abonnement s'ouvre mais rien ne se clique ». Il ne se voit qu'en laissant
+    une requête sans réponse, ce qu'aucun test d'API simulée ne fait
+    spontanément.
+    """
+    ctx = navigateur.new_context(viewport={"width": 390, "height": 780}, is_mobile=True,
+                                 has_touch=True, service_workers="block")
+
+    def router(route):
+        chemin = route.request.url.split(API, 1)[-1].split("?")[0]
+        if chemin.startswith("/abonnements/renouvellement"):
+            return          # la requête part et ne revient jamais
+        return repondre(route)
+
+    ctx.route(f"{API}/**", router)
+    page = ctx.new_page()
+    ouvrir_session(page, base)
+    page.goto(f"{base}/abonnements.html", wait_until="domcontentloaded")
+
+    # Au-delà du délai après lequel la page doit expliquer l'attente.
+    page.wait_for_timeout(9000)
+
+    dit = page.evaluate(
+        "() => { const p = document.getElementById('plans');"
+        " const c = document.getElementById('etat-compact');"
+        " return ((p ? p.textContent : '') + ' ' + (c ? c.textContent : '')).trim(); }")
+
+    if "Chargement" in dit and "réveille" not in dit and "Connexion" not in dit:
+        signaler("Serveur endormi : la page reste sur « Chargement… » sans rien expliquer. "
+                 "C'est l'écran mort dont les écoles ne peuvent pas sortir.")
+    ctx.close()
+
+
 def auditer_pages_de_sortie(navigateur, base):
     """Payer, écrire au support, changer son mot de passe : jamais recouvert."""
     ctx = navigateur.new_context(viewport={"width": 390, "height": 780}, is_mobile=True,
@@ -391,6 +433,7 @@ def main():
             auditer_connexion_serveur_ancien(navigateur, base)
             auditer_ecran_de_blocage(navigateur, base)
             auditer_absence_de_page_vide(navigateur, base)
+            auditer_serveur_endormi(navigateur, base)
             auditer_pages_de_sortie(navigateur, base)
             navigateur.close()
     finally:
@@ -412,7 +455,8 @@ def main():
     print("  y compris face à un serveur qui ignore encore le champ « acces ».")
     print("  Un seul écran de blocage, opaque, application réellement masquée.")
     print("  Aucune animation ne tourne derrière ; les pages de sortie restent libres.")
-    print("  Sans voile, la page redevient lisible : aucun écran vide possible.\n")
+    print("  Sans voile, la page redevient lisible : aucun écran vide possible.")
+    print("  Un serveur qui ne répond pas est annoncé, jamais laissé en silence.\n")
     return 0
 
 

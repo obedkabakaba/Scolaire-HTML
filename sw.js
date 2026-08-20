@@ -41,8 +41,11 @@
    v59 : la connexion constate elle-même un accès bloqué quand le serveur ne
          l'annonce pas encore, et `cachePuisReseauLocal` relit à nouveau le
          réseau derrière un fichier servi depuis le cache — sans cela, un
-         fichier corrigé n'atteignait le téléphone qu'au prochain incrément. */
-const VERSION='ardoise-v59';
+         fichier corrigé n'atteignait le téléphone qu'au prochain incrément.
+   v60 : la page Abonnements pose un délai sur son chargement. Sans lui, une
+         requête partie vers un serveur endormi n'aboutissait jamais et la page
+         restait sur « Chargement… », sans bouton ni message. */
+const VERSION='ardoise-v60';
 const CACHE_COQUILLE=`${VERSION}-coquille`;
 const COQUILLE=[
   './','connexion.html','changer-mot-de-passe.html','dashboard-directeur.html',

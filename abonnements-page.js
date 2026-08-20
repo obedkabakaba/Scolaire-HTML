@@ -37,12 +37,56 @@
     });
   }
 
+  /* COMBIEN DE TEMPS ON ATTEND, ET POURQUOI CES DURÉES
+
+     L'hébergement met le serveur en veille après une période d'inactivité. Le
+     premier appel du matin paie donc le réveil : trente à cinquante secondes,
+     parfois plus. Pendant ce temps la requête est PARTIE et ne revient pas —
+     ce n'est pas une erreur, c'est une attente. Sans délai, `fetch` patiente
+     sans limite et la page reste sur « Chargement… », sans bouton, sans
+     message : exactement ce que les écoles décrivaient comme « la page
+     d'abonnement s'ouvre mais rien ne se clique ».
+
+     · 6 s  → on DIT que le serveur se réveille. Le plus important des deux :
+              une attente expliquée n'est plus une panne.
+     · 45 s → on abandonne et on montre l'écran d'erreur, qui porte, lui, un
+              bouton « Réessayer » et deux moyens de nous joindre. Assez long
+              pour laisser un vrai réveil aboutir, assez court pour ne pas
+              laisser quelqu'un devant un écran mort. */
+  var DELAI_REVEIL = 6000;
+  var DELAI_ABANDON = 45000;
+
   function api(path, opt) {
-    return ArdoiseSession.appelApi(path, opt || {}).then(function (r) {
+    var reglage = {};
+    var source = opt || {};
+    for (var cle in source) {
+      if (Object.prototype.hasOwnProperty.call(source, cle)) reglage[cle] = source[cle];
+    }
+
+    var minuteur = null;
+    if (reglage.delai && typeof AbortController === 'function') {
+      var controleur = new AbortController();
+      reglage.signal = controleur.signal;
+      minuteur = setTimeout(function () { controleur.abort(); }, reglage.delai);
+    }
+    var arreter = function () { if (minuteur) clearTimeout(minuteur); };
+
+    return ArdoiseSession.appelApi(path, reglage).then(function (r) {
+      arreter();
       return r.json().catch(function () { return {}; }).then(function (j) {
         if (!r.ok) { var e = new Error(j.message || 'Opération impossible.'); e.status = r.status; throw e; }
         return j;
       });
+    }, function (e) {
+      arreter();
+      // `AbortError` : c'est NOTRE délai qui a coupé, pas le réseau. Le dire
+      // autrement ferait accuser la connexion de l'école.
+      if (e && (e.name === 'AbortError' || e.code === 20)) {
+        var abandon = new Error('Le serveur n’a pas répondu à temps.');
+        abandon.expire = true;
+        throw abandon;
+      }
+      throw e;
     });
   }
 
@@ -100,6 +144,10 @@
   var etat = { plan: null, periodicite: 'annuel', etape: null };
   var signatureActuelle = '';
   var envoiEnCours = false;
+  /* Sur un réseau lent, une synchro peut durer plus longtemps que l'intervalle
+     qui la déclenche. Sans ce verrou, les appels s'empilent et chacun ralentit
+     les autres — sur une connexion facturée au mégaoctet, en plus. */
+  var synchroEnCours = false;
 
   /* Une clé stable par tentative : deux clics sur « Continuer » envoient la
      MÊME clé, et le serveur renvoie la demande déjà créée au lieu d'en ouvrir
@@ -668,6 +716,10 @@
    */
   function messageDeCharge(e) {
     var brut = (e && e.message) ? String(e.message) : '';
+    if (e && e.expire) {
+      return brut + ' Il se réveille peut-être encore : réessayez dans un instant. '
+           + 'Si cela dure, écrivez-nous — nous pouvons activer votre abonnement de notre côté.';
+    }
     var reseau = !e || !e.status;
     return (brut ? brut + ' ' : '')
       + (reseau
@@ -676,11 +728,39 @@
         : 'Réessayez dans un instant, ou écrivez-nous si cela persiste.');
   }
 
+  /**
+   * Dire qu'on attend, plutôt que de laisser croire que rien ne se passe.
+   *
+   * Le message remplace le « Chargement… » muet au bout de quelques secondes.
+   * Il ne s'affiche que si l'attente dure vraiment : sur un serveur déjà
+   * réveillé, personne ne le voit jamais.
+   */
+  function annoncerReveil() {
+    var minuteur = setTimeout(function () {
+      var compact = $('etat-compact');
+      if (compact) compact.textContent = 'Connexion au serveur…';
+      var plans = $('plans');
+      if (plans && /Chargement des offres/.test(plans.textContent)) {
+        plans.innerHTML = '<div class="carte-section muted">Le serveur se réveille — '
+          + 'cela peut prendre jusqu’à une minute la première fois de la journée.</div>';
+      }
+    }, DELAI_REVEIL);
+    return function () { clearTimeout(minuteur); };
+  }
+
   function charger(premier) {
     if (premier) $('plans').innerHTML = '<div class="carte-section muted">Chargement des offres…</div>';
-    montrer('erreur-chargement', false);
 
-    return api('/abonnements/renouvellement').then(function (r) {
+    /* L'ERREUR NE DISPARAÎT QU'AVEC LA RÉUSSITE, JAMAIS AVANT.
+       La masquer au DÉBUT de chaque tentative retirait le bouton « Réessayer »
+       et les deux moyens de nous joindre dès qu'une nouvelle tentative
+       partait — automatique comprise. L'école se retrouvait à nouveau devant
+       un écran sans recours, pour quarante-cinq secondes de plus. */
+    var finReveil = premier ? annoncerReveil() : function () {};
+
+    return api('/abonnements/renouvellement', { delai: DELAI_ABANDON }).then(function (r) {
+      finReveil();
+      montrer('erreur-chargement', false);
       data = r;
       signatureActuelle = signature(r);
       renduPlans();
@@ -697,6 +777,7 @@
       }
       return r;
     }).catch(function (e) {
+      finReveil();
       montrer('erreur-chargement', true);
 
       /* On n'écrit QUE dans le conteneur de texte. Réécrire le bloc entier
@@ -726,7 +807,11 @@
     var champ = $('reference');
     var saisieEnCours = champ && (document.activeElement === champ || champ.value.trim().length > 0);
 
-    api('/abonnements/renouvellement').then(function (r) {
+    if (synchroEnCours) return;
+    synchroEnCours = true;
+
+    api('/abonnements/renouvellement', { delai: 15000 }).then(function (r) {
+      synchroEnCours = false;
       var nouvelle = signature(r);
       if (nouvelle === signatureActuelle) return;   // rien n'a changé : DOM intact
 
@@ -751,7 +836,11 @@
       }
       renduSuivi();
       renduActions();
-    }).catch(function () { /* une synchro ratée est sans conséquence */ });
+    }).catch(function () {
+      // Une synchro ratée est sans conséquence : la suivante repartira dans
+      // vingt secondes. On libère seulement le verrou.
+      synchroEnCours = false;
+    });
   }
 
   /* ------------------------------------------------------------ Câblage */
@@ -819,7 +908,11 @@
      boucle de rattrapage, c'est le temps de réveil du serveur. Si la seconde
      échoue aussi, l'écran d'erreur reste, avec son bouton et ses recours. */
   charger(true).catch(function () {
-    setTimeout(function () { charger(true).catch(function () {}); }, 3000);
+    setTimeout(function () {
+      var detail = $('erreur-chargement-detail');
+      if (detail) detail.textContent = 'Nouvelle tentative en cours… ' + detail.textContent;
+      charger(true).catch(function () {});
+    }, 3000);
   });
   setInterval(synchroniser, 20000);
 })();

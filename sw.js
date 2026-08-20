@@ -44,8 +44,10 @@
          fichier corrigé n'atteignait le téléphone qu'au prochain incrément.
    v60 : la page Abonnements pose un délai sur son chargement. Sans lui, une
          requête partie vers un serveur endormi n'aboutissait jamais et la page
-         restait sur « Chargement… », sans bouton ni message. */
-const VERSION='ardoise-v60';
+         restait sur « Chargement… », sans bouton ni message.
+   v61 : quand aucune offre n'est proposable, la page le dit et donne un humain
+         à joindre, au lieu d'un bouton qui ouvre une étape vide. */
+const VERSION='ardoise-v61';
 const CACHE_COQUILLE=`${VERSION}-coquille`;
 const COQUILLE=[
   './','connexion.html','changer-mot-de-passe.html','dashboard-directeur.html',

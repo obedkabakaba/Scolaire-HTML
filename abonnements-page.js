@@ -250,6 +250,30 @@
 
     var e = (data && data.ecole) || {};
     var sansAbonnement = !e.abonnement_statut || e.abonnement_statut === 'en_attente';
+
+    /* AUCUNE OFFRE À PROPOSER : ON NE PROMET PAS UN PARCOURS QUI N'EXISTE PAS.
+       ------------------------------------------------------------------------
+       Le bouton ouvrait l'étape « Choisissez votre offre » sur une liste vide.
+       L'école bloquée cliquait, arrivait sur un écran sans rien à choisir, et
+       n'avait plus aucun moyen de payer — sur la seule page d'où elle le peut.
+       C'est ce qui arrive quand toutes les offres ont été supprimées, archivées
+       ou retirées du site depuis l'espace Super Admin.
+
+       Mieux vaut le dire et donner un humain à joindre. */
+    var aucuneOffre = (data && data.aucune_offre === true)
+      || !((data && data.plans) || []).length;
+
+    if (aucuneOffre) {
+      zone.innerHTML = '<div class="etat-demande erreur" style="width:100%">'
+        + '<strong>Aucune offre n’est proposable pour le moment.</strong><br>'
+        + 'Ce n’est pas votre école qui est en cause — nos offres sont en cours '
+        + 'de mise à jour. Écrivez-nous et nous activons votre abonnement '
+        + 'directement.</div>'
+        + '<a class="bouton bouton-principal" href="support.html">Contacter le support</a>'
+        + '<a class="bouton bouton-secondaire" href="https://wa.me/243855035693" rel="noopener">WhatsApp</a>';
+      return;
+    }
+
     zone.innerHTML = '<button type="button" class="bouton bouton-principal" id="btn-renouveler">'
       + (sansAbonnement ? 'Choisir mon abonnement' : 'Renouveler mon abonnement') + '</button>';
     $('btn-renouveler').addEventListener('click', function () {
@@ -383,7 +407,11 @@
     var courant = sansAbonnement ? null : ecole.abonnement_plan_id;
     var plans = data.plans || [];
     if (!plans.length) {
-      $('plans').innerHTML = '<div class="carte-section erreur">Aucune offre disponible pour le moment.</div>';
+      $('plans').innerHTML = '<div class="carte-section erreur">'
+        + '<strong>Aucune offre n’est proposable pour le moment.</strong><br>'
+        + '<span class="aide">Écrivez-nous : <a href="support.html">le support</a> ou '
+        + '<a href="https://wa.me/243855035693" rel="noopener">WhatsApp</a>. '
+        + 'Nous activons votre abonnement de notre côté.</span></div>';
       return;
     }
 

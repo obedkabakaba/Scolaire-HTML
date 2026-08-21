@@ -46,8 +46,13 @@
          requête partie vers un serveur endormi n'aboutissait jamais et la page
          restait sur « Chargement… », sans bouton ni message.
    v61 : quand aucune offre n'est proposable, la page le dit et donne un humain
-         à joindre, au lieu d'un bouton qui ouvre une étape vide. */
-const VERSION='ardoise-v61';
+         à joindre, au lieu d'un bouton qui ouvre une étape vide.
+   v62 : le calendrier accepte trente-cinq types d'événements au lieu de sept,
+         et les lit dans `evenements-types.js` — un fichier NOUVEAU, absent de
+         la coquille d'un téléphone déjà installé. Sans cet incrément, il ne
+         serait jamais téléchargé : le menu « Type » resterait vide et le
+         formulaire d'ajout d'événement inutilisable sur ces appareils. */
+const VERSION='ardoise-v62';
 const CACHE_COQUILLE=`${VERSION}-coquille`;
 const COQUILLE=[
   './','connexion.html','changer-mot-de-passe.html','dashboard-directeur.html',
@@ -62,6 +67,7 @@ const COQUILLE=[
   'mon-profil.html','messages.html','site-public.html','discipline.html','cours.html',
   'archives.html','rapports.html','super-admin.html','theme.css','theme-base.css','ui.css','mobile.css',
   'mobile.js','theme.js','ui.js','session.js','abonnements-page.js','acces-presences.js','filtre-cycle.js',
+  'evenements-types.js',
   'hors-ligne.js','didacticiel.js','didacticiel.css','super-admin-styles.css',
   'super-admin-noyau.js','super-admin-vues-pilotage.js','super-admin-vues-ecoles.js',
   'super-admin-vues-explorer.js','super-admin-vues-systeme.js','manifest.json',

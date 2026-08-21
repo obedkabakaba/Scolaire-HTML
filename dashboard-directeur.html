@@ -367,6 +367,7 @@
   <!-- Session partagée : renouvellement du jeton et rejeu des requêtes
        expirées. Doit rester AVANT les autres scripts. -->
   <script src="session.js"></script>
+  <script src="evenements-types.js"></script>
   <script src="remontee-erreurs.js"></script>
   <script src="acces-presences.js"></script>
 <link rel="stylesheet" href="mobile.css" />
@@ -559,10 +560,11 @@
   // URL du backend en production.
   const API_BASE_URL = "https://scolaire-saas-backend.onrender.com";
 
-  const TYPES_EVENEMENTS = {
-    debut_cours: 'Début des cours', examen: 'Examen', depot_resultats: 'Dépôt des résultats',
-    conseil_classe: 'Conseil de classe', proclamation: 'Proclamation', vacances: 'Vacances', reunion: 'Réunion'
-  };
+  // Libellés des types d'événements : `evenements-types.js`, partagé avec le
+  // calendrier et aligné sur `utils/evenements-catalogue.js` côté serveur.
+  // Cette liste était recopiée ici, figée à sept entrées : tout type ajouté
+  // depuis s'affichait en clé brute (« fin_annee ») sur ce tableau de bord.
+  const TypesEvenements = window.ArdoiseTypesEvenements;
 
 
   // Session par défaut = sessionStorage (effacée à la fermeture du navigateur),
@@ -877,7 +879,7 @@
         listeEvenements.innerHTML = donnees.evenements_a_venir.map((evt) => `
           <li>
             <span class="date-evt">${formaterDate(evt.date_debut)}</span>
-            <span>${evt.titre} — ${TYPES_EVENEMENTS[evt.type] || evt.type}</span>
+            <span>${evt.titre} — ${TypesEvenements.libelle(evt.type)}</span>
           </li>
         `).join('');
       }

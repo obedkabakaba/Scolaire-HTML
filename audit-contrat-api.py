@@ -28,6 +28,13 @@ manquaient, tous portant sur ce qui se passe ENTRE les deux moitiés :
      dispose de ses propres modales ; les natives bloquent le fil, ignorent le
      thème sombre, et sont bloquées par certains navigateurs mobiles.
 
+  4. La copie de secours des types d'événements (`evenements-types.js`) dit-elle
+     la même chose que le catalogue serveur (`utils/evenements-catalogue.js`) ?
+     Elle sert le menu déroulant tant que `GET /evenements/types` n'a pas
+     répondu — c'est-à-dire hors ligne, et à chaque réveil de serveur. Un type
+     qui n'y figure pas est proposé au secrétariat par intermittence ; un
+     libellé qui a dérivé nomme deux choses différentes selon la latence.
+
 Lancer : python3 audit-contrat-api.py
 Sortie : liste des anomalies, code 1 s'il y en a.
 
@@ -221,6 +228,92 @@ def appels_frontend(source):
 # 3. Contrôles
 # --------------------------------------------------------------------------
 
+# --------------------------------------------------------------------------
+# 4. Catalogue des types d'événements : le repli du navigateur contre la
+#    référence du serveur
+# --------------------------------------------------------------------------
+
+def _types_backend():
+    """{ clé: libellé } lus dans `utils/evenements-catalogue.js`."""
+    chemin = os.path.join(RACINE_BACK, 'utils', 'evenements-catalogue.js')
+    if not os.path.exists(chemin):
+        return None
+    source = open(chemin, encoding='utf-8').read()
+    bloc = re.search(r'const TYPES_EVENEMENTS = \{(.*?)\n\};', source, re.S)
+    if not bloc:
+        return None
+    trouves = {}
+    # Une entrée : la clé en tête de ligne, puis `libelle` sur la ligne suivante.
+    # Le libellé ne franchit ni sa propre quote ni la fin de ligne : sans cette
+    # borne, la capture paresseuse enjambait l'entrée suivante et lui volait sa
+    # clé — le contrôle déclarait alors manquants des types parfaitement
+    # présents des deux côtés.
+    for m in re.finditer(
+            r"""^  ([a-z][a-z0-9_]*): \{\s*\n\s*libelle: (['"])((?:(?!\2)[^\\\n]|\\.)*)\2,""",
+            bloc.group(1), re.M):
+        trouves[m.group(1)] = m.group(3).replace("\\'", "'")
+    return trouves
+
+
+def _types_frontend():
+    """{ clé: libellé } lus dans le repli de `evenements-types.js`."""
+    chemin = os.path.join(RACINE_FRONT, 'evenements-types.js')
+    if not os.path.exists(chemin):
+        return None
+    source = open(chemin, encoding='utf-8').read()
+    bloc = re.search(r'const CATALOGUE_DE_SECOURS = \[(.*?)\n  \];', source, re.S)
+    if not bloc:
+        return None
+    trouves = {}
+    for m in re.finditer(
+            r"""\{\s*cle: '([a-z][a-z0-9_]*)',\s*libelle: (['"])((?:(?!\2)[^\\\n]|\\.)*)\2\s*\}""",
+            bloc.group(1)):
+        trouves[m.group(1)] = m.group(3).replace("\\'", "'")
+    return trouves
+
+
+def verifier_catalogue_evenements(rapport):
+    """Signale toute dérive entre les deux listes de types d'événements."""
+    nom = 'evenements-types.js'
+    backend = _types_backend()
+    frontend = _types_frontend()
+
+    # Aucun des deux fichiers n'est indispensable au reste de l'audit : s'ils
+    # sont absents ou remaniés au point d'être illisibles, on le DIT plutôt que
+    # de laisser croire au silence d'un contrôle qui n'a pas tourné.
+    if backend is None or frontend is None:
+        rapport.constat(
+            nom, 'catalogue_evenements_illisible',
+            "catalogue des types d'événements non comparé : "
+            + ("`utils/evenements-catalogue.js` " if backend is None else '')
+            + ("`evenements-types.js` " if frontend is None else '')
+            + "introuvable ou de forme inattendue",
+            gravite='moyenne')
+        return
+
+    for cle in sorted(set(backend) - set(frontend)):
+        rapport.constat(
+            nom, 'type_evenement_absent_du_repli',
+            f"type « {cle} » servi par le backend mais absent de la copie de "
+            f"secours : il manquera au menu tant que le serveur n'aura pas répondu",
+            gravite='moyenne')
+
+    for cle in sorted(set(frontend) - set(backend)):
+        rapport.constat(
+            nom, 'type_evenement_inconnu_du_backend',
+            f"type « {cle} » proposé par la copie de secours mais inconnu du "
+            f"backend : l'enregistrement sera refusé (400)",
+            gravite='importante')
+
+    for cle in sorted(set(frontend) & set(backend)):
+        if frontend[cle] != backend[cle]:
+            rapport.constat(
+                nom, 'libelle_type_evenement_divergent',
+                f"type « {cle} » : « {frontend[cle]} » côté page, "
+                f"« {backend[cle]} » côté serveur",
+                gravite='moyenne')
+
+
 def auditer_contrat():
     motifs = chemins_backend()
     rapport = commun.Rapport('contrat_api', depot='Scolaire-HTML-main',
@@ -330,6 +423,8 @@ def auditer_contrat():
             message, gravite, code = constat[0], constat[1], constat[2]
             ligne = constat[3] if len(constat) > 3 else None
             rapport.constat(nom, code, message, gravite=gravite, ligne=ligne)
+
+    verifier_catalogue_evenements(rapport)
 
     rapport.message = f"{len(motifs)} routes backend recensées."
     return rapport

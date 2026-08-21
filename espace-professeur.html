@@ -93,6 +93,7 @@
   <!-- Session partagée : renouvellement du jeton et rejeu des requêtes
        expirées. Doit rester AVANT les autres scripts. -->
   <script src="session.js"></script>
+  <script src="evenements-types.js"></script>
   <script src="remontee-erreurs.js"></script>
   <script src="acces-presences.js"></script>
 <link rel="stylesheet" href="mobile.css" />
@@ -167,10 +168,11 @@
 
 <script>
   const API_BASE_URL = "https://scolaire-saas-backend.onrender.com";
-  const TYPES_EVENEMENTS = {
-    debut_cours: 'Début des cours', examen: 'Examen', depot_resultats: 'Dépôt des résultats',
-    conseil_classe: 'Conseil de classe', proclamation: 'Proclamation', vacances: 'Vacances', reunion: 'Réunion'
-  };
+  // Libellés des types d'événements : `evenements-types.js`, partagé avec le
+  // calendrier et aligné sur `utils/evenements-catalogue.js` côté serveur.
+  // Cette liste était recopiée ici, figée à sept entrées : tout type ajouté
+  // depuis s'affichait en clé brute (« fin_annee ») sur ce tableau de bord.
+  const TypesEvenements = window.ArdoiseTypesEvenements;
 
 
   // Session par défaut = sessionStorage (effacée à la fermeture du navigateur),
@@ -324,7 +326,7 @@
       : aVenir.map(e => `
           <li>
             <span class="date-evt">${new Date(e.date_debut).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}</span>
-            <span>${e.titre} — ${TYPES_EVENEMENTS[e.type] || e.type}</span>
+            <span>${e.titre} — ${TypesEvenements.libelle(e.type)}</span>
           </li>
         `).join('');
   }

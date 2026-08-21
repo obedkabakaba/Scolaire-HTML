@@ -51,8 +51,12 @@
          et les lit dans `evenements-types.js` — un fichier NOUVEAU, absent de
          la coquille d'un téléphone déjà installé. Sans cet incrément, il ne
          serait jamais téléchargé : le menu « Type » resterait vide et le
-         formulaire d'ajout d'événement inutilisable sur ces appareils. */
-const VERSION='ardoise-v62';
+         formulaire d'ajout d'événement inutilisable sur ces appareils.
+   v63 : `messages.html` gagne le canal WhatsApp. Ce fichier fait partie de la
+         coquille : sans cet incrément, un téléphone où Ardoise est déjà
+         installée continuerait d'afficher un formulaire à deux canaux, et son
+         directeur conclurait que la fonctionnalité annoncée n'existe pas. */
+const VERSION='ardoise-v63';
 const CACHE_COQUILLE=`${VERSION}-coquille`;
 const COQUILLE=[
   './','connexion.html','changer-mot-de-passe.html','dashboard-directeur.html',

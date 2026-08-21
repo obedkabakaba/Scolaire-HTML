@@ -427,7 +427,11 @@
       </div>
       <div class="ligne-champs">
         <div class="champ"><label for="champ-resp-nom">Responsable</label><input type="text" id="champ-resp-nom" /></div>
-        <div class="champ"><label for="champ-resp-tel">Téléphone responsable</label><input type="text" id="champ-resp-tel" /></div>
+        <!-- Ce champ n'est pas un simple annuaire : c'est le canal WhatsApp de
+             la famille. C'est par lui que le parent interroge l'assistant, et
+             que l'école lui écrit. Le dire dans le champ évite de l'apprendre
+             le jour où une convocation ne touche personne. -->
+        <div class="champ"><label for="champ-resp-tel">Téléphone responsable</label><input type="text" id="champ-resp-tel" placeholder="ex. 0812345678 — numéro WhatsApp de la famille" /></div>
       </div>
       <div class="ligne-champs">
         <div class="champ"><label for="champ-resp-email">Email du responsable</label><input type="email" id="champ-resp-email" /></div>

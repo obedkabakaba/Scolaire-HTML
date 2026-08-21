@@ -68,6 +68,9 @@ jobs:
           python3 audit-frontend.py
           python3 audit-contrat-api.py || true
 
+      - name: Illustrations des e-mails
+        run: python3 test-email-assets.py
+
       # La divulgation progressive du tunnel d'abonnement ne se vérifie pas en
       # lisant le code : elle porte sur ce qui est RÉELLEMENT visible une fois
       # les styles et le script appliqués. Un `cache` retiré par mégarde

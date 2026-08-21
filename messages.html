@@ -363,6 +363,10 @@
         <div style="margin-top:20px;">
           <label class="interrupteur"><input type="checkbox" id="canal-interne" checked /><span>Message interne (visible dans leur boîte Ardoise)</span></label>
           <label class="interrupteur" style="margin-top:9px;"><input type="checkbox" id="canal-email" /><span>Courriel</span></label>
+          <!-- Le canal réellement lu par les familles en RDC. Il n'est pas
+               coché par défaut : un envoi WhatsApp a un coût chez Meta, et il
+               doit rester une décision, jamais un réglage oublié. -->
+          <label class="interrupteur" style="margin-top:9px;"><input type="checkbox" id="canal-whatsapp" /><span>WhatsApp (au numéro du responsable)</span></label>
         </div>
 
         <div class="barre-actions">
@@ -379,6 +383,13 @@
         <p class="aide">
           Les parents et le personnel dont le numéro est enregistré peuvent interroger l'école directement sur WhatsApp :
           résultats, absences, frais, annonces, calendrier. L'assistant ne répond jamais à un numéro inconnu.
+          Un parent dont les enfants sont inscrits dans deux écoles Ardoise est reconnu par les deux, sans mélange.
+        </p>
+        <p class="aide">
+          <strong>Vous pouvez aussi écrire le premier</strong> : depuis « Nouveau message », cochez le canal
+          WhatsApp. Passé 24 heures sans message du parent, WhatsApp n'accepte qu'un format standard —
+          le nom de l'école, l'objet, puis votre texte. Écrivez donc un message qui se lit d'un bloc,
+          sans mise en forme.
         </p>
         <div class="grille-widgets" style="margin-bottom:0;">
           <div class="widget">
@@ -594,8 +605,31 @@
       document.getElementById('compteur-contenu').textContent =
         `${document.getElementById('champ-contenu').value.length} / 5000`;
     });
-    ['canal-interne', 'canal-email'].forEach(id =>
+    ['canal-interne', 'canal-email', 'canal-whatsapp'].forEach(id =>
       document.getElementById(id).addEventListener('change', majResumeCible));
+
+    /* ------------------------------------------------------------------
+       LE CANAL WHATSAPP SUIT L'OFFRE — MAIS NE DISPARAÎT PAS AU MOINDRE DOUTE
+
+       Même règle que le menu (`ui.js`) : les droits viennent du cache écrit
+       par `/abonnements/courant`. S'il est absent — première page ouverte,
+       navigation privée, facturation illisible — on ne masque RIEN. Une
+       panne de lecture ne doit pas retirer à une école un canal qu'elle a
+       payé ; le serveur refusera proprement en 402 si l'offre ne le
+       comprend pas, avec le nom de l'offre qui l'ouvre.
+       ------------------------------------------------------------------ */
+    (function ajusterCanalWhatsapp() {
+      let droits = null;
+      try { droits = JSON.parse(sessionStorage.getItem('ardoise_droits_offre') || 'null'); }
+      catch (e) { droits = null; }
+      if (!droits || droits.whatsapp === true) return;
+
+      const boite = document.getElementById('canal-whatsapp');
+      boite.checked = false;
+      boite.disabled = true;
+      const texte = boite.parentElement.querySelector('span');
+      if (texte) texte.textContent = 'WhatsApp — non compris dans votre offre actuelle';
+    })();
     document.getElementById('select-classe').addEventListener('change', majResumeCible);
 
     // La liste des collègues joignables : ouverte à tout le personnel, c'est
@@ -794,14 +828,20 @@
       ['equipe_classe', 'parents_classe'].includes(type) ? '' : 'none';
 
     // Les parents n'ont pas de compte : le canal interne ne leur parviendrait
-    // jamais. On bascule donc automatiquement sur le courriel.
+    // jamais. On bascule donc sur un canal qui sort de la plateforme, sans
+    // choisir à la place de l'expéditeur lequel des deux — c'est lui qui sait
+    // si ses familles relèvent leur boîte ou leur téléphone.
     const versParents = type.startsWith('parents');
     const interne = document.getElementById('canal-interne');
     const email = document.getElementById('canal-email');
+    const whatsapp = document.getElementById('canal-whatsapp');
     interne.disabled = versParents;
-    if (versParents) { interne.checked = false; email.checked = true; }
+    if (versParents) {
+      interne.checked = false;
+      if (!email.checked && !whatsapp.checked) email.checked = true;
+    }
     document.getElementById('avertissement-canal').textContent = versParents
-      ? "Les parents n'ayant pas de compte, seul le courriel peut les atteindre."
+      ? "Les parents n'ayant pas de compte, seuls le courriel et WhatsApp peuvent les atteindre."
       : '';
 
     majResumeCible();
@@ -830,13 +870,18 @@
         ? `Le titulaire et ${classe.nb_enseignants} enseignant(s) de ${classe.nom}.`
         : 'Choisissez une classe.';
     } else if (type === 'parents_classe') {
+      // Les deux chiffres côte à côte : c'est ce qui montre, sans discours, que
+      // le numéro est mieux renseigné que l'adresse dans presque toutes les
+      // écoles — et donc quel canal choisir.
       texte = classe
-        ? `${classe.nb_parents_email} parent(s) de ${classe.nom} ont une adresse enregistrée, sur ${classe.nb_eleves} élève(s).`
+        ? `${classe.nb_parents_email} parent(s) de ${classe.nom} ont une adresse, `
+          + `${classe.nb_parents_whatsapp || 0} ont un numéro, sur ${classe.nb_eleves} élève(s).`
         : 'Choisissez une classe.';
     } else if (type === 'parents_ecole') {
       const avecEmail = destinataires.classes.reduce((a, c) => a + c.nb_parents_email, 0);
+      const avecNumero = destinataires.classes.reduce((a, c) => a + (c.nb_parents_whatsapp || 0), 0);
       const total = destinataires.classes.reduce((a, c) => a + c.nb_eleves, 0);
-      texte = `${avecEmail} parent(s) ont une adresse enregistrée, sur ${total} élève(s).`;
+      texte = `${avecEmail} parent(s) ont une adresse, ${avecNumero} ont un numéro, sur ${total} élève(s).`;
     }
     resume.textContent = texte;
   }
@@ -855,6 +900,7 @@
     const canaux = [];
     if (document.getElementById('canal-interne').checked) canaux.push('interne');
     if (document.getElementById('canal-email').checked) canaux.push('email');
+    if (document.getElementById('canal-whatsapp').checked) canaux.push('whatsapp');
     if (canaux.length === 0) { afficherMessage("Choisissez au moins un canal.", 'erreur'); return; }
 
     const resume = document.getElementById('resume-cible').textContent;
@@ -908,7 +954,12 @@
       <tr>
         <td style="white-space:nowrap;">${formaterDate(e.created_at)}</td>
         <td><strong>${echapper(e.sujet)}</strong><div style="font-size:0.78rem; color:var(--texte-att); margin-top:3px;">${echapper(e.cible_libelle || '')}</div></td>
-        <td>${e.nb_destinataires}${e.nb_echecs > 0 ? `<div style="font-size:0.78rem; color:var(--rouge);">${e.nb_echecs} échec(s)</div>` : ''}</td>
+        <td>${e.nb_destinataires}
+            ${(e.nb_emails || e.nb_whatsapp) ? `<div style="font-size:0.78rem; color:var(--texte-att);">${[
+              e.nb_emails ? `${e.nb_emails} courriel(s)` : '',
+              e.nb_whatsapp ? `${e.nb_whatsapp} WhatsApp` : ''
+            ].filter(Boolean).join(' · ')}</div>` : ''}
+            ${e.nb_echecs > 0 ? `<div style="font-size:0.78rem; color:var(--rouge);">${e.nb_echecs} échec(s)</div>` : ''}</td>
         <td>${(e.canaux || '').split(',').filter(Boolean).map(c => `<span class="etiquette-canal">${echapper(c)}</span>`).join('')}</td>
         <td style="font-size:0.84rem;">${echapper(e.expediteur || '—')}</td>
       </tr>
@@ -928,11 +979,15 @@
     if (rDest?.ok && window.ArdoiseUI) {
       const d = await rDest.json();
       const total = d.classes.reduce((a, c) => a + c.nb_eleves, 0);
-      const avecEmail = d.classes.reduce((a, c) => a + c.nb_parents_email, 0);
+      // L'anneau comptait les ADRESSES sous une légende qui parlait de
+      // téléphones : une école qui renseignait consciencieusement ses numéros
+      // voyait son anneau rester vide. Ce sont bien les numéros qui décident
+      // de ce que l'assistant — et désormais la diffusion — peut atteindre.
+      const avecNumero = d.classes.reduce((a, c) => a + (c.nb_parents_whatsapp || 0), 0);
       ArdoiseUI.anneau('widget-numeros', {
-        valeur: avecEmail, max: total || 1,
-        affichage: String(total),
-        detail: `élève(s) inscrit(s)<br/>Vérifiez que le téléphone du responsable<br/>est renseigné sur chaque fiche.`
+        valeur: avecNumero, max: total || 1,
+        affichage: `${avecNumero} / ${total}`,
+        detail: `élève(s) dont le responsable a un numéro<br/>Sans numéro, ni l'assistant ni la diffusion<br/>WhatsApp ne peuvent joindre la famille.`
       });
     }
 

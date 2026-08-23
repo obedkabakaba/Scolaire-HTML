@@ -370,9 +370,12 @@
       message.textContent = corps.message || 'Votre accès à Ardoise est temporairement limité.';
       message.style.cssText = 'margin:0 0 12px;line-height:1.6;font-size:1rem';
 
+      var peutGerer = peutGererAbonnements();
       var conservation = document.createElement('p');
       conservation.innerHTML = activationRequise
-        ? '<strong>Votre espace Ardoise est prêt.</strong> Choisissez une offre et un mode de règlement. Les fonctions de gestion s’ouvriront dès l’activation de votre abonnement.'
+        ? (peutGerer
+          ? '<strong>Votre espace Ardoise est prêt.</strong> Choisissez une offre et un mode de règlement. Les fonctions de gestion s’ouvriront dès l’activation de votre abonnement.'
+          : '<strong>Votre espace Ardoise est prêt.</strong> Prévenez la Direction de votre école afin qu’elle active l’abonnement.')
         : '<strong>Vos données sont conservées.</strong> Élèves, notes, classes, bulletins et paramètres restent intacts et seront disponibles dès le rétablissement de l’accès.';
       conservation.style.cssText = 'margin:0 0 24px;line-height:1.6;font-size:.95rem;color:#4A554E';
 
@@ -406,7 +409,7 @@
       ].join(';');
       deconnexion.addEventListener('click', terminer);
 
-      actions.appendChild(abonnements);
+      if (peutGerer) actions.appendChild(abonnements);
       actions.appendChild(support);
       carte.appendChild(titre);
       carte.appendChild(message);
@@ -577,6 +580,12 @@
   function utilisateur() {
     try { return JSON.parse(lire('ardoise_user') || 'null'); }
     catch (e) { return null; }
+  }
+
+  function peutGererAbonnements() {
+    var user = utilisateur();
+    var roles = (user && user.roles) || [];
+    return roles.indexOf('directeur') !== -1 || roles.indexOf('super_admin') !== -1;
   }
 
   window.ArdoiseSession = {

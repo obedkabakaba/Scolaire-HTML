@@ -33,7 +33,7 @@ RACINE = pathlib.Path(__file__).resolve().parent
 # Les montants sont choisis pour que l'économie annuelle soit vérifiable à
 # l'œil : 30 $/mois → 324 $/an, soit 27 $/mois équivalent et 36 $ économisés.
 STUB = """
-window.ArdoiseSession = { connecte: () => true, terminer: () => {}, appelApi: (chemin, opt) => {
+window.ArdoiseSession = { connecte: () => true, roles: () => ['directeur'], terminer: () => {}, appelApi: (chemin, opt) => {
   const d = {
     ecole: { nom: 'Institut Test', code: 'EC-001', plan_nom: 'Prime', abonnement_plan_id: 'p2',
       abonnement_statut: 'actif', date_expiration: '2026-09-30T00:00:00Z',

@@ -185,9 +185,78 @@
      cherche ce qui relève de son compte et non de sa classe.
      ------------------------------------------------------------------ */
   var ENTREES_COMPTE = [
-    { href: 'abonnements.html', libelle: 'Abonnements' },
+    { href: 'abonnements.html', libelle: 'Abonnements', directionSeulement: true },
     { href: 'support.html', libelle: 'Support' }
   ];
+
+  /* Filet partagé pour les pages transversales (Abonnements, Support) qui ne
+     possèdent pas le bloc `gererAccesParRole` recopié dans les écrans métier.
+     Il ne remplace pas le serveur et ne rend jamais une entrée visible : il
+     ne fait que masquer ce que le rôle courant ne doit pas voir. */
+  var ROLES_NAVIGATION = {
+    'dashboard-directeur.html': ['directeur', 'prefet'],
+    'annee-scolaire.html': ['directeur', 'prefet'],
+    'espace-secretaire.html': ['secretaire'],
+    'espace-professeur.html': ['professeur'],
+    'espace-titulaire.html': ['titulaire'],
+    'cours-classe-titulaire.html': ['titulaire'],
+    'eleves.html': ['directeur', 'prefet', 'secretaire'],
+    'inscriptions.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire'],
+    'orientation.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
+    'frais-scolaires.html': ['directeur', 'comptable', 'secretaire'],
+    'comptabilite.html': ['directeur', 'comptable'],
+    'utilisateurs.html': ['directeur', 'prefet', 'secretaire'],
+    'classes.html': ['directeur', 'prefet', 'secretaire'],
+    'cours.html': ['directeur', 'prefet', 'secretaire'],
+    'presences.html': (window.ArdoisePresences
+      ? window.ArdoisePresences.rolesAutorises()
+      : ['directeur', 'prefet', 'secretaire', 'titulaire']),
+    'emploi-du-temps.html': ['directeur', 'prefet', 'secretaire', 'titulaire', 'professeur'],
+    'discipline.html': ['directeur', 'prefet', 'secretaire', 'titulaire', 'directeur_discipline'],
+    'site-public.html': ['directeur', 'prefet', 'secretaire'],
+    'notes.html': ['directeur', 'prefet', 'professeur'],
+    'bulletins.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
+    'bulletin-annuel.html': ['directeur', 'prefet'],
+    'repechage.html': ['directeur', 'prefet', 'professeur', 'titulaire'],
+    'generateur-modeles.html': ['directeur'],
+    'calendrier.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire', 'charge_presences', 'directeur_discipline'],
+    'rapports.html': ['directeur', 'prefet', 'secretaire', 'comptable'],
+    'archives.html': ['directeur', 'prefet', 'secretaire'],
+    'journal.html': ['directeur', 'prefet'],
+    'messages.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire', 'comptable', 'charge_presences', 'directeur_discipline'],
+    'parametres.html': ['directeur'],
+    'abonnements.html': ['directeur']
+  };
+
+  function filtrerNavigationParRole() {
+    var liste = document.querySelector('.barre-laterale .nav-liste');
+    if (!liste) return;
+    var roles = [];
+    try {
+      roles = window.ArdoiseSession && typeof window.ArdoiseSession.roles === 'function'
+        ? window.ArdoiseSession.roles()
+        : rolesCourants();
+    } catch (e) {}
+    var estSuperAdmin = roles.indexOf('super_admin') !== -1;
+
+    liste.querySelectorAll('.nav-item[href]').forEach(function (lien) {
+      var autorises = ROLES_NAVIGATION[lien.getAttribute('href')];
+      if (!autorises || estSuperAdmin || roles.some(function (role) { return autorises.indexOf(role) !== -1; })) return;
+      var li = lien.closest('li');
+      if (li) li.style.display = 'none'; else lien.hidden = true;
+    });
+    liste.style.visibility = 'visible';
+  }
+
+  function peutGererAbonnements() {
+    var roles = [];
+    try {
+      roles = window.ArdoiseSession && typeof window.ArdoiseSession.roles === 'function'
+        ? window.ArdoiseSession.roles()
+        : rolesCourants();
+    } catch (e) {}
+    return roles.indexOf('directeur') !== -1 || roles.indexOf('super_admin') !== -1;
+  }
 
   function injecterEntreesCompte() {
     var liste = document.querySelector('.barre-laterale .nav-liste');
@@ -203,6 +272,10 @@
     var courante = (window.location.pathname.split('/').pop() || '').toLowerCase();
 
     ENTREES_COMPTE.forEach(function (entree) {
+      // Gérer l'abonnement engage l'école. La présence de « Paramètres » dans
+      // le DOM ne suffit pas : les pages le masquent par rôle sans le retirer,
+      // ce qui rendait cette entrée visible aux professeurs.
+      if (entree.directionSeulement && !peutGererAbonnements()) return;
       if (liste.querySelector('.nav-item[href="' + entree.href + '"]')) return;
       var li = document.createElement('li');
       var a = document.createElement('a');
@@ -1492,6 +1565,9 @@
   }
 
   function demarrer() {
+    // D'abord les rôles : une page transversale ne doit jamais construire ses
+    // icônes, son tiroir ou ses actions rapides à partir du rail du Directeur.
+    try { filtrerNavigationParRole(); } catch (e) { /* les gardes serveur restent actives */ }
     // Avant les icônes : les entrées ajoutées doivent recevoir la leur.
     try { injecterEntreesCompte(); } catch (e) { /* le rail reste utilisable sans ces deux entrées */ }
     try { injecterIcones(); } catch (e) { /* la navigation reste utilisable sans icônes */ }
@@ -1556,6 +1632,16 @@
    ========================================================================== */
 (function () {
   'use strict';
+
+  function peutGererAbonnements() {
+    var roles = [];
+    try {
+      roles = window.ArdoiseSession && typeof window.ArdoiseSession.roles === 'function'
+        ? window.ArdoiseSession.roles()
+        : [];
+    } catch (e) {}
+    return roles.indexOf('directeur') !== -1 || roles.indexOf('super_admin') !== -1;
+  }
 
   function champsDuFormulaire(formulaire, ids) {
     if (ids && ids.length) {
@@ -1920,7 +2006,10 @@
     var t = jeton();
     if (!t) return;
 
-    fetch(baseApi() + '/abonnements/courant', { headers: { Authorization: 'Bearer ' + t } })
+    // Ce point d'entrée ne renvoie que les drapeaux fonctionnels nécessaires
+    // au menu. Les données commerciales complètes restent réservées à la
+    // Direction via /abonnements/courant.
+    fetch(baseApi() + '/abonnements/droits', { headers: { Authorization: 'Bearer ' + t } })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (abonnement) {
         // Pas d'abonnement lisible : on ne masque RIEN et on ne touche pas au
@@ -1997,6 +2086,10 @@
           if (corps.code === 'espace_indisponible') {
             var messageEspace = corps.message
               + (corps.action ? ' ' + corps.action : '');
+            if (!peutGererAbonnements()) {
+              afficherBanniereOffre(messageEspace + ' Contactez la Direction de votre école.');
+              return;
+            }
             if (window.ArdoiseUI && window.ArdoiseUI.confirmer) {
               window.ArdoiseUI.confirmer(messageEspace, {
                 danger: false,
@@ -2028,6 +2121,11 @@
             var quoi = LIBELLES[corps.fonctionnalite] || 'ce module';
             message = 'Votre abonnement ne comprend pas ' + quoi + '. '
                     + 'Rien n\u2019est perdu : il s\u2019ouvre dès le changement d\u2019offre.';
+          }
+
+          if (!peutGererAbonnements()) {
+            afficherBanniereOffre(message + ' Contactez la Direction de votre école.');
+            return;
           }
 
           if (window.ArdoiseUI && window.ArdoiseUI.confirmer) {
@@ -2224,7 +2322,7 @@
       window.location.href = 'connexion.html';
     });
 
-    actions.appendChild(principal);
+    if (peutGererAbonnements()) actions.appendChild(principal);
     actions.appendChild(secondaire);
     carte.appendChild(h);
     carte.appendChild(p1);
@@ -2282,11 +2380,15 @@
         : 'Votre démonstration Ardoise expire dans ' + jours + ' jours.';
 
     bandeau.appendChild(document.createTextNode(texte + ' '));
-    var lien = document.createElement('a');
-    lien.href = 'abonnements.html';
-    lien.textContent = 'Choisir un abonnement';
-    lien.style.cssText = 'color:var(--craie-2,#fff);text-decoration:underline;font-weight:600';
-    bandeau.appendChild(lien);
+    if (peutGererAbonnements()) {
+      var lien = document.createElement('a');
+      lien.href = 'abonnements.html';
+      lien.textContent = 'Choisir un abonnement';
+      lien.style.cssText = 'color:var(--craie-2,#fff);text-decoration:underline;font-weight:600';
+      bandeau.appendChild(lien);
+    } else {
+      bandeau.appendChild(document.createTextNode('Prévenez la Direction de votre école.'));
+    }
 
     document.body.insertBefore(bandeau, document.body.firstChild);
   }

@@ -27,6 +27,29 @@
   'use strict';
   if (!window.ArdoiseSession || !ArdoiseSession.connecte()) { location.replace('connexion.html'); return; }
 
+  // Cette page permet de choisir une offre, demander un agent et transmettre
+  // une référence de paiement : elle engage l'école et appartient donc à la
+  // Direction. Ce garde évite aussi qu'une URL saisie à la main n'affiche le
+  // rail complet du Directeur à un Professeur.
+  var rolesPage = ArdoiseSession.roles();
+  var peutGerer = rolesPage.indexOf('directeur') !== -1
+    || rolesPage.indexOf('super_admin') !== -1;
+  if (!peutGerer) {
+    var accueilParRole = {
+      professeur: 'espace-professeur.html',
+      titulaire: 'espace-titulaire.html',
+      secretaire: 'espace-secretaire.html',
+      comptable: 'frais-scolaires.html',
+      prefet: 'dashboard-directeur.html',
+      charge_presences: 'presences.html',
+      directeur_discipline: 'discipline.html'
+    };
+    var accueil = rolesPage.map(function (role) { return accueilParRole[role]; })
+      .find(function (page) { return !!page; }) || 'mon-profil.html';
+    location.replace(accueil);
+    return;
+  }
+
   /* --------------------------------------------------------------- Outils */
 
   var $ = function (id) { return document.getElementById(id); };

@@ -469,7 +469,14 @@
   function routerAccesBloque(acces, roles) {
     if (!acces || !acces.bloquant) return false;
 
-    if (roles.includes('directeur') || roles.includes('prefet')) {
+    /* Seul le Directeur peut réactiver l'abonnement : c'est lui que le
+       serveur autorise sur /abonnements/renouvellement et sur le paiement,
+       et lui seul que la page laisse entrer. Le Préfet figurait ici par
+       héritage — on l'envoyait sur un écran qui le renvoyait aussitôt.
+       Cette page se charge sans session.js ; la règle est donc écrite en
+       clair, et `audit-cloisonnement-menus.py` vérifie qu'elle continue de
+       dire la même chose que la table de session.js. */
+    if (roles.includes('directeur') || roles.includes('super_admin')) {
       window.location.href = 'abonnements.html';
       return true;
     }

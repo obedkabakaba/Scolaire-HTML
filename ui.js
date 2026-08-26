@@ -189,73 +189,86 @@
     { href: 'support.html', libelle: 'Support' }
   ];
 
-  /* Filet partagé pour les pages transversales (Abonnements, Support) qui ne
-     possèdent pas le bloc `gererAccesParRole` recopié dans les écrans métier.
-     Il ne remplace pas le serveur et ne rend jamais une entrée visible : il
-     ne fait que masquer ce que le rôle courant ne doit pas voir. */
-  var ROLES_NAVIGATION = {
-    'dashboard-directeur.html': ['directeur', 'prefet'],
-    'annee-scolaire.html': ['directeur', 'prefet'],
-    'espace-secretaire.html': ['secretaire'],
-    'espace-professeur.html': ['professeur'],
-    'espace-titulaire.html': ['titulaire'],
-    'cours-classe-titulaire.html': ['titulaire'],
-    'eleves.html': ['directeur', 'prefet', 'secretaire'],
-    'inscriptions.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire'],
-    'orientation.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
-    'frais-scolaires.html': ['directeur', 'comptable', 'secretaire'],
-    'comptabilite.html': ['directeur', 'comptable'],
-    'utilisateurs.html': ['directeur', 'prefet', 'secretaire'],
-    'classes.html': ['directeur', 'prefet', 'secretaire'],
-    'cours.html': ['directeur', 'prefet', 'secretaire'],
-    'presences.html': (window.ArdoisePresences
-      ? window.ArdoisePresences.rolesAutorises()
-      : ['directeur', 'prefet', 'secretaire', 'titulaire']),
-    'emploi-du-temps.html': ['directeur', 'prefet', 'secretaire', 'titulaire', 'professeur'],
-    'discipline.html': ['directeur', 'prefet', 'secretaire', 'titulaire', 'directeur_discipline'],
-    'site-public.html': ['directeur', 'prefet', 'secretaire'],
-    'notes.html': ['directeur', 'prefet', 'professeur'],
-    'bulletins.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
-    'bulletin-annuel.html': ['directeur', 'prefet'],
-    'repechage.html': ['directeur', 'prefet', 'professeur', 'titulaire'],
-    'generateur-modeles.html': ['directeur'],
-    'calendrier.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire', 'charge_presences', 'directeur_discipline'],
-    'rapports.html': ['directeur', 'prefet', 'secretaire', 'comptable'],
-    'archives.html': ['directeur', 'prefet', 'secretaire'],
-    'journal.html': ['directeur', 'prefet'],
-    'messages.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire', 'comptable', 'charge_presences', 'directeur_discipline'],
-    'parametres.html': ['directeur'],
-    'abonnements.html': ['directeur']
-  };
+  /* Filet partagé pour TOUTES les pages, y compris les transversales
+     (Abonnements, Support) qui ne portent pas le bloc `gererAccesParRole`
+     recopié dans les écrans métier.
+
+     La table n'est plus recopiée ici : elle vit dans session.js, chargé en
+     tête de `<head>` par chacune de ces pages. Deux copies, c'était deux
+     vérités — et le rail montrait « Abonnements » à un Professeur à qui la
+     page était déjà refusée. */
+  function acces() {
+    return window.ArdoiseAcces || null;
+  }
+
+  function peutVoirPage(page, roles) {
+    var a = acces();
+    // Sans la table, on ne masque rien : le serveur et la garde de chaque
+    // page restent en place, et un rail vide serait une panne, pas une
+    // protection. Le cas ne se produit que si session.js n'a pas été chargé,
+    // auquel cas la page est déjà partie vers connexion.html.
+    if (!a) return true;
+    return a.peutVoirPage(page, roles);
+  }
+
+  function rolesDeLaSession() {
+    try {
+      if (window.ArdoiseSession && typeof window.ArdoiseSession.roles === 'function') {
+        return window.ArdoiseSession.roles();
+      }
+    } catch (e) {}
+    return rolesCourants();
+  }
+
+  /* ------------------------------------------------------------------
+     Garde d'URL universelle
+
+     Le rail masqué ne protège rien : il suffit de taper l'adresse. Trente
+     pages portaient donc leur propre garde, recopiée à la main — et les
+     deux pages transversales, Abonnements et Support, n'en avaient aucune.
+     C'est par là qu'un Professeur arrivait sur `abonnements.html`, où le
+     rail complet du Directeur lui ouvrait Élèves, Comptabilité,
+     Utilisateurs, Journal et Paramètres.
+
+     La garde est ici, une fois, pour toute page qui charge ui.js : celle
+     ajoutée demain naîtra protégée sans que personne ait à y penser.
+     Elle ne remplace pas les contrôles serveur — elle évite d'afficher à
+     quelqu'un une porte qui n'est pas la sienne.
+     ------------------------------------------------------------------ */
+  function verrouillerPageCourante() {
+    var a = acces();
+    if (!a) return false;
+    var courante = a.normaliserPage(window.location.pathname);
+    var roles = rolesDeLaSession();
+    if (a.peutVoirPage(courante, roles)) return false;
+
+    var repli = a.pageDeRepli(roles);
+    if (!repli || a.normaliserPage(repli) === courante) return false;
+    // `replace` et non `href` : la page interdite ne doit pas rester dans
+    // l'historique, sinon « Précédent » la rouvre.
+    window.location.replace(repli);
+    return true;
+  }
 
   function filtrerNavigationParRole() {
     var liste = document.querySelector('.barre-laterale .nav-liste');
     if (!liste) return;
-    var roles = [];
-    try {
-      roles = window.ArdoiseSession && typeof window.ArdoiseSession.roles === 'function'
-        ? window.ArdoiseSession.roles()
-        : rolesCourants();
-    } catch (e) {}
-    var estSuperAdmin = roles.indexOf('super_admin') !== -1;
+    var roles = rolesDeLaSession();
 
     liste.querySelectorAll('.nav-item[href]').forEach(function (lien) {
-      var autorises = ROLES_NAVIGATION[lien.getAttribute('href')];
-      if (!autorises || estSuperAdmin || roles.some(function (role) { return autorises.indexOf(role) !== -1; })) return;
+      if (peutVoirPage(lien.getAttribute('href'), roles)) return;
       var li = lien.closest('li');
-      if (li) li.style.display = 'none'; else lien.hidden = true;
+      if (li) li.style.display = 'none';
+      // `hidden` seul est surchargeable par un `display` de feuille de
+      // style : on pose les deux, et le lanceur relit la même vérité.
+      lien.hidden = true;
+      lien.style.display = 'none';
     });
     liste.style.visibility = 'visible';
   }
 
   function peutGererAbonnements() {
-    var roles = [];
-    try {
-      roles = window.ArdoiseSession && typeof window.ArdoiseSession.roles === 'function'
-        ? window.ArdoiseSession.roles()
-        : rolesCourants();
-    } catch (e) {}
-    return roles.indexOf('directeur') !== -1 || roles.indexOf('super_admin') !== -1;
+    return peutVoirPage('abonnements.html', rolesDeLaSession());
   }
 
   function injecterEntreesCompte() {
@@ -663,6 +676,10 @@
       var lien = liens[i];
       var parent = lien.closest('li');
       if (parent && parent.style.display === 'none') continue;
+      // Un rail sans <li> existe (pages transversales, mode compact) : le
+      // filtrage y masque le lien lui-même. Sans ce test, une page interdite
+      // ressortait en raccourci alors qu'elle avait disparu du rail.
+      if (lien.hidden || lien.style.display === 'none') continue;
       var href = lien.getAttribute('href');
       var libelle = (lien.querySelector('.nav-libelle') || lien).textContent.trim();
       if (href && libelle) {
@@ -1565,7 +1582,11 @@
   }
 
   function demarrer() {
-    // D'abord les rôles : une page transversale ne doit jamais construire ses
+    // AVANT tout le reste : si la page n'est pas celle de ce rôle, on part.
+    // Rien ne sert de dessiner un rail, des icônes et un lanceur sur un écran
+    // que l'on quitte dans la milliseconde.
+    try { if (verrouillerPageCourante()) return; } catch (e) { /* les gardes de page et le serveur restent actifs */ }
+    // Puis les rôles : une page transversale ne doit jamais construire ses
     // icônes, son tiroir ou ses actions rapides à partir du rail du Directeur.
     try { filtrerNavigationParRole(); } catch (e) { /* les gardes serveur restent actives */ }
     // Avant les icônes : les entrées ajoutées doivent recevoir la leur.
@@ -1633,6 +1654,9 @@
 (function () {
   'use strict';
 
+  /* Deuxième IIFE, donc deuxième déclaration — mais plus deuxième RÈGLE :
+     celle-ci était écrite en dur et pouvait dériver de celle du rail sans
+     que rien ne le signale. Les deux lisent maintenant la même table. */
   function peutGererAbonnements() {
     var roles = [];
     try {
@@ -1640,7 +1664,8 @@
         ? window.ArdoiseSession.roles()
         : [];
     } catch (e) {}
-    return roles.indexOf('directeur') !== -1 || roles.indexOf('super_admin') !== -1;
+    if (!window.ArdoiseAcces) return false;
+    return window.ArdoiseAcces.peutGererAbonnements(roles);
   }
 
   function champsDuFormulaire(formulaire, ids) {

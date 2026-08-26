@@ -27,26 +27,27 @@
   'use strict';
   if (!window.ArdoiseSession || !ArdoiseSession.connecte()) { location.replace('connexion.html'); return; }
 
-  // Cette page permet de choisir une offre, demander un agent et transmettre
-  // une référence de paiement : elle engage l'école et appartient donc à la
-  // Direction. Ce garde évite aussi qu'une URL saisie à la main n'affiche le
-  // rail complet du Directeur à un Professeur.
+  /* Cette page permet de choisir une offre, demander un agent et transmettre
+     une référence de paiement : elle engage l'école et appartient donc à la
+     Direction.
+
+     La garde reste ici en plus de celle de ui.js — ce script s'exécute avant
+     lui et n'attend donc pas 100 ko de JavaScript pour renvoyer quelqu'un qui
+     n'a rien à faire là. Mais la règle, elle, n'est plus recopiée : elle est
+     lue dans la table unique de session.js. Une seule liste de rôles, un seul
+     endroit où la corriger. */
   var rolesPage = ArdoiseSession.roles();
-  var peutGerer = rolesPage.indexOf('directeur') !== -1
-    || rolesPage.indexOf('super_admin') !== -1;
+  /* Repli si un session.js d'avant ce correctif traîne dans le cache du
+     service worker : la règle appliquée est alors la même, écrite en clair.
+     Elle ne remplace pas la table — elle évite qu'un Directeur reste devant
+     une page vide le temps qu'un ancien fichier expire. */
+  var peutGerer = window.ArdoiseAcces
+    ? ArdoiseAcces.peutGererAbonnements(rolesPage)
+    : (rolesPage.indexOf('directeur') !== -1 || rolesPage.indexOf('super_admin') !== -1);
   if (!peutGerer) {
-    var accueilParRole = {
-      professeur: 'espace-professeur.html',
-      titulaire: 'espace-titulaire.html',
-      secretaire: 'espace-secretaire.html',
-      comptable: 'frais-scolaires.html',
-      prefet: 'dashboard-directeur.html',
-      charge_presences: 'presences.html',
-      directeur_discipline: 'discipline.html'
-    };
-    var accueil = rolesPage.map(function (role) { return accueilParRole[role]; })
-      .find(function (page) { return !!page; }) || 'mon-profil.html';
-    location.replace(accueil);
+    location.replace(window.ArdoiseAcces
+      ? ArdoiseAcces.pageDeRepli(rolesPage)
+      : 'mon-profil.html');
     return;
   }
 

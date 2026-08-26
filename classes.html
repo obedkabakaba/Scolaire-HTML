@@ -1030,73 +1030,48 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // ---------- Filtrage de la navigation selon le rôle connecté ----------
   (function gererAccesParRole() {
-    const permissions = {
-      'dashboard-directeur.html': ['directeur', 'prefet'],
-      'annee-scolaire.html': ['directeur', 'prefet'],
-      'espace-secretaire.html': ['secretaire'],
-      'espace-professeur.html': ['professeur'],
-      'espace-titulaire.html': ['titulaire'],
-      'cours-classe-titulaire.html': ['titulaire'],
-      'eleves.html': ['directeur', 'prefet', 'secretaire'],
-      'inscriptions.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire'],
-      'orientation.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
-      'frais-scolaires.html': ['directeur', 'comptable', 'secretaire'],
-      'comptabilite.html': ['directeur', 'comptable'],
-      'utilisateurs.html': ['directeur', 'prefet', 'secretaire'],
-      'classes.html': ['directeur', 'prefet', 'secretaire'],
-      'cours.html': ['directeur', 'prefet', 'secretaire'],
-      // Le mode choisi par le directeur (Paramètres > « Qui fait l'appel ? »)
-      // décide qui voit cet écran : en mode « chargé des présences », le menu
-      // quitte tout le monde pour n'aller qu'au chargé et au directeur de
-      // discipline. La liste vit dans acces-presences.js, un seul endroit pour
-      // les 30 pages. Le repli couvre le cas où ce fichier n'a pas pu être
-      // chargé : la page reste utilisable avec l'ancienne règle.
-      'presences.html': (window.ArdoisePresences
-        ? window.ArdoisePresences.rolesAutorises()
-        : ['directeur', 'prefet', 'secretaire', 'titulaire']),
-      'emploi-du-temps.html': ['directeur', 'prefet', 'secretaire', 'titulaire', 'professeur'],
-      'discipline.html': ['directeur', 'prefet', 'secretaire', 'titulaire', 'directeur_discipline'],
-      'site-public.html': ['directeur', 'prefet', 'secretaire'],
-      'notes.html': ['directeur', 'prefet', 'professeur'],
-      'bulletins.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
-      'bulletin-annuel.html': ['directeur', 'prefet'],
-      'repechage.html': ['directeur', 'prefet', 'professeur', 'titulaire'],
-      'generateur-modeles.html': ['directeur'],
-      'calendrier.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire', 'charge_presences', 'directeur_discipline'],
-      'rapports.html': ['directeur', 'prefet', 'secretaire', 'comptable'],
-      'archives.html': ['directeur', 'prefet', 'secretaire'],
-      'journal.html': ['directeur', 'prefet'],
-      'messages.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire', 'comptable', 'charge_presences', 'directeur_discipline'],
-      'parametres.html': ['directeur']
-    };
-    // Les deux derniers écrans servent de page d'accueil aux rôles qui n'ont ni
-    // tableau de bord ni espace dédié : chargé des présences, directeur de
-    // discipline. Sans eux, ces comptes restaient bloqués sur une page interdite.
-    const ordrePriorite = ['dashboard-directeur.html', 'espace-secretaire.html', 'espace-professeur.html', 'espace-titulaire.html', 'frais-scolaires.html', 'eleves.html', 'presences.html', 'discipline.html'];
+    /* ------------------------------------------------------------------
+       CLOISONNEMENT DES ESPACES
 
+       La table « quel rôle ouvre quelle page » n'est plus recopiée ici.
+       Elle vit dans session.js, que cette page charge en tête de <head>.
+
+       Elle l'était : trente copies à la main, plus celle de ui.js, plus
+       celle de la garde des abonnements. Trente occasions de diverger —
+       et c'est très exactement ce qui s'est produit : le rail continuait
+       d'afficher « Abonnements » à des rôles à qui la page était déjà
+       refusée, et l'entrée les menait à un écran qui montrait le rail
+       complet du Directeur.
+
+       Ajouter un écran demain, c'est ajouter une ligne dans session.js.
+       Il n'y a plus d'endroit où oublier de la recopier.
+       ------------------------------------------------------------------ */
     let utilisateur = null;
     try { utilisateur = JSON.parse(obtenirDuStockage('ardoise_user') || 'null'); } catch (e) {}
     const roles = (utilisateur && utilisateur.roles) || [];
-    const estSuperAdmin = roles.includes('super_admin');
+    const acces = window.ArdoiseAcces;
+
+    /* Sans la table — session.js absent, ou une version d'avant ce
+       correctif encore dans le cache du service worker — on ne masque
+       rien : la garde de ui.js et les contrôles de rôle du serveur
+       restent en place, et un rail vide serait une panne, pas une
+       protection. */
+    const autorise = (page) => !acces || acces.peutVoirPage(page, roles);
 
     document.querySelectorAll('.nav-item[href]').forEach((lien) => {
-      const page = lien.getAttribute('href');
-      const rolesAutorises = permissions[page];
-      if (rolesAutorises && !estSuperAdmin && !roles.some((r) => rolesAutorises.includes(r))) {
-        const li = lien.closest('li');
-        if (li) li.style.display = 'none';
-      }
+      if (autorise(lien.getAttribute('href'))) return;
+      const li = lien.closest('li');
+      if (li) li.style.display = 'none';
+      lien.hidden = true;
     });
 
     const pageActuelle = 'classes.html';
-    const rolesPourCettePage = permissions[pageActuelle];
-    if (rolesPourCettePage && !estSuperAdmin && !roles.some((r) => rolesPourCettePage.includes(r))) {
-      const pageDeRepli = ordrePriorite.find((p) => {
-        const r = permissions[p];
-        return !r || roles.some((role) => r.includes(role));
-      });
+    if (!autorise(pageActuelle)) {
+      const pageDeRepli = acces.pageDeRepli(roles);
       if (pageDeRepli && pageDeRepli !== pageActuelle) {
-        window.location.href = pageDeRepli;
+        // `replace` et non `href` : sans quoi « Précédent » rouvre la
+        // page interdite, et la boucle recommence.
+        window.location.replace(pageDeRepli);
         return; // on quitte cette page, pas la peine d'afficher la barre ici
       }
     }

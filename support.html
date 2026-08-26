@@ -13,6 +13,29 @@
 <link rel="stylesheet" href="mobile.css" />
 <script src="session.js"></script>
 <script src="remontee-erreurs.js"></script>
+<style>
+/* ------------------------------------------------------------------
+   Rail fermé par défaut.
+
+   Cette page est ouverte à des rôles qui n'ont RIEN à voir dans la
+   plupart des entrées du rail — un Professeur peut légitimement ouvrir
+   le Support. Le rail est écrit en dur dans le HTML, complet, celui du
+   Directeur : sans cette ligne il s'affiche entier dès la première
+   image, avant que ui.js n'ait filtré quoi que ce soit, et un
+   Professeur y lisait Élèves, Comptabilité, Utilisateurs, Journal et
+   Paramètres — puis cliquait.
+
+   Les trente écrans métier portent déjà cette règle ; ces deux pages
+   transversales étaient les seules à en être dépourvues. On montre
+   après avoir trié, jamais avant : `filtrerNavigationParRole()` rend
+   la liste visible une fois le tri fait.
+   ------------------------------------------------------------------ */
+.nav-liste { visibility: hidden; }
+/* Même règle que les trente écrans métier : sous 780 px le rail cède la
+   place au tiroir de mobile.js. Ces deux pages ne la portaient pas et
+   gardaient le rail du bureau sur un téléphone. */
+@media (max-width: 780px) { .nav-liste { display: none; } }
+</style>
 </head>
 <body>
 <div class="mise-en-page">

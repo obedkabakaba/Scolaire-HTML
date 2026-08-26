@@ -68,6 +68,15 @@ jobs:
           python3 audit-frontend.py
           python3 audit-contrat-api.py || true
 
+      # Le cloisonnement des espaces se casse par duplication, jamais d'un
+      # coup : une copie de la table oubliée quelque part, et un rôle voit un
+      # menu qui n'est pas le sien. Ces deux audits refusent la deuxième copie.
+      - name: Cloisonnement des espaces (rôles et menus)
+        run: |
+          python3 audit-cloisonnement-menus.py
+          python3 audit-autorisation-abonnements.py
+          node --test test-autorisation-abonnements.js
+
       - name: Illustrations des e-mails
         run: python3 test-email-assets.py
 
@@ -81,3 +90,6 @@ jobs:
           pip install --quiet playwright
           python3 -m playwright install --with-deps chromium
           python3 audit-parcours-abonnement.py
+          # Le rail complet du Directeur ne doit apparaître à personne, pas
+          # même le temps que ui.js arrive. Se mesure, ne se lit pas.
+          python3 audit-fenetre-rail.py

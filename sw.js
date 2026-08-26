@@ -56,7 +56,7 @@
          coquille : sans cet incrément, un téléphone où Ardoise est déjà
          installée continuerait d'afficher un formulaire à deux canaux, et son
          directeur conclurait que la fonctionnalité annoncée n'existe pas. */
-const VERSION='ardoise-v63';
+const VERSION='ardoise-v64';
 const CACHE_COQUILLE=`${VERSION}-coquille`;
 const COQUILLE=[
   './','connexion.html','changer-mot-de-passe.html','dashboard-directeur.html',

@@ -582,11 +582,164 @@
     catch (e) { return null; }
   }
 
-  function peutGererAbonnements() {
-    var user = utilisateur();
-    var roles = (user && user.roles) || [];
-    return roles.indexOf('directeur') !== -1 || roles.indexOf('super_admin') !== -1;
+  /* ==================================================================
+     CLOISONNEMENT DES ESPACES — SOURCE UNIQUE
+
+     Une seule question se pose partout : « ce rôle a-t-il le droit
+     d'ouvrir cette page ? » Elle était posée à sept endroits — le bloc
+     `gererAccesParRole` recopié dans trente pages, `ROLES_NAVIGATION`
+     dans ui.js, la garde d'abonnements-page.js, la redirection de
+     connexion.html — et chaque copie était une occasion de diverger.
+
+     C'est exactement ainsi qu'est née la faille « Abonnements » : la
+     page refusait le Professeur, mais le rail continuait de lui montrer
+     l'entrée, et les deux pages transversales (Abonnements, Support)
+     affichaient le rail COMPLET du Directeur — Élèves, Comptabilité,
+     Utilisateurs, Journal, Paramètres — à quiconque les ouvrait.
+
+     La table vit désormais ICI, dans le seul fichier que toutes les
+     pages chargent en tête de `<head>`, avant leur propre garde. Ajouter
+     un écran demain, c'est ajouter UNE ligne : il n'y a plus d'endroit
+     où oublier de la recopier.
+     ================================================================== */
+
+  var ROLES_PAR_PAGE = {
+    'dashboard-directeur.html': ['directeur', 'prefet'],
+    'annee-scolaire.html': ['directeur', 'prefet'],
+    'espace-secretaire.html': ['secretaire'],
+    'espace-professeur.html': ['professeur'],
+    'espace-titulaire.html': ['titulaire'],
+    'cours-classe-titulaire.html': ['titulaire'],
+    'eleves.html': ['directeur', 'prefet', 'secretaire'],
+    'inscriptions.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire'],
+    'orientation.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
+    'frais-scolaires.html': ['directeur', 'comptable', 'secretaire'],
+    'comptabilite.html': ['directeur', 'comptable'],
+    'utilisateurs.html': ['directeur', 'prefet', 'secretaire'],
+    'classes.html': ['directeur', 'prefet', 'secretaire'],
+    'cours.html': ['directeur', 'prefet', 'secretaire'],
+    /* Le mode choisi par le directeur (Paramètres > « Qui fait l'appel ? »)
+       décide qui voit cet écran. La liste vit dans acces-presences.js et est
+       relue à chaque appel : ce fichier-ci est chargé AVANT lui, une copie
+       figée à l'initialisation serait toujours l'ancienne règle. */
+    'presences.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
+    'emploi-du-temps.html': ['directeur', 'prefet', 'secretaire', 'titulaire', 'professeur'],
+    'discipline.html': ['directeur', 'prefet', 'secretaire', 'titulaire', 'directeur_discipline'],
+    'site-public.html': ['directeur', 'prefet', 'secretaire'],
+    'notes.html': ['directeur', 'prefet', 'professeur'],
+    'bulletins.html': ['directeur', 'prefet', 'secretaire', 'titulaire'],
+    'bulletin-annuel.html': ['directeur', 'prefet'],
+    'repechage.html': ['directeur', 'prefet', 'professeur', 'titulaire'],
+    'generateur-modeles.html': ['directeur'],
+    'calendrier.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire', 'charge_presences', 'directeur_discipline'],
+    'rapports.html': ['directeur', 'prefet', 'secretaire', 'comptable'],
+    'archives.html': ['directeur', 'prefet', 'secretaire'],
+    'journal.html': ['directeur', 'prefet'],
+    'messages.html': ['directeur', 'prefet', 'secretaire', 'professeur', 'titulaire', 'comptable', 'charge_presences', 'directeur_discipline'],
+    'parametres.html': ['directeur'],
+    /* Choisir une offre, demander un agent, transmettre une référence de
+       paiement : ces gestes engagent l'école. Ils appartiennent à celui qui
+       en répond. Le Préfet en est exclu au même titre que le Professeur —
+       le serveur ne lui ouvre ni /abonnements/renouvellement ni le paiement. */
+    'abonnements.html': ['directeur']
+  };
+
+  /* Ouvertes à tout compte connecté : elles ne parlent que du compte de
+     celui qui les ouvre, jamais de l'établissement. Elles sont listées —
+     plutôt qu'absentes — pour qu'« ouverte à tous » reste une décision
+     écrite et non l'effet d'un oubli. */
+  var PAGES_OUVERTES = [
+    'support.html',
+    'mon-profil.html',
+    'changer-mot-de-passe.html'
+  ];
+
+  /* Où renvoyer quelqu'un qui vient d'être refusé. Les deux derniers
+     écrans servent d'accueil aux rôles sans espace dédié — chargé des
+     présences, directeur de discipline —, sans quoi ces comptes
+     rebondissaient indéfiniment entre deux pages interdites. */
+  var ORDRE_REPLI = [
+    'dashboard-directeur.html', 'espace-secretaire.html', 'espace-professeur.html',
+    'espace-titulaire.html', 'frais-scolaires.html', 'eleves.html',
+    'presences.html', 'discipline.html'
+  ];
+
+  /** `/app/eleves.html?classe=3#haut` → `eleves.html`. */
+  function normaliserPage(page) {
+    var nom = String(page == null ? '' : page).split('?')[0].split('#')[0];
+    nom = (nom.split('/').pop() || '').toLowerCase();
+    return nom || 'index.html';
   }
+
+  /**
+   * Rôles autorisés sur une page, ou `null` si la page n'est pas dans la
+   * table. `null` ne veut pas dire « interdite » : les aperçus de bulletins
+   * et les écrans Super Admin n'y figurent pas et se gardent eux-mêmes.
+   */
+  function rolesDePage(page) {
+    var nom = normaliserPage(page);
+    if (nom === 'presences.html'
+        && window.ArdoisePresences
+        && typeof window.ArdoisePresences.rolesAutorises === 'function') {
+      try {
+        var vivants = window.ArdoisePresences.rolesAutorises();
+        if (vivants && vivants.length) return vivants;
+      } catch (e) { /* on retombe sur la règle écrite ci-dessus */ }
+    }
+    return ROLES_PAR_PAGE[nom] || null;
+  }
+
+  function rolesEffectifs(roles) {
+    if (roles && typeof roles.indexOf === 'function') return roles;
+    var user = utilisateur();
+    return (user && user.roles) || [];
+  }
+
+  /** Ce rôle peut-il ouvrir cette page ? */
+  function peutVoirPage(page, roles) {
+    var miens = rolesEffectifs(roles);
+    if (miens.indexOf('super_admin') !== -1) return true;
+    var autorises = rolesDePage(page);
+    if (!autorises) return true;
+    for (var i = 0; i < miens.length; i++) {
+      if (autorises.indexOf(miens[i]) !== -1) return true;
+    }
+    return false;
+  }
+
+  /** La page est-elle décrite quelque part ? Sert aux régressions. */
+  function pageConnue(page) {
+    return !!ROLES_PAR_PAGE[normaliserPage(page)]
+      || PAGES_OUVERTES.indexOf(normaliserPage(page)) !== -1;
+  }
+
+  /* Gérer l'abonnement, c'est ouvrir `abonnements.html` : une seule règle,
+     pas deux listes de rôles à tenir d'accord. */
+  function peutGererAbonnements(roles) {
+    return peutVoirPage('abonnements.html', roles);
+  }
+
+  function pageDeRepli(roles) {
+    var miens = rolesEffectifs(roles);
+    for (var i = 0; i < ORDRE_REPLI.length; i++) {
+      if (peutVoirPage(ORDRE_REPLI[i], miens)) return ORDRE_REPLI[i];
+    }
+    // Aucun espace métier : reste le compte, qui est à tout le monde.
+    return 'mon-profil.html';
+  }
+
+  window.ArdoiseAcces = {
+    rolesParPage: ROLES_PAR_PAGE,
+    pagesOuvertes: PAGES_OUVERTES,
+    ordreRepli: ORDRE_REPLI,
+    normaliserPage: normaliserPage,
+    rolesDePage: rolesDePage,
+    peutVoirPage: peutVoirPage,
+    pageConnue: pageConnue,
+    peutGererAbonnements: peutGererAbonnements,
+    pageDeRepli: pageDeRepli
+  };
+
 
   window.ArdoiseSession = {
     jeton: jeton,

@@ -110,6 +110,18 @@
           <div class="sa-encart" style="margin-bottom:12px">
             Cette réponse sera envoyée à <strong>${esc(demande.contact_email)}</strong> avec l’identité officielle Ardoise.
           </div>
+
+          <div class="sa-encart" style="margin-bottom:12px">
+            <strong>Assistant de rédaction IA</strong>
+            <div class="sa-muet" style="margin:4px 0 10px">L’IA prépare uniquement un brouillon à partir de la demande. Elle n’envoie rien automatiquement.</div>
+            <label class="sa-champ-bloc" style="margin-bottom:8px">
+              <span>Consigne facultative</span>
+              <input class="sa-champ" id="fiche-ia-consigne" maxlength="1200"
+                     placeholder="Ex. Répondre brièvement, proposer une démonstration, insister sur l’accompagnement…" />
+            </label>
+            <button class="sa-bouton sa-bouton-secondaire" type="button" data-role="rediger-ia">✨ Rédiger avec l’IA</button>
+          </div>
+
           <label class="sa-champ-bloc">
             <span>Objet</span>
             <input class="sa-champ" id="fiche-reponse-sujet" maxlength="180" value="${esc(sujetDefaut)}" />
@@ -119,6 +131,7 @@
             <textarea class="sa-champ" id="fiche-reponse-message" rows="7" maxlength="12000"
               placeholder="Rédigez ici la réponse officielle à envoyer au prospect…"></textarea>
           </label>
+          <div class="sa-muet" style="margin:-4px 0 10px">Relisez toujours le brouillon avant l’envoi.</div>
           <button class="sa-bouton sa-bouton-principal" type="button" data-role="envoyer-reponse">Envoyer la réponse officielle</button>
         ` : `
           <div class="sa-encart">
@@ -154,6 +167,35 @@
     });
 
     modale.querySelector('[data-role="annuler"]').addEventListener('click', () => modale.fermer());
+
+    const boutonIA = modale.querySelector('[data-role="rediger-ia"]');
+    if (boutonIA) {
+      boutonIA.addEventListener('click', async () => {
+        const consigne = modale.querySelector('#fiche-ia-consigne').value.trim();
+        const sujet = modale.querySelector('#fiche-reponse-sujet');
+        const message = modale.querySelector('#fiche-reponse-message');
+        const ancienTexte = boutonIA.textContent;
+        boutonIA.disabled = true;
+        boutonIA.textContent = 'Rédaction en cours…';
+        try {
+          const resultat = await SA.api(`/super-admin/prospects/${demande.id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ assistance_ia: { consigne } })
+          });
+          if (!resultat.brouillon || !resultat.brouillon.message) {
+            throw new Error('Brouillon IA vide.');
+          }
+          sujet.value = resultat.brouillon.sujet || sujet.value;
+          message.value = resultat.brouillon.message;
+          SA.toast('Brouillon généré. Relisez-le avant l’envoi.', 'succes');
+        } catch (err) {
+          SA.toast(err.message || 'L’IA n’a pas pu rédiger la réponse.', 'danger');
+        } finally {
+          boutonIA.disabled = false;
+          boutonIA.textContent = ancienTexte;
+        }
+      });
+    }
 
     const envoyer = modale.querySelector('[data-role="envoyer-reponse"]');
     if (envoyer) {

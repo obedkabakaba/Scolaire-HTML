@@ -19,6 +19,17 @@
     { cle: 'message_libre', libelle: 'Message libre',  ton: 'neutre' }
   ];
 
+  /* Les trois tons proposés à la rédaction assistée. Les clés doivent rester
+     identiques à celles de `TONS` dans `controllers/prospects.controller.js` :
+     le serveur retombe silencieusement sur « chaleureux » s'il reçoit autre
+     chose, et un intitulé divergent donnerait donc un ton qui n'est pas celui
+     que le commercial a choisi, sans rien lui signaler. */
+  const TONS = [
+    { cle: 'chaleureux', libelle: 'Chaleureux' },
+    { cle: 'direct',     libelle: 'Direct' },
+    { cle: 'formel',     libelle: 'Formel' }
+  ];
+
   const trouver = (c) => STATUTS.find((s) => s.cle === c) || {};
   const libelleStatut = (c) => trouver(c).libelle || c;
   const trouverOrigine = (c) => ORIGINES.find((o) => o.cle === c) || {};
@@ -119,6 +130,25 @@
             <textarea class="sa-champ" id="fiche-reponse-message" rows="7" maxlength="12000"
               placeholder="Rédigez ici la réponse officielle à envoyer au prospect…"></textarea>
           </label>
+
+          <div class="sa-brouillon">
+            <div class="sa-brouillon-titre">
+              Aide à la rédaction
+              <span class="sa-muet">— l’IA propose, vous relisez, vous envoyez.</span>
+            </div>
+            <div class="sa-brouillon-reglages">
+              <select class="sa-champ" id="fiche-ia-ton" aria-label="Ton de la réponse">
+                ${TONS.map((t) => `<option value="${t.cle}">${esc(t.libelle)}</option>`).join('')}
+              </select>
+              <input class="sa-champ" id="fiche-ia-consigne" maxlength="600"
+                     placeholder="Ce qu’il faut dire, en une ligne (facultatif)" />
+              <button class="sa-bouton sa-bouton-secondaire" type="button" data-role="brouillon-ia">
+                Proposer un brouillon
+              </button>
+            </div>
+            <div class="sa-brouillon-etat" data-role="brouillon-etat" hidden></div>
+          </div>
+
           <button class="sa-bouton sa-bouton-principal" type="button" data-role="envoyer-reponse">Envoyer la réponse officielle</button>
         ` : `
           <div class="sa-encart">
@@ -154,6 +184,73 @@
     });
 
     modale.querySelector('[data-role="annuler"]').addEventListener('click', () => modale.fermer());
+
+    /* ---------------------------------------------------- Rédaction assistée
+     *
+     * Le brouillon REMPLACE le contenu du champ, et pose à côté un bouton qui
+     * rend le texte précédent. C'est délibérément l'inverse d'une demande de
+     * confirmation : ouvrir une modale de confirmation par-dessus la fiche
+     * ferait cliquer « Oui » sans lire neuf fois sur dix, et la dixième aurait
+     * quand même perdu son paragraphe. Ici, le geste est immédiat et
+     * réversible tant que la fiche est ouverte.
+     *
+     * Rien n'est envoyé à ce stade : ce point d'entrée ne fait qu'écrire dans
+     * un champ de formulaire. L'engagement d'Ardoise reste le clic sur
+     * « Envoyer la réponse officielle », après relecture.
+     */
+    const brouiller = modale.querySelector('[data-role="brouillon-ia"]');
+    if (brouiller) {
+      const etat = modale.querySelector('[data-role="brouillon-etat"]');
+      const champSujet = modale.querySelector('#fiche-reponse-sujet');
+      const champMessage = modale.querySelector('#fiche-reponse-message');
+
+      const dire = (html, ton) => {
+        etat.hidden = false;
+        etat.className = `sa-brouillon-etat${ton ? ` ${ton}` : ''}`;
+        etat.innerHTML = html;
+      };
+
+      brouiller.addEventListener('click', async () => {
+        const avant = { sujet: champSujet.value, message: champMessage.value };
+
+        brouiller.disabled = true;
+        const libelle = brouiller.textContent.trim();
+        brouiller.textContent = 'Rédaction…';
+        dire('<span class="sa-muet">L’assistant rédige. Cela prend quelques secondes.</span>');
+
+        try {
+          const r = await SA.api(`/super-admin/prospects/${demande.id}/brouillon-ia`, {
+            method: 'POST',
+            body: JSON.stringify({
+              ton: modale.querySelector('#fiche-ia-ton').value,
+              consigne: modale.querySelector('#fiche-ia-consigne').value.trim() || undefined
+            })
+          });
+
+          if (r.sujet) champSujet.value = r.sujet;
+          champMessage.value = r.message || '';
+          champMessage.focus();
+
+          dire(`Brouillon proposé${r.modele ? ` par <span class="sa-mono">${esc(r.modele)}</span>` : ''}.
+                <strong>Relisez-le avant d’envoyer</strong> — il n’engage Ardoise qu’une fois envoyé.
+                ${avant.message ? '<button class="sa-bouton sa-bouton-petit sa-bouton-secondaire" type="button" data-role="restaurer">Rendre mon texte</button>' : ''}`);
+
+          const restaurer = etat.querySelector('[data-role="restaurer"]');
+          if (restaurer) {
+            restaurer.addEventListener('click', () => {
+              champSujet.value = avant.sujet;
+              champMessage.value = avant.message;
+              dire('<span class="sa-muet">Votre texte est revenu.</span>');
+            });
+          }
+        } catch (err) {
+          dire(esc(err.message || 'La rédaction assistée est indisponible.'), 'echec');
+        } finally {
+          brouiller.disabled = false;
+          brouiller.textContent = libelle;
+        }
+      });
+    }
 
     const envoyer = modale.querySelector('[data-role="envoyer-reponse"]');
     if (envoyer) {

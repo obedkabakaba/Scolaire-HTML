@@ -53,3 +53,50 @@
   border: 0; border-top: 1px solid var(--bordure);
   margin: 20px 0 16px;
 }
+
+/* -----------------------------------------------------------------------------
+   Aide à la rédaction (brouillon IA), dans la fiche d'une demande.
+   -----------------------------------------------------------------------------
+   Encadré et non pleine largeur : ce bloc n'est pas une étape du formulaire,
+   c'est un OUTIL posé à côté. Le fond légèrement teinté et le trait qui
+   l'entoure disent qu'on peut l'ignorer — un commercial qui préfère écrire
+   lui-même ne doit pas avoir l'impression de sauter une case obligatoire.
+   -------------------------------------------------------------------------- */
+.sa-brouillon {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border: 1px dashed var(--bordure);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--encre) 3%, transparent);
+}
+
+.sa-brouillon-titre {
+  font-size: 0.86rem; font-weight: 600;
+  margin-bottom: 10px;
+}
+.sa-brouillon-titre .sa-muet { font-weight: 400; }
+
+/* Le ton d'abord, la consigne qui prend la place restante, le bouton au bout.
+   Sous 640 px les trois passent en colonne : une consigne d'une ligne écrite
+   dans un champ de 90 px ne se relit pas. */
+.sa-brouillon-reglages {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+}
+.sa-brouillon-reglages #fiche-ia-ton { flex: 0 0 auto; width: auto; min-width: 140px; }
+.sa-brouillon-reglages #fiche-ia-consigne { flex: 1 1 220px; min-width: 0; }
+.sa-brouillon-reglages .sa-bouton { flex: 0 0 auto; }
+
+@media (max-width: 640px) {
+  .sa-brouillon-reglages { flex-direction: column; align-items: stretch; }
+  .sa-brouillon-reglages #fiche-ia-ton { width: 100%; }
+}
+
+/* Ligne d'état : ce que l'assistant vient de faire, et comment le défaire.
+   Elle porte le rappel « relisez avant d'envoyer », qui est la seule phrase du
+   bloc qui compte vraiment. */
+.sa-brouillon-etat {
+  margin-top: 10px;
+  font-size: 0.85rem; line-height: 1.5;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+}
+.sa-brouillon-etat.echec { color: var(--rouge, #B23A2E); }

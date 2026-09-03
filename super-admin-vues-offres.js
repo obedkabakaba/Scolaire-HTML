@@ -1074,7 +1074,8 @@
           return `<span class="${ton}">${esc(fmt.date(l.date_expiration))}</span>
                   <div class="sa-muet">${j < 0 ? `échu depuis ${Math.abs(j)} j` : `dans ${j} j`}</div>`;
         } },
-        { cle: 'statut', titre: 'Statut', rendu: (l) => `${ui.badgeStatut(l.statut)}${l.en_periode_essai ? ' ' + ui.badge('essai', 'info') : ''}` }
+        { cle: 'statut', titre: 'Statut', rendu: (l) => l.en_periode_essai
+          ? ui.badge('Essai actif', 'info') : ui.badgeStatut(l.statut) }
       ];
 
       conteneur.innerHTML = `

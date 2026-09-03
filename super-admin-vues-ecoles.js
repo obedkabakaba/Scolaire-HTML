@@ -915,10 +915,11 @@
             },
             { cle: 'plan_nom', titre: 'Plan' },
             { cle: 'prix', titre: 'Tarif', classe: 'sa-num', rendu: (l) => esc(fmt.montant(l.prix, l.devise)) },
-            { cle: 'statut', titre: 'Statut', rendu: (l) => ui.badgeStatut(l.statut) },
+            { cle: 'statut', titre: 'Statut', rendu: (l) => l.en_periode_essai
+              ? ui.badge('Essai actif', 'info') : ui.badgeStatut(l.statut) },
             {
               cle: 'en_periode_essai', titre: 'Essai',
-              rendu: (l) => l.en_periode_essai ? ui.badge('essai', 'info') : '<span class="sa-muet">—</span>'
+              rendu: (l) => l.en_periode_essai ? ui.badge('oui', 'info') : '<span class="sa-muet">—</span>'
             },
             { cle: 'date_expiration', titre: 'Expire le', rendu: (l) => esc(fmt.date(l.date_expiration)) },
             {

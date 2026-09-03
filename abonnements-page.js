@@ -207,6 +207,7 @@
        déjà une date d'expiration technique. Cette date ne doit donc jamais être
        montrée au client comme une échéance qu'il aurait ratée. */
     var sansAbonnement = !e.abonnement_statut || e.abonnement_statut === 'en_attente';
+    var enEssai = Boolean(e.en_periode_essai);
     var jours = sansAbonnement ? null : joursRestants(e.date_expiration);
     var expire = !sansAbonnement && jours !== null && jours < 0;
 
@@ -225,7 +226,8 @@
       '<div class="resume-case"><small>École</small><strong>' + esc(e.nom || '—') + '</strong>'
       + '<div class="muted code" style="margin-top:4px">' + esc(e.code || '') + '</div></div>'
       + '<div class="resume-case"><small>Bouquet actuel</small><strong>'
-      + (sansAbonnement ? 'Aucun abonnement actif' : esc(e.plan_nom || '—')) + '</strong>'
+      + (sansAbonnement ? 'Aucun abonnement actif' : enEssai
+        ? 'Essai gratuit — ' + esc(e.plan_nom || '—') : esc(e.plan_nom || '—')) + '</strong>'
       + (sansAbonnement && e.plan_nom
         ? '<div class="muted" style="margin-top:4px">Offre présélectionnée : ' + esc(e.plan_nom) + '</div>' : '')
       + '</div>'
@@ -235,6 +237,7 @@
     if (compact) {
       compact.textContent = sansAbonnement ? 'Sans abonnement'
         : expire ? 'Expiré'
+          : enEssai ? 'Essai actif'
           : e.abonnement_statut === 'actif' ? 'Actif'
             : e.abonnement_statut ? String(e.abonnement_statut).replace(/_/g, ' ') : 'Sans abonnement';
       compact.classList.toggle('ton-alerte', expire);
@@ -254,6 +257,11 @@
         + '<strong>Votre abonnement est arrivé à échéance.</strong><br>'
         + 'Vos données sont conservées. Renouvelez votre abonnement pour reprendre '
         + 'l’utilisation complète d’Ardoise.</p></div>';
+    } else if (enEssai) {
+      zone.innerHTML = '<div class="etat-demande"><p style="margin:0">'
+        + '<strong>Votre essai gratuit est actif.</strong><br>'
+        + 'Il reste ' + jours + ' jour' + (jours > 1 ? 's' : '')
+        + '. Aucun abonnement payant n’a encore été activé.</p></div>';
     } else if (jours !== null && jours <= 30) {
       zone.innerHTML = '<div class="etat-demande"><p style="margin:0">'
         + 'Votre abonnement expire dans ' + jours + ' jour' + (jours > 1 ? 's' : '')

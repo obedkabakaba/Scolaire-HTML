@@ -578,6 +578,7 @@
     var retour = form.querySelector('[data-retour]');
     var bouton = form.querySelector('button[type="submit"]');
     var banniereFermee = doc.querySelector('[data-demo-fermee]');
+    var retourVerification = doc.querySelector('[data-retour-verification]');
 
     recuperer('/demonstration/reglages')
       .then(function (r) {
@@ -619,6 +620,49 @@
       retour.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
+    var jetonVerification = new URLSearchParams(global.location.search).get('verification');
+    if (jetonVerification) {
+      form.hidden = true;
+      if (retourVerification) {
+        retourVerification.hidden = false;
+        retourVerification.className = 'message-retour';
+        retourVerification.textContent = 'Validation de votre adresse e-mail…';
+      }
+
+      fetch(API + '/demonstration/verifier', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jeton: jetonVerification })
+      })
+        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+        .then(function (res) {
+          if (!retourVerification) return;
+          retourVerification.className = 'message-retour ' + (res.ok ? 'succes' : 'erreur');
+          retourVerification.textContent = res.d.message
+            || (res.ok ? 'Adresse confirmée.' : "La validation n'a pas pu être terminée.");
+          if (res.ok && res.d.code === 'demonstration_activee') {
+            retourVerification.appendChild(document.createTextNode(' Redirection vers la connexion…'));
+            setTimeout(function () {
+              global.location.href = '/connexion.html?nouveau=1&email='
+                + encodeURIComponent((res.d.connexion || {}).email || '');
+            }, 2200);
+          }
+        })
+        .catch(function () {
+          if (!retourVerification) return;
+          retourVerification.className = 'message-retour erreur';
+          retourVerification.textContent = 'Connexion impossible. Ouvrez de nouveau le lien reçu par e-mail.';
+        })
+        .finally(function () {
+          try {
+            var url = new URL(global.location.href);
+            url.searchParams.delete('verification');
+            global.history.replaceState({}, '', url.pathname + url.search + url.hash);
+          } catch (_) { /* navigateur ancien : sans conséquence */ }
+        });
+      return;
+    }
+
     form.addEventListener('submit', function (e) {
       e.preventDefault();
 
@@ -626,7 +670,7 @@
 
       bouton.disabled = true;
       var texteInitial = bouton.textContent;
-      bouton.textContent = 'Création de votre espace…';
+      bouton.textContent = 'Envoi du lien de validation…';
       retour.hidden = true;
 
       fetch(API + '/demonstration/demander', {
@@ -637,19 +681,8 @@
         .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
         .then(function (res) {
           if (res.ok) {
-            afficher('succes',
-              res.d.message + ' Vous allez être redirigé vers la connexion…');
+            afficher('succes', res.d.message);
             form.reset();
-            /* On NE connecte PAS automatiquement.
-               La personne vient de choisir un mot de passe ; lui faire faire
-               une première connexion volontaire l'ancre, et évite d'avoir à
-               manipuler un jeton depuis une page publique — c'est-à-dire
-               depuis le seul contexte du site qui n'a jamais eu à en
-               manipuler. */
-            setTimeout(function () {
-              global.location.href = '/connexion.html?nouveau=1&email='
-                + encodeURIComponent(donnees.email || '');
-            }, 2200);
             return;
           }
 

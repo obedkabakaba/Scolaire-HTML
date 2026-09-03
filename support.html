@@ -94,11 +94,14 @@
              équipe, sans le formalisme — et sans compte, ce qui permet aussi
              de faire écrire un parent ou un professeur. -->
         <a class="bouton bouton-secondaire" href="/ecrire/">Écrire librement</a>
-        <a class="bouton bouton-secondaire" href="abonnements.html">Abonnements</a>
+        <a class="bouton bouton-secondaire" id="lien-abonnements" href="abonnements.html">Abonnements</a>
       </div>
     </div>
 
-    <div class="message-flash" id="message-flash" role="status"></div>
+    <div class="message-flash" id="message-flash" role="status" aria-live="polite"></div>
+    <div class="support-connectivite cache" id="etat-connexion" role="status" aria-live="polite">
+      Vous êtes hors connexion. Vos demandes restent privées sur le serveur, mais il faut une connexion pour les consulter ou écrire au support.
+    </div>
 
     <!-- ACCUEIL — la première question est celle de l'école, pas la nôtre.
          Aucun choix de priorité : le serveur la déduit (voir
@@ -107,44 +110,50 @@
     <section class="carte-section" id="accueil-support">
       <div class="carte-titre-ligne">
         <div><span class="sur-titre">Support Ardoise</span><h2>Comment pouvons-nous vous aider ?</h2></div>
-        <button type="button" class="bouton bouton-secondaire bouton-petit" id="action-tickets">
-          Mes demandes <span id="compteur-tickets"></span>
+        <button type="button" class="bouton bouton-secondaire bouton-petit" id="action-tickets"
+          aria-controls="centre-tickets" aria-expanded="false">
+          <span id="libelle-action-tickets">Mes demandes</span> <span id="compteur-tickets"></span>
         </button>
       </div>
       <div class="support-motifs" id="motifs" role="group" aria-label="Type de demande"></div>
     </section>
 
     <!-- DESCRIPTION — n'apparaît qu'après le choix d'un motif. -->
-    <section class="carte-section cache" id="nouvelle-demande">
-      <div class="etape-entete">
-        <div><span class="sur-titre" id="motif-choisi"></span><h2>Décrivez votre problème</h2>
-          <p class="aide">Le support Ardoise est averti dès l’envoi et vous répond dans cette page.</p></div>
-        <button type="button" class="lien-retour" id="changer-motif">Changer de sujet</button>
-      </div>
-      <div class="champ">
-        <label for="sujet">Sujet</label>
-        <input id="sujet" maxlength="300" placeholder="Ex. Impossible de générer les bulletins" />
-      </div>
-      <div class="champ">
-        <label for="description">Description</label>
-        <textarea id="description" maxlength="10000"
-          placeholder="Sur quelle page étiez-vous ? Qu’avez-vous essayé ? Quel message s’est affiché ?"></textarea>
-      </div>
-      <div class="support-form-actions">
-        <button type="button" class="bouton bouton-principal" id="creer">Envoyer au support</button>
-        <button type="button" class="bouton bouton-secondaire" id="annuler-nouveau">Annuler</button>
-      </div>
+    <section class="carte-section cache" id="nouvelle-demande" aria-labelledby="titre-nouvelle-demande">
+      <form id="form-demande" novalidate>
+        <div class="etape-entete">
+          <div><span class="sur-titre" id="motif-choisi"></span><h2 id="titre-nouvelle-demande">Décrivez votre problème</h2>
+            <p class="aide">Le support Ardoise est averti dès l’envoi et vous répond dans cette page.</p></div>
+          <button type="button" class="lien-retour" id="changer-motif">Changer de sujet</button>
+        </div>
+        <div class="champ">
+          <label for="sujet">Sujet</label>
+          <input id="sujet" name="sujet" minlength="4" maxlength="300" required
+            autocomplete="off" placeholder="Ex. Impossible de générer les bulletins" />
+          <div class="champ-indication"><span>Résumez le problème en une phrase.</span><span id="compteur-sujet">0 / 300</span></div>
+        </div>
+        <div class="champ">
+          <label for="description">Description</label>
+          <textarea id="description" name="description" minlength="8" maxlength="10000" required
+            placeholder="Sur quelle page étiez-vous ? Qu’avez-vous essayé ? Quel message s’est affiché ?"></textarea>
+          <div class="champ-indication"><span>Ne saisissez aucun mot de passe ni code secret.</span><span id="compteur-description">0 / 10 000</span></div>
+        </div>
+        <div class="support-form-actions">
+          <button type="submit" class="bouton bouton-principal" id="creer">Envoyer au support</button>
+          <button type="button" class="bouton bouton-secondaire" id="annuler-nouveau">Annuler</button>
+        </div>
+      </form>
     </section>
 
     <!-- CONVERSATIONS -->
     <section class="cache" id="centre-tickets">
       <div class="section-titre">
-        <div><h2>Vos demandes</h2><p>Chaque demande est une conversation avec l’équipe Ardoise.</p></div>
+        <div><h2 id="titre-liste-tickets">Vos demandes</h2><p>Chaque demande est une conversation avec l’équipe Ardoise.</p></div>
         <button type="button" class="bouton bouton-secondaire bouton-petit" id="action-nouveau">Nouvelle demande</button>
       </div>
       <div class="support-layout">
         <div class="carte-section">
-          <div class="liste-tickets" id="tickets"><div class="vide">Chargement de vos demandes…</div></div>
+          <div class="liste-tickets" id="tickets" aria-live="polite"><div class="vide">Chargement de vos demandes…</div></div>
         </div>
         <div>
           <div class="carte-section" id="detail-vide">
@@ -152,15 +161,21 @@
           </div>
           <div class="carte-section cache conversation" id="detail">
             <div class="conversation-entete" id="detail-entete"></div>
-            <div class="messages" id="messages"></div>
-            <div id="zone-reponse" style="padding-top:12px;border-top:1px solid var(--bordure)">
-              <div class="champ">
-                <label for="reponse">Votre message</label>
-                <textarea id="reponse" style="min-height:88px" placeholder="Ajoutez une précision ou répondez à Ardoise."></textarea>
+            <div class="messages" id="messages" aria-live="polite"></div>
+            <form id="form-reponse">
+              <div id="zone-reponse" class="zone-reponse">
+                <div class="champ">
+                  <label for="reponse">Votre message</label>
+                  <textarea id="reponse" name="reponse" minlength="2" maxlength="10000" required
+                    placeholder="Ajoutez une précision ou répondez à Ardoise."></textarea>
+                </div>
+                <button type="submit" class="bouton bouton-principal" id="envoyer-reponse">Envoyer</button>
+                <div class="aide" style="margin-top:7px">Astuce : Ctrl + Entrée ou ⌘ + Entrée envoie le message.</div>
               </div>
-              <button type="button" class="bouton bouton-principal" id="envoyer-reponse">Envoyer</button>
-              <div class="aide" style="margin-top:7px">Astuce : Ctrl + Entrée ou ⌘ + Entrée envoie le message.</div>
-            </div>
+              <div class="support-ferme cache" id="ticket-ferme">
+                Cette demande est clôturée. Si le problème revient, créez une nouvelle demande pour que l’équipe soit avertie.
+              </div>
+            </form>
           </div>
         </div>
       </div>

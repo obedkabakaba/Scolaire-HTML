@@ -55,8 +55,11 @@
    v63 : `messages.html` gagne le canal WhatsApp. Ce fichier fait partie de la
          coquille : sans cet incrément, un téléphone où Ardoise est déjà
          installée continuerait d'afficher un formulaire à deux canaux, et son
-         directeur conclurait que la fonctionnalité annoncée n'existe pas. */
-const VERSION='ardoise-v64';
+         directeur conclurait que la fonctionnalité annoncée n'existe pas.
+   v65 : le centre Support et ses styles entrent dans la coquille. La mise à
+         jour corrige ses formulaires, ses erreurs réseau et ses conversations
+         sans jamais mettre en cache les réponses authentifiées de l'API. */
+const VERSION='ardoise-v65';
 const CACHE_COQUILLE=`${VERSION}-coquille`;
 const COQUILLE=[
   './','connexion.html','changer-mot-de-passe.html','dashboard-directeur.html',
@@ -69,6 +72,7 @@ const COQUILLE=[
   'apercu-bulletin-primaire.html','apercu-bulletin-secondaire.html',
   'apercu-bulletin-terminale.html','apercu-bulletin-semestre.html',
   'mon-profil.html','messages.html','site-public.html','discipline.html','cours.html',
+  'support.html','support-page.js','support-abonnements.css',
   'archives.html','rapports.html','super-admin.html','theme.css','theme-base.css','ui.css','mobile.css',
   'mobile.js','theme.js','ui.js','session.js','abonnements-page.js','acces-presences.js','filtre-cycle.js',
   'evenements-types.js',

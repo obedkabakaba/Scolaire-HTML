@@ -1486,14 +1486,31 @@ label:where(.case, .case-a-cocher, .champ-case, .interrupteur-controle) {
   cursor: pointer;
 }
 
-/* Coin du panneau principal, du cote du rail gauche.
-   Le fond dessine l'arrondi sans rogner les menus, modifier la grille
-   ou creer un nouveau conteneur de defilement. */
+/* Arrondi interieur du panneau : suit le bord visible du rail, y compris
+   son deploiement au survol/au clavier, et reste en haut pendant le defilement.
+   Le decor fixe n'intercepte aucun clic et ne rogne aucun contenu. */
 @media screen and (min-width: 781px) {
-  html:not([data-theme="public"]):is([data-nav-position="gauche"], :not([data-nav-position])) .mise-en-page > .contenu {
-    background-image: radial-gradient(circle at 24px 24px, transparent 24px, var(--nav-fond) 24.5px);
-    background-position: top left;
-    background-size: 24px 24px;
-    background-repeat: no-repeat;
+  html:not([data-theme="public"], [data-theme="yohali"], [data-theme="kivu"]):is([data-nav-position="gauche"], :not([data-nav-position])) .mise-en-page > .barre-laterale::after {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 240px;
+    width: 24px;
+    height: 24px;
+    background: radial-gradient(circle at 24px 24px, transparent 24px, var(--nav-fond) 24.5px);
+    pointer-events: none;
+    z-index: 41;
+  }
+  html:not([data-theme="public"], [data-theme="yohali"], [data-theme="kivu"]):is([data-nav-position="gauche"], :not([data-nav-position]))[data-nav-compact="oui"] .mise-en-page > .barre-laterale::after {
+    left: 72px;
+    transition: left 0.22s cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+  html:not([data-theme="public"], [data-theme="yohali"], [data-theme="kivu"]):is([data-nav-position="gauche"], :not([data-nav-position]))[data-nav-compact="oui"] .mise-en-page > .barre-laterale:is(:hover, :focus-within)::after {
+    left: 240px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html:not([data-theme="public"], [data-theme="yohali"], [data-theme="kivu"]):is([data-nav-position="gauche"], :not([data-nav-position])) .mise-en-page > .barre-laterale::after {
+    transition: none;
   }
 }

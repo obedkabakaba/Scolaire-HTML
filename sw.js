@@ -66,8 +66,11 @@
          dans la coquille précachée afin que son écran de renouvellement ne
          puisse plus rester avec un rail incomplet après une mise à jour.
    v68 : recharge ui.css pour afficher le coin supérieur gauche arrondi du
-         panneau principal sur les applications déjà installées. */
-const VERSION='ardoise-v68';
+         panneau principal sur les applications déjà installées.
+   v69 : l'arrondi intérieur suit le rail déployé ou replié et reste visible
+         pendant le défilement du contenu. Yohali et son alias Kivu
+         conservent leur apparence d'origine, sans cet ajout. */
+const VERSION='ardoise-v69';
 const CACHE_COQUILLE=`${VERSION}-coquille`;
 const COQUILLE=[
   './','connexion.html','changer-mot-de-passe.html','dashboard-directeur.html',

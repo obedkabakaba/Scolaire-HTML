@@ -58,8 +58,11 @@
          directeur conclurait que la fonctionnalité annoncée n'existe pas.
    v65 : le centre Support et ses styles entrent dans la coquille. La mise à
          jour corrige ses formulaires, ses erreurs réseau et ses conversations
-         sans jamais mettre en cache les réponses authentifiées de l'API. */
-const VERSION='ardoise-v65';
+         sans jamais mettre en cache les réponses authentifiées de l'API.
+   v66 : le Support charge directement la base du thème et possède une coque
+         de secours ; ce changement doit remplacer immédiatement l'ancienne
+         page brute encore présente dans certains caches PWA. */
+const VERSION='ardoise-v66';
 const CACHE_COQUILLE=`${VERSION}-coquille`;
 const COQUILLE=[
   './','connexion.html','changer-mot-de-passe.html','dashboard-directeur.html',

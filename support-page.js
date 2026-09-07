@@ -76,6 +76,7 @@
 
   var actif = null;
   var motif = null;
+  var dernierSujetAutomatique = '';
   var signatureListe = '';
   var signatureDetail = '';
   var listeChargee = false;
@@ -177,6 +178,14 @@
     var choisi = MOTIFS.find(function (m) { return m.cle === motif; }) || MOTIFS[MOTIFS.length - 1];
     renduMotifs();
     $('motif-choisi').textContent = choisi.titre;
+
+    var champSujet = $('sujet');
+    if (champSujet && (!champSujet.value.trim() || champSujet.value === dernierSujetAutomatique)) {
+      champSujet.value = choisi.titre;
+      dernierSujetAutomatique = choisi.titre;
+      mettreAJourCompteur('sujet', 'compteur-sujet', 300);
+    }
+
     montrer('nouvelle-demande', true);
     montrer('centre-tickets', false);
     $('action-tickets').setAttribute('aria-expanded', 'false');
@@ -373,6 +382,7 @@
     }).then(function (reponse) {
       if (!reponse.ticket || !reponse.ticket.id) throw new Error('La demande a été reçue, mais son suivi ne peut pas encore être ouvert.');
       formulaire.reset();
+      dernierSujetAutomatique = '';
       mettreAJourCompteur('sujet', 'compteur-sujet', 300);
       mettreAJourCompteur('description', 'compteur-description', 10000);
       flash(reponse.message || 'Demande envoyée.', 'succes');

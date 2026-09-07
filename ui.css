@@ -1485,3 +1485,15 @@ label:where(.case, .case-a-cocher, .champ-case, .interrupteur-controle) {
   align-items: center;
   cursor: pointer;
 }
+
+/* Coin du panneau principal, du cote du rail gauche.
+   Le fond dessine l'arrondi sans rogner les menus, modifier la grille
+   ou creer un nouveau conteneur de defilement. */
+@media screen and (min-width: 781px) {
+  html:not([data-theme="public"]):is([data-nav-position="gauche"], :not([data-nav-position])) .mise-en-page > .contenu {
+    background-image: radial-gradient(circle at 24px 24px, transparent 24px, var(--nav-fond) 24.5px);
+    background-position: top left;
+    background-size: 24px 24px;
+    background-repeat: no-repeat;
+  }
+}

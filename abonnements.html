@@ -7,6 +7,11 @@
 <script>
 (function(){var t,p,c;try{t=localStorage.getItem('ardoise_theme')||sessionStorage.getItem('ardoise_theme');p=localStorage.getItem('ardoise_nav_position');c=localStorage.getItem('ardoise_nav_compact')}catch(e){}var th=(t&&/^[a-z][a-z0-9-]{1,19}$/.test(t))?t:'ardoise';document.documentElement.setAttribute('data-theme',th);if(!c&&th==='studio')c='oui';document.documentElement.setAttribute('data-nav-position',['gauche','droite','haut','bas'].indexOf(p)!==-1?p:'gauche');document.documentElement.setAttribute('data-nav-compact',c==='oui'?'oui':'non')})();
 </script>
+<!-- Comme pour Support, la page Abonnements charge directement la base du
+     thème. Elle ne doit pas dépendre uniquement du @import de theme.css pour
+     obtenir sa grille et son rail, sinon un cache PWA incomplet peut laisser
+     les icônes et puces sans libellés ni vraie barre latérale. -->
+<link rel="stylesheet" href="theme-base.css" />
 <link rel="stylesheet" href="theme.css" />
 <link rel="stylesheet" href="ui.css" />
 <link rel="stylesheet" href="support-abonnements.css" />
@@ -15,26 +20,120 @@
 <script src="remontee-erreurs.js"></script>
 <style>
 /* ------------------------------------------------------------------
-   Rail fermé par défaut.
+   REPLI VISUEL CRITIQUE ABONNEMENTS
 
-   Cette page est ouverte à des rôles qui n'ont RIEN à voir dans la
-   plupart des entrées du rail — un Professeur peut légitimement ouvrir
-   le Support. Le rail est écrit en dur dans le HTML, complet, celui du
-   Directeur : sans cette ligne il s'affiche entier dès la première
-   image, avant que ui.js n'ait filtré quoi que ce soit, et un
-   Professeur y lisait Élèves, Comptabilité, Utilisateurs, Journal et
-   Paramètres — puis cliquait.
+   support-abonnements.css dessine le contenu métier, mais la coque générale
+   (grille, rail, marque et liens) vient de theme-base.css. Si cette feuille
+   manque pendant un chargement PWA/réseau, la page devient une colonne de
+   puces/icônes sur fond sombre — exactement le défaut observé.
 
-   Les trente écrans métier portent déjà cette règle ; ces deux pages
-   transversales étaient les seules à en être dépourvues. On montre
-   après avoir trié, jamais avant : `filtrerNavigationParRole()` rend
-   la liste visible une fois le tri fait.
+   Ces règles ne redessinent que la coque minimale et réutilisent les mêmes
+   variables que les thèmes. Quand theme-base.css charge normalement, elles
+   sont compatibles ; quand il manque, la page reste immédiatement utilisable.
    ------------------------------------------------------------------ */
+:root {
+  --police-titre: 'Fraunces', Georgia, serif;
+  --police-corps: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --r-petit: 6px;
+  --nav-fond: #1F2B24;
+  --nav-texte-fort: #F6F2E7;
+  --nav-texte: rgba(246, 242, 231, 0.62);
+  --nav-separateur: rgba(246, 242, 231, 0.12);
+  --nav-actif-fond: rgba(246, 242, 231, 0.08);
+}
+* { box-sizing: border-box; }
+.mise-en-page {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  min-height: 100vh;
+}
+.contenu { min-width: 0; }
+.barre-laterale {
+  background: var(--nav-fond);
+  color: var(--nav-texte-fort);
+  padding: 32px 22px;
+  position: sticky;
+  top: 0;
+  align-self: start;
+  height: 100vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.barre-laterale .marque {
+  font-family: var(--police-titre);
+  font-weight: 600;
+  font-size: 1.5rem;
+  margin: 0 0 40px 0;
+}
+.nav-liste {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  visibility: hidden;
+}
+.nav-item,
+.nav-item:visited {
+  padding: 10px 12px;
+  border-radius: var(--r-petit);
+  font-size: 0.92rem;
+  color: var(--nav-texte);
+  text-decoration: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.nav-item:hover { color: var(--nav-texte-fort); background: var(--nav-actif-fond); }
+.nav-item.actif {
+  background: var(--nav-actif-fond);
+  color: var(--nav-texte-fort);
+  font-weight: 600;
+}
+.lettre-i { position: relative; display: inline-block; line-height: 1; }
+.point-i-marque {
+  position: absolute;
+  width: 0.13em;
+  height: 0.13em;
+  border-radius: 50%;
+  background: var(--ocre, #C98A3E);
+  left: 50%;
+  top: 0.16em;
+  transform: translateX(-50%);
+}
+.nav-deconnexion {
+  background: none;
+  border: none;
+  border-top: 1px solid var(--nav-separateur);
+  color: var(--nav-texte);
+  text-align: left;
+  padding: 14px 12px 4px 12px;
+  font-size: 0.86rem;
+  font-family: var(--police-corps);
+  cursor: pointer;
+}
+.nav-deconnexion:hover { color: var(--nav-texte-fort); }
+
+/* Rail fermé par défaut : ui.js le montre seulement après filtrage par rôle. */
 .nav-liste { visibility: hidden; }
-/* Même règle que les trente écrans métier : sous 780 px le rail cède la
-   place au tiroir de mobile.js. Ces deux pages ne la portaient pas et
-   gardaient le rail du bureau sur un téléphone. */
-@media (max-width: 780px) { .nav-liste { display: none; } }
+
+@media (max-width: 780px) {
+  .mise-en-page { display: block; }
+  .barre-laterale {
+    position: relative;
+    height: auto;
+    padding: 18px 22px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .barre-laterale .marque { margin: 0; }
+  .nav-liste { display: none; }
+  .nav-deconnexion { border-top: none; padding: 8px 12px; }
+}
 </style>
 </head>
 <body>

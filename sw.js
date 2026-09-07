@@ -61,8 +61,11 @@
          sans jamais mettre en cache les réponses authentifiées de l'API.
    v66 : le Support charge directement la base du thème et possède une coque
          de secours ; ce changement doit remplacer immédiatement l'ancienne
-         page brute encore présente dans certains caches PWA. */
-const VERSION='ardoise-v66';
+         page brute encore présente dans certains caches PWA.
+   v67 : Abonnements reçoit le même garde-fou visuel et entre explicitement
+         dans la coquille précachée afin que son écran de renouvellement ne
+         puisse plus rester avec un rail incomplet après une mise à jour. */
+const VERSION='ardoise-v67';
 const CACHE_COQUILLE=`${VERSION}-coquille`;
 const COQUILLE=[
   './','connexion.html','changer-mot-de-passe.html','dashboard-directeur.html',
@@ -75,7 +78,7 @@ const COQUILLE=[
   'apercu-bulletin-primaire.html','apercu-bulletin-secondaire.html',
   'apercu-bulletin-terminale.html','apercu-bulletin-semestre.html',
   'mon-profil.html','messages.html','site-public.html','discipline.html','cours.html',
-  'support.html','support-page.js','support-abonnements.css',
+  'abonnements.html','support.html','support-page.js','support-abonnements.css',
   'archives.html','rapports.html','super-admin.html','theme.css','theme-base.css','ui.css','mobile.css',
   'mobile.js','theme.js','ui.js','session.js','abonnements-page.js','acces-presences.js','filtre-cycle.js',
   'evenements-types.js',

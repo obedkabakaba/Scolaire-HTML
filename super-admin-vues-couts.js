@@ -40,7 +40,7 @@
     { cle: 'fournisseur', libelle: 'Fournisseur', valeur: s.fournisseur },
     { cle: 'categorie', libelle: 'Catégorie', type: 'liste', valeur: s.categorie || 'autre',
       options: CATEGORIES_SERVICE },
-    { cle: 'plan', libelle: 'Formule souscrite', valeur: s.plan, exemple: 'Ex. Pro, Team, Starter' },
+    { cle: 'plan', libelle: 'Formule souscrite', valeur: s.plan, exemple: 'Ex. Pro, Team, Business' },
     { cle: 'cout_mensuel', libelle: 'Coût par période facturée', type: 'nombre', min: 0, valeur: s.cout_mensuel ?? 0,
       aide: 'Le montant qui apparaît sur la facture, pour la fréquence choisie ci-dessous.' },
     { cle: 'devise', libelle: 'Devise', valeur: s.devise || 'USD', longueurMax: 8 },

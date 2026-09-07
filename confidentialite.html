@@ -20,11 +20,9 @@
   * { box-sizing: border-box; }
   body { margin: 0; font-family: var(--police-corps); color: var(--texte); background: var(--craie); line-height: 1.68; }
   .contenant { max-width: 760px; margin: 0 auto; padding: 0 22px; }
-
   header { background: var(--ardoise); color: var(--craie); padding: 44px 0 40px 0; }
   header h1 { font-family: var(--police-titre); font-weight: 600; font-size: 2rem; margin: 0 0 8px 0; }
   header p { margin: 0; color: rgba(246,242,231,0.72); }
-
   main { padding: 40px 0 70px 0; }
   h2 { font-family: var(--police-titre); font-weight: 600; font-size: 1.28rem; margin: 38px 0 12px 0; }
   h2:first-of-type { margin-top: 0; }
@@ -33,7 +31,6 @@
   ul { margin: 0 0 16px 0; padding-left: 22px; }
   li { margin-bottom: 7px; }
   a { color: var(--encre); }
-
   .encadre { background: var(--craie-2); border: 1px solid var(--bordure); border-left: 3px solid var(--ocre); border-radius: 0 10px 10px 0; padding: 18px 22px; margin: 22px 0; }
   .encadre p:last-child { margin-bottom: 0; }
   table { width: 100%; border-collapse: collapse; font-size: 0.92rem; margin: 16px 0 22px 0; }
@@ -41,10 +38,8 @@
   td { padding: 11px 10px; border-bottom: 1px solid var(--bordure); vertical-align: top; }
   .conteneur-tableau { overflow-x: auto; }
   .conteneur-tableau table { min-width: 520px; }
-
   footer { border-top: 1px solid var(--bordure); padding: 26px 0 46px 0; color: var(--texte-att); font-size: 0.86rem; }
   footer a { color: var(--encre); }
-
   /* -------------------------------------------------------------------------
      ÉCRAN ÉTROIT
 
@@ -64,7 +59,6 @@
     header { padding: 30px 0 26px 0; }
     main { padding: 26px 0 48px 0; }
     .encadre { padding: 14px 16px; }
-
     /* Le tableau garde sa géométrie et devient défilable dans son cadre. */
     table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch;
             white-space: nowrap; }
@@ -73,7 +67,6 @@
 <link rel="stylesheet" href="mobile.css" />
 </head>
 <body>
-
 <header>
   <div class="contenant">
     <h1>Politique de confidentialité</h1>
@@ -81,9 +74,7 @@
     <p style="margin-top:6px; font-size:0.88rem;">Dernière mise à jour : juillet 2026</p>
   </div>
 </header>
-
 <main class="contenant">
-
   <div class="encadre">
     <p>
       Ardoise traite des données concernant des enfants mineurs. Nous avons choisi d'expliquer
@@ -91,11 +82,10 @@
       de nous abriter derrière des formules générales.
     </p>
   </div>
-
   <h2>1. Qui est responsable des données</h2>
   <p>
     Ardoise est édité par <strong>Obed Kabakaba</strong>, à Kinshasa, République démocratique du Congo.
-    Contact : <a href="mailto:contact@ardoise.cd">contact@ardoise.cd</a>.
+    Contact : <a href="mailto:myardoise@gmail.com">myardoise@gmail.com</a>.
   </p>
   <p>
     Une distinction est essentielle. <strong>Chaque école reste responsable des données de ses élèves.</strong>
@@ -103,46 +93,20 @@
     sous-traitant technique : nous hébergeons et traitons ces données pour le compte de l'école,
     selon ses instructions, et nous ne les utilisons jamais à nos propres fins.
   </p>
-
   <h2>2. Quelles données sont traitées</h2>
   <div class="conteneur-tableau">
     <table>
       <thead><tr><th>Catégorie</th><th>Données</th><th>Pourquoi</th></tr></thead>
       <tbody>
-        <tr>
-          <td>Élèves</td>
-          <td>Nom, postnom, prénom, sexe, date de naissance, matricule, photo, classe, adresse, téléphone</td>
-          <td>Tenir le registre scolaire et produire les bulletins</td>
-        </tr>
-        <tr>
-          <td>Scolarité</td>
-          <td>Notes, bulletins, présences, faits disciplinaires, résultats de fin d'année</td>
-          <td>Assurer le suivi pédagogique, obligation propre à l'établissement</td>
-        </tr>
-        <tr>
-          <td>Responsables</td>
-          <td>Nom, téléphone, adresse électronique</td>
-          <td>Communiquer avec la famille et donner accès aux résultats</td>
-        </tr>
-        <tr>
-          <td>Personnel</td>
-          <td>Nom, adresse électronique, téléphone, photo, rôle, mot de passe chiffré</td>
-          <td>Ouvrir les accès et tracer les actions</td>
-        </tr>
-        <tr>
-          <td>Frais scolaires</td>
-          <td>Montants dus et versés</td>
-          <td>Suivi comptable de l'établissement</td>
-        </tr>
-        <tr>
-          <td>Journal technique</td>
-          <td>Connexions, actions sensibles, adresse IP</td>
-          <td>Sécurité et résolution d'incidents</td>
-        </tr>
+        <tr><td>Élèves</td><td>Nom, postnom, prénom, sexe, date de naissance, matricule, photo, classe, adresse, téléphone</td><td>Tenir le registre scolaire et produire les bulletins</td></tr>
+        <tr><td>Scolarité</td><td>Notes, bulletins, présences, faits disciplinaires, résultats de fin d'année</td><td>Assurer le suivi pédagogique, obligation propre à l'établissement</td></tr>
+        <tr><td>Responsables</td><td>Nom, téléphone, adresse électronique</td><td>Communiquer avec la famille et donner accès aux résultats</td></tr>
+        <tr><td>Personnel</td><td>Nom, adresse électronique, téléphone, photo, rôle, mot de passe chiffré</td><td>Ouvrir les accès et tracer les actions</td></tr>
+        <tr><td>Frais scolaires</td><td>Montants dus et versés</td><td>Suivi comptable de l'établissement</td></tr>
+        <tr><td>Journal technique</td><td>Connexions, actions sensibles, adresse IP</td><td>Sécurité et résolution d'incidents</td></tr>
       </tbody>
     </table>
   </div>
-
   <h2>3. Ce que nous ne faisons pas</h2>
   <ul>
     <li>Nous ne vendons, ne louons et n'échangeons aucune donnée.</li>
@@ -150,98 +114,60 @@
     <li>Nous n'utilisons pas les données d'une école pour entraîner un modèle d'intelligence artificielle.</li>
     <li>Une école ne voit jamais les données d'une autre : l'isolement est appliqué par la base de données elle-même, pas seulement par le code applicatif.</li>
   </ul>
-
   <h2>4. Intelligence artificielle</h2>
   <p>
     Certaines fonctions — propositions d'appréciations de bulletin, repérage d'élèves en difficulté,
     aide à la rédaction, assistant WhatsApp — s'appuient sur un modèle de langage fourni par
     <strong>Anthropic</strong>.
   </p>
-  <div class="encadre">
-    <p>
-      <strong>Les noms des élèves ne sont pas transmis.</strong> Avant tout envoi, les identités sont
+  <div class="encadre"><p><strong>Les noms des élèves ne sont pas transmis.</strong> Avant tout envoi, les identités sont
       remplacées par des étiquettes neutres (« Élève 1 », « Élève 2 »). Le modèle reçoit des chiffres
       et des situations, jamais des personnes identifiées. Les vrais noms sont réassociés sur notre
-      serveur, après la réponse.
-    </p>
-  </div>
-  <p>
-    Le modèle ne calcule aucune note, aucune moyenne et aucun classement : ces valeurs sont produites
+      serveur, après la réponse.</p></div>
+  <p>Le modèle ne calcule aucune note, aucune moyenne et aucun classement : ces valeurs sont produites
     par la plateforme, et le modèle se contente de les mettre en mots. Toute proposition écrite par
-    l'assistant est relue et validée par un membre du personnel avant d'être enregistrée.
-  </p>
-  <p>
-    Les données envoyées ne sont pas utilisées pour entraîner les modèles d'Anthropic.
-  </p>
-
+    l'assistant est relue et validée par un membre du personnel avant d'être enregistrée.</p>
+  <p>Les données envoyées ne sont pas utilisées pour entraîner les modèles d'Anthropic.</p>
   <h2>5. WhatsApp</h2>
-  <p>
-    Le numéro de téléphone enregistré sur la fiche de l'élève — ou sur celle d'un membre du personnel —
-    sert à deux usages distincts. Dans les deux cas, le numéro, authentifié par WhatsApp, sert d'identité.
-  </p>
-
+  <p>Le numéro de téléphone enregistré sur la fiche de l'élève — ou sur celle d'un membre du personnel —
+    sert à deux usages distincts. Dans les deux cas, le numéro, authentifié par WhatsApp, sert d'identité.</p>
   <h3>5.1 Les questions posées à l'école</h3>
-  <p>
-    Les familles et le personnel dont le numéro est enregistré peuvent interroger l'école via WhatsApp.
-  </p>
+  <p>Les familles et le personnel dont le numéro est enregistré peuvent interroger l'école via WhatsApp.</p>
   <ul>
     <li>Un numéro inconnu ne reçoit aucune donnée scolaire.</li>
     <li>Un parent n'accède qu'aux enfants rattachés à son numéro, et à aucun autre élève.</li>
-    <li>Lorsque des enfants sont inscrits dans deux écoles utilisant la plateforme, le même numéro
-        vaut pour les deux, et chaque école ne voit que les échanges qui la concernent.</li>
+    <li>Lorsque des enfants sont inscrits dans deux écoles utilisant la plateforme, le même numéro vaut pour les deux, et chaque école ne voit que les échanges qui la concernent.</li>
     <li>Seuls les bulletins déjà signés par l'école sont communiqués.</li>
     <li>Les échanges sont conservés pour permettre à l'école de les consulter, avec le numéro partiellement masqué.</li>
   </ul>
-
   <h3>5.2 Les messages envoyés par l'école</h3>
-  <p>
-    L'école peut également écrire la première à ce numéro : convocations, annonces, rappels. Ces envois
+  <p>L'école peut également écrire la première à ce numéro : convocations, annonces, rappels. Ces envois
     sont décidés par l'établissement, jamais par la plateforme, et sont consignés dans son historique.
     Hors des vingt-quatre heures qui suivent un message de la famille, WhatsApp n'autorise qu'un format
-    de message approuvé à l'avance : le nom de l'école, l'objet, puis le texte qu'elle a rédigé.
-  </p>
-  <p>
-    <strong>Comment ne plus être joint par ce canal.</strong> Ne pas écrire ne suffit plus, puisque
+    de message approuvé à l'avance : le nom de l'école, l'objet, puis le texte qu'elle a rédigé.</p>
+  <p><strong>Comment ne plus être joint par ce canal.</strong> Ne pas écrire ne suffit plus, puisque
     l'école peut prendre l'initiative. Une famille qui ne souhaite pas être jointe par WhatsApp
     demande à l'école de retirer son numéro de la fiche de son enfant, ou bloque le numéro de
     l'établissement depuis son téléphone. Retirer le numéro ferme aussi l'accès aux questions
-    décrites en 5.1.
-  </p>
-  <p>
-    Les messages transitent, dans les deux sens, par l'infrastructure de <strong>Meta Platforms</strong>,
-    soumise à ses propres conditions.
-  </p>
-
+    décrites en 5.1.</p>
+  <p>Les messages transitent, dans les deux sens, par l'infrastructure de <strong>Meta Platforms</strong>, soumise à ses propres conditions.</p>
   <h2>6. Page publique de l'école</h2>
-  <p>
-    Chaque école peut publier une page de présentation. Elle seule décide de son contenu et du moment
-    de sa publication ; par défaut, aucune page n'est visible.
-  </p>
-  <p>
-    La consultation des résultats par les familles exige le matricule <em>et</em> un code d'accès remis
+  <p>Chaque école peut publier une page de présentation. Elle seule décide de son contenu et du moment
+    de sa publication ; par défaut, aucune page n'est visible.</p>
+  <p>La consultation des résultats par les familles exige le matricule <em>et</em> un code d'accès remis
     par l'établissement. Le nombre de tentatives est limité, et le message d'erreur est identique quelle
-    que soit la cause — de sorte qu'il soit impossible de deviner si un matricule existe.
-  </p>
-
+    que soit la cause — de sorte qu'il soit impossible de deviner si un matricule existe.</p>
   <h2>7. Sous-traitants techniques</h2>
-  <div class="conteneur-tableau">
-    <table>
-      <thead><tr><th>Prestataire</th><th>Rôle</th></tr></thead>
-      <tbody>
-        <tr><td>Supabase</td><td>Base de données et stockage des fichiers</td></tr>
-        <tr><td>Render</td><td>Hébergement du serveur applicatif</td></tr>
-        <tr><td>GitHub Pages</td><td>Diffusion des pages de l'interface</td></tr>
-        <tr><td>Anthropic</td><td>Modèle de langage des fonctions assistées</td></tr>
-        <tr><td>Meta Platforms</td><td>Acheminement des messages WhatsApp</td></tr>
-        <tr><td>Resend</td><td>Envoi des courriers électroniques</td></tr>
-      </tbody>
-    </table>
-  </div>
-  <p>
-    Ces prestataires hébergent des serveurs hors de la République démocratique du Congo. Aucun d'eux
-    n'est autorisé à exploiter les données à d'autres fins que le service rendu.
-  </p>
-
+  <div class="conteneur-tableau"><table><thead><tr><th>Prestataire</th><th>Rôle</th></tr></thead><tbody>
+    <tr><td>Supabase</td><td>Base de données et stockage des fichiers</td></tr>
+    <tr><td>Render</td><td>Hébergement du serveur applicatif</td></tr>
+    <tr><td>GitHub Pages</td><td>Diffusion des pages de l'interface</td></tr>
+    <tr><td>Anthropic</td><td>Modèle de langage des fonctions assistées</td></tr>
+    <tr><td>Meta Platforms</td><td>Acheminement des messages WhatsApp</td></tr>
+    <tr><td>Resend</td><td>Envoi des courriers électroniques</td></tr>
+  </tbody></table></div>
+  <p>Ces prestataires hébergent des serveurs hors de la République démocratique du Congo. Aucun d'eux
+    n'est autorisé à exploiter les données à d'autres fins que le service rendu.</p>
   <h2>8. Sécurité</h2>
   <ul>
     <li>Les échanges sont chiffrés en transit (HTTPS).</li>
@@ -250,57 +176,34 @@
     <li>L'isolement entre écoles est imposé au niveau de la base de données.</li>
     <li>Les actions sensibles sont journalisées.</li>
   </ul>
-
   <h2>9. Durée de conservation</h2>
-  <p>
-    Les données scolaires sont conservées tant que l'école utilise la plateforme, puis archivées en
+  <p>Les données scolaires sont conservées tant que l'école utilise la plateforme, puis archivées en
     lecture seule à la clôture de chaque année. Cette conservation longue est volontaire : une école
-    doit pouvoir délivrer un duplicata de bulletin des années après le départ d'un élève.
-  </p>
-  <p>
-    En cas de résiliation, l'école peut demander l'export complet de ses données, puis leur suppression.
-    La suppression intervient dans les trente jours suivant la demande.
-  </p>
-
+    doit pouvoir délivrer un duplicata de bulletin des années après le départ d'un élève.</p>
+  <p>En cas de résiliation, l'école peut demander l'export complet de ses données, puis leur suppression.
+    La suppression intervient dans les trente jours suivant la demande.</p>
   <h2>10. Droits des personnes</h2>
-  <p>
-    Toute personne concernée — élève majeur, parent, membre du personnel — peut demander l'accès à ses
-    données, leur rectification, leur suppression, ou s'opposer à un traitement.
-  </p>
-  <p>
-    <strong>Adressez-vous d'abord à l'établissement</strong>, qui décide de ces données et peut agir
+  <p>Toute personne concernée — élève majeur, parent, membre du personnel — peut demander l'accès à ses
+    données, leur rectification, leur suppression, ou s'opposer à un traitement.</p>
+  <p><strong>Adressez-vous d'abord à l'établissement</strong>, qui décide de ces données et peut agir
     directement dans la plateforme. Si l'école ne peut pas répondre, écrivez-nous à
-    <a href="mailto:contact@ardoise.cd">contact@ardoise.cd</a> ; nous répondons sous trente jours.
-  </p>
-
+    <a href="mailto:myardoise@gmail.com">myardoise@gmail.com</a> ; nous répondons sous trente jours.</p>
   <h2>11. Données concernant des mineurs</h2>
-  <p>
-    L'essentiel des données traitées concerne des enfants. Elles sont saisies par l'établissement dans
-    le cadre de sa mission éducative, et non collectées directement auprès des élèves.
-  </p>
-  <p>
-    Les élèves ne disposent pas de compte sur la plateforme. Les photographies publiées sur la page
+  <p>L'essentiel des données traitées concerne des enfants. Elles sont saisies par l'établissement dans
+    le cadre de sa mission éducative, et non collectées directement auprès des élèves.</p>
+  <p>Les élèves ne disposent pas de compte sur la plateforme. Les photographies publiées sur la page
     publique d'une école relèvent de la responsabilité de celle-ci, qui doit s'assurer de disposer de
-    l'accord des parents.
-  </p>
-
+    l'accord des parents.</p>
   <h2>12. Modifications</h2>
-  <p>
-    Cette politique peut évoluer. Toute modification substantielle sera signalée aux écoles clientes
-    avant son entrée en vigueur.
-  </p>
-
+  <p>Cette politique peut évoluer. Toute modification substantielle sera signalée aux écoles clientes
+    avant son entrée en vigueur.</p>
 </main>
-
 <footer>
   <div class="contenant">
-    <p>
-      <a href="index.html">Retour au site</a> · <a href="mailto:contact@ardoise.cd">contact@ardoise.cd</a>
-    </p>
+    <p><a href="index.html">Retour au site</a> · <a href="mailto:myardoise@gmail.com">myardoise@gmail.com</a></p>
     <p style="margin:0;">Ardoise — la gestion scolaire simplifiée. Kinshasa, République démocratique du Congo.</p>
   </div>
 </footer>
-
 <!-- Didacticiel d'installation : bouton d'aide contextuel, partagé par toutes les pages. -->
 <script src="didacticiel.js" data-ecran="Confidentialite"></script>
 <script src="mobile.js"></script>

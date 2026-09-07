@@ -64,8 +64,10 @@
          page brute encore présente dans certains caches PWA.
    v67 : Abonnements reçoit le même garde-fou visuel et entre explicitement
          dans la coquille précachée afin que son écran de renouvellement ne
-         puisse plus rester avec un rail incomplet après une mise à jour. */
-const VERSION='ardoise-v67';
+         puisse plus rester avec un rail incomplet après une mise à jour.
+   v68 : recharge ui.css pour afficher le coin supérieur gauche arrondi du
+         panneau principal sur les applications déjà installées. */
+const VERSION='ardoise-v68';
 const CACHE_COQUILLE=`${VERSION}-coquille`;
 const COQUILLE=[
   './','connexion.html','changer-mot-de-passe.html','dashboard-directeur.html',

@@ -70,7 +70,8 @@
    v69 : l'arrondi intérieur suit le rail déployé ou replié et reste visible
          pendant le défilement du contenu. Yohali et son alias Kivu
          conservent leur apparence d'origine, sans cet ajout. */
-const VERSION='ardoise-v71';
+const VERSION='ardoise-v72';
+/* v72 : noms affichés Yohali (perspective) et Teranga (yohali), préférences conservées. */
 /* v71 : Perspective, illustrations architecturales et papeterie par rubrique. */
 /* v70 : Élan, navigation horizontale et illustrations locales par rubrique. */
 const CACHE_COQUILLE=`${VERSION}-coquille`;

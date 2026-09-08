@@ -31,13 +31,13 @@
 })();
 
 window.ARDOISE_THEMES = [
-  { cle: 'perspective', nom: 'Perspective', description: 'Crème, vert profond et terre cuite. Architecture, papeterie et navigation horizontale.', apercu: { fond: '#FAF9F5', surface: '#FDFCF9', accent: '#2E5040', barre: '#EAE8DC', texte: '#203C32' } },
+  { cle: 'perspective', nom: 'Yohali', description: 'Crème, vert profond et terre cuite. Architecture, papeterie et navigation horizontale.', apercu: { fond: '#FAF9F5', surface: '#FDFCF9', accent: '#2E5040', barre: '#EAE8DC', texte: '#203C32' } },
   { cle: 'elan', nom: 'Élan', description: 'Bleu, menthe et soleil. Navigation horizontale, dessins par rubrique et accueil avec agenda.', apercu: { fond: '#FFFDF8', surface: '#FFFFFF', accent: '#2165B5', barre: '#FFF2BF', texte: '#142D46' } },
   { cle: 'studio', nom: 'Studio', description: 'Rail sombre déplaçable, accent indigo, cartes sans bordure. Le plus proche des outils professionnels actuels.', apercu: { fond: '#F4F6FB', surface: '#FFFFFF', accent: '#4C5FD5', barre: '#1B2559', texte: '#101828' } },
   { cle: 'ardoise', nom: 'Ardoise', description: 'Craie et ocre, titres en serif. Chaleureux et identitaire.', apercu: { fond: '#F6F2E7', surface: '#FBF9F3', accent: '#C98A3E', barre: '#1F2B24', texte: '#1F2B24' } },
   { cle: 'pure', nom: 'Pure', description: 'Fond blanc, angles nets, aucune ombre. Sobre et dense.', apercu: { fond: '#FFFFFF', surface: '#FFFFFF', accent: '#2563A8', barre: '#FAFAFA', texte: '#14171A' } },
   { cle: 'nuit', nom: 'Nuit', description: 'Thème sombre, reposant en soirée et économe en batterie.', apercu: { fond: '#12171A', surface: '#1B2226', accent: '#5FB08C', barre: '#0C1013', texte: '#E8EDE9' } },
-  { cle: 'yohali', nom: 'Yohali', description: 'Terracotta et vert profond, grands rayons. Expressif.', apercu: { fond: '#FDF6EE', surface: '#FFFFFF', accent: '#C2542F', barre: '#1E5B4F', texte: '#26201B' } }
+  { cle: 'yohali', nom: 'Teranga', description: 'Terracotta et vert profond, grands rayons. Expressif.', apercu: { fond: '#FDF6EE', surface: '#FFFFFF', accent: '#C2542F', barre: '#1E5B4F', texte: '#26201B' } }
 ];
 window.ARDOISE_THEME_DEFAUT = 'ardoise';
 

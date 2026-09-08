@@ -25,7 +25,13 @@
     'html[data-theme="ardoise"]{--texte-att:#686F66;--vert-ok:#467052;}',
     'html[data-theme="ardoise"] .valider{color:var(--texte-sombre,#1F2B24)!important;}',
     'html[data-theme="ardoise"] #sa-identite{color:var(--nav-texte-fort,#F6F2E7)!important;}',
-    'html[data-theme="ardoise"] .sa-muet,html[data-theme="ardoise"] .sa-carte-detail{opacity:1!important;color:var(--texte-att,#686F66)!important;}'
+    'html[data-theme="ardoise"] .sa-muet,html[data-theme="ardoise"] .sa-carte-detail{opacity:1!important;color:var(--texte-att,#686F66)!important;}',
+    /* #6A461D sur le fond réel #F2E8D6 de la bannière = ~6,9:1.
+       Le précédent var(--ocre) (#C98A3E) ne donnait que 2,4:1 et faisait
+       échouer axe dans le Browser E2E du Directeur. La règle est volontairement
+       cross-theme : cette bannière exprime un état fonctionnel, pas une couleur
+       d'accent décorative, et doit rester lisible quel que soit le thème. */
+    '.banniere-abonnement.info{color:#6A461D!important;}'
   ].join('');
   (document.head || document.documentElement).appendChild(style);
 })();

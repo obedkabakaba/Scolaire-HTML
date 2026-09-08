@@ -1,0 +1,166 @@
+/* Perspective — apparence optionnelle. Les règles restent toutes sous data-theme. */
+html[data-theme="perspective"][data-theme="perspective"] {
+  --ardoise:#203C32; --ardoise-2:#314D40; --craie:#FAF9F5; --craie-2:#FDFCF9;
+  --ocre:#2E5040; --ocre-dark:#203C32; --ocre-clair:#BDC5AE; --encre:#2E5040;
+  --rouge:#B44232; --vert-ok:#267960; --texte-sombre:#203C32; --texte-att:#6C7367;
+  --bordure:#D8D0BF; --ligne:#D8D0BF;
+  --nav-fond:#FDFCF9; --nav-texte-fort:#203C32; --nav-texte:#465C4E;
+  --nav-texte-faible:#737D70; --nav-actif-fond:#EAE8DC; --nav-separateur:#D8D0BF;
+  --police-titre:Georgia,'Times New Roman',serif; --police-corps:'Inter',system-ui,sans-serif;
+  --r-carte:14px; --r-bouton:8px; --r-petit:5px; --r-pilule:24px;
+  --ombre-carte:0 3px 14px #203C3205; --ombre-flottante:0 16px 44px #203C3220;
+  --perspective-surface:#EAE8DC; --perspective-bleu:#ECEEE7; --perspective-menthe:#E6E9DE;
+  color-scheme:light;
+}
+html[data-theme="perspective"][data-theme="perspective"] body { background:var(--craie); color:var(--texte-sombre); }
+html[data-theme="perspective"][data-theme="perspective"] :is(h1,h2,h3) { font-family:var(--police-titre); letter-spacing:-.035em; }
+html[data-theme="perspective"][data-theme="perspective"] :is(.carte-stat,.widget,.panneau,.carte-section,.carte-config,.carte-cours,.carte-recap,.conteneur-tableau,.fiche,.sa-carte,.sa-panneau) {
+  border-radius:var(--r-carte); box-shadow:var(--ombre-carte);
+}
+html[data-theme="perspective"][data-theme="perspective"] :is(.bouton-principal,.valider) { background:var(--ocre); color:#fff; }
+html[data-theme="perspective"][data-theme="perspective"] :is(a,button,input,select,textarea):focus-visible { outline:3px solid #2E5040; outline-offset:3px; }
+html[data-theme="perspective"][data-theme="perspective"] :is(th,.sa-table th) { background:#F0F1E9; color:var(--texte-sombre); }
+html[data-theme="perspective"][data-theme="perspective"] :is(.bouton,.bouton-principal,.tuile) { transition:background .18s,border-color .18s,box-shadow .18s; }
+html[data-theme="perspective"][data-theme="perspective"] :is(.tuile:hover,.carte-theme:hover) { box-shadow:0 5px 18px #203C3212; }
+/* Les ajouts DOM sont invisibles dès qu'on quitte Perspective. */
+.perspective-only { display:none; }
+/* La vignette appartient uniquement au nouveau choix, quel que soit le thème actif. */
+.carte-theme[data-theme="perspective"] .apercu { flex-direction:column; }
+.carte-theme[data-theme="perspective"] .apercu .bande { width:100%; height:12px; flex:none; }
+html[data-theme="perspective"][data-theme="perspective"] .perspective-only { display:block; }
+html[data-theme="perspective"][data-theme="perspective"] .perspective-hero {
+  position:relative; background:var(--perspective-surface); border:1px solid #C9C3AD;
+  border-radius:14px; padding:32px 36px; min-height:220px; margin:0 0 24px;
+  display:flex; align-items:center; gap:16px; isolation:isolate;
+}
+html[data-theme="perspective"][data-theme="perspective"] .perspective-hero-copy { flex:1; min-width:0; position:relative; z-index:1; }
+html[data-theme="perspective"][data-theme="perspective"] .perspective-kicker { font-size:.7rem; letter-spacing:.12em; font-weight:700; text-transform:uppercase; color:#65705F; margin:0 0 12px; }
+html[data-theme="perspective"][data-theme="perspective"] .perspective-hero h2 { font-size:clamp(1.65rem,2.5vw,2.9rem); line-height:1.1; max-width:580px; margin:0 0 14px; font-weight:500; }
+html[data-theme="perspective"][data-theme="perspective"] .perspective-hero p:not(.perspective-kicker) { font-size:.94rem; line-height:1.6; margin:0; max-width:540px; }
+html[data-theme="perspective"][data-theme="perspective"] .perspective-hero-art { width:31%; max-width:300px; aspect-ratio:4/3; object-fit:contain; flex:none; }
+html[data-theme="perspective"][data-theme="perspective"] .perspective-home-hero .perspective-hero-art {
+  width:36%; max-width:320px; mix-blend-mode:multiply;
+  mask-image:radial-gradient(ellipse 74% 70% at center,#000 55%,transparent 100%);
+}
+html[data-theme="perspective"][data-theme="perspective"] .perspective-date { display:inline-flex; margin-top:18px; border:1px solid #C9C3AD; border-radius:24px; padding:7px 13px; font-size:.76rem; background:#FDFCF965; }
+html[data-theme="perspective"][data-theme="perspective"] .entete-page { margin-bottom:20px; }
+html[data-theme="perspective"][data-theme="perspective"] .entete-page h1 { font-size:1.5rem; }
+html[data-theme="perspective"][data-theme="perspective"] .perspective-aside { display:grid; gap:20px; align-content:start; }
+html[data-theme="perspective"][data-theme="perspective"] :is(.perspective-agenda,.perspective-help) { background:#fff; border:1px solid var(--bordure); border-radius:14px; padding:22px; }
+html[data-theme="perspective"][data-theme="perspective"] .perspective-aside h2 { font-size:1.15rem; margin:0 0 18px; }
+html[data-theme="perspective"][data-theme="perspective"] .perspective-month { display:flex; justify-content:space-between; align-items:center; gap:4px; margin-bottom:12px; }
+html[data-theme="perspective"][data-theme="perspective"] .perspective-month button { border:0; background:transparent; color:var(--texte-sombre); width:36px; height:36px; border-radius:10px; font-size:1.2rem; cursor:pointer; }
+html[data-theme="perspective"][data-theme="perspective"] .perspective-month button:hover { background:var(--perspective-bleu); }
+html[data-theme="perspective"][data-theme="perspective"] .perspective-month strong { font-size:.86rem; text-transform:capitalize; text-align:center; }
+html[data-theme="perspective"][data-theme="perspective"] .perspective-calendar { border-collapse:separate; border-spacing:2px 5px; table-layout:fixed; width:100%; min-width:0; }
+html[data-theme="perspective"][data-theme="perspective"] .perspective-calendar th { background:transparent; font-size:.65rem; font-weight:500; padding:5px 0; }
+html[data-theme="perspective"][data-theme="perspective"] .perspective-calendar td { text-align:center; font-size:.76rem; padding:7px 0; border:0; }
+html[data-theme="perspective"][data-theme="perspective"] .perspective-calendar .perspective-today { background:#2E5040; border-radius:50%; font-weight:700; color:#203C32; }
+html[data-theme="perspective"][data-theme="perspective"] .perspective-calendar .perspective-other { color:#7A8175; }
+html[data-theme="perspective"][data-theme="perspective"] .perspective-calendar-caption { font-size:.75rem; color:var(--texte-att); margin:8px 0 0; line-height:1.5; }
+html[data-theme="perspective"][data-theme="perspective"] .perspective-events { border-top:1px solid var(--bordure); padding-top:16px; margin-top:16px; }
+html[data-theme="perspective"][data-theme="perspective"] .perspective-events .panneau { border:0; padding:0; box-shadow:none; }
+html[data-theme="perspective"][data-theme="perspective"] .perspective-events h3 { font-size:.86rem; }
+html[data-theme="perspective"][data-theme="perspective"] .perspective-home .perspective-events-original { display:none; }
+html[data-theme="perspective"][data-theme="perspective"] .perspective-help { background:linear-gradient(140deg,#fff,#ECECDF); }
+html[data-theme="perspective"][data-theme="perspective"] .perspective-help img { width:100%; max-height:150px; object-fit:contain; }
+html[data-theme="perspective"][data-theme="perspective"] .perspective-help button { width:100%; padding:12px; border:0; background:var(--ocre); color:#fff; font:inherit; border-radius:24px; cursor:pointer; }
+html[data-theme="perspective"][data-theme="perspective"] .perspective-help p { color:var(--texte-att); font-size:.8rem; line-height:1.5; }
+html[data-theme="perspective"][data-theme="perspective"] .perspective-profile-link { display:inline-flex; align-items:center; gap:8px; color:var(--texte-sombre); padding:9px 12px; text-decoration:none; font-size:.8rem; white-space:nowrap; border:1px solid var(--bordure); border-radius:22px; }
+html[data-theme="perspective"][data-theme="perspective"] .perspective-profile-link::before { content:""; width:10px; height:10px; background:#2E5040; border-radius:50%; }
+html[data-theme="perspective"][data-theme="perspective"] .lanceur { padding:18px; border:1px solid var(--bordure); border-radius:20px; background:#fff; }
+html[data-theme="perspective"][data-theme="perspective"] .lanceur-entete h2 { font-size:1.1rem; }
+html[data-theme="perspective"][data-theme="perspective"] .lanceur-grille { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); overflow:visible; gap:12px; }
+html[data-theme="perspective"][data-theme="perspective"] .lanceur-grille > .tuile { min-width:0; display:flex; flex-direction:column; align-items:flex-start; justify-content:flex-end; gap:8px; min-height:150px; background:#E8EADD; padding:14px; border:1px solid #C9CEBC; border-radius:15px; }
+html[data-theme="perspective"][data-theme="perspective"] .tuile:nth-child(2n) { background:#E9ECE8; border-color:#CDD3CB; }
+html[data-theme="perspective"][data-theme="perspective"] .tuile:nth-child(3n) { background:#F1E8DE; border-color:#DCCBBB; }
+html[data-theme="perspective"][data-theme="perspective"] .tuile:nth-child(4n) { background:#F0E9D8; border-color:#D7CAB0; }
+html[data-theme="perspective"][data-theme="perspective"] .tuile .textes { display:flex; flex-direction:column; gap:3px; }
+html[data-theme="perspective"][data-theme="perspective"] .tuile .nom { font-size:.83rem; line-height:1.4; }
+html[data-theme="perspective"][data-theme="perspective"] .tuile .desc { font-size:.68rem; line-height:1.4; color:#65705F; }
+html[data-theme="perspective"][data-theme="perspective"] .tuile .jeton { display:none; }
+html[data-theme="perspective"][data-theme="perspective"] .perspective-tile-art { width:100%; height:72px; object-fit:contain; align-self:center; }
+html[data-theme="perspective"][data-theme="perspective"] .carte-stat { position:relative; background:#fff; padding:22px; min-width:0; }
+html[data-theme="perspective"][data-theme="perspective"] .carte-stat .valeur { font-family:var(--police-corps); color:#2E5040; font-weight:500; }
+html[data-theme="perspective"][data-theme="perspective"] .perspective-stat-art { position:absolute; right:12px; top:14px; width:54px; height:54px; opacity:.65; pointer-events:none; }
+html[data-theme="perspective"][data-theme="perspective"] .perspective-stat-art ~ * { position:relative; }
+html[data-theme="perspective"][data-theme="perspective"] .carte-stat:has(.perspective-stat-art) { padding-right:64px; }
+html[data-theme="perspective"][data-theme="perspective"] .tiroir-ligne .perspective-tile-art { width:56px; height:48px; flex:none; }
+html[data-theme="perspective"][data-theme="perspective"] .tiroir-ligne:has(.perspective-tile-art) .jeton-menu { display:none; }
+html[data-theme="perspective"][data-theme="perspective"] .perspective-layout-note { font-size:.8rem; line-height:1.5; background:var(--perspective-bleu); padding:12px 16px; border-radius:12px; }
+/* Bureau : le même rail et ses écouteurs deviennent la barre horizontale.
+   Les préférences de position/compacité des autres thèmes ne sont pas écrites. */
+@media screen and (min-width:781px) {
+  html[data-theme="perspective"][data-theme="perspective"] .mise-en-page { grid-template-columns:minmax(0,1fr); grid-template-rows:auto 1fr; }
+  html[data-theme="perspective"][data-theme="perspective"] .mise-en-page > .barre-laterale {
+    order:0; width:auto; height:auto; min-height:76px; margin:0; padding:12px 28px;
+    top:0; bottom:auto; position:sticky; align-self:start; z-index:60;
+    display:flex; flex-direction:row; align-items:center; gap:20px; overflow:visible;
+    background:#fff; border:0; border-bottom:1px solid var(--bordure); border-radius:0;
+    box-shadow:none; transition:none;
+  }
+  html[data-theme="perspective"][data-theme="perspective"][data-nav-compact] .mise-en-page > .barre-laterale:is(:hover,:focus-within) { width:auto; margin-left:0; box-shadow:none; }
+  html[data-theme="perspective"][data-theme="perspective"] .mise-en-page > .barre-laterale::after { content:none; }
+  html[data-theme="perspective"][data-theme="perspective"] .barre-laterale > div:has(> .nav-liste) { display:flex; flex:1; gap:26px; align-items:center; min-width:0; }
+  html[data-theme="perspective"][data-theme="perspective"] .barre-laterale .marque { font-size:1.65rem; margin:0; text-align:left; white-space:nowrap; overflow:visible; flex:none; }
+  html[data-theme="perspective"][data-theme="perspective"] .barre-laterale .nav-liste { display:flex; flex-direction:row; align-items:center; gap:4px; flex-wrap:nowrap; overflow-x:auto; scrollbar-width:thin; min-width:0; }
+  html[data-theme="perspective"][data-theme="perspective"] .barre-laterale .nav-item { padding:11px 10px; gap:7px; white-space:nowrap; font-size:.78rem; border-radius:10px; }
+  html[data-theme="perspective"][data-theme="perspective"] .barre-laterale .nav-libelle { opacity:1; }
+  html[data-theme="perspective"][data-theme="perspective"] .barre-laterale .nav-item.actif { background:#EAE8DC; box-shadow:inset 0 -3px #2E5040; }
+  html[data-theme="perspective"][data-theme="perspective"] .barre-laterale .nav-deconnexion { display:flex; border:0; font-size:0; padding:10px; margin:0; width:40px; flex:none; }
+  html[data-theme="perspective"][data-theme="perspective"] .barre-laterale .nav-deconnexion::before { content:"↗"; font-size:20px; background:none; width:20px; height:20px; mask:none; -webkit-mask:none; }
+  html[data-theme="perspective"][data-theme="perspective"] .barre-laterale .nav-deconnexion::after { content:none; }
+  html[data-theme="perspective"][data-theme="perspective"] .mise-en-page > .contenu { order:1; padding:28px 32px 60px; width:100%; max-width:1680px; margin:0 auto; }
+  html[data-theme="perspective"][data-theme="perspective"] .contenu.perspective-home { display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:20px 24px; align-items:start; }
+  html[data-theme="perspective"][data-theme="perspective"] .perspective-home > * { grid-column:1; margin-bottom:0; }
+  html[data-theme="perspective"][data-theme="perspective"] .perspective-home > .entete-page { grid-column:1/-1; grid-row:1; }
+  html[data-theme="perspective"][data-theme="perspective"] .perspective-home > .perspective-hero { grid-row:2; }
+  html[data-theme="perspective"][data-theme="perspective"] .perspective-home > .grille-stats { grid-row:3; grid-template-columns:repeat(auto-fit,minmax(135px,1fr)); gap:12px; }
+  html[data-theme="perspective"][data-theme="perspective"] .perspective-home > #lanceur { grid-row:4; }
+  html[data-theme="perspective"][data-theme="perspective"] .perspective-home > .perspective-aside { grid-column:2; grid-row:2 / span 4; }
+  html[data-theme="perspective"][data-theme="perspective"] .perspective-home > .banniere-abonnement { grid-column:1/-1; }
+  html[data-theme="perspective"][data-theme="perspective"] .perspective-home > .grille-basse { grid-template-columns:1fr; }
+}
+@media screen and (min-width:781px) and (max-width:1100px) {
+  html[data-theme="perspective"][data-theme="perspective"] .contenu.perspective-home { grid-template-columns:minmax(0,1fr); }
+  html[data-theme="perspective"][data-theme="perspective"] .perspective-home > .perspective-aside { grid-column:1; grid-row:auto; grid-template-columns:1fr 1fr; }
+  html[data-theme="perspective"][data-theme="perspective"] .barre-laterale { gap:10px; }
+  html[data-theme="perspective"][data-theme="perspective"] .perspective-profile-link { font-size:0; padding:12px; }
+}
+@media screen and (max-width:780px) {
+  html[data-theme="perspective"][data-theme="perspective"] .perspective-hero { padding:22px; min-height:0; gap:8px; }
+  html[data-theme="perspective"][data-theme="perspective"] .perspective-hero h2 { font-size:1.6rem; }
+  html[data-theme="perspective"][data-theme="perspective"] .perspective-hero-art { width:27%; }
+  html[data-theme="perspective"][data-theme="perspective"] .perspective-home-hero { flex-wrap:wrap; }
+  html[data-theme="perspective"][data-theme="perspective"] .perspective-home-hero .perspective-hero-art { width:100%; height:150px; max-width:none; }
+  html[data-theme="perspective"][data-theme="perspective"] .perspective-aside { margin:24px 0; }
+  html[data-theme="perspective"][data-theme="perspective"] .perspective-profile-link { display:none; }
+  html[data-theme="perspective"][data-theme="perspective"] .lanceur-grille { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  html[data-theme="perspective"][data-theme="perspective"] .perspective-calendar :is(thead,tbody,tr) { display:revert; }
+  html[data-theme="perspective"][data-theme="perspective"] .perspective-calendar :is(th,td) { display:table-cell; }
+}
+@media print {
+  html[data-theme="perspective"][data-theme="perspective"] .perspective-only { display:none!important; }
+  html[data-theme="perspective"][data-theme="perspective"] .contenu.perspective-home { display:block; }
+  html[data-theme="perspective"][data-theme="perspective"] .perspective-events-original { display:block!important; }
+}
+
+html[data-theme="perspective"][data-theme="perspective"] .carte-stat .valeur { white-space:nowrap; font-size:clamp(1.6rem,2.2vw,2.6rem); }
+html[data-theme="perspective"][data-theme="perspective"] .carte-stat .etiquette { text-transform:none; letter-spacing:0; font-size:.78rem; }
+html[data-theme="perspective"][data-theme="perspective"] .carte-stat .pictogramme { display:none; }
+
+/* Architecture éditoriale : lignes fines, aplats papier, titrage sérif. */
+html[data-theme="perspective"][data-theme="perspective"] .perspective-hero { background:linear-gradient(115deg,#EEEDDF,#F7F5EF); }
+html[data-theme="perspective"][data-theme="perspective"] .perspective-home-hero .perspective-hero-art { width:43%; max-width:400px; }
+html[data-theme="perspective"][data-theme="perspective"] .perspective-hero h2 { font-weight:400; letter-spacing:-.04em; }
+html[data-theme="perspective"][data-theme="perspective"] .carte-stat .valeur { font-family:var(--police-titre); }
+html[data-theme="perspective"][data-theme="perspective"] .perspective-calendar .perspective-today { color:#fff; }
+html[data-theme="perspective"][data-theme="perspective"] .barre-laterale .nav-item.actif { border-radius:0; background:transparent; }
+html[data-theme="perspective"][data-theme="perspective"] .lanceur-grille > .tuile { border-radius:9px; }
+html[data-theme="perspective"][data-theme="perspective"] .perspective-stat-art { opacity:.85; }
+@media screen and (min-width:1101px) {
+ html[data-theme="perspective"][data-theme="perspective"] .perspective-home-hero h2 { font-size:clamp(2.2rem,3.6vw,3.8rem); }
+}
+@media screen and (max-width:780px) {
+ html[data-theme="perspective"][data-theme="perspective"] .perspective-home-hero .perspective-hero-art { width:100%; max-width:none; height:180px; }
+}

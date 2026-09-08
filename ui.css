@@ -1490,7 +1490,7 @@ label:where(.case, .case-a-cocher, .champ-case, .interrupteur-controle) {
    son deploiement au survol/au clavier, et reste en haut pendant le defilement.
    Le decor fixe n'intercepte aucun clic et ne rogne aucun contenu. */
 @media screen and (min-width: 781px) {
-  html:not([data-theme="public"], [data-theme="yohali"], [data-theme="kivu"], [data-theme="elan"]):is([data-nav-position="gauche"], :not([data-nav-position])) .mise-en-page > .barre-laterale::after {
+  html:not([data-theme="public"], [data-theme="yohali"], [data-theme="kivu"], [data-theme="elan"], [data-theme="perspective"]):is([data-nav-position="gauche"], :not([data-nav-position])) .mise-en-page > .barre-laterale::after {
     content: "";
     position: fixed;
     top: 0;
@@ -1501,16 +1501,16 @@ label:where(.case, .case-a-cocher, .champ-case, .interrupteur-controle) {
     pointer-events: none;
     z-index: 41;
   }
-  html:not([data-theme="public"], [data-theme="yohali"], [data-theme="kivu"], [data-theme="elan"]):is([data-nav-position="gauche"], :not([data-nav-position]))[data-nav-compact="oui"] .mise-en-page > .barre-laterale::after {
+  html:not([data-theme="public"], [data-theme="yohali"], [data-theme="kivu"], [data-theme="elan"], [data-theme="perspective"]):is([data-nav-position="gauche"], :not([data-nav-position]))[data-nav-compact="oui"] .mise-en-page > .barre-laterale::after {
     left: 72px;
     transition: left 0.22s cubic-bezier(0.22, 0.61, 0.36, 1);
   }
-  html:not([data-theme="public"], [data-theme="yohali"], [data-theme="kivu"], [data-theme="elan"]):is([data-nav-position="gauche"], :not([data-nav-position]))[data-nav-compact="oui"] .mise-en-page > .barre-laterale:is(:hover, :focus-within)::after {
+  html:not([data-theme="public"], [data-theme="yohali"], [data-theme="kivu"], [data-theme="elan"], [data-theme="perspective"]):is([data-nav-position="gauche"], :not([data-nav-position]))[data-nav-compact="oui"] .mise-en-page > .barre-laterale:is(:hover, :focus-within)::after {
     left: 240px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  html:not([data-theme="public"], [data-theme="yohali"], [data-theme="kivu"], [data-theme="elan"]):is([data-nav-position="gauche"], :not([data-nav-position])) .mise-en-page > .barre-laterale::after {
+  html:not([data-theme="public"], [data-theme="yohali"], [data-theme="kivu"], [data-theme="elan"], [data-theme="perspective"]):is([data-nav-position="gauche"], :not([data-nav-position])) .mise-en-page > .barre-laterale::after {
     transition: none;
   }
 }

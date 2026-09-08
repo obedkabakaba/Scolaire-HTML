@@ -68,9 +68,10 @@
    v68 : recharge ui.css pour afficher le coin supérieur gauche arrondi du
          panneau principal sur les applications déjà installées.
    v69 : l'arrondi intérieur suit le rail déployé ou replié et reste visible
-         pendant le défilement du contenu. Yohali et son alias Kivu
-         conservent leur apparence d'origine, sans cet ajout. */
-const VERSION='ardoise-v71';
+         pendant le défilement du contenu. Terranga (clé interne yohali) et son
+         alias Kivu conservent leur apparence d'origine, sans cet ajout. */
+const VERSION='ardoise-v72';
+/* v72 : nouveaux noms d’apparence — Perspective devient Yohali, l’ancien Yohali devient Terranga. */
 /* v71 : Perspective, illustrations architecturales et papeterie par rubrique. */
 /* v70 : Élan, navigation horizontale et illustrations locales par rubrique. */
 const CACHE_COQUILLE=`${VERSION}-coquille`;

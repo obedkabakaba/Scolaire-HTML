@@ -64,7 +64,8 @@ test('le style Support reste relié aux variables du thème Ardoise', () => {
 });
 
 test('la nouvelle page Support est disponible dans la coquille PWA', () => {
-  assert.match(sw, /const VERSION='ardoise-v65'/);
+  const version = sw.match(/const VERSION='ardoise-v(\d+)'/);
+  assert.ok(version && Number(version[1]) >= 65, 'Le cache doit inclure la livraison du Support (v65 ou ultérieure).');
   for (const fichier of ['support.html', 'support-page.js', 'support-abonnements.css']) {
     assert.ok(sw.includes(`'${fichier}'`), `${fichier} doit être précaché`);
   }

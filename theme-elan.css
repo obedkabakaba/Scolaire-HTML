@@ -1,0 +1,150 @@
+/* Élan — apparence optionnelle. Les règles restent toutes sous data-theme. */
+html[data-theme="elan"][data-theme="elan"] {
+  --ardoise:#142D46; --ardoise-2:#20415C; --craie:#FFFDF8; --craie-2:#FFFFFF;
+  --ocre:#2165B5; --ocre-dark:#174D8B; --ocre-clair:#A9D3F1; --encre:#2165B5;
+  --rouge:#B44232; --vert-ok:#267960; --texte-sombre:#142D46; --texte-att:#586A78;
+  --bordure:#E5E2DA; --ligne:#E5E2DA;
+  --nav-fond:#FFFFFF; --nav-texte-fort:#142D46; --nav-texte:#40576A;
+  --nav-texte-faible:#647888; --nav-actif-fond:#FFF2BF; --nav-separateur:#E5E2DA;
+  --police-titre:'Inter',system-ui,sans-serif; --police-corps:'Inter',system-ui,sans-serif;
+  --r-carte:20px; --r-bouton:12px; --r-petit:9px; --r-pilule:24px;
+  --ombre-carte:0 3px 14px #18354B05; --ombre-flottante:0 16px 44px #18354B20;
+  --elan-surface:#FFF2BF; --elan-bleu:#E8F3FC; --elan-menthe:#E4F3EC;
+  color-scheme:light;
+}
+html[data-theme="elan"][data-theme="elan"] body { background:var(--craie); color:var(--texte-sombre); }
+html[data-theme="elan"][data-theme="elan"] :is(h1,h2,h3) { font-family:var(--police-titre); letter-spacing:-.035em; }
+html[data-theme="elan"][data-theme="elan"] :is(.carte-stat,.widget,.panneau,.carte-section,.carte-config,.carte-cours,.carte-recap,.conteneur-tableau,.fiche,.sa-carte,.sa-panneau) {
+  border-radius:var(--r-carte); box-shadow:var(--ombre-carte);
+}
+html[data-theme="elan"][data-theme="elan"] :is(.bouton-principal,.valider) { background:var(--ocre); color:#fff; }
+html[data-theme="elan"][data-theme="elan"] :is(a,button,input,select,textarea):focus-visible { outline:3px solid #2165B5; outline-offset:3px; }
+html[data-theme="elan"][data-theme="elan"] :is(th,.sa-table th) { background:#F3F7FA; color:var(--texte-sombre); }
+html[data-theme="elan"][data-theme="elan"] :is(.bouton,.bouton-principal,.tuile) { transition:background .18s,border-color .18s,box-shadow .18s; }
+html[data-theme="elan"][data-theme="elan"] :is(.tuile:hover,.carte-theme:hover) { box-shadow:0 5px 18px #18354B12; }
+/* Les ajouts DOM sont invisibles dès qu'on quitte Élan. */
+.elan-only { display:none; }
+/* La vignette appartient uniquement au nouveau choix, quel que soit le thème actif. */
+.carte-theme[data-theme="elan"] .apercu { flex-direction:column; }
+.carte-theme[data-theme="elan"] .apercu .bande { width:100%; height:12px; flex:none; }
+html[data-theme="elan"][data-theme="elan"] .elan-only { display:block; }
+html[data-theme="elan"][data-theme="elan"] .elan-hero {
+  position:relative; background:var(--elan-surface); border:1px solid #E9DFBB;
+  border-radius:24px; padding:32px 36px; min-height:220px; margin:0 0 24px;
+  display:flex; align-items:center; gap:16px; isolation:isolate;
+}
+html[data-theme="elan"][data-theme="elan"] .elan-hero-copy { flex:1; min-width:0; position:relative; z-index:1; }
+html[data-theme="elan"][data-theme="elan"] .elan-kicker { font-size:.7rem; letter-spacing:.12em; font-weight:700; text-transform:uppercase; color:#536574; margin:0 0 12px; }
+html[data-theme="elan"][data-theme="elan"] .elan-hero h2 { font-size:clamp(1.65rem,2.5vw,2.9rem); line-height:1.1; max-width:580px; margin:0 0 14px; font-weight:750; }
+html[data-theme="elan"][data-theme="elan"] .elan-hero p:not(.elan-kicker) { font-size:.94rem; line-height:1.6; margin:0; max-width:540px; }
+html[data-theme="elan"][data-theme="elan"] .elan-hero-art { width:31%; max-width:300px; aspect-ratio:4/3; object-fit:contain; flex:none; }
+html[data-theme="elan"][data-theme="elan"] .elan-home-hero .elan-hero-art {
+  width:36%; max-width:320px; mix-blend-mode:multiply;
+  mask-image:radial-gradient(ellipse 74% 70% at center,#000 55%,transparent 100%);
+}
+html[data-theme="elan"][data-theme="elan"] .elan-date { display:inline-flex; margin-top:18px; border:1px solid #D8CEA9; border-radius:24px; padding:7px 13px; font-size:.76rem; background:#FFFFFF65; }
+html[data-theme="elan"][data-theme="elan"] .entete-page { margin-bottom:20px; }
+html[data-theme="elan"][data-theme="elan"] .entete-page h1 { font-size:1.5rem; }
+html[data-theme="elan"][data-theme="elan"] .elan-aside { display:grid; gap:20px; align-content:start; }
+html[data-theme="elan"][data-theme="elan"] :is(.elan-agenda,.elan-help) { background:#fff; border:1px solid var(--bordure); border-radius:22px; padding:22px; }
+html[data-theme="elan"][data-theme="elan"] .elan-aside h2 { font-size:1.15rem; margin:0 0 18px; }
+html[data-theme="elan"][data-theme="elan"] .elan-month { display:flex; justify-content:space-between; align-items:center; gap:4px; margin-bottom:12px; }
+html[data-theme="elan"][data-theme="elan"] .elan-month button { border:0; background:transparent; color:var(--texte-sombre); width:36px; height:36px; border-radius:10px; font-size:1.2rem; cursor:pointer; }
+html[data-theme="elan"][data-theme="elan"] .elan-month button:hover { background:var(--elan-bleu); }
+html[data-theme="elan"][data-theme="elan"] .elan-month strong { font-size:.86rem; text-transform:capitalize; text-align:center; }
+html[data-theme="elan"][data-theme="elan"] .elan-calendar { border-collapse:separate; border-spacing:2px 5px; table-layout:fixed; width:100%; min-width:0; }
+html[data-theme="elan"][data-theme="elan"] .elan-calendar th { background:transparent; font-size:.65rem; font-weight:500; padding:5px 0; }
+html[data-theme="elan"][data-theme="elan"] .elan-calendar td { text-align:center; font-size:.76rem; padding:7px 0; border:0; }
+html[data-theme="elan"][data-theme="elan"] .elan-calendar .elan-today { background:#FFD65A; border-radius:50%; font-weight:700; color:#142D46; }
+html[data-theme="elan"][data-theme="elan"] .elan-calendar .elan-other { color:#788591; }
+html[data-theme="elan"][data-theme="elan"] .elan-calendar-caption { font-size:.75rem; color:var(--texte-att); margin:8px 0 0; line-height:1.5; }
+html[data-theme="elan"][data-theme="elan"] .elan-events { border-top:1px solid var(--bordure); padding-top:16px; margin-top:16px; }
+html[data-theme="elan"][data-theme="elan"] .elan-events .panneau { border:0; padding:0; box-shadow:none; }
+html[data-theme="elan"][data-theme="elan"] .elan-events h3 { font-size:.86rem; }
+html[data-theme="elan"][data-theme="elan"] .elan-home .elan-events-original { display:none; }
+html[data-theme="elan"][data-theme="elan"] .elan-help { background:linear-gradient(140deg,#fff,#F0F8FD); }
+html[data-theme="elan"][data-theme="elan"] .elan-help img { width:100%; max-height:150px; object-fit:contain; }
+html[data-theme="elan"][data-theme="elan"] .elan-help button { width:100%; padding:12px; border:0; background:var(--ocre); color:#fff; font:inherit; border-radius:24px; cursor:pointer; }
+html[data-theme="elan"][data-theme="elan"] .elan-help p { color:var(--texte-att); font-size:.8rem; line-height:1.5; }
+html[data-theme="elan"][data-theme="elan"] .elan-profile-link { display:inline-flex; align-items:center; gap:8px; color:var(--texte-sombre); padding:9px 12px; text-decoration:none; font-size:.8rem; white-space:nowrap; border:1px solid var(--bordure); border-radius:22px; }
+html[data-theme="elan"][data-theme="elan"] .elan-profile-link::before { content:""; width:10px; height:10px; background:#FFD65A; border-radius:50%; }
+html[data-theme="elan"][data-theme="elan"] .lanceur { padding:18px; border:1px solid var(--bordure); border-radius:20px; background:#fff; }
+html[data-theme="elan"][data-theme="elan"] .lanceur-entete h2 { font-size:1.1rem; }
+html[data-theme="elan"][data-theme="elan"] .lanceur-grille { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); overflow:visible; gap:12px; }
+html[data-theme="elan"][data-theme="elan"] .lanceur-grille > .tuile { min-width:0; display:flex; flex-direction:column; align-items:flex-start; justify-content:flex-end; gap:8px; min-height:150px; background:#E7F4EE; padding:14px; border:1px solid #D0E5DA; border-radius:15px; }
+html[data-theme="elan"][data-theme="elan"] .tuile:nth-child(2n) { background:#E6F1FC; border-color:#D2E3F4; }
+html[data-theme="elan"][data-theme="elan"] .tuile:nth-child(3n) { background:#FFEBDC; border-color:#F1DACA; }
+html[data-theme="elan"][data-theme="elan"] .tuile:nth-child(4n) { background:#FFF4CC; border-color:#EDDFAC; }
+html[data-theme="elan"][data-theme="elan"] .tuile .textes { display:flex; flex-direction:column; gap:3px; }
+html[data-theme="elan"][data-theme="elan"] .tuile .nom { font-size:.83rem; line-height:1.4; }
+html[data-theme="elan"][data-theme="elan"] .tuile .desc { font-size:.68rem; line-height:1.4; color:#536574; }
+html[data-theme="elan"][data-theme="elan"] .tuile .jeton { display:none; }
+html[data-theme="elan"][data-theme="elan"] .elan-tile-art { width:100%; height:72px; object-fit:contain; align-self:center; }
+html[data-theme="elan"][data-theme="elan"] .carte-stat { position:relative; background:#fff; padding:22px; min-width:0; }
+html[data-theme="elan"][data-theme="elan"] .carte-stat .valeur { font-family:var(--police-corps); color:#2165B5; font-weight:750; }
+html[data-theme="elan"][data-theme="elan"] .elan-stat-art { position:absolute; right:12px; top:14px; width:54px; height:54px; opacity:.65; pointer-events:none; }
+html[data-theme="elan"][data-theme="elan"] .elan-stat-art ~ * { position:relative; }
+html[data-theme="elan"][data-theme="elan"] .carte-stat:has(.elan-stat-art) { padding-right:64px; }
+html[data-theme="elan"][data-theme="elan"] .tiroir-ligne .elan-tile-art { width:56px; height:48px; flex:none; }
+html[data-theme="elan"][data-theme="elan"] .tiroir-ligne:has(.elan-tile-art) .jeton-menu { display:none; }
+html[data-theme="elan"][data-theme="elan"] .elan-layout-note { font-size:.8rem; line-height:1.5; background:var(--elan-bleu); padding:12px 16px; border-radius:12px; }
+/* Bureau : le même rail et ses écouteurs deviennent la barre horizontale.
+   Les préférences de position/compacité des autres thèmes ne sont pas écrites. */
+@media screen and (min-width:781px) {
+  html[data-theme="elan"][data-theme="elan"] .mise-en-page { grid-template-columns:minmax(0,1fr); grid-template-rows:auto 1fr; }
+  html[data-theme="elan"][data-theme="elan"] .mise-en-page > .barre-laterale {
+    order:0; width:auto; height:auto; min-height:76px; margin:0; padding:12px 28px;
+    top:0; bottom:auto; position:sticky; align-self:start; z-index:60;
+    display:flex; flex-direction:row; align-items:center; gap:20px; overflow:visible;
+    background:#fff; border:0; border-bottom:1px solid var(--bordure); border-radius:0;
+    box-shadow:none; transition:none;
+  }
+  html[data-theme="elan"][data-theme="elan"][data-nav-compact] .mise-en-page > .barre-laterale:is(:hover,:focus-within) { width:auto; margin-left:0; box-shadow:none; }
+  html[data-theme="elan"][data-theme="elan"] .mise-en-page > .barre-laterale::after { content:none; }
+  html[data-theme="elan"][data-theme="elan"] .barre-laterale > div:has(> .nav-liste) { display:flex; flex:1; gap:26px; align-items:center; min-width:0; }
+  html[data-theme="elan"][data-theme="elan"] .barre-laterale .marque { font-size:1.65rem; margin:0; text-align:left; white-space:nowrap; overflow:visible; flex:none; }
+  html[data-theme="elan"][data-theme="elan"] .barre-laterale .nav-liste { display:flex; flex-direction:row; align-items:center; gap:4px; flex-wrap:nowrap; overflow-x:auto; scrollbar-width:thin; min-width:0; }
+  html[data-theme="elan"][data-theme="elan"] .barre-laterale .nav-item { padding:11px 10px; gap:7px; white-space:nowrap; font-size:.78rem; border-radius:10px; }
+  html[data-theme="elan"][data-theme="elan"] .barre-laterale .nav-libelle { opacity:1; }
+  html[data-theme="elan"][data-theme="elan"] .barre-laterale .nav-item.actif { background:#FFF2BF; box-shadow:inset 0 -3px #F4C83E; }
+  html[data-theme="elan"][data-theme="elan"] .barre-laterale .nav-deconnexion { display:flex; border:0; font-size:0; padding:10px; margin:0; width:40px; flex:none; }
+  html[data-theme="elan"][data-theme="elan"] .barre-laterale .nav-deconnexion::before { content:"↗"; font-size:20px; background:none; width:20px; height:20px; mask:none; -webkit-mask:none; }
+  html[data-theme="elan"][data-theme="elan"] .barre-laterale .nav-deconnexion::after { content:none; }
+  html[data-theme="elan"][data-theme="elan"] .mise-en-page > .contenu { order:1; padding:28px 32px 60px; width:100%; max-width:1680px; margin:0 auto; }
+  html[data-theme="elan"][data-theme="elan"] .contenu.elan-home { display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:20px 24px; align-items:start; }
+  html[data-theme="elan"][data-theme="elan"] .elan-home > * { grid-column:1; margin-bottom:0; }
+  html[data-theme="elan"][data-theme="elan"] .elan-home > .entete-page { grid-column:1/-1; grid-row:1; }
+  html[data-theme="elan"][data-theme="elan"] .elan-home > .elan-hero { grid-row:2; }
+  html[data-theme="elan"][data-theme="elan"] .elan-home > .grille-stats { grid-row:3; grid-template-columns:repeat(auto-fit,minmax(135px,1fr)); gap:12px; }
+  html[data-theme="elan"][data-theme="elan"] .elan-home > #lanceur { grid-row:4; }
+  html[data-theme="elan"][data-theme="elan"] .elan-home > .elan-aside { grid-column:2; grid-row:2 / span 4; }
+  html[data-theme="elan"][data-theme="elan"] .elan-home > .banniere-abonnement { grid-column:1/-1; }
+  html[data-theme="elan"][data-theme="elan"] .elan-home > .grille-basse { grid-template-columns:1fr; }
+}
+@media screen and (min-width:781px) and (max-width:1100px) {
+  html[data-theme="elan"][data-theme="elan"] .contenu.elan-home { grid-template-columns:minmax(0,1fr); }
+  html[data-theme="elan"][data-theme="elan"] .elan-home > .elan-aside { grid-column:1; grid-row:auto; grid-template-columns:1fr 1fr; }
+  html[data-theme="elan"][data-theme="elan"] .barre-laterale { gap:10px; }
+  html[data-theme="elan"][data-theme="elan"] .elan-profile-link { font-size:0; padding:12px; }
+}
+@media screen and (max-width:780px) {
+  html[data-theme="elan"][data-theme="elan"] .elan-hero { padding:22px; min-height:0; gap:8px; }
+  html[data-theme="elan"][data-theme="elan"] .elan-hero h2 { font-size:1.6rem; }
+  html[data-theme="elan"][data-theme="elan"] .elan-hero-art { width:27%; }
+  html[data-theme="elan"][data-theme="elan"] .elan-home-hero { flex-wrap:wrap; }
+  html[data-theme="elan"][data-theme="elan"] .elan-home-hero .elan-hero-art { width:100%; height:150px; max-width:none; }
+  html[data-theme="elan"][data-theme="elan"] .elan-aside { margin:24px 0; }
+  html[data-theme="elan"][data-theme="elan"] .elan-profile-link { display:none; }
+  html[data-theme="elan"][data-theme="elan"] .lanceur-grille { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  html[data-theme="elan"][data-theme="elan"] .elan-calendar :is(thead,tbody,tr) { display:revert; }
+  html[data-theme="elan"][data-theme="elan"] .elan-calendar :is(th,td) { display:table-cell; }
+}
+@media print {
+  html[data-theme="elan"][data-theme="elan"] .elan-only { display:none!important; }
+  html[data-theme="elan"][data-theme="elan"] .contenu.elan-home { display:block; }
+  html[data-theme="elan"][data-theme="elan"] .elan-events-original { display:block!important; }
+}
+
+html[data-theme="elan"][data-theme="elan"] .carte-stat .valeur { white-space:nowrap; font-size:clamp(1.6rem,2.2vw,2.6rem); }
+html[data-theme="elan"][data-theme="elan"] .carte-stat .etiquette { text-transform:none; letter-spacing:0; font-size:.78rem; }
+html[data-theme="elan"][data-theme="elan"] .carte-stat .pictogramme { display:none; }

@@ -70,9 +70,43 @@
    v69 : l'arrondi intérieur suit le rail déployé ou replié et reste visible
          pendant le défilement du contenu. Yohali et son alias Kivu
          conservent leur apparence d'origine, sans cet ajout. */
-const VERSION='ardoise-v69';
+const VERSION='ardoise-v70';
+/* v70 : Élan, navigation horizontale et illustrations locales par rubrique. */
 const CACHE_COQUILLE=`${VERSION}-coquille`;
 const COQUILLE=[
+  'theme-elan.css',
+  'theme-elan.js',
+  'public/elan/abonnement.svg',
+  'public/elan/accueil.webp',
+  'public/elan/agenda.svg',
+  'public/elan/aide.svg',
+  'public/elan/annee.svg',
+  'public/elan/annuel.svg',
+  'public/elan/archives.svg',
+  'public/elan/bulletin.svg',
+  'public/elan/cahier.svg',
+  'public/elan/classe.svg',
+  'public/elan/comptabilite.svg',
+  'public/elan/discipline.svg',
+  'public/elan/dossiers.svg',
+  'public/elan/eleves.svg',
+  'public/elan/equipe.svg',
+  'public/elan/horaire.svg',
+  'public/elan/inscriptions.svg',
+  'public/elan/journal.svg',
+  'public/elan/livres.svg',
+  'public/elan/messages.svg',
+  'public/elan/modeles.svg',
+  'public/elan/notes.svg',
+  'public/elan/orientation.svg',
+  'public/elan/paiements.svg',
+  'public/elan/pilotage.svg',
+  'public/elan/presences.svg',
+  'public/elan/profil.svg',
+  'public/elan/rapports.svg',
+  'public/elan/reglages.svg',
+  'public/elan/repechage.svg',
+  'public/elan/site.svg',
   './','connexion.html','changer-mot-de-passe.html','dashboard-directeur.html',
   'espace-professeur.html','espace-titulaire.html','espace-secretaire.html',
   'presences.html','emploi-du-temps.html','notes.html','bulletins.html',

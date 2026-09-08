@@ -70,10 +70,44 @@
    v69 : l'arrondi intérieur suit le rail déployé ou replié et reste visible
          pendant le défilement du contenu. Yohali et son alias Kivu
          conservent leur apparence d'origine, sans cet ajout. */
-const VERSION='ardoise-v70';
+const VERSION='ardoise-v71';
+/* v71 : Perspective, illustrations architecturales et papeterie par rubrique. */
 /* v70 : Élan, navigation horizontale et illustrations locales par rubrique. */
 const CACHE_COQUILLE=`${VERSION}-coquille`;
 const COQUILLE=[
+  'theme-perspective.css',
+  'theme-perspective.js',
+  'public/perspective/abonnement.svg',
+  'public/perspective/accueil.webp',
+  'public/perspective/agenda.svg',
+  'public/perspective/aide.svg',
+  'public/perspective/annee.svg',
+  'public/perspective/annuel.svg',
+  'public/perspective/archives.svg',
+  'public/perspective/bulletin.svg',
+  'public/perspective/cahier.svg',
+  'public/perspective/classe.svg',
+  'public/perspective/comptabilite.svg',
+  'public/perspective/discipline.svg',
+  'public/perspective/dossiers.svg',
+  'public/perspective/eleves.svg',
+  'public/perspective/equipe.svg',
+  'public/perspective/horaire.svg',
+  'public/perspective/inscriptions.svg',
+  'public/perspective/journal.svg',
+  'public/perspective/livres.svg',
+  'public/perspective/messages.svg',
+  'public/perspective/modeles.svg',
+  'public/perspective/notes.svg',
+  'public/perspective/orientation.svg',
+  'public/perspective/paiements.svg',
+  'public/perspective/pilotage.svg',
+  'public/perspective/presences.svg',
+  'public/perspective/profil.svg',
+  'public/perspective/rapports.svg',
+  'public/perspective/reglages.svg',
+  'public/perspective/repechage.svg',
+  'public/perspective/site.svg',
   'theme-elan.css',
   'theme-elan.js',
   'public/elan/abonnement.svg',

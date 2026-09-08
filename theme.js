@@ -31,6 +31,7 @@
 })();
 
 window.ARDOISE_THEMES = [
+  { cle: 'perspective', nom: 'Perspective', description: 'Crème, vert profond et terre cuite. Architecture, papeterie et navigation horizontale.', apercu: { fond: '#FAF9F5', surface: '#FDFCF9', accent: '#2E5040', barre: '#EAE8DC', texte: '#203C32' } },
   { cle: 'elan', nom: 'Élan', description: 'Bleu, menthe et soleil. Navigation horizontale, dessins par rubrique et accueil avec agenda.', apercu: { fond: '#FFFDF8', surface: '#FFFFFF', accent: '#2165B5', barre: '#FFF2BF', texte: '#142D46' } },
   { cle: 'studio', nom: 'Studio', description: 'Rail sombre déplaçable, accent indigo, cartes sans bordure. Le plus proche des outils professionnels actuels.', apercu: { fond: '#F4F6FB', surface: '#FFFFFF', accent: '#4C5FD5', barre: '#1B2559', texte: '#101828' } },
   { cle: 'ardoise', nom: 'Ardoise', description: 'Craie et ocre, titres en serif. Chaleureux et identitaire.', apercu: { fond: '#F6F2E7', surface: '#FBF9F3', accent: '#C98A3E', barre: '#1F2B24', texte: '#1F2B24' } },
@@ -52,6 +53,13 @@ window.ARDOISE_THEME_DEFAUT = 'ardoise';
     try { localStorage.setItem(CLE_STOCKAGE, theme); if (sessionStorage.getItem('ardoise_refresh_token')) sessionStorage.setItem(CLE_STOCKAGE, theme); } catch (e) {}
     try { if (theme === 'studio' && !localStorage.getItem('ardoise_nav_compact')) localStorage.setItem('ardoise_nav_compact', 'oui'); if (window.ArdoiseDisposition) ArdoiseDisposition.appliquer(); } catch (e) {}
     document.dispatchEvent(new CustomEvent('ardoise:theme-change', { detail: { theme: theme } }));
+    if (theme === 'perspective' && !document.querySelector('script[data-ardoise-perspective]')) {
+      var scriptPerspective = document.createElement('script');
+      scriptPerspective.src = 'theme-perspective.js';
+      scriptPerspective.dataset.ardoisePerspective = '';
+      scriptPerspective.onerror = function () { scriptPerspective.remove(); };
+      document.head.appendChild(scriptPerspective);
+    }
     if (theme === 'elan' && !document.querySelector('script[data-ardoise-elan]')) {
       var scriptElan = document.createElement('script');
       scriptElan.src = 'theme-elan.js';

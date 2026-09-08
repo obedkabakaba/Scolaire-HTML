@@ -1,4 +1,4 @@
-/* Perspective : décoration progressive, sans requête métier ni réécriture des écrans. */
+/* Yohali : décoration progressive, sans requête métier ni réécriture des écrans. */
 (function () {
   'use strict';
   var html = document.documentElement;
@@ -60,9 +60,9 @@
     if (contenu.querySelector(':scope > .perspective-hero')) return;
     var scene = scenePour(page), home = /^(dashboard-directeur|espace-)/.test(page);
     var hero = node('section','perspective-only perspective-hero' + (home ? ' perspective-home-hero' : ''));
-    hero.setAttribute('aria-label','Votre espace Perspective');
+    hero.setAttribute('aria-label','Votre espace Yohali');
     var copy = node('div','perspective-hero-copy');
-    copy.append(node('p','perspective-kicker','Ardoise · Perspective'),node('h2','',scene[1]),node('p','',scene[2]));
+    copy.append(node('p','perspective-kicker','Ardoise · Yohali'),node('h2','',scene[1]),node('p','',scene[2]));
     if (home) copy.append(node('time','perspective-date',new Intl.DateTimeFormat('fr',{day:'numeric',month:'long',year:'numeric'}).format(new Date())));
     hero.append(copy,art(home ? 'accueil' : scene[0],'perspective-hero-art'));
     var entete = contenu.querySelector(':scope > .entete-page, :scope > .sa-entete');
@@ -176,7 +176,7 @@
     }
     if(page==='mon-profil' && !document.querySelector('.perspective-layout-note')) {
       var grille=document.getElementById('grille-themes');
-      if(grille)grille.after(node('p','perspective-only perspective-layout-note','Perspective utilise une navigation en haut sur ordinateur. Vos préférences de barre latérale sont conservées pour les autres apparences.'));
+      if(grille)grille.after(node('p','perspective-only perspective-layout-note','Yohali utilise une navigation en haut sur ordinateur. Vos préférences de barre latérale sont conservées pour les autres apparences.'));
     }
     if(page==='super-admin'){
       decorerAdmin();

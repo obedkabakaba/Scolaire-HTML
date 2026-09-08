@@ -127,14 +127,14 @@ const server=http.createServer((req,res)=>{
  });
  await op.waitForFunction(()=>navigator.serviceWorker.controller!==null);
  const keys=await op.evaluate(()=>caches.keys());
- assert.ok(keys.includes('ardoise-v71-coquille'));assert.ok(!keys.includes('ardoise-v69-coquille'));
+ assert.ok(keys.includes('ardoise-v72-coquille'));assert.ok(!keys.includes('ardoise-v69-coquille'));
  await offline.setOffline(true);
  const offlineFiles=await op.evaluate(async()=>Promise.all(
    ['theme-elan.css','theme-elan.js','public/elan/accueil.webp','public/elan/aide.svg'].map(async p=>{
      const response=await fetch(p);return response.ok&&(await response.arrayBuffer()).byteLength>0;
    })));
  assert.ok(offlineFiles.every(Boolean));await offline.close();
- console.log('PWA v69 → v71 and offline Élan assets passed.');
+ console.log('PWA v69 → v72 and offline Élan assets passed.');
  await browser.close();server.closeAllConnections();server.close();
  assert.deepEqual(failures,[]);
 })().catch(e=>{console.error(e);server.close();process.exit(1)});

@@ -138,14 +138,14 @@ const server=http.createServer((req,res)=>{
  });
  await op.waitForFunction(()=>navigator.serviceWorker.controller!==null);
  const keys=await op.evaluate(()=>caches.keys());
- assert.ok(keys.includes('ardoise-v71-coquille'));assert.ok(!keys.includes('ardoise-v70-coquille'));
+ assert.ok(keys.includes('ardoise-v72-coquille'));assert.ok(!keys.includes('ardoise-v70-coquille'));
  await offline.setOffline(true);
  const offlineFiles=await op.evaluate(async()=>Promise.all(
    ['theme-perspective.css','theme-perspective.js','public/perspective/accueil.webp','public/perspective/aide.svg'].map(async p=>{
      const response=await fetch(p);return response.ok&&(await response.arrayBuffer()).byteLength>0;
    })));
  assert.ok(offlineFiles.every(Boolean));await offline.close();
- console.log('PWA v70 → v71 and offline Perspective assets passed.');
+ console.log('PWA v70 → v72 and offline Perspective assets passed.');
  await browser.close();server.closeAllConnections();server.close();
  assert.deepEqual(failures,[]);
 })().catch(e=>{console.error(e);server.close();process.exit(1)});

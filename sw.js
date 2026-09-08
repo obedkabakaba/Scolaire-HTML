@@ -70,7 +70,8 @@
    v69 : l'arrondi intérieur suit le rail déployé ou replié et reste visible
          pendant le défilement du contenu. Terranga (clé interne yohali) et son
          alias Kivu conservent leur apparence d'origine, sans cet ajout. */
-const VERSION='ardoise-v72';
+const VERSION='ardoise-v73';
+/* v73 : contraste WCAG de la bannière d’abonnement du Directeur. */
 /* v72 : nouveaux noms d’apparence — Perspective devient Yohali, l’ancien Yohali devient Terranga. */
 /* v71 : Perspective, illustrations architecturales et papeterie par rubrique. */
 /* v70 : Élan, navigation horizontale et illustrations locales par rubrique. */

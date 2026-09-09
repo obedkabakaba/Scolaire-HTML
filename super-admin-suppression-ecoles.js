@@ -1,6 +1,9 @@
 /* Ardoise — suppression définitive d'une école depuis le Super Admin.
    Chargé à la demande depuis la palette de commandes : aucune donnée sensible
-   n'est embarquée, et la vraie autorisation reste imposée par le backend. */
+   n'est embarquée, et la vraie autorisation reste imposée par le backend.
+
+   Trois barrières se cumulent : rôle Super Admin, ré-authentification récente
+   par mot de passe, puis phrase exacte `SUPPRIMER <code-école>`. */
 
 export async function ouvrirSuppressionEcole() {
   if (!window.SA || !SA.session || !SA.session.connecte()) return;

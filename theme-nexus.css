@@ -1,0 +1,138 @@
+/* Nexus : tous les styles sont limités au thème, les autres préférences restent intactes. */
+.nx-only { display:none; }
+html[data-theme="nexus"][data-theme="nexus"] {
+ --ardoise:#0D1214; --ardoise-2:#192126; --craie:#101517; --craie-2:#182024;
+ --ocre:#C9F65F; --ocre-dark:#ACDB42; --ocre-clair:#E1FF9D; --encre:#91CDD9;
+ --rouge:#FF9B91; --vert-ok:#B6E568; --texte-sombre:#F0F4EE; --texte-att:#ABB8BB;
+ --bordure:#3E4D52; --ligne:#344248; --nav-fond:#101719; --nav-texte-fort:#F0F4EE;
+ --nav-texte:#C2CDD0; --nav-texte-faible:#A0AFB2; --nav-actif-fond:#C9F65F14; --nav-separateur:#344248;
+ --police-titre:'Inter',system-ui,sans-serif; --police-corps:'Inter',system-ui,sans-serif;
+ --r-carte:10px; --r-bouton:7px; --r-petit:5px; --r-pilule:12px;
+ --ombre-carte:0 4px 20px #00000012; --ombre-flottante:0 16px 50px #00000070;
+ color-scheme:dark;
+}
+html[data-theme="nexus"][data-theme="nexus"] body { background:#101517; color:var(--texte-sombre); }
+html[data-theme="nexus"][data-theme="nexus"] :is(h1,h2,h3) { font-family:var(--police-titre); letter-spacing:-.035em; }
+html[data-theme="nexus"][data-theme="nexus"] :is(input,select,textarea) { background:#11191C; color:#F0F4EE; border-color:#526268; }
+html[data-theme="nexus"][data-theme="nexus"] :is(input,textarea)::placeholder { color:#A1B1B5; opacity:1; }
+html[data-theme="nexus"][data-theme="nexus"] :is(a,button,input,select,textarea):focus-visible { outline:3px solid #C9F65F; outline-offset:4px; }
+html[data-theme="nexus"][data-theme="nexus"] :is(.bouton-principal,.valider) { background:#C9F65F; color:#142009; border:1px solid #C9F65F; }
+html[data-theme="nexus"][data-theme="nexus"] :is(.ard-di-bouton,.ard-di-btn-principal,.ard-di-marque,.ard-di-pastille,.pilule.actif,.onglet-sec.actif) { background:#C9F65F; color:#142009; border-color:#C9F65F; }
+html[data-theme="nexus"][data-theme="nexus"] .onglet.actif { color:#C9F65F; }
+html[data-theme="nexus"][data-theme="nexus"] .ard-di-bouton { bottom:94px; }
+html[data-theme="nexus"][data-theme="nexus"] :is(th,.sa-table th) { background:#202B2F; color:#E9F1ED; }
+html[data-theme="nexus"][data-theme="nexus"] :is(.carte-stat,.widget,.panneau,.carte-section,.carte-config,.carte-cours,.carte-recap,.conteneur-tableau,.fiche,.sa-carte,.sa-panneau) { border-radius:10px; box-shadow:var(--ombre-carte); }
+html[data-theme="nexus"][data-theme="nexus"] :is(.carte-stat,.panneau,.widget) { border-color:var(--bordure); }
+html[data-theme="nexus"][data-theme="nexus"] .carte-stat .valeur { color:#C9F65F; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-only { display:block; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-workspace { margin-bottom:28px; }
+/* Le panneau fixe doit rester ancré à la fenêtre, même après l'animation d'entrée commune. */
+html[data-theme="nexus"][data-theme="nexus"] .nx-content { animation:none; transform:none; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-workspace svg,
+html[data-theme="nexus"][data-theme="nexus"] .nx-dock svg { width:24px; height:24px; fill:none; stroke:currentColor; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; flex:none; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-eyebrow { color:#B6C4C5; font:500 .68rem/1.6 var(--police-mono); text-transform:uppercase; letter-spacing:.14em; margin:0 0 10px; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-muted { color:#ABB8BB; font-size:.8rem; line-height:1.6; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-main > h2 { font-size:1.7rem; margin:0 0 8px; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-main > .nx-muted { margin:0 0 24px; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-map {
+ position:relative; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); grid-template-rows:repeat(4,102px); gap:12px 24px;
+ padding:22px; border-radius:16px; isolation:isolate;
+ background:radial-gradient(ellipse at center,#C9F65F09,transparent 70%),url('public/nexus/reseau.svg') center/100% 100% no-repeat;
+}
+html[data-theme="nexus"][data-theme="nexus"] .nx-hub { grid-area:2/2/4/3; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; border:1px solid #C9F65F; border-radius:40px 14px; background:#101719; box-shadow:0 0 0 14px #C9F65F05,0 0 0 28px #C9F65F03; padding:16px; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-hub svg { width:44px; height:44px; color:#C9F65F; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-hub h3 { font-size:1.3rem; margin:12px 0 4px; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-hub p { margin:4px 0; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-node { position:relative; display:grid; grid-template-columns:34px minmax(0,1fr); gap:7px 10px; align-content:center; text-align:left; border:1px solid #66787D; border-radius:20px 8px; color:#F0F4EE; padding:16px; cursor:pointer; font:inherit; background:linear-gradient(145deg,#202B2F,#11191C); transition:background .16s,border-color .16s; min-width:0; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-node > svg:first-child { grid-row:1/3; align-self:center; width:28px; height:28px; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-node > svg:last-child { display:none; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-node strong { font-size:.92rem; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-node-stat { grid-column:2; font-size:.73rem; color:#BDCBCB; line-height:1.4; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-node:is(:hover,[aria-pressed="true"]) { border-color:#C9F65F; background:linear-gradient(145deg,#283323,#141D16); }
+html[data-theme="nexus"][data-theme="nexus"] .nx-node[aria-pressed="true"] > :is(strong,svg) { color:#C9F65F; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-node[data-group="eleves"] { grid-area:1/1; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-node[data-group="classes"] { grid-area:1/3; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-node[data-group="resultats"] { grid-area:3/1; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-node[data-group="gestion"] { grid-area:3/3; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-node[data-group="equipe"] { grid-area:4/2; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-events { display:flex; align-items:center; gap:20px; padding:16px 20px; border:1px solid var(--bordure); border-radius:8px; margin-bottom:24px; background:#172024; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-events .nx-eyebrow { color:#C9F65F; margin:0; white-space:nowrap; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-event { margin:0; font-size:.76rem; line-height:1.5; border-left:2px solid #C9F65F; padding-left:14px; flex:1; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-inspector { border:1px solid #4A5B60; border-radius:10px; padding:22px; background:linear-gradient(145deg,#1C272B,#121A1D); }
+html[data-theme="nexus"][data-theme="nexus"] .nx-inspector h2 { display:flex; align-items:center; gap:12px; font-size:1.45rem; margin:20px 0 8px; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-inspector h2 svg { width:32px; height:32px; color:#C9F65F; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-summary { color:#C9F65F; font-size:.86rem; margin:18px 0; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-related { display:grid; gap:8px; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-related-link { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px; border:1px solid #415259; border-radius:6px; text-decoration:none; color:#E7F0ED; font-size:.8rem; line-height:1.45; background:#1C272C; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-related-link:hover { border-color:#C9F65F; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-related-link[aria-current="page"] { color:#C9F65F; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-related-link svg { width:16px; height:16px; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-primary { display:flex; align-items:center; justify-content:space-between; gap:12px; color:#142009; background:#C9F65F; border:1px solid #C9F65F; border-radius:6px; padding:15px; text-decoration:none; font-size:.85rem; font-weight:650; margin-top:20px; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-help { margin-top:14px; padding:10px 0; background:none; color:#BCCACA; border:0; font:inherit; font-size:.76rem; text-decoration:underline; cursor:pointer; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-class-list { border-top:1px solid var(--bordure); margin-top:20px; padding-top:8px; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-class-list ul { padding:0; margin:0; list-style:none; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-class-list li { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:10px 0; border-bottom:1px solid #344248; font-size:.78rem; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-dock { display:flex; align-items:center; gap:16px; padding:14px 28px; background:#11191CF5; border-top:1px solid #526268; position:fixed; left:0; right:0; bottom:0; z-index:65; backdrop-filter:blur(14px); }
+html[data-theme="nexus"][data-theme="nexus"] .nx-search { display:flex; align-items:center; gap:8px; flex:1; max-width:440px; margin:0 auto 0 0; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-search input { min-width:0; width:100%; margin:0; padding:12px; border-radius:6px; border:1px solid #526268; font:inherit; font-size:.8rem; }
+html[data-theme="nexus"][data-theme="nexus"] :is(.nx-secondary,.nx-dock-link) { display:inline-flex; align-items:center; justify-content:center; min-height:42px; padding:10px 16px; border:1px solid #526268; border-radius:6px; background:#192327; color:#E7F0ED; font:inherit; font-size:.8rem; text-decoration:none; cursor:pointer; }
+html[data-theme="nexus"][data-theme="nexus"] :is(.nx-secondary,.nx-dock-link):hover { border-color:#C9F65F; color:#C9F65F; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-tools:not([open]) { display:none; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-tools { width:640px; max-width:calc(100vw - 32px); max-height:80vh; padding:24px; border:1px solid #697B80; border-radius:12px; background:#172125; color:#F0F4EE; box-shadow:0 20px 80px #0009; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-tools::backdrop { background:#070D12BA; backdrop-filter:blur(5px); }
+html[data-theme="nexus"][data-theme="nexus"] .nx-tools-head { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:16px; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-tools-head h2 { margin:0; font-size:1.4rem; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-tools > input { width:100%; padding:14px; border:1px solid #697B80; border-radius:6px; font:inherit; margin-bottom:18px; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-tools-results { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-profile { padding:10px 14px; border:1px solid #526268; border-radius:6px; color:#E7F0ED; font-size:.78rem; text-decoration:none; white-space:nowrap; }
+html[data-theme="nexus"][data-theme="nexus"] .nx-content:not(.nx-home) .nx-page-title { display:none; }
+html[data-theme="nexus"][data-theme="nexus"] .lanceur { border:1px solid var(--bordure); border-radius:8px; padding:16px; background:#172024; }
+html[data-theme="nexus"][data-theme="nexus"] .tuile { border-radius:8px; }
+/* Le même rail conserve ses liens, ses épingles et ses gestionnaires. */
+@media screen and (min-width:781px) {
+ html[data-theme="nexus"][data-theme="nexus"] .mise-en-page { grid-template-columns:minmax(0,1fr); grid-template-rows:auto 1fr; }
+ html[data-theme="nexus"][data-theme="nexus"] .mise-en-page > .barre-laterale { order:0; width:auto; height:auto; min-height:76px; margin:0; padding:12px 26px; top:0; bottom:auto; position:sticky; align-self:start; z-index:60; display:flex; flex-direction:row; align-items:center; gap:20px; overflow:visible; background:#101719; border:0; border-bottom:1px solid #526268; border-radius:0; box-shadow:none; transition:none; }
+ html[data-theme="nexus"][data-theme="nexus"][data-nav-compact] .mise-en-page > .barre-laterale:is(:hover,:focus-within) { width:auto; margin-left:0; box-shadow:none; }
+ html[data-theme="nexus"][data-theme="nexus"] .mise-en-page > .barre-laterale::after { content:none; }
+ html[data-theme="nexus"][data-theme="nexus"] .barre-laterale > div:has(> .nav-liste) { display:flex; flex:1; gap:26px; align-items:center; min-width:0; }
+ html[data-theme="nexus"][data-theme="nexus"] .barre-laterale .marque { font-family:var(--police-corps); font-size:1.5rem; margin:0; text-align:left; white-space:nowrap; overflow:visible; flex:none; }
+ html[data-theme="nexus"][data-theme="nexus"] .barre-laterale .marque::after { content:'NEXUS'; display:block; font:600 .6rem/1.4 var(--police-mono); color:#C9F65F; letter-spacing:.2em; }
+ html[data-theme="nexus"][data-theme="nexus"] .barre-laterale .nav-liste { display:flex; flex-direction:row; align-items:center; gap:4px; flex-wrap:nowrap; overflow-x:auto; scrollbar-width:thin; min-width:0; }
+ html[data-theme="nexus"][data-theme="nexus"] .barre-laterale .nav-item { padding:11px 10px; gap:7px; white-space:nowrap; font-size:.78rem; border-radius:5px; }
+ html[data-theme="nexus"][data-theme="nexus"] .barre-laterale .nav-libelle { opacity:1; }
+ html[data-theme="nexus"][data-theme="nexus"] .barre-laterale .nav-item.actif { color:#C9F65F; background:#C9F65F0B; box-shadow:inset 0 -2px #C9F65F; }
+ html[data-theme="nexus"][data-theme="nexus"] .barre-laterale .nav-deconnexion { display:flex; border:0; font-size:0; padding:10px; margin:0; width:40px; flex:none; }
+ html[data-theme="nexus"][data-theme="nexus"] .barre-laterale .nav-deconnexion::before { content:'↗'; font-size:20px; background:none; width:20px; height:20px; mask:none; -webkit-mask:none; }
+ html[data-theme="nexus"][data-theme="nexus"] .barre-laterale .nav-deconnexion::after { content:none; }
+ html[data-theme="nexus"][data-theme="nexus"] .mise-en-page > .contenu { order:1; padding:28px 28px 140px; width:100%; max-width:1800px; margin:0 auto; }
+ html[data-theme="nexus"][data-theme="nexus"] .nx-home > .grille-stats { grid-template-columns:repeat(auto-fit,minmax(135px,1fr)); gap:12px; }
+}
+@media screen and (min-width:1201px) {
+ html[data-theme="nexus"][data-theme="nexus"] .mise-en-page > .nx-content { padding-right:374px; }
+ html[data-theme="nexus"][data-theme="nexus"] .nx-inspector { position:fixed; width:318px; right:28px; top:104px; bottom:108px; overflow:auto; scrollbar-width:thin; }
+ html[data-theme="nexus"][data-theme="nexus"] .nx-home > .grille-basse { grid-template-columns:1fr; }
+}
+@media screen and (max-width:1200px) {
+ html[data-theme="nexus"][data-theme="nexus"] .nx-inspector { margin-top:24px; }
+ html[data-theme="nexus"][data-theme="nexus"] .nx-content:not(.nx-home) .nx-inspector .nx-related { display:flex; flex-wrap:wrap; }
+ html[data-theme="nexus"][data-theme="nexus"] .nx-content:not(.nx-home) .nx-inspector :is(.nx-summary,.nx-primary,.nx-help) { display:none; }
+}
+@media screen and (max-width:780px) {
+ html[data-theme="nexus"][data-theme="nexus"] .nx-map { grid-template-columns:repeat(2,minmax(0,1fr)); grid-template-rows:auto; gap:12px; padding:12px 0; background:none; }
+ html[data-theme="nexus"][data-theme="nexus"] .nx-map > .nx-node { grid-area:auto; min-height:125px; padding:14px; grid-template-columns:1fr; }
+ html[data-theme="nexus"][data-theme="nexus"] .nx-node > svg:first-child { grid-row:auto; }
+ html[data-theme="nexus"][data-theme="nexus"] .nx-node-stat { grid-column:1; }
+ html[data-theme="nexus"][data-theme="nexus"] .nx-hub { grid-area:auto; grid-column:1/-1; min-height:150px; margin-bottom:12px; }
+ html[data-theme="nexus"][data-theme="nexus"] .nx-events { align-items:flex-start; flex-direction:column; gap:10px; }
+ html[data-theme="nexus"][data-theme="nexus"] .nx-dock { position:static; padding:16px 16px 100px; flex-wrap:wrap; gap:8px; z-index:auto; }
+ html[data-theme="nexus"][data-theme="nexus"] .nx-search { flex-basis:100%; max-width:none; }
+ html[data-theme="nexus"][data-theme="nexus"] .nx-profile { display:none; }
+ html[data-theme="nexus"][data-theme="nexus"] .nx-tools-results { grid-template-columns:1fr; }
+}
+html[data-theme="nexus"][data-theme="nexus"] .sa-principal .nx-inspector { display:none; }
+.carte-theme[data-theme="nexus"] .apercu { flex-direction:column; }
+.carte-theme[data-theme="nexus"] .apercu .bande { width:100%; height:12px; flex:none; }
+@media print {
+ html[data-theme="nexus"][data-theme="nexus"] .nx-only { display:none!important; }
+ html[data-theme="nexus"][data-theme="nexus"] .mise-en-page > .nx-content { padding:0; }
+}

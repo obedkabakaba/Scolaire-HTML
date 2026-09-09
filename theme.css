@@ -2,6 +2,7 @@
 @import url("theme-elan.css");
 @import url("theme-perspective.css");
 @import url("theme-recre.css");
+@import url("theme-nexus.css");
 
 html[data-theme="ardoise"] .carte-cours .bouton {
   color: var(--texte-sombre, #1F2B24) !important;

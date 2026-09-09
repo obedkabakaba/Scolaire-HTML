@@ -70,13 +70,47 @@
    v69 : l'arrondi intérieur suit le rail déployé ou replié et reste visible
          pendant le défilement du contenu. Terranga (clé interne yohali) et son
          alias Kivu conservent leur apparence d'origine, sans cet ajout. */
-const VERSION='ardoise-v73';
+const VERSION='ardoise-v74';
+/* v74 : Récré, papier crème et dessins de cahier pour chaque rubrique. */
 /* v73 : contraste WCAG de la bannière d’abonnement du Directeur. */
 /* v72 : nouveaux noms d’apparence — Perspective devient Yohali, l’ancien Yohali devient Terranga. */
 /* v71 : Perspective, illustrations architecturales et papeterie par rubrique. */
 /* v70 : Élan, navigation horizontale et illustrations locales par rubrique. */
 const CACHE_COQUILLE=`${VERSION}-coquille`;
 const COQUILLE=[
+  'theme-recre.css',
+  'theme-recre.js',
+  'public/recre/abonnement.svg',
+  'public/recre/accueil.webp',
+  'public/recre/agenda.svg',
+  'public/recre/aide.svg',
+  'public/recre/annee.svg',
+  'public/recre/annuel.svg',
+  'public/recre/archives.svg',
+  'public/recre/bulletin.svg',
+  'public/recre/cahier.svg',
+  'public/recre/classe.svg',
+  'public/recre/comptabilite.svg',
+  'public/recre/discipline.svg',
+  'public/recre/dossiers.svg',
+  'public/recre/eleves.svg',
+  'public/recre/equipe.svg',
+  'public/recre/horaire.svg',
+  'public/recre/inscriptions.svg',
+  'public/recre/journal.svg',
+  'public/recre/livres.svg',
+  'public/recre/messages.svg',
+  'public/recre/modeles.svg',
+  'public/recre/notes.svg',
+  'public/recre/orientation.svg',
+  'public/recre/paiements.svg',
+  'public/recre/pilotage.svg',
+  'public/recre/presences.svg',
+  'public/recre/profil.svg',
+  'public/recre/rapports.svg',
+  'public/recre/reglages.svg',
+  'public/recre/repechage.svg',
+  'public/recre/site.svg',
   'theme-perspective.css',
   'theme-perspective.js',
   'public/perspective/abonnement.svg',

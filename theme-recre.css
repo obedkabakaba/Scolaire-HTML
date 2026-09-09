@@ -1,0 +1,174 @@
+/* Récré — apparence optionnelle. Les règles restent toutes sous data-theme. */
+html[data-theme="recre"][data-theme="recre"] {
+  --ardoise:#122642; --ardoise-2:#294764; --craie:#FFFCF2; --craie-2:#FFFFFF;
+  --ocre:#245B8C; --ocre-dark:#193F66; --ocre-clair:#BAD6E9; --encre:#245B8C;
+  --rouge:#B44232; --vert-ok:#267960; --texte-sombre:#122642; --texte-att:#586570;
+  --bordure:#D6BE97; --ligne:#D6BE97;
+  --nav-fond:#FFFFFF; --nav-texte-fort:#122642; --nav-texte:#344960;
+  --nav-texte-faible:#607184; --nav-actif-fond:#FFEBA1; --nav-separateur:#D6BE97;
+  --police-titre:'Trebuchet MS','Arial Rounded MT Bold',system-ui,sans-serif; --police-corps:'Inter',system-ui,sans-serif;
+  --r-carte:20px; --r-bouton:12px; --r-petit:9px; --r-pilule:24px;
+  --ombre-carte:0 2px 0 #D6BE9726; --ombre-flottante:0 16px 44px #18354B20;
+  --recre-surface:#FFEBA1; --recre-bleu:#E8F3FC; --recre-menthe:#E4F3EC;
+  color-scheme:light;
+}
+html[data-theme="recre"][data-theme="recre"] body { background:var(--craie); color:var(--texte-sombre); }
+html[data-theme="recre"][data-theme="recre"] :is(h1,h2,h3) { font-family:var(--police-titre); letter-spacing:-.035em; }
+html[data-theme="recre"][data-theme="recre"] :is(.carte-stat,.widget,.panneau,.carte-section,.carte-config,.carte-cours,.carte-recap,.conteneur-tableau,.fiche,.sa-carte,.sa-panneau) {
+  border-radius:var(--r-carte); box-shadow:var(--ombre-carte);
+}
+html[data-theme="recre"][data-theme="recre"] :is(.bouton-principal,.valider) { background:var(--ocre); color:#fff; }
+html[data-theme="recre"][data-theme="recre"] :is(a,button,input,select,textarea):focus-visible { outline:3px solid #245B8C; outline-offset:3px; }
+html[data-theme="recre"][data-theme="recre"] :is(th,.sa-table th) { background:#F3F7FA; color:var(--texte-sombre); }
+html[data-theme="recre"][data-theme="recre"] :is(.bouton,.bouton-principal,.tuile) { transition:background .18s,border-color .18s,box-shadow .18s; }
+html[data-theme="recre"][data-theme="recre"] :is(.tuile:hover,.carte-theme:hover) { box-shadow:0 5px 18px #18354B12; }
+/* Les ajouts DOM sont invisibles dès qu'on quitte Récré. */
+.recre-only { display:none; }
+/* La vignette appartient uniquement au nouveau choix, quel que soit le thème actif. */
+.carte-theme[data-theme="recre"] .apercu { flex-direction:column; }
+.carte-theme[data-theme="recre"] .apercu .bande { width:100%; height:12px; flex:none; }
+html[data-theme="recre"][data-theme="recre"] .recre-only { display:block; }
+html[data-theme="recre"][data-theme="recre"] .recre-hero {
+  position:relative; background:var(--recre-surface); border:1px solid #C7A468;
+  border-radius:24px; padding:32px 36px; min-height:220px; margin:0 0 24px;
+  display:flex; align-items:center; gap:16px; isolation:isolate;
+}
+html[data-theme="recre"][data-theme="recre"] .recre-hero-copy { flex:1; min-width:0; position:relative; z-index:1; }
+html[data-theme="recre"][data-theme="recre"] .recre-kicker { font-size:.7rem; letter-spacing:.12em; font-weight:700; text-transform:uppercase; color:#536574; margin:0 0 12px; }
+html[data-theme="recre"][data-theme="recre"] .recre-hero h2 { font-size:clamp(1.65rem,2.5vw,2.9rem); line-height:1.1; max-width:580px; margin:0 0 14px; font-weight:800; }
+html[data-theme="recre"][data-theme="recre"] .recre-hero p:not(.recre-kicker) { font-size:.94rem; line-height:1.6; margin:0; max-width:540px; }
+html[data-theme="recre"][data-theme="recre"] .recre-hero-art { width:31%; max-width:300px; aspect-ratio:4/3; object-fit:contain; flex:none; }
+html[data-theme="recre"][data-theme="recre"] .recre-home-hero .recre-hero-art {
+  width:36%; max-width:320px; mix-blend-mode:multiply;
+  mask-image:radial-gradient(ellipse 74% 70% at center,#000 55%,transparent 100%);
+}
+html[data-theme="recre"][data-theme="recre"] .recre-date { display:inline-flex; margin-top:18px; border:1px solid #D8CEA9; border-radius:24px; padding:7px 13px; font-size:.76rem; background:#FFFFFF65; }
+html[data-theme="recre"][data-theme="recre"] .entete-page { margin-bottom:20px; }
+html[data-theme="recre"][data-theme="recre"] .entete-page h1 { font-size:1.5rem; }
+html[data-theme="recre"][data-theme="recre"] .recre-aside { display:grid; gap:20px; align-content:start; }
+html[data-theme="recre"][data-theme="recre"] :is(.recre-agenda,.recre-help) { background:#fff; border:1px solid var(--bordure); border-radius:22px; padding:22px; }
+html[data-theme="recre"][data-theme="recre"] .recre-aside h2 { font-size:1.15rem; margin:0 0 18px; }
+html[data-theme="recre"][data-theme="recre"] .recre-month { display:flex; justify-content:space-between; align-items:center; gap:4px; margin-bottom:12px; }
+html[data-theme="recre"][data-theme="recre"] .recre-month button { border:0; background:transparent; color:var(--texte-sombre); width:36px; height:36px; border-radius:10px; font-size:1.2rem; cursor:pointer; }
+html[data-theme="recre"][data-theme="recre"] .recre-month button:hover { background:var(--recre-bleu); }
+html[data-theme="recre"][data-theme="recre"] .recre-month strong { font-size:.86rem; text-transform:capitalize; text-align:center; }
+html[data-theme="recre"][data-theme="recre"] .recre-calendar { border-collapse:separate; border-spacing:2px 5px; table-layout:fixed; width:100%; min-width:0; }
+html[data-theme="recre"][data-theme="recre"] .recre-calendar th { background:transparent; font-size:.65rem; font-weight:500; padding:5px 0; }
+html[data-theme="recre"][data-theme="recre"] .recre-calendar td { text-align:center; font-size:.76rem; padding:7px 0; border:0; }
+html[data-theme="recre"][data-theme="recre"] .recre-calendar .recre-today { background:#FFD34E; border-radius:50%; font-weight:700; color:#122642; }
+html[data-theme="recre"][data-theme="recre"] .recre-calendar .recre-other { color:#788591; }
+html[data-theme="recre"][data-theme="recre"] .recre-calendar-caption { font-size:.75rem; color:var(--texte-att); margin:8px 0 0; line-height:1.5; }
+html[data-theme="recre"][data-theme="recre"] .recre-events { border-top:1px solid var(--bordure); padding-top:16px; margin-top:16px; }
+html[data-theme="recre"][data-theme="recre"] .recre-events .panneau { border:0; padding:0; box-shadow:none; }
+html[data-theme="recre"][data-theme="recre"] .recre-events h3 { font-size:.86rem; }
+html[data-theme="recre"][data-theme="recre"] .recre-home .recre-events-original { display:none; }
+html[data-theme="recre"][data-theme="recre"] .recre-help { background:linear-gradient(140deg,#fff,#F0F8FD); }
+html[data-theme="recre"][data-theme="recre"] .recre-help img { width:100%; max-height:150px; object-fit:contain; }
+html[data-theme="recre"][data-theme="recre"] .recre-help button { width:100%; padding:12px; border:0; background:var(--ocre); color:#fff; font:inherit; border-radius:24px; cursor:pointer; }
+html[data-theme="recre"][data-theme="recre"] .recre-help p { color:var(--texte-att); font-size:.8rem; line-height:1.5; }
+html[data-theme="recre"][data-theme="recre"] .recre-profile-link { display:inline-flex; align-items:center; gap:8px; color:var(--texte-sombre); padding:9px 12px; text-decoration:none; font-size:.8rem; white-space:nowrap; border:1px solid var(--bordure); border-radius:22px; }
+html[data-theme="recre"][data-theme="recre"] .recre-profile-link::before { content:""; width:10px; height:10px; background:#FFD34E; border-radius:50%; }
+html[data-theme="recre"][data-theme="recre"] .lanceur { padding:18px; border:1px solid var(--bordure); border-radius:20px; background:#fff; }
+html[data-theme="recre"][data-theme="recre"] .lanceur-entete h2 { font-size:1.1rem; }
+html[data-theme="recre"][data-theme="recre"] .lanceur-grille { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); overflow:visible; gap:12px; }
+html[data-theme="recre"][data-theme="recre"] .lanceur-grille > .tuile { min-width:0; display:flex; flex-direction:column; align-items:flex-start; justify-content:flex-end; gap:8px; min-height:150px; background:#EDF2DF; padding:14px; border:1px solid #B6C79E; border-radius:15px; }
+html[data-theme="recre"][data-theme="recre"] .tuile:nth-child(2n) { background:#E5EEF9; border-color:#A9C2DD; }
+html[data-theme="recre"][data-theme="recre"] .tuile:nth-child(3n) { background:#FFF0E2; border-color:#DDB992; }
+html[data-theme="recre"][data-theme="recre"] .tuile:nth-child(4n) { background:#FFF3C9; border-color:#DABD73; }
+html[data-theme="recre"][data-theme="recre"] .tuile .textes { display:flex; flex-direction:column; gap:3px; }
+html[data-theme="recre"][data-theme="recre"] .tuile .nom { font-size:.83rem; line-height:1.4; }
+html[data-theme="recre"][data-theme="recre"] .tuile .desc { font-size:.68rem; line-height:1.4; color:#536574; }
+html[data-theme="recre"][data-theme="recre"] .tuile .jeton { display:none; }
+html[data-theme="recre"][data-theme="recre"] .recre-tile-art { width:100%; height:72px; object-fit:contain; align-self:center; }
+html[data-theme="recre"][data-theme="recre"] .carte-stat { position:relative; background:#fff; padding:22px; min-width:0; }
+html[data-theme="recre"][data-theme="recre"] .carte-stat .valeur { font-family:var(--police-corps); color:#245B8C; font-weight:800; }
+html[data-theme="recre"][data-theme="recre"] .recre-stat-art { position:absolute; right:12px; top:14px; width:54px; height:54px; opacity:.65; pointer-events:none; }
+html[data-theme="recre"][data-theme="recre"] .recre-stat-art ~ * { position:relative; }
+html[data-theme="recre"][data-theme="recre"] .carte-stat:has(.recre-stat-art) { padding-right:64px; }
+html[data-theme="recre"][data-theme="recre"] .tiroir-ligne .recre-tile-art { width:56px; height:48px; flex:none; }
+html[data-theme="recre"][data-theme="recre"] .tiroir-ligne:has(.recre-tile-art) .jeton-menu { display:none; }
+html[data-theme="recre"][data-theme="recre"] .recre-layout-note { font-size:.8rem; line-height:1.5; background:var(--recre-bleu); padding:12px 16px; border-radius:12px; }
+/* Bureau : le même rail et ses écouteurs deviennent la barre horizontale.
+   Les préférences de position/compacité des autres thèmes ne sont pas écrites. */
+@media screen and (min-width:781px) {
+  html[data-theme="recre"][data-theme="recre"] .mise-en-page { grid-template-columns:minmax(0,1fr); grid-template-rows:auto 1fr; }
+  html[data-theme="recre"][data-theme="recre"] .mise-en-page > .barre-laterale {
+    order:0; width:auto; height:auto; min-height:76px; margin:0; padding:12px 28px;
+    top:0; bottom:auto; position:sticky; align-self:start; z-index:60;
+    display:flex; flex-direction:row; align-items:center; gap:20px; overflow:visible;
+    background:#fff; border:0; border-bottom:1px solid var(--bordure); border-radius:0;
+    box-shadow:none; transition:none;
+  }
+  html[data-theme="recre"][data-theme="recre"][data-nav-compact] .mise-en-page > .barre-laterale:is(:hover,:focus-within) { width:auto; margin-left:0; box-shadow:none; }
+  html[data-theme="recre"][data-theme="recre"] .mise-en-page > .barre-laterale::after { content:none; }
+  html[data-theme="recre"][data-theme="recre"] .barre-laterale > div:has(> .nav-liste) { display:flex; flex:1; gap:26px; align-items:center; min-width:0; }
+  html[data-theme="recre"][data-theme="recre"] .barre-laterale .marque { font-size:1.65rem; margin:0; text-align:left; white-space:nowrap; overflow:visible; flex:none; }
+  html[data-theme="recre"][data-theme="recre"] .barre-laterale .nav-liste { display:flex; flex-direction:row; align-items:center; gap:4px; flex-wrap:nowrap; overflow-x:auto; scrollbar-width:thin; min-width:0; }
+  html[data-theme="recre"][data-theme="recre"] .barre-laterale .nav-item { padding:11px 10px; gap:7px; white-space:nowrap; font-size:.78rem; border-radius:10px; }
+  html[data-theme="recre"][data-theme="recre"] .barre-laterale .nav-libelle { opacity:1; }
+  html[data-theme="recre"][data-theme="recre"] .barre-laterale .nav-item.actif { background:#FFEBA1; box-shadow:inset 0 -3px #F5BB2C; }
+  html[data-theme="recre"][data-theme="recre"] .barre-laterale .nav-deconnexion { display:flex; border:0; font-size:0; padding:10px; margin:0; width:40px; flex:none; }
+  html[data-theme="recre"][data-theme="recre"] .barre-laterale .nav-deconnexion::before { content:"↗"; font-size:20px; background:none; width:20px; height:20px; mask:none; -webkit-mask:none; }
+  html[data-theme="recre"][data-theme="recre"] .barre-laterale .nav-deconnexion::after { content:none; }
+  html[data-theme="recre"][data-theme="recre"] .mise-en-page > .contenu { order:1; padding:28px 32px 60px; width:100%; max-width:1680px; margin:0 auto; }
+  html[data-theme="recre"][data-theme="recre"] .contenu.recre-home { display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:20px 24px; align-items:start; }
+  html[data-theme="recre"][data-theme="recre"] .recre-home > * { grid-column:1; margin-bottom:0; }
+  html[data-theme="recre"][data-theme="recre"] .recre-home > .entete-page { grid-column:1/-1; grid-row:1; }
+  html[data-theme="recre"][data-theme="recre"] .recre-home > .recre-hero { grid-row:2; }
+  html[data-theme="recre"][data-theme="recre"] .recre-home > .grille-stats { grid-row:3; grid-template-columns:repeat(auto-fit,minmax(135px,1fr)); gap:12px; }
+  html[data-theme="recre"][data-theme="recre"] .recre-home > #lanceur { grid-row:4; }
+  html[data-theme="recre"][data-theme="recre"] .recre-home > .recre-aside { grid-column:2; grid-row:2 / span 4; }
+  html[data-theme="recre"][data-theme="recre"] .recre-home > .banniere-abonnement { grid-column:1/-1; }
+  html[data-theme="recre"][data-theme="recre"] .recre-home > .grille-basse { grid-template-columns:1fr; }
+}
+@media screen and (min-width:781px) and (max-width:1100px) {
+  html[data-theme="recre"][data-theme="recre"] .contenu.recre-home { grid-template-columns:minmax(0,1fr); }
+  html[data-theme="recre"][data-theme="recre"] .recre-home > .recre-aside { grid-column:1; grid-row:auto; grid-template-columns:1fr 1fr; }
+  html[data-theme="recre"][data-theme="recre"] .barre-laterale { gap:10px; }
+  html[data-theme="recre"][data-theme="recre"] .recre-profile-link { font-size:0; padding:12px; }
+}
+@media screen and (max-width:780px) {
+  html[data-theme="recre"][data-theme="recre"] .recre-hero { padding:22px; min-height:0; gap:8px; }
+  html[data-theme="recre"][data-theme="recre"] .recre-hero h2 { font-size:1.6rem; }
+  html[data-theme="recre"][data-theme="recre"] .recre-hero-art { width:27%; }
+  html[data-theme="recre"][data-theme="recre"] .recre-home-hero { flex-wrap:wrap; }
+  html[data-theme="recre"][data-theme="recre"] .recre-home-hero .recre-hero-art { width:100%; height:150px; max-width:none; }
+  html[data-theme="recre"][data-theme="recre"] .recre-aside { margin:24px 0; }
+  html[data-theme="recre"][data-theme="recre"] .recre-profile-link { display:none; }
+  html[data-theme="recre"][data-theme="recre"] .lanceur-grille { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  html[data-theme="recre"][data-theme="recre"] .recre-calendar :is(thead,tbody,tr) { display:revert; }
+  html[data-theme="recre"][data-theme="recre"] .recre-calendar :is(th,td) { display:table-cell; }
+}
+@media print {
+  html[data-theme="recre"][data-theme="recre"] .recre-only { display:none!important; }
+  html[data-theme="recre"][data-theme="recre"] .contenu.recre-home { display:block; }
+  html[data-theme="recre"][data-theme="recre"] .recre-events-original { display:block!important; }
+}
+
+html[data-theme="recre"][data-theme="recre"] .carte-stat .valeur { white-space:nowrap; font-size:clamp(1.6rem,2.2vw,2.6rem); }
+html[data-theme="recre"][data-theme="recre"] .carte-stat .etiquette { text-transform:none; letter-spacing:0; font-size:.78rem; }
+html[data-theme="recre"][data-theme="recre"] .carte-stat .pictogramme { display:none; }
+
+/* Cahier à points et crayons : uniquement dans Récré, sans recouvrir les commandes. */
+html[data-theme="recre"][data-theme="recre"] body { background-color:var(--craie); background-image:radial-gradient(#E5CD962E 1px,transparent 1px); background-size:18px 18px; }
+html[data-theme="recre"][data-theme="recre"] .recre-hero { border-radius:22px 27px 24px 20px; background:linear-gradient(115deg,#FFF1B8,#FFE698); box-shadow:0 3px 0 #D6BE972B; }
+html[data-theme="recre"][data-theme="recre"] .recre-hero h2 { font-weight:800; letter-spacing:-.045em; }
+html[data-theme="recre"][data-theme="recre"] .recre-home-hero .recre-hero-art { width:43%; max-width:400px; }
+html[data-theme="recre"][data-theme="recre"] .recre-stat-art { width:62px; height:62px; opacity:1; }
+html[data-theme="recre"][data-theme="recre"] .carte-stat:has(.recre-stat-art) { padding-right:77px; }
+html[data-theme="recre"][data-theme="recre"] .carte-stat .valeur { color:var(--texte-sombre); font-family:var(--police-titre); }
+html[data-theme="recre"][data-theme="recre"] :is(.recre-help button,.bouton-principal,.valider) { background:#FFD34E; color:#122642; border:1px solid #BF922E; }
+html[data-theme="recre"][data-theme="recre"] .recre-help { background:linear-gradient(150deg,#fff,#FFF9E7); }
+html[data-theme="recre"][data-theme="recre"] .recre-help h2 { line-height:1.35; }
+html[data-theme="recre"][data-theme="recre"] .recre-tile-art { height:82px; }
+html[data-theme="recre"][data-theme="recre"] .tuile .nom { font-weight:700; }
+html[data-theme="recre"][data-theme="recre"] .lanceur-grille > .tuile { border-radius:15px 18px 13px 17px; }
+html[data-theme="recre"][data-theme="recre"] .recre-date { border:1px solid #C7A468; }
+html[data-theme="recre"][data-theme="recre"] .barre-laterale .marque { font-family:var(--police-titre); font-weight:900; letter-spacing:-.04em; }
+html[data-theme="recre"][data-theme="recre"] .recre-profile-link::before { box-shadow:0 0 0 3px #FFF2C6; }
+@media screen and (min-width:1101px) {
+ html[data-theme="recre"][data-theme="recre"] .recre-home-hero h2 { font-size:clamp(2.2rem,3.3vw,3.4rem); }
+}
+@media screen and (max-width:780px) {
+ html[data-theme="recre"][data-theme="recre"] .recre-home-hero .recre-hero-art { width:100%; max-width:none; height:170px; }
+}

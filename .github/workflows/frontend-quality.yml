@@ -100,3 +100,4 @@ jobs:
           node test-elan-browser.cjs
           node test-perspective-browser.cjs
           node test-recre-browser.cjs
+          node test-nexus-browser.cjs

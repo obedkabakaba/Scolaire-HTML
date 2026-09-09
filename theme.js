@@ -37,6 +37,7 @@
 })();
 
 window.ARDOISE_THEMES = [
+  { cle: 'recre', nom: 'Récré', description: 'Jaune soleil, papier crème et dessins de cahier. Une navigation joyeuse, des crayons et un agenda.', apercu: { fond: '#FFFCF2', surface: '#FFFFFF', accent: '#FFD34E', barre: '#FFEBA1', texte: '#122642' } },
   { cle: 'perspective', nom: 'Yohali', description: 'Crème, vert profond et terre cuite. Architecture, papeterie et navigation horizontale.', apercu: { fond: '#FAF9F5', surface: '#FDFCF9', accent: '#2E5040', barre: '#EAE8DC', texte: '#203C32' } },
   { cle: 'elan', nom: 'Élan', description: 'Bleu, menthe et soleil. Navigation horizontale, dessins par rubrique et accueil avec agenda.', apercu: { fond: '#FFFDF8', surface: '#FFFFFF', accent: '#2165B5', barre: '#FFF2BF', texte: '#142D46' } },
   { cle: 'studio', nom: 'Studio', description: 'Rail sombre déplaçable, accent indigo, cartes sans bordure. Le plus proche des outils professionnels actuels.', apercu: { fond: '#F4F6FB', surface: '#FFFFFF', accent: '#4C5FD5', barre: '#1B2559', texte: '#101828' } },
@@ -59,6 +60,13 @@ window.ARDOISE_THEME_DEFAUT = 'ardoise';
     try { localStorage.setItem(CLE_STOCKAGE, theme); if (sessionStorage.getItem('ardoise_refresh_token')) sessionStorage.setItem(CLE_STOCKAGE, theme); } catch (e) {}
     try { if (theme === 'studio' && !localStorage.getItem('ardoise_nav_compact')) localStorage.setItem('ardoise_nav_compact', 'oui'); if (window.ArdoiseDisposition) ArdoiseDisposition.appliquer(); } catch (e) {}
     document.dispatchEvent(new CustomEvent('ardoise:theme-change', { detail: { theme: theme } }));
+    if (theme === 'recre' && !document.querySelector('script[data-ardoise-recre]')) {
+      var scriptRecre = document.createElement('script');
+      scriptRecre.src = 'theme-recre.js';
+      scriptRecre.dataset.ardoiseRecre = '';
+      scriptRecre.onerror = function () { scriptRecre.remove(); };
+      document.head.appendChild(scriptRecre);
+    }
     if (theme === 'perspective' && !document.querySelector('script[data-ardoise-perspective]')) {
       var scriptPerspective = document.createElement('script');
       scriptPerspective.src = 'theme-perspective.js';

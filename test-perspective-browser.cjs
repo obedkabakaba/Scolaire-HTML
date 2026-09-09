@@ -2,6 +2,7 @@
 const fs=require('fs'),path=require('path'),http=require('http'),assert=require('assert/strict');
 const {chromium}=require('playwright');
 const root=__dirname;
+const cacheVersion=fs.readFileSync(path.join(root,'sw.js'),'utf8').match(/const VERSION='([^']+)'/)[1];
 const user={id:42,ecole_id:1,nom:'Exemple',prenom:'Direction',roles:['directeur'],email:'test@example.invalid'};
 const data={effectifs:{nb_eleves:428,nb_professeurs:32,nb_classes:18},taux_reussite_global:86,
  impayes:{nb_eleves_en_retard:7},annee_active:{libelle:'2026–2027'},notes:{encodees:340,attendues:400,restantes:60},
@@ -138,14 +139,14 @@ const server=http.createServer((req,res)=>{
  });
  await op.waitForFunction(()=>navigator.serviceWorker.controller!==null);
  const keys=await op.evaluate(()=>caches.keys());
- assert.ok(keys.includes('ardoise-v71-coquille'));assert.ok(!keys.includes('ardoise-v70-coquille'));
+ assert.ok(keys.includes(cacheVersion+'-coquille'));assert.ok(!keys.includes('ardoise-v70-coquille'));
  await offline.setOffline(true);
  const offlineFiles=await op.evaluate(async()=>Promise.all(
    ['theme-perspective.css','theme-perspective.js','public/perspective/accueil.webp','public/perspective/aide.svg'].map(async p=>{
      const response=await fetch(p);return response.ok&&(await response.arrayBuffer()).byteLength>0;
    })));
  assert.ok(offlineFiles.every(Boolean));await offline.close();
- console.log('PWA v70 → v71 and offline Perspective assets passed.');
+ console.log('PWA migration and offline Perspective assets passed:',cacheVersion);
  await browser.close();server.closeAllConnections();server.close();
  assert.deepEqual(failures,[]);
 })().catch(e=>{console.error(e);server.close();process.exit(1)});

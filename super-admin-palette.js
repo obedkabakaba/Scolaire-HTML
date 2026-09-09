@@ -26,6 +26,21 @@
 
   const { esc } = SA;
 
+  /**
+   * L'écran de suppression est isolé dans son propre module et chargé seulement
+   * à la demande. Cela évite d'alourdir le démarrage du Super Admin pour une
+   * action rare et destructive.
+   */
+  async function ouvrirSuppressionEcole() {
+    try {
+      const module = await import('./super-admin-suppression-ecoles.js');
+      await module.ouvrirSuppressionEcole();
+    } catch (erreur) {
+      console.error('Impossible de charger la suppression école:', erreur);
+      SA.toast("Impossible d'ouvrir l'outil de suppression.", 'erreur');
+    }
+  }
+
   /* ======================================================================
      Commandes locales
      ====================================================================== */
@@ -86,6 +101,12 @@
       route: 'ecoles', params: { mode_test: '1' } },
     { groupe: 'Écoles de test', icone: '🏫', libelle: 'Voir les écoles clientes (hors test)',
       route: 'ecoles', params: { mode_test: '0' } },
+
+    /* Destruction de tenant : volontairement séparée des actions ordinaires.
+       La commande ouvre deux étapes de confirmation et le backend réexige la
+       phrase exacte ; un clic dans la palette ne peut donc jamais supprimer. */
+    { groupe: 'Écoles', icone: '🗑', libelle: 'Supprimer définitivement une école',
+      action: ouvrirSuppressionEcole },
 
     { groupe: 'Espace existant', icone: '👥', libelle: 'Utilisateurs', route: 'utilisateurs' },
     { groupe: 'Espace existant', icone: '💰', libelle: 'Finance', route: 'finance' },
@@ -235,6 +256,31 @@
 
     afficher(COMMANDES);
     champ.focus();
+  }
+
+  /* ======================================================================
+     Action visible sur la liste des écoles
+     ====================================================================== */
+
+  const vueEcoles = SA.vues && SA.vues.get('ecoles');
+  if (vueEcoles && !vueEcoles.__suppressionEcoleInstallee) {
+    const renduEcolesOriginal = vueEcoles.rendu;
+    vueEcoles.__suppressionEcoleInstallee = true;
+
+    vueEcoles.rendu = async function (conteneur, params) {
+      const resultat = await renduEcolesOriginal.call(this, conteneur, params);
+      const actions = document.getElementById('sa-entete-actions');
+      if (actions && !actions.querySelector('#btn-supprimer-ecole')) {
+        const bouton = document.createElement('button');
+        bouton.type = 'button';
+        bouton.id = 'btn-supprimer-ecole';
+        bouton.className = 'sa-bouton sa-bouton-danger';
+        bouton.textContent = 'Supprimer une école';
+        bouton.addEventListener('click', ouvrirSuppressionEcole);
+        actions.insertBefore(bouton, actions.firstChild);
+      }
+      return resultat;
+    };
   }
 
   /* ======================================================================

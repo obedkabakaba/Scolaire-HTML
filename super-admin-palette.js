@@ -259,6 +259,31 @@
   }
 
   /* ======================================================================
+     Action visible sur la liste des écoles
+     ====================================================================== */
+
+  const vueEcoles = SA.vues && SA.vues.get('ecoles');
+  if (vueEcoles && !vueEcoles.__suppressionEcoleInstallee) {
+    const renduEcolesOriginal = vueEcoles.rendu;
+    vueEcoles.__suppressionEcoleInstallee = true;
+
+    vueEcoles.rendu = async function (conteneur, params) {
+      const resultat = await renduEcolesOriginal.call(this, conteneur, params);
+      const actions = document.getElementById('sa-entete-actions');
+      if (actions && !actions.querySelector('#btn-supprimer-ecole')) {
+        const bouton = document.createElement('button');
+        bouton.type = 'button';
+        bouton.id = 'btn-supprimer-ecole';
+        bouton.className = 'sa-bouton sa-bouton-danger';
+        bouton.textContent = 'Supprimer une école';
+        bouton.addEventListener('click', ouvrirSuppressionEcole);
+        actions.insertBefore(bouton, actions.firstChild);
+      }
+      return resultat;
+    };
+  }
+
+  /* ======================================================================
      Raccourci clavier
      ====================================================================== */
 

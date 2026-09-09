@@ -6,6 +6,68 @@ export async function ouvrirSuppressionEcole() {
   if (!window.SA || !SA.session || !SA.session.connecte()) return;
 
   const esc = SA.esc;
+
+  /**
+   * Le serveur décide si la preuve de présence est encore récente. Lorsqu'il
+   * répond REAUTHENTIFICATION_REQUISE, on demande le mot de passe, ouvre la
+   * fenêtre de ré-authentification officielle puis rejoue exactement l'action.
+   */
+  async function avecReauthentification(action) {
+    try {
+      return await action();
+    } catch (erreur) {
+      if (!erreur || erreur.code !== 'REAUTHENTIFICATION_REQUISE') throw erreur;
+
+      const motDePasse = await demanderMotDePasse();
+      if (!motDePasse) return null;
+
+      await SA.api('/super-admin/control-center/reauthentifier', {
+        method: 'POST',
+        body: JSON.stringify({ mot_de_passe: motDePasse })
+      });
+      return action();
+    }
+  }
+
+  function demanderMotDePasse() {
+    return new Promise((resoudre) => {
+      const modale = SA.modale({
+        titre: 'Confirmez votre mot de passe',
+        sousTitre: "La suppression d'une école agit sur la production et exige une preuve de présence récente.",
+        contenu: `
+          <p class="sa-texte" style="margin-top:0">
+            Votre mot de passe n'est utilisé que pour ouvrir la fenêtre de
+            ré-authentification sécurisée du Super Admin. L'action reste en plus
+            protégée par la phrase de suppression exacte.
+          </p>
+          <label class="sa-champ-bloc"><span>Mot de passe</span>
+            <input type="password" class="sa-champ" id="supp-ecole-reauth-mdp"
+                   autocomplete="current-password" />
+          </label>`,
+        actions: `
+          <button class="sa-bouton sa-bouton-secondaire" data-role="annuler">Annuler</button>
+          <button class="sa-bouton sa-bouton-principal" data-role="confirmer">Confirmer</button>`
+      });
+
+      const champ = modale.querySelector('#supp-ecole-reauth-mdp');
+      const terminer = (valeur) => {
+        modale.fermer();
+        resoudre(valeur || null);
+      };
+      const valider = () => terminer(champ.value);
+
+      modale.querySelector('[data-role="annuler"]').addEventListener('click', () => terminer(null));
+      modale.querySelector('[data-role="confirmer"]').addEventListener('click', valider);
+      champ.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter') {
+          ev.preventDefault();
+          valider();
+        }
+      });
+      setTimeout(() => champ.focus(), 30);
+    });
+  }
+
   const recherche = SA.modale({
     titre: 'Supprimer définitivement une école',
     sousTitre: 'Cette opération est irréversible.',
@@ -116,10 +178,19 @@ export async function ouvrirSuppressionEcole() {
       bouton.textContent = 'Suppression…';
 
       try {
-        const resultat = await SA.api(`/admin/ecoles/${ecole.id}`, {
-          method: 'DELETE',
-          body: JSON.stringify({ confirmation: phrase })
-        });
+        const resultat = await avecReauthentification(() =>
+          SA.api(`/admin/ecoles/${ecole.id}`, {
+            method: 'DELETE',
+            body: JSON.stringify({ confirmation: phrase })
+          })
+        );
+
+        if (!resultat) {
+          bouton.disabled = false;
+          bouton.textContent = 'Supprimer définitivement';
+          return;
+        }
+
         modale.fermer();
         SA.toast('École supprimée définitivement.', 'succes', 8000);
         if (resultat.stockage && resultat.stockage.complet === false) {

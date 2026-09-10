@@ -14,3 +14,287 @@ html[data-theme="ardoise"] .carte-cours .bouton {
 html[data-theme="ardoise"] .sa-badge.ton-succes {
   color: #456E50 !important;
 }
+
+/* ========================================================================== 
+   Navigation horizontale — finition commune
+   --------------------------------------------------------------------------
+   Les thèmes ci-dessous sont les seuls qui autorisent réellement le réglage
+   gauche/droite/haut/bas. Les apparences à coque dédiée (Élan, Yohali,
+   Récré, Nexus, Orbite, Fluide, Vibra...) gardent leur propre navigation et
+   ne sont volontairement pas touchées ici.
+
+   Le défaut principal du mode « En haut » venait des styles de page : la
+   barre héritait encore de flex-direction:column et de largeurs prévues pour
+   un rail latéral. Résultat : déconnexion sous la barre, contenu tassé à
+   gauche et grand vide sur la droite. Cette couche remet la coque à plat sans
+   modifier les écrans métier.
+   ========================================================================== */
+@media screen and (min-width: 781px) {
+  html[data-nav-position="haut"]:is(
+    [data-theme="ardoise"],
+    [data-theme="studio"],
+    [data-theme="pure"],
+    [data-theme="nuit"],
+    [data-theme="yohali"],
+    [data-theme="kivu"]
+  ) .mise-en-page,
+  html[data-nav-position="bas"]:is(
+    [data-theme="ardoise"],
+    [data-theme="studio"],
+    [data-theme="pure"],
+    [data-theme="nuit"],
+    [data-theme="yohali"],
+    [data-theme="kivu"]
+  ) .mise-en-page {
+    grid-template-columns: minmax(0, 1fr) !important;
+    min-width: 0;
+  }
+
+  html[data-nav-position="haut"]:is(
+    [data-theme="ardoise"], [data-theme="studio"], [data-theme="pure"],
+    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"]
+  ) .mise-en-page {
+    grid-template-rows: auto minmax(0, 1fr) !important;
+  }
+
+  html[data-nav-position="bas"]:is(
+    [data-theme="ardoise"], [data-theme="studio"], [data-theme="pure"],
+    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"]
+  ) .mise-en-page {
+    grid-template-rows: minmax(0, 1fr) auto !important;
+  }
+
+  /* La barre devient une vraie top/bottom bar : une seule ligne, compacte,
+     stable et indépendante des anciens styles de rail vertical. */
+  html:is(
+    [data-theme="ardoise"], [data-theme="studio"], [data-theme="pure"],
+    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"]
+  ):is([data-nav-position="haut"], [data-nav-position="bas"]) .barre-laterale {
+    box-sizing: border-box;
+    width: 100% !important;
+    max-width: none !important;
+    min-height: 64px;
+    height: 64px;
+    padding: 0 20px !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 14px;
+    overflow: visible;
+    border-radius: 0 !important;
+  }
+
+  html:is(
+    [data-theme="ardoise"], [data-theme="studio"], [data-theme="pure"],
+    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"]
+  ):is([data-nav-position="haut"], [data-nav-position="bas"]) .barre-laterale > div {
+    width: auto;
+    min-width: 0;
+    max-width: none;
+    margin: 0;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 14px !important;
+    flex: 1 1 auto !important;
+  }
+
+  /* Identité compacte à gauche, séparée du reste sans créer un gros bloc. */
+  html:is(
+    [data-theme="ardoise"], [data-theme="studio"], [data-theme="pure"],
+    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"]
+  ):is([data-nav-position="haut"], [data-nav-position="bas"]) .barre-laterale .marque {
+    margin: 0 !important;
+    padding: 0 16px 0 2px;
+    min-width: max-content;
+    font-size: 1.18rem !important;
+    line-height: 1;
+    border-right: 1px solid var(--nav-separateur);
+  }
+
+  /* La liste prend l'espace disponible. Si l'écran est plus étroit, elle
+     défile horizontalement plutôt que de pousser la déconnexion à la ligne. */
+  html:is(
+    [data-theme="ardoise"], [data-theme="studio"], [data-theme="pure"],
+    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"]
+  ):is([data-nav-position="haut"], [data-nav-position="bas"]) .nav-liste {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    flex: 1 1 auto !important;
+    min-width: 0;
+    width: auto !important;
+    margin: 0 !important;
+    padding: 4px 1px !important;
+    gap: 4px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: none;
+    white-space: nowrap;
+  }
+
+  html:is(
+    [data-theme="ardoise"], [data-theme="studio"], [data-theme="pure"],
+    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"]
+  ):is([data-nav-position="haut"], [data-nav-position="bas"]) .nav-liste::-webkit-scrollbar {
+    display: none;
+  }
+
+  html:is(
+    [data-theme="ardoise"], [data-theme="studio"], [data-theme="pure"],
+    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"]
+  ):is([data-nav-position="haut"], [data-nav-position="bas"]) .nav-liste > li {
+    flex: 0 0 auto;
+    margin: 0 !important;
+  }
+
+  html:is(
+    [data-theme="ardoise"], [data-theme="studio"], [data-theme="pure"],
+    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"]
+  ):is([data-nav-position="haut"], [data-nav-position="bas"]) .nav-item {
+    box-sizing: border-box;
+    min-height: 40px;
+    padding: 0 11px !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    border: 1px solid transparent;
+    border-radius: 10px !important;
+    line-height: 1.1;
+    font-size: 0.88rem !important;
+    font-weight: 500;
+    color: var(--nav-texte);
+    background: transparent;
+    white-space: nowrap;
+    transition: color .16s ease, background-color .16s ease, border-color .16s ease, transform .16s ease;
+  }
+
+  html:is(
+    [data-theme="ardoise"], [data-theme="studio"], [data-theme="pure"],
+    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"]
+  ):is([data-nav-position="haut"], [data-nav-position="bas"]) button.nav-item {
+    font-family: var(--police-corps);
+    cursor: pointer;
+  }
+
+  html:is(
+    [data-theme="ardoise"], [data-theme="studio"], [data-theme="pure"],
+    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"]
+  ):is([data-nav-position="haut"], [data-nav-position="bas"]) .nav-item:hover {
+    color: var(--nav-texte-fort);
+    background: var(--nav-actif-fond);
+    transform: translateY(-1px);
+  }
+
+  /* L'ancien trait vertical de Pure/Nuit est remplacé par un repère bas qui
+     fonctionne visuellement dans une barre horizontale. */
+  html:is(
+    [data-theme="ardoise"], [data-theme="studio"], [data-theme="pure"],
+    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"]
+  ):is([data-nav-position="haut"], [data-nav-position="bas"]) .nav-item.actif {
+    color: var(--nav-texte-fort) !important;
+    background: var(--nav-actif-fond) !important;
+    box-shadow: inset 0 -2px 0 var(--ocre) !important;
+  }
+
+  html:is(
+    [data-theme="ardoise"], [data-theme="studio"], [data-theme="pure"],
+    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"]
+  ):is([data-nav-position="haut"], [data-nav-position="bas"]) .nav-icone {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 auto;
+  }
+
+  /* La déconnexion reste dans la même ligne. Elle ressemble maintenant à une
+     action secondaire de la barre plutôt qu'à un élément de rail oublié. */
+  html:is(
+    [data-theme="ardoise"], [data-theme="studio"], [data-theme="pure"],
+    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"]
+  ):is([data-nav-position="haut"], [data-nav-position="bas"]) .nav-deconnexion {
+    box-sizing: border-box;
+    margin: 0 !important;
+    min-height: 40px;
+    padding: 0 11px !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    align-self: center !important;
+    flex: 0 0 auto !important;
+    border: 1px solid var(--nav-separateur) !important;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--nav-texte);
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  html:is(
+    [data-theme="ardoise"], [data-theme="studio"], [data-theme="pure"],
+    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"]
+  ):is([data-nav-position="haut"], [data-nav-position="bas"]) .nav-deconnexion:hover {
+    color: var(--nav-texte-fort);
+    background: var(--nav-actif-fond);
+  }
+
+  /* Quand le rail passe en haut/bas, le contenu n'a plus à rester limité à la
+     largeur d'un formulaire pensé à côté d'une sidebar. On élargit et centre
+     l'espace de travail, tout en gardant une largeur confortable sur grand
+     écran. Cela corrige notamment le grand vide de Mon profil. */
+  html:is(
+    [data-theme="ardoise"], [data-theme="studio"], [data-theme="pure"],
+    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"]
+  ):is([data-nav-position="haut"], [data-nav-position="bas"]) .contenu {
+    box-sizing: border-box;
+    width: 100% !important;
+    max-width: 1280px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  html:is(
+    [data-theme="ardoise"], [data-theme="studio"], [data-theme="pure"],
+    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"]
+  ):is([data-nav-position="haut"], [data-nav-position="bas"]) #grille-themes {
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 16px;
+    width: 100%;
+  }
+
+  /* Finitions par apparence : même géométrie, identité visuelle conservée. */
+  html[data-theme="pure"]:is([data-nav-position="haut"], [data-nav-position="bas"]) .barre-laterale {
+    border-right: 0 !important;
+    background: rgba(255, 255, 255, .97);
+    box-shadow: 0 5px 18px rgba(20, 23, 26, .07);
+  }
+
+  html[data-theme="studio"]:is([data-nav-position="haut"], [data-nav-position="bas"]) .barre-laterale {
+    box-shadow: 0 7px 22px rgba(27, 37, 89, .16);
+  }
+
+  html[data-theme="ardoise"]:is([data-nav-position="haut"], [data-nav-position="bas"]) .barre-laterale {
+    box-shadow: 0 7px 22px rgba(31, 43, 36, .14);
+  }
+
+  html[data-theme="nuit"]:is([data-nav-position="haut"], [data-nav-position="bas"]) .barre-laterale {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .30);
+  }
+
+  html:is([data-theme="yohali"], [data-theme="kivu"]):is([data-nav-position="haut"], [data-nav-position="bas"]) .barre-laterale {
+    border-radius: 0 !important;
+    box-shadow: 0 7px 22px rgba(30, 91, 79, .16);
+  }
+
+  /* Le mode bas utilise la même finition mais avec l'ombre vers le haut. */
+  html[data-nav-position="bas"]:is(
+    [data-theme="ardoise"], [data-theme="studio"], [data-theme="pure"],
+    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"]
+  ) .barre-laterale {
+    box-shadow: 0 -6px 20px rgba(16, 24, 40, .10);
+  }
+}

@@ -1,0 +1,116 @@
+/* Isolated browser check: real shared navigation/theme scripts, fixture data only. */
+const fs=require('fs'),path=require('path'),http=require('http'),assert=require('assert/strict');
+const {chromium}=require('playwright');
+const root=__dirname;
+const cacheVersion=fs.readFileSync(path.join(root,'sw.js'),'utf8').match(/const VERSION='([^']+)'/)[1];
+const user={id:42,ecole_id:1,nom:'Exemple',prenom:'Direction',roles:['directeur'],email:'test@example.invalid'};
+const data={effectifs:{nb_eleves:428,nb_professeurs:32,nb_classes:18},taux_reussite_global:86,
+ impayes:{nb_eleves_en_retard:7},annee_active:{libelle:'2026–2027'},notes:{encodees:340,attendues:400,restantes:60},
+ periode_courante:{libelle:'Première période'},etat_periodes_par_classe:[],
+ evenements_a_venir:[{titre:'Réunion pédagogique',date_debut:'2026-09-12',type:'reunion'}]};
+const server=http.createServer((req,res)=>{
+ const u=new URL(req.url,'http://localhost');let f=path.join(root,u.pathname==='/'?'index.html':decodeURIComponent(u.pathname));
+ if(!f.startsWith(root+path.sep)){res.writeHead(403).end();return;}
+ if(!fs.existsSync(f)||fs.statSync(f).isDirectory()){res.writeHead(404).end();return;}
+ let body=fs.readFileSync(f);
+ if(u.searchParams.has('shell')&&f.endsWith('.html')){
+   body=body.toString().replace(/<script\b(?![^>]*\bsrc=)[^>]*>[\s\S]*?<\/script>/gi,'')
+     .replace(/<script[^>]+src="([^"]+)"[^>]*><\/script>/gi,(tag,src)=>/^(theme|ui|mobile|session|acces-presences|evenements-types|didacticiel)\.js$/.test(src)?tag:'');
+ }
+ const ext=path.extname(f);res.setHeader('Content-Type',({'.html':'text/html; charset=utf-8','.js':'application/javascript','.css':'text/css','.svg':'image/svg+xml','.png':'image/png','.webp':'image/webp'})[ext]||'application/octet-stream');res.end(body);
+});
+(async()=>{
+ await new Promise(r=>server.listen(0,'127.0.0.1',r));
+ const base='http://127.0.0.1:'+server.address().port;
+ const browser=await chromium.launch(process.env.ORBITE_BROWSER?{executablePath:process.env.ORBITE_BROWSER,headless:true}:{headless:true});
+ const ctx=await browser.newContext({viewport:{width:1536,height:1024},serviceWorkers:'block',reducedMotion:'reduce'});
+ await ctx.addInitScript(u=>{
+   localStorage.setItem('ardoise_user',JSON.stringify(u));localStorage.setItem('ardoise_token','test');
+   localStorage.setItem('ardoise_access_token','test');localStorage.setItem('ardoise_theme','orbite');
+   localStorage.setItem('ardoise_nav_position','gauche');localStorage.setItem('ardoise_nav_compact','oui');
+ },user);
+ await ctx.route('**/*',async route=>{
+   const url=new URL(route.request().url());
+   if(url.origin===base)return route.continue();
+   if(/google|gstatic/.test(url.hostname))return route.abort();
+   let value=[];
+   if(url.pathname.endsWith('/dashboard/directeur'))value=data;
+   else if(url.pathname.includes('/presences/resume-jour'))value={nb_classes:18,nb_classes_appelees:18,total_absents:3,total_retards:0,classes:[]};
+   else if(url.pathname.endsWith('/classes'))value=Array.from({length:18},(_,i)=>({id:i+1,nom:i===0?'6e A':i===1?'<em>6e B</em>':'Classe '+(i+1),nb_eleves:20+i}));
+   else if(url.pathname.endsWith('/utilisateurs/moi'))value=user;
+   else if(url.pathname.endsWith('/ecoles/moi'))value={id:1,nom:'École de démonstration',abonnement_statut:'actif'};
+   else if(url.pathname.includes('/messages'))value={messages:[],non_lus:0};
+   return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(value)});
+ });
+ const page=await ctx.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.stack));
+ await page.goto(base+'/dashboard-directeur.html');await page.waitForSelector('.ob-class');await page.waitForTimeout(650);
+ assert.equal(await page.locator('.ob-class').count(),4);
+ assert.equal(await page.locator('.ob-class em').count(),0);
+ assert.ok((await page.locator('.ob-class').nth(1).textContent()).includes('<em>'));
+ assert.ok((await page.locator('.ob-events').textContent()).includes('Réunion pédagogique'));
+ assert.equal(await page.locator('.ob-main #stat-eleves').textContent(),'428');
+ await page.evaluate(()=>{window.obStatNode=document.querySelector('.grille-stats');window.obClicks=0;obStatNode.addEventListener('click',()=>obClicks++);});
+ for(const theme of ['nexus','elan','perspective','recre','yohali','orbite']){
+   await page.evaluate(t=>ArdoiseTheme.appliquer(t,{synchroniserServeur:false}),theme);
+   if(['elan','perspective','recre'].includes(theme))await page.waitForSelector('.'+theme+'-hero');
+   assert.equal(await page.locator('.ob-shell').isVisible(),theme==='orbite');
+   assert.equal(await page.evaluate(t=>document.querySelector(t==='orbite'?'.ob-main > .grille-stats':'.contenu > .grille-stats')===window.obStatNode,theme),true);
+ }
+ await page.locator('#stat-eleves').click();assert.ok(await page.evaluate(()=>obClicks)>0);
+ await page.evaluate(()=>document.querySelector('#stat-eleves').textContent='429');assert.equal(await page.locator('.ob-main #stat-eleves').textContent(),'429');
+ for(const position of ['gauche','droite','haut','bas']){
+   await page.evaluate(p=>ArdoiseDisposition.definir(p,true),position);await page.waitForTimeout(100);
+   const box=await page.locator('.barre-laterale').boundingBox();assert.equal(Math.round(box.x),18);assert.equal(Math.round(box.width),100);
+ }
+ await page.evaluate(()=>ArdoiseDisposition.definir('gauche',true));await page.waitForTimeout(650);
+ await page.keyboard.press('Control+k');await page.locator('#ob-tools input').fill('comptabilite');
+ assert.equal(await page.locator('#ob-tools nav a').count(),1);assert.equal(await page.locator('#ob-tools nav a').getAttribute('href'),'comptabilite.html');
+ await page.keyboard.press('Escape');assert.equal(await page.locator('#ob-tools').isVisible(),false);
+ const mainBox=await page.locator('.ob-main').boundingBox(),asideBox=await page.locator('.ob-aside').boundingBox();assert.ok(mainBox.x+mainBox.width<=asideBox.x);
+ await page.screenshot({path:process.env.ORBITE_SHOT||path.join(root,'orbite-preview.png')});
+ await page.setViewportSize({width:390,height:844});await page.waitForTimeout(150);
+ await page.screenshot({path:(process.env.ORBITE_SHOT||path.join(root,'orbite-preview.png')).replace('.png','-mobile.png')});
+ await page.goto(base+'/mon-profil.html');await page.waitForSelector('.carte-theme[data-theme="orbite"]');
+ await page.waitForFunction(()=>getComputedStyle(document.getElementById('choix-position').closest('.champ-disposition')).display==='none');
+ await page.locator('.carte-theme[data-theme="nuit"]').click();assert.equal(await page.locator('.ob-banner').isVisible(),false);
+ await page.waitForFunction(()=>getComputedStyle(document.getElementById('choix-position').closest('.champ-disposition')).display!=='none');
+ await page.locator('.carte-theme[data-theme="orbite"]').click();assert.equal(await page.locator('.ob-banner').isVisible(),true);
+ await page.reload();await page.waitForSelector('.ob-banner');assert.equal(await page.locator('.carte-theme[data-theme="orbite"]').getAttribute('aria-pressed'),'true');
+ await page.locator('.ard-mob-barre .ard-mob-bouton').click();assert.equal(await page.locator('.barre-laterale').getAttribute('aria-hidden'),'false');
+ await page.keyboard.press('Escape');assert.equal(await page.locator('.barre-laterale').getAttribute('aria-hidden'),'true');
+ const failures=[];
+ const scenes=["dashboard-directeur", "espace-secretaire", "espace-professeur", "espace-titulaire", "eleves", "inscriptions", "classes", "cours", "cours-classe-titulaire", "notes", "presences", "discipline", "bulletins", "bulletin-annuel", "generateur-modeles", "repechage", "orientation", "calendrier", "emploi-du-temps", "annee-scolaire", "frais-scolaires", "comptabilite", "rapports", "archives", "journal", "messages", "utilisateurs", "parametres", "mon-profil", "site-public", "abonnements", "support", "super-admin"];
+ for(const name of scenes.filter(p=>p!=='super-admin')){
+   await page.goto(base+'/'+name+'.html?shell');await page.waitForTimeout(180);
+   await page.evaluate(()=>{document.querySelectorAll('.mise-en-page').forEach(e=>e.style.display='grid');document.querySelectorAll('#ecran-chargement').forEach(e=>e.style.display='none');});
+   for(const width of [1536,1024,390]){
+     await page.setViewportSize({width,height:1000});await page.waitForTimeout(80);
+     const state=await page.evaluate(()=>({workspace:!!document.querySelector('.ob-banner'),overflow:document.documentElement.scrollWidth-innerWidth}));
+     if(!state.workspace||state.overflow>2)failures.push({name,width,...state,culprits:await page.evaluate(()=>Array.from(document.querySelectorAll('main *')).filter(n=>n.getBoundingClientRect().right>innerWidth+2).slice(0,8).map(n=>({tag:n.tagName,cls:n.className,right:n.getBoundingClientRect().right})))});
+     if(process.env.ORBITE_SHOT&&width===1536&&['classes','inscriptions'].includes(name))await page.screenshot({path:process.env.ORBITE_SHOT.replace('.png','-'+name+'.png')});
+   }
+ }
+ console.log('Screen checks:',scenes.length-1,'x 3 viewports',JSON.stringify(failures));
+ await page.setViewportSize({width:1536,height:1000});
+ await page.evaluate(()=>{const u=JSON.parse(localStorage.getItem('ardoise_user'));u.roles=['super_admin'];localStorage.setItem('ardoise_user',JSON.stringify(u));});
+ await page.goto(base+'/super-admin.html?shell');await page.evaluate(()=>document.querySelector('.sa-application').style.display='flex');
+ await page.waitForSelector('.sa-principal .ob-banner');
+ // Independently exercise a professor's allowed navigation, including the new palette.
+ const prof=await browser.newContext({serviceWorkers:'block'});
+ await prof.addInitScript(()=>{localStorage.setItem('ardoise_user',JSON.stringify({id:7,ecole_id:1,roles:['professeur']}));localStorage.setItem('ardoise_token','test');localStorage.setItem('ardoise_access_token','test');localStorage.setItem('ardoise_theme','orbite');});
+ let financeRequests=0;
+ await prof.route('**/*',route=>{if(new URL(route.request().url()).origin===base)return route.continue();if(/\/(classes|comptabilite|frais|paiements)(?:[/?]|$)/.test(route.request().url()))financeRequests++;return route.fulfill({status:200,contentType:'application/json',body:'[]'});});
+ const pp=await prof.newPage();await pp.goto(base+'/espace-professeur.html?shell');await pp.evaluate(()=>document.querySelector('.mise-en-page').style.display='grid');await pp.waitForSelector('.ob-banner');
+ assert.equal(await pp.locator('.ob-class').count(),0);
+ await pp.locator('.ob-dock button').last().click();
+ assert.equal(await pp.locator('#ob-tools a[href="abonnements.html"],#ob-tools a[href="comptabilite.html"]').count(),0);
+ assert.equal(financeRequests,0);await prof.close();
+ const offline=await browser.newContext({serviceWorkers:'allow'}),op=await offline.newPage();await op.goto(base+'/theme.css');
+ await op.evaluate(async()=>{await caches.open('ardoise-v75-coquille');await navigator.serviceWorker.register('/sw.js');await navigator.serviceWorker.ready;});
+ await op.waitForFunction(()=>navigator.serviceWorker.controller!==null);
+ const keys=await op.evaluate(()=>caches.keys());assert.ok(keys.includes(cacheVersion+'-coquille'));assert.ok(!keys.includes('ardoise-v75-coquille'));
+ await offline.setOffline(true);
+ const ok=await op.evaluate(async()=>Promise.all(['theme-orbite.css','theme-orbite.js','public/orbite/horizon.svg','public/orbite/symbole.svg'].map(async p=>{const r=await fetch(p);return r.ok&&(await r.text()).length>0;})));assert.ok(ok.every(Boolean));await offline.close();
+ await browser.close();server.closeAllConnections();server.close();
+ assert.deepEqual(failures,[]);console.log('Orbite Aube: rail, classes, agenda, stat node restoration, search, themes, profile, mobile, role filtering and offline passed.');
+})().catch(e=>{console.error(e);server.close();process.exit(1)});

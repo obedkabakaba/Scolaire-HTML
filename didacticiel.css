@@ -137,7 +137,6 @@
    -------------------------------------------------------------------------- */
 .ard-di-bienvenue { text-align: center; padding: 34px 30px 26px 30px; }
 .ard-di-bienvenue .ard-di-salut {
-  font-family: var(--police-titre, inherit);
   font-size: 1.65rem; line-height: 1.25; margin: 0 0 12px 0; font-weight: 600;
 }
 .ard-di-bienvenue .ard-di-texte {
@@ -646,4 +645,36 @@
 
 @media (prefers-reduced-motion: reduce) {
   .ard-di-checklist { animation: none; }
+}
+
+/* --------------------------------------------------------------------------
+   15. CENTRAGE DU BOUTON D'AIDE SUR TÉLÉPHONE
+
+   Quand le libellé est masqué, le bouton conserve `display:flex` mais sans
+   `justify-content:center`. Le seul élément restant — le « ? » — reste donc
+   au début de la pastille et paraît nettement décalé. On centre le contenu
+   horizontalement et verticalement, puis on applique une correction optique
+   d'un pixel vers le haut pour le glyphe.
+   -------------------------------------------------------------------------- */
+@media (max-width: 560px) {
+  .ard-di-bouton {
+    width: 46px;
+    min-width: 46px;
+    height: 46px;
+    padding: 0;
+    gap: 0;
+    align-items: center;
+    justify-content: center;
+  }
+  .ard-di-bouton .ard-di-glyphe {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    line-height: 1;
+    transform: translateY(-1px);
+  }
 }

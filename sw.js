@@ -70,7 +70,8 @@
    v69 : l'arrondi intérieur suit le rail déployé ou replié et reste visible
          pendant le défilement du contenu. Terranga (clé interne yohali) et son
          alias Kivu conservent leur apparence d'origine, sans cet ajout. */
-const VERSION='ardoise-v80';
+const VERSION='ardoise-v81';
+/* v81 : recharge theme.css pour afficher la déconnexion dans toutes les apparences. */
 /* v80 : coque mobile opaque et mieux séparée du contenu, notamment pour Fluide. */
 /* v78 : Fluide, panneaux de verre et raccourcis contextuels. */
 /* v77 : Orbite garde son rail vertical après une ancienne position haut/bas. */

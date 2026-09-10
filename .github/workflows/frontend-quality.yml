@@ -102,3 +102,4 @@ jobs:
           node test-recre-browser.cjs
           node test-nexus-browser.cjs
           node test-orbite-browser.cjs
+          node test-fluide-browser.cjs

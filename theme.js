@@ -45,6 +45,7 @@
    sélectionné.
 */
 window.ARDOISE_THEMES = [
+  { cle: 'vibra', nom: 'Vibra', dispositionMenu: false, description: 'Ivoire, or et bleu pétrole. Campus futuriste, connexions lumineuses et priorités à portée de main.', apercu: { fond: '#17343B', surface: '#F6EFE4', accent: '#A5793D', barre: '#EAD8BD', texte: '#17303B' } },
   { cle: 'fluide', nom: 'Fluide', dispositionMenu: false, description: 'Verre transparent, reflets aquatiques et raccourcis colorés. Votre journée, en toute clarté.', apercu: { fond: '#D1E4EA', surface: '#EBF6F8', accent: '#007E9B', barre: '#C4E8ED', texte: '#10354E' } },
   { cle: 'orbite', nom: 'Orbite Aube', dispositionMenu: false, description: 'Bleu céleste et blanc. Rail flottant, classes et repères du jour.', apercu: { fond: '#F1F8FF', surface: '#FFFFFF', accent: '#0860D9', barre: '#FFFFFF', texte: '#102B52' } },
   { cle: 'nexus', nom: 'Nexus', dispositionMenu: false, description: 'Graphite et vert électrique. Carte des espaces, panneau contextuel et commandes rapides.', apercu: { fond: '#101517', surface: '#182024', accent: '#C9F65F', barre: '#101719', texte: '#F0F4EE' } },
@@ -76,6 +77,13 @@ window.ARDOISE_THEME_DEFAUT = 'ardoise';
     try { localStorage.setItem(CLE_STOCKAGE, theme); if (sessionStorage.getItem('ardoise_refresh_token')) sessionStorage.setItem(CLE_STOCKAGE, theme); } catch (e) {}
     try { if (theme === 'studio' && !localStorage.getItem('ardoise_nav_compact')) localStorage.setItem('ardoise_nav_compact', 'oui'); if (window.ArdoiseDisposition) ArdoiseDisposition.appliquer(); } catch (e) {}
     document.dispatchEvent(new CustomEvent('ardoise:theme-change', { detail: { theme: theme } }));
+    if (theme === 'vibra' && !document.querySelector('script[data-ardoise-vibra]')) {
+      var scriptVibra = document.createElement('script');
+      scriptVibra.src = 'theme-vibra.js';
+      scriptVibra.dataset.ardoiseVibra = '';
+      scriptVibra.onerror = function () { scriptVibra.remove(); };
+      document.head.appendChild(scriptVibra);
+    }
     if (theme === 'fluide' && !document.querySelector('script[data-ardoise-fluide]')) {
       var scriptFluide = document.createElement('script');
       scriptFluide.src = 'theme-fluide.js';

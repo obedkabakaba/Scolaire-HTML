@@ -5,6 +5,7 @@
 @import url("theme-nexus.css");
 @import url("theme-orbite.css");
 @import url("theme-fluide.css");
+@import url("theme-vibra.css");
 
 html[data-theme="ardoise"] .carte-cours .bouton {
   color: var(--texte-sombre, #1F2B24) !important;

@@ -58,9 +58,12 @@ const server=http.createServer((req,res)=>{
  }
  await page.locator('#stat-eleves').click();assert.ok(await page.evaluate(()=>obClicks)>0);
  await page.evaluate(()=>document.querySelector('#stat-eleves').textContent='429');assert.equal(await page.locator('.ob-main #stat-eleves').textContent(),'429');
- for(const position of ['gauche','droite','haut','bas']){
+ for(const compact of ['oui','non'])for(const position of ['gauche','droite','haut','bas']){
    await page.evaluate(p=>ArdoiseDisposition.definir(p,true),position);await page.waitForTimeout(100);
+   await page.evaluate(c=>document.documentElement.setAttribute('data-nav-compact',c),compact);
    const box=await page.locator('.barre-laterale').boundingBox();assert.equal(Math.round(box.x),18);assert.equal(Math.round(box.width),100);
+   const inner=await page.evaluate(()=>{const rail=document.querySelector('.barre-laterale'),brand=rail.querySelector('.marque').getBoundingClientRect(),item=rail.querySelector('.nav-item').getBoundingClientRect(),r=rail.getBoundingClientRect();return {brandBottom:brand.bottom,itemTop:item.top,itemWidth:item.width,itemRight:item.right,railRight:r.right};});
+   assert.ok(inner.itemWidth>=70&&inner.itemRight<=inner.railRight&&inner.brandBottom<=inner.itemTop,JSON.stringify({position,inner}));
  }
  await page.evaluate(()=>ArdoiseDisposition.definir('gauche',true));await page.waitForTimeout(650);
  await page.keyboard.press('Control+k');await page.locator('#ob-tools input').fill('comptabilite');
@@ -71,6 +74,12 @@ const server=http.createServer((req,res)=>{
  await page.setViewportSize({width:390,height:844});await page.waitForTimeout(150);
  await page.screenshot({path:(process.env.ORBITE_SHOT||path.join(root,'orbite-preview.png')).replace('.png','-mobile.png')});
  await page.goto(base+'/mon-profil.html');await page.waitForSelector('.carte-theme[data-theme="orbite"]');
+ await page.setViewportSize({width:1280,height:590});
+ await page.evaluate(()=>ArdoiseDisposition.definir('haut',true));
+ await page.locator('.carte-theme[data-theme="orbite"]').scrollIntoViewIfNeeded();
+ const profileLink=await page.locator('.barre-laterale .nav-item').first().boundingBox();assert.ok(profileLink.width>=70);
+ if(process.env.ORBITE_SHOT)await page.screenshot({path:process.env.ORBITE_SHOT.replace('.png','-profil.png')});
+ await page.setViewportSize({width:390,height:844});
  await page.waitForFunction(()=>getComputedStyle(document.getElementById('choix-position').closest('.champ-disposition')).display==='none');
  await page.locator('.carte-theme[data-theme="nuit"]').click();assert.equal(await page.locator('.ob-banner').isVisible(),false);
  await page.waitForFunction(()=>getComputedStyle(document.getElementById('choix-position').closest('.champ-disposition')).display!=='none');
@@ -106,9 +115,9 @@ const server=http.createServer((req,res)=>{
  assert.equal(await pp.locator('#ob-tools a[href="abonnements.html"],#ob-tools a[href="comptabilite.html"]').count(),0);
  assert.equal(financeRequests,0);await prof.close();
  const offline=await browser.newContext({serviceWorkers:'allow'}),op=await offline.newPage();await op.goto(base+'/theme.css');
- await op.evaluate(async()=>{await caches.open('ardoise-v75-coquille');await navigator.serviceWorker.register('/sw.js');await navigator.serviceWorker.ready;});
+ await op.evaluate(async()=>{await caches.open('ardoise-v76-coquille');await navigator.serviceWorker.register('/sw.js');await navigator.serviceWorker.ready;});
  await op.waitForFunction(()=>navigator.serviceWorker.controller!==null);
- const keys=await op.evaluate(()=>caches.keys());assert.ok(keys.includes(cacheVersion+'-coquille'));assert.ok(!keys.includes('ardoise-v75-coquille'));
+ const keys=await op.evaluate(()=>caches.keys());assert.ok(keys.includes(cacheVersion+'-coquille'));assert.ok(!keys.includes('ardoise-v76-coquille'));
  await offline.setOffline(true);
  const ok=await op.evaluate(async()=>Promise.all(['theme-orbite.css','theme-orbite.js','public/orbite/horizon.svg','public/orbite/symbole.svg'].map(async p=>{const r=await fetch(p);return r.ok&&(await r.text()).length>0;})));assert.ok(ok.every(Boolean));await offline.close();
  await browser.close();server.closeAllConnections();server.close();

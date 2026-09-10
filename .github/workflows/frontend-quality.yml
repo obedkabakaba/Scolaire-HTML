@@ -103,3 +103,4 @@ jobs:
           node test-nexus-browser.cjs
           node test-orbite-browser.cjs
           node test-fluide-browser.cjs
+          node test-vibra-browser.cjs

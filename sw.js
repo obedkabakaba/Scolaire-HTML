@@ -70,7 +70,8 @@
    v69 : l'arrondi intérieur suit le rail déployé ou replié et reste visible
          pendant le défilement du contenu. Terranga (clé interne yohali) et son
          alias Kivu conservent leur apparence d'origine, sans cet ajout. */
-const VERSION='ardoise-v76';
+const VERSION='ardoise-v77';
+/* v77 : Orbite garde son rail vertical après une ancienne position haut/bas. */
 /* v76 : Orbite Aube, rail flottant et agenda lumineux. */
 /* v75 : Nexus, carte contextuelle et commandes rapides. */
 /* v74 : Récré, papier crème et dessins de cahier pour chaque rubrique. */

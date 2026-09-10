@@ -379,3 +379,135 @@ html[data-theme="ardoise"] .sa-badge.ton-succes {
     border-top-color: #B7CDD6 !important;
   }
 }
+
+/* ========================================================================== 
+   Déconnexion — visible dans toutes les apparences
+   --------------------------------------------------------------------------
+   Les coques dédiées réutilisent le vrai bouton #bouton-deconnexion-nav afin
+   de conserver le même gestionnaire de session. Certaines avaient cependant
+   masqué son texte sans dessiner l'icône de remplacement. Le contrôle restait
+   donc cliquable mais visuellement absent.
+   ========================================================================== */
+@media screen and (min-width: 781px) {
+  /* Barres horizontales dédiées : le libellé est volontairement explicite.
+     La liste centrale peut défiler, donc ce bouton ne casse pas la topbar. */
+  html:is(
+    [data-theme="elan"],
+    [data-theme="perspective"],
+    [data-theme="recre"],
+    [data-theme="nexus"]
+  ) .barre-laterale .nav-deconnexion {
+    box-sizing: border-box;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: auto !important;
+    min-width: max-content;
+    min-height: 40px;
+    margin: 0 !important;
+    padding: 9px 12px !important;
+    border: 1px solid var(--nav-separateur) !important;
+    border-radius: 10px !important;
+    background: transparent !important;
+    color: var(--nav-texte) !important;
+    font-family: var(--police-corps) !important;
+    font-size: .78rem !important;
+    font-weight: 600;
+    line-height: 1 !important;
+    white-space: nowrap;
+    cursor: pointer;
+    flex: 0 0 auto !important;
+  }
+
+  html:is(
+    [data-theme="elan"],
+    [data-theme="perspective"],
+    [data-theme="recre"],
+    [data-theme="nexus"]
+  ) .barre-laterale .nav-deconnexion::before,
+  html:is(
+    [data-theme="elan"],
+    [data-theme="perspective"],
+    [data-theme="recre"],
+    [data-theme="nexus"]
+  ) .barre-laterale .nav-deconnexion::after {
+    content: none !important;
+    display: none !important;
+  }
+
+  html:is(
+    [data-theme="elan"],
+    [data-theme="perspective"],
+    [data-theme="recre"],
+    [data-theme="nexus"]
+  ) .barre-laterale .nav-deconnexion:hover {
+    color: var(--nav-texte-fort) !important;
+    background: var(--nav-actif-fond) !important;
+  }
+
+  /* Rails étroits : on garde une commande compacte mais impossible à rater.
+     Le pictogramme et le mot « Sortir » remplacent proprement le texte trop
+     long « Se déconnecter » dans une colonne de 100 px. */
+  html:is(
+    [data-theme="orbite"],
+    [data-theme="fluide"],
+    [data-theme="vibra"]
+  ) .barre-laterale .nav-deconnexion {
+    box-sizing: border-box;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    width: 100% !important;
+    min-height: 58px;
+    margin: auto 0 0 !important;
+    padding: 9px 4px !important;
+    border: 1px solid var(--nav-separateur) !important;
+    border-radius: 16px !important;
+    background: transparent !important;
+    color: var(--nav-texte) !important;
+    font-size: 0 !important;
+    line-height: 1 !important;
+    cursor: pointer;
+    flex: 0 0 auto !important;
+  }
+
+  html:is(
+    [data-theme="orbite"],
+    [data-theme="fluide"],
+    [data-theme="vibra"]
+  ) .barre-laterale .nav-deconnexion::before {
+    content: '' !important;
+    display: block !important;
+    width: 18px !important;
+    height: 18px !important;
+    flex: 0 0 18px !important;
+    background: currentColor !important;
+    -webkit-mask: var(--icone-sortie) center / contain no-repeat !important;
+    mask: var(--icone-sortie) center / contain no-repeat !important;
+  }
+
+  html:is(
+    [data-theme="orbite"],
+    [data-theme="fluide"],
+    [data-theme="vibra"]
+  ) .barre-laterale .nav-deconnexion::after {
+    content: 'Sortir' !important;
+    display: block !important;
+    font-family: var(--police-corps) !important;
+    font-size: .68rem !important;
+    font-weight: 650;
+    line-height: 1.1 !important;
+    letter-spacing: .01em;
+  }
+
+  html:is(
+    [data-theme="orbite"],
+    [data-theme="fluide"],
+    [data-theme="vibra"]
+  ) .barre-laterale .nav-deconnexion:hover {
+    color: var(--nav-texte-fort) !important;
+    background: var(--nav-actif-fond) !important;
+  }
+}

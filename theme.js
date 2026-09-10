@@ -45,6 +45,7 @@
    sélectionné.
 */
 window.ARDOISE_THEMES = [
+  { cle: 'orbite', nom: 'Orbite Aube', dispositionMenu: false, description: 'Bleu céleste et blanc. Rail flottant, classes et repères du jour.', apercu: { fond: '#F1F8FF', surface: '#FFFFFF', accent: '#0860D9', barre: '#FFFFFF', texte: '#102B52' } },
   { cle: 'nexus', nom: 'Nexus', dispositionMenu: false, description: 'Graphite et vert électrique. Carte des espaces, panneau contextuel et commandes rapides.', apercu: { fond: '#101517', surface: '#182024', accent: '#C9F65F', barre: '#101719', texte: '#F0F4EE' } },
   { cle: 'recre', nom: 'Récré', dispositionMenu: false, description: 'Jaune soleil, papier crème et dessins de cahier. Une navigation joyeuse, des crayons et un agenda.', apercu: { fond: '#FFFCF2', surface: '#FFFFFF', accent: '#FFD34E', barre: '#FFEBA1', texte: '#122642' } },
   { cle: 'perspective', nom: 'Yohali', dispositionMenu: false, description: 'Crème, vert profond et terre cuite. Architecture, papeterie et navigation horizontale.', apercu: { fond: '#FAF9F5', surface: '#FDFCF9', accent: '#2E5040', barre: '#EAE8DC', texte: '#203C32' } },
@@ -74,6 +75,13 @@ window.ARDOISE_THEME_DEFAUT = 'ardoise';
     try { localStorage.setItem(CLE_STOCKAGE, theme); if (sessionStorage.getItem('ardoise_refresh_token')) sessionStorage.setItem(CLE_STOCKAGE, theme); } catch (e) {}
     try { if (theme === 'studio' && !localStorage.getItem('ardoise_nav_compact')) localStorage.setItem('ardoise_nav_compact', 'oui'); if (window.ArdoiseDisposition) ArdoiseDisposition.appliquer(); } catch (e) {}
     document.dispatchEvent(new CustomEvent('ardoise:theme-change', { detail: { theme: theme } }));
+    if (theme === 'orbite' && !document.querySelector('script[data-ardoise-orbite]')) {
+      var scriptOrbite = document.createElement('script');
+      scriptOrbite.src = 'theme-orbite.js';
+      scriptOrbite.dataset.ardoiseOrbite = '';
+      scriptOrbite.onerror = function () { scriptOrbite.remove(); };
+      document.head.appendChild(scriptOrbite);
+    }
     if (theme === 'nexus' && !document.querySelector('script[data-ardoise-nexus]')) {
       var scriptNexus = document.createElement('script');
       scriptNexus.src = 'theme-nexus.js';

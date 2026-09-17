@@ -377,7 +377,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="ligne-fiche"><span>Code</span><span>${echapper(d.cours.code || '—')}</span></div>
       <div class="ligne-fiche"><span>Maximum de période</span><span>${d.cours.maximum_points}</span></div>
       <div class="ligne-fiche"><span>Maximum d'examen</span><span>${
-        d.cours.maximum_examen === null ? 'non renseigné'
+        d.cours.maximum_examen === null ? '2× le maximum de période'
         : d.cours.maximum_examen === 0 ? 'pas d\'examen' : d.cours.maximum_examen}</span></div>
       ${d.cours.domaine ? `<div class="ligne-fiche"><span>Domaine</span><span>${echapper(d.cours.domaine)}</span></div>` : ''}
       <div class="ligne-fiche"><span>Seuil de réussite</span><span>${d.seuil} %</span></div>
@@ -521,8 +521,8 @@ document.addEventListener('DOMContentLoaded', function() {
           <td><input class="champ-ligne" data-champ="maximum_points" type="number" min="1" step="1" value="${c.maximum_points ?? ''}" /></td>
           <td>
             <input class="champ-ligne" data-champ="maximum_examen" type="number" min="0" step="1"
-                   value="${c.maximum_examen ?? ''}" placeholder="2x" style="width:64px;"
-                   title="Vide = 2x le maximum de période. 0 = pas d'examen (case noircie sur le bulletin)." />
+                   value="${c.maximum_examen ?? ''}" placeholder="2×" style="width:64px;"
+                   title="Vide = 2× le maximum de période. 0 = pas d'examen (case noircie sur le bulletin)." />
           </td>
           <td colspan="2" class="liste-classes">${(c.classes || []).map(n => `<span class="puce-classe">${echapper(n)}</span>`).join('') || '—'}</td>
           <td>
@@ -546,7 +546,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <td>${
           c.maximum_examen === 0
             ? '<span style="background:#000; color:#fff; padding:1px 6px; border-radius:3px; font-size:0.76rem;">sans examen</span>'
-            : (c.maximum_examen ?? `<span style="color:var(--texte-att);">2x</span>`)
+            : (c.maximum_examen ?? `<span style="color:var(--texte-att);">2×</span>`)
         }</td>
         <td class="liste-classes">${classes}</td>
         <td style="font-size:0.84rem;">${profs}</td>

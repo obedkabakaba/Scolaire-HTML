@@ -603,8 +603,12 @@
     (etat.alertes || []).forEach(function (a) {
       html += '<div class="ard-di-alerte"><strong>' + echapper(a.titre) + '</strong><br/>'
         + echapper(a.alerte)
-        + ' <button type="button" class="ard-di-btn ard-di-btn-discret" style="padding:2px 6px;font-size:0.8rem"'
-        + ' data-action="guider" data-code="' + echapper(a.code) + '">Corriger</button></div>';
+        + (a.ecran_correction
+            ? ' <a class="ard-di-btn ard-di-btn-discret" style="padding:2px 6px;font-size:0.8rem" href="'
+              + echapper(a.ecran_correction) + '">Modifier le cours</a>'
+            : ' <button type="button" class="ard-di-btn ard-di-btn-discret" style="padding:2px 6px;font-size:0.8rem"'
+              + ' data-action="guider" data-code="' + echapper(a.code) + '">Corriger</button>')
+        + '</div>';
     });
 
     if (etat.prochaine) {

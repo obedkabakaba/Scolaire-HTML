@@ -1209,6 +1209,10 @@
     ecole_suspendue: 'Accès suspendu (impayé)'
   };
 
+  // Démarrage anticipé : le tableau de bord principal ne doit pas dépendre
+  // de l'initialisation secondaire de la navigation ou des notifications.
+  chargerDashboard();
+
   async function chargerNotifications() {
     const r = await appelApi('/notifications');
     if (!r || !r.ok) return;
@@ -1262,7 +1266,6 @@
     }
   });
 
-  chargerDashboard();
   chargerNotifications();
 
   // ---------- Filtrage de la navigation selon le rôle connecté ----------

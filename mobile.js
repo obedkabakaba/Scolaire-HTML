@@ -406,13 +406,37 @@
       var source = document.querySelector('.badge-nav-messages');
       var n = source && source.textContent.trim();
       var visible = !!(n && n !== '0' && getComputedStyle(source).display !== 'none');
-      pastilleEl.textContent = visible ? n : '';
-      pastilleEl.classList.toggle('visible', visible);
-      pastilleEl.setAttribute('aria-label', visible ? n + ' message(s) non lu(s)' : '');
+      var texte = visible ? n : '';
+      var aria = visible ? n + ' message(s) non lu(s)' : '';
+
+      // Ne modifier la pastille que si sa valeur change. Le MutationObserver
+      // surveille désormais uniquement la source du badge : observer tout le
+      // body créait une boucle, car les propres modifications de pastilleEl
+      // déclenchaient à nouveau relire() sans fin et pouvaient bloquer le
+      // navigateur (« La page ne répond pas »).
+      if (pastilleEl.textContent !== texte) pastilleEl.textContent = texte;
+      if (pastilleEl.classList.contains('visible') !== visible) {
+        pastilleEl.classList.toggle('visible', visible);
+      }
+      if (pastilleEl.getAttribute('aria-label') !== aria) {
+        pastilleEl.setAttribute('aria-label', aria);
+      }
     }
+
+    var source = document.querySelector('.badge-nav-messages');
     relire();
+    if (!source) return;
+
+    // La source peut changer de contenu/visibilité ; la pastille de mobile,
+    // elle, ne doit jamais observer ses propres mutations.
     var obs = new MutationObserver(relire);
-    obs.observe(document.body, { childList: true, subtree: true, characterData: true });
+    obs.observe(source, {
+      childList: true,
+      characterData: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['style', 'class', 'hidden', 'aria-hidden']
+    });
   }
 
   /* ==========================================================================

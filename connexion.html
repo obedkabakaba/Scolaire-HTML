@@ -395,6 +395,7 @@
 
   /** Page d'accueil correspondant au rôle principal de l'utilisateur. */
   function pageAtterrissagePourRoles(roles = []) {
+    if (roles.includes('super_admin')) return 'super-admin.html';
     if (roles.includes('directeur') || roles.includes('prefet')) return 'dashboard-directeur.html';
     if (roles.includes('secretaire')) return 'espace-secretaire.html';
     if (roles.includes('comptable')) return 'frais-scolaires.html';

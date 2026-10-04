@@ -70,7 +70,7 @@
    v69 : l'arrondi intérieur suit le rail déployé ou replié et reste visible
          pendant le défilement du contenu. Terranga (clé interne yohali) et son
          alias Kivu conservent leur apparence d'origine, sans cet ajout. */
-const VERSION='ardoise-v83';
+const VERSION='ardoise-v84';
 /* v83 : force la diffusion du correctif du chargement du tableau de bord directeur et évite qu'une ancienne coque PWA conserve les scripts précédents. */
 /* v82 : recharge le didacticiel et l'écran Cours, pour appliquer le barème automatique 2× et le lien de correction direct. */
 /* v81 : recharge theme.css pour afficher la déconnexion dans toutes les apparences. */

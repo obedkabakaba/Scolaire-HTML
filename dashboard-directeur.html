@@ -949,6 +949,11 @@
     }
   }
 
+  // Lancer le chargement immédiatement après la définition de la fonction.
+  // Ainsi, une erreur dans l'initialisation secondaire ci-dessous ne peut pas
+  // empêcher le tableau de bord directeur/préfet de démarrer.
+  chargerDashboard();
+
   /* ==========================================================================
      WIDGET MOYENNE — filtre au clic
 
@@ -1208,10 +1213,6 @@
     abonnement_expire: 'Abonnement expiré',
     ecole_suspendue: 'Accès suspendu (impayé)'
   };
-
-  // Démarrage anticipé : le tableau de bord principal ne doit pas dépendre
-  // de l'initialisation secondaire de la navigation ou des notifications.
-  chargerDashboard();
 
   async function chargerNotifications() {
     const r = await appelApi('/notifications');

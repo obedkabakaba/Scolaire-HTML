@@ -611,10 +611,10 @@
     const executer = (token) => {
       const controleur = new AbortController();
       const delai = setTimeout(() => controleur.abort(), 15000);
-      return fetch(\`\${API_BASE_URL}\${chemin}\`, {
+      return fetch(`${API_BASE_URL}${chemin}`, {
         ...options,
         signal: options.signal || controleur.signal,
-        headers: { ...(options.headers || {}), Authorization: \`Bearer \${token}\` }
+        headers: { ...(options.headers || {}), Authorization: `Bearer ${token}` }
       }).finally(() => clearTimeout(delai));
     };
 
@@ -623,7 +623,7 @@
       reponse = await executer(accessToken);
     } catch (erreur) {
       if (erreur && erreur.name === 'AbortError') {
-        throw new Error(\`Le serveur met trop de temps à répondre (\${chemin}). Réessaie dans quelques secondes.\`);
+        throw new Error(`Le serveur met trop de temps à répondre (${chemin}). Réessaie dans quelques secondes.`);
       }
       throw erreur;
     }
@@ -635,7 +635,7 @@
         reponse = await executer(nouveauToken);
       } catch (erreur) {
         if (erreur && erreur.name === 'AbortError') {
-          throw new Error(\`Le serveur met trop de temps à répondre (\${chemin}). Réessaie dans quelques secondes.\`);
+          throw new Error(`Le serveur met trop de temps à répondre (${chemin}). Réessaie dans quelques secondes.`);
         }
         throw erreur;
       }

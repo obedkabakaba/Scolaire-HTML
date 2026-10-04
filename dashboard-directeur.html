@@ -606,17 +606,39 @@
     let { accessToken, refreshToken } = obtenirTokens();
     if (!accessToken) { retourConnexion(); return null; }
 
-    const executer = (token) => fetch(`${API_BASE_URL}${chemin}`, {
-      ...options,
-      headers: { ...(options.headers || {}), Authorization: `Bearer ${token}` }
-    });
+    // Une requête qui reste pendue ne doit jamais laisser l'utilisateur devant
+    // « Chargement du tableau de bord… » indéfiniment.
+    const executer = (token) => {
+      const controleur = new AbortController();
+      const delai = setTimeout(() => controleur.abort(), 15000);
+      return fetch(\`\${API_BASE_URL}\${chemin}\`, {
+        ...options,
+        signal: options.signal || controleur.signal,
+        headers: { ...(options.headers || {}), Authorization: \`Bearer \${token}\` }
+      }).finally(() => clearTimeout(delai));
+    };
 
-    let reponse = await executer(accessToken);
+    let reponse;
+    try {
+      reponse = await executer(accessToken);
+    } catch (erreur) {
+      if (erreur && erreur.name === 'AbortError') {
+        throw new Error(\`Le serveur met trop de temps à répondre (\${chemin}). Réessaie dans quelques secondes.\`);
+      }
+      throw erreur;
+    }
 
     if (reponse.status === 401 && refreshToken) {
       const nouveauToken = await rafraichirToken(refreshToken);
       if (!nouveauToken) { retourConnexion(); return null; }
-      reponse = await executer(nouveauToken);
+      try {
+        reponse = await executer(nouveauToken);
+      } catch (erreur) {
+        if (erreur && erreur.name === 'AbortError') {
+          throw new Error(\`Le serveur met trop de temps à répondre (\${chemin}). Réessaie dans quelques secondes.\`);
+        }
+        throw erreur;
+      }
     }
 
     if (reponse.status === 401 || reponse.status === 403) { retourConnexion(); return null; }
@@ -908,7 +930,22 @@
       document.getElementById('ecran-chargement').style.display = 'none';
       const ecranErreur = document.getElementById('ecran-erreur');
       ecranErreur.style.display = 'block';
-      ecranErreur.textContent = "Impossible de charger le tableau de bord. Vérifie ta connexion et réessaie.";
+      ecranErreur.textContent = erreur && erreur.message
+        ? erreur.message
+        : "Impossible de charger le tableau de bord. Vérifie ta connexion et réessaie.";
+    } finally {
+      // Garde-fou : aucune erreur secondaire dans le rendu des widgets ne doit
+      // pouvoir laisser l'écran « Chargement… » visible indéfiniment.
+      const chargement = document.getElementById('ecran-chargement');
+      if (chargement && chargement.style.display !== 'none') {
+        chargement.style.display = 'none';
+        const miseEnPage = document.getElementById('mise-en-page');
+        const ecranErreur = document.getElementById('ecran-erreur');
+        if (miseEnPage && ecranErreur && ecranErreur.style.display === 'none') {
+          ecranErreur.style.display = 'block';
+          ecranErreur.textContent = "Le tableau de bord n'a pas pu être affiché. Recharge la page.";
+        }
+      }
     }
   }
 

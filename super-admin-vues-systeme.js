@@ -1308,10 +1308,10 @@
      ====================================================================== */
 
   SA.enregistrerVue('configuration', {
-    titre: 'Configuration',
+    titre: 'Paramètres de la plateforme',
     sousTitre: 'Paramètres généraux, image de marque, emails, stockage et intégrations.',
 
-    async rendu(conteneur) {
+    async rendu(conteneur, params) {
       const d = await SA.api('/super-admin/configuration');
       const categories = d.categories || {};
 
@@ -1319,6 +1319,15 @@
         general: 'Paramètres généraux', branding: 'Image de marque', emails: 'Emails',
         stockage: 'Stockage', integrations: 'Intégrations', limites: 'Limites et quotas'
       };
+
+      /* Un espace de réglages plutôt qu'une page de quarante champs : les
+         catégories à gauche, une seule ouverte à droite. Tous les champs
+         restent dans la page — on ne fait que masquer les catégories fermées —
+         si bien qu'une modification faite dans « Emails » puis une autre dans
+         « Stockage » partent ensemble au même enregistrement, comme avant. */
+      const entreesCategories = Object.entries(categories);
+      const premiere = (entreesCategories[0] || [])[0];
+      const ouverte = categories[params && params.categorie] ? params.categorie : premiere;
 
       conteneur.innerHTML = `
         <div class="sa-bandeau-lecture" style="margin-bottom:18px">
@@ -1330,17 +1339,77 @@
           </span>
         </div>
 
-        ${Object.entries(categories).map(([categorie, entrees]) => `
-          <section class="sa-section">
-            <h2 class="sa-section-titre">${esc(libelles[categorie] || categorie)}</h2>
-            <div class="sa-panneau">
-              ${entrees.map((e) => rendreEntreeConfiguration(e)).join('')}
-            </div>
-          </section>`).join('')}
+        ${entreesCategories.length ? `
+        <div class="sa-reglages">
+          <div class="sa-reglages-nav" role="tablist" aria-label="Catégories de réglages">
+            ${entreesCategories.map(([categorie, entrees]) => `
+              <button type="button" role="tab" data-categorie="${esc(categorie)}"
+                      aria-selected="${categorie === ouverte}">
+                <span>${esc(libelles[categorie] || categorie)}</span>
+                <span class="sa-reglages-nb">${esc(entrees.length)}</span>
+              </button>`).join('')}
+          </div>
+          <div>
+            ${entreesCategories.map(([categorie, entrees]) => `
+              <section class="sa-reglages-categorie" data-panneau="${esc(categorie)}" ${categorie === ouverte ? '' : 'hidden'}>
+                <h2 class="sa-section-titre">${esc(libelles[categorie] || categorie)}</h2>
+                <div class="sa-panneau">
+                  ${entrees.map((e) => rendreEntreeConfiguration(e)).join('')}
+                </div>
+              </section>`).join('')}
 
-        <div style="display:flex;gap:9px;position:sticky;bottom:16px">
-          <button class="sa-bouton sa-bouton-principal" id="btn-enregistrer-config">Enregistrer les modifications</button>
-        </div>`;
+            <div class="sa-reglages-barre">
+              <span class="sa-reglages-barre-etat" id="config-etat">Aucune modification en cours.</span>
+              <span class="sa-reglages-barre-actions">
+                <button class="sa-bouton sa-bouton-secondaire" id="btn-annuler-config" disabled>Annuler</button>
+                <button class="sa-bouton sa-bouton-principal" id="btn-enregistrer-config">Enregistrer les modifications</button>
+              </span>
+            </div>
+          </div>
+        </div>` : ui.etatVide('Aucun paramètre exposé', 'Le serveur n\'a renvoyé aucune catégorie de configuration.')}`;
+
+      if (!entreesCategories.length) return;
+
+      const valeurChamp = (champ) => {
+        const type = champ.getAttribute('data-type');
+        if (type === 'boolean') return champ.checked;
+        if (type === 'number') return champ.value === '' ? null : Number(champ.value);
+        return champ.value === '' ? null : champ.value;
+      };
+      const modifie = (champ) => String(champ.getAttribute('data-initial')) !== String(valeurChamp(champ));
+
+      /* Ce qui n'est pas encore enregistré se voit : nombre total en bas, point
+         sur la catégorie concernée. Quitter la page sans enregistrer perdrait
+         ces valeurs sans un mot ; l'utilisateur doit au moins le savoir. */
+      function majEtat() {
+        const champs = [...conteneur.querySelectorAll('[data-cle]')].filter((c) => !c.disabled);
+        const total = champs.filter(modifie).length;
+        const etat = conteneur.querySelector('#config-etat');
+        etat.textContent = total
+          ? `${total} modification${total > 1 ? 's' : ''} non enregistrée${total > 1 ? 's' : ''}.`
+          : 'Aucune modification en cours.';
+        etat.classList.toggle('modifie', total > 0);
+        conteneur.querySelector('#btn-annuler-config').disabled = total === 0;
+        conteneur.querySelectorAll('[data-categorie]').forEach((b) => {
+          const panneau = conteneur.querySelector(`[data-panneau="${b.getAttribute('data-categorie')}"]`);
+          const n = [...panneau.querySelectorAll('[data-cle]')].filter((c) => !c.disabled && modifie(c)).length;
+          let point = b.querySelector('.sa-reglages-modif');
+          if (n && !point) { point = document.createElement('span'); point.className = 'sa-reglages-modif'; b.appendChild(point); }
+          if (!n && point) point.remove();
+        });
+      }
+
+      conteneur.querySelectorAll('[data-categorie]').forEach((bouton) => {
+        bouton.addEventListener('click', () => {
+          const cat = bouton.getAttribute('data-categorie');
+          conteneur.querySelectorAll('[data-categorie]').forEach((b) => b.setAttribute('aria-selected', String(b === bouton)));
+          conteneur.querySelectorAll('[data-panneau]').forEach((p) => { p.hidden = p.getAttribute('data-panneau') !== cat; });
+          SA.majParams({ categorie: cat });
+        });
+      });
+      conteneur.addEventListener('input', majEtat);
+      conteneur.addEventListener('change', majEtat);
+      conteneur.querySelector('#btn-annuler-config').addEventListener('click', () => SA.rafraichirVue());
 
       document.getElementById('btn-enregistrer-config').addEventListener('click', async (evenement) => {
         const bouton = evenement.currentTarget;
@@ -1705,15 +1774,16 @@
 
           <section class="sa-panneau" style="margin-top:18px;max-width:720px">
             <div class="sa-section-titre">
-              <h2>Barre latérale</h2>
+              <h2>Navigation</h2>
             </div>
             <label class="sa-interrupteur-disposition">
               <input type="checkbox" id="sa-case-nav-compact" />
               <span>
-                <strong>Activer la barre rétractable</strong>
+                <strong>Replier le panneau des sections</strong>
                 <span class="sa-aide-disposition">
-                  Le menu n'affiche que les icônes au repos et se déploie lorsque vous
-                  le survolez ou l'utilisez au clavier. Ce réglage reste propre à cet appareil.
+                  Seul le rail des domaines reste affiché ; le panneau des sections se déploie
+                  par-dessus la page lorsque vous survolez le rail ou l'utilisez au clavier.
+                  Ce réglage reste propre à cet appareil.
                 </span>
               </span>
             </label>
@@ -1735,8 +1805,8 @@
           caseCompacte.addEventListener('change', () => {
             ArdoiseDisposition.definir(null, caseCompacte.checked);
             confirmation.textContent = caseCompacte.checked
-              ? 'Barre rétractable activée : survolez le menu pour le déployer.'
-              : 'Barre rétractable désactivée : le menu reste entièrement affiché.';
+              ? 'Panneau replié : survolez le rail des domaines pour le déployer.'
+              : 'Panneau affiché en permanence.';
             SA.toast(caseCompacte.checked
               ? 'Barre rétractable activée.'
               : 'Barre rétractable désactivée.', 'succes');

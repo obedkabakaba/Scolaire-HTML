@@ -70,7 +70,8 @@
    v69 : l'arrondi intérieur suit le rail déployé ou replié et reste visible
          pendant le défilement du contenu. Terranga (clé interne yohali) et son
          alias Kivu conservent leur apparence d'origine, sans cet ajout. */
-const VERSION='ardoise-v86';
+const VERSION='ardoise-v87';
+/* v87 : espace Super Admin réorganisé en domaines — nouvelle coque (super-admin-coque.js/.css, précachées), tour de contrôle, menu, noyau et thème modifiés : sans incrément, un navigateur déjà installé garderait l'ancien menu. */
 /* v86 : connexion.html — code école facultatif, pré-remplissage depuis l'essai et l'e-mail de bienvenue. */
 /* v85 : espace Super Admin — programme des apporteurs d'affaires (nouveau menu dans super-admin.html, précaché) et portail espace-apporteur.html. */
 /* v83 : force la diffusion du correctif du chargement du tableau de bord directeur et évite qu'une ancienne coque PWA conserve les scripts précédents. */
@@ -225,7 +226,7 @@ const COQUILLE=[
   'mobile.js','theme.js','ui.js','session.js','abonnements-page.js','acces-presences.js','filtre-cycle.js',
   'evenements-types.js',
   'hors-ligne.js','didacticiel.js','didacticiel.css','super-admin-styles.css',
-  'super-admin-noyau.js','super-admin-vues-pilotage.js','super-admin-vues-ecoles.js',
+  'super-admin-noyau.js','super-admin-coque.js','super-admin-coque.css','super-admin-vues-pilotage.js','super-admin-vues-ecoles.js',
   'super-admin-vues-explorer.js','super-admin-vues-systeme.js','manifest.json',
   'icone-192.png','icone-384.png','icone-512.png','icone-ios-180.png',
   'icone-maskable-192.png','icone-maskable-512.png','manifest.webmanifest'

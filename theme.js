@@ -199,11 +199,7 @@ window.ARDOISE_THEME_DEFAUT = 'ardoise';
    ses avertissements — le correctif n'a plus rien à corriger, et la
    surveillance permanente du DOM disparaît avec lui. */
 
-/* Le Super Admin charge sa vue de traitement sans modifier son noyau isolé. */
-(function chargerVueRenouvellements() {
-  if (!/super-admin\.html$/i.test(window.location.pathname)) return;
-  if (document.querySelector('script[data-ardoise-renouvellements-admin]')) return;
-  var s = document.createElement('script');
-  s.src = 'super-admin-vues-renouvellements.js'; s.defer = true; s.setAttribute('data-ardoise-renouvellements-admin', '');
-  (document.head || document.documentElement).appendChild(s);
-})();
+/* La vue « Renouvellements » du Super Admin était injectée ici. Elle est
+   désormais chargée par super-admin.html comme toutes les autres vues : un
+   script partagé par toutes les pages n'a pas à connaître les écrans d'un
+   espace qui se veut isolé. */

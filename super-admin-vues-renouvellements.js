@@ -84,14 +84,9 @@
     paiement_recupere: []
   };
 
-  function injecterMenu() {
-    if (document.querySelector('[data-route="renouvellements"]')) return;
-    var groupe = document.querySelector('[data-groupe="offres"] .sa-sous-menu');
-    if (!groupe) return;
-    var li = document.createElement('li');
-    li.innerHTML = '<a href="#/renouvellements" data-route="renouvellements">Renouvellements à traiter</a>';
-    groupe.appendChild(li);
-  }
+  /* L'entrée de menu est déclarée dans super-admin.html (domaine « Écoles &
+     clients »). Elle était auparavant injectée ici, au premier affichage de la
+     vue — donc invisible tant qu'on n'avait pas déjà trouvé l'écran. */
 
   function montant(l) { return SA.fmt.nombre(Number(l.montant_attendu)) + ' ' + esc(l.devise || ''); }
 
@@ -370,7 +365,6 @@
     sousTitre: 'Paiements déclarés et demandes de passage d’un agent, à traiter en priorité.',
 
     async rendu(conteneur, params) {
-      injecterMenu();
       clearInterval(window.__ardoiseRenouvTimer);
 
       var filtre = params.statut || 'a_traiter';
@@ -579,6 +573,4 @@
     }
   });
 
-  injecterMenu();
-  if (location.hash.indexOf('#/renouvellements') === 0 && SA.rafraichirVue) setTimeout(SA.rafraichirVue, 0);
 })();

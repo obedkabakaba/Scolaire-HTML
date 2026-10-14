@@ -995,8 +995,10 @@
     const entete = document.getElementById('sa-entete');
 
     if (!vue) {
-      entete.innerHTML = '<h1>Page introuvable</h1>';
-      conteneur.innerHTML = SA.ui.etatVide('Cette section n\'existe pas', 'Utilisez le menu de gauche.');
+      entete.innerHTML = '<div class="sa-entete-titres"><h1>Page introuvable</h1></div>';
+      conteneur.innerHTML = SA.ui.etatVide('Cette section n\'existe pas',
+        'Choisissez un domaine dans la barre de gauche, ou recherchez l\'écran avec Ctrl K.');
+      if (SA.coque) SA.coque.surNavigation(null, chemin);
       return;
     }
 
@@ -1004,11 +1006,17 @@
     marquerMenuActif(chemin);
 
     entete.innerHTML = `
-      <div>
+      <div class="sa-entete-titres">
         <h1>${SA.esc(typeof vue.titre === 'function' ? vue.titre(reste, params) : vue.titre)}</h1>
         ${vue.sousTitre ? `<p class="sa-sous-titre">${SA.esc(vue.sousTitre)}</p>` : ''}
       </div>
       <div class="sa-entete-actions" id="sa-entete-actions"></div>`;
+
+    /* La coque de navigation (super-admin-coque.js) pose le fil d'Ariane, le
+       domaine actif et, si l'écran appartient à un espace de travail, sa
+       barre d'onglets. Facultative : sans elle, le panneau fonctionne comme
+       avant, menu compris. */
+    if (SA.coque) SA.coque.surNavigation(SA.routeCourante, chemin);
 
     conteneur.innerHTML = SA.ui.squelette(6);
 
@@ -1045,7 +1053,10 @@
     // Sur mobile, la navigation se referme après un choix — sinon elle masque
     // la page qu'on vient justement de demander.
     document.body.classList.remove('sa-nav-ouverte');
-    conteneur.scrollIntoView({ block: 'start', behavior: 'auto' });
+    /* Retour en haut de PAGE, et non du contenu : `scrollIntoView` sur la zone
+       de contenu faisait passer le titre et les onglets de l'écran au-dessus
+       du bord de la fenêtre — on arrivait sur une page sans savoir laquelle. */
+    window.scrollTo(0, 0);
   }
 
   SA.rafraichirVue = rendre;
@@ -1066,6 +1077,7 @@
    * veut, et c'est autre chose que d'être surligné.
    */
   function marquerMenuActif(chemin) {
+    if (SA.coque) return;   // la coque applique la même règle, domaine compris
     const liens = [...document.querySelectorAll('#sa-navigation a[data-route]')];
 
     let meilleure = null;

@@ -1,0 +1,906 @@
+/* ==========================================================================
+   Ardoise — Espace Super Admin : COQUE (navigation par domaines)
+   --------------------------------------------------------------------------
+   Charpente de l'espace : rail de domaines, panneau de sections, barre haute,
+   onglets d'espace de travail, vues d'ensemble et tour de contrôle.
+
+   Mêmes règles que le reste du panneau :
+     · aucune couleur en dur — uniquement les variables du thème, si bien que
+       les apparences d'Ardoise (Nuit comprise) s'appliquent sans retouche ;
+     · préfixe `sa-` partout ;
+     · aucun texte sous 0.72rem (le plancher que vérifie audit-mobile.py).
+   ========================================================================== */
+
+/* Un voyant « attention » doit rester ambre quel que soit le thème : dans
+   Nuit, l'accent `--ocre` est vert, et un voyant d'alerte vert dit l'inverse
+   de ce qu'il signale. C'est la seule teinte propre à ce fichier, et elle
+   n'est employée que pour des ÉTATS, jamais pour la décoration. */
+:root { --sa-ambre: #C9861F; }
+html[data-theme="nuit"] { --sa-ambre: #E0A84A; }
+
+/* --------------------------------------------------------------------------
+   1. Charpente
+   -------------------------------------------------------------------------- */
+.sa-navigation {
+  flex: none;
+  display: flex;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  z-index: 40;
+}
+
+/* Rail : un bouton par domaine. Il garde la couleur de navigation du thème. */
+.sa-rail {
+  width: 64px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 0 14px;
+  background: var(--nav-fond);
+  color: var(--nav-texte);
+  border-right: 1px solid var(--nav-separateur, transparent);
+}
+.sa-rail-marque { display: flex; margin-bottom: 10px; text-decoration: none; }
+.sa-rail-logo {
+  width: 38px; height: 38px;
+  display: grid; place-items: center;
+  border-radius: 11px;
+  background: var(--ocre);
+  color: var(--craie-2);
+  font-family: var(--police-titre);
+  font-weight: 600;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+.sa-rail-domaines { display: flex; flex-direction: column; gap: 4px; align-items: center; }
+.sa-rail-pied { margin-top: auto; display: flex; flex-direction: column; gap: 6px; align-items: center; }
+
+.sa-rail-domaine,
+.sa-rail-bouton {
+  position: relative;
+  width: 42px; height: 42px;
+  display: grid; place-items: center;
+  border: 0;
+  border-radius: 11px;
+  background: transparent;
+  color: var(--nav-texte);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background var(--transition-base), color var(--transition-base);
+}
+.sa-rail-domaine:hover,
+.sa-rail-bouton:hover { background: var(--nav-actif-fond); color: var(--nav-texte-fort); }
+.sa-rail-domaine.actif,
+.sa-rail-bouton.actif { background: var(--nav-actif-fond); color: var(--nav-texte-fort); }
+.sa-rail-domaine.actif::before {
+  content: '';
+  position: absolute;
+  left: -11px; top: 10px; bottom: 10px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--ocre);
+}
+.sa-rail-domaine:focus-visible,
+.sa-rail-bouton:focus-visible { outline: 2px solid var(--ocre); outline-offset: 2px; }
+
+/* Une pastille discrète : « il y a quelque chose à traiter dans ce domaine ». */
+.sa-rail-point {
+  position: absolute;
+  top: 8px; right: 8px;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--ocre);
+  box-shadow: 0 0 0 2px var(--nav-fond);
+}
+
+/* Infobulle du rail, à droite, sans JavaScript. */
+@media (hover: hover) and (min-width: 981px) {
+  .sa-rail [data-infobulle]:hover::after {
+    content: attr(data-infobulle);
+    position: absolute;
+    left: calc(100% + 12px);
+    top: 50%;
+    transform: translateY(-50%);
+    white-space: nowrap;
+    padding: 6px 10px;
+    border-radius: var(--r-petit);
+    background: var(--ardoise, #1F2B24);
+    color: #fff;
+    font-size: 0.78rem;
+    font-weight: 500;
+    pointer-events: none;
+    box-shadow: var(--ombre-flottante);
+    z-index: 90;
+  }
+}
+
+.sa-avatar {
+  width: 32px; height: 32px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--ocre) 22%, var(--nav-fond));
+  color: var(--nav-texte-fort);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* --------------------------------------------------------------------------
+   2. Panneau de sections — clair, comme le contenu, pour lire facilement
+   -------------------------------------------------------------------------- */
+.sa-panneau-nav {
+  width: 252px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 18px 12px 24px;
+  background: var(--craie-2);
+  border-right: 1px solid var(--bordure);
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.sa-marque {
+  font-family: var(--police-titre);
+  font-weight: 600;
+  font-size: 1.3rem;
+  padding: 0 10px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--texte-sombre);
+}
+.sa-marque .sa-etiquette-admin {
+  font-family: var(--police-mono);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--craie-2);
+  background: var(--ocre);
+  padding: 2px 7px;
+  border-radius: var(--r-pilule);
+}
+.sa-coque-prete .sa-marque { display: none; }
+
+/* Sans la coque, tout le menu reste lisible ; avec elle, un domaine à la fois. */
+.sa-coque-prete .sa-domaine { display: none; }
+.sa-coque-prete .sa-domaine.sa-domaine-visible { display: block; animation: sa-apparaitre 0.18s ease-out; }
+@keyframes sa-apparaitre { from { opacity: 0; transform: translateX(-4px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .sa-coque-prete .sa-domaine.sa-domaine-visible { animation: none; } }
+
+.sa-domaine + .sa-domaine { margin-top: 16px; }
+.sa-coque-prete .sa-domaine + .sa-domaine { margin-top: 0; }
+
+.sa-domaine-titre {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 4px 14px 10px;
+  line-height: 1.25;
+  font-family: var(--police-titre);
+  font-weight: 600;
+  font-size: 1.12rem;
+  color: var(--texte-sombre);
+}
+.sa-svg { flex: none; display: block; }
+
+.sa-domaine-apercu {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px; height: 30px;
+  border-radius: var(--r-petit);
+  color: var(--texte-att);
+  font-family: var(--police-corps);
+  font-size: 0.74rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+.sa-domaine-apercu:hover,
+.sa-domaine-apercu.actif { color: var(--texte-sombre); background: color-mix(in srgb, var(--texte-sombre) 6%, transparent); }
+
+.sa-nav-groupe { margin: 0 0 14px; }
+.sa-nav-groupe-titre {
+  margin: 0 10px 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--texte-att);
+}
+details.sa-nav-groupe > summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-radius: var(--r-petit);
+}
+details.sa-nav-groupe > summary::-webkit-details-marker { display: none; }
+details.sa-nav-groupe > summary::after { content: '›'; font-size: 0.95rem; transition: transform var(--transition-base); }
+details.sa-nav-groupe[open] > summary::after { transform: rotate(90deg); }
+details.sa-nav-groupe > summary:hover { color: var(--texte-sombre); }
+
+.sa-menu { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
+.sa-menu a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--r-petit);
+  color: var(--texte-sombre);
+  text-decoration: none;
+  font-size: 0.875rem;
+  line-height: 1.3;
+  transition: background var(--transition-base), color var(--transition-base);
+}
+.sa-menu a:hover { background: color-mix(in srgb, var(--texte-sombre) 5%, transparent); }
+.sa-menu a.actif {
+  background: color-mix(in srgb, var(--ocre) 13%, transparent);
+  color: var(--texte-sombre);
+  font-weight: 600;
+  box-shadow: inset 3px 0 0 var(--ocre);
+}
+.sa-menu a:focus-visible { outline: 2px solid var(--ocre); outline-offset: -2px; }
+
+/* Espace de travail : une ligne dans le menu, des onglets dans la page. */
+.sa-coque-prete .sa-espace > a[data-route] { display: none; }
+.sa-espace-lien { display: none !important; }
+.sa-coque-prete .sa-espace-lien { display: flex !important; }
+/* Sans coque (repli) : les liens d'un espace s'affichent en sous-liste. */
+html:not(.sa-coque-prete) .sa-espace { display: flex; flex-direction: column; }
+html:not(.sa-coque-prete) .sa-espace > a + a { padding-left: 22px; }
+
+.sa-compteur {
+  margin-left: auto;
+  min-width: 20px;
+  padding: 1px 7px;
+  border-radius: var(--r-pilule);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.5;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  background: color-mix(in srgb, var(--ocre) 20%, transparent);
+  color: color-mix(in srgb, var(--ocre-dark) 75%, var(--texte-sombre));
+}
+.sa-compteur.ton-danger { background: var(--rouge); color: #fff; }
+.sa-compteur.ton-info { background: color-mix(in srgb, var(--encre) 16%, transparent); color: color-mix(in srgb, var(--encre) 70%, var(--texte-sombre)); }
+
+/* Menu du compte, ouvert depuis l'avatar du rail. */
+.sa-menu-compte {
+  position: fixed;
+  left: 74px;
+  bottom: 14px;
+  z-index: 95;
+  min-width: 240px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--craie-2);
+  border: 1px solid var(--bordure);
+  border-radius: var(--r-carte);
+  box-shadow: var(--ombre-flottante);
+}
+.sa-menu-compte[hidden] { display: none; }
+.sa-identite {
+  padding: 6px 10px 10px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--bordure);
+  font-size: 0.8rem;
+  color: var(--texte-att);
+  word-break: break-all;
+}
+.sa-menu-compte-lien,
+.sa-deconnexion {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: var(--r-petit);
+  background: none;
+  color: var(--texte-sombre);
+  font: inherit;
+  font-size: 0.86rem;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+.sa-menu-compte-lien:hover,
+.sa-deconnexion:hover { background: color-mix(in srgb, var(--texte-sombre) 6%, transparent); }
+.sa-deconnexion { color: var(--rouge); }
+
+/* --------------------------------------------------------------------------
+   3. Mode rétractable (Apparence → barre rétractable)
+   Le rail reste ; le panneau se déplie par-dessus le contenu au survol ou au
+   clavier, sans faire sauter la page.
+   -------------------------------------------------------------------------- */
+@media (min-width: 981px) {
+  html[data-nav-compact="oui"] .sa-panneau-nav {
+    position: absolute;
+    left: 64px;
+    top: 0;
+    height: 100vh;
+    box-shadow: 10px 0 32px rgba(16, 24, 40, 0.16);
+    transform: translateX(-12px);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s;
+  }
+  html[data-nav-compact="oui"] .sa-navigation:hover .sa-panneau-nav,
+  html[data-nav-compact="oui"] .sa-navigation:focus-within .sa-panneau-nav {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   4. Barre haute : fil d'Ariane et recherche
+   -------------------------------------------------------------------------- */
+.sa-principal { padding: 0 34px 64px; }
+
+.sa-barre-haut {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 60px;
+  margin: 0 -34px 24px;
+  padding: 10px 34px;
+  background: color-mix(in srgb, var(--craie) 90%, transparent);
+  -webkit-backdrop-filter: saturate(1.4) blur(10px);
+  backdrop-filter: saturate(1.4) blur(10px);
+  border-bottom: 1px solid var(--bordure);
+}
+
+.sa-fil {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 0.84rem;
+  color: var(--texte-att);
+  white-space: nowrap;
+  overflow: hidden;
+}
+.sa-fil a { color: var(--texte-att); text-decoration: none; }
+.sa-fil a:hover { color: var(--texte-sombre); text-decoration: underline; }
+.sa-fil [aria-current] { color: var(--texte-sombre); font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+.sa-fil-sep { opacity: 0.5; }
+
+.sa-recherche-globale {
+  margin-left: auto;
+  flex: 0 1 380px;
+  min-width: 0;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 8px 0 12px;
+  border: 1px solid var(--bordure);
+  border-radius: var(--r-bouton);
+  background: var(--craie-2);
+  color: var(--texte-att);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
+}
+.sa-recherche-globale:hover { border-color: color-mix(in srgb, var(--texte-sombre) 30%, var(--bordure)); }
+.sa-recherche-globale:focus-visible { outline: none; border-color: var(--ocre); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ocre) 22%, transparent); }
+.sa-recherche-icone { display: inline-flex; flex: none; }
+.sa-recherche-texte { flex: 1; min-width: 0; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sa-recherche-globale kbd,
+.sa-kbd {
+  flex: none;
+  font-family: var(--police-mono);
+  font-size: 0.72rem;
+  padding: 2px 6px;
+  border: 1px solid var(--bordure);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  color: var(--texte-att);
+  background: var(--craie);
+}
+
+.sa-bouton-nav {
+  display: none;
+  flex: none;
+  width: 40px; height: 40px;
+  place-items: center;
+  border: 1px solid var(--bordure);
+  border-radius: var(--r-bouton);
+  background: var(--craie-2);
+  color: var(--texte-sombre);
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+/* --------------------------------------------------------------------------
+   5. En-tête de page et onglets d'espace de travail
+   -------------------------------------------------------------------------- */
+.sa-entete { align-items: flex-end; margin-bottom: 22px; }
+.sa-entete-titres { min-width: 0; flex: 1 1 320px; }
+.sa-entete h1 { font-size: 1.62rem; letter-spacing: -0.01em; }
+.sa-entete .sa-sous-titre { max-width: 760px; line-height: 1.45; }
+.sa-entete-actions { align-items: center; }
+
+.sa-onglets-espace {
+  flex: 1 1 100%;
+  display: flex;
+  gap: 2px;
+  margin-top: 4px;
+  border-bottom: 1px solid var(--bordure);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.sa-onglets-espace::-webkit-scrollbar { display: none; }
+.sa-onglets-espace a {
+  flex: none;
+  padding: 10px 13px 11px;
+  margin-bottom: -1px;
+  border-bottom: 2px solid transparent;
+  color: var(--texte-att);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color var(--transition-base), border-color var(--transition-base);
+}
+.sa-onglets-espace a:hover { color: var(--texte-sombre); border-bottom-color: var(--bordure); }
+.sa-onglets-espace a.actif { color: var(--texte-sombre); font-weight: 600; border-bottom-color: var(--ocre); }
+
+/* --------------------------------------------------------------------------
+   6. Vues d'ensemble de domaine
+   -------------------------------------------------------------------------- */
+.sa-cartes-sections {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 12px;
+}
+.sa-carte-section {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  padding: 16px 16px 16px 15px;
+  border: 1px solid var(--bordure);
+  border-radius: var(--r-carte);
+  background: var(--craie-2);
+  color: inherit;
+  text-decoration: none;
+  transition: border-color var(--transition-base), box-shadow var(--transition-base), transform var(--transition-base);
+}
+.sa-carte-section:hover {
+  border-color: color-mix(in srgb, var(--ocre) 45%, var(--bordure));
+  box-shadow: var(--ombre-carte);
+  transform: translateY(-1px);
+}
+.sa-carte-section-icone,
+.sa-carte-domaine-icone {
+  flex: none;
+  width: 34px; height: 34px;
+  display: grid; place-items: center;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--ocre) 13%, transparent);
+  color: color-mix(in srgb, var(--ocre-dark) 80%, var(--texte-sombre));
+}
+.sa-carte-section-corps { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.sa-carte-section-titre { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 0.93rem; color: var(--texte-sombre); }
+.sa-carte-section-titre .sa-compteur { margin-left: 0; }
+.sa-carte-section-texte { font-size: 0.82rem; line-height: 1.45; color: var(--texte-att); }
+.sa-carte-section-onglets { font-size: 0.76rem; color: var(--texte-att); opacity: 0.85; }
+.sa-carte-section-fleche { color: var(--texte-att); opacity: 0; transition: opacity var(--transition-base); align-self: center; }
+.sa-carte-section:hover .sa-carte-section-fleche { opacity: 1; }
+
+.sa-cartes-domaines {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+.sa-carte-domaine {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px;
+  border: 1px solid var(--bordure);
+  border-radius: var(--r-carte);
+  background: var(--craie-2);
+  color: inherit;
+  text-decoration: none;
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
+}
+.sa-carte-domaine:hover { border-color: color-mix(in srgb, var(--ocre) 45%, var(--bordure)); box-shadow: var(--ombre-carte); }
+.sa-carte-domaine-icone { margin-bottom: 4px; }
+.sa-carte-domaine-titre { font-weight: 600; font-size: 0.93rem; color: var(--texte-sombre); }
+.sa-carte-domaine-texte { font-size: 0.8rem; line-height: 1.45; color: var(--texte-att); flex: 1; }
+.sa-carte-domaine-pied { font-size: 0.74rem; color: var(--texte-att); opacity: 0.8; }
+
+/* --------------------------------------------------------------------------
+   7. Tour de contrôle (tableau de bord)
+   -------------------------------------------------------------------------- */
+.tc-accueil { display: flex; flex-direction: column; gap: 22px; }
+
+.tc-bandeau {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 14px 18px;
+  border: 1px solid var(--bordure);
+  border-radius: var(--r-carte);
+  background: var(--craie-2);
+}
+.tc-bandeau-etat { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.tc-voyant {
+  flex: none;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--texte-att);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--texte-att) 18%, transparent);
+}
+.tc-voyant.ton-succes { background: var(--vert-ok); box-shadow: 0 0 0 4px color-mix(in srgb, var(--vert-ok) 20%, transparent); }
+.tc-voyant.ton-attention { background: var(--sa-ambre); box-shadow: 0 0 0 4px color-mix(in srgb, var(--sa-ambre) 22%, transparent); }
+.tc-voyant.ton-danger { background: var(--rouge); box-shadow: 0 0 0 4px color-mix(in srgb, var(--rouge) 22%, transparent); }
+.tc-bandeau-titre { font-weight: 600; font-size: 0.95rem; color: var(--texte-sombre); }
+.tc-bandeau-detail { font-size: 0.8rem; color: var(--texte-att); margin-top: 2px; }
+.tc-bandeau-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+.tc-titre-bloc {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 12px;
+}
+.tc-titre-bloc h2 {
+  margin: 0;
+  font-family: var(--police-titre);
+  font-weight: 600;
+  font-size: 1.08rem;
+  color: var(--texte-sombre);
+}
+.tc-titre-bloc .tc-annexe { font-size: 0.78rem; color: var(--texte-att); }
+.tc-lien {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--encre);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.tc-lien:hover { text-decoration: underline; }
+
+/* File « À traiter » : une tuile par file d'attente réelle et non vide. */
+.tc-file {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 10px;
+}
+.tc-tache {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 15px 13px;
+  border: 1px solid var(--bordure);
+  border-radius: var(--r-carte);
+  background: var(--craie-2);
+  color: inherit;
+  text-decoration: none;
+  overflow: hidden;
+  transition: border-color var(--transition-base), box-shadow var(--transition-base), transform var(--transition-base);
+}
+.tc-tache::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--sa-ambre);
+}
+.tc-tache.ton-danger::before { background: var(--rouge); }
+.tc-tache.ton-info::before { background: var(--encre); }
+.tc-tache:hover { border-color: color-mix(in srgb, var(--ocre) 45%, var(--bordure)); box-shadow: var(--ombre-carte); transform: translateY(-1px); }
+.tc-tache-haut { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--texte-att); }
+.tc-tache-nombre {
+  font-family: var(--police-titre);
+  font-size: 1.7rem;
+  font-weight: 600;
+  line-height: 1.15;
+  color: var(--texte-sombre);
+  font-variant-numeric: tabular-nums;
+}
+.tc-tache-libelle { font-size: 0.86rem; font-weight: 600; color: var(--texte-sombre); }
+.tc-tache-detail { font-size: 0.76rem; color: var(--texte-att); line-height: 1.4; }
+
+.tc-tache[hidden] { display: none; }
+.tc-plus {
+  margin-top: 10px;
+  border: 0;
+  background: none;
+  padding: 4px 0;
+  color: var(--encre);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+.tc-plus:hover { text-decoration: underline; }
+
+.tc-calme {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px;
+  border: 1px dashed var(--bordure);
+  border-radius: var(--r-carte);
+  color: var(--texte-att);
+  font-size: 0.88rem;
+}
+.tc-calme .sa-svg { color: var(--vert-ok); flex: none; }
+
+.tc-sources-ko {
+  margin-top: 10px;
+  font-size: 0.76rem;
+  color: var(--texte-att);
+}
+
+/* Indicateurs clés */
+.tc-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+.tc-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 14px 16px;
+  border: 1px solid var(--bordure);
+  border-radius: var(--r-carte);
+  background: var(--craie-2);
+  color: inherit;
+  text-decoration: none;
+  min-width: 0;
+}
+a.tc-kpi:hover { border-color: color-mix(in srgb, var(--ocre) 45%, var(--bordure)); }
+.tc-kpi-libelle { font-size: 0.76rem; color: var(--texte-att); }
+.tc-kpi-valeur {
+  font-family: var(--police-titre);
+  font-size: 1.55rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--texte-sombre);
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tc-kpi-detail { font-size: 0.76rem; color: var(--texte-att); }
+.tc-kpi-detail.ton-danger { color: var(--rouge); }
+.tc-kpi-detail.ton-attention { color: color-mix(in srgb, var(--sa-ambre) 80%, var(--texte-sombre)); }
+
+/* Grille principale : tendance à gauche, état technique à droite. */
+.tc-grille {
+  display: grid;
+  grid-template-columns: minmax(0, 1.75fr) minmax(280px, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.tc-grille-egale { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.tc-carte {
+  padding: 18px 18px 16px;
+  border: 1px solid var(--bordure);
+  border-radius: var(--r-carte);
+  background: var(--craie-2);
+  min-width: 0;
+}
+
+.tc-segments {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--r-bouton);
+  background: color-mix(in srgb, var(--texte-sombre) 6%, transparent);
+}
+.tc-segments button {
+  border: 0;
+  padding: 5px 10px;
+  border-radius: calc(var(--r-bouton) - 2px);
+  background: transparent;
+  color: var(--texte-att);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+.tc-segments button[aria-pressed="true"] { background: var(--craie-2); color: var(--texte-sombre); font-weight: 600; box-shadow: 0 1px 2px rgba(16, 24, 40, 0.08); }
+.tc-chiffre-courbe { display: flex; align-items: baseline; gap: 10px; margin: 4px 0 10px; }
+.tc-chiffre-courbe strong { font-family: var(--police-titre); font-size: 1.45rem; color: var(--texte-sombre); font-variant-numeric: tabular-nums; }
+.tc-chiffre-courbe span { font-size: 0.78rem; color: var(--texte-att); }
+.tc-note { margin-top: 8px; font-size: 0.76rem; color: var(--texte-att); line-height: 1.45; }
+
+/* État de la plateforme */
+.tc-score { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; }
+.tc-score-valeur { font-family: var(--police-titre); font-size: 2.3rem; font-weight: 600; line-height: 1; color: var(--texte-sombre); }
+.tc-score-valeur small { font-size: 0.95rem; color: var(--texte-att); font-weight: 500; }
+.tc-score-libelle { font-size: 0.8rem; color: var(--texte-att); }
+.tc-axes { display: flex; flex-direction: column; gap: 9px; margin-bottom: 14px; }
+.tc-axe { display: grid; grid-template-columns: 92px 1fr 34px; align-items: center; gap: 10px; font-size: 0.8rem; color: var(--texte-att); }
+.tc-axe strong { text-align: right; color: var(--texte-sombre); font-variant-numeric: tabular-nums; }
+.tc-piste { height: 6px; border-radius: var(--r-pilule); background: color-mix(in srgb, var(--texte-att) 14%, transparent); overflow: hidden; }
+.tc-piste span { display: block; height: 100%; border-radius: inherit; background: var(--vert-ok); }
+.tc-piste span.ton-attention { background: var(--sa-ambre); }
+.tc-piste span.ton-danger { background: var(--rouge); }
+.tc-lignes { display: flex; flex-direction: column; }
+.tc-ligne {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-top: 1px solid var(--bordure);
+  font-size: 0.84rem;
+}
+.tc-ligne > span:first-child { color: var(--texte-att); }
+.tc-ligne > span:last-child { color: var(--texte-sombre); font-variant-numeric: tabular-nums; text-align: right; }
+
+/* Listes courtes (points d'attention, alertes) */
+.tc-liste { display: flex; flex-direction: column; }
+.tc-element {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 10px 2px;
+  border-top: 1px solid var(--bordure);
+  color: inherit;
+  text-decoration: none;
+}
+.tc-element:first-child { border-top: 0; }
+a.tc-element:hover .tc-element-titre { text-decoration: underline; }
+.tc-element .tc-voyant { width: 9px; height: 9px; margin-top: 5px; box-shadow: none; }
+.tc-element-corps { flex: 1; min-width: 0; }
+.tc-element-titre, .tc-element-detail { display: block; }
+.tc-element-titre { font-size: 0.86rem; font-weight: 600; color: var(--texte-sombre); overflow: hidden; text-overflow: ellipsis; }
+.tc-element-detail { font-size: 0.78rem; color: var(--texte-att); line-height: 1.4; margin-top: 1px; }
+
+.tc-indisponible { font-size: 0.82rem; color: var(--texte-att); padding: 10px 0; }
+
+/* --------------------------------------------------------------------------
+   8. Configuration : catégories à gauche, une seule ouverte à la fois
+   -------------------------------------------------------------------------- */
+.sa-reglages {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+.sa-reglages-nav {
+  position: sticky;
+  top: 84px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sa-reglages-nav button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 11px;
+  border: 0;
+  border-radius: var(--r-petit);
+  background: none;
+  color: var(--texte-sombre);
+  font: inherit;
+  font-size: 0.875rem;
+  text-align: left;
+  cursor: pointer;
+}
+.sa-reglages-nav button:hover { background: color-mix(in srgb, var(--texte-sombre) 5%, transparent); }
+.sa-reglages-nav button[aria-selected="true"] {
+  background: color-mix(in srgb, var(--ocre) 13%, transparent);
+  font-weight: 600;
+  box-shadow: inset 3px 0 0 var(--ocre);
+}
+.sa-reglages-nav .sa-reglages-nb { font-size: 0.74rem; color: var(--texte-att); font-weight: 500; }
+.sa-reglages-nav .sa-reglages-modif { width: 7px; height: 7px; border-radius: 50%; background: var(--ocre); }
+.sa-reglages-categorie[hidden] { display: none; }
+.sa-reglages-barre {
+  position: sticky;
+  bottom: 14px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+  padding: 12px 14px;
+  border: 1px solid var(--bordure);
+  border-radius: var(--r-carte);
+  background: var(--craie-2);
+  box-shadow: var(--ombre-flottante);
+}
+.sa-reglages-barre-etat { font-size: 0.84rem; color: var(--texte-att); }
+.sa-reglages-barre-etat.modifie { color: var(--texte-sombre); font-weight: 600; }
+.sa-reglages-barre-actions { display: flex; gap: 8px; }
+
+/* --------------------------------------------------------------------------
+   9. Tablette et téléphone : rail + panneau deviennent un tiroir
+   -------------------------------------------------------------------------- */
+@media (max-width: 1180px) {
+  .tc-grille { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 980px) {
+  .sa-navigation {
+    position: fixed;
+    top: 0; left: 0;
+    z-index: 70;
+    height: 100vh;
+    height: 100dvh;
+    max-width: 100vw;
+    transform: translateX(-100%);
+    transition: transform var(--transition-base);
+    box-shadow: var(--ombre-flottante);
+  }
+  .sa-panneau-nav { width: min(280px, calc(100vw - 64px)); }
+  body.sa-nav-ouverte .sa-navigation { transform: none; }
+  body.sa-nav-ouverte::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 65;
+    background: color-mix(in srgb, var(--ardoise, #1F2B24) 40%, transparent);
+  }
+  .sa-bouton-nav { display: grid; }
+  .sa-principal { padding: 0 18px 60px; }
+  .sa-barre-haut { margin: 0 -18px 18px; padding: 8px 18px; gap: 10px; }
+  .sa-recherche-globale { flex: 0 0 auto; width: 40px; padding: 0; justify-content: center; }
+  .sa-recherche-texte, .sa-recherche-globale kbd { display: none; }
+  .sa-menu-compte { left: 74px; right: 14px; min-width: 0; }
+  .sa-entete h1 { font-size: 1.4rem; }
+  .sa-reglages { grid-template-columns: minmax(0, 1fr); }
+  .sa-reglages-nav { position: static; flex-direction: row; overflow-x: auto; gap: 4px; }
+  .sa-reglages-nav button { flex: none; }
+}
+
+@media (max-width: 560px) {
+  .sa-principal { padding: 0 14px 52px; }
+  .sa-barre-haut { margin: 0 -14px 16px; padding: 8px 14px; }
+  .sa-fil > a:not(:last-of-type), .sa-fil > .sa-fil-sep:first-of-type { display: none; }
+  .sa-cartes-sections { grid-template-columns: minmax(0, 1fr); }
+  .tc-file, .tc-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tc-kpi-valeur { font-size: 1.3rem; }
+  .tc-tache-nombre { font-size: 1.45rem; }
+  .tc-axe { grid-template-columns: 80px 1fr 30px; }
+  .sa-cartes-domaines { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .sa-carte-domaine { padding: 12px; }
+  .sa-carte-domaine-texte, .sa-carte-domaine-pied { display: none; }
+  .tc-titre-bloc { flex-wrap: wrap; }
+}
+
+@media (max-width: 380px) {
+  .tc-file, .tc-kpis { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media print {
+  .sa-barre-haut, .sa-onglets-espace, .sa-menu-compte { display: none !important; }
+}

@@ -389,110 +389,28 @@
   });
 
   /* ======================================================================
-     4. BASE DE CONNAISSANCE
+     4. BASE DE CONNAISSANCE — remplacée par le Knowledge Hub
+     ----------------------------------------------------------------------
+     Cet écran éditait directement `base_connaissance` par
+     PUT /control-center/connaissance/:cle. Ce chemin incrémente le numéro de
+     version de la fiche mais n'écrit RIEN dans `connaissance_versions` :
+     chaque enregistrement fait ici effaçait le contenu précédent sans retour
+     possible, alors que le Knowledge Hub (#/ia/connaissance), qui gère les
+     mêmes fiches, garantit qu'aucune modification ne perd l'état antérieur.
+
+     Deux éditeurs pour une même table, dont l'un contournait l'historique de
+     l'autre : on garde celui qui tient sa promesse. L'adresse reste valable
+     (favoris, liens de la palette, résultats de recherche) et redirige.
      ====================================================================== */
 
   SA.enregistrerVue('cc/connaissance', {
     titre: 'Base de connaissance',
-    sousTitre: "Ce que l'IA lit avant de répondre. Sans elle, elle invente du plausible.",
+    sousTitre: "Déplacée dans le Knowledge Hub, qui conserve l'historique de chaque fiche.",
 
-    async rendu(conteneur, params) {
-      const actions = document.getElementById('sa-entete-actions');
-      if (actions) {
-        actions.innerHTML = `<button class="sa-bouton sa-bouton-principal sa-bouton-petit" id="cc-kb-nouvelle">Ajouter une fiche</button>`;
-      }
-
-      conteneur.innerHTML = ui.squelette(6);
-      const d = await SA.api(SA.url('/super-admin/control-center/connaissance',
-        Object.assign({}, params.q ? { q: params.q } : {}, params.categorie ? { categorie: params.categorie } : {})));
-
-      conteneur.innerHTML = `
-        <div class="cc-filtres">
-          <label class="cc-filtre cc-filtre-large"><span>Recherche</span>
-            <input class="sa-champ" id="cc-kb-q" value="${esc(params.q || '')}"></label>
-          <label class="cc-filtre"><span>Catégorie</span>
-            <select class="sa-champ" id="cc-kb-cat">
-              <option value="">Toutes</option>
-              ${(d.categories || []).map((c) =>
-                `<option value="${esc(c)}"${params.categorie === c ? ' selected' : ''}>${esc(c)}</option>`).join('')}
-            </select></label>
-        </div>
-
-        ${d.etat ? `<div class="cc-encart-hypothese">${esc(d.etat)}</div>` : ''}
-
-        ${(d.fiches || []).map((f) => `
-          <div class="sa-panneau" style="margin-bottom:12px">
-            <div style="display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin-bottom:8px">
-              <strong>${esc(f.titre)}</strong>
-              ${ui.badge(f.categorie, 'neutre')}
-              <span class="sa-annexe sa-mono">${esc(f.cle)}</span>
-              <span class="sa-annexe">v${esc(f.version)} · ${esc(fmt.relatif(f.updated_at))}</span>
-            </div>
-            <div style="white-space:pre-wrap;line-height:1.6;font-size:.88rem">${esc(f.contenu)}</div>
-            ${(f.mots_cles || []).length ? `<div style="margin-top:8px">${(f.mots_cles || []).map((m) => ui.badge(m, 'neutre')).join(' ')}</div>` : ''}
-            <button class="sa-bouton sa-bouton-secondaire sa-bouton-petit" style="margin-top:9px"
-                    data-editer="${esc(f.cle)}">Modifier</button>
-          </div>`).join('') || ''}
-
-        <div class="cc-source">${esc(d.raison_d_etre || '')}</div>`;
-
-      const q = document.getElementById('cc-kb-q');
-      if (q) q.addEventListener('keydown', (ev) => {
-        if (ev.key === 'Enter') SA.naviguer('cc/connaissance', { q: q.value.trim() });
-      });
-      const cat = document.getElementById('cc-kb-cat');
-      if (cat) cat.addEventListener('change', () =>
-        SA.naviguer('cc/connaissance', cat.value ? { categorie: cat.value } : {}));
-
-      function editeur(fiche) {
-        const modale = SA.modale({
-          titre: fiche ? 'Modifier la fiche' : 'Ajouter une fiche',
-          sousTitre: "Écrivez ce que fait VRAIMENT Ardoise : c'est ce texte que l'IA citera.",
-          large: true,
-          contenu: `
-            <label class="sa-connexion-champ"><span>Clé (identifiant stable)</span>
-              <input class="sa-champ" id="cc-kb-cle" value="${esc(fiche ? fiche.cle : '')}"
-                     ${fiche ? 'readonly' : ''} placeholder="module.bulletins"></label>
-            <label class="sa-connexion-champ"><span>Catégorie</span>
-              <select class="sa-champ" id="cc-kb-fcat">
-                ${(d.categories || []).map((c) =>
-                  `<option value="${esc(c)}"${fiche && fiche.categorie === c ? ' selected' : ''}>${esc(c)}</option>`).join('')}
-              </select></label>
-            <label class="sa-connexion-champ"><span>Titre</span>
-              <input class="sa-champ" id="cc-kb-titre" value="${esc(fiche ? fiche.titre : '')}"></label>
-            <label class="sa-connexion-champ"><span>Contenu</span>
-              <textarea class="sa-champ" id="cc-kb-contenu" rows="10">${esc(fiche ? fiche.contenu : '')}</textarea></label>
-            <label class="sa-connexion-champ"><span>Mots-clés (séparés par des virgules)</span>
-              <input class="sa-champ" id="cc-kb-mots" value="${esc(fiche ? (fiche.mots_cles || []).join(', ') : '')}"></label>`,
-          actions: `<button class="sa-bouton sa-bouton-principal" data-role="ok">Enregistrer</button>`
-        });
-        modale.querySelector('[data-role="ok"]').addEventListener('click', async () => {
-          const cle = document.getElementById('cc-kb-cle').value.trim();
-          if (!cle) { SA.toast('La clé est obligatoire.', 'danger'); return; }
-          try {
-            await SA.api(`/super-admin/control-center/connaissance/${encodeURIComponent(cle)}`, {
-              method: 'PUT',
-              body: JSON.stringify({
-                categorie: document.getElementById('cc-kb-fcat').value,
-                titre: document.getElementById('cc-kb-titre').value,
-                contenu: document.getElementById('cc-kb-contenu').value,
-                mots_cles: (document.getElementById('cc-kb-mots').value || '')
-                  .split(',').map((s) => s.trim()).filter(Boolean)
-              })
-            });
-            modale.fermer();
-            SA.toast('Fiche enregistrée.', 'succes');
-            SA.rafraichirVue();
-          } catch (err) { SA.toast(err.message, 'danger'); }
-        });
-      }
-
-      const btnN = document.getElementById('cc-kb-nouvelle');
-      if (btnN) btnN.addEventListener('click', () => editeur(null));
-      conteneur.querySelectorAll('[data-editer]').forEach((b) => {
-        b.addEventListener('click', () =>
-          editeur((d.fiches || []).find((f) => f.cle === b.getAttribute('data-editer'))));
-      });
+    async rendu(conteneur) {
+      conteneur.innerHTML = ui.etatVide('Redirection vers le Knowledge Hub…',
+        'Les fiches que lit le copilote se gèrent désormais au même endroit que toutes les bases de connaissance.');
+      location.replace('#/ia/connaissance');
     }
   });
 

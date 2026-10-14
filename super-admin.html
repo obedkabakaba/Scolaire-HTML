@@ -75,6 +75,10 @@
      que les deux précédentes. -->
 <link rel="stylesheet" href="super-admin-control-center.css" />
 <link rel="stylesheet" href="super-admin-ia.css" />
+<!-- Coque de navigation par domaines (rail, panneau, barre haute, onglets
+     d'espace de travail, tour de contrôle). Chargée APRÈS les feuilles
+     précédentes : c'est elle qui redessine la charpente de la page. -->
+<link rel="stylesheet" href="super-admin-coque.css" />
 
 <style>
   /* ------------------------------------------------------------------
@@ -281,242 +285,358 @@
      ===================================================================== -->
 <div class="sa-application" id="application" style="display:none;">
 
+  <!-- ===================================================================
+       NAVIGATION PAR DOMAINES
+       -------------------------------------------------------------------
+       Une quarantaine d'entrées à plat ne se parcourent plus : elles se
+       subissent. Les écrans sont donc rangés en DIX DOMAINES, chacun avec
+       son panneau de sections ; le rail de gauche ne montre que les
+       domaines, le panneau ne montre que le domaine courant.
+
+       CE BLOC EST LA SOURCE UNIQUE DE LA NAVIGATION. super-admin-coque.js
+       le lit pour construire le rail, le panneau, le fil d'Ariane, les
+       onglets d'espace de travail, les vues d'ensemble de domaine et les
+       commandes de la palette. Ajouter un écran = une ligne ici.
+
+       Conventions :
+         · <section class="sa-domaine" data-domaine data-libelle data-icone
+             data-accueil data-description> — un domaine ;
+         · .sa-nav-groupe > .sa-nav-groupe-titre — un groupe de sections ;
+           <details class="sa-nav-groupe sa-nav-avance"> — outils rares,
+           repliés par défaut ;
+         · <li><a data-route> — une section ;
+         · <li class="sa-espace" data-espace="…"> contenant plusieurs <a> —
+           un ESPACE DE TRAVAIL : une seule entrée dans le panneau, et ses
+           écrans deviennent des onglets en tête de page. C'est ainsi que
+           les écrans qui se recouvraient (trois écrans de coûts IA, deux
+           d'abonnements, deux d'erreurs…) sont réunis sans qu'aucune route
+           ne disparaisse ;
+         · data-compteur — pastille alimentée par la coque (données réelles).
+
+       Sans JavaScript, toutes les entrées restent des liens visibles.
+       =================================================================== -->
   <nav class="sa-navigation" id="sa-navigation" aria-label="Navigation principale">
-    <div class="sa-marque">
-      <span>Ardoise</span>
-      <span class="sa-etiquette-admin">Admin</span>
+    <div class="sa-rail" id="sa-rail">
+      <a class="sa-rail-marque" href="#/tableau-de-bord" aria-label="Ardoise — Tour de contrôle">
+        <span class="sa-rail-logo" aria-hidden="true">A</span>
+      </a>
+      <div class="sa-rail-domaines" id="sa-rail-domaines" role="tablist" aria-label="Domaines"></div>
+      <div class="sa-rail-pied">
+        <button type="button" class="sa-rail-bouton" id="sa-rail-recherche" aria-label="Rechercher (Ctrl K)" data-infobulle="Rechercher · Ctrl K"></button>
+        <a class="sa-rail-bouton" href="#/apparence" data-route="apparence" aria-label="Apparence" data-infobulle="Apparence"></a>
+        <button type="button" class="sa-rail-bouton sa-rail-profil" id="sa-rail-profil" aria-haspopup="true" aria-expanded="false" aria-label="Compte">
+          <span class="sa-avatar" id="sa-avatar">SA</span>
+        </button>
+      </div>
     </div>
 
-    <ul class="sa-menu">
-      <li><a href="#/tableau-de-bord" data-route="tableau-de-bord"><span class="sa-icone">📊</span> Tableau de bord</a></li>
+    <div class="sa-panneau-nav" id="sa-panneau-nav">
+      <div class="sa-marque">
+        <span>Ardoise</span>
+        <span class="sa-etiquette-admin">Admin</span>
+      </div>
 
-      <!-- ===== ARDOISE CONTROL CENTER =====
-           Placé EN TÊTE, juste après le tableau de bord commercial, et pas en
-           bas avec les écrans techniques : c'est l'écran qu'on ouvre le matin.
-           Une arborescence dit ce qui compte par l'ordre autant que par les mots.
+      <section class="sa-domaine" data-domaine="pilotage" data-libelle="Pilotage" data-icone="jauge"
+               data-accueil="tableau-de-bord" data-description="La vue globale de la plateforme, ses tendances et ses exports.">
+        <h2 class="sa-domaine-titre">Pilotage</h2>
+        <div class="sa-nav-groupe">
+          <ul class="sa-menu">
+            <li><a href="#/tableau-de-bord" data-route="tableau-de-bord">Tour de contrôle</a></li>
+            <li><a href="#/analyses" data-route="analyses">Analyses</a></li>
+            <li class="sa-espace" data-espace="Rapports et exports">
+              <a href="#/rapports" data-route="rapports">Exports plateforme</a>
+              <a href="#/finance/exports" data-route="finance/exports">Exports financiers</a>
+              <a href="#/cc/rapports" data-route="cc/rapports">Rapports automatiques</a>
+            </li>
+          </ul>
+        </div>
+      </section>
 
-           Quatre groupes plutôt qu'un seul menu de quarante entrées : Contrôle
-           (ce qui se passe), Audit (ce qui devrait être), IA (ce qu'on en
-           déduit), Système (ce qu'on peut changer). Les écrans existants —
-           Écoles, Finance, Offres, Support — ne bougent pas d'un pixel. -->
-      <li><a href="#/cc" data-route="cc"><span class="sa-icone">◎</span> Control Center</a></li>
+      <section class="sa-domaine" data-domaine="ecoles" data-libelle="Écoles &amp; clients" data-icone="ecole"
+               data-accueil="ecoles" data-description="Les établissements, leurs abonnements et la consultation de leurs données.">
+        <h2 class="sa-domaine-titre">Écoles &amp; clients</h2>
+        <div class="sa-nav-groupe">
+          <p class="sa-nav-groupe-titre">Établissements</p>
+          <ul class="sa-menu">
+            <li><a href="#/ecoles" data-route="ecoles">Toutes les écoles</a></li>
+            <li><a href="#/ecoles/statistiques" data-route="ecoles/statistiques">Statistiques par école</a></li>
+          </ul>
+        </div>
+        <div class="sa-nav-groupe">
+          <p class="sa-nav-groupe-titre">Abonnements</p>
+          <ul class="sa-menu">
+            <li><a href="#/renouvellements" data-route="renouvellements" data-compteur="renouvellements">Renouvellements à traiter</a></li>
+            <li class="sa-espace" data-espace="Abonnements">
+              <a href="#/ecoles/abonnements" data-route="ecoles/abonnements">Échéancier</a>
+              <a href="#/offres/abonnements" data-route="offres/abonnements">Prix payés et remises</a>
+            </li>
+          </ul>
+        </div>
+        <div class="sa-nav-groupe">
+          <p class="sa-nav-groupe-titre">Données des écoles · lecture seule</p>
+          <ul class="sa-menu">
+            <li class="sa-espace" data-espace="Explorateur">
+              <a href="#/explorer" data-route="explorer">Écoles</a>
+              <a href="#/explorer/annuaire/eleves" data-route="explorer/annuaire/eleves">Élèves</a>
+              <a href="#/explorer/annuaire/enseignants" data-route="explorer/annuaire/enseignants">Professeurs</a>
+              <a href="#/explorer/annuaire/parents" data-route="explorer/annuaire/parents">Parents</a>
+              <a href="#/explorer/annuaire/classes" data-route="explorer/annuaire/classes">Classes</a>
+            </li>
+            <li><a href="#/explorer/recherche" data-route="explorer/recherche">Recherche dans les écoles</a></li>
+          </ul>
+        </div>
+      </section>
 
-      <li class="sa-groupe" data-groupe="cc-controle">
-        <button type="button" class="sa-groupe-titre">
-          <span class="sa-icone">🛰</span> Contrôle <span class="sa-chevron">›</span>
-        </button>
-        <ul class="sa-sous-menu">
-          <li><a href="#/cc/release" data-route="cc/release">Release Readiness</a></li>
-          <li><a href="#/cc/constats" data-route="cc/constats">Écarts constatés</a></li>
-          <li><a href="#/cc/erreurs" data-route="cc/erreurs">Erreurs</a></li>
-          <li><a href="#/cc/logs" data-route="cc/logs">Journaux</a></li>
-          <li><a href="#/cc/performance" data-route="cc/performance">Performance</a></li>
-          <li><a href="#/cc/incidents" data-route="cc/incidents">Incidents</a></li>
-          <li><a href="#/cc/alertes" data-route="cc/alertes">Alertes</a></li>
-          <li><a href="#/cc/verifications" data-route="cc/verifications">Vérifications</a></li>
-        </ul>
-      </li>
+      <section class="sa-domaine" data-domaine="relation" data-libelle="Relation client" data-icone="bulle"
+               data-accueil="support" data-description="Tout ce qui attend une réponse : tickets, demandes du site public, annonces.">
+        <h2 class="sa-domaine-titre">Relation client</h2>
+        <div class="sa-nav-groupe">
+          <ul class="sa-menu">
+            <li><a href="#/support" data-route="support" data-compteur="tickets">Tickets de support</a></li>
+            <li><a href="#/prospects" data-route="prospects" data-compteur="prospects">Demandes et messages</a></li>
+            <li><a href="#/notifications" data-route="notifications">Annonces aux écoles</a></li>
+          </ul>
+        </div>
+      </section>
 
-      <li class="sa-groupe" data-groupe="cc-audit">
-        <button type="button" class="sa-groupe-titre">
-          <span class="sa-icone">📐</span> Audit <span class="sa-chevron">›</span>
-        </button>
-        <ul class="sa-sous-menu">
-          <li><a href="#/cc/regles" data-route="cc/regles">Règles métier</a></li>
-          <li><a href="#/cc/matrice" data-route="cc/matrice">Matrice des permissions</a></li>
-          <li><a href="#/cc/roles" data-route="cc/roles">Audit par rôle</a></li>
-          <li><a href="#/cc/audits" data-route="cc/audits">Lancer les audits</a></li>
-          <li><a href="#/cc/routes" data-route="cc/routes">Carte des routes</a></li>
-        </ul>
-      </li>
+      <section class="sa-domaine" data-domaine="croissance" data-libelle="Croissance" data-icone="croissance"
+               data-accueil="demonstrations" data-description="Essais gratuits et programme des apporteurs d'affaires.">
+        <h2 class="sa-domaine-titre">Croissance</h2>
+        <div class="sa-nav-groupe">
+          <p class="sa-nav-groupe-titre">Acquisition</p>
+          <ul class="sa-menu">
+            <li><a href="#/demonstrations" data-route="demonstrations" data-compteur="demonstrations">Démonstrations</a></li>
+          </ul>
+        </div>
+        <div class="sa-nav-groupe">
+          <p class="sa-nav-groupe-titre">Apporteurs d'affaires</p>
+          <ul class="sa-menu">
+            <li><a href="#/apporteurs" data-route="apporteurs">Vue d'ensemble</a></li>
+            <li class="sa-espace" data-espace="Réseau d'apporteurs">
+              <a href="#/apporteurs/profils" data-route="apporteurs/profils">Profils et badges</a>
+              <a href="#/apporteurs/candidatures" data-route="apporteurs/candidatures">Candidatures</a>
+              <a href="#/apporteurs/declarations" data-route="apporteurs/declarations">Déclarations</a>
+              <a href="#/apporteurs/attributions" data-route="apporteurs/attributions">Attributions</a>
+              <a href="#/apporteurs/partenariats" data-route="apporteurs/partenariats">Partenariats</a>
+            </li>
+            <li class="sa-espace" data-espace="Rémunération">
+              <a href="#/apporteurs/commissions" data-route="apporteurs/commissions">Commissions</a>
+              <a href="#/apporteurs/prestations" data-route="apporteurs/prestations">Prestations</a>
+              <a href="#/apporteurs/reglements" data-route="apporteurs/reglements">Règlements</a>
+            </li>
+            <li class="sa-espace" data-espace="Programme">
+              <a href="#/apporteurs/programme" data-route="apporteurs/programme">Programme et barèmes</a>
+              <a href="#/apporteurs/journal" data-route="apporteurs/journal">Historique</a>
+            </li>
+          </ul>
+        </div>
+      </section>
 
-      <li class="sa-groupe" data-groupe="cc-ia">
-        <button type="button" class="sa-groupe-titre">
-          <span class="sa-icone">🤖</span> Intelligence <span class="sa-chevron">›</span>
-        </button>
-        <ul class="sa-sous-menu">
-          <li><a href="#/cc/copilote" data-route="cc/copilote">Copilote</a></li>
-          <li><a href="#/cc/conseil" data-route="cc/conseil">Conseil stratégique</a></li>
-          <li><a href="#/cc/cause-racine" data-route="cc/cause-racine">Cause racine</a></li>
-          <li><a href="#/cc/correctifs" data-route="cc/correctifs">Correctifs proposés</a></li>
-          <li><a href="#/cc/rapports" data-route="cc/rapports">Rapports</a></li>
-          <li><a href="#/cc/couts-ia" data-route="cc/couts-ia">Coût de l'IA</a></li>
-        </ul>
-      </li>
+      <section class="sa-domaine" data-domaine="acces" data-libelle="Utilisateurs &amp; accès" data-icone="utilisateurs"
+               data-accueil="utilisateurs" data-description="Les comptes, leurs connexions, et qui peut faire quoi.">
+        <h2 class="sa-domaine-titre">Utilisateurs &amp; accès</h2>
+        <div class="sa-nav-groupe">
+          <p class="sa-nav-groupe-titre">Comptes</p>
+          <ul class="sa-menu">
+            <li><a href="#/utilisateurs" data-route="utilisateurs">Tous les utilisateurs</a></li>
+            <li><a href="#/securite" data-route="securite">Connexions et sessions</a></li>
+            <li><a href="#/explorer/voir-comme" data-route="explorer/voir-comme">Voir comme…</a></li>
+          </ul>
+        </div>
+        <div class="sa-nav-groupe">
+          <p class="sa-nav-groupe-titre">Droits</p>
+          <ul class="sa-menu">
+            <li class="sa-espace" data-espace="Droits par rôle">
+              <a href="#/cc/matrice" data-route="cc/matrice">Matrice des permissions</a>
+              <a href="#/cc/roles" data-route="cc/roles">Ce que peut faire un rôle</a>
+            </li>
+            <li><a href="#/finance/permissions" data-route="finance/permissions">Permissions financières</a></li>
+          </ul>
+        </div>
+      </section>
 
-      <!-- ===== IA & MODÈLES =====
-           Le centre de configuration de TOUTES les intelligences artificielles
-           d'Ardoise. Distinct du groupe « Intelligence » ci-dessus : celui-là
-           UTILISE l'IA (copilote, conseil, analyses), celui-ci décide QUEL
-           modèle répond, à qui, avec quel budget et sous quelle autorisation.
-           Confondre les deux ferait chercher le réglage de WhatsApp dans
-           l'écran du copilote. -->
-      <li class="sa-groupe" data-groupe="ia">
-        <button type="button" class="sa-groupe-titre">
-          <span class="sa-icone">🧠</span> IA &amp; Modèles <span class="sa-chevron">›</span>
-        </button>
-        <ul class="sa-sous-menu">
-          <li><a href="#/ia/studio" data-route="ia/studio">AI Studio</a></li>
-          <li><a href="#/ia/fournisseurs" data-route="ia/fournisseurs">Fournisseurs</a></li>
-          <li><a href="#/ia/modeles" data-route="ia/modeles">Modèles</a></li>
-          <li><a href="#/ia/routage" data-route="ia/routage">Routage</a></li>
-          <li><a href="#/ia/couts" data-route="ia/couts">Coûts</a></li>
-          <li><a href="#/ia/autorisations" data-route="ia/autorisations">Autorisations</a></li>
-          <li><a href="#/ia/actions" data-route="ia/actions">Actions IA</a></li>
-          <li><a href="#/ia/journal" data-route="ia/journal">Historique</a></li>
-          <li><a href="#/ia/historique" data-route="ia/historique">Changements de routage</a></li>
-        </ul>
-      </li>
+      <section class="sa-domaine" data-domaine="finance" data-libelle="Finance" data-icone="portefeuille"
+               data-accueil="finance" data-description="Revenus, coûts, tarification et rentabilité de la plateforme.">
+        <h2 class="sa-domaine-titre">Finance</h2>
+        <div class="sa-nav-groupe">
+          <ul class="sa-menu">
+            <li><a href="#/finance" data-route="finance">Tableau financier</a></li>
+            <li><a href="#/finance/alertes" data-route="finance/alertes" data-compteur="finance">Alertes financières</a></li>
+            <li class="sa-espace" data-espace="Analyse">
+              <a href="#/finance/rentabilite" data-route="finance/rentabilite">Rentabilité</a>
+              <a href="#/finance/seuil" data-route="finance/seuil">Seuil de rentabilité</a>
+              <a href="#/finance/previsions" data-route="finance/previsions">Prévisions</a>
+              <a href="#/finance/fonctionnalites" data-route="finance/fonctionnalites">Coût des fonctionnalités</a>
+            </li>
+          </ul>
+        </div>
+        <div class="sa-nav-groupe">
+          <p class="sa-nav-groupe-titre">Tarification</p>
+          <ul class="sa-menu">
+            <li class="sa-espace" data-espace="Offres et prix">
+              <a href="#/offres" data-route="offres">Offres</a>
+              <a href="#/offres/historique-prix" data-route="offres/historique-prix">Historique des prix</a>
+            </li>
+            <li class="sa-espace" data-espace="Remises et gestes commerciaux">
+              <a href="#/offres/promotions" data-route="offres/promotions">Promotions</a>
+              <a href="#/offres/speciales" data-route="offres/speciales">Offres spéciales</a>
+              <a href="#/offres/tarifs" data-route="offres/tarifs">Tarifs négociés</a>
+            </li>
+          </ul>
+        </div>
+        <div class="sa-nav-groupe">
+          <p class="sa-nav-groupe-titre">Coûts et traçabilité</p>
+          <ul class="sa-menu">
+            <li class="sa-espace" data-espace="Dépenses et services">
+              <a href="#/couts/services" data-route="couts/services">Services</a>
+              <a href="#/couts/depenses" data-route="couts/depenses">Dépenses</a>
+              <a href="#/couts/budgets" data-route="couts/budgets">Budget</a>
+              <a href="#/couts/calendrier" data-route="couts/calendrier">Calendrier de facturation</a>
+              <a href="#/couts/taux-change" data-route="couts/taux-change">Taux de change</a>
+            </li>
+            <li><a href="#/finance/journal" data-route="finance/journal">Journal financier</a></li>
+          </ul>
+        </div>
+      </section>
 
-      <li class="sa-groupe" data-groupe="knowledge">
-        <button type="button" class="sa-groupe-titre">
-          <span class="sa-icone">📚</span> Knowledge Hub <span class="sa-chevron">›</span>
-        </button>
-        <ul class="sa-sous-menu">
-          <li><a href="#/ia/connaissance" data-route="ia/connaissance">Bases de connaissance</a></li>
-          <li><a href="#/ia/connaissance/propositions" data-route="ia/connaissance/propositions">Propositions IA</a></li>
-        </ul>
-      </li>
+      <section class="sa-domaine" data-domaine="supervision" data-libelle="Supervision" data-icone="pouls"
+               data-accueil="cc" data-description="Ce qui se passe en ce moment : santé, erreurs, incidents et journaux.">
+        <h2 class="sa-domaine-titre">Supervision</h2>
+        <div class="sa-nav-groupe">
+          <ul class="sa-menu">
+            <li><a href="#/cc" data-route="cc">Vue technique</a></li>
+            <li class="sa-espace" data-espace="Santé et performance">
+              <a href="#/sante" data-route="sante">Services</a>
+              <a href="#/cc/performance" data-route="cc/performance">Performance</a>
+              <a href="#/cc/verifications" data-route="cc/verifications">Vérifications</a>
+            </li>
+            <li class="sa-espace" data-espace="Erreurs">
+              <a href="#/cc/erreurs" data-route="cc/erreurs">Suivi technique</a>
+              <a href="#/bugs" data-route="bugs">Triage et commentaires</a>
+            </li>
+            <li class="sa-espace" data-espace="Incidents et alertes" data-compteur="supervision">
+              <a href="#/cc/incidents" data-route="cc/incidents">Incidents</a>
+              <a href="#/cc/alertes" data-route="cc/alertes">Alertes techniques</a>
+            </li>
+            <li class="sa-espace" data-espace="Journaux">
+              <a href="#/cc/logs" data-route="cc/logs">Journal technique</a>
+              <a href="#/journal" data-route="journal">Journal d'activité</a>
+            </li>
+          </ul>
+        </div>
+      </section>
 
-      <li class="sa-groupe" data-groupe="cc-systeme">
-        <button type="button" class="sa-groupe-titre">
-          <span class="sa-icone">⚙️</span> Système <span class="sa-chevron">›</span>
-        </button>
-        <ul class="sa-sous-menu">
-          <li><a href="#/cc/drapeaux" data-route="cc/drapeaux">Drapeaux</a></li>
-          <li><a href="#/cc/maintenance" data-route="cc/maintenance">Maintenance</a></li>
-          <li><a href="#/cc/decisions" data-route="cc/decisions">Décisions</a></li>
-          <li><a href="#/cc/connaissance" data-route="cc/connaissance">Base de connaissance</a></li>
-          <li><a href="#/cc/dependances" data-route="cc/dependances">Dépendances</a></li>
-          <li><a href="#/cc/base" data-route="cc/base">Inspecteur de base</a></li>
-          <li><a href="#/cc/infrastructure" data-route="cc/infrastructure">Infrastructure</a></li>
-        </ul>
-      </li>
+      <section class="sa-domaine" data-domaine="qualite" data-libelle="Qualité &amp; audit" data-icone="coche"
+               data-accueil="cc/release" data-description="Ce qui devrait être : écarts au référentiel, audits et préparation des livraisons.">
+        <h2 class="sa-domaine-titre">Qualité &amp; audit</h2>
+        <div class="sa-nav-groupe">
+          <ul class="sa-menu">
+            <li><a href="#/cc/release" data-route="cc/release">Prêt à livrer ?</a></li>
+            <li class="sa-espace" data-espace="Écarts et correctifs">
+              <a href="#/cc/constats" data-route="cc/constats">Écarts constatés</a>
+              <a href="#/cc/audits" data-route="cc/audits">Lancer les audits</a>
+              <a href="#/cc/correctifs" data-route="cc/correctifs">Correctifs proposés</a>
+            </li>
+            <li class="sa-espace" data-espace="Référentiel">
+              <a href="#/cc/regles" data-route="cc/regles">Règles métier</a>
+              <a href="#/cc/routes" data-route="cc/routes">Carte des routes</a>
+            </li>
+          </ul>
+        </div>
+      </section>
 
-      <li class="sa-groupe" data-groupe="ecoles">
-        <button type="button" class="sa-groupe-titre">
-          <span class="sa-icone">🏫</span> Écoles <span class="sa-chevron">›</span>
-        </button>
-        <ul class="sa-sous-menu">
-          <li><a href="#/ecoles" data-route="ecoles">Toutes les écoles</a></li>
-          <li><a href="#/ecoles/abonnements" data-route="ecoles/abonnements">Abonnements</a></li>
-          <li><a href="#/ecoles/statistiques" data-route="ecoles/statistiques">Statistiques</a></li>
-        </ul>
-      </li>
+      <section class="sa-domaine" data-domaine="ia" data-libelle="Intelligence artificielle" data-icone="etincelle"
+               data-accueil="espace/ia" data-description="Les assistants, les modèles qui leur répondent, ce qu'ils savent et ce qu'ils coûtent.">
+        <h2 class="sa-domaine-titre">Intelligence artificielle</h2>
+        <div class="sa-nav-groupe">
+          <p class="sa-nav-groupe-titre">Assistants</p>
+          <ul class="sa-menu">
+            <li><a href="#/cc/copilote" data-route="cc/copilote">Copilote</a></li>
+            <li><a href="#/cc/conseil" data-route="cc/conseil">Conseil stratégique</a></li>
+            <li><a href="#/cc/cause-racine" data-route="cc/cause-racine">Cause racine</a></li>
+            <li><a href="#/ia/studio" data-route="ia/studio">AI Studio</a></li>
+            <li class="sa-espace" data-espace="Actions IA">
+              <a href="#/ia/actions" data-route="ia/actions">Propositions</a>
+              <a href="#/ia/journal" data-route="ia/journal">Journal</a>
+            </li>
+          </ul>
+        </div>
+        <div class="sa-nav-groupe">
+          <p class="sa-nav-groupe-titre">Modèles</p>
+          <ul class="sa-menu">
+            <li><a href="#/ia/fournisseurs" data-route="ia/fournisseurs">Fournisseurs</a></li>
+            <li><a href="#/ia/modeles" data-route="ia/modeles">Registre des modèles</a></li>
+            <li class="sa-espace" data-espace="Routage">
+              <a href="#/ia/routage" data-route="ia/routage">Routage par fonction</a>
+              <a href="#/ia/historique" data-route="ia/historique">Historique des changements</a>
+            </li>
+            <li><a href="#/ia/autorisations" data-route="ia/autorisations">Autorisations</a></li>
+          </ul>
+        </div>
+        <div class="sa-nav-groupe">
+          <p class="sa-nav-groupe-titre">Connaissance et coûts</p>
+          <ul class="sa-menu">
+            <li class="sa-espace" data-espace="Knowledge Hub">
+              <a href="#/ia/connaissance" data-route="ia/connaissance">Bases de connaissance</a>
+              <a href="#/ia/connaissance/propositions" data-route="ia/connaissance/propositions">Propositions de l'IA</a>
+            </li>
+            <li class="sa-espace" data-espace="Coûts de l'IA">
+              <a href="#/ia/couts" data-route="ia/couts">Vue détaillée</a>
+              <a href="#/cc/couts-ia" data-route="cc/couts-ia">Copilote et budgets</a>
+              <a href="#/ia" data-route="ia">Usage par les écoles</a>
+            </li>
+          </ul>
+        </div>
+      </section>
 
-      <li><a href="#/utilisateurs" data-route="utilisateurs"><span class="sa-icone">👥</span> Utilisateurs</a></li>
+      <section class="sa-domaine" data-domaine="configuration" data-libelle="Configuration" data-icone="reglages"
+               data-accueil="espace/configuration" data-description="Les réglages de la plateforme, ses données et ses outils techniques.">
+        <h2 class="sa-domaine-titre">Configuration</h2>
+        <div class="sa-nav-groupe">
+          <p class="sa-nav-groupe-titre">Plateforme</p>
+          <ul class="sa-menu">
+            <li><a href="#/configuration" data-route="configuration">Paramètres</a></li>
+            <li><a href="#/cc/drapeaux" data-route="cc/drapeaux">Drapeaux de fonctionnalités</a></li>
+            <li><a href="#/cc/maintenance" data-route="cc/maintenance">Mode maintenance</a></li>
+          </ul>
+        </div>
+        <div class="sa-nav-groupe">
+          <p class="sa-nav-groupe-titre">Données</p>
+          <ul class="sa-menu">
+            <li><a href="#/sauvegardes" data-route="sauvegardes">Sauvegardes</a></li>
+            <li><a href="#/cc/base" data-route="cc/base">Inspecteur de base</a></li>
+          </ul>
+        </div>
+        <details class="sa-nav-groupe sa-nav-avance">
+          <summary class="sa-nav-groupe-titre">Outils techniques</summary>
+          <ul class="sa-menu">
+            <li><a href="#/cc/infrastructure" data-route="cc/infrastructure">Infrastructure</a></li>
+            <li><a href="#/cc/dependances" data-route="cc/dependances">Dépendances</a></li>
+            <li><a href="#/outils" data-route="outils">Outils développeur</a></li>
+            <li><a href="#/cc/decisions" data-route="cc/decisions">Journal des décisions</a></li>
+          </ul>
+        </details>
+      </section>
 
-      <li><a href="#/prospects" data-route="prospects"><span class="sa-icone">🤝</span> Prospects</a></li>
-
-      <!-- ===== Programme des apporteurs d'affaires =====
-           À côté des prospects : les deux parlent d'acquisition d'écoles.
-           Profils et badges cumulables, attributions, partenariats,
-           commissions, prestations et règlements. -->
-      <li class="sa-groupe" data-groupe="apporteurs">
-        <button type="button" class="sa-groupe-titre">
-          <span class="sa-icone">🧭</span> Apporteurs d'affaires <span class="sa-chevron">›</span>
-        </button>
-        <ul class="sa-sous-menu">
-          <li><a href="#/apporteurs" data-route="apporteurs">Vue d'ensemble</a></li>
-          <li><a href="#/apporteurs/profils" data-route="apporteurs/profils">Profils et badges</a></li>
-          <li><a href="#/apporteurs/candidatures" data-route="apporteurs/candidatures">Candidatures</a></li>
-          <li><a href="#/apporteurs/declarations" data-route="apporteurs/declarations">Déclarations</a></li>
-          <li><a href="#/apporteurs/attributions" data-route="apporteurs/attributions">Attributions</a></li>
-          <li><a href="#/apporteurs/partenariats" data-route="apporteurs/partenariats">Partenariats</a></li>
-          <li><a href="#/apporteurs/commissions" data-route="apporteurs/commissions">Commissions</a></li>
-          <li><a href="#/apporteurs/prestations" data-route="apporteurs/prestations">Prestations</a></li>
-          <li><a href="#/apporteurs/reglements" data-route="apporteurs/reglements">Règlements</a></li>
-          <li><a href="#/apporteurs/programme" data-route="apporteurs/programme">Programme et barèmes</a></li>
-          <li><a href="#/apporteurs/journal" data-route="apporteurs/journal">Historique</a></li>
-        </ul>
-      </li>
-
-      <li class="sa-groupe" data-groupe="explorer">
-        <button type="button" class="sa-groupe-titre">
-          <span class="sa-icone">🔍</span> Explorer <span class="sa-chevron">›</span>
-        </button>
-        <ul class="sa-sous-menu">
-          <li><a href="#/explorer" data-route="explorer">Explorateur</a></li>
-          <li><a href="#/explorer/voir-comme" data-route="explorer/voir-comme">Voir comme…</a></li>
-          <li><a href="#/explorer/recherche" data-route="explorer/recherche">Recherche globale</a></li>
-          <li><a href="#/explorer/annuaire/eleves" data-route="explorer/annuaire/eleves">Élèves</a></li>
-          <li><a href="#/explorer/annuaire/enseignants" data-route="explorer/annuaire/enseignants">Professeurs</a></li>
-          <li><a href="#/explorer/annuaire/parents" data-route="explorer/annuaire/parents">Parents</a></li>
-          <li><a href="#/explorer/annuaire/classes" data-route="explorer/annuaire/classes">Classes</a></li>
-        </ul>
-      </li>
-
-      <!-- ===== Centre Finance, Offres et Coûts =====
-           Ajouté par l'extension commerciale. Placé après « Explorer » et avant
-           les écrans techniques : la finance se consulte avec les écoles, pas
-           avec les sauvegardes. -->
-      <li class="sa-groupe" data-groupe="finance">
-        <button type="button" class="sa-groupe-titre">
-          <span class="sa-icone">💰</span> Finance <span class="sa-chevron">›</span>
-        </button>
-        <ul class="sa-sous-menu">
-          <li><a href="#/finance" data-route="finance">Tableau de bord</a></li>
-          <li><a href="#/finance/rentabilite" data-route="finance/rentabilite">Rentabilité</a></li>
-          <li><a href="#/finance/seuil" data-route="finance/seuil">Seuil de rentabilité</a></li>
-          <li><a href="#/finance/previsions" data-route="finance/previsions">Prévisions</a></li>
-          <li><a href="#/finance/alertes" data-route="finance/alertes">Alertes</a></li>
-          <li><a href="#/finance/fonctionnalites" data-route="finance/fonctionnalites">Coût des fonctionnalités</a></li>
-          <li><a href="#/finance/journal" data-route="finance/journal">Journal financier</a></li>
-          <li><a href="#/finance/exports" data-route="finance/exports">Exports</a></li>
-          <li><a href="#/finance/permissions" data-route="finance/permissions">Permissions</a></li>
-        </ul>
-      </li>
-
-      <li class="sa-groupe" data-groupe="offres">
-        <button type="button" class="sa-groupe-titre">
-          <span class="sa-icone">💳</span> Offres &amp; tarification <span class="sa-chevron">›</span>
-        </button>
-        <ul class="sa-sous-menu">
-          <li><a href="#/offres" data-route="offres">Offres</a></li>
-          <li><a href="#/offres/historique-prix" data-route="offres/historique-prix">Historique des prix</a></li>
-          <li><a href="#/offres/promotions" data-route="offres/promotions">Promotions</a></li>
-          <li><a href="#/offres/speciales" data-route="offres/speciales">Offres spéciales</a></li>
-          <li><a href="#/offres/tarifs" data-route="offres/tarifs">Tarifs négociés</a></li>
-          <li><a href="#/offres/abonnements" data-route="offres/abonnements">Abonnements clients</a></li>
-          <li><a href="#/demonstrations" data-route="demonstrations">Démonstrations</a></li>
-        </ul>
-      </li>
-
-      <li class="sa-groupe" data-groupe="couts">
-        <button type="button" class="sa-groupe-titre">
-          <span class="sa-icone">🧾</span> Services &amp; coûts <span class="sa-chevron">›</span>
-        </button>
-        <ul class="sa-sous-menu">
-          <li><a href="#/couts/services" data-route="couts/services">Services &amp; infrastructure</a></li>
-          <li><a href="#/couts/depenses" data-route="couts/depenses">Dépenses</a></li>
-          <li><a href="#/couts/budgets" data-route="couts/budgets">Budget</a></li>
-          <li><a href="#/couts/calendrier" data-route="couts/calendrier">Calendrier de facturation</a></li>
-          <li><a href="#/couts/taux-change" data-route="couts/taux-change">Taux de change</a></li>
-        </ul>
-      </li>
-
-      <li><a href="#/analyses" data-route="analyses"><span class="sa-icone">📈</span> Analyses</a></li>
-      <li><a href="#/sante" data-route="sante"><span class="sa-icone">🩺</span> Santé de la plateforme</a></li>
-      <li><a href="#/bugs" data-route="bugs"><span class="sa-icone">🐞</span> Bugs &amp; erreurs</a></li>
-      <li><a href="#/journal" data-route="journal"><span class="sa-icone">📜</span> Journal d'activité</a></li>
-      <li><a href="#/securite" data-route="securite"><span class="sa-icone">🔐</span> Sécurité</a></li>
-      <li><a href="#/sauvegardes" data-route="sauvegardes"><span class="sa-icone">💾</span> Sauvegardes</a></li>
-      <li><a href="#/notifications" data-route="notifications"><span class="sa-icone">🔔</span> Notifications</a></li>
-      <li><a href="#/support" data-route="support"><span class="sa-icone">🎫</span> Support</a></li>
-      <li><a href="#/ia" data-route="ia"><span class="sa-icone">🤖</span> Intelligence artificielle</a></li>
-      <li><a href="#/configuration" data-route="configuration"><span class="sa-icone">⚙️</span> Configuration</a></li>
-      <li><a href="#/outils" data-route="outils"><span class="sa-icone">🛠</span> Outils développeur</a></li>
-      <li><a href="#/rapports" data-route="rapports"><span class="sa-icone">📄</span> Rapports</a></li>
-      <li><a href="#/apparence" data-route="apparence"><span class="sa-icone">🎨</span> Apparence</a></li>
-    </ul>
-
-    <div class="sa-nav-pied">
-      <div class="sa-identite" id="sa-identite">—</div>
-      <button class="sa-deconnexion" id="bouton-deconnexion">↩ Se déconnecter</button>
+      <div class="sa-nav-pied">
+        <div class="sa-identite" id="sa-identite">—</div>
+        <button class="sa-deconnexion" id="bouton-deconnexion">Se déconnecter</button>
+      </div>
     </div>
   </nav>
 
   <main class="sa-principal">
+    <div class="sa-barre-haut" id="sa-barre-haut">
+      <button type="button" class="sa-bouton-nav" id="sa-bouton-nav" aria-label="Ouvrir la navigation" aria-controls="sa-navigation" aria-expanded="false">
+        <span aria-hidden="true">☰</span>
+      </button>
+      <nav class="sa-fil" id="sa-fil" aria-label="Fil d'Ariane"></nav>
+      <button type="button" class="sa-recherche-globale" id="sa-recherche-globale" aria-label="Rechercher ou aller à… (Ctrl K)">
+        <span class="sa-recherche-icone" aria-hidden="true"></span>
+        <span class="sa-recherche-texte">Rechercher un écran, une école, une erreur…</span>
+        <kbd>Ctrl K</kbd>
+      </button>
+    </div>
     <div class="sa-entete" id="sa-entete">
       <div><h1>Chargement…</h1></div>
       <div class="sa-entete-actions" id="sa-entete-actions"></div>
@@ -561,6 +681,15 @@
 <script src="super-admin-vues-ia-plateforme.js"></script>
 <script src="super-admin-vues-ai-studio.js"></script>
 <script src="super-admin-vues-knowledge.js"></script>
+<!-- Renouvellements : chargé ici comme toute autre vue. Il était auparavant
+     injecté par theme.js, et son entrée de menu n'apparaissait qu'APRÈS une
+     première visite de l'écran — c'est-à-dire jamais pour qui ne connaissait
+     pas l'adresse. -->
+<script src="super-admin-vues-renouvellements.js"></script>
+<!-- La coque lit le menu ci-dessus et toutes les vues enregistrées : elle
+     vient après elles. La palette vient en dernier, elle s'appuie sur la
+     coque pour connaître tous les écrans. -->
+<script src="super-admin-coque.js"></script>
 <script src="super-admin-palette.js"></script>
 
 <script>
@@ -591,6 +720,8 @@
     'super-admin-vues-cc-release.js',
     'super-admin-vues-ia-plateforme.js', 'super-admin-vues-ai-studio.js',
     'super-admin-vues-knowledge.js',
+    'super-admin-vues-renouvellements.js',
+    'super-admin-coque.js',
     'super-admin-palette.js'
   ];
 
@@ -609,7 +740,7 @@
       'super-admin.html :<br>' +
       '<code style="font-size:.78rem;display:block;margin-top:7px;line-height:1.7">'
       + SCRIPTS_REQUIS.join('<br>')
-      + '<br>super-admin-styles.css<br>super-admin-styles-prospects.css<br>super-admin-styles-apporteurs.css</code>' +
+      + '<br>super-admin-styles.css<br>super-admin-styles-prospects.css<br>super-admin-styles-apporteurs.css<br>super-admin-coque.css</code>' +
       '<span style="display:block;margin-top:8px">' +
       'Le serveur n\'est pas en cause : ouvrez la console du navigateur, ' +
       'les fichiers manquants y apparaissent en 404.</span>';
@@ -681,36 +812,7 @@
     SA.deconnecter({ recharger: true });
   });
 
-  // Groupes repliables.
-  document.querySelectorAll('.sa-groupe > .sa-groupe-titre').forEach(function (titre) {
-    titre.addEventListener('click', function () {
-      titre.parentElement.classList.toggle('ouvert');
-    });
-  });
-
-  // Tiroir de navigation sur mobile : le bouton est injecté dans l'en-tête,
-  // qui est réécrit à chaque rendu de vue. On le repose donc après coup.
-  const observateur = new MutationObserver(function () {
-    const entete = document.getElementById('sa-entete');
-    if (!entete || entete.querySelector('.sa-bouton-nav')) return;
-    const bouton = document.createElement('button');
-    bouton.className = 'sa-bouton-nav';
-    bouton.setAttribute('aria-label', 'Ouvrir la navigation');
-    bouton.textContent = '☰';
-    bouton.addEventListener('click', function () {
-      document.body.classList.toggle('sa-nav-ouverte');
-    });
-    entete.insertBefore(bouton, entete.firstChild);
-  });
-  observateur.observe(document.getElementById('sa-entete'), { childList: true });
-
-  document.addEventListener('click', function (evenement) {
-    if (document.body.classList.contains('sa-nav-ouverte')
-        && !evenement.target.closest('.sa-navigation')
-        && !evenement.target.closest('.sa-bouton-nav')) {
-      document.body.classList.remove('sa-nav-ouverte');
-    }
-  });
+  // Groupes, tiroir mobile, fil d'Ariane et onglets : super-admin-coque.js.
 
   /* ---------- Hygiène de l'écran de connexion ----------
      Les navigateurs restaurent les valeurs des formulaires après un

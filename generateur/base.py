@@ -13,7 +13,7 @@ import os
 
 SITE = "https://myardoise.com"
 DATE = "2026-08-12"
-RESSOURCES_VERSION = "20260819-1"
+RESSOURCES_VERSION = "20261014-1"
 
 POLICES = ("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;"
            "9..144,600;9..144,700&family=Inter:wght@400;500;600;700&"
@@ -108,6 +108,13 @@ MENU = [
                     ("/contact/", "Parler à quelqu'un", "Demander un accompagnement"),
                     ("/ecrire/", "Écrivez-nous",
                      "Une question, une remarque : un message libre"),
+                ],
+            },
+            {
+                "titre": "Rejoindre Ardoise",
+                "liens": [
+                    ("/apporteurs/", "Devenir apporteur d'affaires",
+                     "Recommander Ardoise aux écoles, être rémunéré"),
                 ],
             },
         ],
@@ -234,6 +241,7 @@ PIED = """<footer class="pied">
           <li><a href="/a-propos/">À propos</a></li>
           <li><a href="/contact/">Nous contacter</a></li>
           <li><a href="/ecrire/">Écrivez-nous</a></li>
+          <li><a href="/apporteurs/">Devenir apporteur</a></li>
           <li><a href="/connexion.html">Se connecter</a></li>
           <li><a href="/confidentialite.html">Confidentialité</a></li>
         </ul>

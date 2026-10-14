@@ -106,6 +106,11 @@
 <li><a href="/a-propos/"><span class="sm-lien">À propos d'Ardoise</span><span class="sm-note">Le projet, son éditeur et ses engagements</span></a></li>
 <li><a href="/contact/"><span class="sm-lien">Parler à quelqu'un</span><span class="sm-note">Demander un accompagnement</span></a></li>
 </ul></div>
+<div class="sm-colonne">
+<p class="sm-titre">Rejoindre Ardoise</p>
+<ul>
+<li><a href="/apporteurs/"><span class="sm-lien">Devenir apporteur d'affaires</span><span class="sm-note">Recommander Ardoise aux écoles, être rémunéré</span></a></li>
+</ul></div>
 </div></div></li>
 </ul>
     </nav>
@@ -162,6 +167,9 @@
 <li><a href="/securite/">Sécurité et données</a></li>
 <li><a href="/a-propos/">À propos d'Ardoise</a></li>
 <li><a href="/contact/">Parler à quelqu'un</a></li>
+</ul>
+<ul>
+<li><a href="/apporteurs/">Devenir apporteur d'affaires</a></li>
 </ul>
 </section>
 <div class="actions-mobile"><a class="bouton secondaire pleine-largeur" href="/connexion.html">Se connecter</a><a class="bouton ocre pleine-largeur" href="/contact/">Découvrir Ardoise</a></div>
@@ -279,6 +287,15 @@
       </div>
 
       <div>
+        <label for="code_referencement">Code d'apporteur ou de partenaire (facultatif)</label>
+        <input type="text" id="code_referencement" name="code_referencement"
+               autocomplete="off" maxlength="32" spellcheck="false"
+               placeholder="ex. KIN-4H7Q2M" style="text-transform:uppercase" />
+        <p class="aide" data-code-retour>Si une personne ou une organisation vous a présenté Ardoise,
+        saisissez son code : il nous permet de la reconnaître. Il ne change rien à votre essai.</p>
+      </div>
+
+      <div>
         <label for="mot_de_passe">Mot de passe *</label>
         <input type="password" id="mot_de_passe" name="mot_de_passe" required
                minlength="8" autocomplete="new-password" />
@@ -376,6 +393,7 @@
           <li><a href="/faq/">Questions fréquentes</a></li>
           <li><a href="/a-propos/">À propos</a></li>
           <li><a href="/contact/">Nous contacter</a></li>
+          <li><a href="/apporteurs/">Devenir apporteur</a></li>
           <li><a href="/connexion.html">Se connecter</a></li>
           <li><a href="/confidentialite.html">Confidentialité</a></li>
         </ul>
@@ -388,7 +406,7 @@
   </div>
 </footer>
 
-<script src="/catalogue.js?v=20260903-1" defer></script>
+<script src="/catalogue.js?v=20261014-1" defer></script>
 <script src="/nav.js?v=20260812-3" defer></script>
 <script>
 /* Préremplit l'offre ou le service quand on arrive depuis /tarifs/ ou /services/

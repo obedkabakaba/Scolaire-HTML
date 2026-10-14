@@ -67,6 +67,8 @@
 <link rel="stylesheet" href="super-admin-styles-finance.css" />
 <!-- Styles de la file commerciale : filtres, délai de rappel et fiche prospect. -->
 <link rel="stylesheet" href="super-admin-styles-prospects.css" />
+<!-- Programme des apporteurs d'affaires : quelques classes `ap-` additives. -->
+<link rel="stylesheet" href="super-admin-styles-apporteurs.css" />
 <!-- Styles du Control Center : scores, log explorer, matrice, copilote, palette.
      Feuille ADDITIVE : toutes ses classes portent le préfixe `cc-` et elle
      n'écrase aucune règle existante. Chargée en dernier pour la même raison
@@ -406,6 +408,29 @@
 
       <li><a href="#/prospects" data-route="prospects"><span class="sa-icone">🤝</span> Prospects</a></li>
 
+      <!-- ===== Programme des apporteurs d'affaires =====
+           À côté des prospects : les deux parlent d'acquisition d'écoles.
+           Profils et badges cumulables, attributions, partenariats,
+           commissions, prestations et règlements. -->
+      <li class="sa-groupe" data-groupe="apporteurs">
+        <button type="button" class="sa-groupe-titre">
+          <span class="sa-icone">🧭</span> Apporteurs d'affaires <span class="sa-chevron">›</span>
+        </button>
+        <ul class="sa-sous-menu">
+          <li><a href="#/apporteurs" data-route="apporteurs">Vue d'ensemble</a></li>
+          <li><a href="#/apporteurs/profils" data-route="apporteurs/profils">Profils et badges</a></li>
+          <li><a href="#/apporteurs/candidatures" data-route="apporteurs/candidatures">Candidatures</a></li>
+          <li><a href="#/apporteurs/declarations" data-route="apporteurs/declarations">Déclarations</a></li>
+          <li><a href="#/apporteurs/attributions" data-route="apporteurs/attributions">Attributions</a></li>
+          <li><a href="#/apporteurs/partenariats" data-route="apporteurs/partenariats">Partenariats</a></li>
+          <li><a href="#/apporteurs/commissions" data-route="apporteurs/commissions">Commissions</a></li>
+          <li><a href="#/apporteurs/prestations" data-route="apporteurs/prestations">Prestations</a></li>
+          <li><a href="#/apporteurs/reglements" data-route="apporteurs/reglements">Règlements</a></li>
+          <li><a href="#/apporteurs/programme" data-route="apporteurs/programme">Programme et barèmes</a></li>
+          <li><a href="#/apporteurs/journal" data-route="apporteurs/journal">Historique</a></li>
+        </ul>
+      </li>
+
       <li class="sa-groupe" data-groupe="explorer">
         <button type="button" class="sa-groupe-titre">
           <span class="sa-icone">🔍</span> Explorer <span class="sa-chevron">›</span>
@@ -519,6 +544,8 @@
 <script src="super-admin-vues-demonstrations.js"></script>
 <script src="super-admin-vues-couts.js"></script>
 <script src="super-admin-vues-prospects.js"></script>
+<!-- Après super-admin-vues-offres.js : réutilise SA.finance.formulaire. -->
+<script src="super-admin-vues-apporteurs.js"></script>
 <!-- Vues du Control Center. Chargées APRÈS les vues existantes : elles
      n'enregistrent que des clés commençant par `cc/`, donc aucune ne peut
      remplacer une vue actuelle. La palette vient en dernier, elle référence
@@ -558,6 +585,7 @@
     'super-admin-vues-finance.js', 'super-admin-vues-offres.js',
     'super-admin-vues-demonstrations.js', 'super-admin-vues-couts.js',
     'super-admin-vues-prospects.js',
+    'super-admin-vues-apporteurs.js',
     'super-admin-vues-controle.js', 'super-admin-vues-audit.js',
     'super-admin-vues-cc-ia.js', 'super-admin-vues-cc-systeme.js',
     'super-admin-vues-cc-release.js',
@@ -581,7 +609,7 @@
       'super-admin.html :<br>' +
       '<code style="font-size:.78rem;display:block;margin-top:7px;line-height:1.7">'
       + SCRIPTS_REQUIS.join('<br>')
-      + '<br>super-admin-styles.css<br>super-admin-styles-prospects.css</code>' +
+      + '<br>super-admin-styles.css<br>super-admin-styles-prospects.css<br>super-admin-styles-apporteurs.css</code>' +
       '<span style="display:block;margin-top:8px">' +
       'Le serveur n\'est pas en cause : ouvrez la console du navigateur, ' +
       'les fichiers manquants y apparaissent en 404.</span>';

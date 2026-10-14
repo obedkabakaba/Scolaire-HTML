@@ -26,6 +26,7 @@ import contenu_tarifs
 import contenu_services
 import contenu_divers
 import contenu_guides
+import contenu_apporteurs
 
 ICI = os.path.dirname(os.path.abspath(__file__))
 RACINE_DEPOT = os.path.dirname(ICI)
@@ -38,7 +39,7 @@ def construire_pages():
     urls = [contenu_accueil.construire()]
     for module in (contenu_fonctionnalites_a, contenu_fonctionnalites_b,
                    contenu_fonctionnalites_c, contenu_tarifs,
-                   contenu_services, contenu_divers):
+                   contenu_services, contenu_divers, contenu_apporteurs):
         urls.extend(module.construire())
     urls.extend(contenu_guides.construire())
     return urls
@@ -243,7 +244,7 @@ orientation.html repechage.html archives.html rapports.html journal.html
 messages.html parametres.html utilisateurs.html annee-scolaire.html ecole.html
 generateur-modeles.html bulletin-annuel.html apercu-bulletin-primaire.html
 apercu-bulletin-secondaire.html apercu-bulletin-semestre.html
-apercu-bulletin-terminale.html""".split()
+apercu-bulletin-terminale.html espace-apporteur.html""".split()
 
 
 def construire_robots(urls):

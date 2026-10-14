@@ -1,0 +1,45 @@
+/* =============================================================================
+   PROGRAMME DES APPORTEURS D'AFFAIRES — compléments de l'espace Super Admin
+   -----------------------------------------------------------------------------
+   Quelques classes seulement, toutes préfixées `ap-`, qui s'ajoutent aux
+   composants `sa-` existants sans en redéfinir aucun. Aucune couleur écrite en
+   dur : tout passe par les variables du thème, comme le reste du panneau.
+   ============================================================================= */
+
+/* Cartes des quatre badges cumulables : une grille souple, une colonne sur
+   téléphone. */
+.ap-grille-badges {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+.ap-badge {
+  display: flex; flex-direction: column; gap: 8px; align-items: flex-start;
+  font-size: 0.86rem; line-height: 1.45;
+}
+.ap-badge .sa-bouton { margin-top: auto; }
+.ap-badge-tete { display: flex; align-items: center; gap: 8px; }
+.ap-badge-icone { font-size: 1.15rem; }
+.ap-preuve {
+  font-size: 0.8rem; line-height: 1.45;
+  border-left: 2px solid var(--bordure); padding-left: 8px;
+}
+
+/* Codes de référencement : le code se lit de loin et le lien se copie sans
+   déborder du panneau. */
+.ap-code {
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
+  padding: 10px 0; border-bottom: 1px solid var(--bordure);
+  font-size: 0.86rem; line-height: 1.45;
+}
+.ap-code:last-child { border-bottom: 0; }
+.ap-code-valeur { font-size: 0.95rem; letter-spacing: 0.04em; font-weight: 600; }
+.ap-lien { font-size: 0.76rem; overflow-wrap: anywhere; }
+
+/* État vide d'un total : une mention discrète, pas un titre. */
+.ap-vide { font-size: 0.86rem; }
+
+@media (max-width: 560px) {
+  .ap-grille-badges { grid-template-columns: 1fr; }
+  .ap-code { flex-direction: column; }
+}

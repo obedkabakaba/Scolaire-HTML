@@ -663,10 +663,13 @@
       return;
     }
 
+    brancherCodeReferencement(form);
+
     form.addEventListener('submit', function (e) {
       e.preventDefault();
 
       var donnees = Object.fromEntries(new FormData(form).entries());
+      if (!String(donnees.code_referencement || '').trim()) delete donnees.code_referencement;
 
       bouton.disabled = true;
       var texteInitial = bouton.textContent;
@@ -702,6 +705,110 @@
         .catch(function () {
           afficher('erreur',
             'Connexion impossible. Vérifiez votre réseau et réessayez.');
+        })
+        .finally(function () {
+          bouton.disabled = false;
+          bouton.textContent = texteInitial;
+        });
+    });
+  }
+
+  /* ------------------------------------------- Code d'apporteur d'affaires
+
+     Le lien partagé par un apporteur est `/essai/?ref=CODE`. Le code est
+     recopié dans le champ et gardé 30 jours sur l'appareil : l'école qui
+     découvre Ardoise par ce lien et revient s'inscrire une semaine plus tard
+     ne perd pas la trace de la personne qui la lui a présentée.
+
+     Ce code ne décide de rien : le serveur le vérifie, et l'attribution de
+     l'école à l'apporteur reste soumise à la validation de l'équipe Ardoise. */
+
+  var CLE_REF = 'ardoise.ref';
+
+  function brancherCodeReferencement(form) {
+    var champ = form.querySelector('[name="code_referencement"]');
+    if (!champ) return;
+    var retour = form.querySelector('[data-code-retour]');
+    var texteAide = retour ? retour.textContent : '';
+
+    var depuisLien = new URLSearchParams(global.location.search).get('ref');
+    try {
+      if (depuisLien) {
+        localStorage.setItem(CLE_REF, JSON.stringify({ code: depuisLien, le: Date.now() }));
+      } else {
+        var memo = JSON.parse(localStorage.getItem(CLE_REF) || 'null');
+        if (memo && Date.now() - memo.le < 30 * 24 * 3600 * 1000) depuisLien = memo.code;
+      }
+    } catch (e) { /* stockage indisponible : le lien suffit */ }
+    if (depuisLien && !champ.value) champ.value = String(depuisLien).toUpperCase().slice(0, 32);
+
+    var minuteur = null;
+    function verifier() {
+      var code = champ.value.trim().toUpperCase();
+      if (!retour) return;
+      if (!code) { retour.textContent = texteAide; return; }
+      if (!/^[A-Z0-9-]{4,32}$/.test(code)) { retour.textContent = 'Ce code ne semble pas valide.'; return; }
+      recuperer('/apporteurs/codes/' + encodeURIComponent(code)).then(function (r) {
+        if (!r) return;
+        retour.textContent = r.valide
+          ? 'Code reconnu' + (r.partenariat ? ' — ' + r.partenariat : '') + '.'
+          : "Code non reconnu : vérifiez-le auprès de la personne qui vous l'a donné, ou laissez le champ vide.";
+      }).catch(function () { retour.textContent = texteAide; });
+    }
+    champ.addEventListener('input', function () { clearTimeout(minuteur); minuteur = setTimeout(verifier, 500); });
+    if (champ.value) verifier();
+  }
+
+  /* ---------------------------------- Candidature « Devenir apporteur »
+
+     Un branchement à part, comme « Écrivez-nous » : une candidature n'est ni
+     un prospect ni un message, et elle atterrit dans sa propre file côté
+     Super Admin. Elle n'ouvre aucun accès. */
+
+  function brancherFormulaireApporteur(racine) {
+    var form = (racine || document).querySelector('[data-formulaire-apporteur]');
+    if (!form) return;
+    var retour = form.querySelector('[data-retour]');
+    var bouton = form.querySelector('button[type="submit"]');
+
+    function dire(classe, texte) {
+      retour.hidden = false;
+      retour.className = 'message-retour ' + classe;
+      retour.textContent = texte;
+      retour.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var donnees = Object.fromEntries(new FormData(form).entries());
+      donnees.profils_souhaites = Array.from(
+        form.querySelectorAll('input[name="profils_souhaites"]:checked')
+      ).map(function (c) { return c.value; });
+      donnees.consentement = !!form.querySelector('input[name="consentement"]:checked');
+
+      if (!donnees.consentement) {
+        dire('erreur', 'Votre accord est nécessaire pour que nous examinions votre candidature.');
+        return;
+      }
+
+      bouton.disabled = true;
+      var texteInitial = bouton.textContent;
+      bouton.textContent = 'Envoi…';
+      retour.hidden = true;
+
+      fetch(API + '/apporteurs/candidatures', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(donnees)
+      })
+        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+        .then(function (res) {
+          dire(res.ok ? 'succes' : 'erreur', res.d.message
+            || (res.ok ? 'Candidature envoyée.' : 'Votre candidature n\u2019a pas pu être envoyée.'));
+          if (res.ok) form.reset();
+        })
+        .catch(function () {
+          dire('erreur', 'Connexion impossible. Vérifiez votre réseau et réessayez.');
         })
         .finally(function () {
           bouton.disabled = false;
@@ -773,6 +880,7 @@
     brancherSimulateur(document);
     brancherFormulaireContact(document);
     brancherFormulaireMessage(document);
+    brancherFormulaireApporteur(document);
     brancherEssai(document);
   }
 

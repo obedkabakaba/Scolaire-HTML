@@ -641,11 +641,35 @@
           retourVerification.textContent = res.d.message
             || (res.ok ? 'Adresse confirmée.' : "La validation n'a pas pu être terminée.");
           if (res.ok && res.d.code === 'demonstration_activee') {
-            retourVerification.appendChild(document.createTextNode(' Redirection vers la connexion…'));
-            setTimeout(function () {
-              global.location.href = '/connexion.html?nouveau=1&email='
-                + encodeURIComponent((res.d.connexion || {}).email || '');
-            }, 2200);
+            // Les identifiants sont affichés ET repris dans le lien : l'école
+            // qui revient plus tard les retrouve aussi dans l'e-mail de
+            // bienvenue. Pas de redirection automatique : un écran qui
+            // disparaît en deux secondes ne laisse pas le temps de les noter.
+            var email = (res.d.connexion || {}).email || '';
+            var lienConnexion = '/connexion.html?nouveau=1&email=' + encodeURIComponent(email)
+              + (res.d.code_ecole ? '&code=' + encodeURIComponent(res.d.code_ecole) : '');
+            var bloc = doc.createElement('p');
+            bloc.style.margin = '10px 0';
+            bloc.appendChild(doc.createTextNode('Vos identifiants : '));
+            var b1 = doc.createElement('strong');
+            b1.textContent = email;
+            bloc.appendChild(b1);
+            bloc.appendChild(doc.createTextNode(' et le mot de passe que vous avez choisi.'));
+            if (res.d.code_ecole) {
+              bloc.appendChild(doc.createElement('br'));
+              bloc.appendChild(doc.createTextNode('Code de votre école : '));
+              var b2 = doc.createElement('strong');
+              b2.textContent = res.d.code_ecole;
+              bloc.appendChild(b2);
+            }
+            bloc.appendChild(doc.createElement('br'));
+            bloc.appendChild(doc.createTextNode('Un e-mail récapitulatif vient de vous être envoyé.'));
+            retourVerification.appendChild(bloc);
+            var bouton = doc.createElement('a');
+            bouton.className = 'bouton ocre';
+            bouton.href = lienConnexion;
+            bouton.textContent = 'Me connecter maintenant';
+            retourVerification.appendChild(bouton);
           }
         })
         .catch(function () {

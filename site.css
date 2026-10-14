@@ -851,6 +851,7 @@ table.comparatif tbody tr.groupe th {
   .nav-site { display: none; }
   .bascule-menu { display: flex; }
   .lien-connexion { display: none; }
+  .actions-entete .bouton-inscription { display: none; }
 }
 @media (max-width: 460px) {
   .actions-entete .bouton { display: none; }

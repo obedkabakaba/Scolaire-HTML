@@ -56,7 +56,7 @@ def construire_pages():
 # La valeur donne l'URL générée devant laquelle insérer la page manuelle, pour
 # que le plan du site garde l'ordre de lecture du menu plutôt que de reléguer
 # ces pages en fin de fichier.
-PAGES_MANUELLES = {"/essai/": "/tarifs/"}
+PAGES_MANUELLES = {"/essai/": "/tarifs/", "/inscription/": "/tarifs/"}
 
 
 def avec_pages_manuelles(pages):
@@ -172,6 +172,7 @@ PRIORITES = {
     "/tarifs/": ("0.9", "monthly"),
     "/tarifs/comparer/": ("0.9", "monthly"),
     "/essai/": ("0.9", "monthly"),
+    "/inscription/": ("0.9", "monthly"),
     "/fonctionnalites/": ("0.8", "monthly"),
     "/services/": ("0.8", "monthly"),
     "/guides/": ("0.8", "monthly"),

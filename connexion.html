@@ -236,6 +236,19 @@
   }
   .message-erreur.visible { display: block; }
 
+  .message-bienvenue {
+    display: none;
+    margin: -6px 0 20px 0;
+    padding: 10px 12px;
+    font-size: 0.87rem;
+    color: var(--encre);
+    border-left: 2.5px solid var(--ocre);
+    background: rgba(201, 138, 62, 0.08);
+    line-height: 1.45;
+  }
+  .message-bienvenue.visible { display: block; }
+  .facultatif { font-weight: 400; color: var(--texte-att); }
+
   .message-succes {
     display: none;
   }
@@ -319,12 +332,16 @@
 
       <form id="formulaire-connexion" novalidate>
         <h2>Connexion</h2>
-        <p class="sous-titre">Entrez les identifiants fournis par votre école.</p>
+        <p class="sous-titre">Entrez votre adresse e-mail et votre mot de passe.</p>
+
+        <!-- Affiché à l'arrivée depuis la validation d'un essai ou depuis le
+             lien de l'e-mail de bienvenue (?nouveau=1 / ?email= / ?code=). -->
+        <div class="message-bienvenue" id="zone-bienvenue" role="status"></div>
 
         <div class="message-erreur" id="zone-erreur" role="alert"></div>
 
         <div class="champ">
-          <label for="code_ecole">Code de l'école</label>
+          <label for="code_ecole">Code de l'école <span class="facultatif">(facultatif)</span></label>
           <input type="text" id="code_ecole" name="code_ecole" placeholder="ex. college-boboto" autocomplete="organization" />
         </div>
 
@@ -351,7 +368,7 @@
 
       <div id="panneau-mdp-oublie" style="display:none;">
         <h2>Mot de passe oublié</h2>
-        <p class="sous-titre">Entrez votre email (et le code école si vous n'êtes pas Super Admin) : vous recevrez un lien pour en choisir un nouveau.</p>
+        <p class="sous-titre">Entrez votre adresse e-mail : vous recevrez un lien pour choisir un nouveau mot de passe.</p>
         <div class="message-erreur" id="zone-erreur-mdp-oublie" role="alert"></div>
         <div class="message-succes visible" id="zone-succes-mdp-oublie" style="display:none;">
           <div class="coche">✓</div>
@@ -359,7 +376,7 @@
         </div>
         <form id="formulaire-mdp-oublie">
           <div class="champ">
-            <label for="mdp-oublie-code-ecole">Code de l'école (laisser vide si Super Admin)</label>
+            <label for="mdp-oublie-code-ecole">Code de l'école <span class="facultatif">(facultatif)</span></label>
             <input type="text" id="mdp-oublie-code-ecole" placeholder="ex. college-boboto" />
           </div>
           <div class="champ">
@@ -494,6 +511,31 @@
     return true;
   }
 
+  // ---------- Arrivée depuis l'essai ou l'e-mail de bienvenue ----------
+  // /connexion.html?nouveau=1&email=…&code=… : on pré-remplit ce qu'on sait,
+  // pour qu'il ne reste que le mot de passe à saisir.
+  (function preRemplir() {
+    const p = new URLSearchParams(window.location.search);
+    const email = p.get('email');
+    const code = p.get('code');
+    if (email) {
+      document.getElementById('email').value = email;
+      document.getElementById('mdp-oublie-email').value = email;
+    }
+    if (code) {
+      document.getElementById('code_ecole').value = code;
+      document.getElementById('mdp-oublie-code-ecole').value = code;
+    }
+    if (p.get('nouveau') === '1' || email) {
+      const zone = document.getElementById('zone-bienvenue');
+      zone.textContent = p.get('nouveau') === '1'
+        ? "Votre espace est prêt. Saisissez le mot de passe choisi lors de votre demande d'essai."
+        : 'Saisissez votre mot de passe pour ouvrir votre espace.';
+      zone.classList.add('visible');
+      if (email) champMotDePasse.focus();
+    }
+  })();
+
   // ---------- Reconnexion automatique ("Se souvenir de moi") ----------
   // L'access token ne vit que 15 minutes : au retour de l'utilisateur il est
   // toujours périmé. On repart donc du refresh token (valable 30 jours) pour
@@ -583,7 +625,8 @@
       const donnees = await reponse.json();
 
       if (!reponse.ok) {
-        afficherErreur(donnees.message || "Identifiants incorrects. Vérifiez le code école, l'email et le mot de passe.");
+        afficherErreur(donnees.message || "Identifiants incorrects. Vérifiez l'adresse e-mail et le mot de passe.");
+        if (donnees.code === 'code_ecole_requis') document.getElementById('code_ecole').focus();
         boutonConnexion.disabled = false;
         boutonConnexion.textContent = 'Se connecter';
         return;

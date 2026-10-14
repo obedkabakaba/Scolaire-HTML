@@ -70,7 +70,8 @@
    v69 : l'arrondi intérieur suit le rail déployé ou replié et reste visible
          pendant le défilement du contenu. Terranga (clé interne yohali) et son
          alias Kivu conservent leur apparence d'origine, sans cet ajout. */
-const VERSION='ardoise-v85';
+const VERSION='ardoise-v86';
+/* v86 : connexion.html — code école facultatif, pré-remplissage depuis l'essai et l'e-mail de bienvenue. */
 /* v85 : espace Super Admin — programme des apporteurs d'affaires (nouveau menu dans super-admin.html, précaché) et portail espace-apporteur.html. */
 /* v83 : force la diffusion du correctif du chargement du tableau de bord directeur et évite qu'une ancienne coque PWA conserve les scripts précédents. */
 /* v82 : recharge le didacticiel et l'écran Cours, pour appliquer le barème automatique 2× et le lien de correction direct. */

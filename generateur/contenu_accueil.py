@@ -38,6 +38,7 @@ CORPS = """
       </p>
       <div class="groupe-cta">
         <a class="bouton ocre" href="/essai/">Essayer gratuitement 7 jours</a>
+        <a class="bouton secondaire" href="/inscription/">Inscrire mon école</a>
         <a class="bouton secondaire" href="/tarifs/">Voir les offres</a>
       </div>
       <p class="mention-cta">

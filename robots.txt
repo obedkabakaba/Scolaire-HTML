@@ -20,6 +20,7 @@ Allow: /fonctionnalites/admissions-et-orientation/
 Allow: /fonctionnalites/direction-et-pilotage/
 Allow: /fonctionnalites/ia/
 Allow: /essai/
+Allow: /inscription/
 Allow: /tarifs/
 Allow: /tarifs/comparer/
 Allow: /services/

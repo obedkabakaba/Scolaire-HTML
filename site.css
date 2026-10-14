@@ -654,6 +654,10 @@ table.comparatif tbody tr.groupe th {
 }
 .case + .case { border-top: 1px solid var(--bordure); }
 .case span { min-width: 0; }
+/* `.formulaire label` impose `display: block` à toute étiquette et l'emporte
+   sur `.case` par sa spécificité : la case passait au-dessus de son libellé.
+   Une case reste une ligne flexible, case et libellé alignés. */
+.formulaire label.case { display: flex; margin-bottom: 0; font-weight: 400; }
 
 .message-retour {
   padding: 13px 16px; border-radius: var(--r-bouton); font-size: .9rem;

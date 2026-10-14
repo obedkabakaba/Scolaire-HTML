@@ -30,6 +30,7 @@ Allow: /securite/
 Allow: /faq/
 Allow: /contact/
 Allow: /ecrire/
+Allow: /apporteurs/
 Allow: /guides/
 Allow: /guides/choisir-logiciel-gestion-scolaire-rdc/
 Allow: /guides/digitaliser-ecole-rdc/
@@ -83,5 +84,6 @@ Disallow: /apercu-bulletin-primaire.html
 Disallow: /apercu-bulletin-secondaire.html
 Disallow: /apercu-bulletin-semestre.html
 Disallow: /apercu-bulletin-terminale.html
+Disallow: /espace-apporteur.html
 
 Sitemap: https://myardoise.com/sitemap.xml

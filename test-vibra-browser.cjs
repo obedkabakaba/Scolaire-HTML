@@ -53,6 +53,9 @@ const server=http.createServer((req,res)=>{
  for(const theme of ['fluide','vibra','orbite','vibra','nexus','elan','perspective','recre','yohali','orbite','vibra']){
    await page.evaluate(t=>ArdoiseTheme.appliquer(t,{synchroniserServeur:false}),theme);
    if(['elan','perspective','recre'].includes(theme))await page.waitForSelector('.'+theme+'-hero');
+   // Les thèmes s'installent sur l'événement de changement (microtâche, rAF) : on attend l'état
+   // attendu jusqu'à 2 s au lieu de le lire aussitôt. Un état faux qui dure reste signalé.
+   await page.waitForFunction(([t,sel])=>{const n=document.querySelector(sel);const vu=!!n&&n.getClientRects().length>0&&getComputedStyle(n).visibility!=='hidden';return vu===(t==='vibra')&&(t=>document.querySelector(t==='vibra'?'.vb-main > .grille-stats':t==='fluide'?'.fl-main > .grille-stats':t==='orbite'?'.ob-main > .grille-stats':'.contenu > .grille-stats')===window.obStatNode)(t);},[theme,'.vb-shell'],{timeout:2000}).catch(()=>{});
    assert.equal(await page.locator('.vb-shell').isVisible(),theme==='vibra');
    assert.equal(await page.evaluate(t=>document.querySelector(t==='vibra'?'.vb-main > .grille-stats':t==='fluide'?'.fl-main > .grille-stats':t==='orbite'?'.ob-main > .grille-stats':'.contenu > .grille-stats')===window.obStatNode,theme),true);
  }

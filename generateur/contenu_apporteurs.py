@@ -219,7 +219,7 @@ def apporteurs():
       <article class="carte">
         <span class="probleme">Prix publics</span>
         <h3>Des offres lisibles</h3>
-        <p>Quatre offres publiées, de 35 à 159 $ par mois, avec un essai gratuit et des
+        <p>Quatre offres publiées, de 30 à 159 $ par mois, avec un essai gratuit et des
            services d'accompagnement facultatifs. <a href="/tarifs/">Voir les tarifs</a>.</p>
       </article>
     </div>

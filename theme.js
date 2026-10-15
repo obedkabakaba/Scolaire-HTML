@@ -24,7 +24,10 @@
   style.textContent = [
     'html[data-theme="ardoise"]{--texte-att:#686F66;--vert-ok:#467052;}',
     'html[data-theme="ardoise"] .valider{color:var(--texte-sombre,#1F2B24)!important;}',
-    'html[data-theme="ardoise"] #sa-identite{color:var(--nav-texte-fort,#F6F2E7)!important;}',
+    /* #sa-identite n'est plus forcé en couleur claire : l'identité du Super
+       Admin est passée de la barre latérale sombre au menu du compte, sur fond
+       clair, où ce forçage la rendait illisible (1,06:1). Le contraste y est
+       assuré par super-admin-coque.css. */
     'html[data-theme="ardoise"] .sa-muet,html[data-theme="ardoise"] .sa-carte-detail{opacity:1!important;color:var(--texte-att,#686F66)!important;}',
     /* #6A461D sur le fond réel #F2E8D6 de la bannière = ~6,9:1.
        Le précédent var(--ocre) (#C98A3E) ne donnait que 2,4:1 et faisait
@@ -199,11 +202,7 @@ window.ARDOISE_THEME_DEFAUT = 'ardoise';
    ses avertissements — le correctif n'a plus rien à corriger, et la
    surveillance permanente du DOM disparaît avec lui. */
 
-/* Le Super Admin charge sa vue de traitement sans modifier son noyau isolé. */
-(function chargerVueRenouvellements() {
-  if (!/super-admin\.html$/i.test(window.location.pathname)) return;
-  if (document.querySelector('script[data-ardoise-renouvellements-admin]')) return;
-  var s = document.createElement('script');
-  s.src = 'super-admin-vues-renouvellements.js'; s.defer = true; s.setAttribute('data-ardoise-renouvellements-admin', '');
-  (document.head || document.documentElement).appendChild(s);
-})();
+/* La vue « Renouvellements » du Super Admin était injectée ici. Elle est
+   désormais chargée par super-admin.html comme toutes les autres vues : un
+   script partagé par toutes les pages n'a pas à connaître les écrans d'un
+   espace qui se veut isolé. */

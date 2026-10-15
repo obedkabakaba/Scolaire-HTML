@@ -363,6 +363,30 @@
     return type.includes('application/json') ? reponse.json() : reponse.text();
   };
 
+  /* RÉ-AUTHENTIFICATION À DEUX FACTEURS
+     Quatre écrans ouvrent la fenêtre des actions critiques, chacun avec sa
+     propre boîte « mot de passe ». Quand le compte est protégé par la double
+     authentification, le serveur répond MFA_REQUISE : plutôt que de modifier
+     les quatre boîtes, on demande le code ici, une fois, et on rejoue la même
+     requête avec lui. Sans `SA.demanderCodeMfa` (écran Compte non chargé),
+     l'erreur remonte telle quelle, avec son message explicite. */
+  const CHEMIN_REAUTH = '/super-admin/control-center/reauthentifier';
+  const appelBrut = SA.api;
+  SA.api = async function (chemin, options = {}) {
+    try {
+      return await appelBrut(chemin, options);
+    } catch (err) {
+      const mfaRequise = chemin === CHEMIN_REAUTH && err && err.corps && err.corps.code === 'MFA_REQUISE';
+      if (!mfaRequise || typeof SA.demanderCodeMfa !== 'function') throw err;
+      const code = await SA.demanderCodeMfa();
+      if (!code) throw err;
+      let corps = {};
+      try { corps = JSON.parse(options.body || '{}'); } catch (e) { /* corps illisible : on repart de rien */ }
+      corps.code_mfa = code;
+      return appelBrut(chemin, Object.assign({}, options, { body: JSON.stringify(corps) }));
+    }
+  };
+
   /** Construit une URL avec paramètres, en omettant les valeurs vides. */
   SA.url = function (chemin, params = {}) {
     const q = new URLSearchParams();
@@ -413,6 +437,8 @@
     if (email) email.value = '';
     if (motDePasse) motDePasse.value = '';
     if (souvenir) souvenir.checked = false;
+    const codeMfa = document.getElementById('champ-code-mfa');
+    if (codeMfa) codeMfa.value = '';
   };
 
   /**
@@ -995,8 +1021,10 @@
     const entete = document.getElementById('sa-entete');
 
     if (!vue) {
-      entete.innerHTML = '<h1>Page introuvable</h1>';
-      conteneur.innerHTML = SA.ui.etatVide('Cette section n\'existe pas', 'Utilisez le menu de gauche.');
+      entete.innerHTML = '<div class="sa-entete-titres"><h1>Page introuvable</h1></div>';
+      conteneur.innerHTML = SA.ui.etatVide('Cette section n\'existe pas',
+        'Choisissez un domaine dans la barre de gauche, ou recherchez l\'écran avec Ctrl K.');
+      if (SA.coque) SA.coque.surNavigation(null, chemin);
       return;
     }
 
@@ -1004,11 +1032,17 @@
     marquerMenuActif(chemin);
 
     entete.innerHTML = `
-      <div>
+      <div class="sa-entete-titres">
         <h1>${SA.esc(typeof vue.titre === 'function' ? vue.titre(reste, params) : vue.titre)}</h1>
         ${vue.sousTitre ? `<p class="sa-sous-titre">${SA.esc(vue.sousTitre)}</p>` : ''}
       </div>
       <div class="sa-entete-actions" id="sa-entete-actions"></div>`;
+
+    /* La coque de navigation (super-admin-coque.js) pose le fil d'Ariane, le
+       domaine actif et, si l'écran appartient à un espace de travail, sa
+       barre d'onglets. Facultative : sans elle, le panneau fonctionne comme
+       avant, menu compris. */
+    if (SA.coque) SA.coque.surNavigation(SA.routeCourante, chemin);
 
     conteneur.innerHTML = SA.ui.squelette(6);
 
@@ -1045,7 +1079,10 @@
     // Sur mobile, la navigation se referme après un choix — sinon elle masque
     // la page qu'on vient justement de demander.
     document.body.classList.remove('sa-nav-ouverte');
-    conteneur.scrollIntoView({ block: 'start', behavior: 'auto' });
+    /* Retour en haut de PAGE, et non du contenu : `scrollIntoView` sur la zone
+       de contenu faisait passer le titre et les onglets de l'écran au-dessus
+       du bord de la fenêtre — on arrivait sur une page sans savoir laquelle. */
+    window.scrollTo(0, 0);
   }
 
   SA.rafraichirVue = rendre;
@@ -1066,6 +1103,7 @@
    * veut, et c'est autre chose que d'être surligné.
    */
   function marquerMenuActif(chemin) {
+    if (SA.coque) return;   // la coque applique la même règle, domaine compris
     const liens = [...document.querySelectorAll('#sa-navigation a[data-route]')];
 
     let meilleure = null;
@@ -1145,7 +1183,7 @@
     const choix = ecoles.map((e) =>
       `<option value="${SA.esc(e.id)}" ${valeurCourante === e.id ? 'selected' : ''}>${SA.esc(e.nom)}</option>`
     ).join('');
-    return `<select class="sa-champ" data-filtre="${options.nom || 'ecole_id'}">
+    return `<select class="sa-champ" data-filtre="${options.nom || 'ecole_id'}" aria-label="${SA.esc(options.libelleVide || 'Toutes les écoles')}">
       <option value="">${SA.esc(options.libelleVide || 'Toutes les écoles')}</option>${choix}
     </select>`;
   };
@@ -1164,7 +1202,7 @@
     const html = champs.map((c) => {
       if (c.type === 'recherche') {
         return `<input type="search" class="sa-champ sa-champ-recherche" data-filtre="${SA.esc(c.nom)}"
-                       placeholder="${SA.esc(c.libelle || 'Rechercher…')}" value="${SA.esc(c.valeur || '')}" />`;
+                       aria-label="${SA.esc(c.libelle || 'Rechercher')}" placeholder="${SA.esc(c.libelle || 'Rechercher…')}" value="${SA.esc(c.valeur || '')}" />`;
       }
       if (c.type === 'date') {
         return `<label class="sa-champ-date"><span>${SA.esc(c.libelle)}</span>
@@ -1178,7 +1216,7 @@
         const libelle = typeof o === 'string' ? o : o.libelle;
         return `<option value="${SA.esc(valeur)}" ${String(c.valeur) === String(valeur) ? 'selected' : ''}>${SA.esc(libelle)}</option>`;
       }).join('');
-      return `<select class="sa-champ" data-filtre="${SA.esc(c.nom)}">
+      return `<select class="sa-champ" data-filtre="${SA.esc(c.nom)}" aria-label="${SA.esc(c.libelle)}">
                 <option value="">${SA.esc(c.libelle)}</option>${options}
               </select>`;
     }).join('');

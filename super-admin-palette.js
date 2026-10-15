@@ -46,44 +46,43 @@
      ====================================================================== */
 
   const COMMANDES = [
-    { groupe: 'Control Center', icone: '◎', libelle: "Vue d'ensemble", route: 'cc' },
-    { groupe: 'Control Center', icone: '⚠', libelle: 'Écarts constatés', route: 'cc/constats' },
-    { groupe: 'Control Center', icone: '⚠', libelle: 'Écarts à traiter immédiatement', route: 'cc/constats', params: { urgence: 'immediat' } },
-    { groupe: 'Control Center', icone: '🐞', libelle: 'Suivi des erreurs', route: 'cc/erreurs' },
-    { groupe: 'Control Center', icone: '📜', libelle: 'Explorateur de journaux', route: 'cc/logs' },
-    { groupe: 'Control Center', icone: '📜', libelle: 'Journaux de sécurité', route: 'cc/logs', params: { categorie: 'SECURITY' } },
-    { groupe: 'Control Center', icone: '📜', libelle: 'Journaux de paiement', route: 'cc/logs', params: { categorie: 'PAYMENT' } },
-    { groupe: 'Control Center', icone: '⚡', libelle: 'Performance', route: 'cc/performance' },
-    { groupe: 'Control Center', icone: '🚨', libelle: 'Incidents', route: 'cc/incidents' },
-    { groupe: 'Control Center', icone: '🔔', libelle: 'Alertes', route: 'cc/alertes' },
-    { groupe: 'Control Center', icone: '🩺', libelle: 'Vérifications de santé', route: 'cc/verifications' },
+    { groupe: 'Pilotage', icone: '◎', libelle: 'Tour de contrôle', route: 'tableau-de-bord' },
+    { groupe: 'Supervision', icone: '◎', libelle: 'Vue technique', route: 'cc' },
+    { groupe: 'Supervision', icone: '⚠', libelle: 'Écarts constatés', route: 'cc/constats' },
+    { groupe: 'Supervision', icone: '⚠', libelle: 'Écarts à traiter immédiatement', route: 'cc/constats', params: { urgence: 'immediat' } },
+    { groupe: 'Supervision', icone: '🐞', libelle: 'Suivi des erreurs', route: 'cc/erreurs' },
+    { groupe: 'Supervision', icone: '📜', libelle: 'Explorateur de journaux', route: 'cc/logs' },
+    { groupe: 'Supervision', icone: '📜', libelle: 'Journaux de sécurité', route: 'cc/logs', params: { categorie: 'SECURITY' } },
+    { groupe: 'Supervision', icone: '📜', libelle: 'Journaux de paiement', route: 'cc/logs', params: { categorie: 'PAYMENT' } },
+    { groupe: 'Supervision', icone: '⚡', libelle: 'Performance', route: 'cc/performance' },
+    { groupe: 'Supervision', icone: '🚨', libelle: 'Incidents', route: 'cc/incidents' },
+    { groupe: 'Supervision', icone: '🔔', libelle: 'Alertes', route: 'cc/alertes' },
+    { groupe: 'Supervision', icone: '🩺', libelle: 'Vérifications de santé', route: 'cc/verifications' },
 
-    { groupe: 'Audit', icone: '📐', libelle: 'Règles métier', route: 'cc/regles' },
-    { groupe: 'Audit', icone: '🔑', libelle: 'Matrice des permissions', route: 'cc/matrice' },
-    { groupe: 'Audit', icone: '🔍', libelle: 'Lancer les audits', route: 'cc/audits' },
-    { groupe: 'Audit', icone: '🗺', libelle: 'Carte des routes', route: 'cc/routes' },
-    { groupe: 'Audit', icone: '👤', libelle: 'Ce que peut faire le Directeur', route: 'cc/roles/directeur' },
-    { groupe: 'Audit', icone: '👤', libelle: 'Ce que peut faire le Comptable', route: 'cc/roles/comptable' },
-    { groupe: 'Audit', icone: '👤', libelle: 'Ce que peut faire le Professeur', route: 'cc/roles/professeur' },
-    { groupe: 'Audit', icone: '👤', libelle: 'Ce que peut faire le Titulaire', route: 'cc/roles/titulaire' },
+    { groupe: 'Qualité & audit', icone: '📐', libelle: 'Règles métier', route: 'cc/regles' },
+    { groupe: 'Qualité & audit', icone: '🔑', libelle: 'Matrice des permissions', route: 'cc/matrice' },
+    { groupe: 'Qualité & audit', icone: '🔍', libelle: 'Lancer les audits', route: 'cc/audits' },
+    { groupe: 'Qualité & audit', icone: '🗺', libelle: 'Carte des routes', route: 'cc/routes' },
+    { groupe: 'Qualité & audit', icone: '👤', libelle: 'Ce que peut faire le Directeur', route: 'cc/roles/directeur' },
+    { groupe: 'Qualité & audit', icone: '👤', libelle: 'Ce que peut faire le Comptable', route: 'cc/roles/comptable' },
+    { groupe: 'Qualité & audit', icone: '👤', libelle: 'Ce que peut faire le Professeur', route: 'cc/roles/professeur' },
+    { groupe: 'Qualité & audit', icone: '👤', libelle: 'Ce que peut faire le Titulaire', route: 'cc/roles/titulaire' },
 
-    { groupe: 'IA', icone: '🤖', libelle: "Demander à l'IA", route: 'cc/copilote' },
-    { groupe: 'IA', icone: '🧭', libelle: 'Conseil stratégique', route: 'cc/conseil' },
-    { groupe: 'IA', icone: '🔬', libelle: 'Analyse de cause racine', route: 'cc/cause-racine' },
-    { groupe: 'IA', icone: '🩹', libelle: 'Correctifs proposés', route: 'cc/correctifs' },
-    { groupe: 'IA', icone: '📄', libelle: 'Rapports automatiques', route: 'cc/rapports' },
-    { groupe: 'IA', icone: '💸', libelle: "Coût de l'IA", route: 'cc/couts-ia' },
+    { groupe: 'Intelligence artificielle', icone: '🤖', libelle: "Demander à l'IA", route: 'cc/copilote' },
+    { groupe: 'Intelligence artificielle', icone: '🧭', libelle: 'Conseil stratégique', route: 'cc/conseil' },
+    { groupe: 'Intelligence artificielle', icone: '🔬', libelle: 'Analyse de cause racine', route: 'cc/cause-racine' },
+    { groupe: 'Intelligence artificielle', icone: '🩹', libelle: 'Correctifs proposés', route: 'cc/correctifs' },
+    { groupe: 'Intelligence artificielle', icone: '📄', libelle: 'Rapports automatiques', route: 'cc/rapports' },
+    { groupe: 'Intelligence artificielle', icone: '💸', libelle: "Coût de l'IA", route: 'cc/couts-ia' },
 
-    { groupe: 'Système', icone: '🚩', libelle: 'Drapeaux de fonctionnalités', route: 'cc/drapeaux' },
-    { groupe: 'Système', icone: '🛑', libelle: 'Mode maintenance', route: 'cc/maintenance' },
-    { groupe: 'Système', icone: '📘', libelle: 'Journal des décisions', route: 'cc/decisions' },
-    { groupe: 'Système', icone: '📚', libelle: 'Base de connaissance', route: 'cc/connaissance' },
-    { groupe: 'Système', icone: '📦', libelle: 'Dépendances', route: 'cc/dependances' },
-    { groupe: 'Système', icone: '🗄', libelle: 'Inspecteur de base', route: 'cc/base' },
-    { groupe: 'Système', icone: '☁', libelle: 'Infrastructure et coûts', route: 'cc/infrastructure' },
+    { groupe: 'Configuration', icone: '🚩', libelle: 'Drapeaux de fonctionnalités', route: 'cc/drapeaux' },
+    { groupe: 'Configuration', icone: '🛑', libelle: 'Mode maintenance', route: 'cc/maintenance' },
+    { groupe: 'Configuration', icone: '📘', libelle: 'Journal des décisions', route: 'cc/decisions' },
+    { groupe: 'Configuration', icone: '📚', libelle: 'Base de connaissance (Knowledge Hub)', route: 'ia/connaissance' },
+    { groupe: 'Configuration', icone: '📦', libelle: 'Dépendances', route: 'cc/dependances' },
+    { groupe: 'Configuration', icone: '🗄', libelle: 'Inspecteur de base', route: 'cc/base' },
+    { groupe: 'Configuration', icone: '☁', libelle: 'Infrastructure et coûts', route: 'cc/infrastructure' },
 
-    { groupe: 'Espace existant', icone: '📊', libelle: 'Tableau de bord', route: 'tableau-de-bord' },
-    { groupe: 'Espace existant', icone: '🏫', libelle: 'Toutes les écoles', route: 'ecoles' },
 
     /* École de test — la seule commande de cette palette qui ÉCRIT.
        ------------------------------------------------------------------
@@ -108,18 +107,39 @@
     { groupe: 'Écoles', icone: '🗑', libelle: 'Supprimer définitivement une école',
       action: ouvrirSuppressionEcole },
 
-    { groupe: 'Espace existant', icone: '👥', libelle: 'Utilisateurs', route: 'utilisateurs' },
-    { groupe: 'Espace existant', icone: '💰', libelle: 'Finance', route: 'finance' },
-    { groupe: 'Espace existant', icone: '💳', libelle: 'Offres', route: 'offres' },
-    { groupe: 'Espace existant', icone: '🩺', libelle: 'Santé de la plateforme', route: 'sante' },
-    { groupe: 'Espace existant', icone: '🔐', libelle: 'Sécurité', route: 'securite' },
-    { groupe: 'Espace existant', icone: '🎫', libelle: 'Support', route: 'support' }
   ];
 
-  /** Correspondance approximative : chaque terme saisi doit apparaître. */
+  /**
+   * Toutes les commandes : celles écrites ci-dessus (raccourcis filtrés,
+   * actions), puis CHAQUE écran déclaré dans le menu, lu par la coque. La
+   * palette ne connaissait qu'une quarantaine d'écrans écrits à la main ; elle
+   * ignorait les apporteurs, l'IA & modèles, la finance détaillée — c'est-à-dire
+   * précisément ceux qu'on ne sait pas où chercher.
+   */
+  function commandes() {
+    const liste = COMMANDES.slice();
+    const dejaLa = new Set(COMMANDES.filter((c) => c.route && !c.params).map((c) => c.route));
+    const ecrans = (SA.coque && SA.coque.ecrans) ? SA.coque.ecrans() : [];
+    ecrans.forEach((e) => {
+      if (dejaLa.has(e.route)) return;
+      dejaLa.add(e.route);
+      liste.push({ groupe: e.groupe, icone: '›', libelle: e.libelle, route: e.route, mots: e.description || '' });
+    });
+    return liste;
+  }
+
+  /** Correspondance approximative, sans tenir compte des accents : chaque terme saisi doit apparaître. */
+  const sansAccent = (t) => String(t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   function correspond(texte, requete) {
-    const t = texte.toLowerCase();
-    return requete.toLowerCase().split(/\s+/).filter(Boolean).every((mot) => t.includes(mot));
+    const t = sansAccent(texte);
+    return sansAccent(requete).split(/\s+/).filter(Boolean).every((mot) => t.includes(mot));
+  }
+
+  /** La recherche dans les DONNÉES des écoles reste dans son écran dédié, dont
+   *  les consultations sont tracées : la palette y mène, elle ne la fait pas. */
+  function rechercheEcoles(q) {
+    return { groupe: 'Données des écoles', icone: '🔎', libelle: `Rechercher « ${q} » dans les écoles, élèves et comptes`,
+      route: 'explorer/recherche', params: { q } };
   }
 
   /* ======================================================================
@@ -135,9 +155,9 @@
     voile.className = 'cc-palette-voile';
     voile.innerHTML = `
       <div class="cc-palette" role="dialog" aria-modal="true" aria-label="Palette de commandes">
-        <input id="cc-pal-champ" placeholder="Aller à… ou rechercher une erreur, un écart, une règle, une route"
+        <input id="cc-pal-champ" placeholder="Aller à un écran, rechercher une école, une erreur, une règle…"
                autocomplete="off" spellcheck="false">
-        <div class="cc-palette-resultats" id="cc-pal-res"></div>
+        <div class="cc-palette-resultats" id="cc-pal-res" tabindex="0" aria-label="Résultats"></div>
         <div class="cc-palette-pied">
           <span><span class="cc-touche">↑</span><span class="cc-touche">↓</span> naviguer</span>
           <span><span class="cc-touche">↵</span> ouvrir</span>
@@ -150,6 +170,7 @@
 
     const champ = voile.querySelector('#cc-pal-champ');
     const zone = voile.querySelector('#cc-pal-res');
+    const toutes = commandes();
     let items = [];
     let index = 0;
 
@@ -240,21 +261,23 @@
         // La saisie a pu changer pendant l'appel : on ne remplace la liste que
         // si la requête est encore celle affichée.
         if (champ.value.trim() !== q) return;
-        const locales = COMMANDES.filter((c) => correspond(`${c.libelle} ${c.groupe}`, q));
-        afficher([...locales, ...distants]);
+        const locales = toutes.filter((c) => correspond(`${c.libelle} ${c.groupe} ${c.mots || ''}`, q));
+        afficher([...locales, rechercheEcoles(q), ...distants]);
       } catch { /* la recherche est un service, pas une obligation */ }
     }, 260);
 
     champ.addEventListener('input', () => {
       const q = champ.value.trim();
-      afficher(q ? COMMANDES.filter((c) => correspond(`${c.libelle} ${c.groupe}`, q)) : COMMANDES);
+      if (!q) { afficher(toutes); return; }
+      const locales = toutes.filter((c) => correspond(`${c.libelle} ${c.groupe} ${c.mots || ''}`, q));
+      afficher(q.length >= 2 ? [...locales, rechercheEcoles(q)] : locales);
       if (q.length >= 3) chercher(q);
     });
 
     voile.addEventListener('click', (ev) => { if (ev.target === voile) fermer(); });
     document.addEventListener('keydown', surTouche, true);
 
-    afficher(COMMANDES);
+    afficher(toutes);
     champ.focus();
   }
 

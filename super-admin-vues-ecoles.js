@@ -100,6 +100,11 @@
           tri: d.tri,
           colonnes: [
             {
+              cle: 'choix', titre: '', classe: 'sa-col-choix',
+              rendu: (l) => `<input type="checkbox" data-choix="${esc(l.id)}" data-nom="${esc(l.nom)}"
+                               aria-label="Sélectionner ${esc(l.nom)}" ${selectionEcoles.has(l.id) ? 'checked' : ''}>`
+            },
+            {
               cle: 'nom', titre: 'École', triable: true,
               rendu: (l) => `<strong>${esc(l.nom)}</strong>
                              ${l.mode_test ? ' ' + ui.badge('test', 'info') : ''}
@@ -137,13 +142,192 @@
         brancherPagination(zone, 'ecoles', requete);
 
         zone.querySelectorAll('tbody tr[data-id]').forEach((ligne) => {
-          ligne.addEventListener('click', () => ouvrirFicheEcole(ligne.getAttribute('data-id'), charger));
+          ligne.addEventListener('click', (ev) => {
+            if (ev.target.closest('.sa-col-choix')) return;   // la case coche, elle n'ouvre pas la fiche
+            ouvrirFicheEcole(ligne.getAttribute('data-id'), charger);
+          });
         });
+        brancherSelection(zone, d.donnees || []);
       }
 
+      conteneur.appendChild(barreSelection());
       await charger();
     }
   });
+
+  /* ======================================================================
+     Actions groupées : annonce ou relance à plusieurs écoles d'un coup
+     ----------------------------------------------------------------------
+     La sélection survit au changement de page de la liste : on coche des
+     écoles sur la page 1, puis sur la page 3, et on écrit une seule fois.
+
+     L'envoi passe par la route existante des annonces (POST
+     /super-admin/notifications, cible « école »), une école après l'autre :
+     chaque annonce reste ainsi tracée et consultable école par école dans
+     « Annonces aux écoles », et un échec n'emporte pas les autres envois.
+     ====================================================================== */
+
+  const selectionEcoles = new Map();   // id → nom
+
+  function barreSelection() {
+    const barre = document.createElement('div');
+    barre.className = 'sa-barre-selection';
+    barre.id = 'sa-barre-selection';
+    barre.hidden = true;
+    barre.innerHTML = `
+      <strong id="sa-selection-nb"></strong>
+      <span class="sa-barre-selection-actions">
+        <button type="button" class="sa-bouton sa-bouton-secondaire sa-bouton-petit" data-groupe="aucune">Tout désélectionner</button>
+        <button type="button" class="sa-bouton sa-bouton-secondaire sa-bouton-petit" data-groupe="relance">Relancer l'échéance</button>
+        <button type="button" class="sa-bouton sa-bouton-principal sa-bouton-petit" data-groupe="annonce">Envoyer une annonce</button>
+      </span>`;
+    barre.addEventListener('click', (ev) => {
+      const b = ev.target.closest('[data-groupe]');
+      if (!b) return;
+      const action = b.getAttribute('data-groupe');
+      if (action === 'aucune') {
+        selectionEcoles.clear();
+        document.querySelectorAll('[data-choix]').forEach((c) => { c.checked = false; });
+        majBarreSelection();
+        return;
+      }
+      ouvrirAnnonceGroupee(action === 'relance');
+    });
+    setTimeout(majBarreSelection, 0);
+    return barre;
+  }
+
+  function majBarreSelection() {
+    const barre = document.getElementById('sa-barre-selection');
+    if (!barre) return;
+    const n = selectionEcoles.size;
+    barre.hidden = n === 0;
+    barre.querySelector('#sa-selection-nb').textContent = `${n} école${n > 1 ? 's' : ''} sélectionnée${n > 1 ? 's' : ''}`;
+  }
+
+  function brancherSelection(zone, lignes) {
+    zone.querySelectorAll('[data-choix]').forEach((c) => {
+      c.addEventListener('change', () => {
+        const id = c.getAttribute('data-choix');
+        if (c.checked) selectionEcoles.set(id, c.getAttribute('data-nom'));
+        else selectionEcoles.delete(id);
+        majBarreSelection();
+      });
+    });
+    // Case d'en-tête : sélectionner toute la page affichée.
+    const entete = zone.querySelector('thead th.sa-col-choix');
+    if (entete && lignes.length) {
+      entete.innerHTML = '<input type="checkbox" aria-label="Sélectionner toute la page">';
+      const tout = entete.querySelector('input');
+      tout.checked = lignes.every((l) => selectionEcoles.has(l.id));
+      tout.addEventListener('change', () => {
+        zone.querySelectorAll('[data-choix]').forEach((c) => {
+          c.checked = tout.checked;
+          c.dispatchEvent(new Event('change'));
+        });
+      });
+    }
+    majBarreSelection();
+  }
+
+  const MODELE_RELANCE = {
+    titre: 'Votre abonnement Ardoise arrive à échéance',
+    contenu: "Bonjour,\n\nL'abonnement de votre établissement à Ardoise arrive bientôt à échéance. "
+      + "Pour que vos équipes gardent l'accès sans interruption, vous pouvez le renouveler dès maintenant "
+      + "depuis le menu « Abonnement » de votre espace.\n\nNotre équipe reste disponible pour toute question.\n\nL'équipe Ardoise",
+    niveau: 'avertissement'
+  };
+
+  function ouvrirAnnonceGroupee(relance) {
+    const ecoles = [...selectionEcoles.entries()];
+    if (!ecoles.length) return;
+    const m = relance ? MODELE_RELANCE : { titre: '', contenu: '', niveau: 'info' };
+    const modale = SA.modale({
+      titre: relance ? "Relancer l'échéance" : 'Annonce aux écoles sélectionnées',
+      sousTitre: `${ecoles.length} école${ecoles.length > 1 ? 's' : ''} : ${ecoles.slice(0, 4).map(([, nom]) => nom).join(', ')}${ecoles.length > 4 ? '…' : ''}`,
+      large: true,
+      contenu: `
+        <label class="sa-champ-bloc"><span>Titre</span>
+          <input class="sa-champ" id="grp-titre" maxlength="200" value="${esc(m.titre)}"></label>
+        <label class="sa-champ-bloc"><span>Message</span>
+          <textarea class="sa-champ" id="grp-contenu" rows="7">${esc(m.contenu)}</textarea></label>
+        <div class="sa-grille-2" style="gap:12px">
+          <label class="sa-champ-bloc"><span>Ton</span>
+            <select class="sa-champ" id="grp-niveau">
+              ${['info', 'succes', 'avertissement', 'critique'].map((n) => `<option value="${n}" ${n === m.niveau ? 'selected' : ''}>${n}</option>`).join('')}
+            </select></label>
+          <label class="sa-champ-bloc"><span>Destinataires dans chaque école</span>
+            <select class="sa-champ" id="grp-role">
+              <option value="">Directeurs et préfets</option>
+              <option value="comptable">Comptables</option>
+              <option value="secretaire">Secrétaires</option>
+              <option value="professeur">Professeurs</option>
+            </select></label>
+        </div>
+        <p class="sa-note">L'annonce apparaît dans l'espace des destinataires, comme celles envoyées
+          depuis « Annonces aux écoles ». Une annonce est créée par école, pour rester traçable.</p>
+        <div class="sa-envoi-progression" id="grp-progression" aria-live="polite"></div>`,
+      actions: `
+        <button class="sa-bouton sa-bouton-secondaire" data-role="annuler">Annuler</button>
+        <button class="sa-bouton sa-bouton-principal" data-role="envoyer">Envoyer à ${ecoles.length} école${ecoles.length > 1 ? 's' : ''}</button>`
+    });
+
+    modale.querySelector('[data-role="annuler"]').addEventListener('click', () => modale.fermer());
+    const envoyer = modale.querySelector('[data-role="envoyer"]');
+    envoyer.addEventListener('click', async () => {
+      const titre = modale.querySelector('#grp-titre').value.trim();
+      const contenu = modale.querySelector('#grp-contenu').value.trim();
+      if (!titre || !contenu) return SA.toast('Le titre et le message sont requis.', 'attention');
+      // Seulement les écoles encore sélectionnées : après un envoi partiel,
+      // « Réessayer » ne doit viser que celles qui ont échoué.
+      const lot = ecoles.filter(([id]) => selectionEcoles.has(id));
+      if (!lot.length) return modale.fermer();
+      const ok = await SA.confirmer({
+        titre: 'Confirmer l\'envoi',
+        message: `Publier cette annonce dans ${lot.length} école${lot.length > 1 ? 's' : ''} ? Elle sera visible immédiatement.`,
+        libelleValider: 'Publier'
+      });
+      if (!ok) return;
+
+      envoyer.disabled = true;
+      const progression = modale.querySelector('#grp-progression');
+      const echecs = [];
+      let destinataires = 0;
+      for (let i = 0; i < lot.length; i++) {
+        const [id, nom] = lot[i];
+        progression.textContent = `Envoi ${i + 1} / ${lot.length} — ${nom}`;
+        try {
+          const r = await SA.api('/super-admin/notifications', {
+            method: 'POST',
+            body: JSON.stringify({
+              titre, contenu,
+              niveau: modale.querySelector('#grp-niveau').value,
+              cible: 'ecole', ecole_id: id,
+              role_cible: modale.querySelector('#grp-role').value || undefined,
+              publier: true
+            })
+          });
+          destinataires += Number(r.destinataires) || 0;
+          selectionEcoles.delete(id);
+        } catch (err) {
+          echecs.push(`${nom} : ${err.message}`);
+        }
+      }
+      majBarreSelection();
+      document.querySelectorAll('[data-choix]').forEach((c) => { c.checked = selectionEcoles.has(c.getAttribute('data-choix')); });
+
+      if (!echecs.length) {
+        modale.fermer();
+        SA.toast(`Annonce publiée dans ${lot.length} école(s), ${destinataires} destinataire(s).`, 'succes', 8000);
+      } else {
+        // Les écoles en échec restent sélectionnées : on peut réessayer pour elles seules.
+        progression.innerHTML = `<strong>${esc(lot.length - echecs.length)} envoi(s) réussi(s), ${esc(echecs.length)} en échec</strong>
+          — les écoles en échec restent sélectionnées.<br>${echecs.map(esc).join('<br>')}`;
+        envoyer.disabled = false;
+        envoyer.textContent = 'Réessayer pour les écoles en échec';
+      }
+    });
+  }
 
   /** Rebranche le tri des en-têtes sur la navigation. */
   function brancherTri(zone, route, requete) {

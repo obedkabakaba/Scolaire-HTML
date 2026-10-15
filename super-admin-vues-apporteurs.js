@@ -177,7 +177,12 @@
         [(d.declarations || {}).en_attente, 'déclaration(s) de prospect en attente', 'apporteurs/declarations?statut=en_attente'],
         [(d.attributions || {}).proposee, 'attribution(s) proposée(s) à décider', 'apporteurs/attributions?statut=proposee'],
         [d.ecoles_en_conflit, 'école(s) revendiquée(s) par plusieurs apporteurs', 'apporteurs/attributions?conflit=1'],
-        [d.prolongations_en_attente, 'prolongation(s) en attente de validation', 'apporteurs/attributions?onglet=prolongations']
+        [d.prolongations_en_attente, 'prolongation(s) en attente de validation', 'apporteurs/attributions?onglet=prolongations'],
+        [(d.en_attente || {}).demandes_badges, 'demande(s) de badge en cours (frais, session, qualification)', 'apporteurs/badges'],
+        [(d.en_attente || {}).missions_avec_candidats, 'mission(s) ouverte(s) avec des propositions à examiner', 'apporteurs/missions?statut=ouverte'],
+        [(d.en_attente || {}).missions_a_cloturer, 'compte(s) rendu(s) de mission à vérifier', 'apporteurs/missions?statut=realisee'],
+        [(d.en_attente || {}).campagnes_proposees, 'campagne(s) de partenaire à valider', 'apporteurs/campagnes'],
+        [(d.en_attente || {}).presomptions_ouvertes, 'école(s) à rattacher à une campagne (réponse attendue ou appel)', 'apporteurs/campagnes?onglet=presomptions']
       ].filter(([n]) => n);
 
       conteneur.innerHTML = `
@@ -1181,7 +1186,7 @@
 
     async rendu(conteneur) {
       conteneur.innerHTML = ui.squelette(6, 50);
-      const d = await SA.api(`${BASE}/programme`);
+      const [d, formations] = await Promise.all([SA.api(`${BASE}/programme`), SA.api(`${BASE}/formations`).catch(() => null)]);
       const decrire = (b) => b.mode === 'taux_paiement'
         ? `${fmt.decimal(b.valeur, 0)} % de chaque paiement d’abonnement encaissé, pendant ${b.duree_mois} mois`
         : b.mode === 'pourcentage_prestation'
@@ -1189,7 +1194,8 @@
           : '<span class="sa-attention-texte">À définir</span> — montant saisi et justifié à chaque prestation';
       conteneur.innerHTML = `
         <section class="sa-section">
-          <div class="sa-encart">Les badges sont <strong>indépendants et cumulables</strong>. Aucun ne donne accès à l’administration d’Ardoise : ils conditionnent seulement ce que le programme peut confier à un apporteur.</div>
+          <div class="sa-encart">Les badges sont <strong>indépendants et cumulables</strong>. Aucun ne donne accès à l’administration d’Ardoise : chacun ouvre ses propres sections dans l’espace partenaire, et les referme proprement s’il est suspendu ou retiré.</div>
+          ${formations && SA.apporteursFormations ? SA.apporteursFormations.panneauFormations(formations.formations) : ''}
           ${ui.tableau({
             lignes: d.baremes.map((b) => ({ ...b, id: b.code })),
             colonnes: [
@@ -1202,6 +1208,7 @@
             ]
           })}
         </section>`;
+      if (formations && SA.apporteursFormations) SA.apporteursFormations.brancherFormations(conteneur, formations.formations);
       conteneur.querySelectorAll('[data-modifier]').forEach((btn) => btn.addEventListener('click', () => {
         const b = d.baremes.find((x) => x.code === btn.dataset.modifier);
         const commission = b.categorie === 'commission';
@@ -1320,6 +1327,8 @@
               ${m.ecrit_par ? `<span class="sa-muet">— écrit par ${esc(m.ecrit_par)}, invisible du partenaire</span>` : ''}
               <span class="sa-muet">${esc(heure(m.created_at))}</span>
               ${m.supprime ? '' : `<button type="button" class="am-retirer" data-retirer="${esc(m.id)}" title="Retirer ce message">Retirer</button>`}</div>
+            ${!m.supprime && m.meta && m.meta.type === 'demande_badge' ? `<div class="am-meta">🏅 Demande de badge « ${esc((BADGES[m.meta.badge] || {}).libelle || m.meta.badge)} »${m.meta.relance ? ' (relance)' : ''} — <a href="#/apporteurs/badges">traiter la demande</a></div>` : ''}
+            ${!m.supprime && m.meta && m.meta.type && m.meta.type !== 'demande_badge' ? `<div class="am-meta sa-muet">${esc({ demande_badge_recue: 'Accusé de réception automatique', badge: 'Message automatique : changement de badge', mission: 'Message automatique : mission', campagne: 'Message automatique : campagne', presomption_confirmee: 'Message automatique : école confirmée', tarif_formation: 'Annonce automatique : tarif de formation' }[m.meta.type] || 'Message automatique')}</div>` : ''}
             <div class="am-message-corps">${m.supprime ? `<em class="sa-muet">Retiré${m.supprime_par === 'equipe' ? ' par l’équipe' : ' par son auteur'}${m.contenu_retire ? ` : « ${esc(m.contenu_retire)} »` : ''}</em>` : esc(m.contenu)}</div>
           </div>`).join('') || ui.etatVide('Aucun message', 'Écrivez le premier message.');
         zone.scrollTop = zone.scrollHeight;

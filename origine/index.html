@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<!--
+  ARDOISE — « GRÂCE À QUELLE ANNONCE ? »
+  ---------------------------------------------------------------------
+  Page ouverte par le responsable d'une école, depuis le lien personnel
+  reçu à l'ouverture de son espace d'essai (?q=jeton). Elle ne montre que
+  le nom de l'école et les annonces publiques qui pourraient l'avoir
+  amenée ; la réponse permet de rattacher l'école à la campagne du
+  partenaire qui l'a fait connaître, après validation par l'équipe.
+  Elle ne change rien à l'essai ni aux tarifs de l'école.
+-->
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Comment avez-vous connu Ardoise ?</title>
+<meta name="robots" content="noindex, nofollow" />
+<meta name="theme-color" content="#F6F2E7" />
+<link rel="icon" type="image/png" sizes="192x192" href="/icone-192.png" />
+<link rel="preconnect" href="https://scolaire-saas-backend.onrender.com" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+<style>
+  :root { --fond: #F6F2E7; --surface: #FFFDF8; --texte: #1F2B24; --texte-2: #5B6159; --bordure: #E4DCCB; --accent: #B8742B; --vert: #3F6B4A; }
+  @media (prefers-color-scheme: dark) { :root { --fond: #141C18; --surface: #18211C; --texte: #EEEBE2; --texte-2: #B5B8AE; --bordure: #2C3832; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 16px; background: var(--fond); color: var(--texte); font: 16px/1.5 Inter, system-ui, sans-serif; }
+  main { width: 100%; max-width: 520px; background: var(--surface); border: 1px solid var(--bordure); border-radius: 20px; padding: 26px 22px; }
+  .marque { font-family: Fraunces, Georgia, serif; font-weight: 600; font-size: 1.3rem; color: var(--accent); text-decoration: none; }
+  h1 { font-family: Fraunces, Georgia, serif; font-size: 1.45rem; margin: 14px 0 6px; }
+  p { color: var(--texte-2); margin: 0 0 14px; }
+  .choix { display: grid; gap: 10px; margin: 16px 0; }
+  button { font: inherit; cursor: pointer; text-align: left; padding: 14px 16px; border-radius: 14px; border: 1.5px solid var(--bordure); background: transparent; color: var(--texte); }
+  button:hover, button:focus-visible { border-color: var(--accent); outline: none; }
+  button strong { display: block; }
+  button small { color: var(--texte-2); }
+  button.aucune { text-align: center; color: var(--texte-2); }
+  button:disabled { opacity: .5; cursor: wait; }
+  .message { padding: 14px; border-radius: 12px; background: rgba(63, 107, 74, .12); color: var(--texte); }
+  .message.erreur { background: rgba(142, 45, 35, .12); }
+</style>
+</head>
+<body>
+<main>
+  <a class="marque" href="/">Ardoise</a>
+  <div id="zone" aria-live="polite"><p>Chargement…</p></div>
+</main>
+<script>
+(function () {
+  'use strict';
+  var API = (window.API_BASE_URL || 'https://scolaire-saas-backend.onrender.com').replace(/\/+$/, '');
+  var jeton = new URLSearchParams(location.search).get('q') || '';
+  var zone = document.getElementById('zone');
+  function esc(v) {
+    return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function message(texte, erreur) {
+    zone.innerHTML = '<div class="message' + (erreur ? ' erreur' : '') + '">' + esc(texte) + '</div>';
+  }
+  if (jeton.length < 32) { message('Ce lien est incomplet. Ouvrez-le directement depuis l’e-mail reçu.', true); return; }
+  // Le jeton quitte la barre d'adresse : il ne se retrouvera ni dans l'historique partagé ni dans une capture.
+  history.replaceState(null, '', location.pathname);
+
+  fetch(API + '/apporteurs/origine/' + encodeURIComponent(jeton))
+    .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+    .then(function (x) {
+      if (!x.ok) { message(x.d.message || 'Ce lien n’est plus actif.', true); return; }
+      var d = x.d;
+      if (d.deja_repondu) { message('Merci, votre réponse est déjà enregistrée.'); return; }
+      if (d.expire) { message('Ce lien a expiré. Si vous souhaitez répondre, écrivez-nous depuis votre espace Ardoise.', true); return; }
+      zone.innerHTML = '<h1>Comment avez-vous connu Ardoise ?</h1>'
+        + '<p>Pour <strong>' + esc(d.ecole_nom) + '</strong>, vous nous avez indiqué avoir découvert Ardoise par une annonce. Était-ce l’une de celles-ci ?</p>'
+        + '<div class="choix">' + d.campagnes.map(function (k) {
+          return '<button type="button" data-choix="' + esc(k.id) + '"><strong>' + esc(k.nom_public) + '</strong><small>'
+            + esc(k.canal) + ' · ' + esc(new Date(k.date_diffusion + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })) + '</small></button>';
+        }).join('')
+        + '<button type="button" class="aucune" data-choix="aucune">Non, aucune de ces annonces</button></div>'
+        + '<p style="font-size:.85rem">Votre réponse nous permet de remercier la personne ou l’organisation qui vous a fait connaître Ardoise. Elle ne change rien à votre essai ni à vos tarifs.</p>';
+      Array.prototype.forEach.call(zone.querySelectorAll('[data-choix]'), function (b) {
+        b.addEventListener('click', function () {
+          Array.prototype.forEach.call(zone.querySelectorAll('button'), function (x) { x.disabled = true; });
+          fetch(API + '/apporteurs/origine/' + encodeURIComponent(jeton), {
+            method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+            body: JSON.stringify({ campagne_id: b.getAttribute('data-choix') })
+          }).then(function (r) { return r.json().then(function (d2) { return { ok: r.ok, d: d2 }; }); })
+            .then(function (y) { message(y.d.message || (y.ok ? 'Merci !' : 'Réponse impossible.'), !y.ok); })
+            .catch(function () { message('Serveur injoignable. Réessayez dans un instant.', true); });
+        });
+      });
+    })
+    .catch(function () { message('Serveur injoignable. Vérifiez votre connexion et réessayez.', true); });
+})();
+</script>
+</body>
+</html>

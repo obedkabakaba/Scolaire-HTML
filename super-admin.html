@@ -446,6 +446,11 @@
               <a href="#/apporteurs/declarations" data-route="apporteurs/declarations">Déclarations</a>
               <a href="#/apporteurs/attributions" data-route="apporteurs/attributions">Attributions</a>
               <a href="#/apporteurs/partenariats" data-route="apporteurs/partenariats">Partenariats</a>
+              <a href="#/apporteurs/campagnes" data-route="apporteurs/campagnes">Campagnes et présomptions</a>
+            </li>
+            <li class="sa-espace" data-espace="Badges et terrain">
+              <a href="#/apporteurs/badges" data-route="apporteurs/badges">Demandes de badge et formations</a>
+              <a href="#/apporteurs/missions" data-route="apporteurs/missions">Missions</a>
             </li>
             <li class="sa-espace" data-espace="Rémunération">
               <a href="#/apporteurs/commissions" data-route="apporteurs/commissions">Commissions</a>
@@ -695,6 +700,7 @@
 <script src="super-admin-vues-prospects.js"></script>
 <!-- Après super-admin-vues-offres.js : réutilise SA.finance.formulaire. -->
 <script src="super-admin-vues-apporteurs.js"></script>
+<script src="super-admin-vues-apporteurs-badges.js"></script>
 <!-- Vues du Control Center. Chargées APRÈS les vues existantes : elles
      n'enregistrent que des clés commençant par `cc/`, donc aucune ne peut
      remplacer une vue actuelle. La palette vient en dernier, elle référence
@@ -746,7 +752,7 @@
     'super-admin-vues-finance.js', 'super-admin-vues-offres.js',
     'super-admin-vues-demonstrations.js', 'super-admin-vues-couts.js',
     'super-admin-vues-prospects.js',
-    'super-admin-vues-apporteurs.js',
+    'super-admin-vues-apporteurs.js', 'super-admin-vues-apporteurs-badges.js',
     'super-admin-vues-controle.js', 'super-admin-vues-audit.js',
     'super-admin-vues-cc-ia.js', 'super-admin-vues-cc-systeme.js',
     'super-admin-vues-cc-release.js',

@@ -78,3 +78,14 @@
   .am-liste { max-height: 260px; border-right: 0; border-bottom: 1px solid var(--bordure, #E2DACA); }
   .am-messages { max-height: 60vh; }
 }
+
+/* --------------------------------------------- Badges, formations, missions, campagnes */
+.am-meta { font-size: .8rem; margin: 2px 0 4px; }
+.ab-apercu { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .88rem; line-height: 1.5; padding: 12px 14px; border-radius: 10px; background: rgba(0, 0, 0, .04); border: 1px solid rgba(0, 0, 0, .08); }
+.ab-formation { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 14px; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(0, 0, 0, .08); }
+.ab-formation:last-of-type { border-bottom: 0; }
+.ab-formation-prix { font-size: 1.15rem; font-weight: 700; white-space: nowrap; }
+.ab-actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.ab-choix { display: grid; gap: 8px; }
+.ab-choix-ligne { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(0, 0, 0, .1); cursor: pointer; }
+@media (max-width: 720px) { .ab-formation { grid-template-columns: minmax(0, 1fr); } .ab-actions { justify-content: flex-start; } }

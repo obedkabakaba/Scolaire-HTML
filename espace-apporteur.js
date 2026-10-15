@@ -39,6 +39,51 @@
     partenaire_strategique: { libelle: 'Partenaire stratégique', icone: '🏛',
       texte: 'Porter un réseau, une organisation ou une campagne à grande échelle, avec un partenariat dédié.' }
   };
+  /* Route du portail → badges qui l'ouvrent. La décision appartient au
+     serveur (/portail/moi → droits.routes) ; cette table sert seulement à
+     dire au partenaire QUEL badge ouvrirait une section fermée. */
+  const ROUTES_BADGE = {
+    prospects: ['apporteur_affaires'], kit: ['apporteur_affaires'],
+    missions: ['configurateur', 'formateur'], ressources: ['configurateur', 'formateur'],
+    campagnes: ['partenaire_strategique']
+  };
+  const ROUTE_FONCTION = {
+    prospects: 'prospects', kit: 'kit', missions_installation: 'missions', missions_formation: 'missions',
+    guide_configuration: 'ressources', kit_formateur: 'ressources', campagnes: 'campagnes', partenariats: 'campagnes'
+  };
+  const SECTIONS = {
+    prospects: { libelle: 'Prospects', icone: 'prospects' }, kit: { libelle: 'Partager', icone: 'partage' },
+    missions: { libelle: 'Missions', icone: 'outils' }, ressources: { libelle: 'Guides', icone: 'livre' },
+    campagnes: { libelle: 'Campagnes', icone: 'megaphone' }
+  };
+  /* Cases du compte rendu : mêmes clés que le serveur (apporteurs-badges.controller.js). */
+  const CHECKLISTS = {
+    installation: [
+      ['compte_directeur', 'École et compte du Directeur créés'],
+      ['annees_periodes', 'Année scolaire et périodes (trimestres ou semestres)'],
+      ['classes_cours_coefficients', 'Sections, options, classes et cours avec leurs coefficients'],
+      ['notation_mentions', 'Système de notation, mentions et seuils de promotion'],
+      ['grille_frais', 'Grille des frais scolaires et devise de référence'],
+      ['comptes_personnel', 'Comptes du personnel créés, rôles attribués'],
+      ['verification_finale', 'Vérification finale, écran par écran, avec la direction']
+    ],
+    formation: [
+      ['emargement', 'Fiche d’émargement signée par les participants'],
+      ['connexion_roles', 'Connexion et rôle de chacun'],
+      ['notes_travaux', 'Saisie des notes et des travaux'],
+      ['presences', 'Appel et présences'],
+      ['bulletin', 'Un bulletin généré de bout en bout'],
+      ['modules_complets', 'Modules de la formation complète (si commandée)'],
+      ['evaluation', 'Évaluation des participants'],
+      ['support_remis', 'Support écrit remis à l’école (complète, personnalisée)']
+    ]
+  };
+  const TYPES_MISSION = { installation: 'Installation & configuration', formation: 'Formation' };
+  const SERVICES = { installation: 'Installation', formation_express: 'Formation express', formation_complete: 'Formation complète', formation_personnalisee: 'Formation personnalisée' };
+  const CANAUX = {
+    communique_officiel: 'Communiqué ou annonce officielle', reseaux_sociaux: 'Réseaux sociaux', radio_tv: 'Radio ou télévision',
+    evenement: 'Réunion, atelier ou événement', presse: 'Presse écrite', autre: 'Autre canal'
+  };
   const ETAPES = [
     { cle: 'a_contacter', libelle: 'À contacter' },
     { cle: 'contacte', libelle: 'Contacté' },
@@ -52,12 +97,20 @@
     proposee: 'En vérification', validee: 'Attribuée', rejetee: 'Non retenue', revoquee: 'Révoquée',
     gagnee: 'En vérification', due: 'À verser', reglee: 'Versée', annulee: 'Annulée', a_valider: 'En vérification',
     en_attente: 'Déclarée', rattachee: 'Rattachée', clos: 'Clos',
+    demandee: 'Demande envoyée', frais_regles: 'Frais réglés', formation_planifiee: 'Formation planifiée',
+    qualifiee: 'Qualifié', refusee: 'Non retenue', ouverte: 'Ouverte', attribuee: 'Confiée', realisee: 'Compte rendu envoyé',
+    cloturee: 'Clôturée', candidat: 'Proposition envoyée', retenu: 'Retenu', non_retenu: 'Confiée à un autre', desiste: 'Désisté',
+    active: 'Active', close: 'Close', a_confirmer: 'À confirmer', confirmee: 'Confirmée', infirmee: 'Infirmée', expiree: 'Sans réponse',
+    campagne_confirmee: 'Campagne confirmée par l’école',
     declaration_apporteur: 'Votre déclaration', code_inscription: 'Code saisi à l’inscription', saisie_admin: 'Justificatif'
   };
   const TONS = {
     actif: 'succes', validee: 'succes', reglee: 'succes', rattachee: 'succes',
     en_qualification: 'attention', proposee: 'attention', due: 'attention', a_valider: 'attention',
-    gagnee: 'info', en_attente: 'info', suspendu: 'danger', revoquee: 'danger', rejetee: 'danger'
+    gagnee: 'info', en_attente: 'info', suspendu: 'danger', revoquee: 'danger', rejetee: 'danger',
+    demandee: 'info', frais_regles: 'info', formation_planifiee: 'attention', qualifiee: 'succes', refusee: 'danger',
+    ouverte: 'info', attribuee: 'attention', realisee: 'info', cloturee: 'succes', candidat: 'info', retenu: 'succes',
+    non_retenu: '', desiste: '', active: 'succes', confirmee: 'succes', a_confirmer: 'attention'
   };
   const METHODES = { mobile_money: 'Mobile Money', virement: 'Virement bancaire', especes: 'Espèces', autre: 'Autre' };
   const JALONS = [
@@ -420,8 +473,64 @@
   let routeCourante = '';
 
   async function moi(forcer) {
-    if (!cache.moi || forcer) cache.moi = await api('/apporteurs/portail/moi');
+    if (!cache.moi || forcer) {
+      cache.moi = await api('/apporteurs/portail/moi');
+      appliquerDroits(cache.moi.droits);
+    }
     return cache.moi;
+  }
+
+  /* ------------------------------------------------ Droits : menu et garde */
+
+  function routeOuverte(nom) {
+    if (!ROUTES_BADGE[nom]) return true;
+    // Droits encore inconnus (premier affichage) : le serveur tranchera (403).
+    return !cache.droits || cache.droits.routes.includes(nom);
+  }
+
+  /** Recompose le menu à partir des droits reçus du serveur. */
+  function appliquerDroits(droits) {
+    if (!droits) return;
+    cache.droits = droits;
+    $$('[data-exige]').forEach((li) => { li.hidden = !droits.routes.includes(li.dataset.exige); });
+    dessinerOngletsBas();
+  }
+
+  /** Barre du bas (mobile) : accueil, les sections des badges actifs, messages, puis le reste. */
+  function dessinerOngletsBas() {
+    const d = cache.droits;
+    const sections = ['prospects', 'missions', 'campagnes', 'kit'].filter((r) => d && d.routes.includes(r)).slice(0, 2);
+    const routes = ['accueil', ...sections, 'messages', 'gains', 'ecoles', 'badges'].slice(0, 5);
+    const def = { accueil: ['accueil', 'Accueil'], messages: ['messages', 'Messages'], gains: ['gains', 'Gains'],
+      ecoles: ['ecole', 'Écoles'], badges: ['programme', 'Badges'] };
+    $('#onglets-bas').innerHTML = routes.map((r) => {
+      const [ic, lib] = def[r] || [SECTIONS[r].icone, SECTIONS[r].libelle];
+      return `<a href="#/${r}" data-route="${r}">${icone(ic)}<span>${esc(lib)}</span>${r === 'messages' ? '<b class="pastille" data-non-lus hidden></b>' : ''}</a>`;
+    }).join('');
+    $$('#onglets-bas [data-route]').forEach((a) => a.classList.toggle('actif', a.dataset.route === routeCourante));
+    afficherNonLus(dernierNonLus);
+  }
+
+  /** Une section dont le badge n'est pas (ou plus) actif : dire pourquoi, sans rien casser. */
+  function sectionFermee(contenu, nom) {
+    const badges = Object.fromEntries(((cache.moi && cache.moi.badges) || []).map((b) => [b.badge, b]));
+    const requis = ROUTES_BADGE[nom] || [];
+    const titre = { prospects: 'Prospects', kit: 'Kit de partage', missions: 'Missions', ressources: 'Guides et outils', campagnes: 'Campagnes' }[nom] || 'Cette section';
+    entete(titre, 'Section fermée');
+    const lignes = requis.map((b) => {
+      const x = badges[b];
+      const etatTexte = !x ? 'vous ne le détenez pas encore'
+        : x.statut === 'suspendu' ? 'il est suspendu' : x.statut === 'retire' ? 'il a été retiré'
+          : x.statut === 'en_qualification' ? 'il est en cours de qualification' : 'il est actif';
+      return `<li><strong>${esc(BADGES[b].icone)} ${esc(BADGES[b].libelle)}</strong> — ${esc(etatTexte)}.</li>`;
+    }).join('');
+    contenu.innerHTML = `<div class="carte section-fermee">
+      <div class="vide-icone">${icone('cadenas')}</div>
+      <h2>La section « ${esc(titre)} » s’ouvre avec ${requis.length > 1 ? 'l’un de ces badges' : 'ce badge'}</h2>
+      <ul>${lignes}</ul>
+      <p class="muet">Ce que vous avez déjà gagné reste visible dans « Gains » et vous est versé normalement ; les écoles qui vous sont attribuées le restent.</p>
+      <div class="actions-ligne"><a class="bouton principal" href="#/badges">${icone('programme')} Voir mes badges</a>
+        <a class="bouton secondaire" href="#/messages?equipe=1">${icone('messages')} Écrire à l’équipe</a></div></div>`;
   }
   function codePrincipal(m) {
     const actifs = (m.codes || []).filter((c) => c.actif);
@@ -442,7 +551,8 @@
   }
 
   async function rendre() {
-    const { nom, params } = lireRoute();
+    const { nom: brut, params } = lireRoute();
+    const nom = brut === 'programme' ? 'badges' : brut;
     const vue = vues[nom] ? nom : 'accueil';
     routeCourante = vue;
     arreterMinuteries();
@@ -453,9 +563,16 @@
     const contenu = $('#contenu');
     contenu.innerHTML = '<div class="grille"><div class="squelette" style="height:150px"></div><div class="grille g-3"><div class="squelette" style="height:110px"></div><div class="squelette" style="height:110px"></div><div class="squelette" style="height:110px"></div></div></div>';
     try {
+      if (!routeOuverte(vue)) { sectionFermee(contenu, vue); return; }
       await vues[vue](contenu, params);
     } catch (err) {
       if (err.session || !session.lire() || routeCourante !== vue) return;
+      if (err.code === 'BADGE_INACTIF') {
+        // Badge retiré entre deux affichages : menu remis à jour, section fermée proprement.
+        try { await moi(true); } catch (e) { /* */ }
+        sectionFermee(contenu, vue);
+        return;
+      }
       contenu.innerHTML = etatVide('fermer', 'Impossible d’afficher cette section', esc(err.message),
         '<button class="bouton secondaire" data-recharger>Réessayer</button>');
       contenu.querySelector('[data-recharger]').addEventListener('click', rendre);
@@ -469,14 +586,28 @@
   /* ------------------------------------------------------- Non-lus (badge) */
 
   let sondageNonLus = null;
+  let dernierNonLus = 0;
   function afficherNonLus(n) {
+    dernierNonLus = n || 0;
     $$('[data-non-lus]').forEach((p) => { p.hidden = !n; p.textContent = n > 99 ? '99+' : String(n); });
     const base = document.title.replace(/^\(\d+\+?\)\s*/, '');
     document.title = n ? `(${n}) ${base}` : base;
   }
   async function rafraichirNonLus() {
     if (!session.lire() || document.hidden) return;
-    try { afficherNonLus((await api('/apporteurs/portail/messagerie/non-lus')).non_lus || 0); } catch (e) { /* silencieux */ }
+    try {
+      const r = await api('/apporteurs/portail/messagerie/non-lus');
+      afficherNonLus(r.non_lus || 0);
+      // Un badge vient de s'ouvrir ou de se fermer : menu et section à jour, sans recharger.
+      if (r.signature_droits && cache.droits && r.signature_droits !== cache.droits.signature) {
+        const avant = cache.droits.routes;
+        const m = await moi(true);
+        const ouvertes = m.droits.routes.filter((x) => !avant.includes(x));
+        toast(ouvertes.length ? 'Un badge vient de s’activer : de nouvelles sections sont dans votre menu.'
+          : 'Vos badges ont changé : votre menu est à jour. Détails dans vos messages.', ouvertes.length ? 'succes' : '');
+        if (!routeOuverte(routeCourante)) rendre();
+      }
+    } catch (e) { /* silencieux */ }
   }
   function demarrerSondageNonLus() {
     if (sondageNonLus) return;
@@ -536,6 +667,9 @@
 
   vues.accueil = async (contenu, params) => {
     const [m, d, p] = await Promise.all([moi(true), api('/apporteurs/portail/tableau-de-bord'), api('/apporteurs/portail/performance')]);
+    const droits = m.droits || { routes: [], badges_actifs: [], fonctionnalites: [] };
+    const missions = droits.routes.includes('missions')
+      ? await api('/apporteurs/portail/missions').catch(() => null) : null;
     const profil = m.profil;
     const code = codePrincipal(m);
     const g = totauxGains(d);
@@ -552,7 +686,18 @@
       { fait: p.visites.total > 0 || fl.lien_partage, texte: 'Partager votre lien à une première école', lien: '#/kit' },
       { fait: e.prospects > 0, texte: 'Déclarer un premier prospect', lien: '#/prospects?nouveau=1' },
       { fait: Boolean(fl.presente), texte: 'Vous présenter à la communauté', lien: '#/messages?salon=communaute' }
-    ];
+    ].filter((x) => routeOuverte(x.lien.replace(/^#\/([a-z]+).*$/, '$1')));
+    const sectionsBadges = [...new Set((droits.fonctionnalites || []).map((f) => ROUTE_FONCTION[f]).filter(Boolean))];
+    const ouvertesMissions = missions ? missions.ouvertes.filter((x) => !x.ma_candidature) : [];
+    const enCours = missions ? missions.miennes.filter((x) => x.mon_statut === 'retenu' && x.statut === 'attribuee') : [];
+    const carteBadges = `<div class="carte"><div class="carte-titre"><h3>Vos badges</h3><a href="#/badges" class="petit">Tout voir</a></div>
+      <div class="puces-badges">${droits.badges_actifs.length
+        ? droits.badges_actifs.map((b) => `<span class="etiquette succes">${esc(BADGES[b].icone)} ${esc(BADGES[b].libelle)}</span>`).join('')
+        : '<span class="muet petit">Aucun badge actif pour le moment.</span>'}</div>
+      ${sectionsBadges.length ? `<div class="raccourcis">${sectionsBadges.map((r) => `<a class="raccourci" href="#/${r}">${icone(SECTIONS[r].icone)}<span>${esc({ prospects: 'Prospects', kit: 'Kit de partage', missions: 'Missions', ressources: 'Guides et outils', campagnes: 'Campagnes' }[r])}</span></a>`).join('')}</div>` : ''}
+      ${missions ? `<p class="petit" style="margin:10px 0 0">${enCours.length ? `<strong>${enCours.length} mission(s) à réaliser</strong> · ` : ''}${ouvertesMissions.length} mission(s) ouverte(s)${ouvertesMissions.some((x) => x.pres_de_chez_vous) ? `, dont ${ouvertesMissions.filter((x) => x.pres_de_chez_vous).length} près de chez vous` : ''}.</p>` : ''}
+      ${droits.badges_actifs.length < 4 ? '<p class="muet petit" style="margin:10px 0 0">Configurateur, formateur, partenaire stratégique : chaque badge ajoute ses propres sections à votre espace. <a href="#/badges">Découvrir</a></p>' : ''}
+    </div>`;
     const faites = taches.filter((x) => x.fait).length;
     const maxEntonnoir = Math.max(e.visites_30j, e.prospects + e.essais_via_code, 1);
     const ecoles = e.ecoles_attribuees;
@@ -611,6 +756,7 @@
             <ul class="activite">${p.rappels.map((r) => `<li><span class="pastille-type">${icone('calendrier')}</span>
               <div><p><strong>${esc(r.ecole_nom)}</strong></p><small>${esc(r.ville || '')} · ${esc((ETAPES.find((x) => x.cle === r.etape) || {}).libelle || '')}</small></div>
               <span class="etiquette ${r.rappel_le < new Date().toISOString().slice(0, 10) ? 'danger' : 'attention'}">${esc(dateLongue(r.rappel_le))}</span></li>`).join('')}</ul></div>` : ''}
+          ${carteBadges}
           <div class="carte"><div class="carte-titre"><h3>Vos jalons</h3><span class="muet petit">${ecoles} école(s)</span></div>
             <div class="jalons">${JALONS.map((j) => `<div class="jalon ${ecoles >= j.n ? 'atteint' : ''}" title="${esc(j.titre)}">${icone('trophee')}<strong>${j.n}</strong><small>${ecoles >= j.n ? 'atteint' : `encore ${j.n - ecoles}`}</small></div>`).join('')}</div></div>
           <div class="carte"><h3>Une question ?</h3><p>L’équipe Ardoise vous répond directement dans votre messagerie.</p>
@@ -1074,6 +1220,55 @@
     let conversations = [];
     let courante = null;
     let messages = [];
+    // Demande de badge : préparée depuis « Mes badges » (#/messages?equipe=1&demande=…),
+    // envoyée avec le message pour que l'équipe la reconnaisse et la traite.
+    let demandeAPreparer = params.demande || null;
+    let demandeEnCours = null;
+
+    function puceMeta(x) {
+      const m = x.meta;
+      if (!m || !m.type) return '';
+      const lib = m.badge && BADGES[m.badge] ? `${BADGES[m.badge].icone} ${BADGES[m.badge].libelle}` : '';
+      const texte = { demande_badge: `Demande de badge · ${lib}`, demande_badge_recue: `Demande reçue · ${lib}`, badge: `Badge · ${lib}`,
+        tarif_formation: `Tarif de formation · ${lib}`, mission: 'Mission', campagne: 'Campagne', presomption_confirmee: 'Campagne · école confirmée' }[m.type];
+      return texte ? `<span class="puce-meta">${esc(texte)}</span>` : '';
+    }
+
+    /** Préremplit le message de demande ; le partenaire complète, vérifie, envoie. */
+    async function installerDemande(form, zone, ajuster, badge) {
+      let etat;
+      try { etat = await api('/apporteurs/portail/badges'); } catch (err) { toast(err.message, 'danger'); return; }
+      const b = (etat.badges || []).find((x) => x.badge === badge);
+      if (!b) return;
+      if (!b.demandable) {
+        toast(b.statut === 'actif' ? 'Ce badge est déjà actif.'
+          : (b.demande && ['demandee', 'frais_regles', 'formation_planifiee'].includes(b.demande.statut)
+            ? 'Votre demande est déjà en cours : écrivez simplement ici pour la compléter.'
+            : 'Ce badge ne peut pas être demandé pour le moment : écrivez à l’équipe.'));
+        return;
+      }
+      demandeEnCours = badge;
+      zone.value = b.brouillon || '';
+      ajuster();
+      const bandeau = document.createElement('div');
+      bandeau.className = 'bandeau-demande';
+      bandeau.innerHTML = `<div><strong>${esc(BADGES[badge].icone)} Demande du badge « ${esc(b.libelle)} »</strong>
+        <small>Message préparé pour vous : remplacez les passages <mark>[à compléter]</mark>, vérifiez, puis envoyez.
+        ${b.formation ? `Formation de qualification : ${esc(b.formation.montant_texte || 'montant communiqué par l’équipe')}.` : ''}</small></div>
+        <button type="button" class="lien" data-annuler-demande>Annuler</button>`;
+      form.parentNode.insertBefore(bandeau, form);
+      bandeau.querySelector('[data-annuler-demande]').addEventListener('click', () => {
+        demandeEnCours = null; bandeau.remove(); zone.value = ''; ajuster();
+        history.replaceState(null, '', `#/messages?c=${courante.id}`);
+      });
+      selectionnerACompleter(zone);
+    }
+
+    function selectionnerACompleter(zone) {
+      const i = zone.value.indexOf('[à compléter]');
+      zone.focus();
+      if (i >= 0) zone.setSelectionRange(i, i + '[à compléter]'.length);
+    }
 
     contenu.innerHTML = `<div class="messagerie" id="messagerie">
       <aside class="liste-conversations"><div class="liste-tete"><h3>Conversations</h3>
@@ -1127,6 +1322,7 @@
           ${x.est_moi ? '' : avatar(x.auteur_nom, x.auteur_apporteur_id || x.auteur_type, x.auteur_type === 'apporteur' ? '' : 'equipe')}
           <div class="bulle ${x.supprime ? 'retire' : ''}">
             ${montrerAuteur ? `<button type="button" class="auteur ${cliquable ? 'cliquable' : ''}" ${cliquable ? `data-ecrire-a="${esc(x.auteur_apporteur_id)}" title="Écrire en privé"` : 'tabindex="-1"'}>${esc(x.auteur_nom)}</button>` : ''}
+            ${x.supprime ? '' : puceMeta(x)}
             <span class="texte">${x.supprime ? (x.supprime_par === 'equipe' ? 'Message retiré par l’équipe' : 'Message retiré') : esc(x.contenu)}</span>
             <span class="heure">${esc(heure(x.created_at))}</span>
             ${x.est_moi && !x.supprime ? `<button type="button" class="supprimer" data-retirer="${esc(x.id)}" aria-label="Retirer ce message">${icone('fermer')}</button>` : ''}
@@ -1189,11 +1385,26 @@
           e.preventDefault();
           const texte = zone.value.trim();
           if (!texte) return;
+          if (demandeEnCours && texte.includes('[à compléter]')) {
+            toast('Complétez d’abord les passages « [à compléter] ».', 'danger');
+            selectionnerACompleter(zone);
+            return;
+          }
           const bouton = form.querySelector('[type=submit]');
           bouton.disabled = true;
           try {
-            const rep = await api(`/apporteurs/portail/messagerie/${id}/messages`, { method: 'POST', body: { contenu: texte } });
+            const rep = await api(`/apporteurs/portail/messagerie/${id}/messages`, { method: 'POST',
+              body: demandeEnCours ? { contenu: texte, demande_badge: demandeEnCours } : { contenu: texte } });
             messages.push(rep.message);
+            if (rep.accuse) messages.push(rep.accuse);
+            if (demandeEnCours) {
+              toast(rep.relance ? 'Message ajouté à votre demande en cours.' : 'Demande envoyée. Suivez-la dans « Mes badges ».', 'succes');
+              demandeEnCours = null;
+              cache.moi = null;
+              const bandeau = $('.bandeau-demande', racine);
+              if (bandeau) bandeau.remove();
+              history.replaceState(null, '', `#/messages?c=${id}`);
+            }
             zone.value = ''; ajuster();
             dessinerFil(true);
             if (courante.type === 'salon') drapeaux.poser('presente');
@@ -1202,7 +1413,11 @@
           } catch (err) { toast(err.message, 'danger'); }
           finally { bouton.disabled = false; zone.focus(); }
         });
-        if (window.matchMedia('(min-width: 861px)').matches) zone.focus();
+        if (demandeAPreparer && courante.type === 'equipe') {
+          const badge = demandeAPreparer;
+          demandeAPreparer = null;
+          await installerDemande(form, zone, ajuster, badge);
+        } else if (window.matchMedia('(min-width: 861px)').matches) zone.focus();
       }
     }
 
@@ -1274,23 +1489,69 @@
 
   /* ------------------------------------------------------------- Programme */
 
-  vues.programme = async (contenu) => {
-    const m = await moi();
-    const parBadge = Object.fromEntries((m.badges || []).map((b) => [b.badge, b]));
-    entete('Le programme', 'Quatre badges cumulables, et les règles qui s’appliquent à chacun.');
+  /** Les étapes d'une demande, pour la frise de suivi. */
+  function etapesDemande(badge) {
+    return badge === 'partenaire_strategique'
+      ? [['demandee', 'Demande envoyée'], ['qualifiee', 'Badge activé']]
+      : [['demandee', 'Demande envoyée'], ['frais_regles', 'Frais réglés'], ['formation_planifiee', 'Formation planifiée'], ['qualifiee', 'Qualifié, badge activé']];
+  }
+
+  function friseDemande(b) {
+    const d = b.demande;
+    if (!d || ['refusee', 'annulee'].includes(d.statut)) return '';
+    const etapes = etapesDemande(b.badge);
+    const rang = b.statut === 'actif' ? etapes.length : Math.max(0, etapes.findIndex(([k]) => k === d.statut));
+    return `<ol class="frise">${etapes.map(([k, libelle], i) => {
+      const fait = i < rang || (i === rang && b.statut === 'actif') || (i === 0);
+      const courant = i === rang && b.statut !== 'actif';
+      let detail = '';
+      if (k === 'demandee') detail = dateLongue(d.created_at);
+      if (k === 'frais_regles' && d.frais_texte) detail = d.frais_regles_le ? `${d.frais_texte} · reçus` : `${d.frais_texte} à régler`;
+      if (k === 'formation_planifiee' && d.session) {
+        detail = `${new Date(d.session.debut).toLocaleString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`
+          + `${d.session.lieu ? ` · ${d.session.lieu}` : ''}${d.session.statut === 'tenue' ? ' · suivie' : ''}`;
+      }
+      return `<li class="${fait && !courant ? 'fait' : ''} ${courant ? 'courant' : ''}"><span class="frise-point">${fait && !courant ? icone('ok') : ''}</span>
+        <span><strong>${esc(libelle)}</strong>${detail ? `<small>${esc(detail)}</small>` : ''}</span></li>`;
+    }).join('')}</ol>`;
+  }
+
+  function carteBadge(b) {
+    const def = BADGES[b.badge] || { icone: '', libelle: b.libelle };
+    const actif = b.statut === 'actif';
+    const s = b.statut || 'non_detenu';
+    const ouvert = b.demande && ['demandee', 'frais_regles', 'formation_planifiee'].includes(b.demande.statut);
+    const f = b.formation;
+    return `<article class="carte badge-carte ${esc(s)}" id="badge-${esc(b.badge)}"><span class="badge-medaille" aria-hidden="true">${def.icone}</span>
+      <div class="badge-corps">
+        <div class="badge-tete"><h3>${esc(b.libelle)}</h3>
+          ${b.statut ? etiquette(b.statut) : '<span class="etiquette">Non détenu</span>'}</div>
+        <p class="muet petit">${esc(b.description)}</p>
+        <h4 class="badge-sous-titre">${actif ? 'Ce badge vous ouvre' : 'Ce badge ouvrirait'}</h4>
+        <ul class="fonctions">${b.fonctionnalites.map((x) => `<li class="${actif ? 'ouverte' : ''}">${icone(actif ? 'ok' : 'cadenas')}
+          <span><strong>${esc(x.libelle)}</strong><small>${esc(x.description)}</small></span>
+          ${actif && ROUTE_FONCTION[x.code] ? `<a class="petit" href="#/${ROUTE_FONCTION[x.code]}">Ouvrir</a>` : ''}</li>`).join('')}</ul>
+        ${f ? `<div class="formation-encart"><span>${icone('calendrier')}</span><div><strong>${esc(f.libelle)} : ${esc(f.montant_texte || 'montant communiqué par l’équipe')}</strong>
+          ${f.contenu ? `<small>${esc(f.contenu)}</small>` : ''}
+          <small>Qualification obligatoire avant activation : ${b.badge === 'configurateur' ? 'évaluation pratique' : 'session observée'} en fin de formation.</small></div></div>` : ''}
+        ${['suspendu', 'retire'].includes(b.statut) ? `<div class="alerte erreur">Badge ${b.statut === 'suspendu' ? 'suspendu' : 'retiré'}${b.motif ? ` : ${esc(b.motif)}` : ''}. Ses sections sont fermées ; ce que vous avez déjà gagné reste dans vos gains.</div>` : ''}
+        ${b.demande && b.demande.statut === 'refusee' ? `<div class="alerte info">Demande précédente non retenue${b.demande.motif ? ` : ${esc(b.demande.motif)}` : ''}.</div>` : ''}
+        ${ouvert || (actif && b.demande && b.demande.statut === 'qualifiee') ? friseDemande(b) : ''}
+        ${ouvert ? '<p class="petit muet">L’équipe vous écrit à chaque étape dans votre messagerie.</p>' : ''}
+        <div class="actions-ligne">
+          ${b.demandable ? `<a class="bouton principal petit" href="#/messages?equipe=1&demande=${esc(b.badge)}">${icone('envoyer')} Demander ce badge</a>` : ''}
+          ${ouvert ? `<a class="bouton secondaire petit" href="#/messages?equipe=1">${icone('messages')} Suivre ma demande</a>` : ''}
+          ${b.statut === 'suspendu' ? `<a class="bouton secondaire petit" href="#/messages?equipe=1">${icone('messages')} Écrire à l’équipe</a>` : ''}
+        </div>
+      </div></article>`;
+  }
+
+  vues.badges = async (contenu) => {
+    const etat = await api('/apporteurs/portail/badges');
+    if (etat.droits) appliquerDroits(etat.droits);
+    entete('Mes badges', 'Quatre badges cumulables : chacun ajoute ses propres sections à votre espace.');
     contenu.innerHTML = `
-      <section class="grille g-2">
-        ${Object.entries(BADGES).map(([cle, def]) => {
-          const b = parBadge[cle];
-          const s = b ? b.statut : 'non_detenu';
-          return `<article class="carte badge-carte ${esc(s)}"><span class="badge-medaille" aria-hidden="true">${def.icone}</span>
-            <div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px"><h3 style="margin:0">${esc(def.libelle)}</h3>
-              ${b ? etiquette(b.statut) : '<span class="etiquette">Non demandé</span>'}</div>
-              <p class="muet petit" style="margin:0">${esc(def.texte)}</p>
-              ${!b && cle !== 'apporteur_affaires' ? `<a class="petit" href="#/messages?equipe=1">Demander ce badge</a>` : ''}
-              ${b && b.statut === 'en_qualification' ? '<p class="petit" style="margin:6px 0 0">L’équipe vous contactera pour la qualification.</p>' : ''}</div></article>`;
-        }).join('')}
-      </section>
+      <section class="grille g-2">${etat.badges.map(carteBadge).join('')}</section>
       <section class="section grille g-principal">
         <div class="carte"><div class="carte-titre"><h3>Comment vous êtes rémunéré</h3></div>
           <div class="regles">
@@ -1312,6 +1573,255 @@
             <p style="margin-top:10px"><a href="/apporteurs/" target="_blank" rel="noopener">Conditions complètes du programme</a></p></div>
         </div>
       </section>`;
+  };
+
+  /* --------------------------------------------- Missions (configurateur, formateur) */
+
+  function modaleCompteRendu(mission, rafraichir) {
+    const cases = CHECKLISTS[mission.type] || [];
+    const { racine, fermer } = modale({
+      titre: 'Compte rendu de mission',
+      sousTitre: `${esc(mission.ecole_nom)}${mission.ville ? ` · ${esc(mission.ville)}` : ''} — ${esc(SERVICES[mission.service_code] || TYPES_MISSION[mission.type])}`,
+      large: true,
+      corps: `<form novalidate>
+        <fieldset class="liste-controle"><legend>Ce qui a été fait</legend>
+          ${cases.map(([cle, libelle]) => `<label class="case"><input type="checkbox" name="${esc(cle)}" /><span>${esc(libelle)}</span></label>`).join('')}
+        </fieldset>
+        <label class="champ"><span>Déroulement</span><textarea name="compte_rendu" maxlength="4000" required
+          placeholder="Date et heure, personnes présentes, ce qui a été fait, ce qui reste à faire, remarques de la direction…"></textarea></label>
+        <p class="muet petit">Après vérification, l’équipe enregistre la prestation : elle apparaît dans vos gains.</p>
+        <div class="modale-pied"><button type="button" class="bouton discret" data-fermer>Annuler</button>
+          <button type="submit" class="bouton principal">Envoyer le compte rendu</button></div>
+      </form>`
+    });
+    racine.querySelector('form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const f = e.currentTarget; const bouton = f.querySelector('[type=submit]');
+      if (f.compte_rendu.value.trim().length < 30) { toast('Décrivez l’intervention en quelques phrases.', 'danger'); return; }
+      const checklist = Object.fromEntries(cases.map(([cle]) => [cle, f[cle].checked]));
+      attente(bouton, true, 'Envoi…');
+      try {
+        const r = await api(`/apporteurs/portail/missions/${mission.id}/compte-rendu`, { method: 'POST', body: { compte_rendu: f.compte_rendu.value, checklist } });
+        toast(r.message, 'succes'); fermer(); rafraichir();
+      } catch (err) { toast(err.message, 'danger'); attente(bouton, false); }
+    });
+  }
+
+  function carteMission(m, mienne) {
+    const type = `${SERVICES[m.service_code] || TYPES_MISSION[m.type]}`;
+    const statut = mienne ? (m.mon_statut === 'retenu' ? m.statut : m.mon_statut) : (m.ma_candidature || 'ouverte');
+    const peutDesister = mienne && ['candidat', 'retenu'].includes(m.mon_statut) && ['ouverte', 'attribuee'].includes(m.statut);
+    const cases = m.checklist ? Object.values(m.checklist) : [];
+    return `<article class="carte mission">
+      <div class="mission-tete"><span class="stat-icone ${m.type === 'installation' ? '' : 'bleu'}">${icone(m.type === 'installation' ? 'outils' : 'livre')}</span>
+        <div><h3>${esc(m.ecole_nom)}</h3><p class="muet petit">${esc([m.ville, m.province].filter(Boolean).join(' · ') || 'Lieu à préciser')} · ${esc(type)}</p></div>
+        ${etiquette(statut)}</div>
+      <div class="mission-infos">
+        ${m.date_souhaitee ? `<span>${icone('calendrier')} Souhaitée le ${esc(dateLongue(m.date_souhaitee))}</span>` : ''}
+        ${m.pres_de_chez_vous ? `<span class="etiquette succes">Près de chez vous</span>` : ''}
+        ${!mienne && m.places > 1 ? `<span>${m.places} intervenants</span>` : ''}
+      </div>
+      ${m.description ? `<p class="petit">${esc(m.description)}</p>` : ''}
+      ${mienne && (m.contact_nom || m.contact_telephone) ? `<div class="alerte info">Contact à l’école : <strong>${esc([m.contact_nom, m.contact_telephone].filter(Boolean).join(' · '))}</strong></div>` : ''}
+      ${mienne && m.equipe && m.equipe.length ? `<p class="petit muet">Avec : ${esc(m.equipe.join(', '))}</p>` : ''}
+      ${mienne && m.compte_rendu ? `<details class="petit"><summary>Votre compte rendu (${cases.filter(Boolean).length}/${cases.length} points)</summary><p style="white-space:pre-wrap">${esc(m.compte_rendu)}</p></details>` : ''}
+      <div class="actions-ligne">
+        ${!mienne && !m.ma_candidature ? `<button type="button" class="bouton principal petit" data-proposer="${esc(m.id)}">${icone('envoyer')} Me proposer</button>` : ''}
+        ${!mienne && m.ma_candidature === 'desiste' ? `<button type="button" class="bouton secondaire petit" data-proposer="${esc(m.id)}">Me proposer à nouveau</button>` : ''}
+        ${mienne && m.mon_statut === 'retenu' && m.statut === 'attribuee' ? `<button type="button" class="bouton principal petit" data-compte-rendu="${esc(m.id)}">${icone('ok')} Envoyer le compte rendu</button>` : ''}
+        ${peutDesister ? `<button type="button" class="bouton discret petit" data-desister="${esc(m.id)}">Me retirer</button>` : ''}
+      </div></article>`;
+  }
+
+  vues.missions = async (contenu, params) => {
+    const d = await api('/apporteurs/portail/missions');
+    const types = d.types.map((x) => ({ installation: 'installations', formation: 'formations' })[x]).join(' et ');
+    entete('Missions', `Les ${types || 'missions'} commandées par les écoles, confiées aux partenaires qualifiés.`);
+    const aFaire = d.miennes.filter((m) => m.mon_statut === 'retenu' && m.statut === 'attribuee').length;
+    const onglet = params.onglet || (aFaire ? 'miennes' : 'ouvertes');
+    const liste = onglet === 'miennes' ? d.miennes : d.ouvertes;
+    contenu.innerHTML = `
+      <div class="onglets" role="tablist">
+        <button type="button" role="tab" aria-selected="${onglet === 'ouvertes'}" data-onglet="ouvertes">Ouvertes (${d.ouvertes.length})</button>
+        <button type="button" role="tab" aria-selected="${onglet === 'miennes'}" data-onglet="miennes">Mes missions (${d.miennes.length})${aFaire ? ` · ${aFaire} à faire` : ''}</button>
+      </div>
+      <section class="grille g-2 section">${liste.map((m) => carteMission(m, onglet === 'miennes')).join('')
+        || `<div style="grid-column:1/-1">${onglet === 'miennes'
+          ? etatVide('outils', 'Aucune mission pour l’instant', 'Proposez-vous sur une mission ouverte : l’équipe vous écrit quand elle vous la confie.')
+          : etatVide('outils', 'Aucune mission ouverte', 'Les installations et formations commandées par les écoles apparaissent ici dès leur publication.')}</div>`}</section>
+      <div class="carte section"><h3>Comment ça marche</h3><ol class="taches" style="list-style:decimal;padding-left:20px;gap:8px">
+        <li>Une école commande une prestation (${types || 'installation ou formation'}) : l’équipe publie la mission ici.</li>
+        <li>Vous vous proposez ; l’équipe vous la confie et vous transmet le contact de l’école.</li>
+        <li>Vous intervenez, puis envoyez votre compte rendu avec la liste de contrôle.</li>
+        <li>L’équipe vérifie et enregistre la prestation : votre rémunération apparaît dans vos gains.</li></ol></div>`;
+    $$('[data-onglet]', contenu).forEach((b) => b.addEventListener('click', () => { location.hash = `#/missions?onglet=${b.dataset.onglet}`; }));
+    $$('[data-proposer]', contenu).forEach((b) => b.addEventListener('click', async () => {
+      attente(b, true, 'Envoi…');
+      try { toast((await api(`/apporteurs/portail/missions/${b.dataset.proposer}/candidater`, { method: 'POST', body: {} })).message, 'succes'); rendre(); }
+      catch (err) { toast(err.message, 'danger'); attente(b, false); }
+    }));
+    $$('[data-desister]', contenu).forEach((b) => b.addEventListener('click', async () => {
+      if (!window.confirm('Vous retirer de cette mission ? Elle sera reproposée aux autres partenaires.')) return;
+      try { toast((await api(`/apporteurs/portail/missions/${b.dataset.desister}/desister`, { method: 'POST', body: {} })).message, 'succes'); rendre(); }
+      catch (err) { toast(err.message, 'danger'); }
+    }));
+    $$('[data-compte-rendu]', contenu).forEach((b) => b.addEventListener('click', () =>
+      modaleCompteRendu(d.miennes.find((m) => m.id === b.dataset.compteRendu), rendre)));
+  };
+
+  /* --------------------------------------------- Guides et outils (configurateur, formateur) */
+
+  const GUIDE_CONFIGURATION = [
+    ['Avant de partir', ['Recevoir de l’école : liste des classes (sections, options), cours et coefficients, système de notation, grille des frais, liste du personnel.',
+      'Une photo lisible d’un document manuscrit suffit : ne demandez pas de fichier Excel.']],
+    ['1. École et compte du Directeur', ['Vérifier le nom officiel, la ville, la devise de référence.', 'Remettre l’accès au Directeur en main propre.']],
+    ['2. Années scolaires et périodes', ['Trimestres ou semestres selon le cycle ; dates de début et de fin.']],
+    ['3. Sections, options, classes et cours', ['Chaque cours avec son coefficient : un coefficient oublié se remarque au premier bulletin.']],
+    ['4. Notation, mentions, seuils de promotion', ['Reprendre exactement le système de l’école.']],
+    ['5. Grille des frais', ['Frais par classe, échéances, devise ; vérifier un reçu de test.']],
+    ['6. Comptes du personnel', ['Un compte par personne, avec son rôle (préfet, secrétaire, comptable, titulaires, professeurs).']],
+    ['7. Vérification finale avec la direction', ['Parcourir chaque écran avec le Directeur, générer un bulletin d’essai, noter ce qui reste.']],
+    ['Ce qui n’est pas compris', ['La saisie des élèves un par un (campagne de capture) et la formation du personnel : ce sont d’autres prestations.']]
+  ];
+  const DEROULES_FORMATION = [
+    ['Formation express', 'Les gestes quotidiens : connexion et rôle de chacun, saisie des notes et des travaux, appel et présences, un bulletin de bout en bout, questions-réponses.'],
+    ['Formation complète', 'Tout l’express, puis : dossiers élèves, inscriptions et sorties, bulletins de période, de semestre et annuels, frais, paiements et reçus, clôture de période et fin d’année, cas particuliers. Support écrit remis à l’équipe.'],
+    ['Formation personnalisée', 'Tout le complet, bâti sur les circuits de l’école (qui saisit, valide, encaisse, signe) : étude préalable, sessions séparées par profil, exercices sur ses propres données, fiches de procédure à ses noms de rôles, séance de suivi à distance.']
+  ];
+
+  function imprimer(titre, corpsHtml) {
+    const w = window.open('', '_blank');
+    if (!w) { toast('Autorisez les fenêtres pour imprimer.', 'danger'); return; }
+    w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>${esc(titre)}</title>
+      <style>body{font-family:Arial,sans-serif;margin:28px;color:#111}h1{font-size:18px}table{width:100%;border-collapse:collapse;margin-top:12px}
+      th,td{border:1px solid #444;padding:8px;font-size:12px;text-align:left;height:22px}p{font-size:12px}</style></head>
+      <body>${corpsHtml}<script>window.onload=function(){window.print()}<\/script></body></html>`);
+    w.document.close();
+  }
+
+  vues.ressources = async (contenu) => {
+    const m = await moi();
+    const f = (m.droits && m.droits.fonctionnalites) || [];
+    entete('Guides et outils', 'Ce qu’il vous faut sur le terrain, selon vos badges.');
+    let coches = {};
+    try { coches = JSON.parse(localStorage.getItem('ardoise.ap.guide') || '{}'); } catch (e) { coches = {}; }
+    contenu.innerHTML = `<section class="grille g-principal">
+      ${f.includes('guide_configuration') ? `<div class="carte"><div class="carte-titre"><h3>${icone('outils')} Guide du configurateur</h3>
+          <button type="button" class="bouton discret petit" data-reinitialiser>Tout décocher</button></div>
+        <p class="muet petit">Les sept opérations d’une installation complète, à cocher pendant l’intervention (gardé sur cet appareil).</p>
+        <div class="guide">${GUIDE_CONFIGURATION.map(([titre, points], i) => `<div class="guide-etape">
+          <label class="case"><input type="checkbox" data-guide="${i}" ${coches[i] ? 'checked' : ''} /><strong>${esc(titre)}</strong></label>
+          <ul>${points.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></div>`).join('')}</div></div>` : ''}
+      ${f.includes('kit_formateur') ? `<div class="carte"><div class="carte-titre"><h3>${icone('livre')} Kit du formateur</h3></div>
+        <div class="pile">${DEROULES_FORMATION.map(([t2, x]) => `<div><h4 style="margin:0 0 4px">${esc(t2)}</h4><p class="petit" style="margin:0">${esc(x)}</p></div>`).join('')}</div>
+        <div class="actions-ligne" style="margin-top:14px">
+          <button type="button" class="bouton secondaire petit" data-emargement>${icone('telecharger')} Fiche d’émargement</button>
+          <button type="button" class="bouton secondaire petit" data-evaluation>${icone('telecharger')} Évaluation des participants</button></div></div>` : ''}
+    </section>`;
+    $$('[data-guide]', contenu).forEach((c) => c.addEventListener('change', () => {
+      coches[c.dataset.guide] = c.checked;
+      try { localStorage.setItem('ardoise.ap.guide', JSON.stringify(coches)); } catch (e) { /* */ }
+    }));
+    const raz = $('[data-reinitialiser]', contenu);
+    if (raz) raz.addEventListener('click', () => { coches = {}; try { localStorage.removeItem('ardoise.ap.guide'); } catch (e) { /* */ } rendre(); });
+    const nom = [m.profil.prenom, m.profil.nom].filter(Boolean).join(' ');
+    const lignes = (n, cols) => Array.from({ length: n }, (_, i) => `<tr><td>${i + 1}</td>${cols.map(() => '<td></td>').join('')}</tr>`).join('');
+    const em = $('[data-emargement]', contenu);
+    if (em) em.addEventListener('click', () => imprimer('Fiche d’émargement', `<h1>Formation Ardoise — fiche d’émargement</h1>
+      <p>École : ______________________ &nbsp; Date : ____/____/______ &nbsp; Formule : express / complète / personnalisée</p>
+      <p>Formateur : ${esc(nom)}</p><table><tr><th>#</th><th>Nom et prénom</th><th>Fonction</th><th>Téléphone</th><th>Signature</th></tr>${lignes(15, [1, 2, 3, 4])}</table>`));
+    const ev = $('[data-evaluation]', contenu);
+    if (ev) ev.addEventListener('click', () => imprimer('Évaluation des participants', `<h1>Formation Ardoise — évaluation</h1>
+      <p>École : ______________________ &nbsp; Date : ____/____/______ &nbsp; Formateur : ${esc(nom)}</p>
+      <table><tr><th>#</th><th>Participant</th><th>Se connecte seul</th><th>Saisit des notes</th><th>Fait l’appel</th><th>Génère un bulletin</th><th>Remarques</th></tr>${lignes(15, [1, 2, 3, 4, 5, 6])}</table>`));
+  };
+
+  /* --------------------------------------------- Campagnes (partenaire stratégique) */
+
+  function modaleCampagne(partenariats, rafraichir) {
+    const auj = new Date().toISOString().slice(0, 10);
+    const { racine, fermer } = modale({
+      titre: 'Déclarer une campagne',
+      sousTitre: 'Avant sa diffusion (ou au plus tard 7 jours après) : c’est ce qui permet de rattacher les écoles qu’elle amènera.',
+      large: true,
+      corps: `<form novalidate>
+        <label class="champ"><span>L’annonce, telle qu’une école la reconnaîtra</span>
+          <input name="nom_public" maxlength="200" required placeholder="ex. Communiqué de la Fédération des écoles conventionnées du 12 novembre" /></label>
+        <div class="duo">
+          <label class="champ"><span>Canal</span><select name="canal">${Object.entries(CANAUX).map(([k, l]) => `<option value="${k}">${esc(l)}</option>`).join('')}</select></label>
+          <label class="champ"><span>Date de diffusion</span><input type="date" name="date_diffusion" value="${auj}" required /></label>
+        </div>
+        <label class="champ"><span>Zone <em>(villes ou provinces, séparées par des virgules ; vide = tout le pays)</em></span>
+          <input name="zones" maxlength="600" placeholder="ex. Kananga, Kasaï-Central" /></label>
+        <label class="champ"><span>Public visé <em>(facultatif)</em></span><input name="public_vise" maxlength="500" placeholder="ex. écoles conventionnées catholiques du diocèse" /></label>
+        <label class="champ"><span>Preuve de diffusion <em>(lien, référence ; facultatif si elle est à venir)</em></span><input name="preuve_diffusion" maxlength="1000" /></label>
+        ${partenariats.length ? `<label class="champ"><span>Dans le cadre du partenariat</span><select name="partenariat_id"><option value="">Aucun</option>
+          ${partenariats.filter((p) => p.statut === 'actif').map((p) => `<option value="${esc(p.id)}">${esc(p.nom)}</option>`).join('')}</select></label>` : ''}
+        <div class="modale-pied"><button type="button" class="bouton discret" data-fermer>Annuler</button>
+          <button type="submit" class="bouton principal">Envoyer à l’équipe</button></div>
+      </form>`
+    });
+    racine.querySelector('form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const f = e.currentTarget; const bouton = f.querySelector('[type=submit]');
+      const corps = Object.fromEntries(new FormData(f).entries());
+      if (String(corps.nom_public).trim().length < 8) { toast('Décrivez l’annonce telle qu’une école la reconnaîtra.', 'danger'); return; }
+      attente(bouton, true, 'Envoi…');
+      try { const r = await api('/apporteurs/portail/campagnes', { method: 'POST', body: corps }); toast(r.message, 'succes'); fermer(); rafraichir(); }
+      catch (err) { toast(err.message, 'danger'); attente(bouton, false); }
+    });
+  }
+
+  function carteCampagne(k) {
+    const p = k.presomptions || {};
+    const attribuees = k.ecoles.filter((x) => x.statut === 'validee').length;
+    const commissions = {};
+    k.ecoles.forEach((x) => Object.entries(x.commissions || {}).forEach(([dev, v]) => { commissions[dev] = (commissions[dev] || 0) + Number(v); }));
+    return `<article class="carte campagne">
+      <div class="mission-tete"><span class="stat-icone">${icone('megaphone')}</span>
+        <div><h3>${esc(k.nom_public)}</h3><p class="muet petit">${esc(CANAUX[k.canal] || k.canal)} · diffusion le ${esc(dateLongue(k.date_diffusion))}${k.partenariat_nom ? ` · ${esc(k.partenariat_nom)}` : ''}</p></div>
+        ${k.statut === 'proposee' ? etiquette('proposee', 'En attente') : etiquette(k.statut)}</div>
+      ${k.statut === 'proposee' ? '<div class="alerte info">En attente de validation : l’équipe vous écrit avec le code à citer dans votre annonce.</div>' : ''}
+      ${k.statut === 'rejetee' ? `<div class="alerte erreur">Non retenue${k.motif ? ` : ${esc(k.motif)}` : ''}.</div>` : ''}
+      ${k.code ? `<div class="lien-champ"><code>${esc(k.code)}</code><button type="button" class="bouton secondaire petit" data-copier="${esc(k.phrase)}">${icone('copier')} Copier la phrase</button></div>
+        <p class="muet petit" style="margin:6px 0 0">« ${esc(k.phrase)} »</p>` : ''}
+      ${k.code ? `<p class="petit muet">Fenêtre : jusqu’au ${esc(dateLongue(k.date_fin_fenetre))} · zone : ${esc((k.zones || []).join(', ') || 'tout le pays')}</p>` : ''}
+      ${k.statut !== 'proposee' && k.statut !== 'rejetee' ? `<div class="chiffres-campagne">
+        <div><strong>${k.visites}</strong><small>visites du lien</small></div>
+        <div><strong>${k.inscriptions_code}</strong><small>inscrites avec le code</small></div>
+        <div><strong>${(p.a_confirmer || 0) + (p.expiree || 0)}</strong><small>à confirmer par l’école</small></div>
+        <div><strong>${p.confirmee || 0}</strong><small>confirmées par l’école</small></div>
+        <div><strong>${attribuees}</strong><small>école(s) attribuée(s)</small></div>
+        <div><strong>${esc(montants(commissions))}</strong><small>commissions</small></div></div>` : ''}
+      ${k.ecoles.length ? `<details class="petit"><summary>Écoles rattachées (${k.ecoles.length})</summary><ul class="activite">${k.ecoles.map((x) => `<li><span class="pastille-type t-attribution">${icone('ecole')}</span>
+        <div><p><strong>${esc(x.ecole_nom)}</strong></p><small>${esc(x.ecole_ville || '')} · ${esc(LIBELLES[x.source] || x.source)}</small></div>${etiquette(x.statut)}</li>`).join('')}</ul></details>` : ''}
+    </article>`;
+  }
+
+  vues.campagnes = async (contenu) => {
+    const d = await api('/apporteurs/portail/campagnes');
+    entete('Campagnes', 'Faites connaître Ardoise à grande échelle, et retrouvez chaque école que votre annonce amène.',
+      `<button type="button" class="bouton principal" data-nouvelle>${icone('plus')} Déclarer une campagne</button>`);
+    contenu.innerHTML = `
+      <section class="carte mecanisme"><h3>Comment vos écoles vous sont rattachées</h3>
+        <div class="grille g-3">
+          <div><span class="numero">1</span><h4>Déclarez avant de diffuser</h4><p class="petit">Votre campagne reçoit un code dédié et une zone. Citez le code dans votre communiqué, votre émission ou votre réunion.</p></div>
+          <div><span class="numero">2</span><h4>Avec le code : direct</h4><p class="petit">Une école qui saisit le code (ou ouvre votre lien) vous est rattachée dès son inscription, comme pour un apporteur.</p></div>
+          <div><span class="numero">3</span><h4>Sans le code : l’école confirme</h4><p class="petit">Une école de votre zone qui s’inscrit dans la fenêtre de la campagne et dit avoir connu Ardoise par une annonce reçoit une question : « était-ce cette annonce ? ». Si elle répond oui, elle vous est rattachée.</p></div>
+        </div>
+        <p class="muet petit" style="margin:12px 0 0">Chaque rattachement est ensuite validé par l’équipe ; votre commission porte sur les paiements réellement encaissés, aux conditions du programme. Une école inscrite avec le code d’un autre partenaire, ou déjà cliente, ne peut pas vous être attribuée.</p>
+      </section>
+      <section class="grille g-2 section">${d.campagnes.map(carteCampagne).join('')
+        || `<div style="grid-column:1/-1">${etatVide('megaphone', 'Aucune campagne', 'Déclarez votre première annonce avant sa diffusion : son code vous sera envoyé dès sa validation.',
+          '<button type="button" class="bouton principal" data-nouvelle>Déclarer une campagne</button>')}</div>`}</section>
+      ${d.partenariats.length ? `<section class="section"><div class="section-titre"><h2>Vos partenariats</h2></div><div class="grille g-2">
+        ${d.partenariats.map((p) => `<div class="carte"><div class="carte-titre"><h3>${esc(p.nom)}</h3>${etiquette(p.statut === 'actif' ? 'actif' : p.statut)}</div>
+          ${p.description ? `<p class="petit">${esc(p.description)}</p>` : ''}
+          <p class="petit"><strong>${p.ecoles_validees}</strong> école(s) attribuée(s)${p.ecoles_en_verification ? ` · ${p.ecoles_en_verification} en vérification` : ''}</p>
+          ${(p.codes || []).map((c) => `<div class="lien-champ"><code>${esc(c.code)}</code>${c.actif ? `<button type="button" class="bouton secondaire petit" data-copier="${esc(c.lien)}">${icone('copier')} Lien</button>` : '<span class="etiquette">Désactivé</span>'}</div>`).join('')}
+        </div>`).join('')}</div></section>` : ''}`;
+    $$('[data-nouvelle]').forEach((b) => b.addEventListener('click', () => modaleCampagne(d.partenariats, rendre)));
+    $$('[data-copier]', contenu).forEach((b) => b.addEventListener('click', () => copier(b.dataset.copier, 'Copié.')));
   };
 
   /* ------------------------------------------------------------------ Profil */

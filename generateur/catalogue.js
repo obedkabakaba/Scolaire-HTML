@@ -443,6 +443,29 @@
     afficher(nombre ? nombre.value : 300);
   }
 
+  /* ------------------------------------- Accord sur la confidentialité
+
+     Inscription, essai, demande d'accompagnement et « Écrivez-nous » portent
+     une case « J'accepte la politique de confidentialité ». L'attribut
+     `required` ne joue pas : ces formulaires sont en `novalidate` pour parler
+     avec nos propres mots. La vérification est donc faite ici, avant tout
+     envoi — et refaite par le serveur, qui refuse une demande sans accord.
+
+     La version est celle de la politique affichée (« Dernière mise à jour ») :
+     à changer en même temps que confidentialite.html. */
+
+  var VERSION_CONFIDENTIALITE = '2026-10';
+  var MESSAGE_ACCORD = 'Cochez la case d\u2019accord sur la politique de confidentialité pour continuer.';
+
+  function accordConfidentialite(form, donnees) {
+    var c = form.querySelector('input[name="consentement"]');
+    if (!c) return true;
+    if (!c.checked) { c.focus(); return false; }
+    donnees.consentement = true;
+    donnees.version_confidentialite = VERSION_CONFIDENTIALITE;
+    return true;
+  }
+
   /* ------------------------------------------------- Formulaire de contact */
 
   function brancherFormulaireContact(racine) {
@@ -458,6 +481,13 @@
         form.querySelectorAll('input[name="services_souhaites"]:checked')
       ).map(function (c) { return c.value; });
       delete donnees['services_souhaites[]'];
+
+      if (!accordConfidentialite(form, donnees)) {
+        retour.hidden = false;
+        retour.className = 'message-retour erreur';
+        retour.textContent = MESSAGE_ACCORD;
+        return;
+      }
 
       bouton.disabled = true;
       var texteInitial = bouton.textContent;
@@ -520,6 +550,12 @@
         retour.className = 'message-retour erreur';
         retour.textContent = 'Indiquez au moins une adresse e-mail ou un numéro '
           + 'de téléphone, sinon nous ne pourrons pas vous répondre.';
+        return;
+      }
+      if (!accordConfidentialite(form, donnees)) {
+        retour.hidden = false;
+        retour.className = 'message-retour erreur';
+        retour.textContent = MESSAGE_ACCORD;
         return;
       }
 
@@ -694,6 +730,10 @@
 
       var donnees = Object.fromEntries(new FormData(form).entries());
       if (!String(donnees.code_referencement || '').trim()) delete donnees.code_referencement;
+      if (!accordConfidentialite(form, donnees)) {
+        afficher('erreur', MESSAGE_ACCORD, { href: '/confidentialite.html', texte: 'Lire la politique' });
+        return;
+      }
 
       bouton.disabled = true;
       var texteInitial = bouton.textContent;

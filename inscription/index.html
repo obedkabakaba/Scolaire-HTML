@@ -34,7 +34,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="preconnect" href="https://scolaire-saas-backend.onrender.com" />
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="/site.css?v=20260812-3" />
+<link rel="stylesheet" href="/site.css?v=20261015-1" />
 
 </head>
 
@@ -303,14 +303,17 @@
         <p class="aide">Au moins 8 caractères. C'est celui qui vous servira à vous connecter.</p>
       </div>
 
+      <label class="case case-accord">
+        <input type="checkbox" name="consentement" value="true" required />
+        <span>J'ai lu et j'accepte la <a href="/confidentialite.html" target="_blank" rel="noopener">politique de confidentialité</a> d'Ardoise. *</span>
+      </label>
+
       <div class="message-retour" data-retour hidden></div>
 
       <button type="submit" class="bouton ocre pleine-largeur">
         M'inscrire et recevoir mon lien de validation
       </button>
       <p class="aide">
-        En vous inscrivant, vous acceptez notre
-        <a href="/confidentialite.html">politique de confidentialité</a>.
         Vous avez déjà un compte ? <a href="/connexion.html">Se connecter</a>.
         Vous préférez d'abord essayer ? <a href="/essai/">Essai gratuit</a> — c'est le même accès.
       </p>
@@ -409,7 +412,7 @@
   </div>
 </footer>
 
-<script src="/catalogue.js?v=20261014-2" defer></script>
+<script src="/catalogue.js?v=20261015-1" defer></script>
 <script src="/nav.js?v=20260812-3" defer></script>
 <script>
 /* Préremplit l'offre ou le service quand on arrive depuis /tarifs/ ou /services/

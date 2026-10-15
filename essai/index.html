@@ -296,6 +296,28 @@
         saisissez son code : il nous permet de la reconnaître. Il ne change rien à votre essai.</p>
       </div>
 
+      <div class="duo">
+        <div>
+          <label for="source_connaissance">Comment avez-vous connu Ardoise ? (facultatif)</label>
+          <select id="source_connaissance" name="source_connaissance">
+            <option value="">— Choisir —</option>
+            <option value="recommandation">Une personne me l’a recommandée</option>
+            <option value="communique_officiel">Un communiqué ou une annonce officielle</option>
+            <option value="reseaux_sociaux">Les réseaux sociaux (WhatsApp, Facebook…)</option>
+            <option value="radio_tv">La radio ou la télévision</option>
+            <option value="evenement">Une réunion, un atelier, un événement</option>
+            <option value="presse">La presse écrite</option>
+            <option value="recherche">Une recherche sur internet</option>
+            <option value="autre">Autre</option>
+          </select>
+        </div>
+        <div>
+          <label for="source_precision">Précisez si vous le souhaitez</label>
+          <input type="text" id="source_precision" name="source_precision" maxlength="300"
+                 placeholder="ex. le communiqué de la fédération, le nom de la personne" />
+        </div>
+      </div>
+
       <div>
         <label for="mot_de_passe">Mot de passe *</label>
         <input type="password" id="mot_de_passe" name="mot_de_passe" required

@@ -44,7 +44,7 @@
     if (t === 'clair' || t === 'sombre') document.documentElement.setAttribute('data-theme', t);
   })();
 </script>
-<link rel="stylesheet" href="espace-apporteur.css?v=20261015" />
+<link rel="stylesheet" href="espace-apporteur.css?v=20261016" />
 </head>
 <body>
 
@@ -80,6 +80,10 @@
   <symbol id="i-cible" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></symbol>
   <symbol id="i-oeil" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
   <symbol id="i-poubelle" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></symbol>
+  <symbol id="i-outils" viewBox="0 0 24 24"><path d="M14.5 6.5a4 4 0 0 0-5.3 5.3L3.5 17.5l3 3 5.7-5.7a4 4 0 0 0 5.3-5.3l-2.6 2.6-2.4-.6-.6-2.4z"/></symbol>
+  <symbol id="i-livre" viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM4 21V5M19 19v2H6"/></symbol>
+  <symbol id="i-megaphone" viewBox="0 0 24 24"><path d="M3 10v4h3l8 4V6L6 10zM17 9a4 4 0 0 1 0 6M6 14l1 5h3l-1-4"/></symbol>
+  <symbol id="i-cadenas" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
 </svg>
 
 <!-- =====================================================================
@@ -203,12 +207,17 @@
     <a class="rail-logo" href="#/accueil">Ardoise<span>Partenaires</span></a>
     <ul class="rail-menu">
       <li><a href="#/accueil" data-route="accueil"><svg><use href="#i-accueil"/></svg><span>Accueil</span></a></li>
-      <li><a href="#/prospects" data-route="prospects"><svg><use href="#i-prospects"/></svg><span>Prospects</span></a></li>
+      <!-- Les entrées marquées data-exige n'apparaissent qu'avec le badge actif
+           qui les ouvre (liste fournie par le serveur : /portail/moi → droits). -->
+      <li data-exige="prospects" hidden><a href="#/prospects" data-route="prospects"><svg><use href="#i-prospects"/></svg><span>Prospects</span></a></li>
+      <li data-exige="kit" hidden><a href="#/kit" data-route="kit"><svg><use href="#i-partage"/></svg><span>Kit de partage</span></a></li>
+      <li data-exige="missions" hidden><a href="#/missions" data-route="missions"><svg><use href="#i-outils"/></svg><span>Missions</span></a></li>
+      <li data-exige="ressources" hidden><a href="#/ressources" data-route="ressources"><svg><use href="#i-livre"/></svg><span>Guides et outils</span></a></li>
+      <li data-exige="campagnes" hidden><a href="#/campagnes" data-route="campagnes"><svg><use href="#i-megaphone"/></svg><span>Campagnes</span></a></li>
       <li><a href="#/ecoles" data-route="ecoles"><svg><use href="#i-ecole"/></svg><span>Mes écoles</span></a></li>
       <li><a href="#/gains" data-route="gains"><svg><use href="#i-gains"/></svg><span>Gains</span></a></li>
-      <li><a href="#/kit" data-route="kit"><svg><use href="#i-partage"/></svg><span>Kit de partage</span></a></li>
       <li><a href="#/messages" data-route="messages"><svg><use href="#i-messages"/></svg><span>Messages</span><b class="pastille" data-non-lus hidden></b></a></li>
-      <li><a href="#/programme" data-route="programme"><svg><use href="#i-programme"/></svg><span>Programme</span></a></li>
+      <li><a href="#/badges" data-route="badges"><svg><use href="#i-programme"/></svg><span>Mes badges</span></a></li>
       <li><a href="#/profil" data-route="profil"><svg><use href="#i-profil"/></svg><span>Profil</span></a></li>
     </ul>
     <div class="rail-pied">
@@ -234,18 +243,19 @@
     <main id="contenu" class="contenu" tabindex="-1"></main>
   </div>
 
-  <nav class="onglets-bas" aria-label="Navigation rapide">
+  <!-- Recomposée selon les badges actifs (voir dessinerOngletsBas). -->
+  <nav class="onglets-bas" id="onglets-bas" aria-label="Navigation rapide">
     <a href="#/accueil" data-route="accueil"><svg><use href="#i-accueil"/></svg><span>Accueil</span></a>
-    <a href="#/prospects" data-route="prospects"><svg><use href="#i-prospects"/></svg><span>Prospects</span></a>
-    <a href="#/kit" data-route="kit"><svg><use href="#i-partage"/></svg><span>Partager</span></a>
+    <a href="#/ecoles" data-route="ecoles"><svg><use href="#i-ecole"/></svg><span>Écoles</span></a>
     <a href="#/messages" data-route="messages"><svg><use href="#i-messages"/></svg><span>Messages</span><b class="pastille" data-non-lus hidden></b></a>
     <a href="#/gains" data-route="gains"><svg><use href="#i-gains"/></svg><span>Gains</span></a>
+    <a href="#/badges" data-route="badges"><svg><use href="#i-programme"/></svg><span>Badges</span></a>
   </nav>
   <div class="voile" id="voile" hidden></div>
 </div>
 
 <div id="toasts" class="toasts" aria-live="polite"></div>
 
-<script src="espace-apporteur.js?v=20261015"></script>
+<script src="espace-apporteur.js?v=20261016"></script>
 </body>
 </html>

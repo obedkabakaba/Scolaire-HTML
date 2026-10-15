@@ -628,6 +628,82 @@ details.objection p { margin: 8px 0 0; font-size: .88rem; color: var(--texte-2);
 .regle p { margin: 0; font-size: .9rem; color: var(--texte-2); }
 .regle h4 { margin: 0 0 3px; font-size: .95rem; }
 
+/* ----------------------------------------------- Badges : ce qu'ils ouvrent */
+
+.rail-menu li[hidden] { display: none; }
+.badge-corps { min-width: 0; display: grid; gap: 8px; }
+.badge-corps > p { margin: 0; }
+.badge-tete { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.badge-tete h3 { margin: 0; }
+.badge-sous-titre { margin: 6px 0 0; font-size: .74rem; text-transform: uppercase; letter-spacing: .06em; color: var(--texte-3); }
+.fonctions { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.fonctions li { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 8px; align-items: start; padding: 8px 10px; border-radius: 12px; background: var(--surface-2); }
+.fonctions li svg { width: 16px; height: 16px; margin-top: 2px; color: var(--texte-3); fill: none; stroke: currentColor; stroke-width: 2; }
+.fonctions li.ouverte svg { color: var(--vert); }
+.fonctions li strong { display: block; font-size: .86rem; }
+.fonctions li small { display: block; color: var(--texte-2); font-size: .78rem; line-height: 1.4; }
+.formation-encart { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 8px; padding: 10px 12px; border-radius: 12px; border: 1px dashed var(--bordure-2); }
+.formation-encart svg { width: 18px; height: 18px; fill: none; stroke: var(--accent); stroke-width: 2; }
+.formation-encart small { display: block; color: var(--texte-2); font-size: .78rem; margin-top: 2px; }
+.actions-ligne { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.actions-ligne:empty { display: none; }
+.frise { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 0; }
+.frise li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; position: relative; padding-bottom: 10px; color: var(--texte-3); }
+.frise li:not(:last-child)::before { content: ""; position: absolute; left: 10px; top: 22px; bottom: 0; width: 2px; background: var(--bordure); }
+.frise li.fait::before { background: var(--vert); }
+.frise-point { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--bordure-2); background: var(--surface); display: grid; place-items: center; }
+.frise-point svg { width: 12px; height: 12px; fill: none; stroke: #fff; stroke-width: 3; }
+.frise li.fait { color: var(--texte); }
+.frise li.fait .frise-point { background: var(--vert); border-color: var(--vert); }
+.frise li.courant { color: var(--texte); }
+.frise li.courant .frise-point { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-doux); }
+.frise strong { display: block; font-size: .86rem; }
+.frise small { display: block; font-size: .76rem; color: var(--texte-2); }
+.puces-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+.raccourcis { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; margin-top: 12px; }
+.raccourci { display: flex; gap: 8px; align-items: center; padding: 10px; border-radius: 12px; background: var(--surface-2); text-decoration: none; color: var(--texte) !important; font-size: .84rem; font-weight: 600; }
+.raccourci:hover { background: var(--accent-doux); }
+.raccourci svg { width: 18px; height: 18px; fill: none; stroke: var(--accent); stroke-width: 2; flex: none; }
+.section-fermee { max-width: 640px; margin: 24px auto; text-align: center; display: grid; gap: 12px; justify-items: center; }
+.section-fermee .vide-icone { width: 56px; height: 56px; border-radius: 16px; display: grid; place-items: center; background: var(--surface-3); }
+.section-fermee .vide-icone svg { width: 26px; height: 26px; fill: none; stroke: var(--texte-2); stroke-width: 2; }
+.section-fermee ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; text-align: left; }
+.section-fermee p { margin: 0; }
+
+/* Messagerie : demande préremplie et messages porteurs d'une action */
+.bandeau-demande { display: flex; gap: 12px; align-items: flex-start; justify-content: space-between; padding: 10px 14px; background: var(--accent-doux); border-top: 1px solid var(--bordure); font-size: .84rem; }
+.bandeau-demande small { display: block; color: var(--texte-2); margin-top: 2px; }
+.bandeau-demande mark { background: var(--surface); padding: 0 3px; border-radius: 4px; }
+.puce-meta { display: inline-block; margin-bottom: 4px; padding: 2px 8px; border-radius: 999px; font-size: .7rem; font-weight: 700; background: rgba(0, 0, 0, .08); }
+.bulle-ligne.moi .puce-meta, .bulle-ligne.equipe .puce-meta { background: rgba(255, 255, 255, .18); }
+
+/* Missions, guides, campagnes */
+.mission, .campagne { display: grid; gap: 10px; align-content: start; }
+.mission-tete { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: start; }
+.mission-tete h3 { margin: 0; }
+.mission-tete p { margin: 2px 0 0; }
+.mission-infos { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; font-size: .8rem; color: var(--texte-2); }
+.mission-infos > span { display: inline-flex; gap: 4px; align-items: center; }
+.mission-infos svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; }
+.mission p, .campagne p { margin: 0; }
+.liste-controle { border: 1px solid var(--bordure); border-radius: 12px; padding: 10px 14px; margin: 0 0 14px; display: grid; gap: 6px; }
+.liste-controle legend { font-weight: 700; font-size: .85rem; padding: 0 4px; }
+.guide { display: grid; gap: 10px; }
+.guide-etape { padding: 10px 12px; border-radius: 12px; background: var(--surface-2); }
+.guide-etape ul { margin: 6px 0 0 30px; padding: 0; font-size: .84rem; color: var(--texte-2); }
+.chiffres-campagne { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.chiffres-campagne div { padding: 8px 10px; border-radius: 12px; background: var(--surface-2); }
+.chiffres-campagne strong { display: block; font-family: var(--titre); font-size: 1.15rem; }
+.chiffres-campagne small { color: var(--texte-2); font-size: .74rem; }
+.mecanisme h4 { margin: 6px 0 4px; }
+.mecanisme p { margin: 0; }
+.numero { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: #fff; font-weight: 700; font-size: .85rem; }
+@media (max-width: 860px) {
+  .chiffres-campagne { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mission-tete { grid-template-columns: auto minmax(0, 1fr); }
+  .mission-tete .etiquette { grid-column: 2; justify-self: start; }
+}
+
 /* --------------------------------------------------------------- Modale */
 
 .modale-fond { position: fixed; inset: 0; z-index: 60; background: rgba(10, 15, 12, .5); display: grid; place-items: center; padding: 16px; animation: apparaitre .15s ease; }

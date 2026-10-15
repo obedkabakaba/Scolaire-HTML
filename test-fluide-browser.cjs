@@ -96,6 +96,10 @@ const server=http.createServer((req,res)=>{
    await page.evaluate(()=>{document.querySelectorAll('.mise-en-page').forEach(e=>e.style.display='grid');document.querySelectorAll('#ecran-chargement').forEach(e=>e.style.display='none');});
    for(const width of [1536,1024,390]){
      await page.setViewportSize({width,height:1000});await page.waitForTimeout(80);
+     // Juste après un redimensionnement, Chromium réévalue parfois les media queries avec retard :
+     // la page garde un instant la marge du rail de bureau à 390 px, puis se corrige seule.
+     // On attend que la mise en page se stabilise ; un débordement réel reste au-delà de 1,5 s et est signalé.
+     await page.waitForFunction(()=>document.documentElement.scrollWidth-innerWidth<=2,null,{timeout:1500}).catch(()=>{});
      const state=await page.evaluate(()=>({workspace:!!document.querySelector('.fl-banner'),overflow:document.documentElement.scrollWidth-innerWidth}));
      if(!state.workspace||state.overflow>2)failures.push({name,width,...state,culprits:await page.evaluate(()=>Array.from(document.querySelectorAll('main *')).filter(n=>n.getBoundingClientRect().right>innerWidth+2).slice(0,8).map(n=>({tag:n.tagName,cls:n.className,right:n.getBoundingClientRect().right})))});
      if(process.env.FLUIDE_SHOT&&width===1536&&['classes','inscriptions'].includes(name))await page.screenshot({path:process.env.FLUIDE_SHOT.replace('.png','-'+name+'.png')});

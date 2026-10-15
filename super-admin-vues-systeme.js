@@ -875,7 +875,9 @@
           { cle: 'niveau', titre: 'Niveau', rendu: (l) => ui.badgeStatut(l.niveau) },
           { cle: 'cible', titre: 'Cible', rendu: (l) => esc(l.ecole_nom || (l.cible === 'toutes' ? 'Toutes les écoles' : l.cible)) },
           { cle: 'statut', titre: 'Statut', rendu: (l) => ui.badgeStatut(l.statut) },
+          { cle: 'canal', titre: 'Canal', rendu: (l) => esc(LIBELLES_CANAL[l.canal] || l.canal || '—') },
           { cle: 'nb_destinataires', titre: 'Destinataires', classe: 'sa-num', rendu: (l) => fmt.nombre(l.nb_destinataires) },
+          { cle: 'emails', titre: 'E-mails', rendu: bilanEmails },
           { cle: 'cree_par_nom', titre: 'Émise par' }
         ],
         lignes: d.donnees,
@@ -886,10 +888,29 @@
     }
   });
 
+  const LIBELLES_CANAL = {
+    interne: 'Notification',
+    interne_email: 'Notification + e-mail',
+    email: 'E-mail seul'
+  };
+
+  /* Sort réel des e-mails, lu par le serveur dans la file d'envoi : « publiée »
+     ne veut pas dire « reçue ». « Sans adresse » = personnes visées qu'aucun
+     e-mail ne pouvait atteindre. */
+  function bilanEmails(l) {
+    if (!l.emails) return '<span class="sa-muet">—</span>';
+    const e = l.emails;
+    const morceaux = [`${fmt.nombre(e.envoyes)} envoyé(s)`];
+    if (e.en_attente) morceaux.push(`${fmt.nombre(e.en_attente)} en attente`);
+    if (e.abandonnes) morceaux.push(`<strong>${fmt.nombre(e.abandonnes)} non remis</strong>`);
+    if (l.nb_echecs) morceaux.push(`<span class="sa-muet">${fmt.nombre(l.nb_echecs)} sans adresse</span>`);
+    return morceaux.map((m) => `<div style="font-size:.78rem;line-height:1.45">${m}</div>`).join('');
+  }
+
   function ouvrirCompositionNotification() {
     const modale = SA.modale({
       titre: 'Nouvelle annonce',
-      sousTitre: 'Déposée dans le centre de notifications des écoles concernées.',
+      sousTitre: 'Dans le centre de notifications des écoles concernées, et par e-mail si vous le choisissez.',
       contenu: `
         <label class="sa-champ-bloc"><span>Titre *</span><input class="sa-champ" id="n-titre" /></label>
         <label class="sa-champ-bloc"><span>Contenu *</span><textarea class="sa-champ" id="n-contenu"></textarea></label>
@@ -912,6 +933,13 @@
         <label class="sa-champ-bloc" id="bloc-ecole" style="display:none"><span>École</span>
           ${SA.ui.selecteurEcoles('', { libelleVide: 'Choisir…' })}
         </label>
+        <label class="sa-champ-bloc"><span>Canal</span>
+          <select class="sa-champ" id="n-canal">
+            <option value="interne">Notification dans l'application</option>
+            <option value="interne_email">Notification + e-mail</option>
+            <option value="email">E-mail uniquement</option>
+          </select>
+        </label>
         <label class="sa-champ-bloc"><span>Rôle destinataire</span>
           <select class="sa-champ" id="n-role">
             <option value="">Direction (directeurs et préfets)</option>
@@ -923,8 +951,9 @@
           </select>
         </label>
         <p class="sa-note">
-          L'annonce est déposée nominativement dans le centre de notifications de chaque
-          personne visée. Sans publication, elle reste en brouillon.
+          L'annonce est adressée nominativement à chaque personne visée. Les e-mails partent
+          par la file d'envoi de la plateforme, avec réessais ; leur sort réel s'affiche dans
+          la liste. Sans publication, l'annonce reste en brouillon.
         </p>`,
       actions: `
         <button class="sa-bouton sa-bouton-secondaire" data-role="brouillon">Enregistrer en brouillon</button>
@@ -952,12 +981,19 @@
             cible: cible.value,
             ecole_id: cible.value === 'ecole' ? modale.querySelector('[data-filtre="ecole_id"]').value : null,
             role_cible: modale.querySelector('#n-role').value || null,
+            canal: modale.querySelector('#n-canal').value,
             publier
           })
         });
-        SA.toast(publier
-          ? `Annonce déposée à ${r.destinataires} destinataire(s) dans ${r.ecoles_touchees} école(s).`
-          : 'Brouillon enregistré.', 'succes');
+        let message = 'Brouillon enregistré.';
+        if (publier) {
+          message = `Annonce adressée à ${r.destinataires} destinataire(s) dans ${r.ecoles_touchees} école(s).`;
+          if (r.canal && r.canal !== 'interne') {
+            message += ` ${r.emails_en_file || 0} e-mail(s) en cours d'envoi.`;
+            if (r.sans_email) message += ` ${r.sans_email} personne(s) sans adresse e-mail.`;
+          }
+        }
+        SA.toast(message, publier && r.sans_email ? 'attention' : 'succes', 8000);
         modale.fermer();
         SA.rafraichirVue();
       } catch (erreur) {

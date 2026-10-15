@@ -889,6 +889,17 @@ a.tc-element:hover .tc-element-titre { text-decoration: underline; }
   flex-direction: column;
   gap: 4px;
 }
+.sa-mfa-qr-bloc { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; }
+.sa-mfa-qr-bloc p { flex: 1 1 200px; margin: 0; font-size: 0.85rem; line-height: 1.5; }
+.sa-mfa-qr {
+  width: 196px;
+  height: 196px;
+  flex: none;
+  border-radius: 10px;
+  border: 1px solid var(--bordure);
+  /* Le QR reste sombre sur blanc dans tous les thèmes. */
+  background: #fff;
+}
 .sa-mfa-cle { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .sa-mfa-cle code {
   font-size: 1rem;

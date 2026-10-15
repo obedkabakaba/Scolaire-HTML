@@ -96,7 +96,7 @@ Défaut découvert par le test de bout en bout (serveur et base réels) : **tout
 ciblée sur une école échouait en 500** (`POST /super-admin/notifications`). L'identifiant
 de l'annonce était passé après `ecole_id`, si bien que `$5` désignait l'école et que
 PostgreSQL refusait la requête. Corrigé, et couvert par
-`test/integration/annonces-ciblees.test.js`. La migration `063` déclare aussi trois colonnes
+`test/integration/annonces-ciblees.test.js`. La migration `064` déclare aussi trois colonnes
 que le code écrit et que la production possède, mais qu'aucune migration du dépôt ne créait.
 
 Autre défaut corrigé au passage : un mot de passe erroné à la ré-authentification
@@ -105,7 +105,7 @@ déconnecté pour une faute de frappe. Le serveur répond désormais 403.
 
 ### Déploiement
 
-1. Backend : appliquer `migrations/062-mfa-super-admin.sql` (et `063`, sans effet en
+1. Backend : appliquer `migrations/063-mfa-super-admin.sql` (et `064`, sans effet en
    production), définir `MFA_CLE_CHIFFREMENT`
    (≥ 16 caractères) — ou réutiliser `IA_CLE_CHIFFREMENT`.
 2. Sans ces deux étapes, rien ne casse : la connexion reste au mot de passe seul et

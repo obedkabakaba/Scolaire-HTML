@@ -148,7 +148,7 @@
         conteneur.innerHTML = `<div class="sa-panneau sa-mfa">
           <h2 class="sa-section-titre">Installation incomplète</h2>
           <p class="sa-texte">La table de la double authentification n'existe pas encore dans la base.
-            Appliquez la migration <code class="sa-mono">062-mfa-super-admin.sql</code>, puis revenez ici.
+            Appliquez la migration <code class="sa-mono">063-mfa-super-admin.sql</code>, puis revenez ici.
             En attendant, la connexion reste au mot de passe seul.</p></div>`;
         return;
       }

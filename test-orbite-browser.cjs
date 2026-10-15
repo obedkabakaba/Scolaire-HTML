@@ -53,6 +53,9 @@ const server=http.createServer((req,res)=>{
  for(const theme of ['nexus','elan','perspective','recre','yohali','orbite']){
    await page.evaluate(t=>ArdoiseTheme.appliquer(t,{synchroniserServeur:false}),theme);
    if(['elan','perspective','recre'].includes(theme))await page.waitForSelector('.'+theme+'-hero');
+   // Les thèmes s'installent sur l'événement de changement (microtâche, rAF) : on attend l'état
+   // attendu jusqu'à 2 s au lieu de le lire aussitôt. Un état faux qui dure reste signalé.
+   await page.waitForFunction(([t,sel])=>{const n=document.querySelector(sel);const vu=!!n&&n.getClientRects().length>0&&getComputedStyle(n).visibility!=='hidden';return vu===(t==='orbite')&&(t=>document.querySelector(t==='orbite'?'.ob-main > .grille-stats':'.contenu > .grille-stats')===window.obStatNode)(t);},[theme,'.ob-shell'],{timeout:2000}).catch(()=>{});
    assert.equal(await page.locator('.ob-shell').isVisible(),theme==='orbite');
    assert.equal(await page.evaluate(t=>document.querySelector(t==='orbite'?'.ob-main > .grille-stats':'.contenu > .grille-stats')===window.obStatNode,theme),true);
  }

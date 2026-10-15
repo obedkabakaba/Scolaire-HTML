@@ -105,24 +105,26 @@ déconnecté pour une faute de frappe. Le serveur répond désormais 403.
 
 ### Déploiement
 
-1. Backend : appliquer `migrations/062-mfa-super-admin.sql` (et `063`, sans effet en
-   production), définir `MFA_CLE_CHIFFREMENT`
-   (≥ 16 caractères) — ou réutiliser `IA_CLE_CHIFFREMENT`.
-2. Sans ces deux étapes, rien ne casse : la connexion reste au mot de passe seul et
-   l'écran « Sécurité du compte » explique ce qui manque.
+1. Backend : `migrations/062-mfa-super-admin.sql` et `063` sont appliquées en production,
+   `MFA_CLE_CHIFFREMENT` est définie sur Render. Cette clé ne doit plus jamais changer :
+   les secrets déjà enregistrés deviendraient illisibles.
+2. Troisième livraison : `migrations/065-sessions-persistantes.sql` doit être appliquée
+   AVANT le déploiement du code qui l'écrit (la connexion insère la colonne).
 
-### Reste ouvert
+### Points ouverts de la deuxième livraison, traités dans la troisième
 
-- **Pas de QR code** à la configuration : aucune bibliothèque n'existe dans le dépôt, et
-  en charger une depuis un CDN ferait transiter le secret par du code tiers. Clé à saisir
-  et lien `otpauth://` à la place.
-- Le paramètre `se_souvenir` envoyé à la connexion est **ignoré par le serveur** : toute
-  session vit 30 jours en base, alors que les commentaires des pages de connexion
-  annoncent l'inverse. Le corriger change la durée de session de tous les utilisateurs
-  des écoles : décision à prendre, non faite ici.
-- Les annonces marquées « interne + email » ne déclenchent pas d'email côté serveur
-  (seule la notification interne est créée) ; les actions groupées s'en tiennent donc à
-  la notification interne.
+- **QR code** à la configuration de la double authentification : calculé par le serveur
+  (`qrcode-generator`, sans dépendance), renvoyé sous forme de grille de modules et
+  dessiné en SVG par la page à partir de nombres seulement. Le secret ne passe par aucun
+  script tiers ; la clé et le lien `otpauth://` restent proposés.
+- **« Se souvenir de moi »** respecté par le serveur : case décochée → session de 12 h
+  (`JWT_SESSION_COURTE_HEURES`), prolongée à chaque rafraîchissement ; case cochée →
+  30 jours ; un client qui n'envoie pas le champ garde les 30 jours d'avant.
+- **Annonces par e-mail** : le canal (notification, notification + e-mail, e-mail seul)
+  se choisit dans le formulaire, et le serveur met les e-mails dans la file d'envoi
+  existante (réessais, suivi d'état). La liste affiche le sort réel : envoyés, en
+  attente, non remis, personnes sans adresse. Les relances groupées depuis la liste des
+  écoles restent des notifications internes.
 
 ## 7. Vérifications
 

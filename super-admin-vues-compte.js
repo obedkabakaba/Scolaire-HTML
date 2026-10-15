@@ -10,13 +10,14 @@
      · en cours   → clé à saisir dans l'application, puis premier code ;
      · active     → état, codes de secours restants, régénérer, désactiver.
 
-   PAS DE QR CODE, VOLONTAIREMENT
-   ------------------------------
-   Aucune bibliothèque de QR code n'existe dans ce dépôt, et en charger une
-   depuis un CDN ferait passer le secret par du code tiers, sur la page la
-   plus sensible de la plateforme. Les applications acceptent toutes la
-   saisie d'une clé ; sur téléphone, le lien otpauth:// ouvre directement
-   l'application. Le secret n'est affiché qu'une fois, pendant la
+   LE QR CODE EST CALCULÉ PAR LE SERVEUR, DESSINÉ ICI
+   --------------------------------------------------
+   Charger une bibliothèque de QR code depuis un CDN ferait passer le secret
+   par du code tiers, sur la page la plus sensible de la plateforme. Le
+   serveur renvoie donc la GRILLE des modules (lignes de « 0 » et de « 1 »),
+   et cette page en tire un SVG à partir de nombres seulement : rien de servi
+   n'est injecté tel quel. Sans grille (ancien serveur), la clé et le lien
+   otpauth:// restent là. Le secret n'est affiché qu'une fois, pendant la
    configuration ; le serveur ne le renvoie plus jamais ensuite.
    ========================================================================== */
 
@@ -27,6 +28,29 @@
 
   function grouper(secret) {
     return String(secret || '').replace(/(.{4})/g, '$1 ').trim();
+  }
+
+  /** SVG du QR code à partir de la grille du serveur ; '' si elle est invalide. */
+  function svgQr(qr) {
+    const taille = qr && Number(qr.taille);
+    if (!Number.isInteger(taille) || taille < 21 || taille > 177 || !Array.isArray(qr.lignes)
+        || qr.lignes.length !== taille
+        || !qr.lignes.every((l) => typeof l === 'string' && l.length === taille && /^[01]+$/.test(l))) {
+      return '';
+    }
+    const marge = 4; // zone de silence exigée par la norme
+    const cote = taille + 2 * marge;
+    let trace = '';
+    qr.lignes.forEach((ligne, y) => {
+      for (let x = 0; x < taille; x++) {
+        if (ligne[x] === '1') trace += `M${x + marge} ${y + marge}h1v1h-1z`;
+      }
+    });
+    // Toujours sombre sur blanc, quel que soit le thème : c'est ce que lisent les appareils photo.
+    return `<svg class="sa-mfa-qr" viewBox="0 0 ${cote} ${cote}" role="img"
+                 aria-label="QR code à scanner avec l'application d'authentification"
+                 shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg">
+              <rect width="${cote}" height="${cote}" fill="#fff"/><path d="${trace}" fill="#000"/></svg>`;
   }
 
   function telechargerCodes(codes) {
@@ -198,9 +222,15 @@
   }
 
   function dessinerConfiguration(zone, r) {
+    const qr = svgQr(r.qr);
     zone.innerHTML = `
       <div class="sa-mfa-config">
-        <div class="sa-champ-bloc"><span>Clé de configuration</span>
+        ${qr ? `<div class="sa-mfa-qr-bloc">
+          ${qr}
+          <p class="sa-muet">Scannez ce code avec l'application d'authentification
+            (« Ajouter un compte » → « Scanner un QR code »), ou saisissez la clé ci-dessous.</p>
+        </div>` : ''}
+        <div class="sa-champ-bloc"><span>${qr ? 'Ou saisissez la clé' : 'Clé de configuration'}</span>
           <div class="sa-mfa-cle">
             <code class="sa-mono" id="mfa-cle">${esc(grouper(r.secret))}</code>
             <button class="sa-bouton sa-bouton-secondaire sa-bouton-petit" id="mfa-copier">Copier</button>

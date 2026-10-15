@@ -354,6 +354,13 @@ GROUPES = [
         ("Que voit l'équipe Ardoise&nbsp;?",
          "<p>Un accès d'assistance existe, strictement en lecture, limité dans le "
          "temps, et enregistré avec son motif et son horaire.</p>"),
+        ("Pourquoi faut-il accepter la politique de confidentialité pour s'inscrire&nbsp;?",
+         "<p>Parce que vous nous confiez des coordonnées, et bientôt les données de "
+         "vos élèves : vous devez savoir ce que nous en faisons avant de les envoyer. "
+         "La case renvoie vers la <a href=\"/confidentialite.html\">politique de "
+         "confidentialité</a>, qui dit ce qui est collecté, pourquoi, combien de "
+         "temps, et ce que nous ne faisons jamais. Sans elle cochée, la demande "
+         "n'est pas envoyée.</p>"),
     ]),
     ("Accompagnement et support", [
         ("La formation est-elle incluse dans l'abonnement&nbsp;?",
@@ -492,6 +499,11 @@ FORMULAIRE = """
         <label for="message">Votre situation en quelques mots</label>
         <textarea id="message" name="message" placeholder="Combien de classes, ce que vous gérez déjà sur ordinateur, ce qui vous prend le plus de temps…"></textarea>
       </div>
+
+      <label class="case case-accord">
+        <input type="checkbox" name="consentement" value="true" required />
+        <span>J'accepte qu'Ardoise utilise ces informations pour me répondre, conformément à sa <a href="/confidentialite.html" target="_blank" rel="noopener">politique de confidentialité</a>. *</span>
+      </label>
 
       <div class="message-retour" data-retour hidden></div>
       <button class="bouton ocre" type="submit">Envoyer ma demande</button>
@@ -644,6 +656,11 @@ FORMULAIRE_MESSAGE = """
       </div>
       <p class="aide">Un e-mail ou un téléphone suffit — il en faut au moins un,
       sinon nous ne pourrons pas vous répondre.</p>
+
+      <label class="case case-accord">
+        <input type="checkbox" name="consentement" value="true" required />
+        <span>J'accepte qu'Ardoise utilise ces informations pour me répondre, conformément à sa <a href="/confidentialite.html" target="_blank" rel="noopener">politique de confidentialité</a>. *</span>
+      </label>
 
       <div class="message-retour" data-retour hidden></div>
       <button class="bouton ocre" type="submit">Envoyer mon message</button>

@@ -659,6 +659,11 @@ table.comparatif tbody tr.groupe th {
    sur `.case` par sa spécificité : la case passait au-dessus de son libellé.
    Une case reste une ligne flexible, case et libellé alignés. */
 .formulaire label.case { display: flex; margin-bottom: 0; font-weight: 400; }
+/* Case d'accord (politique de confidentialité) : son libellé tient souvent
+   sur deux lignes ; la case reste alignée sur la première, pas au milieu. */
+.formulaire label.case-accord { align-items: flex-start; margin: 4px 0 2px 0; line-height: 1.5; }
+.case-accord input { margin-top: 3px; flex-shrink: 0; }
+.case-accord a { color: var(--accent-texte); font-weight: 500; text-decoration: underline; text-underline-offset: 2px; }
 
 .message-retour {
   padding: 13px 16px; border-radius: var(--r-bouton); font-size: .9rem;

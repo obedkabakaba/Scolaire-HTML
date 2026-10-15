@@ -15,7 +15,9 @@ TROIS RÈGLES D'ÉCRITURE
    reversée sur une formation ou une capture, calendrier des versements, prix
    de la formation de qualification) est dit « convenu » ou « précisé à
    l'entrée dans le programme », jamais chiffré.
-3. Une candidature n'accorde rien : la page le dit, le serveur l'applique.
+3. L'inscription ouvre l'espace, pas l'argent : l'adresse confirmée donne le
+   code et le lien personnels ; une commission exige toujours une attribution
+   validée par l'équipe. La page le dit, le serveur l'applique.
 """
 
 from base import rendre, fil, hero, cta_final, faq_bloc, faq_jsonld, pour_aller_plus_loin
@@ -25,13 +27,18 @@ FORMULAIRE = """
     <form class="formulaire" data-formulaire-apporteur novalidate>
       <div class="duo">
         <div>
+          <label for="ap_prenom">Prénom *</label>
+          <input type="text" id="ap_prenom" name="prenom" required autocomplete="given-name" maxlength="120" />
+        </div>
+        <div>
           <label for="ap_nom">Nom *</label>
           <input type="text" id="ap_nom" name="nom" required autocomplete="family-name" maxlength="120" />
         </div>
-        <div>
-          <label for="ap_prenom">Prénom</label>
-          <input type="text" id="ap_prenom" name="prenom" autocomplete="given-name" maxlength="120" />
-        </div>
+      </div>
+
+      <div>
+        <label for="ap_email">Adresse e-mail * <span class="aide-champ">(votre identifiant ; le lien de confirmation y est envoyé)</span></label>
+        <input type="email" id="ap_email" name="email" required autocomplete="email" maxlength="200" />
       </div>
 
       <div class="duo">
@@ -41,39 +48,18 @@ FORMULAIRE = """
                  placeholder="+243 8XX XXX XXX" maxlength="40" />
         </div>
         <div>
-          <label for="ap_email">Adresse e-mail</label>
-          <input type="email" id="ap_email" name="email" autocomplete="email" maxlength="200" />
-        </div>
-      </div>
-
-      <div class="duo">
-        <div>
           <label for="ap_ville">Ville *</label>
           <input type="text" id="ap_ville" name="ville" required autocomplete="address-level2" maxlength="120" />
         </div>
-        <div>
-          <label for="ap_province">Province</label>
-          <input type="text" id="ap_province" name="province" autocomplete="address-level1" maxlength="120" />
-        </div>
       </div>
 
-      <div class="duo">
-        <div>
-          <label for="ap_profession">Profession</label>
-          <input type="text" id="ap_profession" name="profession" maxlength="160"
-                 placeholder="ex. Préfet des études, formateur, consultant" />
-        </div>
-        <div>
-          <label for="ap_organisation">Organisation (facultatif)</label>
-          <input type="text" id="ap_organisation" name="organisation" maxlength="200"
-                 placeholder="ex. réseau d'écoles, association, entreprise" />
-        </div>
+      <div>
+        <label for="ap_mot_de_passe">Mot de passe * <span class="aide-champ">(8 caractères au moins)</span></label>
+        <input type="password" id="ap_mot_de_passe" name="mot_de_passe" required minlength="8" autocomplete="new-password" />
       </div>
 
       <fieldset class="groupe-cases">
-        <legend>Ce qui vous intéresse (plusieurs choix possibles)</legend>
-        <label class="case"><input type="checkbox" name="profils_souhaites" value="apporteur_affaires" checked />
-          <span>Présenter Ardoise aux écoles — apporteur d'affaires</span></label>
+        <legend>En plus de présenter Ardoise, je voudrais aussi (facultatif, après qualification)</legend>
         <label class="case"><input type="checkbox" name="profils_souhaites" value="configurateur" />
           <span>Installer et configurer Ardoise — configurateur</span></label>
         <label class="case"><input type="checkbox" name="profils_souhaites" value="formateur" />
@@ -83,21 +69,9 @@ FORMULAIRE = """
       </fieldset>
 
       <div>
-        <label for="ap_reseau">Les écoles ou réseaux que vous connaissez</label>
-        <textarea id="ap_reseau" name="reseau" maxlength="3000"
+        <label for="ap_reseau">Les écoles ou réseaux que vous connaissez (facultatif)</label>
+        <textarea id="ap_reseau" name="reseau" maxlength="2000"
                   placeholder="Combien d'établissements, dans quelles villes, quel lien vous avez avec eux…"></textarea>
-      </div>
-
-      <div>
-        <label for="ap_motivation">Pourquoi vous, et pourquoi Ardoise ? *</label>
-        <textarea id="ap_motivation" name="motivation" required maxlength="3000"
-                  placeholder="Quelques phrases suffisent."></textarea>
-      </div>
-
-      <div>
-        <label for="ap_experience">Expérience utile (facultatif)</label>
-        <textarea id="ap_experience" name="experience" maxlength="3000"
-                  placeholder="Informatique, formation d'adultes, gestion scolaire, vente…"></textarea>
       </div>
 
       <!-- Champ piège : invisible pour une personne, rempli par les robots. -->
@@ -108,14 +82,15 @@ FORMULAIRE = """
 
       <label class="case">
         <input type="checkbox" name="consentement" value="true" required />
-        <span>J'accepte qu'Ardoise conserve ces informations pour examiner ma candidature et me recontacter.
-        <a href="/confidentialite.html">Confidentialité</a></span>
+        <span>J'accepte les conditions du programme ci-dessus et la
+        <a href="/confidentialite.html">politique de confidentialité</a>.</span>
       </label>
 
       <div class="message-retour" data-retour hidden></div>
-      <button class="bouton ocre" type="submit">Envoyer ma candidature</button>
-      <p class="aide">Une candidature n'ouvre aucun accès et n'attribue aucun badge : elle est
-      examinée par l'équipe Ardoise, qui vous recontacte.</p>
+      <button class="bouton ocre" type="submit">Créer mon espace partenaire</button>
+      <p class="aide">Vous recevez un e-mail de confirmation : un clic, et votre espace s'ouvre
+      avec votre code et votre lien personnels. Les commissions, elles, ne naissent que des
+      écoles attribuées et validées par l'équipe Ardoise.</p>
     </form>
 """
 
@@ -172,8 +147,8 @@ def apporteurs():
          "vous.</p>"),
         ("Quand suis-je payé&nbsp;?",
          "<p>Une commission est versée après vérification de l'encaissement qui l'a "
-         "produite. Les modalités de versement vous sont présentées lors de l'examen de "
-         "votre candidature, et chaque versement apparaît dans votre relevé avec sa "
+         "produite. Vous indiquez dans votre espace comment recevoir vos gains (Mobile "
+         "Money, virement…), et chaque versement apparaît dans votre relevé avec sa "
          "référence.</p>"),
         ("La formation de configurateur est-elle payante&nbsp;?",
          "<p>Elle peut l'être. Ses conditions vous sont communiquées avant votre "
@@ -187,7 +162,7 @@ def apporteurs():
         "papier ou sur Excel ? Aidez-les à se moderniser, et soyez rémunéré sur ce "
         "que leurs abonnements rapportent réellement — puis, si vous en avez les "
         "compétences, sur les installations et formations que vous réalisez.",
-        [("#candidature", "Déposer ma candidature", "ocre"),
+        [("#candidature", "Créer mon espace partenaire", "ocre"),
          ("#conditions", "Voir les conditions", "secondaire")],
         mention="Aucun revenu garanti : la rémunération dépend des paiements réels des écoles.",
         aparte="<h2>Déjà apporteur&nbsp;?</h2>"
@@ -219,7 +194,7 @@ def apporteurs():
       <article class="carte">
         <span class="probleme">Prix publics</span>
         <h3>Des offres lisibles</h3>
-        <p>Quatre offres publiées, de 35 à 159 $ par mois, avec un essai gratuit et des
+        <p>Quatre offres publiées, de 30 à 159 $ par mois, avec un essai gratuit et des
            services d'accompagnement facultatifs. <a href="/tarifs/">Voir les tarifs</a>.</p>
       </article>
     </div>
@@ -317,6 +292,54 @@ def apporteurs():
   </div>
 </section>
 
+<section class="section" id="espace">
+  <div class="conteneur">
+    <div class="section-entete">
+      <span class="eyebrow">Votre espace partenaire</span>
+      <h2>Tout pour présenter, suivre et être payé</h2>
+      <p class="chapeau">Ouvert dès votre adresse confirmée, sur ordinateur comme sur téléphone.</p>
+    </div>
+    <div class="grille-cartes trois">
+      <article class="carte">
+        <span class="probleme">Partager</span>
+        <h3>Lien, code et QR code</h3>
+        <p>Des messages WhatsApp, SMS et e-mail prêts à envoyer, les prix publics à jour
+           et un simulateur — pour présenter Ardoise sans rien inventer.</p>
+      </article>
+      <article class="carte">
+        <span class="probleme">Suivre</span>
+        <h3>Vos prospects, étape par étape</h3>
+        <p>Chaque école rencontrée, de « à contacter » à « inscrite », avec vos relances.
+           Les visites de votre lien et les essais demandés avec votre code.</p>
+      </article>
+      <article class="carte">
+        <span class="probleme">Être payé</span>
+        <h3>Gains ligne par ligne</h3>
+        <p>Chaque commission avec son calcul, son statut et la référence de son versement,
+           sur le mode de paiement que vous choisissez.</p>
+      </article>
+      <article class="carte">
+        <span class="probleme">Échanger</span>
+        <h3>L'équipe à portée de message</h3>
+        <p>Une conversation privée avec l'équipe Ardoise pour toute question sur une école
+           ou un montant, sans passer par trois canaux.</p>
+      </article>
+      <article class="carte">
+        <span class="probleme">Communauté</span>
+        <h3>Les autres partenaires</h3>
+        <p>Des salons pour partager ce qui marche sur le terrain, les annonces de l'équipe,
+           et des messages directs entre partenaires.</p>
+      </article>
+      <article class="carte">
+        <span class="probleme">Progresser</span>
+        <h3>Jalons et badges</h3>
+        <p>Vos écoles attribuées, vos jalons, et les badges configurateur ou formateur à
+           obtenir pour être rémunéré aussi sur les prestations.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
 <section class="section alt">
   <div class="conteneur">
     <div class="section-entete">
@@ -327,8 +350,8 @@ def apporteurs():
       <article class="etape">
         <span class="num">1</span>
         <h3>Votre code</h3>
-        <p>Une fois votre candidature retenue, vous recevez un code et un lien personnels,
-           consultables dans votre espace.</p>
+        <p>Dès votre adresse confirmée, votre espace s'ouvre avec un code, un lien et un
+           QR code personnels, et des messages prêts à partager.</p>
       </article>
       <article class="etape">
         <span class="num">2</span>
@@ -412,16 +435,16 @@ def apporteurs():
   <div class="conteneur grille-deux">
     <div>
       <div class="section-entete">
-        <span class="eyebrow">Candidature</span>
-        <h2>Rejoindre le programme</h2>
-        <p class="chapeau">Quelques minutes suffisent. Nous examinons chaque candidature et vous
-        recontactons.</p>
+        <span class="eyebrow">Inscription</span>
+        <h2>Créer mon espace partenaire</h2>
+        <p class="chapeau">Deux minutes, gratuit et sans engagement. Pas d'attente : vous
+        confirmez votre adresse et vous commencez.</p>
       </div>
       """ + FORMULAIRE + """
     </div>
     <aside class="colonne-aside">
       <div class="encart">
-        <h2>Une question avant de candidater&nbsp;?</h2>
+        <h2>Une question avant de vous inscrire&nbsp;?</h2>
         <ul class="mini-liste">
           <li><a href="https://wa.me/243855035693" rel="noopener">WhatsApp : 0855 035 693</a></li>
           <li><a href="mailto:myardoise@gmail.com">myardoise@gmail.com</a></li>
@@ -431,10 +454,11 @@ def apporteurs():
       <div class="encart">
         <h2>Ce qui se passe ensuite</h2>
         <ul class="mini-liste">
-          <li>Votre candidature est examinée par l'équipe Ardoise.</li>
-          <li>Si elle est retenue, votre profil est créé et vous recevez un lien pour activer
-              votre espace.</li>
-          <li>Les badges sont accordés un à un ; configurateur et formateur après qualification.</li>
+          <li>Vous confirmez votre adresse grâce au lien reçu par e-mail.</li>
+          <li>Votre espace s'ouvre aussitôt : code et lien personnels, suivi de vos prospects,
+              gains, messagerie avec l'équipe et les autres partenaires.</li>
+          <li>Configurateur, formateur et partenaire stratégique : accordés après qualification
+              ou échange avec l'équipe.</li>
         </ul>
       </div>
       <div class="encart">
@@ -462,7 +486,7 @@ def apporteurs():
     corps += cta_final(
         "Vous connaissez des écoles qui en ont besoin.",
         "Présentez-leur Ardoise, et suivez chaque résultat depuis votre espace.",
-        [("#candidature", "Déposer ma candidature", "principal"),
+        [("#candidature", "Créer mon espace partenaire", "principal"),
          ("/contact/", "Nous parler d'abord", "secondaire")])
 
     return rendre(

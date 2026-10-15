@@ -172,7 +172,8 @@
       });
 
       const aTraiter = [
-        [(d.candidatures || {}).nouvelle, 'candidature(s) à examiner', 'apporteurs/candidatures?statut=nouvelle'],
+        [d.messages_non_lus, 'message(s) de partenaires non lu(s)', 'apporteurs/messagerie'],
+        [(d.candidatures || {}).nouvelle, 'candidature(s) à examiner (ancien formulaire)', 'apporteurs/candidatures?statut=nouvelle'],
         [(d.declarations || {}).en_attente, 'déclaration(s) de prospect en attente', 'apporteurs/declarations?statut=en_attente'],
         [(d.attributions || {}).proposee, 'attribution(s) proposée(s) à décider', 'apporteurs/attributions?statut=proposee'],
         [d.ecoles_en_conflit, 'école(s) revendiquée(s) par plusieurs apporteurs', 'apporteurs/attributions?conflit=1'],
@@ -184,7 +185,7 @@
         <section class="sa-section">
           <div class="sa-grille-stats">
             ${ui.carteStat({ valeur: fmt.nombre((d.apporteurs || {}).actif || 0), etiquette: 'Apporteurs actifs', icone: '👥',
-              detail: `${fmt.nombre(somme(d.apporteurs))} profil(s) au total` })}
+              detail: `${fmt.nombre(somme(d.apporteurs))} profil(s) au total · ${fmt.nombre((d.inscriptions || {}).nouveaux_30j || 0)} inscrit(s) en 30 j${(d.inscriptions || {}).en_attente_confirmation ? ` · ${fmt.nombre(d.inscriptions.en_attente_confirmation)} adresse(s) à confirmer` : ''}` })}
             ${ui.carteStat({ valeur: fmt.nombre((d.attributions || {}).validee || 0), etiquette: 'Écoles attribuées (validées)', ton: 'succes', icone: '🏫' })}
             ${ui.carteStat({ valeur: fmt.nombre(aTraiter.reduce((s, [n]) => s + n, 0)), etiquette: 'Décisions en attente', ton: aTraiter.length ? 'attention' : null, icone: '⏳' })}
             ${ui.carteStat({ valeur: fmt.nombre(actifs('configurateur') + actifs('formateur')), etiquette: 'Configurateurs et formateurs qualifiés', icone: '🎓',
@@ -267,7 +268,9 @@
         { cle: 'badges', titre: 'Badges', rendu: (l) => badgesHtml(l.badges) },
         { cle: 'ecoles', titre: 'Écoles', classe: 'sa-num', rendu: (l) => `${fmt.nombre(l.ecoles_validees)}${l.ecoles_proposees ? `<div class="sa-muet">+${l.ecoles_proposees} proposée(s)</div>` : ''}` },
         { cle: 'a_verser', titre: 'Gagné / dû', classe: 'sa-num', rendu: (l) => objetDevises(l.a_verser) },
-        { cle: 'acces', titre: 'Portail', rendu: (l) => l.acces_active ? ui.badge('Activé', 'succes') : ui.badge('Non activé', 'neutre') },
+        { cle: 'acces', titre: 'Portail', rendu: (l) => (l.acces_active ? ui.badge('Activé', 'succes')
+            : (l.origine === 'inscription' && !l.email_verifie_le ? ui.badge('Adresse à confirmer', 'attention') : ui.badge('Non activé', 'neutre')))
+            + (l.origine === 'inscription' ? '<div class="sa-muet">Inscrit en ligne</div>' : '') },
         { cle: 'statut', titre: 'Statut', rendu: (l) => statut(l.statut) }
       ];
 
@@ -345,7 +348,14 @@
       const zone = actionsEntete(`
         <button class="sa-bouton sa-bouton-secondaire" data-modifier>Modifier</button>
         <button class="sa-bouton sa-bouton-secondaire" data-acces>${p.acces_active ? 'Nouveau lien d’accès' : 'Envoyer l’accès au portail'}</button>
-        <button class="sa-bouton sa-bouton-secondaire" data-releve>Relevé CSV</button>`);
+        <button class="sa-bouton sa-bouton-secondaire" data-releve>Relevé CSV</button>
+        <button class="sa-bouton sa-bouton-principal" data-ecrire>Écrire</button>`);
+      zone.querySelector('[data-ecrire]').addEventListener('click', async () => {
+        try {
+          const r = await SA.api(`${BASE}/messagerie/equipe/${id}`, { method: 'POST', body: '{}' });
+          SA.naviguer('apporteurs/messagerie', { c: r.id });
+        } catch (e) { SA.toast(e.message, 'danger'); }
+      });
       zone.querySelector('[data-modifier]').addEventListener('click', () => formulaireProfil(p));
       zone.querySelector('[data-releve]').addEventListener('click', () =>
         SA.telecharger(`${BASE}/${id}/releve?format=csv`, `releve-${(p.nom || 'apporteur').toLowerCase()}.csv`));
@@ -1246,6 +1256,140 @@
       conteneur.querySelectorAll('[data-page]').forEach((b) => b.addEventListener('click', () => {
         SA.majParams({ entite: params.entite, page: b.dataset.page }); SA.rafraichirVue();
       }));
+    }
+  });
+
+  /* ======================================================================
+     MESSAGERIE — conversations privées et salons du programme
+     ----------------------------------------------------------------------
+     Toute réponse part au nom de « Équipe Ardoise » : le portail ne montre
+     jamais le nom ni le rôle de la personne qui a écrit. La mention « écrit
+     par … » ci-dessous n'est visible que de l'équipe, pour se coordonner.
+     ====================================================================== */
+
+  const MSG = `${BASE}/messagerie`;
+
+  SA.enregistrerVue('apporteurs/messagerie', {
+    titre: 'Messagerie des partenaires',
+    sousTitre: 'Conversations privées avec chaque partenaire et salons du programme. Vos réponses sont signées « Équipe Ardoise ».',
+
+    async rendu(conteneur, params) {
+      conteneur.innerHTML = ui.squelette(6, 46);
+      let conversations = [];
+      let courante = null;
+      let messages = [];
+      let recherche = params.q || '';
+      actionsEntete('');
+
+      conteneur.innerHTML = `<div class="am-messagerie">
+        <aside class="am-liste"><div class="am-liste-tete">
+          <input class="sa-champ" id="am-recherche" placeholder="Rechercher un partenaire…" value="${esc(recherche)}" /></div>
+          <div id="am-conversations"></div></aside>
+        <section class="am-fil" id="am-fil">${ui.etatVide('Choisissez une conversation', 'Les conversations non lues apparaissent en premier.')}</section>
+      </div>`;
+
+      const heure = (v) => new Date(v).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+      function dessinerListe() {
+        const salons = conversations.filter((c) => c.type === 'salon');
+        const prives = conversations.filter((c) => c.type === 'equipe')
+          .sort((a, b) => (b.non_lus - a.non_lus) || String(b.dernier_message_at || '').localeCompare(String(a.dernier_message_at || '')));
+        const ligne = (c) => `<button type="button" class="am-conv ${courante && courante.id === c.id ? 'actif' : ''} ${c.non_lus ? 'non-lu' : ''}" data-conv="${esc(c.id)}">
+          <span class="am-conv-icone">${c.type === 'salon' ? esc(c.icone || '#') : esc((c.nom || '?').slice(0, 1).toUpperCase())}</span>
+          <span class="am-conv-texte"><strong>${esc(c.nom || 'Partenaire')}</strong>
+            <small>${c.dernier ? `${esc(c.dernier.auteur_type === 'apporteur' ? c.dernier.auteur_nom : 'Équipe')} : ${c.dernier.contenu === null ? '<em>retiré</em>' : esc(c.dernier.contenu)}` : esc(c.description || '')}</small></span>
+          ${c.non_lus ? `<span class="sa-badge ton-danger">${c.non_lus}</span>` : ''}</button>`;
+        conteneur.querySelector('#am-conversations').innerHTML =
+          `<p class="am-groupe">Salons</p>${salons.map(ligne).join('')}
+           <p class="am-groupe">Partenaires</p>${prives.map(ligne).join('') || '<p class="sa-muet am-vide">Aucune conversation pour le moment.</p>'}`;
+        conteneur.querySelectorAll('[data-conv]').forEach((b) => b.addEventListener('click', () => ouvrir(b.dataset.conv)));
+      }
+
+      async function chargerListe() {
+        const d = await SA.api(SA.url(MSG, { q: recherche || undefined }));
+        conversations = d.conversations || [];
+        dessinerListe();
+      }
+
+      function dessinerFil() {
+        const zone = conteneur.querySelector('#am-messages');
+        if (!zone) return;
+        zone.innerHTML = messages.map((m) => `
+          <div class="am-message ${m.auteur_type}">
+            <div class="am-message-tete"><strong>${esc(m.auteur_type === 'apporteur' ? m.auteur_nom : 'Équipe Ardoise')}</strong>
+              ${m.ecrit_par ? `<span class="sa-muet">— écrit par ${esc(m.ecrit_par)}, invisible du partenaire</span>` : ''}
+              <span class="sa-muet">${esc(heure(m.created_at))}</span>
+              ${m.supprime ? '' : `<button type="button" class="am-retirer" data-retirer="${esc(m.id)}" title="Retirer ce message">Retirer</button>`}</div>
+            <div class="am-message-corps">${m.supprime ? `<em class="sa-muet">Retiré${m.supprime_par === 'equipe' ? ' par l’équipe' : ' par son auteur'}${m.contenu_retire ? ` : « ${esc(m.contenu_retire)} »` : ''}</em>` : esc(m.contenu)}</div>
+          </div>`).join('') || ui.etatVide('Aucun message', 'Écrivez le premier message.');
+        zone.scrollTop = zone.scrollHeight;
+        zone.querySelectorAll('[data-retirer]').forEach((b) => b.addEventListener('click', async () => {
+          const v = await demanderMotif({ titre: 'Retirer ce message', libelle: 'Motif (gardé au journal)', libelleValider: 'Retirer', danger: true });
+          if (!v) return;
+          try {
+            await SA.api(`${MSG}/messages/${b.dataset.retirer}`, { method: 'DELETE', body: JSON.stringify(v) });
+            SA.toast('Message retiré.', 'succes');
+            ouvrir(courante.id);
+          } catch (e) { SA.toast(e.message, 'danger'); }
+        }));
+      }
+
+      async function ouvrir(id) {
+        courante = conversations.find((c) => c.id === id) || { id, type: 'equipe', nom: 'Partenaire' };
+        SA.majParams(Object.assign({}, params, { c: id }));
+        dessinerListe();
+        conteneur.querySelector('#am-fil').innerHTML = `
+          <header class="am-fil-tete"><div><h3>${esc(courante.nom || '')}</h3><p class="sa-muet">${esc(courante.description || '')}</p></div>
+            ${courante.apporteur_id ? `<a class="sa-bouton sa-bouton-secondaire sa-bouton-petit" href="#/apporteurs/profils/fiche/${esc(courante.apporteur_id)}">Fiche</a>` : ''}</header>
+          <div class="am-messages" id="am-messages">${ui.squelette(3, 40)}</div>
+          <form class="am-composer" id="am-composer">
+            <textarea class="sa-champ" rows="3" maxlength="4000" placeholder="${courante.type === 'salon' ? 'Publier dans le salon au nom de l’équipe…' : 'Répondre au nom de l’équipe Ardoise…'}"></textarea>
+            <div class="am-composer-pied"><span class="sa-note">Signé « Équipe Ardoise ».${courante.type === 'equipe' ? ' Le partenaire est prévenu par e-mail s’il l’a accepté.' : ''}</span>
+              <button type="submit" class="sa-bouton sa-bouton-principal">Envoyer</button></div>
+          </form>`;
+        const d = await SA.api(`${MSG}/${id}/messages`);
+        if (!courante || courante.id !== id) return;
+        messages = d.messages || [];
+        dessinerFil();
+        SA.api(`${MSG}/${id}/lu`, { method: 'POST', body: '{}' }).then(() => { courante.non_lus = 0; dessinerListe(); }).catch(() => {});
+        const form = conteneur.querySelector('#am-composer');
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const zone = form.querySelector('textarea');
+          const texte = zone.value.trim();
+          if (!texte) return;
+          const bouton = form.querySelector('[type=submit]');
+          bouton.disabled = true;
+          try {
+            const r = await SA.api(`${MSG}/${id}/messages`, { method: 'POST', body: JSON.stringify({ contenu: texte }) });
+            messages.push(r.message);
+            zone.value = '';
+            dessinerFil();
+            chargerListe();
+          } catch (err) { SA.toast(err.message, 'danger'); }
+          finally { bouton.disabled = false; }
+        });
+      }
+
+      const champ = conteneur.querySelector('#am-recherche');
+      champ.addEventListener('input', SA.antiRebond(() => { recherche = champ.value.trim(); chargerListe(); }, 350));
+
+      await chargerListe();
+      const cible = params.c || (conversations.find((c) => c.non_lus) || {}).id;
+      if (cible) await ouvrir(cible);
+
+      // Rafraîchissement tant que la vue est affichée.
+      const minuteur = setInterval(async () => {
+        if (!SA.routeCourante || SA.routeCourante.cle !== 'apporteurs/messagerie') { clearInterval(minuteur); return; }
+        if (document.hidden) return;
+        try {
+          await chargerListe();
+          if (courante) {
+            const d = await SA.api(`${MSG}/${courante.id}/messages`);
+            if ((d.messages || []).length !== messages.length) { messages = d.messages; dessinerFil(); }
+          }
+        } catch (e) { /* réessai au prochain passage */ }
+      }, 15000);
     }
   });
 })();

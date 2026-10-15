@@ -1,301 +1,251 @@
 <!DOCTYPE html>
 <!--
-  ARDOISE — ESPACE APPORTEUR D'AFFAIRES
-  -------------------------------------
-  Portail personnel des apporteurs, configurateurs, formateurs et partenaires
-  du programme. Même charte que l'espace Super Admin (classes `sa-`, thème
-  Ardoise), mais AUCUN partage de session :
+  ARDOISE — ESPACE PARTENAIRE (apporteurs d'affaires, configurateurs,
+  formateurs, partenaires stratégiques)
+  ---------------------------------------------------------------------
+  Application monopage autonome : sa propre feuille (espace-apporteur.css),
+  son propre script (espace-apporteur.js), AUCUN partage de session avec
+  les écoles ni avec l'administration d'Ardoise :
 
-    · clé de stockage dédiée (`ardoise_apporteur_jeton`), jamais celles des
-      écoles (`ardoise_access_token`) ni du Super Admin ;
+    · clé de stockage dédiée (`ardoise_apporteur_jeton`) ;
     · jeton signé par le serveur avec une clé distincte : il n'ouvre aucune
       autre partie d'Ardoise, et aucun autre jeton n'ouvre ce portail ;
-    · l'apporteur n'y voit que SES données — profil, badges, codes, écoles
-      attribuées (nom et ville seulement), commissions, prestations,
-      règlements — sous le contrôle de la RLS côté base.
+    · le partenaire n'y voit que SES données, sous le contrôle de la RLS.
 
-  Aucun montant n'est calculé ici : la page affiche ce que le serveur a
-  enregistré à partir des encaissements réels.
+  Parcours d'entrée :
+    · « Créer mon espace » → e-mail de confirmation → ?verification=… →
+      espace ouvert, sans attente d'examen ;
+    · « Se connecter » ; « mot de passe oublié » → ?acces=… ;
+    · un profil créé par l'équipe reçoit aussi un lien ?acces=….
+
+  Aucun montant n'est calculé ici, hormis le simulateur, présenté comme tel.
 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Ardoise — Espace apporteur d'affaires</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Espace partenaire — Ardoise</title>
+<meta name="description" content="Votre espace partenaire Ardoise : lien de parrainage, prospects, écoles, gains, messagerie et kit de présentation." />
 <meta name="robots" content="noindex, nofollow" />
-<meta name="theme-color" content="#111A19" />
+<meta name="theme-color" content="#141C18" />
 <link rel="icon" type="image/png" sizes="192x192" href="icone-192.png" />
 <link rel="apple-touch-icon" sizes="180x180" href="icone-ios-180.png" />
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://scolaire-saas-backend.onrender.com" />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
 
 <script>
-  /* Même apparence que le reste d'Ardoise sur cet appareil, sans clignotement. */
-  (function(){var t;
-   try{t=localStorage.getItem('ardoise_theme')||sessionStorage.getItem('ardoise_theme');}catch(e){}
-   var th=(t&&/^[a-z][a-z0-9-]{1,19}$/.test(t))?t:'ardoise';
-   document.documentElement.setAttribute('data-theme', th);})();
+  /* Apparence choisie sur cet appareil (clair / sombre / système), sans clignotement. */
+  (function () {
+    var t = null;
+    try { t = localStorage.getItem('ardoise.ap.theme'); } catch (e) {}
+    if (t === 'clair' || t === 'sombre') document.documentElement.setAttribute('data-theme', t);
+  })();
 </script>
-
-<link rel="stylesheet" href="theme.css" />
-<link rel="stylesheet" href="ui.css" />
-<link rel="stylesheet" href="super-admin-styles.css" />
-<link rel="stylesheet" href="super-admin-styles-finance.css" />
-<link rel="stylesheet" href="super-admin-styles-prospects.css" />
-<link rel="stylesheet" href="super-admin-styles-apporteurs.css" />
-
-<!-- Styles de l'écran de connexion : repris À L'IDENTIQUE de super-admin.html,
-     où ils sont volontairement autonomes (lisibles même si une feuille
-     externe manque). -->
-<style>
-  /* ------------------------------------------------------------------
-     Écran de connexion : styles VOLONTAIREMENT AUTONOMES.
-
-     Cet écran vit avant que l'application ne soit montée, et il doit
-     rester lisible même si super-admin-styles.css ne se charge pas.
-     C'est exactement ce qui est arrivé : la feuille manquait, les
-     styles des champs avec elle, et le formulaire s'est affiché en
-     ligne — « Email [   ] Mot de passe [   ] » — au lieu d'être empilé.
-     Un écran de connexion cassé empêche d'entrer dans l'outil ; il ne
-     doit donc dépendre d'aucun fichier externe.
-
-     Les variables du thème sont utilisées avec un repli explicite, pour
-     la même raison : si theme.css manque aussi, la page reste correcte.
-     ------------------------------------------------------------------ */
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    font-family: var(--police-corps, "Inter", system-ui, -apple-system, sans-serif);
-    color: var(--texte-sombre, #2B2A26);
-    background: var(--craie, #F6F1E7);
-  }
-
-  .sa-ecran-connexion {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-  }
-
-  .sa-carte-connexion {
-    background: var(--craie-2, #FFFDF8);
-    border: 1px solid var(--bordure, #E2DACA);
-    border-radius: var(--r-carte, 14px);
-    padding: 40px 36px 34px;
-    max-width: 400px;
-    width: 100%;
-    box-shadow: 0 1px 2px rgba(43, 42, 38, 0.04), 0 8px 28px rgba(43, 42, 38, 0.07);
-  }
-
-  /* Filet ocre au-dessus du titre : le seul ornement, repris de la charte. */
-  .sa-marque-connexion {
-    width: 34px; height: 3px;
-    background: var(--ocre, #C08A3E);
-    border-radius: 2px;
-    margin-bottom: 20px;
-  }
-
-  .sa-carte-connexion h1 {
-    font-family: var(--police-titre, "Fraunces", Georgia, serif);
-    font-weight: 600;
-    font-size: 1.5rem;
-    line-height: 1.2;
-    margin: 0 0 6px;
-    color: var(--texte-sombre, #2B2A26);
-  }
-  .sa-carte-connexion .sa-sous-titre {
-    margin: 0 0 28px;
-    font-size: 0.875rem;
-    line-height: 1.45;
-    color: var(--texte-att, #7A7466);
-  }
-
-  /* Champs empilés. C'est CE bloc dont l'absence cassait la mise en page. */
-  .sa-connexion-champ { display: block; margin-bottom: 16px; }
-  .sa-connexion-champ > span {
-    display: block;
-    font-size: 0.72rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--texte-att, #7A7466);
-    margin-bottom: 7px;
-  }
-  .sa-connexion-champ > input {
-    display: block;
-    width: 100%;
-    padding: 11px 13px;
-    font: inherit;
-    font-size: 0.94rem;
-    color: var(--texte-sombre, #2B2A26);
-    background: var(--craie-2, #FFFDF8);
-    border: 1.5px solid var(--bordure, #E2DACA);
-    border-radius: var(--r-bouton, 9px);
-    transition: border-color 0.15s ease;
-  }
-  .sa-connexion-champ > input:focus {
-    outline: none;
-    border-color: var(--ocre, #C08A3E);
-  }
-
-  .sa-case-souvenir {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    margin: 2px 0 4px;
-    font-size: 0.86rem;
-    color: var(--texte-att, #7A7466);
-    cursor: pointer;
-    user-select: none;
-  }
-  .sa-case-souvenir > input {
-    /* Une taille explicite plutôt que `width: auto` : la feuille partagée
-       fixe désormais la hauteur des cases à 18 px pour la rendre cliquable
-       au doigt, et un `auto` en largeur donnait une case de 13 sur 18. */
-    width: 18px;
-    height: 18px;
-    margin: 0;
-    accent-color: var(--ocre, #C08A3E);
-    cursor: pointer;
-  }
-  .sa-note-souvenir {
-    margin: 12px 0 0;
-    font-size: 0.78rem;
-    line-height: 1.5;
-    color: var(--texte-att, #7A7466);
-    opacity: 0.85;
-    text-align: center;
-  }
-
-  .sa-erreur-connexion {
-    display: none;
-    margin: 0 0 18px;
-    padding: 11px 13px;
-    font-size: 0.85rem;
-    line-height: 1.45;
-    color: var(--rouge, #B23A2E);
-    border-left: 3px solid var(--rouge, #B23A2E);
-    border-radius: 0 var(--r-bouton, 9px) var(--r-bouton, 9px) 0;
-    background: rgba(178, 58, 46, 0.07);
-  }
-  .sa-erreur-connexion.visible { display: block; }
-
-  .sa-bouton-connexion {
-    display: block;
-    width: 100%;
-    margin-top: 8px;
-    padding: 12px 16px;
-    font: inherit;
-    font-size: 0.92rem;
-    font-weight: 600;
-    color: var(--craie-2, #FFFDF8);
-    background: var(--ocre, #C08A3E);
-    border: 1.5px solid var(--ocre, #C08A3E);
-    border-radius: var(--r-bouton, 9px);
-    cursor: pointer;
-    transition: background 0.15s ease;
-  }
-  .sa-bouton-connexion:hover:not(:disabled) { background: var(--ocre-dark, #A5722F); border-color: var(--ocre-dark, #A5722F); }
-  .sa-bouton-connexion:disabled { opacity: 0.6; cursor: not-allowed; }
-
-  @media (max-width: 420px) {
-    .sa-carte-connexion { padding: 30px 22px 26px; }
-  }
-</style>
-<style>
-  .sa-lien-discret {
-    display: block; margin-top: 16px; text-align: center;
-    font-size: 0.84rem; color: var(--texte-att, #7A7466); text-decoration: underline;
-    background: none; border: 0; cursor: pointer; width: 100%; font-family: inherit;
-  }
-  .sa-succes-connexion {
-    margin: 0 0 18px; padding: 11px 13px; font-size: 0.85rem; line-height: 1.45;
-    color: var(--vert-ok, #4C7A5A); border-left: 3px solid var(--vert-ok, #4C7A5A);
-    background: rgba(76, 122, 90, 0.08); border-radius: 0 9px 9px 0;
-  }
-</style>
-<link rel="stylesheet" href="mobile.css" />
+<link rel="stylesheet" href="espace-apporteur.css?v=20261015" />
 </head>
 <body>
 
-<!-- =====================================================================
-     Connexion, activation et lien d'accès
-     ===================================================================== -->
-<div class="sa-ecran-connexion" id="ecran-connexion">
-  <div class="sa-carte-connexion">
-    <div class="sa-marque-connexion" aria-hidden="true"></div>
-    <h1 id="connexion-titre">Ardoise — Espace apporteur</h1>
-    <p class="sa-sous-titre" id="connexion-intro">Vos codes, vos écoles attribuées, vos commissions et vos règlements.</p>
-
-    <div class="sa-erreur-connexion" id="erreur-connexion" role="alert"></div>
-    <div class="sa-succes-connexion" id="succes-connexion" role="status" hidden></div>
-
-    <form id="formulaire-connexion" autocomplete="on">
-      <label class="sa-connexion-champ"><span>E-mail</span>
-        <input type="email" id="champ-email" autocomplete="username" required /></label>
-      <label class="sa-connexion-champ"><span>Mot de passe</span>
-        <input type="password" id="champ-mot-de-passe" autocomplete="current-password" required /></label>
-      <label class="sa-case-souvenir"><input type="checkbox" id="case-souvenir" />
-        <span>Rester connecté sur cet appareil</span></label>
-      <button type="submit" class="sa-bouton-connexion" id="bouton-connexion">Se connecter</button>
-      <button type="button" class="sa-lien-discret" id="lien-oubli">Première connexion ou mot de passe oublié ?</button>
-    </form>
-
-    <form id="formulaire-lien" hidden>
-      <label class="sa-connexion-champ"><span>E-mail de votre profil</span>
-        <input type="email" id="champ-email-lien" autocomplete="email" required /></label>
-      <button type="submit" class="sa-bouton-connexion" id="bouton-lien">Recevoir un lien d'accès</button>
-      <button type="button" class="sa-lien-discret" id="retour-connexion">Retour à la connexion</button>
-    </form>
-
-    <form id="formulaire-acces" hidden>
-      <label class="sa-connexion-champ"><span>Nouveau mot de passe (8 caractères au moins)</span>
-        <input type="password" id="champ-nouveau" autocomplete="new-password" minlength="8" required /></label>
-      <label class="sa-connexion-champ"><span>Confirmation</span>
-        <input type="password" id="champ-confirmation" autocomplete="new-password" minlength="8" required /></label>
-      <button type="submit" class="sa-bouton-connexion" id="bouton-acces">Enregistrer et entrer</button>
-    </form>
-
-    <p class="sa-note-souvenir">Pas encore apporteur ? <a href="/apporteurs/">Découvrir le programme</a></p>
-  </div>
-</div>
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+  <symbol id="i-accueil" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-prospects" viewBox="0 0 24 24"><path d="M4 5h16M4 5v14h16V5M9 5v14M15 5v14"/></symbol>
+  <symbol id="i-ecole" viewBox="0 0 24 24"><path d="m2 9 10-5 10 5-10 5zM6 11v5c3 2.5 9 2.5 12 0v-5M22 9v6"/></symbol>
+  <symbol id="i-gains" viewBox="0 0 24 24"><path d="M3 7h18v12H3zM3 7l3-3h12l3 3M16 13h2"/></symbol>
+  <symbol id="i-partage" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></symbol>
+  <symbol id="i-messages" viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></symbol>
+  <symbol id="i-programme" viewBox="0 0 24 24"><circle cx="12" cy="9" r="6"/><path d="m8.5 14 -1.5 7 5-3 5 3-1.5-7"/></symbol>
+  <symbol id="i-profil" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></symbol>
+  <symbol id="i-sortie" viewBox="0 0 24 24"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/></symbol>
+  <symbol id="i-copier" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a1 1 0 0 1 1-1h10"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-envoyer" viewBox="0 0 24 24"><path d="m4 12 16-8-6 16-2.5-6.5z"/></symbol>
+  <symbol id="i-fleche" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="i-retour" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></symbol>
+  <symbol id="i-cloche" viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 1 1 12 0v5l2 2H4zM10 21h4"/></symbol>
+  <symbol id="i-soleil" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M5 19l1.5-1.5M17.5 6.5 19 5"/></symbol>
+  <symbol id="i-lune" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></symbol>
+  <symbol id="i-chercher" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></symbol>
+  <symbol id="i-fermer" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="i-ok" viewBox="0 0 24 24"><path d="m5 12 5 5 9-10"/></symbol>
+  <symbol id="i-calendrier" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+  <symbol id="i-telecharger" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></symbol>
+  <symbol id="i-trophee" viewBox="0 0 24 24"><path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H4a3 3 0 0 0 4 4M16 6h4a3 3 0 0 1-4 4M12 13v4M8 21h8M9 17h6v4H9z"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+  <symbol id="i-whatsapp" viewBox="0 0 24 24"><path d="M4 20l1.2-4A8 8 0 1 1 8 18.8z"/><path d="M9 9.5c0 3 2.5 5.5 5.5 5.5l1-1.5-2-1-1 1c-1-.5-2-1.5-2.5-2.5l1-1-1-2z"/></symbol>
+  <symbol id="i-courriel" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></symbol>
+  <symbol id="i-sms" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="3"/><path d="M10 18h4"/></symbol>
+  <symbol id="i-calcul" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 12h2M14 12h2M8 16h2M14 16h2"/></symbol>
+  <symbol id="i-cible" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></symbol>
+  <symbol id="i-oeil" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-poubelle" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></symbol>
+</svg>
 
 <!-- =====================================================================
-     Portail
+     ACCÈS : connexion, inscription, confirmation, mot de passe
      ===================================================================== -->
-<div class="sa-application" id="application" style="display:none;">
-  <nav class="sa-navigation" id="sa-navigation" aria-label="Navigation de l'espace apporteur">
-    <div class="sa-marque">
-      <span>Ardoise</span>
-      <span class="sa-etiquette-admin">Apporteur</span>
+<div class="acces" id="ecran-acces">
+  <aside class="acces-marque">
+    <a class="acces-logo" href="/">Ardoise</a>
+    <div class="acces-marque-corps">
+      <p class="acces-eyebrow">Programme partenaires</p>
+      <h1>Faites entrer Ardoise dans les écoles que vous connaissez.</h1>
+      <ul class="acces-atouts">
+        <li><strong>20&nbsp;%</strong> de chaque abonnement réellement encaissé, pendant 24&nbsp;mois, pour les écoles qui vous sont attribuées.</li>
+        <li>Votre <strong>lien personnel</strong>, un kit de présentation prêt à partager et le suivi de vos prospects.</li>
+        <li>Une <strong>communauté</strong> de partenaires et l'équipe Ardoise à portée de message.</li>
+      </ul>
     </div>
-    <ul class="sa-menu">
-      <li><a href="#/tableau-de-bord" data-route="tableau-de-bord"><span class="sa-icone">📊</span> Tableau de bord</a></li>
-      <li><a href="#/codes" data-route="codes"><span class="sa-icone">🔗</span> Mes codes et liens</a></li>
-      <li><a href="#/ecoles" data-route="ecoles"><span class="sa-icone">🏫</span> Mes écoles</a></li>
-      <li><a href="#/releve" data-route="releve"><span class="sa-icone">🧾</span> Commissions et relevé</a></li>
-      <li><a href="#/declarations" data-route="declarations"><span class="sa-icone">📝</span> Déclarer un prospect</a></li>
-      <li><a href="#/programme" data-route="programme"><span class="sa-icone">🧭</span> Le programme</a></li>
-    </ul>
-    <div class="sa-nav-pied">
-      <div class="sa-identite" id="sa-identite">—</div>
-      <button class="sa-deconnexion" id="bouton-deconnexion">↩ Se déconnecter</button>
-    </div>
-  </nav>
+    <p class="acces-pied">Aucun revenu garanti : la rémunération dépend des paiements réels des écoles. <a href="/apporteurs/#conditions">Conditions du programme</a></p>
+  </aside>
 
-  <main class="sa-principal">
-    <div class="sa-entete" id="sa-entete">
-      <div><h1>Chargement…</h1></div>
-      <div class="sa-entete-actions" id="sa-entete-actions"></div>
+  <main class="acces-panneau">
+    <div class="acces-carte">
+      <div class="onglets-acces" role="tablist" id="onglets-acces">
+        <button type="button" role="tab" data-onglet="connexion" aria-selected="true">Se connecter</button>
+        <button type="button" role="tab" data-onglet="inscription" aria-selected="false">Créer mon espace</button>
+      </div>
+
+      <div class="alerte erreur" id="acces-erreur" role="alert" hidden></div>
+      <div class="alerte succes" id="acces-succes" role="status" hidden></div>
+
+      <!-- Connexion -->
+      <form id="form-connexion" class="formulaire-acces" autocomplete="on" novalidate>
+        <h2>Bon retour</h2>
+        <p class="aide">Retrouvez votre lien, vos prospects, vos gains et vos messages.</p>
+        <label class="champ"><span>Adresse e-mail</span>
+          <input type="email" name="email" autocomplete="username" required /></label>
+        <label class="champ"><span>Mot de passe</span>
+          <input type="password" name="mot_de_passe" autocomplete="current-password" required /></label>
+        <label class="case"><input type="checkbox" name="souvenir" /> <span>Rester connecté sur cet appareil</span></label>
+        <button type="submit" class="bouton principal plein">Se connecter</button>
+        <button type="button" class="lien" data-vers="oubli">Mot de passe oublié ?</button>
+      </form>
+
+      <!-- Inscription -->
+      <form id="form-inscription" class="formulaire-acces" autocomplete="on" novalidate hidden>
+        <h2>Créer mon espace partenaire</h2>
+        <p class="aide">Gratuit, sans engagement. Vous confirmez votre adresse et vous entrez aussitôt.</p>
+        <div class="duo">
+          <label class="champ"><span>Prénom</span><input name="prenom" autocomplete="given-name" required maxlength="120" /></label>
+          <label class="champ"><span>Nom</span><input name="nom" autocomplete="family-name" required maxlength="120" /></label>
+        </div>
+        <label class="champ"><span>Adresse e-mail</span><input type="email" name="email" autocomplete="email" required maxlength="200" /></label>
+        <div class="duo">
+          <label class="champ"><span>Téléphone / WhatsApp</span><input type="tel" name="telephone" autocomplete="tel" required placeholder="+243 8XX XXX XXX" maxlength="40" /></label>
+          <label class="champ"><span>Ville</span><input name="ville" autocomplete="address-level2" required maxlength="120" /></label>
+        </div>
+        <label class="champ"><span>Mot de passe <em>(8 caractères au moins)</em></span>
+          <input type="password" name="mot_de_passe" autocomplete="new-password" minlength="8" required /></label>
+        <fieldset class="puces">
+          <legend>Je voudrais aussi, après qualification <em>(facultatif)</em></legend>
+          <label><input type="checkbox" name="profils_souhaites" value="configurateur" /><span>Installer et configurer</span></label>
+          <label><input type="checkbox" name="profils_souhaites" value="formateur" /><span>Former les équipes</span></label>
+          <label><input type="checkbox" name="profils_souhaites" value="partenaire_strategique" /><span>Porter un réseau d'écoles</span></label>
+        </fieldset>
+        <div class="piege" aria-hidden="true"><label>Ne pas remplir <input name="site_web" tabindex="-1" autocomplete="off" /></label></div>
+        <label class="case"><input type="checkbox" name="consentement" required />
+          <span>J'accepte les <a href="/apporteurs/#conditions" target="_blank" rel="noopener">conditions du programme</a> et la <a href="/confidentialite.html" target="_blank" rel="noopener">politique de confidentialité</a>.</span></label>
+        <button type="submit" class="bouton principal plein">Créer mon espace</button>
+      </form>
+
+      <!-- En attente de confirmation -->
+      <div id="bloc-verifier" class="formulaire-acces etat-boite" hidden>
+        <div class="boite-icone" aria-hidden="true"><svg><use href="#i-courriel"/></svg></div>
+        <h2>Vérifiez votre boîte de réception</h2>
+        <p class="aide" id="verifier-texte">Nous vous avons envoyé un lien de confirmation.</p>
+        <ol class="etapes-boite">
+          <li>Ouvrez l'e-mail « Confirmez votre adresse » d'Ardoise.</li>
+          <li>Touchez <strong>Confirmer mon adresse</strong>.</li>
+          <li>Votre espace s'ouvre, votre lien personnel est prêt.</li>
+        </ol>
+        <p class="aide">Rien reçu ? Regardez dans les courriers indésirables, ou :</p>
+        <button type="button" class="bouton secondaire plein" id="bouton-renvoyer">Renvoyer le lien</button>
+        <button type="button" class="lien" data-vers="connexion">Retour à la connexion</button>
+      </div>
+
+      <!-- Mot de passe oublié -->
+      <form id="form-oubli" class="formulaire-acces" novalidate hidden>
+        <h2>Mot de passe oublié</h2>
+        <p class="aide">Indiquez l'adresse de votre espace : nous vous envoyons un lien pour choisir un nouveau mot de passe.</p>
+        <label class="champ"><span>Adresse e-mail</span><input type="email" name="email" autocomplete="email" required /></label>
+        <button type="submit" class="bouton principal plein">Recevoir le lien</button>
+        <button type="button" class="lien" data-vers="connexion">Retour à la connexion</button>
+      </form>
+
+      <!-- Nouveau mot de passe (lien reçu) -->
+      <form id="form-acces" class="formulaire-acces" novalidate hidden>
+        <h2>Choisissez votre mot de passe</h2>
+        <p class="aide">Ce lien personnel ne sert qu'une fois.</p>
+        <label class="champ"><span>Nouveau mot de passe <em>(8 caractères au moins)</em></span>
+          <input type="password" name="nouveau" autocomplete="new-password" minlength="8" required /></label>
+        <label class="champ"><span>Confirmation</span>
+          <input type="password" name="confirmation" autocomplete="new-password" minlength="8" required /></label>
+        <button type="submit" class="bouton principal plein">Enregistrer et entrer</button>
+      </form>
+
+      <!-- Confirmation en cours (lien ?verification=) -->
+      <div id="bloc-confirmation" class="formulaire-acces etat-boite" hidden>
+        <div class="anneau-chargement" aria-hidden="true"></div>
+        <h2>Ouverture de votre espace…</h2>
+        <p class="aide">Nous confirmons votre adresse.</p>
+      </div>
     </div>
-    <div id="sa-contenu"></div>
   </main>
 </div>
 
-<script src="espace-apporteur.js"></script>
-<script src="mobile.js"></script>
+<!-- =====================================================================
+     APPLICATION
+     ===================================================================== -->
+<div class="app" id="application" hidden>
+  <nav class="rail" id="rail" aria-label="Navigation de l'espace partenaire">
+    <a class="rail-logo" href="#/accueil">Ardoise<span>Partenaires</span></a>
+    <ul class="rail-menu">
+      <li><a href="#/accueil" data-route="accueil"><svg><use href="#i-accueil"/></svg><span>Accueil</span></a></li>
+      <li><a href="#/prospects" data-route="prospects"><svg><use href="#i-prospects"/></svg><span>Prospects</span></a></li>
+      <li><a href="#/ecoles" data-route="ecoles"><svg><use href="#i-ecole"/></svg><span>Mes écoles</span></a></li>
+      <li><a href="#/gains" data-route="gains"><svg><use href="#i-gains"/></svg><span>Gains</span></a></li>
+      <li><a href="#/kit" data-route="kit"><svg><use href="#i-partage"/></svg><span>Kit de partage</span></a></li>
+      <li><a href="#/messages" data-route="messages"><svg><use href="#i-messages"/></svg><span>Messages</span><b class="pastille" data-non-lus hidden></b></a></li>
+      <li><a href="#/programme" data-route="programme"><svg><use href="#i-programme"/></svg><span>Programme</span></a></li>
+      <li><a href="#/profil" data-route="profil"><svg><use href="#i-profil"/></svg><span>Profil</span></a></li>
+    </ul>
+    <div class="rail-pied">
+      <button type="button" class="rail-bouton" id="bascule-theme" aria-label="Changer d'apparence"><svg><use href="#i-lune"/></svg><span>Apparence</span></button>
+      <div class="rail-identite">
+        <span class="avatar" id="avatar-rail">·</span>
+        <span class="rail-identite-texte"><strong id="nom-rail">—</strong><small id="code-rail"></small></span>
+      </div>
+      <button type="button" class="rail-bouton" id="bouton-deconnexion"><svg><use href="#i-sortie"/></svg><span>Se déconnecter</span></button>
+    </div>
+  </nav>
+
+  <div class="zone-principale">
+    <header class="barre-haut">
+      <button type="button" class="icone-bouton seulement-mobile" id="ouvrir-rail" aria-label="Ouvrir le menu"><svg><use href="#i-menu"/></svg></button>
+      <div class="barre-titre">
+        <h1 id="titre-page">Chargement…</h1>
+        <p id="sous-titre-page"></p>
+      </div>
+      <div class="barre-actions" id="actions-page"></div>
+      <a class="icone-bouton cloche" href="#/messages" aria-label="Messages"><svg><use href="#i-cloche"/></svg><b class="pastille" data-non-lus hidden></b></a>
+    </header>
+    <main id="contenu" class="contenu" tabindex="-1"></main>
+  </div>
+
+  <nav class="onglets-bas" aria-label="Navigation rapide">
+    <a href="#/accueil" data-route="accueil"><svg><use href="#i-accueil"/></svg><span>Accueil</span></a>
+    <a href="#/prospects" data-route="prospects"><svg><use href="#i-prospects"/></svg><span>Prospects</span></a>
+    <a href="#/kit" data-route="kit"><svg><use href="#i-partage"/></svg><span>Partager</span></a>
+    <a href="#/messages" data-route="messages"><svg><use href="#i-messages"/></svg><span>Messages</span><b class="pastille" data-non-lus hidden></b></a>
+    <a href="#/gains" data-route="gains"><svg><use href="#i-gains"/></svg><span>Gains</span></a>
+  </nav>
+  <div class="voile" id="voile" hidden></div>
+</div>
+
+<div id="toasts" class="toasts" aria-live="polite"></div>
+
+<script src="espace-apporteur.js?v=20261015"></script>
 </body>
 </html>

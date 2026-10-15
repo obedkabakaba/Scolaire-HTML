@@ -157,7 +157,7 @@
       <div class="cc-palette" role="dialog" aria-modal="true" aria-label="Palette de commandes">
         <input id="cc-pal-champ" placeholder="Aller à un écran, rechercher une école, une erreur, une règle…"
                autocomplete="off" spellcheck="false">
-        <div class="cc-palette-resultats" id="cc-pal-res"></div>
+        <div class="cc-palette-resultats" id="cc-pal-res" tabindex="0" aria-label="Résultats"></div>
         <div class="cc-palette-pied">
           <span><span class="cc-touche">↑</span><span class="cc-touche">↓</span> naviguer</span>
           <span><span class="cc-touche">↵</span> ouvrir</span>

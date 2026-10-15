@@ -1183,7 +1183,7 @@
     const choix = ecoles.map((e) =>
       `<option value="${SA.esc(e.id)}" ${valeurCourante === e.id ? 'selected' : ''}>${SA.esc(e.nom)}</option>`
     ).join('');
-    return `<select class="sa-champ" data-filtre="${options.nom || 'ecole_id'}">
+    return `<select class="sa-champ" data-filtre="${options.nom || 'ecole_id'}" aria-label="${SA.esc(options.libelleVide || 'Toutes les écoles')}">
       <option value="">${SA.esc(options.libelleVide || 'Toutes les écoles')}</option>${choix}
     </select>`;
   };
@@ -1202,7 +1202,7 @@
     const html = champs.map((c) => {
       if (c.type === 'recherche') {
         return `<input type="search" class="sa-champ sa-champ-recherche" data-filtre="${SA.esc(c.nom)}"
-                       placeholder="${SA.esc(c.libelle || 'Rechercher…')}" value="${SA.esc(c.valeur || '')}" />`;
+                       aria-label="${SA.esc(c.libelle || 'Rechercher')}" placeholder="${SA.esc(c.libelle || 'Rechercher…')}" value="${SA.esc(c.valeur || '')}" />`;
       }
       if (c.type === 'date') {
         return `<label class="sa-champ-date"><span>${SA.esc(c.libelle)}</span>
@@ -1216,7 +1216,7 @@
         const libelle = typeof o === 'string' ? o : o.libelle;
         return `<option value="${SA.esc(valeur)}" ${String(c.valeur) === String(valeur) ? 'selected' : ''}>${SA.esc(libelle)}</option>`;
       }).join('');
-      return `<select class="sa-champ" data-filtre="${SA.esc(c.nom)}">
+      return `<select class="sa-champ" data-filtre="${SA.esc(c.nom)}" aria-label="${SA.esc(c.libelle)}">
                 <option value="">${SA.esc(c.libelle)}</option>${options}
               </select>`;
     }).join('');

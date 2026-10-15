@@ -24,7 +24,10 @@
   style.textContent = [
     'html[data-theme="ardoise"]{--texte-att:#686F66;--vert-ok:#467052;}',
     'html[data-theme="ardoise"] .valider{color:var(--texte-sombre,#1F2B24)!important;}',
-    'html[data-theme="ardoise"] #sa-identite{color:var(--nav-texte-fort,#F6F2E7)!important;}',
+    /* #sa-identite n'est plus forcé en couleur claire : l'identité du Super
+       Admin est passée de la barre latérale sombre au menu du compte, sur fond
+       clair, où ce forçage la rendait illisible (1,06:1). Le contraste y est
+       assuré par super-admin-coque.css. */
     'html[data-theme="ardoise"] .sa-muet,html[data-theme="ardoise"] .sa-carte-detail{opacity:1!important;color:var(--texte-att,#686F66)!important;}',
     /* #6A461D sur le fond réel #F2E8D6 de la bannière = ~6,9:1.
        Le précédent var(--ocre) (#C98A3E) ne donnait que 2,4:1 et faisait

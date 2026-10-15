@@ -1497,17 +1497,17 @@
     let champ;
     if (type === 'boolean') {
       champ = `<label style="display:flex;align-items:center;gap:8px;font-size:.86rem">
-        <input type="checkbox" data-cle="${esc(e.cle)}" data-type="boolean"
+        <input type="checkbox" aria-label="${esc(e.libelle || e.cle)}" data-cle="${esc(e.cle)}" data-type="boolean"
                data-initial="${valeur ? 'true' : 'false'}" ${valeur ? 'checked' : ''} />
         Activé
       </label>`;
     } else if (type === 'number') {
       champ = `<input type="number" class="sa-champ" style="max-width:220px"
-                      data-cle="${esc(e.cle)}" data-type="number"
+                      aria-label="${esc(e.libelle || e.cle)}" data-cle="${esc(e.cle)}" data-type="number"
                       data-initial="${esc(valeur)}" value="${esc(valeur)}" />`;
     } else {
       champ = `<input class="sa-champ" style="max-width:420px;width:100%"
-                      data-cle="${esc(e.cle)}" data-type="string"
+                      aria-label="${esc(e.libelle || e.cle)}" data-cle="${esc(e.cle)}" data-type="string"
                       data-initial="${esc(valeur === null ? '' : valeur)}"
                       value="${esc(valeur === null ? '' : valeur)}" />`;
     }

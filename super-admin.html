@@ -197,7 +197,6 @@
     font-size: 0.78rem;
     line-height: 1.5;
     color: var(--texte-att, #7A7466);
-    opacity: 0.85;
     text-align: center;
   }
 
@@ -230,12 +229,13 @@
     font-weight: 600;
     color: var(--craie-2, #FFFDF8);
     background: var(--ocre, #C08A3E);
-    border: 1.5px solid var(--ocre, #C08A3E);
+    background: color-mix(in srgb, var(--ocre, #C08A3E) 60%, var(--texte-sombre, #2B2A26));
+    border: 1.5px solid transparent;
     border-radius: var(--r-bouton, 9px);
     cursor: pointer;
     transition: background 0.15s ease;
   }
-  .sa-bouton-connexion:hover:not(:disabled) { background: var(--ocre-dark, #A5722F); border-color: var(--ocre-dark, #A5722F); }
+  .sa-bouton-connexion:hover:not(:disabled) { background: color-mix(in srgb, var(--ocre, #C08A3E) 48%, var(--texte-sombre, #2B2A26)); }
   .sa-bouton-connexion:disabled { opacity: 0.6; cursor: not-allowed; }
 
   @media (max-width: 420px) {

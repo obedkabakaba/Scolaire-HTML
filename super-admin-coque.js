@@ -182,7 +182,10 @@
   const boutonProfil = document.getElementById('sa-rail-profil');
   if (pied && boutonProfil) {
     pied.classList.add('sa-menu-compte');
-    pied.setAttribute('role', 'menu');
+    // Un simple groupe de liens : `role="menu"` exigerait des `menuitem` et la
+    // navigation au clavier propre aux menus applicatifs (axe : aria-required-children).
+    pied.setAttribute('role', 'group');
+    pied.setAttribute('aria-label', 'Mon compte');
     pied.hidden = true;
     nav.appendChild(pied);
     const deconnexion = pied.querySelector('#bouton-deconnexion');

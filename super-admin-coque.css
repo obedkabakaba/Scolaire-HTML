@@ -18,6 +18,26 @@
 :root { --sa-ambre: #C9861F; }
 html[data-theme="nuit"] { --sa-ambre: #E0A84A; }
 
+/* Bouton principal : l'ocre pur sous un texte crème ne donnait que 2,8:1 dans
+   le thème Ardoise (WCAG AA exige 4,5:1, audit axe de la CI). Mélanger l'ocre
+   avec la couleur de texte du thème l'assombrit dans les thèmes clairs et
+   l'éclaircit dans Nuit : le contraste monte partout (Ardoise 5,2:1,
+   Terranga 7,7:1, Nuit 8,6:1) sans quitter la palette. */
+.sa-bouton-principal { background: color-mix(in srgb, var(--ocre) 60%, var(--texte-sombre)); }
+.sa-bouton-principal:hover { background: color-mix(in srgb, var(--ocre) 48%, var(--texte-sombre)); }
+
+/* Autres contrastes insuffisants relevés par axe (WCAG AA) sur des écrans que
+   la CI n'audite pas : états vides atténués par une opacité, encart
+   « hypothèse » du Control Center, badges « succès ». Le texte « atténué »
+   l'est par sa couleur, plus par une transparence qui le faisait passer sous
+   4,5:1. */
+.sa-etat-vide-detail { opacity: 1; }
+.cc-encart-hypothese { color: color-mix(in srgb, var(--texte-sombre) 78%, var(--texte-att)); }
+/* theme.css impose déjà une couleur (avec !important) pour Ardoise, encore
+   sous le seuil sur le fond teinté du badge : même spécificité, chargée après. */
+html[data-theme] .sa-badge.ton-succes { color: color-mix(in srgb, var(--vert-ok) 45%, var(--texte-sombre)) !important; }
+.cc-palette-item .cc-palette-groupe { color: color-mix(in srgb, var(--texte-sombre) 75%, var(--texte-att)); font-size: 0.72rem; }
+
 /* --------------------------------------------------------------------------
    1. Charpente
    -------------------------------------------------------------------------- */
@@ -296,7 +316,7 @@ html:not(.sa-coque-prete) .sa-espace > a + a { padding-left: 22px; }
   margin-bottom: 4px;
   border-bottom: 1px solid var(--bordure);
   font-size: 0.8rem;
-  color: var(--texte-att);
+  color: color-mix(in srgb, var(--texte-sombre) 75%, var(--texte-att));
   word-break: break-all;
 }
 .sa-menu-compte-lien,
@@ -501,7 +521,7 @@ html:not(.sa-coque-prete) .sa-espace > a + a { padding-left: 22px; }
 .sa-carte-section-titre { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 0.93rem; color: var(--texte-sombre); }
 .sa-carte-section-titre .sa-compteur { margin-left: 0; }
 .sa-carte-section-texte { font-size: 0.82rem; line-height: 1.45; color: var(--texte-att); }
-.sa-carte-section-onglets { font-size: 0.76rem; color: var(--texte-att); opacity: 0.85; }
+.sa-carte-section-onglets { font-size: 0.76rem; color: var(--texte-att); }
 .sa-carte-section-fleche { color: var(--texte-att); opacity: 0; transition: opacity var(--transition-base); align-self: center; }
 .sa-carte-section:hover .sa-carte-section-fleche { opacity: 1; }
 
@@ -526,7 +546,7 @@ html:not(.sa-coque-prete) .sa-espace > a + a { padding-left: 22px; }
 .sa-carte-domaine-icone { margin-bottom: 4px; }
 .sa-carte-domaine-titre { font-weight: 600; font-size: 0.93rem; color: var(--texte-sombre); }
 .sa-carte-domaine-texte { font-size: 0.8rem; line-height: 1.45; color: var(--texte-att); flex: 1; }
-.sa-carte-domaine-pied { font-size: 0.74rem; color: var(--texte-att); opacity: 0.8; }
+.sa-carte-domaine-pied { font-size: 0.74rem; color: var(--texte-att); }
 
 /* --------------------------------------------------------------------------
    7. Tour de contrôle (tableau de bord)
@@ -724,7 +744,7 @@ a.tc-kpi:hover { border-color: color-mix(in srgb, var(--ocre) 45%, var(--bordure
   padding: 5px 10px;
   border-radius: calc(var(--r-bouton) - 2px);
   background: transparent;
-  color: var(--texte-att);
+  color: color-mix(in srgb, var(--texte-sombre) 80%, var(--texte-att));
   font: inherit;
   font-size: 0.78rem;
   font-weight: 500;
@@ -858,8 +878,8 @@ a.tc-element:hover .tc-element-titre { text-decoration: underline; }
   font-size: 0.78rem;
   font-weight: 600;
 }
-.sa-mfa-etat.ton-attention { background: color-mix(in srgb, var(--sa-ambre) 16%, transparent); color: color-mix(in srgb, var(--sa-ambre) 70%, var(--texte-sombre)); }
-.sa-mfa-etat.ton-succes { background: color-mix(in srgb, var(--vert-ok) 15%, transparent); color: color-mix(in srgb, var(--vert-ok) 70%, var(--texte-sombre)); }
+.sa-mfa-etat.ton-attention { background: color-mix(in srgb, var(--sa-ambre) 16%, transparent); color: color-mix(in srgb, var(--sa-ambre) 45%, var(--texte-sombre)); }
+.sa-mfa-etat.ton-succes { background: color-mix(in srgb, var(--vert-ok) 15%, transparent); color: color-mix(in srgb, var(--vert-ok) 45%, var(--texte-sombre)); }
 .sa-mfa-etapes { margin: 6px 0 16px; padding-left: 20px; font-size: 0.88rem; line-height: 1.6; color: var(--texte-sombre); }
 .sa-mfa-config {
   margin-top: 18px;

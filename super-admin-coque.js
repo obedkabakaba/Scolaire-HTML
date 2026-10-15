@@ -187,6 +187,11 @@
     nav.appendChild(pied);
     const deconnexion = pied.querySelector('#bouton-deconnexion');
     if (deconnexion) deconnexion.innerHTML = `${SA.ui.icone('sortie', 16)}<span>Se déconnecter</span>`;
+    const securite = document.createElement('a');
+    securite.href = '#/compte/securite';
+    securite.className = 'sa-menu-compte-lien';
+    securite.innerHTML = `${SA.ui.icone('coche', 16)}<span>Sécurité du compte</span><span class="sa-compte-mfa" id="sa-compte-mfa"></span>`;
+    pied.insertBefore(securite, deconnexion || null);
     const apparence = document.createElement('a');
     apparence.href = '#/apparence';
     apparence.className = 'sa-menu-compte-lien';
@@ -274,6 +279,8 @@
     }
     const lienApp = nav.querySelector('.sa-rail-pied a[data-route="apparence"]');
     if (lienApp) lienApp.classList.toggle('actif', chemin === 'apparence');
+    const profil = document.getElementById('sa-rail-profil');
+    if (profil) profil.classList.toggle('actif', /^compte\//.test(chemin || ''));
 
     const titrePage = texte(document.querySelector('#sa-entete h1'));
     poserFil(domaine, item, titrePage, chemin);
@@ -297,7 +304,7 @@
     const morceaux = [];
     if (domaine) {
       morceaux.push(`<a href="#/espace/${esc(domaine.id)}">${esc(domaine.libelle)}</a>`);
-    } else if (chemin === 'apparence') {
+    } else if (chemin === 'apparence' || /^compte\//.test(chemin || '')) {
       morceaux.push('<span>Mon compte</span>');
     }
     if (item && item.entree.onglets) {
@@ -388,7 +395,10 @@
 
   const compteurs = {};   // cle → { n, ton } ; absent = non mesuré
 
-  const SOURCES = {
+  /* Les pastilles lisent GET /super-admin/compteurs : quatre `count(*)`. Si le
+     serveur en ligne ne connaît pas encore cette route (déploiement décalé du
+     frontend et du backend), on retombe sur les listes complètes. */
+  const SOURCES_REPLI = {
     renouvellements: async () => {
       const d = await SA.api('/super-admin/renouvellements?statut=a_traiter');
       return { n: (d.donnees || []).length, ton: 'attention' };
@@ -407,6 +417,31 @@
       return { n: Number(d.a_verifier) || 0, ton: 'attention' };
     }
   };
+
+  let routeCompteursAbsente = false;
+
+  async function lireCompteurs() {
+    if (!routeCompteursAbsente) {
+      try {
+        const d = await SA.api('/super-admin/compteurs');
+        const c = (n, ton) => (n === null || n === undefined ? null : { n: Number(n) || 0, ton });
+        return {
+          renouvellements: c(d.renouvellements, 'attention'),
+          tickets: d.tickets ? { n: Number(d.tickets.ouverts) || 0, ton: Number(d.tickets.urgents) ? 'danger' : 'info' } : null,
+          prospects: c(d.prospects, 'info'),
+          demonstrations: c(d.demonstrations, 'attention')
+        };
+      } catch (err) {
+        if (err.statut !== 404) throw err;
+        routeCompteursAbsente = true;
+      }
+    }
+    const cles = Object.keys(SOURCES_REPLI);
+    const resultats = await Promise.allSettled(cles.map((c) => SOURCES_REPLI[c]()));
+    const valeurs = {};
+    resultats.forEach((r, i) => { valeurs[cles[i]] = r.status === 'fulfilled' ? r.value : null; });
+    return valeurs;
+  }
 
   function majCompteurs(valeurs) {
     Object.entries(valeurs || {}).forEach(([cle, v]) => {
@@ -449,11 +484,12 @@
     clearTimeout(minuteur);
     if (!SA.session.connecte()) return;
     if (document.visibilityState === 'visible') {
-      const cles = Object.keys(SOURCES);
-      const resultats = await Promise.allSettled(cles.map((c) => SOURCES[c]()));
-      const valeurs = {};
-      resultats.forEach((r, i) => { valeurs[cles[i]] = r.status === 'fulfilled' ? r.value : null; });
-      majCompteurs(valeurs);
+      try {
+        majCompteurs(await lireCompteurs());
+      } catch (err) {
+        // Mesure impossible : pas de pastille plutôt qu'un zéro rassurant.
+        majCompteurs({ renouvellements: null, tickets: null, prospects: null, demonstrations: null });
+      }
     }
     minuteur = setTimeout(chargerCompteurs, 5 * 60 * 1000);
   }
@@ -555,6 +591,8 @@
         }));
       });
       liste.push({ groupe: 'Mon compte', libelle: 'Apparence', route: 'apparence' });
+      liste.push({ groupe: 'Mon compte', libelle: 'Sécurité du compte — double authentification',
+        route: 'compte/securite', description: descriptionDe('compte/securite') });
       return liste;
     }
   };
@@ -574,6 +612,23 @@
       if (bouton) bouton.setAttribute('data-infobulle', profil.email || 'Mon compte');
     }
     chargerCompteurs();
+    lireEtatMfa();
     return resultat;
   };
+
+  /* Un compte Super Admin sans second facteur est signalé dans le menu du
+     compte. Silencieux si le serveur ne connaît pas encore la route. */
+  async function lireEtatMfa() {
+    const zone = document.getElementById('sa-compte-mfa');
+    if (!zone) return;
+    try {
+      const d = await SA.api('/super-admin/mfa');
+      const aActiver = d.migration_appliquee && !d.active;
+      zone.className = aActiver ? 'sa-compteur ton-attention' : 'sa-compte-mfa';
+      zone.textContent = aActiver ? 'à activer' : '';
+      const point = document.querySelector('#sa-rail-profil .sa-rail-point');
+      if (point) point.hidden = !aActiver;
+    } catch (e) { zone.textContent = ''; }
+  }
+  SA.coque.lireEtatMfa = lireEtatMfa;
 })();

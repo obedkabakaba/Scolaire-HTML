@@ -70,7 +70,8 @@
    v69 : l'arrondi intérieur suit le rail déployé ou replié et reste visible
          pendant le défilement du contenu. Terranga (clé interne yohali) et son
          alias Kivu conservent leur apparence d'origine, sans cet ajout. */
-const VERSION='ardoise-v87';
+const VERSION='ardoise-v88';
+/* v88 : Super Admin — double authentification (connexion en deux étapes, écran « Sécurité du compte »), actions groupées sur les écoles, journal des actions Super Admin ; connexion.html renvoie un compte protégé vers l'espace Super Admin. */
 /* v87 : espace Super Admin réorganisé en domaines — nouvelle coque (super-admin-coque.js/.css, précachées), tour de contrôle, menu, noyau et thème modifiés : sans incrément, un navigateur déjà installé garderait l'ancien menu. */
 /* v86 : connexion.html — code école facultatif, pré-remplissage depuis l'essai et l'e-mail de bienvenue. */
 /* v85 : espace Super Admin — programme des apporteurs d'affaires (nouveau menu dans super-admin.html, précaché) et portail espace-apporteur.html. */

@@ -632,6 +632,19 @@
         return;
       }
 
+      // Compte Super Admin protégé par une double authentification : la seconde
+      // étape n'existe que dans l'espace Super Admin. Sans ce renvoi, la page
+      // enregistrerait une session vide (aucun jeton n'a encore été délivré).
+      if (donnees.mfa_requise) {
+        afficherErreur('Ce compte est protégé par une double authentification. '
+          + 'Connectez-vous depuis l’espace Super Admin : super-admin.html');
+        boutonConnexion.disabled = false;
+        boutonConnexion.textContent = 'Se connecter';
+        champMotDePasse.value = '';
+        setTimeout(() => { window.location.href = 'super-admin.html'; }, 2500);
+        return;
+      }
+
       // Stockage des tokens pour les prochaines pages (dashboard, etc.).
       // Par défaut (case non cochée), on utilise sessionStorage : la session
       // est effacée à la fermeture du navigateur/onglet, pour ne jamais rester

@@ -213,6 +213,12 @@
     background: rgba(178, 58, 46, 0.07);
   }
   .sa-erreur-connexion.visible { display: block; }
+  #champ-code-mfa { font-family: var(--police-mono, "IBM Plex Mono", monospace); font-size: 1.2rem; letter-spacing: 0.18em; text-align: center; }
+  .sa-lien-retour {
+    margin-top: 6px; padding: 4px; border: 0; background: none; cursor: pointer;
+    font: inherit; font-size: 0.78rem; color: var(--texte-att, #7A7466); text-decoration: underline;
+  }
+  form[hidden] { display: none; }
 
   .sa-bouton-connexion {
     display: block;
@@ -277,6 +283,25 @@
         Sans cette case, la session se ferme dès que l'onglet est fermé.
       </p>
     </form>
+
+    <!-- Seconde étape, si le compte est protégé par la double authentification.
+         Le mot de passe a été accepté mais AUCUNE session n'existe encore : le
+         serveur a seulement remis un jeton d'étape de cinq minutes. -->
+    <form id="formulaire-mfa" autocomplete="off" hidden>
+      <p class="sa-sous-titre" style="margin-top:-12px">
+        Saisissez le code à six chiffres affiché par votre application d'authentification.
+      </p>
+      <label class="sa-connexion-champ">
+        <span>Code de vérification</span>
+        <input type="text" id="champ-code-mfa" autocomplete="one-time-code" inputmode="numeric"
+               maxlength="11" placeholder="123 456" required />
+      </label>
+      <button type="submit" class="sa-bouton-connexion" id="bouton-mfa">Vérifier</button>
+      <p class="sa-note-souvenir">
+        Téléphone indisponible ? Saisissez l'un de vos codes de secours (XXXXX-XXXXX).<br>
+        <button type="button" class="sa-lien-retour" id="bouton-retour-mfa">Recommencer avec un autre compte</button>
+      </p>
+    </form>
   </div>
 </div>
 
@@ -326,6 +351,7 @@
         <a class="sa-rail-bouton" href="#/apparence" data-route="apparence" aria-label="Apparence" data-infobulle="Apparence"></a>
         <button type="button" class="sa-rail-bouton sa-rail-profil" id="sa-rail-profil" aria-haspopup="true" aria-expanded="false" aria-label="Compte">
           <span class="sa-avatar" id="sa-avatar">SA</span>
+          <span class="sa-rail-point" hidden></span>
         </button>
       </div>
     </div>
@@ -521,6 +547,7 @@
             <li class="sa-espace" data-espace="Journaux">
               <a href="#/cc/logs" data-route="cc/logs">Journal technique</a>
               <a href="#/journal" data-route="journal">Journal d'activité</a>
+              <a href="#/journal/super-admin" data-route="journal/super-admin">Actions des Super Admins</a>
             </li>
           </ul>
         </div>
@@ -686,6 +713,9 @@
      première visite de l'écran — c'est-à-dire jamais pour qui ne connaissait
      pas l'adresse. -->
 <script src="super-admin-vues-renouvellements.js"></script>
+<!-- Mon compte : sécurité (double authentification). Définit aussi
+     SA.demanderCodeMfa, utilisé par le noyau pour la ré-authentification. -->
+<script src="super-admin-vues-compte.js"></script>
 <!-- La coque lit le menu ci-dessus et toutes les vues enregistrées : elle
      vient après elles. La palette vient en dernier, elle s'appuie sur la
      coque pour connaître tous les écrans. -->
@@ -721,6 +751,7 @@
     'super-admin-vues-ia-plateforme.js', 'super-admin-vues-ai-studio.js',
     'super-admin-vues-knowledge.js',
     'super-admin-vues-renouvellements.js',
+    'super-admin-vues-compte.js',
     'super-admin-coque.js',
     'super-admin-palette.js'
   ];
@@ -785,17 +816,11 @@
         return afficherErreur(donnees.message || 'Identifiants incorrects.');
       }
 
-      // Vérification côté client par courtoisie : elle évite d'afficher un
-      // panneau vide à un directeur qui se trompe de page. La vraie barrière
-      // est côté serveur (`superAdminSeul`), qui refuserait chaque requête.
-      if (!(donnees.user && (donnees.user.roles || []).includes('super_admin'))) {
-        return afficherErreur("Ce compte n'a pas les droits Super Admin.");
+      if (donnees.mfa_requise) {
+        return passerEtapeMfa(donnees.jeton_mfa, seSouvenir);
       }
 
-      SA.session.enregistrer(donnees, seSouvenir);
-      // Les identifiants ne restent pas dans le DOM une fois la session ouverte.
-      SA.viderFormulaireConnexion();
-      SA.demarrer();
+      return terminerConnexion(donnees, seSouvenir);
     } catch (erreur) {
       // À ce stade les scripts sont chargés : l'échec vient bien du réseau
       // ou du serveur, et le message peut le dire sans risque de tromper.
@@ -803,6 +828,89 @@
         + 'ou réessayez dans un instant si le service redémarre.');
     }
   });
+
+  /* ---------- Seconde étape : double authentification ---------- */
+  const formulaireMfa = document.getElementById('formulaire-mfa');
+  const champCode = document.getElementById('champ-code-mfa');
+  const boutonMfa = document.getElementById('bouton-mfa');
+  let etapeMfa = null;   // { jeton, seSouvenir } — en mémoire seulement, jamais stocké
+
+  function passerEtapeMfa(jeton, seSouvenir) {
+    etapeMfa = { jeton, seSouvenir };
+    // Le mot de passe a servi : il ne reste pas dans la page pendant l'étape suivante.
+    document.getElementById('champ-mot-de-passe').value = '';
+    formulaire.hidden = true;
+    formulaireMfa.hidden = false;
+    zoneErreur.classList.remove('visible');
+    bouton.disabled = false;
+    bouton.textContent = 'Se connecter';
+    champCode.value = '';
+    champCode.focus();
+  }
+
+  function revenirAuMotDePasse(message) {
+    etapeMfa = null;
+    formulaireMfa.hidden = true;
+    formulaire.hidden = false;
+    SA.viderFormulaireConnexion();
+    if (message) { zoneErreur.textContent = message; zoneErreur.classList.add('visible'); }
+  }
+
+  document.getElementById('bouton-retour-mfa').addEventListener('click', () => revenirAuMotDePasse());
+
+  formulaireMfa.addEventListener('submit', async function (evenement) {
+    evenement.preventDefault();
+    if (!etapeMfa) return revenirAuMotDePasse();
+    zoneErreur.classList.remove('visible');
+    boutonMfa.disabled = true;
+    boutonMfa.textContent = 'Vérification…';
+    try {
+      const reponse = await fetch(`${SA.API_BASE_URL}/auth/mfa/verifier`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jeton_mfa: etapeMfa.jeton, code_mfa: champCode.value.trim() })
+      });
+      const donnees = await reponse.json().catch(() => ({}));
+      boutonMfa.disabled = false;
+      boutonMfa.textContent = 'Vérifier';
+      if (!reponse.ok) {
+        // Étape expirée : retour au mot de passe, avec la raison.
+        if (donnees.code === 'MFA_ETAPE_EXPIREE') return revenirAuMotDePasse(donnees.message);
+        zoneErreur.textContent = donnees.message || 'Code incorrect.';
+        zoneErreur.classList.add('visible');
+        champCode.select();
+        return;
+      }
+      const seSouvenir = etapeMfa.seSouvenir;
+      etapeMfa = null;
+      champCode.value = '';
+      formulaireMfa.hidden = true;
+      formulaire.hidden = false;
+      terminerConnexion(donnees, seSouvenir);
+      if (donnees.mfa && donnees.mfa.methode === 'secours') {
+        SA.toast(`Code de secours utilisé. Il vous en reste ${donnees.mfa.codes_secours_restants}.`
+          + ' Pensez à en régénérer depuis Mon compte → Sécurité.', 'attention', 12000);
+      }
+    } catch (erreur) {
+      boutonMfa.disabled = false;
+      boutonMfa.textContent = 'Vérifier';
+      afficherErreur('Serveur injoignable. Vérifiez votre connexion, puis réessayez.');
+    }
+  });
+
+  function terminerConnexion(donnees, seSouvenir) {
+    // Vérification côté client par courtoisie : elle évite d'afficher un
+    // panneau vide à un directeur qui se trompe de page. La vraie barrière
+    // est côté serveur (`superAdminSeul`), qui refuserait chaque requête.
+    if (!(donnees.user && (donnees.user.roles || []).includes('super_admin'))) {
+      return afficherErreur("Ce compte n'a pas les droits Super Admin.");
+    }
+
+    SA.session.enregistrer(donnees, seSouvenir);
+    // Les identifiants ne restent pas dans le DOM une fois la session ouverte.
+    SA.viderFormulaireConnexion();
+    SA.demarrer();
+  }
 
   /* ---------- Navigation ---------- */
   document.getElementById('bouton-deconnexion').addEventListener('click', function () {

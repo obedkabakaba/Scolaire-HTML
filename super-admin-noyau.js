@@ -363,6 +363,30 @@
     return type.includes('application/json') ? reponse.json() : reponse.text();
   };
 
+  /* RÉ-AUTHENTIFICATION À DEUX FACTEURS
+     Quatre écrans ouvrent la fenêtre des actions critiques, chacun avec sa
+     propre boîte « mot de passe ». Quand le compte est protégé par la double
+     authentification, le serveur répond MFA_REQUISE : plutôt que de modifier
+     les quatre boîtes, on demande le code ici, une fois, et on rejoue la même
+     requête avec lui. Sans `SA.demanderCodeMfa` (écran Compte non chargé),
+     l'erreur remonte telle quelle, avec son message explicite. */
+  const CHEMIN_REAUTH = '/super-admin/control-center/reauthentifier';
+  const appelBrut = SA.api;
+  SA.api = async function (chemin, options = {}) {
+    try {
+      return await appelBrut(chemin, options);
+    } catch (err) {
+      const mfaRequise = chemin === CHEMIN_REAUTH && err && err.corps && err.corps.code === 'MFA_REQUISE';
+      if (!mfaRequise || typeof SA.demanderCodeMfa !== 'function') throw err;
+      const code = await SA.demanderCodeMfa();
+      if (!code) throw err;
+      let corps = {};
+      try { corps = JSON.parse(options.body || '{}'); } catch (e) { /* corps illisible : on repart de rien */ }
+      corps.code_mfa = code;
+      return appelBrut(chemin, Object.assign({}, options, { body: JSON.stringify(corps) }));
+    }
+  };
+
   /** Construit une URL avec paramètres, en omettant les valeurs vides. */
   SA.url = function (chemin, params = {}) {
     const q = new URLSearchParams();
@@ -413,6 +437,8 @@
     if (email) email.value = '';
     if (motDePasse) motDePasse.value = '';
     if (souvenir) souvenir.checked = false;
+    const codeMfa = document.getElementById('champ-code-mfa');
+    if (codeMfa) codeMfa.value = '';
   };
 
   /**

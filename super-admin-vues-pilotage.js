@@ -61,7 +61,8 @@
     prospects: { libelle: 'demandes du site public', appel: () => SA.api('/super-admin/prospects?statut=nouvelle&taille=5') },
     demos: { libelle: 'démonstrations', appel: () => SA.api('/super-admin/demonstrations-resume') },
     finAlertes: { libelle: 'alertes financières', appel: () => SA.api('/super-admin/finance/alertes') },
-    finance: { libelle: 'tableau financier', appel: () => SA.api('/super-admin/finance/tableau-de-bord') }
+    finance: { libelle: 'tableau financier', appel: () => SA.api('/super-admin/finance/tableau-de-bord') },
+    mfa: { libelle: 'double authentification', appel: () => SA.api('/super-admin/mfa') }
   };
 
   /* Les files sont triées par urgence : au-delà de huit tuiles, les suivantes
@@ -198,6 +199,7 @@
 
       conteneur.innerHTML = `<div class="tc-accueil">
         ${blocEtat(r)}
+        ${blocSecuriteCompte(r)}
         <section>
           <div class="tc-titre-bloc">
             <h2>À traiter</h2>
@@ -282,6 +284,19 @@
         ${r.cc.maintenance_active ? '<a class="sa-bouton sa-bouton-principal sa-bouton-petit" href="#/cc/maintenance">Gérer la maintenance</a>' : ''}
         <a class="sa-bouton sa-bouton-secondaire sa-bouton-petit" href="#/cc">Vue technique</a>
       </div>
+    </div>`;
+  }
+
+  /* Le compte qui voit toutes les écoles, protégé par un seul mot de passe :
+     c'est le premier risque de la plateforme, il passe avant les tendances. */
+  function blocSecuriteCompte(r) {
+    if (!r.mfa || !r.mfa.migration_appliquee || r.mfa.active) return '';
+    return `<div class="tc-bandeau tc-bandeau-securite">
+      <div class="tc-bandeau-etat"><span class="tc-voyant ton-attention"></span>
+        <div><div class="tc-bandeau-titre">Votre compte n'est protégé que par un mot de passe</div>
+        <div class="tc-bandeau-detail">Activez la double authentification : un mot de passe volé ne suffira plus à ouvrir l'espace qui voit toutes les écoles.</div></div>
+      </div>
+      <div class="tc-bandeau-actions"><a class="sa-bouton sa-bouton-principal sa-bouton-petit" href="#/compte/securite">Activer</a></div>
     </div>`;
   }
 

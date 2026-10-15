@@ -843,6 +843,96 @@ a.tc-element:hover .tc-element-titre { text-decoration: underline; }
 .sa-reglages-barre-actions { display: flex; gap: 8px; }
 
 /* --------------------------------------------------------------------------
+   8 bis. Mon compte — double authentification
+   -------------------------------------------------------------------------- */
+.sa-mfa { max-width: 760px; }
+.sa-mfa-entete { display: flex; flex-direction: column; gap: 8px; margin-bottom: 6px; }
+.sa-mfa-entete .sa-section-titre { margin: 0; }
+.sa-mfa-etat {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px 3px 7px;
+  border-radius: var(--r-pilule);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.sa-mfa-etat.ton-attention { background: color-mix(in srgb, var(--sa-ambre) 16%, transparent); color: color-mix(in srgb, var(--sa-ambre) 70%, var(--texte-sombre)); }
+.sa-mfa-etat.ton-succes { background: color-mix(in srgb, var(--vert-ok) 15%, transparent); color: color-mix(in srgb, var(--vert-ok) 70%, var(--texte-sombre)); }
+.sa-mfa-etapes { margin: 6px 0 16px; padding-left: 20px; font-size: 0.88rem; line-height: 1.6; color: var(--texte-sombre); }
+.sa-mfa-config {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--bordure);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.sa-mfa-cle { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.sa-mfa-cle code {
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+  padding: 8px 12px;
+  border: 1px dashed var(--bordure);
+  border-radius: var(--r-bouton);
+  background: var(--craie);
+  word-break: break-all;
+}
+.sa-champ-code {
+  max-width: 220px;
+  font-family: var(--police-mono);
+  font-size: 1.1rem;
+  letter-spacing: 0.16em;
+  text-align: center;
+}
+.sa-mfa-actions { display: flex; gap: 9px; flex-wrap: wrap; margin-top: 16px; }
+.sa-codes-secours {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.sa-codes-secours code {
+  font-family: var(--police-mono);
+  font-size: 0.95rem;
+  letter-spacing: 0.06em;
+  text-align: center;
+  padding: 8px;
+  border: 1px solid var(--bordure);
+  border-radius: var(--r-petit);
+  background: var(--craie);
+}
+.sa-case-confirmation { display: flex; align-items: center; gap: 9px; margin-top: 14px; font-size: 0.86rem; cursor: pointer; }
+.sa-case-confirmation input { width: 18px; height: 18px; accent-color: var(--ocre); }
+.sa-compte-mfa:empty { display: none; }
+.sa-menu-compte-lien .sa-compteur { margin-left: auto; }
+.tc-bandeau-securite { border-color: color-mix(in srgb, var(--sa-ambre) 45%, var(--bordure)); }
+
+/* Sélection multiple dans la liste des écoles */
+.sa-col-choix { width: 38px; }
+.sa-col-choix input { width: 18px; height: 18px; accent-color: var(--ocre); cursor: pointer; }
+.sa-barre-selection {
+  position: sticky;
+  bottom: 14px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  padding: 10px 14px;
+  border: 1px solid var(--bordure);
+  border-radius: var(--r-carte);
+  background: var(--craie-2);
+  box-shadow: var(--ombre-flottante);
+}
+.sa-barre-selection[hidden] { display: none; }
+.sa-barre-selection strong { font-size: 0.88rem; }
+.sa-barre-selection-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.sa-envoi-progression { font-size: 0.84rem; color: var(--texte-att); margin-top: 10px; }
+
+/* --------------------------------------------------------------------------
    9. Tablette et téléphone : rail + panneau deviennent un tiroir
    -------------------------------------------------------------------------- */
 @media (max-width: 1180px) {

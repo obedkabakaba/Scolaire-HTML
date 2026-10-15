@@ -82,18 +82,57 @@ ré-authentification, isolation des écoles, intégrations, API : **aucune modif
 backend**. Compatibilité thèmes : `.sa-principal`, `#sa-entete` et son `h1` gardent leur
 structure (Élan, Perspective, Récré, Nexus, Orbite, Fluide, Vibra testés).
 
-## 6. Manques identifiés (non réalisés : ils exigent du backend)
+## 6. Manques comblés (seconde livraison, frontend + backend)
 
-- **Second facteur (TOTP) pour le Super Admin** — la ré-authentification n'est qu'une
-  preuve de présence (HANDOVER §27.14).
-- **Journal des actions du Super Admin lui-même**, filtrable (qui a suspendu, validé, supprimé).
-- **Route de comptage légère** (`/super-admin/compteurs`) : les pastilles lisent
-  aujourd'hui quatre listes ; une route dédiée réduirait la charge.
-- **`PUT /control-center/connaissance/:cle`** n'est plus appelé par l'interface mais reste
-  monté et contourne l'historique : à retirer ou à faire passer par le Hub.
-- Actions groupées sur les écoles (relance d'abonnements, annonce ciblée).
+| Manque | Réalisation |
+|---|---|
+| **Second facteur (TOTP)** | Connexion en deux étapes (`POST /auth/mfa/verifier`), écran « Mon compte → Sécurité du compte », 10 codes de secours à usage unique, anti-rejeu, blocage après 5 erreurs, secret chiffré AES-256-GCM. La ré-authentification des actions critiques exige aussi le code. Désactiver exige mot de passe ET code. Le tableau de bord et le menu du compte signalent un compte non protégé. |
+| **Journal des actions du Super Admin** | Onglet « Actions des Super Admins » dans Supervision → Journaux (`/journal-activite?acteur=super_admin`). Les connexions Super Admin, jusque-là jamais journalisées, le sont désormais. |
+| **Route de comptage légère** | `GET /super-admin/compteurs` (4 `count(*)`), avec repli automatique sur les listes si le serveur en ligne ne la connaît pas encore. |
+| **`PUT /control-center/connaissance/:cle`** | Retirée (contrôleur et route). La lecture reste. |
+| **Actions groupées sur les écoles** | Sélection multiple dans « Toutes les écoles » (persistante entre les pages), « Envoyer une annonce » et « Relancer l'échéance » (modèle prérempli), envoi école par école via la route existante des annonces, réessai limité aux écoles en échec. |
+
+Défaut découvert par le test de bout en bout (serveur et base réels) : **toute annonce
+ciblée sur une école échouait en 500** (`POST /super-admin/notifications`). L'identifiant
+de l'annonce était passé après `ecole_id`, si bien que `$5` désignait l'école et que
+PostgreSQL refusait la requête. Corrigé, et couvert par
+`test/integration/annonces-ciblees.test.js`. La migration `063` déclare aussi trois colonnes
+que le code écrit et que la production possède, mais qu'aucune migration du dépôt ne créait.
+
+Autre défaut corrigé au passage : un mot de passe erroné à la ré-authentification
+renvoyait 401, que l'interface lisait comme une session expirée — le Super Admin était
+déconnecté pour une faute de frappe. Le serveur répond désormais 403.
+
+### Déploiement
+
+1. Backend : appliquer `migrations/062-mfa-super-admin.sql` (et `063`, sans effet en
+   production), définir `MFA_CLE_CHIFFREMENT`
+   (≥ 16 caractères) — ou réutiliser `IA_CLE_CHIFFREMENT`.
+2. Sans ces deux étapes, rien ne casse : la connexion reste au mot de passe seul et
+   l'écran « Sécurité du compte » explique ce qui manque.
+
+### Reste ouvert
+
+- **Pas de QR code** à la configuration : aucune bibliothèque n'existe dans le dépôt, et
+  en charger une depuis un CDN ferait transiter le secret par du code tiers. Clé à saisir
+  et lien `otpauth://` à la place.
+- Le paramètre `se_souvenir` envoyé à la connexion est **ignoré par le serveur** : toute
+  session vit 30 jours en base, alors que les commentaires des pages de connexion
+  annoncent l'inverse. Le corriger change la durée de session de tous les utilisateurs
+  des écoles : décision à prendre, non faite ici.
+- Les annonces marquées « interne + email » ne déclenchent pas d'email côté serveur
+  (seule la notification interne est créée) ; les actions groupées s'en tiennent donc à
+  la notification interne.
 
 ## 7. Vérifications
+
+Seconde livraison : base PostgreSQL de test reconstruite depuis le dépôt (baseline + toutes
+les migrations) ; intégration **79/79** (dont 13 tests MFA et la régression des annonces),
+cloisonnement 18/18, suite rapide 466/466 ; scénario navigateur de bout en bout contre le
+vrai serveur — configuration MFA, codes de secours, connexion en deux étapes, code faux,
+ré-authentification avec code, relance groupée, journal Super Admin — 17/17.
+
+Première livraison :
 
 - Parcours automatisé des 106 routes du menu à 1440 et 390 px : domaine, entrée active,
   onglet, fil d'Ariane, débordement horizontal — 212/212.

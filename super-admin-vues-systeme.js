@@ -454,6 +454,9 @@
     sousTitre: 'Toutes les actions de tous les utilisateurs, toutes écoles confondues.',
 
     async rendu(conteneur, params) {
+      // Cette vue sert aussi l'onglet « Actions des Super Admins » : les filtres
+      // et la pagination restent sur l'onglet d'où l'on vient.
+      const routeJournal = (SA.routeCourante && SA.routeCourante.cle) || 'journal';
       conteneur.innerHTML = '';
       const barre = document.createElement('div');
       const zone = document.createElement('div');
@@ -488,9 +491,13 @@
             { valeur: 'automatique', libelle: 'Trace automatique' }
           ]
         },
+        {
+          type: 'select', nom: 'acteur', libelle: 'Tous les acteurs', valeur: params.acteur,
+          options: [{ valeur: 'super_admin', libelle: 'Super Admins uniquement' }]
+        },
         { type: 'date', nom: 'depuis', libelle: 'Du', valeur: params.depuis },
         { type: 'date', nom: 'jusqu', libelle: 'Au', valeur: params.jusqu }
-      ], (valeurs) => SA.naviguer('journal', Object.assign({}, valeurs, { page: 1 })));
+      ], (valeurs) => SA.naviguer(routeJournal, Object.assign({}, valeurs, { page: 1 })));
 
       const page = Math.max(1, parseInt(params.page, 10) || 1);
       const taille = 50;
@@ -536,7 +543,7 @@
         pages: Math.max(1, Math.ceil((d.total || 0) / taille))
       });
 
-      paginationSimple(zone, 'journal', filtres.lire());
+      paginationSimple(zone, routeJournal, filtres.lire());
 
       zone.querySelectorAll('tbody tr[data-index]').forEach((ligne) => {
         ligne.addEventListener('click', () => {
@@ -558,6 +565,19 @@
           });
         });
       });
+    }
+  });
+
+  /* Les actions des Super Admins eux-mêmes : qui a suspendu une école, validé
+     un paiement, changé un prix, activé la maintenance. Même écran, filtre
+     posé d'office — on y vient pour cela, on ne devrait pas avoir à le chercher. */
+  SA.enregistrerVue('journal/super-admin', {
+    titre: 'Actions des Super Admins',
+    sousTitre: "Tout ce qui a été fait depuis cet espace d'administration, connexions comprises.",
+    rendu(conteneur, params) {
+      // Filtre posé d'office ; « Tous les acteurs » choisi explicitement (valeur vide) le lève.
+      return SA.vues.get('journal').rendu(conteneur,
+        Object.assign({}, params, { acteur: params.acteur === '' ? '' : 'super_admin' }));
     }
   });
 

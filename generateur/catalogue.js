@@ -756,6 +756,7 @@
     var texteAide = retour ? retour.textContent : '';
 
     var depuisLien = new URLSearchParams(global.location.search).get('ref');
+    if (depuisLien) compterVisite(depuisLien);
     try {
       if (depuisLien) {
         localStorage.setItem(CLE_REF, JSON.stringify({ code: depuisLien, le: Date.now() }));
@@ -783,11 +784,28 @@
     if (champ.value) verifier();
   }
 
-  /* ---------------------------------- Candidature « Devenir apporteur »
+  /* Une visite par onglet : le partenaire voit combien de personnes ont ouvert
+     son lien. Le serveur ne garde qu'une empreinte par visiteur et par jour,
+     jamais l'adresse IP. Silencieux en cas d'échec. */
+  function compterVisite(code) {
+    var c = String(code || '').trim().toUpperCase();
+    if (!/^[A-Z0-9-]{4,32}$/.test(c)) return;
+    try {
+      if (sessionStorage.getItem('ardoise.ref.visite') === c) return;
+      sessionStorage.setItem('ardoise.ref.visite', c);
+    } catch (e) { /* stockage indisponible : on compte quand même */ }
+    try {
+      fetch(API + '/apporteurs/codes/' + encodeURIComponent(c) + '/visite', { method: 'POST', keepalive: true })
+        .catch(function () {});
+    } catch (e) { /* navigateur ancien : sans conséquence */ }
+  }
 
-     Un branchement à part, comme « Écrivez-nous » : une candidature n'est ni
-     un prospect ni un message, et elle atterrit dans sa propre file côté
-     Super Admin. Elle n'ouvre aucun accès. */
+  /* ---------------------------------- Inscription « Devenir apporteur »
+
+     Un branchement à part, comme « Écrivez-nous » : l'inscription crée un
+     espace partenaire qui ne s'ouvre qu'une fois l'adresse confirmée par le
+     lien reçu par e-mail. Aucun droit financier : une commission exige
+     toujours une attribution validée par l'équipe. */
 
   function brancherFormulaireApporteur(racine) {
     var form = (racine || document).querySelector('[data-formulaire-apporteur]');
@@ -810,17 +828,21 @@
       ).map(function (c) { return c.value; });
       donnees.consentement = !!form.querySelector('input[name="consentement"]:checked');
 
+      if (String(donnees.mot_de_passe || '').length < 8) {
+        dire('erreur', 'Choisissez un mot de passe de 8 caractères au moins.');
+        return;
+      }
       if (!donnees.consentement) {
-        dire('erreur', 'Votre accord est nécessaire pour que nous examinions votre candidature.');
+        dire('erreur', 'Cochez la case d\u2019accord pour créer votre espace.');
         return;
       }
 
       bouton.disabled = true;
       var texteInitial = bouton.textContent;
-      bouton.textContent = 'Envoi…';
+      bouton.textContent = 'Création de votre espace…';
       retour.hidden = true;
 
-      fetch(API + '/apporteurs/candidatures', {
+      fetch(API + '/apporteurs/inscription', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(donnees)
@@ -828,8 +850,18 @@
         .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
         .then(function (res) {
           dire(res.ok ? 'succes' : 'erreur', res.d.message
-            || (res.ok ? 'Candidature envoyée.' : 'Votre candidature n\u2019a pas pu être envoyée.'));
+            || (res.ok ? 'Vérifiez votre boîte de réception pour confirmer votre adresse.'
+              : 'Votre espace n\u2019a pas pu être créé.'));
           if (res.ok) form.reset();
+          // Un espace existe déjà avec cette adresse : on mène à la connexion.
+          if (!res.ok && res.d.code === 'COMPTE_EXISTANT') {
+            var lien = document.createElement('a');
+            lien.href = '/espace-apporteur.html';
+            lien.className = 'lien-fleche';
+            lien.textContent = 'Se connecter à mon espace';
+            retour.appendChild(document.createTextNode(' '));
+            retour.appendChild(lien);
+          }
         })
         .catch(function () {
           dire('erreur', 'Connexion impossible. Vérifiez votre réseau et réessayez.');

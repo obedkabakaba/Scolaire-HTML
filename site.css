@@ -595,6 +595,7 @@ table.comparatif tbody tr.groupe th {
 .formulaire .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 @media (max-width: 560px) { .formulaire .duo { grid-template-columns: 1fr; } }
 .formulaire label { font-size: .87rem; font-weight: 500; display: block; margin-bottom: 6px; }
+.formulaire label .aide-champ { font-weight: 400; color: var(--texte-att); }
 .formulaire input, .formulaire textarea, .formulaire select {
   width: 100%; font-family: var(--police-corps); font-size: .95rem;
   padding: 11px 13px; border: 1px solid var(--bordure-forte);

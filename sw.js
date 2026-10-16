@@ -70,7 +70,8 @@
    v69 : l'arrondi intérieur suit le rail déployé ou replié et reste visible
          pendant le défilement du contenu. Terranga (clé interne yohali) et son
          alias Kivu conservent leur apparence d'origine, sans cet ajout. */
-const VERSION='ardoise-v93';
+const VERSION='ardoise-v94';
+/* v94 : deux nouvelles apparences, Pro (theme-pro.css) et Savane (theme-savane.css), nouvelles et précachées ; leurs scènes et widgets dans theme-signatures.js/.css et leurs fiches dans theme.js. */
 /* v93 : signatures des apparences (theme-signatures.js/.css, nouveaux, précachés) — récit, scène, widget et gestes propres à chaque apparence, animation d'accueil de première connexion, déconnexion de secours ; Fluide passe au verre liquide (theme-fluide.css/.js) ; rails d'Orbite, Vibra et Fluide bornés à la hauteur de l'écran (theme.css) ; rail Super Admin défilant (super-admin-coque.css/.js). */
 /* v92 : Super Admin — domaine « Communications » (boîte de réception, préférences de notification e-mail / WhatsApp), cloche dans la barre haute et bouton « Rédiger avec l'IA » sur chaque zone de message (super-admin-vues-communications.js et super-admin-communications.css, précachés ; super-admin.html modifié). */
 /* v91 : case d'accord obligatoire sur la politique de confidentialité (inscription, essai, contact, « Écrivez-nous » — catalogue.js, site.css) et politique mise à jour (confidentialite.html). */
@@ -95,6 +96,8 @@ const VERSION='ardoise-v93';
 /* v70 : Élan, navigation horizontale et illustrations locales par rubrique. */
 const CACHE_COQUILLE=`${VERSION}-coquille`;
 const COQUILLE=[
+  'theme-pro.css',
+  'theme-savane.css',
   'theme-signatures.css',
   'theme-signatures.js',
   'theme-vibra.css',

@@ -6,6 +6,8 @@
 @import url("theme-orbite.css");
 @import url("theme-fluide.css");
 @import url("theme-vibra.css");
+@import url("theme-pro.css");
+@import url("theme-savane.css");
 @import url("theme-signatures.css");
 
 html[data-theme="ardoise"] .carte-cours .bouton {
@@ -37,7 +39,9 @@ html[data-theme="ardoise"] .sa-badge.ton-succes {
     [data-theme="pure"],
     [data-theme="nuit"],
     [data-theme="yohali"],
-    [data-theme="kivu"]
+    [data-theme="kivu"],
+    [data-theme="pro"],
+    [data-theme="savane"]
   ) .mise-en-page,
   html[data-nav-position="bas"]:is(
     [data-theme="ardoise"],
@@ -45,7 +49,9 @@ html[data-theme="ardoise"] .sa-badge.ton-succes {
     [data-theme="pure"],
     [data-theme="nuit"],
     [data-theme="yohali"],
-    [data-theme="kivu"]
+    [data-theme="kivu"],
+    [data-theme="pro"],
+    [data-theme="savane"]
   ) .mise-en-page {
     grid-template-columns: minmax(0, 1fr) !important;
     min-width: 0;
@@ -53,14 +59,16 @@ html[data-theme="ardoise"] .sa-badge.ton-succes {
 
   html[data-nav-position="haut"]:is(
     [data-theme="ardoise"], [data-theme="studio"], [data-theme="pure"],
-    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"]
+    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"],
+    [data-theme="pro"], [data-theme="savane"]
   ) .mise-en-page {
     grid-template-rows: auto minmax(0, 1fr) !important;
   }
 
   html[data-nav-position="bas"]:is(
     [data-theme="ardoise"], [data-theme="studio"], [data-theme="pure"],
-    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"]
+    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"],
+    [data-theme="pro"], [data-theme="savane"]
   ) .mise-en-page {
     grid-template-rows: minmax(0, 1fr) auto !important;
   }
@@ -69,7 +77,8 @@ html[data-theme="ardoise"] .sa-badge.ton-succes {
      stable et indépendante des anciens styles de rail vertical. */
   html:is(
     [data-theme="ardoise"], [data-theme="studio"], [data-theme="pure"],
-    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"]
+    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"],
+    [data-theme="pro"], [data-theme="savane"]
   ):is([data-nav-position="haut"], [data-nav-position="bas"]) .barre-laterale {
     box-sizing: border-box;
     width: 100% !important;
@@ -88,7 +97,8 @@ html[data-theme="ardoise"] .sa-badge.ton-succes {
 
   html:is(
     [data-theme="ardoise"], [data-theme="studio"], [data-theme="pure"],
-    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"]
+    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"],
+    [data-theme="pro"], [data-theme="savane"]
   ):is([data-nav-position="haut"], [data-nav-position="bas"]) .barre-laterale > div {
     width: auto;
     min-width: 0;
@@ -105,7 +115,8 @@ html[data-theme="ardoise"] .sa-badge.ton-succes {
   /* Identité compacte à gauche, séparée du reste sans créer un gros bloc. */
   html:is(
     [data-theme="ardoise"], [data-theme="studio"], [data-theme="pure"],
-    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"]
+    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"],
+    [data-theme="pro"], [data-theme="savane"]
   ):is([data-nav-position="haut"], [data-nav-position="bas"]) .barre-laterale .marque {
     margin: 0 !important;
     padding: 0 16px 0 2px;
@@ -119,7 +130,8 @@ html[data-theme="ardoise"] .sa-badge.ton-succes {
      défile horizontalement plutôt que de pousser la déconnexion à la ligne. */
   html:is(
     [data-theme="ardoise"], [data-theme="studio"], [data-theme="pure"],
-    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"]
+    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"],
+    [data-theme="pro"], [data-theme="savane"]
   ):is([data-nav-position="haut"], [data-nav-position="bas"]) .nav-liste {
     display: flex !important;
     flex-direction: row !important;
@@ -140,14 +152,16 @@ html[data-theme="ardoise"] .sa-badge.ton-succes {
 
   html:is(
     [data-theme="ardoise"], [data-theme="studio"], [data-theme="pure"],
-    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"]
+    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"],
+    [data-theme="pro"], [data-theme="savane"]
   ):is([data-nav-position="haut"], [data-nav-position="bas"]) .nav-liste::-webkit-scrollbar {
     display: none;
   }
 
   html:is(
     [data-theme="ardoise"], [data-theme="studio"], [data-theme="pure"],
-    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"]
+    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"],
+    [data-theme="pro"], [data-theme="savane"]
   ):is([data-nav-position="haut"], [data-nav-position="bas"]) .nav-liste > li {
     flex: 0 0 auto;
     margin: 0 !important;
@@ -155,7 +169,8 @@ html[data-theme="ardoise"] .sa-badge.ton-succes {
 
   html:is(
     [data-theme="ardoise"], [data-theme="studio"], [data-theme="pure"],
-    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"]
+    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"],
+    [data-theme="pro"], [data-theme="savane"]
   ):is([data-nav-position="haut"], [data-nav-position="bas"]) .nav-item {
     box-sizing: border-box;
     min-height: 40px;
@@ -177,7 +192,8 @@ html[data-theme="ardoise"] .sa-badge.ton-succes {
 
   html:is(
     [data-theme="ardoise"], [data-theme="studio"], [data-theme="pure"],
-    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"]
+    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"],
+    [data-theme="pro"], [data-theme="savane"]
   ):is([data-nav-position="haut"], [data-nav-position="bas"]) button.nav-item {
     font-family: var(--police-corps);
     cursor: pointer;
@@ -185,7 +201,8 @@ html[data-theme="ardoise"] .sa-badge.ton-succes {
 
   html:is(
     [data-theme="ardoise"], [data-theme="studio"], [data-theme="pure"],
-    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"]
+    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"],
+    [data-theme="pro"], [data-theme="savane"]
   ):is([data-nav-position="haut"], [data-nav-position="bas"]) .nav-item:hover {
     color: var(--nav-texte-fort);
     background: var(--nav-actif-fond);
@@ -196,7 +213,8 @@ html[data-theme="ardoise"] .sa-badge.ton-succes {
      fonctionne visuellement dans une barre horizontale. */
   html:is(
     [data-theme="ardoise"], [data-theme="studio"], [data-theme="pure"],
-    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"]
+    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"],
+    [data-theme="pro"], [data-theme="savane"]
   ):is([data-nav-position="haut"], [data-nav-position="bas"]) .nav-item.actif {
     color: var(--nav-texte-fort) !important;
     background: var(--nav-actif-fond) !important;
@@ -205,7 +223,8 @@ html[data-theme="ardoise"] .sa-badge.ton-succes {
 
   html:is(
     [data-theme="ardoise"], [data-theme="studio"], [data-theme="pure"],
-    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"]
+    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"],
+    [data-theme="pro"], [data-theme="savane"]
   ):is([data-nav-position="haut"], [data-nav-position="bas"]) .nav-icone {
     width: 18px;
     height: 18px;
@@ -216,7 +235,8 @@ html[data-theme="ardoise"] .sa-badge.ton-succes {
      action secondaire de la barre plutôt qu'à un élément de rail oublié. */
   html:is(
     [data-theme="ardoise"], [data-theme="studio"], [data-theme="pure"],
-    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"]
+    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"],
+    [data-theme="pro"], [data-theme="savane"]
   ):is([data-nav-position="haut"], [data-nav-position="bas"]) .nav-deconnexion {
     box-sizing: border-box;
     margin: 0 !important;
@@ -237,7 +257,8 @@ html[data-theme="ardoise"] .sa-badge.ton-succes {
 
   html:is(
     [data-theme="ardoise"], [data-theme="studio"], [data-theme="pure"],
-    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"]
+    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"],
+    [data-theme="pro"], [data-theme="savane"]
   ):is([data-nav-position="haut"], [data-nav-position="bas"]) .nav-deconnexion:hover {
     color: var(--nav-texte-fort);
     background: var(--nav-actif-fond);
@@ -249,7 +270,8 @@ html[data-theme="ardoise"] .sa-badge.ton-succes {
      écran. Cela corrige notamment le grand vide de Mon profil. */
   html:is(
     [data-theme="ardoise"], [data-theme="studio"], [data-theme="pure"],
-    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"]
+    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"],
+    [data-theme="pro"], [data-theme="savane"]
   ):is([data-nav-position="haut"], [data-nav-position="bas"]) .contenu {
     box-sizing: border-box;
     width: 100% !important;
@@ -260,7 +282,8 @@ html[data-theme="ardoise"] .sa-badge.ton-succes {
 
   html:is(
     [data-theme="ardoise"], [data-theme="studio"], [data-theme="pure"],
-    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"]
+    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"],
+    [data-theme="pro"], [data-theme="savane"]
   ):is([data-nav-position="haut"], [data-nav-position="bas"]) #grille-themes {
     grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
     gap: 16px;
@@ -294,7 +317,8 @@ html[data-theme="ardoise"] .sa-badge.ton-succes {
   /* Le mode bas utilise la même finition mais avec l'ombre vers le haut. */
   html[data-nav-position="bas"]:is(
     [data-theme="ardoise"], [data-theme="studio"], [data-theme="pure"],
-    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"]
+    [data-theme="nuit"], [data-theme="yohali"], [data-theme="kivu"],
+    [data-theme="pro"], [data-theme="savane"]
   ) .barre-laterale {
     box-shadow: 0 -6px 20px rgba(16, 24, 40, .10);
   }

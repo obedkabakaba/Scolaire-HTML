@@ -625,6 +625,37 @@ textarea.sa-champ { font-family: var(--police-corps); resize: vertical; min-heig
 .renouv-montant { font-weight: 700; }
 .renouv-carte-actions { display: flex; gap: 7px; flex-wrap: wrap; justify-content: flex-end; }
 
+/* Boîte de réception Mobile Money (super-admin-vues-mobile-money.js) */
+.mm-bloc {
+  border: 1px solid var(--bordure); border-radius: var(--r-carte);
+  background: var(--craie-2); padding: 15px 17px; display: grid; gap: 12px;
+}
+.mm-bloc-titre { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.mm-bloc-titre h3 { margin: 0; font-size: 1rem; }
+.mm-depot { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; font-size: 0.86rem; }
+.mm-depot > span:first-child { color: var(--texte-att); font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.mm-alerte { padding: 10px 13px; border-radius: var(--r-bouton); font-size: 0.85rem; border: 1px solid var(--bordure); }
+.mm-alerte.ton-danger { border-color: var(--rouge); }
+.mm-alerte.ton-attention { border-color: var(--ocre); }
+.mm-appareil, .mm-attente {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px; align-items: center; padding: 11px 0; border-top: 1px solid var(--bordure);
+}
+.mm-appareil strong, .mm-attente strong { display: block; font-size: 0.92rem; }
+.mm-appareil small, .mm-attente small, .mm-lu small {
+  display: block; font-size: 0.7rem; text-transform: uppercase;
+  letter-spacing: 0.05em; color: var(--texte-att); margin-bottom: 2px;
+}
+.mm-appareil span, .mm-attente span { font-size: 0.84rem; }
+.mm-erreur, .mm-texte-erreur { color: var(--rouge); }
+.mm-erreur { grid-column: 1 / -1; }
+.mm-attente .sa-bouton { justify-self: end; }
+.mm-lu {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px;
+  padding: 11px 13px; margin: 6px 0 10px; border: 1px solid var(--bordure); border-radius: var(--r-bouton);
+}
+.mm-tableau { margin-top: 14px; }
+
 /* Fiche détaillée (dans la modale) */
 .sa-fiche { display: grid; gap: 18px; }
 .sa-fiche-bloc h4 {

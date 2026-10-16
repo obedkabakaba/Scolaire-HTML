@@ -396,6 +396,7 @@
           <p class="sa-nav-groupe-titre">Abonnements</p>
           <ul class="sa-menu">
             <li><a href="#/renouvellements" data-route="renouvellements" data-compteur="renouvellements">Renouvellements à traiter</a></li>
+            <li><a href="#/mobile-money" data-route="mobile-money">Mobile Money · réceptions</a></li>
             <li class="sa-espace" data-espace="Abonnements">
               <a href="#/ecoles/abonnements" data-route="ecoles/abonnements">Échéancier</a>
               <a href="#/offres/abonnements" data-route="offres/abonnements">Prix payés et remises</a>
@@ -745,6 +746,9 @@
      première visite de l'écran — c'est-à-dire jamais pour qui ne connaissait
      pas l'adresse. -->
 <script src="super-admin-vues-renouvellements.js"></script>
+<!-- Boîte de réception Mobile Money : preuves relayées par le téléphone,
+     écoles qui attendent leur SMS, état du relais, rattrapage d'un SMS. -->
+<script src="super-admin-vues-mobile-money.js"></script>
 <!-- Mon compte : sécurité (double authentification). Définit aussi
      SA.demanderCodeMfa, utilisé par le noyau pour la ré-authentification. -->
 <script src="super-admin-vues-compte.js"></script>
@@ -787,6 +791,7 @@
     'super-admin-vues-ia-plateforme.js', 'super-admin-vues-ai-studio.js',
     'super-admin-vues-knowledge.js',
     'super-admin-vues-renouvellements.js',
+    'super-admin-vues-mobile-money.js',
     'super-admin-vues-compte.js',
     'super-admin-coque.js',
     'super-admin-vues-communications.js',

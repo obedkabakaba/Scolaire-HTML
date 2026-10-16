@@ -392,7 +392,8 @@
     var complement = '';
     if (d.statut === 'a_verifier' && d.reference_transaction) {
       complement = '<div class="etat-reference">Référence : <span class="code">'
-        + esc(d.reference_transaction) + '</span></div>';
+        + esc(d.reference_transaction) + '</span></div>'
+        + messageVerification(d);
     }
     if (d.statut === 'rdv_planifie' && d.rdv_at) {
       complement = '<div class="etat-reference">Rendez-vous : <strong>' + dateCourte(d.rdv_at) + '</strong></div>';
@@ -411,8 +412,69 @@
       + '<p class="aide" style="margin-top:12px">'
       + (d.mode_paiement === 'agent'
         ? 'L’équipe Ardoise vous contactera. Votre école sera avertie à chaque étape.'
-        : 'Votre école sera avertie dès que le paiement sera validé.')
+        : 'Votre abonnement s’active automatiquement dès que l’opérateur confirme le dépôt. '
+          + 'Votre école sera avertie.')
       + '</p>';
+
+    var corriger = $('btn-corriger-verif');
+    if (corriger) {
+      corriger.addEventListener('click', function () {
+        // Même geste que pour une référence refusée : seule l'étape dépôt rouvre.
+        restaurerChoixDepuisDemande(d);
+        ouvrirTunnel();
+        allerEtape('depot');
+        amener('etape-depot');
+        var champ = $('reference');
+        if (champ) { champ.value = d.reference_transaction || ''; champ.focus(); champ.select(); }
+      });
+    }
+  }
+
+  /**
+   * Ce qu'Ardoise sait du paiement, dit à l'école.
+   *
+   * « Vérification Ardoise » seul ne disait pas s'il fallait patienter ou agir.
+   * Le serveur renvoie désormais un état : en attente du SMS de l'opérateur,
+   * montant différent, référence déjà utilisée… À chacun son geste. La
+   * correction est proposée tant qu'il en reste (trois au plus).
+   */
+  function messageVerification(d) {
+    var v = d.verification;
+    if (!v) return '';
+    var texte, ton = '';
+    switch (v.etat) {
+      case 'attente_operateur':
+        texte = 'Ardoise attend le SMS de confirmation de l’opérateur pour cette référence. '
+          + 'Cela prend en général quelques minutes. Si l’attente se prolonge, vérifiez la référence : '
+          + 'une seule lettre différente suffit à empêcher la confirmation.';
+        break;
+      case 'montant_different':
+        ton = ' erreur';
+        texte = 'Le dépôt reçu pour cette référence ne correspond pas au montant attendu ('
+          + money(d.montant_attendu, d.devise) + '). L’abonnement ne peut pas être activé automatiquement : '
+          + 'l’équipe Ardoise va vous contacter. Vous pouvez aussi écrire au support.';
+        break;
+      case 'reference_deja_utilisee':
+        ton = ' erreur';
+        texte = 'Cette référence a déjà servi à confirmer un autre paiement. '
+          + 'Vérifiez-la dans le SMS reçu de votre opérateur.';
+        break;
+      case 'anomalie':
+        ton = ' erreur';
+        texte = 'Ce paiement demande une vérification manuelle par l’équipe Ardoise. Nous revenons vers vous rapidement.';
+        break;
+      default:
+        texte = 'L’équipe Ardoise vérifie votre paiement.';
+    }
+    var peutCorriger = v.peut_corriger && v.etat !== 'montant_different' && v.etat !== 'anomalie';
+    return '<div class="etat-demande' + ton + '" style="margin-top:10px"><p style="margin:0">' + esc(texte) + '</p>'
+      + (peutCorriger
+        ? '<div class="etat-actions"><button type="button" class="bouton bouton-secondaire bouton-petit" id="btn-corriger-verif">'
+          + 'Corriger la référence</button><small class="aide"> '
+          + esc(v.corrections_restantes + (v.corrections_restantes > 1 ? ' corrections possibles' : ' correction possible'))
+          + '</small></div>'
+        : '')
+      + '</div>';
   }
 
   function recapHTML(d) {
@@ -675,7 +737,8 @@
     var ref = $('reference').value.trim();
     var btn = $('btn-reference');
 
-    if (!d || ['en_attente_paiement', 'refusee'].indexOf(d.statut) === -1) {
+    var corrigeable = d && d.statut === 'a_verifier' && d.verification && d.verification.peut_corriger;
+    if (!d || (['en_attente_paiement', 'refusee'].indexOf(d.statut) === -1 && !corrigeable)) {
       flash('Cette demande n’attend pas de nouvelle référence.', 'erreur');
       return;
     }
@@ -754,7 +817,8 @@
     return [
       e.plan_nom, e.abonnement_statut, e.date_expiration,
       de.id, de.statut, de.updated_at, de.reference_transaction,
-      de.refuse_motif, de.rdv_at, de.agent_nom
+      de.refuse_motif, de.rdv_at, de.agent_nom,
+      de.verification ? de.verification.etat + ':' + de.verification.corrections_restantes : ''
     ].join('|');
   }
 

@@ -61,17 +61,43 @@
       || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   }
 
-  var SCENE_SVG =
-    '<div class="ps-scene" aria-hidden="true">'
-    + '<svg class="ps-telephone" viewBox="0 0 54 92"><rect class="coque" x="1" y="1" width="52" height="90" rx="10"/>'
+  /* L'appareil dessiné est celui de l'école : un téléphone si elle paie
+     depuis un mobile, un ordinateur portable sinon. Une tablette est traitée
+     comme un téléphone (écran tactile, même geste). */
+  function surMobile() {
+    var ua = navigator.userAgent || '';
+    if (/Android|iPhone|iPad|iPod|Mobile|Windows Phone/i.test(ua)) return true;
+    // iPadOS se présente comme un Mac : on le reconnaît à son écran tactile.
+    if (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) return true;
+    return Boolean(window.matchMedia && window.matchMedia('(pointer: coarse)').matches
+      && window.matchMedia('(max-width: 1024px)').matches);
+  }
+
+  var TELEPHONE_SVG =
+    '<svg class="ps-appareil ps-telephone" viewBox="0 0 54 92"><rect class="coque" x="1" y="1" width="52" height="90" rx="10"/>'
     + '<rect class="ecran" x="6" y="12" width="42" height="64" rx="3"/>'
     + '<rect class="barre" x="11" y="22" width="26" height="6" rx="3"/><rect class="barre" x="11" y="33" width="18" height="6" rx="3" opacity=".55"/>'
-    + '<rect class="barre" x="11" y="44" width="30" height="6" rx="3" opacity=".35"/></svg>'
-    + '<div class="ps-route"></div><div class="ps-message"></div>'
-    + '<div class="ps-sceau"><span class="ps-sceau-onde"></span><span class="ps-sceau-onde o2"></span>'
-    + '<div class="ps-sceau-disque"><span class="ps-lettre">A</span>'
-    + '<svg class="ps-coche" viewBox="0 0 72 72"><path d="M22 37 L32 47 L51 27"/></svg></div></div>'
-    + '</div>';
+    + '<rect class="barre" x="11" y="44" width="30" height="6" rx="3" opacity=".35"/></svg>';
+
+  var ORDINATEUR_SVG =
+    '<svg class="ps-appareil ps-ordinateur" viewBox="0 0 100 72">'
+    + '<rect class="coque" x="12" y="2" width="76" height="52" rx="5"/>'
+    + '<rect class="ecran" x="17" y="7" width="66" height="42" rx="2"/>'
+    + '<rect class="barre" x="23" y="14" width="34" height="5" rx="2.5"/><rect class="barre" x="23" y="23" width="24" height="5" rx="2.5" opacity=".55"/>'
+    + '<rect class="barre" x="23" y="32" width="40" height="5" rx="2.5" opacity=".35"/>'
+    + '<path class="coque" d="M4 58 H96 L90 66 Q89 68 86 68 H14 Q11 68 10 66 Z"/>'
+    + '<rect class="ecran" x="42" y="59" width="16" height="3" rx="1.5" opacity=".6"/></svg>';
+
+  function sceneSVG() {
+    var mobile = surMobile();
+    return '<div class="ps-scene ' + (mobile ? 'sur-telephone' : 'sur-ordinateur') + '" aria-hidden="true">'
+      + (mobile ? TELEPHONE_SVG : ORDINATEUR_SVG)
+      + '<div class="ps-route"></div><div class="ps-message"></div>'
+      + '<div class="ps-sceau"><span class="ps-sceau-onde"></span><span class="ps-sceau-onde o2"></span>'
+      + '<div class="ps-sceau-disque"><span class="ps-lettre">A</span>'
+      + '<svg class="ps-coche" viewBox="0 0 72 72"><path d="M22 37 L32 47 L51 27"/></svg></div></div>'
+      + '</div>';
+  }
 
   function etapesHTML() {
     return '<ol class="ps-etapes">' + ETAPES.map(function (e) {
@@ -149,7 +175,7 @@
     voile.setAttribute('aria-labelledby', 'ps-titre');
     voile.innerHTML = '<div class="ps-carte" aria-live="polite">'
       + '<button type="button" class="ps-fermer" data-ps="fermer" aria-label="Fermer">×</button>'
-      + SCENE_SVG
+      + sceneSVG()
       + '<h2 class="ps-titre" id="ps-titre">Nous vérifions votre paiement</h2>'
       + '<p class="ps-sous-titre">Votre référence est partie. Ardoise la compare au SMS de l’opérateur.</p>'
       + (options.reference ? '<div class="ps-reference">Référence <code>' + esc(options.reference) + '</code>'

@@ -38,21 +38,25 @@
 .ps-scene {
   position: relative; height: 128px; margin: 4px auto 14px; max-width: 380px;
 }
-.ps-telephone, .ps-sceau {
+.ps-appareil, .ps-sceau {
   position: absolute; top: 50%; transform: translateY(-50%);
 }
+/* Le point de départ du message suit l'appareil dessiné. */
+.ps-scene { --ps-depart: 64px; }
+.ps-scene.sur-ordinateur { --ps-depart: 100px; }
 .ps-telephone { left: 6px; width: 54px; height: 92px; }
-.ps-telephone rect.coque { fill: var(--ardoise); }
-.ps-telephone rect.ecran { fill: var(--craie-2); }
-.ps-telephone .barre { fill: var(--ocre); }
+.ps-ordinateur { left: 0; width: 100px; height: 72px; }
+.ps-appareil .coque { fill: var(--ardoise); }
+.ps-appareil .ecran { fill: var(--craie-2); }
+.ps-appareil .barre { fill: var(--ocre); }
 
 .ps-route {
-  position: absolute; left: 70px; right: 96px; top: 50%; height: 2px;
+  position: absolute; left: calc(var(--ps-depart) + 6px); right: 96px; top: 50%; height: 2px;
   background-image: linear-gradient(90deg, var(--bordure) 50%, transparent 50%);
   background-size: 10px 2px;
 }
 .ps-message {
-  position: absolute; top: 50%; left: 64px; width: 34px; height: 24px;
+  position: absolute; top: 50%; left: var(--ps-depart); width: 34px; height: 24px;
   margin-top: -12px; border-radius: 7px 7px 7px 2px;
   background: var(--ocre); box-shadow: 0 4px 12px color-mix(in srgb, var(--ocre) 45%, transparent);
   animation: ps-voyage 2.2s cubic-bezier(.55,0,.35,1) infinite;
@@ -95,6 +99,7 @@
   border-radius: var(--r-pilule); background: var(--craie); border: 1px solid var(--bordure); font-size: 0.82rem;
 }
 .ps-reference .ps-montant { white-space: nowrap; font-weight: 600; }
+.ps-reference .ps-montant::before { content: "· "; font-weight: 400; color: var(--texte-att); }
 .ps-reference code { word-break: break-all; font-family: var(--police-mono, monospace); font-weight: 600; letter-spacing: .02em; }
 
 /* --- Les contrôles, cochés en direct ------------------------------------ */
@@ -144,7 +149,7 @@
 .ps-carte.succes .ps-lettre { opacity: 0; transform: scale(.4); }
 .ps-carte.succes .ps-coche { opacity: 1; }
 .ps-carte.succes .ps-coche path { animation: ps-trace .55s .25s ease-out forwards; }
-.ps-carte.succes .ps-telephone { animation: ps-sort .5s ease forwards; }
+.ps-carte.succes .ps-appareil { animation: ps-sort .5s ease forwards; }
 .ps-carte.succes .ps-sceau { right: 50%; transform: translate(50%, -50%); transition: right .6s cubic-bezier(.3,1.3,.5,1), transform .6s cubic-bezier(.3,1.3,.5,1); }
 .ps-carte .ps-sceau { transition: right .6s, transform .6s; }
 
@@ -223,7 +228,7 @@
 @keyframes ps-fondu { from { opacity: 0; } }
 @keyframes ps-monte { from { opacity: 0; transform: translateY(18px) scale(.98); } }
 @keyframes ps-voyage {
-  0% { left: 64px; opacity: 0; transform: scale(.6) rotate(-8deg); }
+  0% { left: var(--ps-depart); opacity: 0; transform: scale(.6) rotate(-8deg); }
   12% { opacity: 1; transform: scale(1) rotate(0); }
   80% { opacity: 1; }
   100% { left: calc(100% - 118px); opacity: 0; transform: scale(.5) rotate(6deg); }

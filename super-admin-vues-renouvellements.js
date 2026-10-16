@@ -102,10 +102,29 @@
     catch (e) { return '—'; }
   }
 
+  /* LE VERDICT DU RELAIS SMS
+     -------------------------------------------------------------------------
+     Ce que le téléphone a constaté pour la référence déclarée : aucun SMS,
+     montant différent, référence déjà utilisée, ou preuve conforme. Il
+     s'affiche sur la carte, en tête de la fiche et dans la fenêtre de
+     validation : c'est l'information qui manquait pour ne pas valider un
+     paiement que le système venait justement de refuser. */
+  var TON_VERDICT = { succes: 'succes', info: 'info', attention: 'attention', danger: 'danger' };
+
+  function verdictHTML(v, compact) {
+    if (!v) return '';
+    var icone = v.gravite === 'succes' ? '✓' : v.gravite === 'danger' ? '⚠' : v.gravite === 'attention' ? '!' : 'i';
+    return '<div class="renouv-verdict ton-' + (TON_VERDICT[v.gravite] || 'info') + (compact ? ' compact' : '') + '">'
+      + '<span class="renouv-verdict-icone" aria-hidden="true">' + icone + '</span>'
+      + '<div><strong>' + esc(v.titre) + '</strong>'
+      + (compact ? '' : '<p>' + esc(v.explication) + '</p>')
+      + '</div></div>';
+  }
+
   /** Signature d'une ligne : sert à ne redessiner QUE ce qui a bougé. */
   function empreinteLigne(l) {
     return [l.statut, l.updated_at, l.reference_transaction, l.refuse_motif,
-      l.agent_id, l.rdv_at, l.montant_attendu].join('|');
+      l.agent_id, l.rdv_at, l.montant_attendu, l.verification ? l.verification.code : ''].join('|');
   }
 
   /* ==================================================================== FICHE */
@@ -194,7 +213,8 @@
         : '')
       + '<p data-erreur class="sa-erreur-modale" hidden></p>';
 
-    m.querySelector('.sa-modale-corps').innerHTML = '<div class="sa-fiche">' + corps + '</div>';
+    m.querySelector('.sa-modale-corps').innerHTML = '<div class="sa-fiche">'
+      + (r.verification ? verdictHTML(r.verification, false) : '') + corps + '</div>';
     var sousTitre = m.querySelector('.sa-modale-sous-titre');
     if (sousTitre) sousTitre.textContent = d.ecole_nom + ' — ' + d.plan_nom;
 
@@ -230,7 +250,10 @@
     });
 
     var valider = m.querySelector('[data-valider]');
-    if (valider) valider.onclick = function () { m.fermer(); modalDecision(d, 'valider', apresAction); };
+    if (valider) valider.onclick = function () {
+      m.fermer();
+      modalDecision(Object.assign({}, d, { verification: r.verification || d.verification }), 'valider', apresAction);
+    };
     var refuser = m.querySelector('[data-refuser]');
     if (refuser) refuser.onclick = function () { m.fermer(); modalDecision(d, 'refuser', apresAction); };
   }
@@ -305,13 +328,27 @@
     var validation = mode === 'valider';
     var reference = ligne.reference_transaction || '';
 
+    var v = ligne.verification || null;
+    var alerte = validation && v && v.gravite === 'danger';
     var contenu = validation
-      ? '<p class="sa-texte">Validez seulement après avoir vérifié que le paiement est réellement reçu.</p>'
+      ? (v ? verdictHTML(v, false) : '')
+        + '<p class="sa-texte">Validez seulement après avoir vérifié que le paiement est réellement reçu.</p>'
         + '<div class="sa-rappel-montant"><span>Montant attendu</span><strong>' + montant(ligne) + '</strong></div>'
+        + (alerte
+          ? '<label class="renouv-forcer"><input type="checkbox" id="renouv-forcer" /> '
+            + '<span>Je valide <strong>malgré l’alerte</strong> : j’ai vérifié moi-même que le paiement complet est reçu. '
+            + 'Ma décision et ma note seront enregistrées au journal.</span></label>'
+          : '')
         + '<label class="sa-champ"><span>Méthode constatée</span><select id="renouv-methode">'
-        + '<option value="mpesa">M-Pesa</option><option value="orange_money">Orange Money</option>'
-        + '<option value="airtel_money">Airtel Money</option><option value="especes">Espèces</option>'
-        + '<option value="virement_bancaire">Virement bancaire</option><option value="cheque">Chèque</option></select></label>'
+        + [['orange_money', 'Orange Money'], ['airtel_money', 'Airtel Money'], ['mpesa', 'M-Pesa'],
+          ['especes', 'Espèces'], ['virement_bancaire', 'Virement bancaire'], ['cheque', 'Chèque']]
+          .map(function (o) {
+            // Le réseau du dépôt de la demande est présélectionné : proposer
+            // M-Pesa pour un dépôt Orange Money invitait à une erreur de saisie.
+            var choisi = (ligne.methode_depot || (ligne.mode_paiement === 'agent' ? 'especes' : 'orange_money')) === o[0];
+            return '<option value="' + o[0] + '"' + (choisi ? ' selected' : '') + '>' + o[1] + '</option>';
+          }).join('')
+        + '</select></label>'
         + '<label class="sa-champ"><span>Référence vérifiée / reçu</span><input id="renouv-ref" value="' + esc(reference) + '" /></label>'
         + '<label class="sa-champ"><span>Note interne (facultative)</span><textarea id="renouv-note" rows="2"></textarea></label>'
       : '<p class="sa-texte">Le motif sera envoyé à l’école. Pour un dépôt, elle pourra corriger sa référence '
@@ -324,8 +361,8 @@
       sousTitre: ligne.ecole_nom + ' — ' + ligne.plan_nom,
       contenu: contenu + '<p data-erreur class="sa-erreur-modale" hidden></p>',
       actions: '<button class="sa-bouton sa-bouton-secondaire" data-annuler>Annuler</button>'
-        + '<button class="sa-bouton ' + (validation ? 'sa-bouton-principal' : 'sa-bouton-danger') + '" data-valider>'
-        + (validation ? 'Activer l’abonnement' : 'Refuser') + '</button>'
+        + '<button class="sa-bouton ' + (validation && !alerte ? 'sa-bouton-principal' : 'sa-bouton-danger') + '" data-valider>'
+        + (validation ? (alerte ? 'Activer malgré l’alerte' : 'Activer l’abonnement') : 'Refuser') + '</button>'
     });
 
     m.querySelector('[data-annuler]').onclick = function () { m.fermer(); };
@@ -339,6 +376,13 @@
           body.reference = m.querySelector('#renouv-ref').value.trim();
           body.note = m.querySelector('#renouv-note').value.trim();
           if (body.reference.length < 3) throw new Error('Une référence ou un numéro de reçu est requis.');
+          if (alerte) {
+            if (!m.querySelector('#renouv-forcer').checked) {
+              throw new Error('Ce paiement est en alerte. Cochez la case si vous avez vérifié vous-même, sinon refusez la demande.');
+            }
+            if (body.note.length < 15) throw new Error('Expliquez dans la note pourquoi vous validez malgré l’alerte (15 caractères au moins).');
+            body.forcer_malgre_alerte = true;
+          }
           chemin = '/super-admin/renouvellements/' + ligne.id + '/valider';
         } else {
           body.motif = m.querySelector('#renouv-motif').value.trim();
@@ -434,6 +478,7 @@
           + esc(estAgent ? (l.agent_nom || '—') : (l.reference_transaction || '—')) + '</span></div>'
           + '<div><small>Demandé</small><span>' + dateHeure(l.created_at) + '</span></div>'
           + '</div>'
+          + (l.verification ? verdictHTML(l.verification, true) : '')
           + '<div class="renouv-carte-actions">'
           + '<button class="sa-bouton sa-bouton-petit sa-bouton-secondaire" data-fiche="' + esc(l.id) + '">'
           + 'Ouvrir la fiche</button>'

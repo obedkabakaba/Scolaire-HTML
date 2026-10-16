@@ -264,6 +264,27 @@
 }
 .sa-champ-bloc .sa-champ, .sa-champ-bloc textarea { width: 100%; }
 textarea.sa-champ { font-family: var(--police-corps); resize: vertical; min-height: 92px; }
+/* `<label class="sa-champ"><span>…</span><input/select/textarea></label>` :
+   forme employée par une quinzaine de fenêtres (renouvellements,
+   démonstrations…). La classe de CHAMP posée sur l'étiquette dessinait un
+   cadre autour de l'ensemble, et le libellé, la liste et la zone de texte se
+   retrouvaient côte à côte. On rend à l'étiquette son rôle de bloc. */
+label.sa-champ {
+  display: block; padding: 0; border: 0; background: none; margin-bottom: 13px; width: 100%;
+}
+label.sa-champ > span:first-child {
+  display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.04em; color: var(--texte-att); margin-bottom: 5px;
+}
+label.sa-champ > input, label.sa-champ > select, label.sa-champ > textarea {
+  display: block; width: 100%; padding: 8px 11px; border: 1.5px solid var(--bordure);
+  border-radius: var(--r-bouton); background: var(--craie-2); color: var(--texte-sombre);
+  font: inherit; font-size: 0.86rem;
+}
+label.sa-champ > textarea { resize: vertical; min-height: 72px; font-family: var(--police-corps); }
+label.sa-champ > input:focus, label.sa-champ > select:focus, label.sa-champ > textarea:focus {
+  outline: none; border-color: var(--encre);
+}
 
 .sa-bouton {
   padding: 9px 15px;
@@ -624,6 +645,32 @@ textarea.sa-champ { font-family: var(--police-corps); resize: vertical; min-heig
 .renouv-carte-corps span { font-size: 0.86rem; }
 .renouv-montant { font-weight: 700; }
 .renouv-carte-actions { display: flex; gap: 7px; flex-wrap: wrap; justify-content: flex-end; }
+
+/* Verdict du relais SMS sur un dossier de renouvellement */
+.renouv-verdict {
+  display: flex; gap: 11px; align-items: flex-start;
+  padding: 11px 13px; margin: 0 0 12px; border-radius: var(--r-bouton);
+  border: 1px solid var(--bordure); border-left-width: 4px; font-size: 0.86rem;
+}
+.renouv-verdict p { margin: 4px 0 0; color: var(--texte-sombre); line-height: 1.5; }
+.renouv-verdict.compact { padding: 8px 11px; margin: 0 0 10px; }
+.renouv-verdict-icone {
+  flex: none; width: 22px; height: 22px; border-radius: 50%;
+  display: grid; place-items: center; font-weight: 700; font-size: 0.8rem; color: #fff;
+  background: var(--texte-att);
+}
+.renouv-verdict.ton-succes { border-left-color: var(--vert-ok); }
+.renouv-verdict.ton-succes .renouv-verdict-icone { background: var(--vert-ok); }
+.renouv-verdict.ton-attention { border-left-color: var(--ocre); }
+.renouv-verdict.ton-attention .renouv-verdict-icone { background: var(--ocre); }
+.renouv-verdict.ton-danger { border-left-color: var(--rouge); }
+.renouv-verdict.ton-danger .renouv-verdict-icone { background: var(--rouge); }
+.renouv-verdict.ton-danger strong { color: var(--rouge); }
+.renouv-forcer {
+  display: flex; gap: 9px; align-items: flex-start; margin: 4px 0 14px;
+  padding: 10px 12px; border: 1px dashed var(--rouge); border-radius: var(--r-bouton); font-size: 0.85rem;
+}
+.renouv-forcer input { margin-top: 3px; }
 
 /* Boîte de réception Mobile Money (super-admin-vues-mobile-money.js) */
 .mm-bloc {

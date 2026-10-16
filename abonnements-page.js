@@ -628,6 +628,8 @@
     $('montant-depot').textContent = money(
       d.montant_attendu != null ? d.montant_attendu : (plan.tarifs || {})[etat.periodicite],
       d.devise || plan.devise);
+    var mc = $('montant-depot-copie');
+    if (mc) mc.textContent = $('montant-depot').textContent;
     $('reseau-depot').textContent = d.reseau_depot || dep.reseau || 'Dépôt Ardoise';
     $('numero-depot').textContent = d.numero_depot || dep.numero || '—';
     $('nom-depot').textContent = d.nom_depot || dep.nom || 'Ardoise';
@@ -750,6 +752,11 @@
     if (envoiEnCours) return;
     envoiEnCours = true;
     setBusy(btn, true, 'Envoi pour vérification…');
+    ref = nettoyerReference(ref);
+
+    /* La scène s'ouvre AVANT la réponse : l'école voit tout de suite que
+       quelque chose se passe, même sur un serveur qui se réveille. */
+    ouvrirScene(d, ref);
 
     /* Une référence refusée se corrige SUR LA MÊME DEMANDE : le serveur
        accepte désormais la transition `refusee → a_verifier`. La version
@@ -762,23 +769,142 @@
       data.demande = r.demande || data.demande;
       signatureActuelle = signature(data);
       $('reference').value = '';
+      majIndiceReference();
       fermerTunnel();
 
       if (r.validation_automatique || (data.demande && data.demande.statut === 'validee')) {
-        flash(r.message || 'Paiement validé : votre abonnement est actif.', 'succes');
-        return charger(false);
+        return charger(false).then(function () { celebrer(data.demande); });
       }
       renduSuivi();
       renduEtat();
       montrer('suivi', true);
-      amener('suivi');
-      flash(r.message || 'Référence transmise.', 'succes');
+      reagirVerification(data.demande);
     }).catch(function (e) {
+      if (window.ArdoiseScenePaiement) ArdoiseScenePaiement.fermer();
       flash(e.message, 'erreur');
     }).finally(function () {
       envoiEnCours = false;
       setBusy(btn, false);
     });
+  }
+
+  /* --------------------------------------- Scène de vérification en direct */
+
+  /** La référence telle qu'on l'envoie : sans espaces parasites, en majuscules. */
+  function nettoyerReference(v) {
+    return String(v || '').replace(/\s+/g, '').toUpperCase();
+  }
+
+  /* Indice sous le champ : on dit tout de suite si ce qui est saisi
+     ressemble à une référence. Indicatif seulement — le serveur juge. */
+  function majIndiceReference() {
+    var champ = $('reference'), indice = $('reference-indice');
+    if (!champ || !indice) return;
+    var v = nettoyerReference(champ.value);
+    indice.classList.remove('ok', 'ko');
+    if (!v) {
+      indice.textContent = 'Copiez-la depuis le SMS plutôt que de la recopier : une seule lettre différente empêche la confirmation.';
+    } else if (v.length < 6 || !/\d/.test(v)) {
+      indice.classList.add('ko');
+      indice.textContent = 'Cette référence semble incomplète : elle contient en général des lettres, des chiffres et des points.';
+    } else {
+      indice.classList.add('ok');
+      indice.textContent = '✓ Référence prête à être vérifiée : ' + v;
+    }
+  }
+
+  function ouvrirScene(d, ref) {
+    if (!window.ArdoiseScenePaiement) return;
+    ArdoiseScenePaiement.ouvrir({
+      reference: ref || d.reference_transaction,
+      montant: d.montant_attendu,
+      devise: d.devise,
+      onCorriger: corrigerReference,
+      // Fermer la scène ramène l'œil sur le suivi : la vérification continue.
+      onFermer: function () { amener('suivi'); }
+    });
+  }
+
+  function corrigerReference() {
+    var d = data && data.demande;
+    if (!d) return;
+    restaurerChoixDepuisDemande(d);
+    ouvrirTunnel();
+    allerEtape('depot');
+    amener('etape-depot');
+    var champ = $('reference');
+    if (champ) {
+      champ.value = d.reference_transaction || '';
+      majIndiceReference();
+      setTimeout(function () { champ.focus(); champ.select(); }, 300);
+    }
+  }
+
+  /**
+   * Fait parler la scène (ouverte ou non) selon ce que le serveur sait.
+   * Appelée après l'envoi ET à chaque synchronisation : un refus ou une
+   * anomalie s'affichent sans que l'école ait à actualiser la page.
+   */
+  function reagirVerification(d) {
+    var S = window.ArdoiseScenePaiement;
+    if (!S || !d) return;
+    var v = d.verification || {};
+    if (d.statut === 'a_verifier') {
+      if (v.etat === 'montant_different') {
+        if (!S.estOuverte()) ouvrirScene(d);
+        if (S.etat() !== 'alerte') S.alerte({
+          ton: 'attention',
+          titre: 'Le montant reçu ne correspond pas',
+          texte: 'Nous avons bien reçu un dépôt pour cette référence, mais pas du montant attendu ('
+            + money(d.montant_attendu, d.devise) + '). L’équipe Ardoise va vous contacter pour régulariser.',
+          corriger: false
+        });
+      } else if (v.etat === 'reference_deja_utilisee') {
+        if (!S.estOuverte()) ouvrirScene(d);
+        if (S.etat() !== 'alerte') S.alerte({
+          titre: 'Cette référence a déjà servi',
+          texte: 'Elle a déjà confirmé un autre paiement. Vérifiez-la dans le SMS reçu de votre opérateur.',
+          corriger: Boolean(v.peut_corriger)
+        });
+      } else if (S.estOuverte() && S.etat() !== 'alerte') {
+        S.attente(v.etat === 'verification_en_cours' ? 'verification_en_cours' : 'attente_operateur');
+      }
+    } else if (d.statut === 'refusee') {
+      if (!S.estOuverte()) ouvrirScene(d);
+      S.alerte({
+        titre: 'Nous n’avons pas pu confirmer ce paiement',
+        texte: 'Votre offre et votre durée sont conservées : corrigez simplement la référence.',
+        motif: d.refuse_motif || 'Référence introuvable.',
+        corriger: true
+      });
+    } else if (d.statut === 'validee') {
+      celebrer(d);
+    }
+  }
+
+  /** Une seule fête par demande, même après rechargement de la page. */
+  function dejaCelebre(id) {
+    try { return localStorage.getItem('ardoise_paiement_celebre') === String(id); } catch (e) { return false; }
+  }
+  function celebrer(d) {
+    if (!d || !window.ArdoiseScenePaiement || dejaCelebre(d.id)) return;
+    try { localStorage.setItem('ardoise_paiement_celebre', String(d.id)); } catch (e) { /* navigation privée */ }
+    var e = (data && data.ecole) || {};
+    if (!ArdoiseScenePaiement.estOuverte()) ouvrirScene(d);
+    ArdoiseScenePaiement.succes({
+      ecole: e.nom,
+      plan: d.plan_nom || e.plan_nom,
+      montant: d.montant_attendu,
+      devise: d.devise,
+      expiration: e.date_expiration
+    });
+  }
+
+  /** Fréquence de la synchronisation : rapide tant qu'un paiement se vérifie. */
+  function intervalleSynchro() {
+    if (window.ArdoiseScenePaiement && ArdoiseScenePaiement.estOuverte()) return 3000;
+    var d = data && data.demande;
+    return d && d.statut === 'a_verifier' ? 6000 : 20000;
   }
 
   /* -------------------------------------------- Confirmation « agent » */
@@ -894,6 +1020,11 @@
          rouvre directement l'étape référence, avec offre et durée déjà
          remplies. L'utilisateur ne recommence jamais ce qu'il a déjà fait. */
       var d = r.demande;
+      /* Revenir sur la page après une activation (fenêtre fermée, autre
+         appareil) : la fête n'a pas encore eu lieu, elle a lieu maintenant —
+         une seule fois, et seulement dans les 3 jours qui suivent. */
+      if (d && d.statut === 'validee' && d.valide_at
+          && Date.now() - new Date(d.valide_at).getTime() < 3 * 86400000) celebrer(d);
       if (d && d.statut === 'en_attente_paiement') {
         restaurerChoixDepuisDemande(d);
         ouvrirTunnel();
@@ -948,16 +1079,18 @@
 
       // L'état en haut est toujours sûr à redessiner : il ne contient aucun champ.
       renduEtat();
+
+      /* La réponse du serveur s'affiche TOUT DE SUITE, dans la scène : c'est
+         elle qui évitait d'avoir à actualiser la page pour apprendre un refus.
+         Elle ne touche à aucun champ, donc pas besoin d'attendre la saisie. */
+      var statut = r.demande && r.demande.statut;
+      var changement = statut !== ancienStatut;
+      if (r.demande && (changement || statut === 'a_verifier')) reagirVerification(r.demande);
+
       if (saisieEnCours) return;
 
-      var statut = r.demande && r.demande.statut;
-      if (statut === 'validee' && ancienStatut !== 'validee') {
-        fermerTunnel();
-        flash('Paiement validé : votre abonnement est actif.', 'succes');
-      }
-      if (statut === 'refusee' && ancienStatut !== 'refusee') {
-        fermerTunnel();
-      }
+      if (statut === 'validee' && ancienStatut !== 'validee') fermerTunnel();
+      if (statut === 'refusee' && ancienStatut !== 'refusee') fermerTunnel();
       renduSuivi();
       renduActions();
     }).catch(function () {
@@ -994,7 +1127,7 @@
     var btn = this;
     var ok = function () {
       var ancien = btn.textContent;
-      btn.textContent = 'Numéro copié ✓';
+      btn.textContent = 'Copié ✓';
       setTimeout(function () { btn.textContent = ancien; }, 1800);
     };
     if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -1038,5 +1171,41 @@
       charger(true).catch(function () {});
     }, 3000);
   });
-  setInterval(synchroniser, 20000);
+  /* Une synchronisation qui s'accélère quand il le faut : toutes les 3 s
+     pendant que la scène de vérification est ouverte, 6 s tant qu'un
+     paiement est en vérification, 20 s le reste du temps. */
+  (function boucle() {
+    setTimeout(function () { synchroniser(); boucle(); }, intervalleSynchro());
+  })();
+
+  var champRef = $('reference');
+  if (champRef) champRef.addEventListener('input', majIndiceReference);
+
+  var coller = $('coller-reference');
+  if (coller) {
+    if (!(navigator.clipboard && navigator.clipboard.readText)) coller.classList.add('cache');
+    coller.addEventListener('click', function () {
+      navigator.clipboard.readText().then(function (t) {
+        /* On colle le SMS entier ? On en extrait la référence. */
+        var m = /(?:R[ée]f(?:[ée]rence)?\.?|Trans(?:action)?\s*ID|TID)\s*[:#.\-]?\s*([A-Za-z0-9][A-Za-z0-9.\-_/]{3,})/i.exec(t || '');
+        var valeur = m ? m[1].replace(/[.\-_/]+$/, '') : String(t || '').trim();
+        $('reference').value = nettoyerReference(valeur).slice(0, 120);
+        majIndiceReference();
+        $('reference').focus();
+      }).catch(function () {
+        flash('Autorisez l’accès au presse-papiers, ou collez la référence à la main.', 'info');
+      });
+    });
+  }
+
+  var copierMontant = $('copier-montant');
+  if (copierMontant) copierMontant.addEventListener('click', function () {
+    var brut = String($('montant-depot').textContent || '').replace(/[^\d,.]/g, '').replace(',', '.');
+    var btn = this;
+    if (!brut || !(navigator.clipboard && navigator.clipboard.writeText)) return;
+    navigator.clipboard.writeText(brut).then(function () {
+      btn.textContent = 'Copié ✓'; btn.classList.add('ok');
+      setTimeout(function () { btn.textContent = 'Copier'; btn.classList.remove('ok'); }, 1800);
+    }).catch(function () {});
+  });
 })();

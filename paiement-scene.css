@@ -1,0 +1,248 @@
+/* ==========================================================================
+   Ardoise — scène de vérification du paiement (paiement-scene.js)
+   --------------------------------------------------------------------------
+   Une fenêtre qui raconte ce qui se passe pendant que le serveur rapproche la
+   référence de l'école du SMS de l'opérateur : un message part du téléphone,
+   voyage jusqu'au sceau Ardoise, et chaque contrôle se coche en direct. Elle
+   se transforme en célébration (abonnement activé) ou en alerte (paiement
+   refusé, montant différent) SANS que l'école ait à actualiser la page.
+
+   Toutes les couleurs viennent des variables du thème : la scène suit Ardoise,
+   Nuit, Studio, Récré… et le choix « Animations : non » ou la préférence
+   système « mouvement réduit » remplacent le mouvement par des états fixes.
+   ========================================================================== */
+
+.ps-voile {
+  position: fixed; inset: 0; z-index: 9000;
+  display: grid; place-items: center; padding: 16px;
+  background: color-mix(in srgb, var(--encre, #111) 55%, transparent);
+  backdrop-filter: blur(3px);
+  animation: ps-fondu .25s ease-out;
+}
+.ps-carte {
+  position: relative; width: min(520px, 100%); max-height: calc(100vh - 32px); overflow: auto;
+  background: var(--craie-2); color: var(--texte-sombre);
+  border: 1px solid var(--bordure); border-radius: calc(var(--r-carte) + 4px);
+  box-shadow: var(--ombre-flottante, 0 24px 60px rgba(0,0,0,.25));
+  padding: 26px 26px 22px; text-align: center;
+  animation: ps-monte .35s cubic-bezier(.2,.8,.2,1);
+}
+.ps-fermer {
+  position: absolute; top: 10px; right: 12px; width: 34px; height: 34px;
+  border: 0; border-radius: 50%; background: none; color: var(--texte-att);
+  font-size: 1.3rem; cursor: pointer;
+}
+.ps-fermer:hover { background: var(--craie); color: var(--texte-sombre); }
+
+/* --- La route du SMS : téléphone → message → sceau Ardoise ------------- */
+.ps-scene {
+  position: relative; height: 128px; margin: 4px auto 14px; max-width: 380px;
+}
+.ps-telephone, .ps-sceau {
+  position: absolute; top: 50%; transform: translateY(-50%);
+}
+.ps-telephone { left: 6px; width: 54px; height: 92px; }
+.ps-telephone rect.coque { fill: var(--ardoise); }
+.ps-telephone rect.ecran { fill: var(--craie-2); }
+.ps-telephone .barre { fill: var(--ocre); }
+
+.ps-route {
+  position: absolute; left: 70px; right: 96px; top: 50%; height: 2px;
+  background-image: linear-gradient(90deg, var(--bordure) 50%, transparent 50%);
+  background-size: 10px 2px;
+}
+.ps-message {
+  position: absolute; top: 50%; left: 64px; width: 34px; height: 24px;
+  margin-top: -12px; border-radius: 7px 7px 7px 2px;
+  background: var(--ocre); box-shadow: 0 4px 12px color-mix(in srgb, var(--ocre) 45%, transparent);
+  animation: ps-voyage 2.2s cubic-bezier(.55,0,.35,1) infinite;
+}
+.ps-message::before, .ps-message::after {
+  content: ''; position: absolute; left: 7px; right: 7px; height: 2px; border-radius: 2px;
+  background: var(--craie-2); opacity: .9;
+}
+.ps-message::before { top: 7px; }
+.ps-message::after { top: 13px; right: 13px; }
+
+.ps-sceau { right: 6px; width: 88px; height: 88px; }
+.ps-sceau-onde {
+  position: absolute; inset: 0; border-radius: 50%;
+  border: 2px solid var(--ocre); opacity: 0;
+  animation: ps-onde 2.2s ease-out infinite;
+}
+.ps-sceau-onde.o2 { animation-delay: 1.1s; }
+.ps-sceau-disque {
+  position: absolute; inset: 8px; border-radius: 50%;
+  background: var(--ardoise); color: var(--craie-2);
+  display: grid; place-items: center;
+  font-family: var(--police-titre); font-size: 2rem; font-weight: 600;
+  box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--craie-2) 18%, transparent);
+  transition: background .5s ease, transform .5s cubic-bezier(.3,1.6,.5,1);
+}
+.ps-sceau-disque .ps-lettre { transition: opacity .25s, transform .25s; }
+.ps-coche { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; }
+.ps-coche path {
+  fill: none; stroke: var(--craie-2); stroke-width: 6; stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 60; stroke-dashoffset: 60;
+}
+
+/* --- Textes ------------------------------------------------------------ */
+.ps-titre { font-family: var(--police-titre); font-size: 1.35rem; margin: 2px 0 6px; line-height: 1.25; }
+.ps-sous-titre { margin: 0 auto 16px; max-width: 400px; color: var(--texte-att); font-size: 0.9rem; line-height: 1.5; }
+.ps-reference {
+  display: inline-flex; flex-wrap: wrap; justify-content: center; column-gap: 8px; row-gap: 2px;
+  align-items: baseline; padding: 6px 14px; margin-bottom: 16px; max-width: 100%;
+  border-radius: var(--r-pilule); background: var(--craie); border: 1px solid var(--bordure); font-size: 0.82rem;
+}
+.ps-reference .ps-montant { white-space: nowrap; font-weight: 600; }
+.ps-reference code { word-break: break-all; font-family: var(--police-mono, monospace); font-weight: 600; letter-spacing: .02em; }
+
+/* --- Les contrôles, cochés en direct ------------------------------------ */
+.ps-etapes { list-style: none; margin: 0 auto 16px; padding: 0; max-width: 360px; text-align: left; display: grid; gap: 9px; }
+.ps-etapes li { display: flex; align-items: center; gap: 11px; font-size: 0.88rem; color: var(--texte-att); transition: color .3s; }
+.ps-puce {
+  flex: none; width: 24px; height: 24px; border-radius: 50%;
+  border: 2px solid var(--bordure); display: grid; place-items: center;
+  font-size: 0.75rem; font-weight: 700; color: var(--craie-2);
+  transition: background .3s, border-color .3s, transform .3s;
+}
+.ps-etapes li.fait { color: var(--texte-sombre); }
+.ps-etapes li.fait .ps-puce { background: var(--vert-ok); border-color: var(--vert-ok); transform: scale(1.05); }
+.ps-etapes li.actif { color: var(--texte-sombre); font-weight: 600; }
+.ps-etapes li.actif .ps-puce {
+  border-color: var(--ocre); border-top-color: transparent;
+  animation: ps-tourne .9s linear infinite;
+}
+.ps-etapes li.alerte { color: var(--rouge); font-weight: 600; }
+.ps-etapes li.alerte .ps-puce { background: var(--rouge); border-color: var(--rouge); }
+
+.ps-astuce {
+  min-height: 2.6em; margin: 0 auto 14px; max-width: 400px;
+  font-size: 0.8rem; color: var(--texte-att); line-height: 1.45;
+  transition: opacity .35s;
+}
+.ps-chrono { font-size: 0.74rem; color: var(--texte-att); margin-bottom: 12px; font-variant-numeric: tabular-nums; }
+.ps-actions { display: flex; gap: 9px; justify-content: center; flex-wrap: wrap; }
+
+/* --- Alerte : refus, montant différent ---------------------------------- */
+.ps-carte.alerte .ps-message, .ps-carte.alerte .ps-sceau-onde,
+.ps-carte.attention .ps-message, .ps-carte.attention .ps-sceau-onde { animation: none; opacity: 0; }
+.ps-carte.alerte .ps-sceau-disque { background: var(--rouge); animation: ps-secoue .5s ease; }
+.ps-carte.attention .ps-sceau-disque { background: var(--ocre); }
+.ps-motif {
+  text-align: left; margin: 0 auto 16px; max-width: 420px; padding: 12px 14px;
+  border-left: 3px solid var(--rouge); background: var(--craie);
+  border-radius: 0 var(--r-bouton) var(--r-bouton) 0; font-size: 0.86rem; line-height: 1.5;
+}
+.ps-carte.attention .ps-motif { border-left-color: var(--ocre); }
+.ps-motif strong { display: block; margin-bottom: 3px; }
+
+/* --- Succès : le sceau devient une coche, et ça fête -------------------- */
+.ps-carte.succes .ps-message, .ps-carte.succes .ps-route { animation: none; opacity: 0; transition: opacity .3s; }
+.ps-carte.succes .ps-sceau-onde { border-color: var(--vert-ok); animation: ps-onde 1.6s ease-out 3; }
+.ps-carte.succes .ps-sceau-disque { background: var(--vert-ok); transform: scale(1.12); }
+.ps-carte.succes .ps-lettre { opacity: 0; transform: scale(.4); }
+.ps-carte.succes .ps-coche { opacity: 1; }
+.ps-carte.succes .ps-coche path { animation: ps-trace .55s .25s ease-out forwards; }
+.ps-carte.succes .ps-telephone { animation: ps-sort .5s ease forwards; }
+.ps-carte.succes .ps-sceau { right: 50%; transform: translate(50%, -50%); transition: right .6s cubic-bezier(.3,1.3,.5,1), transform .6s cubic-bezier(.3,1.3,.5,1); }
+.ps-carte .ps-sceau { transition: right .6s, transform .6s; }
+
+.ps-recap {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;
+  margin: 0 auto 18px; max-width: 440px;
+}
+.ps-recap div {
+  padding: 10px 8px; border-radius: var(--r-bouton); background: var(--craie);
+  border: 1px solid var(--bordure);
+  opacity: 0; transform: translateY(8px); animation: ps-apparait .4s ease forwards;
+}
+.ps-recap div:nth-child(2) { animation-delay: .1s; }
+.ps-recap div:nth-child(3) { animation-delay: .2s; }
+.ps-recap small { display: block; font-size: 0.68rem; text-transform: uppercase; letter-spacing: .05em; color: var(--texte-att); margin-bottom: 3px; }
+.ps-recap strong { font-size: 0.9rem; }
+.ps-confettis { position: fixed; inset: 0; pointer-events: none; z-index: 9001; }
+
+/* --- Étape dépôt : le « ticket » de paiement ---------------------------- */
+.ticket-paiement {
+  position: relative; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 0;
+  border: 1px solid var(--bordure); border-radius: var(--r-carte); background: var(--craie);
+  overflow: hidden; margin-bottom: 18px;
+}
+.ticket-montant {
+  padding: 20px 22px; background: var(--ardoise); color: var(--craie-2);
+  display: flex; flex-direction: column; justify-content: center; gap: 6px;
+}
+.ticket-montant small { font-size: 0.72rem; text-transform: uppercase; letter-spacing: .07em; opacity: .75; }
+.ticket-montant strong { font-family: var(--police-titre); font-size: 2rem; line-height: 1.1; }
+.ticket-montant .ticket-reseau {
+  align-self: flex-start; padding: 3px 10px; border-radius: var(--r-pilule);
+  background: color-mix(in srgb, var(--ocre) 85%, transparent); color: var(--craie-2);
+  font-size: 0.74rem; font-weight: 700;
+}
+.ticket-details { padding: 16px 20px; display: grid; gap: 11px; align-content: center; }
+.ticket-ligne { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.ticket-ligne small { display: block; font-size: 0.7rem; text-transform: uppercase; letter-spacing: .05em; color: var(--texte-att); }
+.ticket-ligne strong { font-size: 1.02rem; }
+.ticket-copier {
+  flex: none; border: 1px solid var(--bordure); background: var(--craie-2); color: var(--texte-sombre);
+  border-radius: var(--r-pilule); padding: 5px 11px; font: inherit; font-size: 0.74rem; font-weight: 600; cursor: pointer;
+}
+.ticket-copier:hover { border-color: var(--ocre); }
+.ticket-copier.ok { border-color: var(--vert-ok); color: var(--vert-ok); }
+.ticket-paiement::before, .ticket-paiement::after {
+  content: ''; position: absolute; left: calc(52.4% - 9px); width: 18px; height: 18px; border-radius: 50%;
+  background: var(--craie-2); border: 1px solid var(--bordure);
+}
+.ticket-paiement::before { top: -10px; }
+.ticket-paiement::after { bottom: -10px; }
+
+.reference-saisie { display: flex; gap: 8px; align-items: stretch; }
+.reference-saisie input { flex: 1; min-width: 0; font-family: var(--police-mono, monospace); letter-spacing: .03em; text-transform: uppercase; font-size: 1rem !important; }
+.reference-saisie .bouton { white-space: nowrap; }
+.reference-indice { font-size: 0.8rem; margin-top: 7px; min-height: 1.2em; color: var(--texte-att); }
+.reference-indice.ok { color: var(--vert-ok); }
+.reference-indice.ko { color: var(--rouge); }
+.promesse-auto {
+  display: flex; gap: 10px; align-items: center; margin: 4px 0 16px; padding: 10px 13px;
+  border-radius: var(--r-bouton); background: color-mix(in srgb, var(--vert-ok) 9%, var(--craie-2));
+  border: 1px solid color-mix(in srgb, var(--vert-ok) 30%, var(--bordure)); font-size: 0.84rem; line-height: 1.45;
+}
+.promesse-auto b { color: var(--vert-ok); }
+
+@media (max-width: 640px) {
+  .ps-carte { padding: 22px 16px 18px; }
+  .ps-recap { grid-template-columns: 1fr; }
+  .ticket-paiement { grid-template-columns: 1fr; }
+  .ticket-paiement::before, .ticket-paiement::after { display: none; }
+  .reference-saisie { flex-wrap: wrap; }
+  .reference-saisie .bouton { flex: 1; }
+}
+
+/* --- Animations ---------------------------------------------------------- */
+@keyframes ps-fondu { from { opacity: 0; } }
+@keyframes ps-monte { from { opacity: 0; transform: translateY(18px) scale(.98); } }
+@keyframes ps-voyage {
+  0% { left: 64px; opacity: 0; transform: scale(.6) rotate(-8deg); }
+  12% { opacity: 1; transform: scale(1) rotate(0); }
+  80% { opacity: 1; }
+  100% { left: calc(100% - 118px); opacity: 0; transform: scale(.5) rotate(6deg); }
+}
+@keyframes ps-onde { 0% { opacity: .55; transform: scale(.85); } 100% { opacity: 0; transform: scale(1.45); } }
+@keyframes ps-tourne { to { transform: rotate(360deg); } }
+@keyframes ps-trace { to { stroke-dashoffset: 0; } }
+@keyframes ps-sort { to { opacity: 0; transform: translate(-30px, -50%); } }
+@keyframes ps-apparait { to { opacity: 1; transform: none; } }
+@keyframes ps-secoue { 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
+
+/* Préférence « Animations : non » ou mouvement réduit : mêmes états, sans
+   mouvement. La coche est dessinée d'emblée, le message reste au milieu. */
+html[data-animations="non"] .ps-message,
+html[data-animations="non"] .ps-sceau-onde { animation: none !important; }
+html[data-animations="non"] .ps-message { left: calc(50% - 30px); opacity: 1; }
+html[data-animations="non"] .ps-carte.succes .ps-coche path { stroke-dashoffset: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .ps-message, .ps-sceau-onde, .ps-etapes li.actif .ps-puce { animation: none !important; }
+  .ps-message { left: calc(50% - 30px); opacity: 1; }
+  .ps-carte.succes .ps-coche path { animation: none; stroke-dashoffset: 0; }
+}

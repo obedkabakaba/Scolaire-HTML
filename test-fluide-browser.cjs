@@ -119,6 +119,8 @@ const server=http.createServer((req,res)=>{
  let financeRequests=0;
  await prof.route('**/*',route=>{if(new URL(route.request().url()).origin===base)return route.continue();if(/\/(classes|comptabilite|frais|paiements)(?:[/?]|$)/.test(route.request().url()))financeRequests++;return route.fulfill({status:200,contentType:'application/json',body:'[]'});});
  const pp=await prof.newPage();await pp.goto(base+'/espace-professeur.html?shell');await pp.evaluate(()=>document.querySelector('.mise-en-page').style.display='grid');await pp.waitForSelector('.fl-banner');
+ // Les raccourcis se reconstruisent dès que le rail filtré par rôle est prêt (une frame).
+ await pp.waitForSelector('.fl-action',{timeout:3000}).catch(()=>{});
  assert.equal(await pp.locator('.fl-action[href="frais-scolaires.html"]').count(),0);
  // Les professeurs participent aux concours d'admission : cet accès est prévu par session.js.
  assert.equal(await pp.locator('.fl-action[href="inscriptions.html"]').count(),1);

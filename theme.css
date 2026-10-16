@@ -6,6 +6,7 @@
 @import url("theme-orbite.css");
 @import url("theme-fluide.css");
 @import url("theme-vibra.css");
+@import url("theme-signatures.css");
 
 html[data-theme="ardoise"] .carte-cours .bouton {
   color: var(--texte-sombre, #1F2B24) !important;
@@ -510,4 +511,21 @@ html[data-theme="ardoise"] .sa-badge.ton-succes {
     color: var(--nav-texte-fort) !important;
     background: var(--nav-actif-fond) !important;
   }
+}
+/* ==========================================================================
+   Rails flottants : la hauteur est bornée par l'écran
+   --------------------------------------------------------------------------
+   Orbite, Vibra et Fluide posent leur rail en position fixe avec un haut et
+   un bas (top/bottom). Chromium laissait pourtant ce rail prendre la hauteur
+   de son contenu : sur un écran de moins de ~750 px de haut, il dépassait
+   sous le bord de la fenêtre, ne défilait jamais, et « Sortir », placé tout
+   en bas, devenait inatteignable. La hauteur maximale explicite rétablit le
+   défilement interne du rail ; la déconnexion reste au bout de la liste.
+   Vérifié par test-signatures-browser.cjs à 1440×900, 1280×640 et 1024×600.
+   ========================================================================== */
+@media screen and (min-width: 781px) {
+  html[data-theme="orbite"][data-theme="orbite"] .mise-en-page > .barre-laterale { max-height: calc(100vh - 106px); max-height: calc(100dvh - 106px); }
+  html[data-theme="vibra"][data-theme="vibra"] .mise-en-page > .barre-laterale { max-height: calc(100vh - 116px); max-height: calc(100dvh - 116px); }
+  html[data-theme="fluide"][data-theme="fluide"] .mise-en-page > .barre-laterale { max-height: calc(100vh - 124px); max-height: calc(100dvh - 124px); }
+  html:is([data-theme="orbite"], [data-theme="vibra"], [data-theme="fluide"]) .mise-en-page > .barre-laterale .nav-deconnexion { flex-shrink: 0 !important; }
 }

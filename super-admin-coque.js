@@ -214,6 +214,71 @@
     pied.addEventListener('click', (ev) => { if (ev.target.closest('a')) basculer(false); });
   }
 
+  /* Déconnexion directe depuis le rail. Le menu du compte la propose aussi,
+     mais elle ne doit jamais dépendre d'un seul chemin : c'est le bouton
+     d'origine (#bouton-deconnexion) qui est déclenché, avec son gestionnaire
+     de session et la propagation aux autres onglets. */
+  const piedRail = nav.querySelector('.sa-rail-pied');
+  if (piedRail && !piedRail.querySelector('.sa-rail-sortie')) {
+    const sortie = document.createElement('button');
+    sortie.type = 'button';
+    sortie.className = 'sa-rail-bouton sa-rail-sortie';
+    sortie.setAttribute('aria-label', 'Se déconnecter');
+    sortie.setAttribute('data-infobulle', 'Se déconnecter');
+    sortie.innerHTML = SA.ui.icone('sortie', 19);
+    sortie.addEventListener('click', () => {
+      const vrai = document.getElementById('bouton-deconnexion');
+      if (vrai) vrai.click();
+    });
+    piedRail.appendChild(sortie);
+  }
+
+  /* Infobulles du rail en position fixe : le rail défile désormais, et un
+     conteneur défilant coupe tout pseudo-élément qui en déborde. */
+  (function infobullesRail() {
+    const rail = document.getElementById('sa-rail');
+    if (!rail) return;
+    const bulle = document.createElement('div');
+    bulle.className = 'sa-infobulle-flottante';
+    bulle.setAttribute('aria-hidden', 'true');
+    bulle.hidden = true;
+    document.body.appendChild(bulle);
+    const grandEcran = window.matchMedia('(hover: hover) and (min-width: 981px)');
+    const montrer = (cible) => {
+      if (!grandEcran.matches) return;
+      const texte = cible.getAttribute('data-infobulle');
+      if (!texte) return;
+      const r = cible.getBoundingClientRect();
+      bulle.textContent = texte;
+      bulle.style.left = `${Math.round(r.right + 12)}px`;
+      bulle.style.top = `${Math.round(r.top + r.height / 2)}px`;
+      bulle.hidden = false;
+    };
+    const cacher = () => { bulle.hidden = true; };
+    rail.addEventListener('mouseover', (ev) => { const c = ev.target.closest('[data-infobulle]'); if (c) montrer(c); });
+    rail.addEventListener('mouseout', (ev) => { const c = ev.target.closest('[data-infobulle]'); if (c && !c.contains(ev.relatedTarget)) cacher(); });
+    rail.addEventListener('focusin', (ev) => { const c = ev.target.closest('[data-infobulle]'); if (c && c.matches(':focus-visible')) montrer(c); });
+    rail.addEventListener('focusout', cacher);
+    rail.addEventListener('scroll', cacher, true);
+    window.addEventListener('resize', cacher);
+
+    // Fondu en haut / en bas quand des domaines sont cachés par le défilement.
+    const zone = document.getElementById('sa-rail-domaines');
+    if (!zone) return;
+    const ombres = () => {
+      zone.classList.toggle('sa-defile-haut', zone.scrollTop > 2);
+      zone.classList.toggle('sa-defile-bas', zone.scrollTop + zone.clientHeight < zone.scrollHeight - 2);
+    };
+    zone.addEventListener('scroll', ombres, { passive: true });
+    window.addEventListener('resize', ombres);
+    requestAnimationFrame(ombres);
+    // Le domaine actif reste visible quand on change de section.
+    zone.addEventListener('click', (ev) => {
+      const b = ev.target.closest('.sa-rail-domaine');
+      if (b) b.scrollIntoView({ block: 'nearest' });
+    });
+  })();
+
   document.documentElement.classList.add('sa-coque-prete');
 
   /* ======================================================================

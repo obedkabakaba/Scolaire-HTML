@@ -1821,6 +1821,7 @@
                   </div>
                   <div class="sa-pied-theme">
                     <div class="sa-nom-theme">${esc(t.nom)}<span class="sa-coche-theme">${t.cle === actuel ? '✓' : ''}</span></div>
+                    ${t.devise ? `<div class="sa-desc-theme" style="font-style:italic;color:var(--texte-sombre)">« ${esc(t.devise)} »</div>` : ''}
                     <div class="sa-desc-theme">${esc(t.description)}</div>
                   </div>
                 </button>

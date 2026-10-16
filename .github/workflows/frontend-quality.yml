@@ -104,3 +104,4 @@ jobs:
           node test-orbite-browser.cjs
           node test-fluide-browser.cjs
           node test-vibra-browser.cjs
+          node test-signatures-browser.cjs

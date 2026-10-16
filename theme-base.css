@@ -51,6 +51,21 @@
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
 
+/* Animations désactivées dans Mon profil (choix propre à l'appareil, posé
+   par theme.js et par le script d'amorçage de chaque page). Comme pour le
+   réglage système, chaque animation saute directement à son état final :
+   rien ne reste à mi-chemin, invisible ou décalé. */
+html[data-animations="non"] { --transition-base: 0s; scroll-behavior: auto; }
+html[data-animations="non"] *,
+html[data-animations="non"] *::before,
+html[data-animations="non"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-delay: 0s !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  transition-delay: 0s !important;
+}
+
 /* ==========================================================================
    1. ARDOISE — thème par défaut (craie et ocre, chaleureux)
    ========================================================================== */

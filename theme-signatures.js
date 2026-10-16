@@ -26,7 +26,10 @@
   var page = location.pathname.split('/').pop() || 'index.html';
   var accueil = /^(dashboard-directeur|espace-)/.test(page);
   var admin = page === 'super-admin.html';
-  var calme = window.matchMedia('(prefers-reduced-motion: reduce)');
+  /* « Calme » : le système demande moins de mouvement, ou l'utilisateur a
+     désactivé les animations dans Mon profil (attribut posé par theme.js). */
+  var systemeCalme = window.matchMedia('(prefers-reduced-motion: reduce)');
+  var calme = { get matches() { return systemeCalme.matches || html.getAttribute('data-animations') === 'non'; } };
   var bureau = window.matchMedia('(min-width: 781px)');
   var NS = 'http://www.w3.org/2000/svg';
 

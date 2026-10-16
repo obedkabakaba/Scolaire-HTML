@@ -57,7 +57,8 @@
   (function(){var t;
    try{t=localStorage.getItem('ardoise_theme')||sessionStorage.getItem('ardoise_theme');}catch(e){}
    var th=(t&&/^[a-z][a-z0-9-]{1,19}$/.test(t))?t:'ardoise';
-   document.documentElement.setAttribute('data-theme', th);})();
+   document.documentElement.setAttribute('data-theme', th);
+   try{if(localStorage.getItem('ardoise_animations')==='non')document.documentElement.setAttribute('data-animations','non');}catch(e){}})();
 </script>
 
 <link rel="stylesheet" href="theme.css" />

@@ -395,11 +395,20 @@ html.sg-accueil-ouvert {overflow:hidden;}
 
 /* ------------------------------------------------------- Calme ------- */
 @media (prefers-reduced-motion:reduce) {
- .sg-scene *,.sg-scene::before,.sg-scene::after {animation:none !important;}
+ .sg-scene *,.sg-scene *::before,.sg-scene *::after,.sg-scene::before,.sg-scene::after {animation:none !important;}
+ .sg-scene :is(.sg-impulsion,.sg-balayage,.sg-filante) {display:none;}
+ .sg-plan line {stroke-dashoffset:0;}
  .sg-entre {animation:none !important;}
  .sg-accueil .sg-lettre,.sg-accueil .sg-point,.sg-accueil :is(.sg-accueil-titre,.sg-accueil-sous,.sg-accueil-puces,.sg-accueil-go),.sg-accueil-puces li {transform:none;visibility:visible;animation:none !important;}
  .sg-accueil {transition:none;}
 }
+/* Même repos quand l'utilisateur a désactivé les animations dans Mon profil. */
+html[data-animations="non"] .sg-scene *,html[data-animations="non"] .sg-scene *::before,html[data-animations="non"] .sg-scene *::after,html[data-animations="non"] .sg-scene::before,html[data-animations="non"] .sg-scene::after {animation:none !important;}
+html[data-animations="non"] .sg-scene :is(.sg-impulsion,.sg-balayage,.sg-filante) {display:none;}
+html[data-animations="non"] .sg-plan line {stroke-dashoffset:0;}
+html[data-animations="non"] .sg-entre {animation:none !important;}
+html[data-animations="non"] :is(.sg-accueil .sg-lettre,.sg-accueil .sg-point,.sg-accueil :is(.sg-accueil-titre,.sg-accueil-sous,.sg-accueil-puces,.sg-accueil-go),.sg-accueil-puces li) {transform:none;visibility:visible;animation:none !important;}
+html[data-animations="non"] .sg-accueil {transition:none;}
 @media (max-width:780px) {
  .sg-scene :is(.sg-etoile:nth-child(n+60),.sg-poussiere:nth-child(n+12)) {display:none;}
  .sg-registre {grid-template-columns:minmax(0,1fr);}

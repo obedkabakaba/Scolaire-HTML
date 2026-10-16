@@ -134,7 +134,7 @@
 
   /* ========================================================= Écrans fixes */
 
-  function oublier() { resume = null; eleves = []; fermerModale(); }
+  function oublier() { resume = null; eleves = []; fermerModale(); if (typeof fermerCamera === 'function') fermerCamera(); }
 
   function ecranFerme(message) {
     ferme = true;
@@ -349,8 +349,11 @@
     const m = modale(nouveau ? 'Enregistrer un élève' : esc(nomComplet(e)),
       nouveau ? 'Absent de la liste de l’école : saisissez-le, puis prenez sa photo.' : esc([e.matricule, e.classe_nom].filter(Boolean).join(' · ')),
       `${nouveau ? '' : `<div class="cap-fiche-photo"><div class="cap-cadre" id="cap-cadre">${e.photo_url ? `<img src="${esc(e.photo_url)}" alt="Photo de ${esc(nomComplet(e))}" referrerpolicy="no-referrer" />` : icone('profil')}</div>
-        <button type="button" class="bouton principal plein" data-photo>${icone('appareil')} ${e.a_photo ? 'Reprendre la photo' : 'Prendre la photo'}</button>
-        <p class="muet petit" style="margin:0;text-align:center">Visage centré, de face, sur fond clair. La photo est recadrée automatiquement.</p></div>`}
+        <div class="cap-choix-photo">
+          <button type="button" class="bouton principal" data-photo>${icone('appareil')} ${e.a_photo ? 'Reprendre la photo' : 'Prendre la photo'}</button>
+          <button type="button" class="bouton secondaire" data-importer>${icone('image')} Importer</button>
+        </div>
+        <p class="muet petit" style="margin:0;text-align:center">Prendre : caméra du téléphone ou de l’ordinateur. Importer : galerie ou fichier.<br />Visage centré, de face, sur fond clair ; la photo est recadrée automatiquement.</p></div>`}
       <form novalidate>${champsFiche(e, classeParDefaut)}
         <div id="cap-doublons"></div>
         <div class="modale-pied">
@@ -360,7 +363,8 @@
     const form = $('form', m);
     form.addEventListener('submit', (evt) => { evt.preventDefault(); enregistrerFiche(form, e, false); });
     if (!nouveau) {
-      $('[data-photo]', m).addEventListener('click', () => choisirPhoto(e));
+      $('[data-photo]', m).addEventListener('click', () => prendrePhoto(e));
+      $('[data-importer]', m).addEventListener('click', () => importerPhoto(e));
       $('[data-suivant]', m).addEventListener('click', () => suivantSansPhoto(e));
     }
   }
@@ -414,34 +418,65 @@
     else { fermerModale(); toast('Tous les élèves de cette liste ont une photo.', 'succes'); }
   }
 
-  /* ============================================================ Photo */
+  /* ============================================================ Photo
+     Trois sources, une seule préparation :
+       · « Prendre la photo » : la caméra dans la page (téléphone ou
+         ordinateur), avec un cadre de visée 3:4. Le navigateur demande
+         l'autorisation la première fois ; un refus est expliqué, avec la
+         marche à suivre pour l'autoriser et l'import en solution de repli.
+       · sur téléphone, l'appareil photo du système reste proposé (meilleur
+         autofocus sur certains modèles) ;
+       · « Importer » : galerie du téléphone, ou fichier de l'ordinateur.
+     Quelle que soit la source : recadrage 3:4, 600×800, JPEG ≈ 100 Ko. */
 
   let eleveEnPhoto = null;
-  const entree = $('#cap-fichier');
-  function choisirPhoto(e) {
+  const entreeImport = $('#cap-fichier');
+  const entreeAppareil = $('#cap-appareil');
+  const tactile = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+  const cameraDisponible = Boolean(window.isSecureContext && navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+
+  function importerPhoto(e) {
     eleveEnPhoto = e;
-    entree.value = '';
-    entree.click();
+    entreeImport.value = '';
+    entreeImport.click();
   }
-  entree.addEventListener('change', async () => {
+  function appareilSysteme(e) {
+    eleveEnPhoto = e;
+    entreeAppareil.value = '';
+    entreeAppareil.click();
+  }
+  function prendrePhoto(e) {
+    if (cameraDisponible) ouvrirCamera(e);
+    else if (tactile) appareilSysteme(e);
+    else {
+      toast(window.isSecureContext ? 'Ce navigateur ne donne pas accès à la caméra : importez une photo.' : 'La caméra n’est accessible que sur une page sécurisée (https).', 'danger');
+      importerPhoto(e);
+    }
+  }
+
+  [entreeImport, entreeAppareil].forEach((entree) => entree.addEventListener('change', () => {
     const fichier = entree.files && entree.files[0];
-    const e = eleveEnPhoto;
     entree.value = '';
-    if (!fichier || !e) return;
+    if (fichier && eleveEnPhoto) envoyerPhoto(eleveEnPhoto, () => preparerPhoto(fichier));
+  }));
+
+  async function envoyerPhoto(e, preparer) {
     const cadre = $('#cap-cadre');
-    const bouton = modaleOuverte ? $('[data-photo]', modaleOuverte) : null;
-    attente(bouton, true, 'Préparation…');
+    const boutons = modaleOuverte ? $$('[data-photo], [data-importer]', modaleOuverte) : [];
+    boutons.forEach((b) => attente(b, true, 'Préparation…'));
     let blob;
     try {
-      blob = await preparerPhoto(fichier);
+      blob = await preparer();
     } catch (err) {
-      attente(bouton, false);
-      toast('Cette image ne peut pas être lue. Reprenez la photo.', 'danger');
+      boutons.forEach((b) => attente(b, false));
+      toast(err.message === 'illisible'
+        ? 'Cette image ne peut pas être lue par ce navigateur (format HEIC ?). Choisissez une photo JPEG ou PNG, ou prenez-la avec la caméra.'
+        : 'La photo n’a pas pu être préparée. Réessayez.', 'danger');
       return;
     }
     const apercu = URL.createObjectURL(blob);
     if (cadre) cadre.innerHTML = `<img src="${apercu}" alt="" /><div class="cap-envoi">Envoi…</div>`;
-    if (bouton) bouton.textContent = 'Envoi de la photo…';
+    boutons.forEach((b) => { b.textContent = 'Envoi de la photo…'; });
     try {
       const avaitPhoto = e.a_photo;
       const r = await api(`/eleves/${e.id}/photo`, { method: 'POST', binaire: blob, type: 'image/jpeg' });
@@ -460,14 +495,60 @@
     } catch (err) {
       if (err.ferme || err.session) return;
       if (cadre) { const voile = $('.cap-envoi', cadre); if (voile) voile.textContent = 'Échec de l’envoi'; }
-      attente(bouton, false);
+      boutons.forEach((b) => attente(b, false));
       toast(err.message, 'danger');
     } finally {
       setTimeout(() => URL.revokeObjectURL(apercu), 30000);
     }
-  });
+  }
 
-  /** Recadre au centre en 3:4, réduit à 600×800 et compresse en JPEG. */
+  /** Recadre une source (image ou vidéo) en 3:4 → JPEG 600×800. Sans `zone`,
+   *  coupe au centre ; avec `zone` ({sx, sy, sw, sh} en pixels de la source),
+   *  garde exactement cette zone (ce qui était dans le cadre de visée). */
+  function cadrer(source, largeur, hauteur, miroir, zone) {
+    const ratio = PHOTO.largeur / PHOTO.hauteur;
+    let sw = largeur;
+    let sh = hauteur;
+    if (!sw || !sh) throw new Error('illisible');
+    let sx = 0;
+    let sy = 0;
+    if (zone) ({ sx, sy, sw, sh } = zone);
+    // Visage plutôt dans le haut de l'image : on coupe un peu moins en haut.
+    else if (sw / sh > ratio) { const l = sh * ratio; sx = (sw - l) / 2; sw = l; } else { const h = sw / ratio; sy = (sh - h) / 2.5; sh = h; }
+    const canvas = document.createElement('canvas');
+    canvas.width = PHOTO.largeur;
+    canvas.height = PHOTO.hauteur;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if (miroir) { ctx.translate(canvas.width, 0); ctx.scale(-1, 1); }
+    ctx.drawImage(source, sx, Math.max(0, sy), sw, sh, 0, 0, canvas.width, canvas.height);
+    return new Promise((ok, ko) => canvas.toBlob((b) => (b ? ok(b) : ko(new Error('compression'))), 'image/jpeg', PHOTO.qualite));
+  }
+
+  /**
+   * La zone de la vidéo qui apparaît DANS le cadre de visée, en pixels de la
+   * source. La vidéo est affichée en `object-fit: cover` (agrandie et coupée) :
+   * on refait le même calcul pour que la photo soit exactement ce que l'on voit.
+   */
+  function zoneVisee(video, cadre, miroir) {
+    const vw = video.videoWidth;
+    const vh = video.videoHeight;
+    const ev = video.getBoundingClientRect();
+    const ec = cadre.getBoundingClientRect();
+    if (!vw || !vh || !ev.width || !ec.width) return null;
+    const echelle = Math.max(ev.width / vw, ev.height / vh);
+    const decalX = (ev.width - vw * echelle) / 2;
+    const decalY = (ev.height - vh * echelle) / 2;
+    let sx = (ec.left - ev.left - decalX) / echelle;
+    const sy = (ec.top - ev.top - decalY) / echelle;
+    const sw = ec.width / echelle;
+    const sh = ec.height / echelle;
+    if (miroir) sx = vw - sx - sw; // l'affichage est retourné, pas la source
+    const borne = (v, max) => Math.min(Math.max(0, v), max);
+    return { sx: borne(sx, vw - 1), sy: borne(sy, vh - 1), sw: Math.min(sw, vw), sh: Math.min(sh, vh) };
+  }
+
   async function preparerPhoto(fichier) {
     const image = await new Promise((ok, ko) => {
       const url = URL.createObjectURL(fichier);
@@ -476,21 +557,148 @@
       img.onerror = () => { URL.revokeObjectURL(url); ko(new Error('illisible')); };
       img.src = url;
     });
-    const ratio = PHOTO.largeur / PHOTO.hauteur;
-    let sw = image.naturalWidth;
-    let sh = image.naturalHeight;
-    if (!sw || !sh) throw new Error('illisible');
-    let sx = 0;
-    let sy = 0;
-    if (sw / sh > ratio) { const l = sh * ratio; sx = (sw - l) / 2; sw = l; } else { const h = sw / ratio; sy = (sh - h) / 2.5; sh = h; }
-    const canvas = document.createElement('canvas');
-    canvas.width = PHOTO.largeur;
-    canvas.height = PHOTO.hauteur;
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(image, sx, Math.max(0, sy), sw, sh, 0, 0, canvas.width, canvas.height);
-    return new Promise((ok, ko) => canvas.toBlob((b) => (b ? ok(b) : ko(new Error('compression'))), 'image/jpeg', PHOTO.qualite));
+    return cadrer(image, image.naturalWidth, image.naturalHeight, false);
+  }
+
+  /* ---------------------------------------------------- Caméra dans la page */
+
+  let flux = null;
+  let cameraOuverte = null;
+  let orientation = tactile ? 'environment' : 'user';
+
+  function arreterCamera() {
+    if (flux) { flux.getTracks().forEach((t) => t.stop()); flux = null; }
+  }
+  function fermerCamera() {
+    arreterCamera();
+    if (cameraOuverte) { cameraOuverte.remove(); cameraOuverte = null; }
+  }
+
+  const AIDE_AUTORISATION = `<ul class="cap-aide">
+    <li><strong>Ordinateur (Chrome, Edge)</strong> : cliquez sur l’icône à gauche de l’adresse (cadenas ou caméra barrée) → Caméra → <em>Autoriser</em>, puis rechargez la page.</li>
+    <li><strong>Android (Chrome)</strong> : ⋮ → Paramètres → Paramètres des sites → Caméra → myardoise.com → <em>Autoriser</em>.</li>
+    <li><strong>iPhone (Safari)</strong> : « aA » dans la barre d’adresse → Réglages du site web → Caméra → <em>Autoriser</em>. Vérifiez aussi Réglages → Safari → Caméra.</li>
+    <li>Si la caméra est utilisée par une autre application (visio, appareil photo), fermez-la.</li></ul>`;
+
+  function messageErreurCamera(err) {
+    const nom = err && err.name;
+    if (nom === 'NotAllowedError' || nom === 'PermissionDeniedError' || nom === 'SecurityError') return ['Accès à la caméra refusé', `Le navigateur bloque la caméra pour ce site. Pour l’autoriser :${AIDE_AUTORISATION}`];
+    if (nom === 'NotFoundError' || nom === 'OverconstrainedError') return ['Aucune caméra trouvée', 'Cet appareil ne présente pas de caméra utilisable. Importez une photo à la place.'];
+    if (nom === 'NotReadableError' || nom === 'AbortError') return ['Caméra occupée', `La caméra est déjà utilisée par une autre application.${AIDE_AUTORISATION}`];
+    return ['Caméra indisponible', `La caméra n’a pas pu démarrer.${AIDE_AUTORISATION}`];
+  }
+
+  async function demarrerFlux(video) {
+    arreterCamera();
+    const contraintes = (mode) => ({ audio: false, video: { facingMode: mode ? { ideal: mode } : undefined, width: { ideal: 1920 }, height: { ideal: 1440 } } });
+    try {
+      flux = await navigator.mediaDevices.getUserMedia(contraintes(orientation));
+    } catch (err) {
+      if (err && err.name === 'OverconstrainedError') flux = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      else throw err;
+    }
+    video.srcObject = flux;
+    await video.play().catch(() => {});
+    const reglages = flux.getVideoTracks()[0] && flux.getVideoTracks()[0].getSettings ? flux.getVideoTracks()[0].getSettings() : {};
+    // Une caméra frontale s'affiche en miroir, comme un miroir de salle de bain.
+    const frontale = reglages.facingMode ? reglages.facingMode === 'user' : !tactile;
+    video.classList.toggle('miroir', frontale);
+    return frontale;
+  }
+
+  async function ouvrirCamera(e) {
+    fermerCamera();
+    eleveEnPhoto = e;
+    const ecran = document.createElement('div');
+    ecran.className = 'cap-camera';
+    ecran.setAttribute('role', 'dialog');
+    ecran.setAttribute('aria-modal', 'true');
+    ecran.setAttribute('aria-label', `Photo de ${nomComplet(e)}`);
+    ecran.innerHTML = `
+      <div class="cap-camera-tete"><strong>${esc(nomComplet(e))}</strong>
+        <button type="button" class="cap-retour" data-fermer-camera aria-label="Fermer la caméra">${icone('fermer')}</button></div>
+      <div class="cap-camera-vue">
+        <video playsinline muted autoplay></video>
+        <img class="cap-camera-figee" alt="" hidden />
+        <div class="cap-camera-cadre" aria-hidden="true"><span></span></div>
+        <div class="cap-camera-etat"><p>Le navigateur va demander l’autorisation d’utiliser la caméra :<br />choisissez <strong>« Autoriser »</strong>.</p></div>
+      </div>
+      <div class="cap-camera-pied">
+        <div data-mode="visee">
+          <button type="button" class="cap-camera-secondaire" data-importer-camera>Importer</button>
+          <button type="button" class="cap-declencheur" data-declencher aria-label="Prendre la photo" disabled></button>
+          <button type="button" class="cap-camera-secondaire" data-basculer hidden>Changer de caméra</button>
+        </div>
+        <div data-mode="verif" hidden>
+          <button type="button" class="bouton secondaire" data-reprendre>Reprendre</button>
+          <button type="button" class="bouton principal" data-valider>${icone('ok')} Utiliser cette photo</button>
+        </div>
+        ${tactile ? '<button type="button" class="cap-camera-lien" data-systeme>Utiliser l’appareil photo du téléphone</button>' : ''}
+      </div>`;
+    document.body.appendChild(ecran);
+    cameraOuverte = ecran;
+    const video = $('video', ecran);
+    const figee = $('.cap-camera-figee', ecran);
+    const etat = $('.cap-camera-etat', ecran);
+    const declencheur = $('[data-declencher]', ecran);
+    const basculer = $('[data-basculer]', ecran);
+    let frontale = false;
+    let cliche = null;
+
+    $('[data-fermer-camera]', ecran).addEventListener('click', fermerCamera);
+    $('[data-importer-camera]', ecran).addEventListener('click', () => { fermerCamera(); importerPhoto(e); });
+    const systeme = $('[data-systeme]', ecran);
+    if (systeme) systeme.addEventListener('click', () => { fermerCamera(); appareilSysteme(e); });
+
+    const demarrer = async () => {
+      etat.hidden = false;
+      declencheur.disabled = true;
+      try {
+        frontale = await demarrerFlux(video);
+        etat.hidden = true;
+        declencheur.disabled = false;
+        declencheur.focus();
+        const appareils = await navigator.mediaDevices.enumerateDevices().catch(() => []);
+        basculer.hidden = appareils.filter((d) => d.kind === 'videoinput').length < 2;
+      } catch (err) {
+        arreterCamera();
+        const [titre, texte] = messageErreurCamera(err);
+        etat.innerHTML = `<div class="cap-camera-erreur"><strong>${esc(titre)}</strong><div>${texte}</div>
+          <p><button type="button" class="bouton principal" data-reessayer>Réessayer</button>
+          <button type="button" class="bouton secondaire" data-importer-erreur>Importer une photo</button></p></div>`;
+        $('[data-reessayer]', etat).addEventListener('click', demarrer);
+        $('[data-importer-erreur]', etat).addEventListener('click', () => { fermerCamera(); importerPhoto(e); });
+      }
+    };
+    basculer.addEventListener('click', () => { orientation = orientation === 'user' ? 'environment' : 'user'; demarrer(); });
+
+    declencheur.addEventListener('click', async () => {
+      if (!video.videoWidth) return;
+      try {
+        cliche = await cadrer(video, video.videoWidth, video.videoHeight, frontale,
+          zoneVisee(video, $('.cap-camera-cadre span', ecran), frontale));
+      } catch (err) { toast('La photo n’a pas pu être prise. Réessayez.', 'danger'); return; }
+      figee.src = URL.createObjectURL(cliche);
+      figee.hidden = false;
+      video.hidden = true;
+      $('[data-mode="visee"]', ecran).hidden = true;
+      $('[data-mode="verif"]', ecran).hidden = false;
+      $('[data-valider]', ecran).focus();
+    });
+    $('[data-reprendre]', ecran).addEventListener('click', () => {
+      if (figee.src) URL.revokeObjectURL(figee.src);
+      figee.hidden = true; video.hidden = false; cliche = null;
+      $('[data-mode="visee"]', ecran).hidden = false;
+      $('[data-mode="verif"]', ecran).hidden = true;
+    });
+    $('[data-valider]', ecran).addEventListener('click', () => {
+      const blob = cliche;
+      if (figee.src) URL.revokeObjectURL(figee.src);
+      fermerCamera();
+      if (blob) envoyerPhoto(e, async () => blob);
+    });
+    ecran.addEventListener('keydown', (evt) => { if (evt.key === 'Escape') fermerCamera(); });
+    demarrer();
   }
 
   /* ============================================================ Fin */

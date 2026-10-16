@@ -44,11 +44,11 @@
      dire au partenaire QUEL badge ouvrirait une section fermée. */
   const ROUTES_BADGE = {
     prospects: ['apporteur_affaires'], kit: ['apporteur_affaires'],
-    missions: ['configurateur', 'formateur'], ressources: ['configurateur', 'formateur'],
+    missions: ['apporteur_affaires', 'configurateur', 'formateur'], ressources: ['configurateur', 'formateur'],
     campagnes: ['partenaire_strategique']
   };
   const ROUTE_FONCTION = {
-    prospects: 'prospects', kit: 'kit', missions_installation: 'missions', missions_formation: 'missions',
+    prospects: 'prospects', kit: 'kit', missions_installation: 'missions', missions_formation: 'missions', missions_capture: 'missions',
     guide_configuration: 'ressources', kit_formateur: 'ressources', campagnes: 'campagnes', partenariats: 'campagnes'
   };
   const SECTIONS = {
@@ -76,10 +76,18 @@
       ['modules_complets', 'Modules de la formation complète (si commandée)'],
       ['evaluation', 'Évaluation des participants'],
       ['support_remis', 'Support écrit remis à l’école (complète, personnalisée)']
+    ],
+    capture: [
+      ['classes_appelees', 'Toutes mes classes ont été appelées'],
+      ['photos_verifiees', 'Photos vérifiées (visage net, cadré, bien rattaché à l’élève)'],
+      ['identites_controlees', 'Noms et dates de naissance contrôlés avec le titulaire ou le registre'],
+      ['responsables_saisis', 'Responsable et téléphone saisis pour chaque élève'],
+      ['absents_signales', 'Élèves absents signalés à la direction'],
+      ['liste_remise_direction', 'Point de fin fait avec la direction']
     ]
   };
-  const TYPES_MISSION = { installation: 'Installation & configuration', formation: 'Formation' };
-  const SERVICES = { installation: 'Installation', formation_express: 'Formation express', formation_complete: 'Formation complète', formation_personnalisee: 'Formation personnalisée' };
+  const TYPES_MISSION = { installation: 'Installation & configuration', formation: 'Formation', capture: 'Campagne de capture' };
+  const SERVICES = { campagne_capture: 'Campagne de capture', installation: 'Installation', formation_express: 'Formation express', formation_complete: 'Formation complète', formation_personnalisee: 'Formation personnalisée' };
   const CANAUX = {
     communique_officiel: 'Communiqué ou annonce officielle', reseaux_sociaux: 'Réseaux sociaux', radio_tv: 'Radio ou télévision',
     evenement: 'Réunion, atelier ou événement', presse: 'Presse écrite', autre: 'Autre canal'
@@ -689,7 +697,7 @@
     ].filter((x) => routeOuverte(x.lien.replace(/^#\/([a-z]+).*$/, '$1')));
     const sectionsBadges = [...new Set((droits.fonctionnalites || []).map((f) => ROUTE_FONCTION[f]).filter(Boolean))];
     const ouvertesMissions = missions ? missions.ouvertes.filter((x) => !x.ma_candidature) : [];
-    const enCours = missions ? missions.miennes.filter((x) => x.mon_statut === 'retenu' && x.statut === 'attribuee') : [];
+    const enCours = missions ? missions.miennes.filter((x) => x.mon_statut === 'retenu' && (x.type === 'capture' ? x.acces_capture && x.acces_capture.ouvert : x.statut === 'attribuee')) : [];
     const carteBadges = `<div class="carte"><div class="carte-titre"><h3>Vos badges</h3><a href="#/badges" class="petit">Tout voir</a></div>
       <div class="puces-badges">${droits.badges_actifs.length
         ? droits.badges_actifs.map((b) => `<span class="etiquette succes">${esc(BADGES[b].icone)} ${esc(BADGES[b].libelle)}</span>`).join('')
@@ -1607,37 +1615,81 @@
     });
   }
 
+  function modaleTerminerCapture(mission, rafraichir) {
+    const cases = CHECKLISTS.capture;
+    const { racine, fermer } = modale({
+      titre: 'Terminer ma part',
+      sousTitre: `${esc(mission.ecole_nom)} — campagne de capture. Après envoi, la liste des élèves vous sera fermée.`,
+      large: true,
+      corps: `<form novalidate>
+        <fieldset class="liste-controle"><legend>Ce qui a été fait</legend>
+          ${cases.map(([cle, libelle]) => `<label class="case"><input type="checkbox" name="${esc(cle)}" /><span>${esc(libelle)}</span></label>`).join('')}
+        </fieldset>
+        <label class="champ"><span>Déroulement</span><textarea name="compte_rendu" maxlength="4000" required
+          placeholder="Classes faites, élèves absents, fiches à compléter par l’école, remarques de la direction…"></textarea></label>
+        <div class="alerte attention">Vérifiez que vous avez bien fini : une fois votre part terminée, vous ne pourrez plus ouvrir la liste des élèves de cette école.</div>
+        <div class="modale-pied"><button type="button" class="bouton discret" data-fermer>Annuler</button>
+          <button type="submit" class="bouton principal">Terminer ma part</button></div>
+      </form>`
+    });
+    racine.querySelector('form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const f = e.currentTarget; const bouton = f.querySelector('[type=submit]');
+      if (f.compte_rendu.value.trim().length < 20) { toast('Décrivez le déroulement en quelques phrases.', 'danger'); return; }
+      const checklist = Object.fromEntries(cases.map(([cle]) => [cle, f[cle].checked]));
+      attente(bouton, true, 'Envoi…');
+      try {
+        const r = await api(`/apporteurs/portail/capture/${mission.id}/terminer`, { method: 'POST', body: { compte_rendu: f.compte_rendu.value, checklist } });
+        toast(r.message, 'succes'); fermer(); rafraichir();
+      } catch (err) { toast(err.message, 'danger'); attente(bouton, false); }
+    });
+  }
+
   function carteMission(m, mienne) {
+    const capture = m.type === 'capture';
     const type = `${SERVICES[m.service_code] || TYPES_MISSION[m.type]}`;
-    const statut = mienne ? (m.mon_statut === 'retenu' ? m.statut : m.mon_statut) : (m.ma_candidature || 'ouverte');
-    const peutDesister = mienne && ['candidat', 'retenu'].includes(m.mon_statut) && ['ouverte', 'attribuee'].includes(m.statut);
+    const partFinie = mienne && capture && m.ma_part_terminee_le;
+    const statut = partFinie ? 'realisee' : (mienne ? (m.mon_statut === 'retenu' ? m.statut : m.mon_statut) : (m.ma_candidature || 'ouverte'));
+    const peutDesister = mienne && ['candidat', 'retenu'].includes(m.mon_statut) && ['ouverte', 'attribuee'].includes(m.statut) && !partFinie;
     const cases = m.checklist ? Object.values(m.checklist) : [];
+    const acces = m.acces_capture;
+    const icon = capture ? 'appareil' : (m.type === 'installation' ? 'outils' : 'livre');
     return `<article class="carte mission">
-      <div class="mission-tete"><span class="stat-icone ${m.type === 'installation' ? '' : 'bleu'}">${icone(m.type === 'installation' ? 'outils' : 'livre')}</span>
+      <div class="mission-tete"><span class="stat-icone ${m.type === 'installation' ? '' : (capture ? 'vert' : 'bleu')}">${icone(icon)}</span>
         <div><h3>${esc(m.ecole_nom)}</h3><p class="muet petit">${esc([m.ville, m.province].filter(Boolean).join(' · ') || 'Lieu à préciser')} · ${esc(type)}</p></div>
-        ${etiquette(statut)}</div>
+        ${etiquette(statut, partFinie ? 'Ma part est terminée' : null)}</div>
       <div class="mission-infos">
-        ${m.date_souhaitee ? `<span>${icone('calendrier')} Souhaitée le ${esc(dateLongue(m.date_souhaitee))}</span>` : ''}
+        ${m.date_souhaitee ? `<span>${icone('calendrier')} ${capture ? 'Prévue' : 'Souhaitée'} le ${esc(dateLongue(m.date_souhaitee))}</span>` : ''}
+        ${capture && m.effectif_estime ? `<span>${icone('ecole')} ≈ ${esc(m.effectif_estime)} élèves</span>` : ''}
         ${m.pres_de_chez_vous ? `<span class="etiquette succes">Près de chez vous</span>` : ''}
-        ${!mienne && m.places > 1 ? `<span>${m.places} intervenants</span>` : ''}
+        ${!mienne && capture && m.places_restantes !== undefined ? `<span>${esc(m.places_restantes)} place(s) sur ${esc(m.places)}</span>` : (!mienne && m.places > 1 ? `<span>${m.places} intervenants</span>` : '')}
+        ${mienne && capture && m.mes_classes ? `<span>${esc(m.mes_classes)} classe(s) confiée(s)</span>` : ''}
       </div>
       ${m.description ? `<p class="petit">${esc(m.description)}</p>` : ''}
+      ${!mienne && capture ? `<p class="petit muet">Sur place : appeler les classes, photographier chaque élève, vérifier ou compléter sa fiche (et l’enregistrer s’il manque). Accès à la liste des élèves pendant la mission seulement.</p>` : ''}
       ${mienne && (m.contact_nom || m.contact_telephone) ? `<div class="alerte info">Contact à l’école : <strong>${esc([m.contact_nom, m.contact_telephone].filter(Boolean).join(' · '))}</strong></div>` : ''}
       ${mienne && m.equipe && m.equipe.length ? `<p class="petit muet">Avec : ${esc(m.equipe.join(', '))}</p>` : ''}
-      ${mienne && m.compte_rendu ? `<details class="petit"><summary>Votre compte rendu (${cases.filter(Boolean).length}/${cases.length} points)</summary><p style="white-space:pre-wrap">${esc(m.compte_rendu)}</p></details>` : ''}
+      ${mienne && capture && m.mon_statut === 'retenu' && acces && !acces.ouvert && !partFinie && ['ouverte', 'attribuee'].includes(m.statut) ? `<div class="alerte attention">${esc(acces.message)}</div>` : ''}
+      ${mienne && capture && acces && acces.ouvert && m.acces_expire_le ? `<p class="petit muet">${icone('cadenas')} Accès à la liste jusqu’au ${esc(dateLongue(m.acces_expire_le))}, ou jusqu’à ce que vous terminiez votre part.</p>` : ''}
+      ${mienne && capture && m.mon_compte_rendu ? `<details class="petit"><summary>Mon compte rendu</summary><p style="white-space:pre-wrap">${esc(m.mon_compte_rendu)}</p></details>` : ''}
+      ${mienne && !capture && m.compte_rendu ? `<details class="petit"><summary>Votre compte rendu (${cases.filter(Boolean).length}/${cases.length} points)</summary><p style="white-space:pre-wrap">${esc(m.compte_rendu)}</p></details>` : ''}
       <div class="actions-ligne">
-        ${!mienne && !m.ma_candidature ? `<button type="button" class="bouton principal petit" data-proposer="${esc(m.id)}">${icone('envoyer')} Me proposer</button>` : ''}
+        ${!mienne && !m.ma_candidature ? (capture && m.adhesion_libre
+          ? `<button type="button" class="bouton principal petit" data-proposer="${esc(m.id)}" data-adhesion="1">${icone('ok')} Rejoindre la campagne</button>`
+          : `<button type="button" class="bouton principal petit" data-proposer="${esc(m.id)}">${icone('envoyer')} Me proposer</button>`) : ''}
         ${!mienne && m.ma_candidature === 'desiste' ? `<button type="button" class="bouton secondaire petit" data-proposer="${esc(m.id)}">Me proposer à nouveau</button>` : ''}
-        ${mienne && m.mon_statut === 'retenu' && m.statut === 'attribuee' ? `<button type="button" class="bouton principal petit" data-compte-rendu="${esc(m.id)}">${icone('ok')} Envoyer le compte rendu</button>` : ''}
+        ${mienne && capture && acces && acces.ouvert ? `<a class="bouton principal petit" href="capture.html?mission=${encodeURIComponent(m.id)}">${icone('appareil')} Ouvrir l’espace de capture</a>
+          <button type="button" class="bouton secondaire petit" data-terminer="${esc(m.id)}">${icone('ok')} Terminer ma part</button>` : ''}
+        ${mienne && !capture && m.mon_statut === 'retenu' && m.statut === 'attribuee' ? `<button type="button" class="bouton principal petit" data-compte-rendu="${esc(m.id)}">${icone('ok')} Envoyer le compte rendu</button>` : ''}
         ${peutDesister ? `<button type="button" class="bouton discret petit" data-desister="${esc(m.id)}">Me retirer</button>` : ''}
       </div></article>`;
   }
 
   vues.missions = async (contenu, params) => {
     const d = await api('/apporteurs/portail/missions');
-    const types = d.types.map((x) => ({ installation: 'installations', formation: 'formations' })[x]).join(' et ');
+    const types = d.types.map((x) => ({ installation: 'installations', formation: 'formations', capture: 'campagnes de capture' })[x]).join(', ');
     entete('Missions', `Les ${types || 'missions'} commandées par les écoles, confiées aux partenaires qualifiés.`);
-    const aFaire = d.miennes.filter((m) => m.mon_statut === 'retenu' && m.statut === 'attribuee').length;
+    const aFaire = d.miennes.filter((m) => m.mon_statut === 'retenu' && (m.type === 'capture' ? m.acces_capture && m.acces_capture.ouvert : m.statut === 'attribuee')).length;
     const onglet = params.onglet || (aFaire ? 'miennes' : 'ouvertes');
     const liste = onglet === 'miennes' ? d.miennes : d.ouvertes;
     contenu.innerHTML = `
@@ -1650,14 +1702,24 @@
           ? etatVide('outils', 'Aucune mission pour l’instant', 'Proposez-vous sur une mission ouverte : l’équipe vous écrit quand elle vous la confie.')
           : etatVide('outils', 'Aucune mission ouverte', 'Les installations et formations commandées par les écoles apparaissent ici dès leur publication.')}</div>`}</section>
       <div class="carte section"><h3>Comment ça marche</h3><ol class="taches" style="list-style:decimal;padding-left:20px;gap:8px">
+        ${d.types.length === 1 && d.types[0] === 'capture' ? `
+        <li>Une école commande une campagne de capture : l’équipe la publie ici avec l’effectif et le nombre de places.</li>
+        <li>« Rejoindre la campagne » vous retient aussitôt tant qu’il reste des places (ou l’équipe vous désigne directement) ; vous recevez le contact de l’école.</li>
+        <li>Le jour J, ouvrez l’espace de capture : appelez les classes, photographiez chaque élève, complétez ou enregistrez sa fiche.</li>
+        <li>Terminez votre part : votre accès à la liste se ferme. L’équipe vérifie puis enregistre la prestation dans vos gains.</li>` : `
         <li>Une école commande une prestation (${types || 'installation ou formation'}) : l’équipe publie la mission ici.</li>
+        ${d.types.includes('capture') ? '<li>Campagne de capture : quand les places sont ouvertes, « Rejoindre la campagne » vous retient aussitôt ; l’espace de capture s’ouvre dans « Mes missions » et se referme quand vous terminez votre part.</li>' : ''}
         <li>Vous vous proposez ; l’équipe vous la confie et vous transmet le contact de l’école.</li>
         <li>Vous intervenez, puis envoyez votre compte rendu avec la liste de contrôle.</li>
-        <li>L’équipe vérifie et enregistre la prestation : votre rémunération apparaît dans vos gains.</li></ol></div>`;
+        <li>L’équipe vérifie et enregistre la prestation : votre rémunération apparaît dans vos gains.</li>`}</ol></div>`;
     $$('[data-onglet]', contenu).forEach((b) => b.addEventListener('click', () => { location.hash = `#/missions?onglet=${b.dataset.onglet}`; }));
     $$('[data-proposer]', contenu).forEach((b) => b.addEventListener('click', async () => {
       attente(b, true, 'Envoi…');
-      try { toast((await api(`/apporteurs/portail/missions/${b.dataset.proposer}/candidater`, { method: 'POST', body: {} })).message, 'succes'); rendre(); }
+      try {
+        const r = await api(`/apporteurs/portail/missions/${b.dataset.proposer}/candidater`, { method: 'POST', body: {} });
+        toast(r.message, 'succes');
+        if (r.retenu) location.hash = '#/missions?onglet=miennes'; else rendre();
+      }
       catch (err) { toast(err.message, 'danger'); attente(b, false); }
     }));
     $$('[data-desister]', contenu).forEach((b) => b.addEventListener('click', async () => {
@@ -1667,6 +1729,8 @@
     }));
     $$('[data-compte-rendu]', contenu).forEach((b) => b.addEventListener('click', () =>
       modaleCompteRendu(d.miennes.find((m) => m.id === b.dataset.compteRendu), rendre)));
+    $$('[data-terminer]', contenu).forEach((b) => b.addEventListener('click', () =>
+      modaleTerminerCapture(d.miennes.find((m) => m.id === b.dataset.terminer), rendre)));
   };
 
   /* --------------------------------------------- Guides et outils (configurateur, formateur) */

@@ -49,7 +49,7 @@
     communique_officiel: 'Communiqué officiel', reseaux_sociaux: 'Réseaux sociaux', radio_tv: 'Radio / TV',
     evenement: 'Événement', presse: 'Presse', autre: 'Autre'
   };
-  const SERVICES = { installation: 'Installation', formation_express: 'Formation express', formation_complete: 'Formation complète', formation_personnalisee: 'Formation personnalisée' };
+  const SERVICES = { campagne_capture: 'Campagne de capture', installation: 'Installation', formation_express: 'Formation express', formation_complete: 'Formation complète', formation_personnalisee: 'Formation personnalisée' };
 
   const statut = (s) => ui.badge(LIBELLES[s] || String(s || '—').replace(/_/g, ' '), TONS[s] || 'neutre');
   const nomComplet = (p, n) => [p, n].filter(Boolean).join(' ');
@@ -314,43 +314,60 @@
      ====================================================================== */
 
   SA.enregistrerVue('apporteurs/missions', {
-    titre: 'Missions des configurateurs et formateurs',
-    sousTitre: 'Une installation ou une formation commandée par une école, confiée à un partenaire qualifié, puis rémunérée comme prestation.',
+    titre: 'Missions des partenaires',
+    sousTitre: 'Installations, formations et campagnes de capture commandées par les écoles, confiées aux partenaires puis rémunérées comme prestations.',
 
     async rendu(conteneur, params) {
       conteneur.innerHTML = ui.squelette(6, 46);
-      const d = await SA.api(SA.url(`${BASE}/missions`, { statut: params.statut }));
-      const zone = actionsEntete('<button class="sa-bouton sa-bouton-principal" data-nouvelle>Publier une mission</button>');
+      const d = await SA.api(SA.url(`${BASE}/missions`, { statut: params.statut, type: params.type }));
+      const zone = actionsEntete('<button class="sa-bouton sa-bouton-secondaire" data-capture>Lancer une campagne de capture</button> <button class="sa-bouton sa-bouton-principal" data-nouvelle>Publier une mission</button>');
       zone.querySelector('[data-nouvelle]').addEventListener('click', () => formulaireMission());
+      zone.querySelector('[data-capture]').addEventListener('click', () => formulaireCapture());
       const c = d.compteurs || {};
       conteneur.innerHTML = `
         <section class="sa-section">
           <div class="sa-filtres">${[['', 'Toutes'], ['ouverte', 'Ouvertes'], ['attribuee', 'Attribuées'], ['realisee', 'À clôturer'], ['cloturee', 'Clôturées'], ['annulee', 'Annulées']].map(([k, l]) =>
-            `<button class="sa-bouton sa-bouton-petit ${(params.statut || '') === k ? 'sa-bouton-principal' : 'sa-bouton-secondaire'}" data-statut="${k}">${esc(l)}${k && c[k] ? ` <span class="sa-mono">${c[k]}</span>` : ''}</button>`).join('')}</div>
+            `<button class="sa-bouton sa-bouton-petit ${(params.statut || '') === k ? 'sa-bouton-principal' : 'sa-bouton-secondaire'}" data-statut="${k}">${esc(l)}${k && c[k] ? ` <span class="sa-mono">${c[k]}</span>` : ''}</button>`).join('')}
+            <span class="sa-muet" style="margin:0 6px">·</span>${[['', 'Tous types'], ['capture', 'Capture'], ['installation', 'Installation'], ['formation', 'Formation']].map(([k, l]) =>
+            `<button class="sa-bouton sa-bouton-petit ${(params.type || '') === k ? 'sa-bouton-principal' : 'sa-bouton-secondaire'}" data-type="${k}">${esc(l)}</button>`).join('')}</div>
           ${ui.tableau({
             lignes: d.donnees, vide: 'Aucune mission',
             colonnes: [
               { cle: 'ecole', titre: 'École', rendu: (l) => `<strong>${esc(l.ecole_nom)}</strong><div class="sa-muet">${esc([l.ville, l.province].filter(Boolean).join(' · '))}</div>
                   ${l.contact_nom || l.contact_telephone ? `<div class="sa-muet">${esc([l.contact_nom, l.contact_telephone].filter(Boolean).join(' · '))}</div>` : ''}` },
-              { cle: 'service', titre: 'Prestation', rendu: (l) => `${esc(SERVICES[l.service_code] || l.service_code)}${l.date_souhaitee ? `<div class="sa-muet">souhaitée le ${esc(fmt.date(l.date_souhaitee))}</div>` : ''}` },
-              { cle: 'intervenants', titre: 'Partenaires', rendu: (l) => l.intervenants.length ? l.intervenants.map((i) =>
-                  `<div>${esc(nomComplet(i.prenom, i.nom))} ${statut(i.statut)}${i.badge_actif ? '' : ' <span class="sa-attention-texte">badge inactif</span>'}</div>`).join('') : '<span class="sa-muet">Aucune proposition</span>' },
+              { cle: 'service', titre: 'Prestation', rendu: (l) => `${esc(SERVICES[l.service_code] || l.service_code)}${l.date_souhaitee ? `<div class="sa-muet">souhaitée le ${esc(fmt.date(l.date_souhaitee))}</div>` : ''}
+                  ${l.type === 'capture' ? `<div class="sa-muet">≈ ${esc(l.effectif_estime || '?')} élèves · ${esc(l.places)} place(s)${l.adhesion_libre ? ' · adhésion libre' : ''}</div>
+                    <div class="sa-muet">${l.acces_ouvert ? `🔓 accès jusqu’au ${esc(fmt.date(l.acces_expire_le))}` : '🔒 accès fermé'}</div>
+                    ${l.bilan ? `<div class="sa-muet">${esc(l.bilan.eleves_photographies)} photo(s) · ${esc(l.bilan.eleves_crees)} élève(s) créé(s)</div>` : ''}` : ''}` },
+              { cle: 'intervenants', titre: 'Partenaires', rendu: (l) => (l.prise_en_charge_equipe ? '<div>Équipe Ardoise</div>' : '') + (l.intervenants.length ? l.intervenants.map((i) =>
+                  `<div>${esc(nomComplet(i.prenom, i.nom))} ${statut(i.statut)}${i.termine_le ? ' <span class="sa-muet">part terminée</span>' : ''}${i.badge_actif ? '' : ' <span class="sa-attention-texte">badge inactif</span>'}</div>`).join('') : (l.prise_en_charge_equipe ? '' : '<span class="sa-muet">Aucune proposition</span>')) },
               { cle: 'statut', titre: 'Statut', rendu: (l) => `${statut(l.statut)}${l.compte_rendu ? `<details class="sa-muet"><summary>Compte rendu</summary><div class="ab-apercu">${esc(l.compte_rendu)}</div>
                   <div>${Object.entries(l.checklist || {}).map(([k, v]) => `${v ? '✓' : '✗'} ${esc(k.replace(/_/g, ' '))}`).join('<br />')}</div></details>` : ''}` },
               { cle: 'act', titre: '', rendu: (l) => `<div class="ab-actions">
-                  ${['ouverte', 'attribuee'].includes(l.statut) ? `<button class="sa-bouton sa-bouton-principal sa-bouton-petit" data-action="retenir" data-id="${esc(l.id)}">Confier</button>` : ''}
+                  ${l.type === 'capture' ? `<button class="sa-bouton sa-bouton-secondaire sa-bouton-petit" data-action="suivre" data-id="${esc(l.id)}">Suivre</button>` : ''}
+                  ${l.type === 'capture' && l.acces_ouvert ? `<a class="sa-bouton sa-bouton-secondaire sa-bouton-petit" style="text-decoration:none" href="capture.html?mission=${encodeURIComponent(l.id)}&mode=equipe">Ouvrir l’espace de capture</a>` : ''}
+                  ${l.type === 'capture' && ['ouverte', 'attribuee'].includes(l.statut) ? `<button class="sa-bouton sa-bouton-secondaire sa-bouton-petit" data-action="prolonger" data-id="${esc(l.id)}">Prolonger l’accès</button>` : ''}
+                  ${['ouverte', 'attribuee'].includes(l.statut) ? `<button class="sa-bouton sa-bouton-principal sa-bouton-petit" data-action="retenir" data-id="${esc(l.id)}">${l.type === 'capture' ? 'Équipe' : 'Confier'}</button>` : ''}
                   ${l.statut === 'realisee' ? `<button class="sa-bouton sa-bouton-principal sa-bouton-petit" data-action="cloturer" data-id="${esc(l.id)}">Clôturer</button>` : ''}
                   ${!['cloturee', 'annulee'].includes(l.statut) ? `<button class="sa-bouton sa-bouton-secondaire sa-bouton-petit" data-action="annuler" data-id="${esc(l.id)}">Annuler</button>` : ''}</div>` }
             ]
           })}
           <p class="sa-note">Une mission n’engage aucun montant : après la clôture, enregistrez la prestation (Rémunération → Prestations) pour rémunérer les intervenants. Un partenaire qui perd son badge est retiré automatiquement des missions non réalisées.</p>
         </section>`;
-      conteneur.querySelectorAll('[data-statut]').forEach((b) => b.addEventListener('click', () => { SA.majParams({ statut: b.dataset.statut || undefined }); SA.rafraichirVue(); }));
+      conteneur.querySelectorAll('[data-statut]').forEach((b) => b.addEventListener('click', () => { SA.majParams({ statut: b.dataset.statut || undefined, type: params.type }); SA.rafraichirVue(); }));
+      conteneur.querySelectorAll('[data-type]').forEach((b) => b.addEventListener('click', () => { SA.majParams({ statut: params.statut, type: b.dataset.type || undefined }); SA.rafraichirVue(); }));
       conteneur.querySelectorAll('[data-action]').forEach((b) => b.addEventListener('click', async (e) => {
         e.stopPropagation();
         const m = d.donnees.find((x) => x.id === b.dataset.id);
-        if (b.dataset.action === 'retenir') modaleRetenir(m);
+        if (b.dataset.action === 'retenir') { if (m.type === 'capture') modaleEquipeCapture(m); else modaleRetenir(m); }
+        if (b.dataset.action === 'suivre') suivreCapture(m);
+        if (b.dataset.action === 'prolonger') {
+          const v = await saisir({ titre: 'Prolonger l’accès à la liste', sousTitre: 'Les partenaires en cours sont prévenus.', libelleValider: 'Prolonger',
+            champsSup: [{ cle: 'jours', libelle: 'Jours d’accès à partir d’aujourd’hui', type: 'nombre', pas: '1', min: 1, max: 90, valeur: 7, requis: true }] });
+          if (v) await agir(`${BASE}/missions/${m.id}/prolonger`, { jours: v.jours });
+        }
         if (b.dataset.action === 'cloturer') {
+          if (m.type === 'capture' && !window.confirm('Clôturer la campagne ? La commande de l’école passe « réalisée » et le bilan est figé.')) return;
           const r = await agir(`${BASE}/missions/${m.id}/cloturer`, {});
           if (r) SA.toast('Pensez à enregistrer la prestation pour rémunérer les intervenants.', 'info');
         }
@@ -390,11 +407,11 @@
       champs: [
         { cle: 'commande_service_id', libelle: 'À partir d’une commande d’école (recommandé)', type: 'liste',
           options: [{ valeur: '', libelle: commandes.length ? 'Choisir une commande…' : 'Aucune commande en attente' }]
-            .concat(commandes.map((c) => ({ valeur: c.id, libelle: `${c.ecole_nom} — ${SERVICES[c.service_code] || c.service_nom} (${c.ville || '—'})` }))) },
+            .concat(commandes.filter((c) => c.service_code !== 'campagne_capture').map((c) => ({ valeur: c.id, libelle: `${c.ecole_nom} — ${SERVICES[c.service_code] || c.service_nom} (${c.ville || '—'})` }))) },
         { cle: 'ecole_id', libelle: '… ou école (sans commande)', type: 'liste',
           options: [{ valeur: '', libelle: '—' }].concat(ecoles.map((e) => ({ valeur: e.id, libelle: e.nom }))) },
         { cle: 'service_code', libelle: 'Prestation (sans commande)', type: 'liste', valeur: 'installation',
-          options: Object.entries(SERVICES).map(([k, l]) => ({ valeur: k, libelle: l })) },
+          options: Object.entries(SERVICES).filter(([k]) => k !== 'campagne_capture').map(([k, l]) => ({ valeur: k, libelle: l })) },
         { cle: 'date_souhaitee', libelle: 'Date souhaitée', type: 'date' },
         { cle: 'places', libelle: 'Intervenants', type: 'nombre', pas: '1', min: 1, max: 10, valeur: 1 },
         { cle: 'description', libelle: 'Ce qui est attendu (visible des partenaires)', type: 'zone', lignes: 3 }
@@ -404,6 +421,174 @@
         return F().envoyer(`${BASE}/missions`, 'POST', v);
       }
     });
+  }
+
+
+  /* ======================================================================
+     2 bis. CAMPAGNES DE CAPTURE
+     ----------------------------------------------------------------------
+     La plateforme PROPOSE un nombre d'intervenants d'après l'effectif ; le
+     Super Admin décide : s'en charger lui-même, désigner des partenaires,
+     et/ou laisser des places ouvertes — l'aperçu part alors vers les
+     partenaires libres, et les premiers qui adhèrent sont retenus d'office.
+     ====================================================================== */
+
+  async function partenairesCapture() {
+    try {
+      return ((await SA.api(SA.url(BASE, { statut: 'actif', badge: 'apporteur_affaires' }))).donnees || [])
+        .filter((a) => a.acces_active);
+    } catch (e) { return []; }
+  }
+
+  function blocSuggestion(s) {
+    if (!s) return '';
+    return `<div class="ab-apercu" style="margin-bottom:12px">Proposition pour ≈ ${esc(s.effectif)} élèves (≈ ${esc(s.capacite_jour)} photos par intervenant et par jour) :
+${s.options.map((o) => `${o.recommande ? '★ ' : '  '}${o.intervenants} intervenant(s) → ${o.jours} jour(s) sur place`).join('\n')}</div>`;
+  }
+
+  async function formulaireCapture() {
+    let commandes = [];
+    try { commandes = ((await SA.api(`${BASE}/missions/commandes`)).donnees || []).filter((c) => c.service_code === 'campagne_capture'); } catch (e) { /* saisie libre */ }
+    const partenaires = await partenairesCapture();
+    const ecoles = (SA.referentiels && SA.referentiels.ecoles) || [];
+    const voile = SA.modale({
+      titre: 'Lancer une campagne de capture', large: true,
+      sousTitre: 'Photographier (et au besoin enregistrer) les élèves d’une école. L’accès des partenaires à la liste est limité à la mission et se ferme à sa fin.',
+      contenu: `<form id="cap-form">
+        <label class="sa-champ-bloc"><span>Commande de l’école</span><select class="sa-champ" name="commande_service_id">
+          <option value="">${commandes.length ? 'Choisir une commande…' : 'Aucune commande en attente'}</option>
+          ${commandes.map((c) => `<option value="${esc(c.id)}">${esc(c.ecole_nom)} — ${esc(Math.round(c.quantite))} élèves annoncés (${esc(c.ville || '—')})${c.consentement_photos_le ? '' : ' ⚠ sans attestation'}</option>`).join('')}
+        </select></label>
+        <label class="sa-champ-bloc"><span>… ou école (sans commande)</span><select class="sa-champ" name="ecole_id">
+          <option value="">—</option>${ecoles.map((e) => `<option value="${esc(e.id)}">${esc(e.nom)}</option>`).join('')}</select></label>
+        <div id="cap-suggestion"></div>
+        <div class="sa-grille-2">
+          <label class="sa-champ-bloc"><span>Nombre d’intervenants</span><input class="sa-champ" type="number" name="places" min="1" max="20" step="1" value="1" required /></label>
+          <label class="sa-champ-bloc"><span>Date prévue</span><input class="sa-champ" type="date" name="date_souhaitee" /></label>
+          <label class="sa-champ-bloc"><span>Jours d’accès après la date prévue</span><input class="sa-champ" type="number" name="acces_jours" min="1" max="90" step="1" value="21" /></label>
+          <label class="sa-champ-bloc"><span>Qui mène la campagne ?</span><select class="sa-champ" name="mode">
+            <option value="partenaires">Des partenaires</option><option value="equipe">L’équipe Ardoise elle-même</option></select></label>
+        </div>
+        <div id="cap-partenaires">
+          <p class="sa-note">Désignez des partenaires (facultatif). Les places non désignées sont proposées aux partenaires libres si « adhésion libre » est cochée.</p>
+          <div class="ab-choix" style="max-height:220px;overflow:auto">${partenaires.length ? partenaires.map((a) => `<label class="ab-choix-ligne"><input type="checkbox" name="designe" value="${esc(a.id)}" />
+            <span><strong>${esc(nomComplet(a.prenom, a.nom))}</strong> <span class="sa-muet">${esc([a.ville, a.province].filter(Boolean).join(', '))}</span></span></label>`).join('')
+            : '<p class="sa-muet">Aucun partenaire actif avec le badge « Apporteur d’affaires ».</p>'}</div>
+          <label class="ab-choix-ligne" style="margin-top:8px"><input type="checkbox" name="adhesion_libre" checked />
+            <span>Adhésion libre : envoyer l’aperçu aux partenaires libres pour les places non désignées</span></label>
+        </div>
+        <label class="sa-champ-bloc"><span>Consignes (visibles des partenaires)</span><textarea class="sa-champ" name="description" rows="3" maxlength="2000"
+          placeholder="Horaires, vacations, matériel, personne à demander à l’accueil…"></textarea></label>
+        <label class="ab-choix-ligne" id="cap-consentement"><input type="checkbox" name="consentement_confirme" />
+          <span>L’école m’a confirmé que les parents sont informés de la prise de photo.</span></label>
+      </form><div class="sa-form-erreur" id="cap-erreur" hidden></div>`,
+      actions: '<button class="sa-bouton sa-bouton-secondaire" data-role="annuler">Annuler</button><button class="sa-bouton sa-bouton-principal" data-role="valider">Lancer la campagne</button>'
+    });
+    const f = voile.querySelector('#cap-form');
+    const majConsentement = () => {
+      const cmd = commandes.find((c) => c.id === f.commande_service_id.value);
+      voile.querySelector('#cap-consentement').style.display = cmd && cmd.consentement_photos_le ? 'none' : '';
+    };
+    const majSuggestion = async () => {
+      const cmd = commandes.find((c) => c.id === f.commande_service_id.value);
+      let s = cmd && cmd.suggestion;
+      if (!s && f.ecole_id.value) {
+        try { s = await SA.api(SA.url(`${BASE}/missions/suggestion`, { ecole_id: f.ecole_id.value })); } catch (e) { s = null; }
+      }
+      voile.querySelector('#cap-suggestion').innerHTML = blocSuggestion(s);
+      if (s) f.places.value = s.recommande;
+      if (cmd && cmd.date_planifiee) f.date_souhaitee.value = String(cmd.date_planifiee).slice(0, 10);
+      majConsentement();
+    };
+    f.commande_service_id.addEventListener('change', majSuggestion);
+    f.ecole_id.addEventListener('change', majSuggestion);
+    f.mode.addEventListener('change', () => { voile.querySelector('#cap-partenaires').hidden = f.mode.value === 'equipe'; });
+    majConsentement();
+    voile.querySelector('[data-role="annuler"]').addEventListener('click', () => voile.fermer());
+    const bouton = voile.querySelector('[data-role="valider"]');
+    const erreur = voile.querySelector('#cap-erreur');
+    bouton.addEventListener('click', async () => {
+      erreur.hidden = true;
+      if (!f.commande_service_id.value && !f.ecole_id.value) { erreur.textContent = 'Choisissez une commande ou une école.'; erreur.hidden = false; return; }
+      const designes = [...f.querySelectorAll('input[name="designe"]:checked')].map((x) => x.value);
+      const corps = {
+        commande_service_id: f.commande_service_id.value || undefined,
+        ecole_id: f.commande_service_id.value ? undefined : f.ecole_id.value,
+        service_code: 'campagne_capture',
+        places: Number(f.places.value) || 1,
+        date_souhaitee: f.date_souhaitee.value || undefined,
+        acces_jours: Number(f.acces_jours.value) || 21,
+        mode: f.mode.value,
+        apporteur_ids: f.mode.value === 'equipe' ? [] : designes,
+        adhesion_libre: f.adhesion_libre.checked,
+        description: f.description.value || undefined,
+        consentement_confirme: f.consentement_confirme.checked
+      };
+      bouton.disabled = true;
+      try {
+        const r = await SA.api(`${BASE}/missions`, { method: 'POST', body: JSON.stringify(corps) });
+        voile.fermer();
+        SA.toast(r.message || 'Campagne lancée.', 'succes');
+        SA.rafraichirVue();
+      } catch (e) {
+        erreur.textContent = e.message || 'Lancement impossible.'; erreur.hidden = false;
+      } finally { bouton.disabled = false; }
+    });
+  }
+
+  /** Équipe d'une campagne : ajouter, retirer (son accès se ferme), répartir. */
+  async function modaleEquipeCapture(m) {
+    const partenaires = await partenairesCapture();
+    const actuels = new Set(m.intervenants.filter((i) => i.statut === 'retenu').map((i) => i.apporteur_id));
+    const voile = SA.modale({
+      titre: `Équipe : ${m.ecole_nom}`,
+      sousTitre: `${m.places} place(s). Décocher un partenaire le retire et ferme son accès à la liste ; les nouveaux reçoivent le contact de l’école.`,
+      contenu: `<div class="ab-choix" style="max-height:320px;overflow:auto">${partenaires.map((a) => `<label class="ab-choix-ligne"><input type="checkbox" value="${esc(a.id)}" ${actuels.has(a.id) ? 'checked' : ''} />
+        <span><strong>${esc(nomComplet(a.prenom, a.nom))}</strong> <span class="sa-muet">${esc(a.ville || '')}</span></span></label>`).join('') || '<p class="sa-muet">Aucun partenaire disponible.</p>'}</div>`,
+      actions: '<button class="sa-bouton sa-bouton-secondaire" data-role="annuler">Annuler</button><button class="sa-bouton sa-bouton-principal" data-role="valider">Enregistrer l’équipe</button>'
+    });
+    voile.querySelector('[data-role="annuler"]').addEventListener('click', () => voile.fermer());
+    voile.querySelector('[data-role="valider"]').addEventListener('click', async () => {
+      const ids = [...voile.querySelectorAll('input:checked')].map((x) => x.value);
+      if (!ids.length) { SA.toast('Choisissez au moins un partenaire (ou annulez la campagne).', 'danger'); return; }
+      if (await agir(`${BASE}/missions/${m.id}/retenir`, { apporteur_ids: ids })) voile.fermer();
+    });
+  }
+
+  /** Suivi : avancement par classe, équipe et répartition, journal. */
+  async function suivreCapture(m) {
+    let d;
+    try { d = await SA.api(`${BASE}/missions/${m.id}/capture`); } catch (e) { SA.toast(e.message, 'danger'); return; }
+    const enCours = d.equipe.filter((x) => x.statut === 'retenu' && !x.termine_le);
+    const nomsClasses = Object.fromEntries(d.classes.map((c) => [c.id, c.nom]));
+    const libelleAction = { liste_consultee: 'a consulté', eleve_cree: 'a enregistré', eleve_modifie: 'a modifié', photo_ajoutee: 'a photographié',
+      photo_remplacee: 'a repris la photo de', part_terminee: 'a terminé sa part', acces_refuse: 'accès refusé' };
+    const voile = SA.modale({
+      titre: `Campagne : ${d.mission.ecole_nom}`, large: true,
+      sousTitre: `${d.acces.ouvert ? `Accès ouvert jusqu’au ${fmt.date(d.mission.acces_expire_le)}` : `Accès fermé (${d.acces.message || ''})`} · ${d.bilan.eleves_photographies} élève(s) photographié(s), ${d.bilan.eleves_crees} enregistré(s)`,
+      contenu: `
+        <h3 style="margin:16px 0 8px;font-size:.95rem">Classes</h3>
+        ${ui.tableau({ lignes: d.classes, vide: 'Aucune classe', colonnes: [
+          { cle: 'nom', titre: 'Classe', rendu: (c) => esc(c.nom) },
+          { cle: 'p', titre: 'Photos', rendu: (c) => `${c.avec_photo} / ${c.effectif}` },
+          { cle: 'qui', titre: 'Confiée à', rendu: (c) => esc(d.equipe.filter((x) => (x.classes || []).includes(c.id)).map((x) => nomComplet(x.prenom, x.nom)).join(', ') || 'toute l’équipe') }
+        ] })}
+        <h3 style="margin:16px 0 8px;font-size:.95rem">Équipe</h3>
+        ${d.equipe.length ? d.equipe.map((x) => `<div>${esc(nomComplet(x.prenom, x.nom))} ${statut(x.statut)} ${x.termine_le ? `<span class="sa-muet">part terminée le ${esc(fmt.date(x.termine_le))}</span>` : ''}
+          ${(x.classes || []).length ? `<span class="sa-muet"> · ${esc(x.classes.map((id) => nomsClasses[id] || '?').join(', '))}</span>` : ''}
+          ${x.compte_rendu ? `<details class="sa-muet"><summary>Compte rendu</summary><div class="ab-apercu">${esc(x.compte_rendu)}</div></details>` : ''}</div>`).join('') : '<p class="sa-muet">Aucun partenaire.</p>'}
+        ${enCours.length > 1 && d.acces.ouvert ? `<p style="margin-top:10px"><button class="sa-bouton sa-bouton-secondaire sa-bouton-petit" data-repartir>Répartir les classes automatiquement</button>
+          <button class="sa-bouton sa-bouton-secondaire sa-bouton-petit" data-toutes>Toutes les classes à tous</button></p>` : ''}
+        <h3 style="margin:16px 0 8px;font-size:.95rem">Journal (200 dernières opérations)</h3>
+        <div style="max-height:260px;overflow:auto;font-size:.85rem">${d.journal.map((o) => `<div><span class="sa-mono">${esc(fmt.date(o.created_at))} ${esc(new Date(o.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }))}</span>
+          ${esc(o.acteur_nom || o.acteur_type)} ${esc(libelleAction[o.action] || o.action)} ${esc([o.eleve_nom, o.eleve_prenom].filter(Boolean).join(' ') || o.classe_nom || '')}</div>`).join('') || '<p class="sa-muet">Rien pour l’instant.</p>'}</div>`,
+      actions: '<button class="sa-bouton sa-bouton-secondaire" data-role="fermer">Fermer</button>'
+    });
+    voile.querySelector('[data-role="fermer"]').addEventListener('click', () => voile.fermer());
+    const auto = voile.querySelector('[data-repartir]');
+    if (auto) auto.addEventListener('click', async () => { if (await agir(`${BASE}/missions/${m.id}/repartition`, { auto: true })) voile.fermer(); });
+    const toutes = voile.querySelector('[data-toutes]');
+    if (toutes) toutes.addEventListener('click', async () => { if (await agir(`${BASE}/missions/${m.id}/repartition`, { aucune: true })) voile.fermer(); });
   }
 
   /* ======================================================================

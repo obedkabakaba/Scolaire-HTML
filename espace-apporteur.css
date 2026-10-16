@@ -188,6 +188,8 @@ input, select, textarea { font: inherit; color: inherit; }
 .alerte.erreur { background: var(--rouge-doux); color: var(--rouge); }
 .alerte.succes { background: var(--vert-doux); color: var(--vert); }
 .alerte.info { background: var(--accent-doux); color: var(--texte); }
+.alerte.attention { background: var(--ocre-doux); color: var(--ocre-fonce); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="clair"]) .alerte.attention { color: #E8B877; } } :root[data-theme="sombre"] .alerte.attention { color: #E8B877; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="clair"]) .alerte.erreur { color: #F2A99F; } :root:not([data-theme="clair"]) .alerte.succes { color: #A8D3B2; } }
 :root[data-theme="sombre"] .alerte.erreur { color: #F2A99F; }
 :root[data-theme="sombre"] .alerte.succes { color: #A8D3B2; }

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<!--
+  ARDOISE — ESPACE DE CAPTURE (campagne de capture sur le terrain)
+  ---------------------------------------------------------------------
+  Utilisé sur place, au téléphone, par :
+    · un partenaire retenu sur la mission (jeton du portail partenaire) ;
+    · l'équipe Ardoise quand elle mène la campagne (?mode=equipe, session
+      de la console Super Admin, ouverte dans le même onglet).
+
+  Le serveur décide à CHAQUE requête si l'accès est encore ouvert : fin de
+  part, fin de mission, échéance, badge suspendu ferment la page aussitôt.
+  Rien n'est conservé sur l'appareil : ni liste, ni photo, ni fiche.
+-->
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Espace de capture — Ardoise</title>
+<meta name="robots" content="noindex, nofollow" />
+<meta name="referrer" content="no-referrer" />
+<meta name="theme-color" content="#141C18" />
+<link rel="icon" type="image/png" sizes="192x192" href="icone-192.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<script>
+  (function () {
+    var t = null;
+    try { t = localStorage.getItem('ardoise.ap.theme'); } catch (e) {}
+    if (t === 'clair' || t === 'sombre') document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+<link rel="stylesheet" href="espace-apporteur.css?v=20261016" />
+<style>
+  .cap { max-width: 860px; margin: 0 auto; padding: 0 16px 96px; }
+  .cap-barre { position: sticky; top: 0; z-index: 20; background: var(--fond); padding: 12px 0 10px; border-bottom: 1px solid var(--bordure); margin-bottom: 14px; }
+  .cap-barre-ligne { display: flex; align-items: center; gap: 10px; }
+  .cap-barre h1 { font-family: var(--titre); font-size: 1.15rem; margin: 0; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cap-retour { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 12px; border: 1px solid var(--bordure-2); background: var(--surface); color: var(--texte); cursor: pointer; flex: 0 0 38px; }
+  .cap-retour svg, .cap svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .cap-meta { font-size: .8rem; color: var(--texte-2); margin: 6px 0 8px; display: flex; flex-wrap: wrap; gap: 4px 12px; }
+  .jauge { height: 8px; border-radius: 999px; background: var(--surface-3); overflow: hidden; }
+  .jauge > i { display: block; height: 100%; background: var(--vert); border-radius: 999px; transition: width .3s ease; }
+  .cap-outils { display: flex; gap: 8px; margin: 0 0 14px; flex-wrap: wrap; }
+  .cap-outils .saisie { flex: 1; min-width: 180px; }
+  .cap-classes { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .cap-classe { text-align: left; padding: 14px; border-radius: var(--r); border: 1px solid var(--bordure); background: var(--surface); color: var(--texte); cursor: pointer; font: inherit; display: grid; gap: 8px; min-height: 92px; }
+  .cap-classe:hover:not(:disabled) { border-color: var(--accent); }
+  .cap-classe:disabled { opacity: .45; cursor: not-allowed; }
+  .cap-classe strong { font-size: .98rem; }
+  .cap-classe span { font-size: .8rem; color: var(--texte-2); }
+  .cap-classe.complete { border-color: var(--vert); }
+  .cap-liste { display: grid; gap: 6px; }
+  .cap-eleve { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border-radius: 14px; border: 1px solid var(--bordure); background: var(--surface); cursor: pointer; text-align: left; font: inherit; color: var(--texte); width: 100%; }
+  .cap-eleve:hover { border-color: var(--accent); }
+  .cap-vignette { width: 46px; height: 58px; border-radius: 9px; object-fit: cover; background: var(--surface-3); flex: 0 0 46px; display: grid; place-items: center; color: var(--texte-3); }
+  .cap-eleve .nom { font-weight: 600; font-size: .94rem; }
+  .cap-eleve .sous { font-size: .78rem; color: var(--texte-2); }
+  .cap-eleve .etiquette { margin-left: auto; }
+  .cap-fiche-photo { display: grid; gap: 10px; justify-items: center; margin-bottom: 14px; }
+  .cap-cadre { width: 180px; height: 240px; border-radius: 16px; overflow: hidden; background: var(--surface-3); display: grid; place-items: center; color: var(--texte-3); position: relative; }
+  .cap-cadre img { width: 100%; height: 100%; object-fit: cover; }
+  .cap-cadre svg { width: 64px; height: 64px; }
+  .cap-cadre .cap-envoi { position: absolute; inset: 0; background: rgba(10,15,12,.55); color: #fff; display: grid; place-items: center; font-size: .86rem; font-weight: 600; }
+  .cap-grille { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+  @media (max-width: 520px) { .cap-grille { grid-template-columns: 1fr; } }
+  .cap-titre-section { font-size: .74rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--texte-3); margin: 14px 0 8px; }
+  .cap-ferme { text-align: center; padding: 48px 12px; }
+  .cap-ferme svg { width: 46px; height: 46px; color: var(--texte-3); }
+  .cap-flottant { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 30; box-shadow: var(--ombre-forte); }
+  .cap-doublon { border: 1px solid var(--bordure); border-radius: 12px; padding: 8px 10px; margin: 6px 0; font-size: .86rem; }
+  .cap-vide { padding: 28px 8px; text-align: center; color: var(--texte-2); }
+  input[type="file"].cap-fichier { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+  <symbol id="i-retour" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></symbol>
+  <symbol id="i-appareil" viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="14" r="3.5"/></symbol>
+  <symbol id="i-profil" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-cadenas" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+  <symbol id="i-ok" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-suivant" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+  <symbol id="i-fermer" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+</svg>
+
+<main class="cap" id="cap" aria-live="polite">
+  <p class="cap-vide"><span class="muet">Ouverture de l’espace de capture…</span></p>
+</main>
+<input type="file" accept="image/*" capture="environment" class="cap-fichier" id="cap-fichier" aria-hidden="true" tabindex="-1" />
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script src="capture.js?v=20261016"></script>
+</body>
+</html>

@@ -149,6 +149,29 @@
   }
   @keyframes tourner { to { transform: rotate(360deg); } }
 
+  /* Photo de l'élève et campagne de capture */
+  .fiche-photo { display: flex; gap: 16px; align-items: flex-start; padding: 14px; margin-bottom: 6px;
+    border: 1px solid var(--bordure); border-radius: var(--r-carte); background: #fff; }
+  .fiche-photo img, .photo-absente { width: 96px; height: 120px; flex: 0 0 96px; border-radius: var(--r-petit); object-fit: cover; background: var(--craie); }
+  .photo-absente { display: flex; align-items: center; justify-content: center; color: var(--texte-att); border: 1.5px dashed var(--bordure); }
+  .photo-absente svg { width: 44px; height: 44px; opacity: 0.55; }
+  .fiche-photo .texte-photo { font-size: 0.86rem; line-height: 1.45; color: var(--texte-sombre); flex: 1; min-width: 0; }
+  .fiche-photo .texte-photo strong { display: block; margin-bottom: 4px; }
+  .fiche-photo .texte-photo p { margin: 0 0 8px 0; color: var(--texte-att); }
+  .fiche-photo .bouton { padding: 8px 12px; font-size: 0.82rem; }
+  @media (max-width: 480px) { .fiche-photo { flex-direction: column; } }
+  .capture-etapes { margin: 0 0 16px 0; padding-left: 20px; font-size: 0.88rem; color: var(--texte-sombre); line-height: 1.5; }
+  .capture-estimation { background: rgba(201,138,62,0.12); border-radius: var(--r-petit); padding: 10px 13px; font-size: 0.88rem; margin-bottom: 14px; }
+  .capture-consentement { display: flex; gap: 10px; align-items: flex-start; font-size: 0.86rem; line-height: 1.45; margin: 6px 0 12px 0; }
+  .capture-consentement input { margin-top: 3px; width: 18px; height: 18px; flex: 0 0 18px; }
+  .champ textarea { width: 100%; padding: 10px 12px; font-size: 0.92rem; font-family: var(--police-corps);
+    border: 1.5px solid var(--bordure); border-radius: var(--r-bouton); background: #fff; color: var(--texte-sombre); min-height: 70px; }
+  .choix-liste { display: grid; gap: 6px; }
+  .choix-liste label { display: flex; gap: 8px; align-items: center; font-size: 0.88rem; text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--texte-sombre); }
+  .choix-liste input { width: auto; }
+  #voile-capture { z-index: 20; }
+  .erreur-capture { color: var(--rouge); font-size: 0.85rem; min-height: 1em; margin: 0 0 8px 0; }
+
   /* --- Styles pour l'assignation --- */
   .bouton-assignation { margin-left: auto; }
   .compteur-selection { font-weight: normal; font-size: 0.85rem; color: var(--texte-att); margin-left: 6px; }
@@ -479,6 +502,50 @@
       <button type="button" class="bouton bouton-secondaire" id="bouton-fermer-fiche">Fermer</button>
       <button type="button" class="bouton bouton-principal" id="bouton-modifier-depuis-fiche">Modifier</button>
     </div>
+  </div>
+</div>
+
+<!-- Demande de campagne de capture : photos des élèves prises sur place. -->
+<div class="voile" id="voile-capture" role="dialog" aria-modal="true" aria-labelledby="titre-capture">
+  <div class="modale modale-large">
+    <h2 id="titre-capture">Demander la campagne de capture</h2>
+    <form id="form-capture" novalidate>
+      <ol class="capture-etapes">
+        <li>Notre équipe convient avec vous d'une date et vient à l'école.</li>
+        <li>Les classes sont appelées une à une : chaque élève est photographié, et sa fiche est vérifiée ou complétée (identité, classe, responsable).</li>
+        <li>Si vos élèves ne sont pas encore dans Ardoise, ils sont enregistrés pendant la campagne.</li>
+        <li>Les photos apparaissent aussitôt sur les fiches. L'accès de l'équipe à votre liste se ferme à la fin de la campagne.</li>
+      </ol>
+      <div class="ligne-champs">
+        <div class="champ"><label for="capture-quantite">Nombre d'élèves (estimation)</label>
+          <input type="number" id="capture-quantite" min="1" max="20000" step="1" required /></div>
+        <div class="champ"><label for="capture-date">Date souhaitée</label>
+          <input type="date" id="capture-date" /></div>
+      </div>
+      <div class="capture-estimation" id="capture-estimation" aria-live="polite"></div>
+      <div class="champ"><label>Vos élèves sont-ils déjà enregistrés dans Ardoise ?</label>
+        <div class="choix-liste">
+          <label><input type="radio" name="liste_eleves" value="complete" /> Oui, tous</label>
+          <label><input type="radio" name="liste_eleves" value="partielle" /> En partie</label>
+          <label><input type="radio" name="liste_eleves" value="absente" /> Non : l'équipe les enregistrera</label>
+        </div>
+      </div>
+      <div class="ligne-champs">
+        <div class="champ"><label for="capture-contact">Personne à contacter</label>
+          <input type="text" id="capture-contact" maxlength="120" /></div>
+        <div class="champ"><label for="capture-telephone">Téléphone</label>
+          <input type="tel" id="capture-telephone" maxlength="40" /></div>
+      </div>
+      <div class="champ"><label for="capture-note">Précisions (horaires, vacations, accès…)</label>
+        <textarea id="capture-note" maxlength="1000"></textarea></div>
+      <label class="capture-consentement"><input type="checkbox" id="capture-consentement" />
+        <span>Je confirme que les parents ou responsables sont informés que la photo de leur enfant sera prise et conservée dans Ardoise, pour l'usage interne de l'école (fiche, cartes, documents scolaires).</span></label>
+      <p class="erreur-capture" id="erreur-capture" role="alert"></p>
+      <div class="actions-modale">
+        <button type="button" class="bouton bouton-secondaire" id="bouton-annuler-capture">Annuler</button>
+        <button type="submit" class="bouton bouton-principal" id="bouton-envoyer-capture">Envoyer la demande</button>
+      </div>
+    </form>
   </div>
 </div>
 
@@ -934,6 +1001,168 @@ document.addEventListener('DOMContentLoaded', function() {
     chargerEleves();
   });
 
+
+  // ============================================================
+  //  Photo de l'élève et campagne de capture
+  // ============================================================
+  //
+  // Les photos sont prises sur place par l'équipe Ardoise lors d'une
+  // « campagne de capture » commandée par l'école. Tant qu'un élève n'a pas
+  // de photo, sa fiche explique comment en obtenir une — sans jamais pousser
+  // la vente : c'est l'école qui décide. Une seule lecture de l'état de la
+  // campagne par page, réutilisée par toutes les fiches.
+
+  let etatCapture = null;
+  let etatCaptureEnCours = null;
+
+  async function chargerEtatCapture(forcer) {
+    if (etatCapture && !forcer) return etatCapture;
+    if (etatCaptureEnCours && !forcer) return etatCaptureEnCours;
+    etatCaptureEnCours = (async () => {
+      const r = await appelApi('/eleves/campagne-capture');
+      etatCapture = r && r.ok ? await r.json() : null;
+      etatCaptureEnCours = null;
+      return etatCapture;
+    })();
+    return etatCaptureEnCours;
+  }
+
+  const SILHOUETTE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>';
+
+  function prix(montant, devise) {
+    const n = Number(montant || 0);
+    const texte = n.toLocaleString('fr-FR', { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 });
+    return devise === 'USD' ? `${texte} $` : `${texte} ${devise || ''}`;
+  }
+
+  function texteCampagne(e, d) {
+    const c = d && d.commande;
+    const m = d && d.mission;
+    const equipe = m && m.equipe && m.equipe.length ? ` Équipe : ${m.equipe.map(echapper).join(', ')}.` : '';
+    if (!c) {
+      return {
+        titre: 'Pas encore de photo',
+        texte: 'Les photos des élèves sont prises à l’école par l’équipe Ardoise lors d’une <strong style="display:inline">campagne de capture</strong> : chaque élève est photographié en classe, et sa photo apparaît ici, sur sa fiche.'
+          + (d && !d.peut_commander ? ' Seule la direction peut la demander.' : ''),
+        bouton: Boolean(d && d.peut_commander)
+      };
+    }
+    if (c.statut === 'demandee' || c.statut === 'confirmee') {
+      return { titre: 'Campagne de capture demandée', texte: `Demande envoyée le ${echapper(formaterDate(c.date_demande))}. L’équipe Ardoise vous contacte pour fixer la date.` };
+    }
+    if (c.statut === 'planifiee') {
+      const date = (m && m.date_souhaitee) || c.date_planifiee;
+      return { titre: 'Campagne de capture planifiée', texte: (date ? `Prévue le ${echapper(formaterDate(date))}.` : 'La date vous sera confirmée.') + equipe };
+    }
+    if (c.statut === 'en_cours') {
+      const p = d.photos || {};
+      return { titre: 'Campagne de capture en cours', texte: `${p.avec_photo || 0} élève(s) photographié(s) sur ${p.eleves || 0}. Cet élève n’est pas encore passé.` + equipe };
+    }
+    // Réalisée : l'élève était sans doute absent ce jour-là.
+    return {
+      titre: 'Pas de photo pour cet élève',
+      texte: `La campagne de capture s’est terminée le ${echapper(formaterDate(c.date_realisation))}. Cet élève était peut-être absent ou arrivé depuis.`
+        + (d.peut_commander ? ' Un passage complémentaire peut être demandé.' : ''),
+      bouton: Boolean(d.peut_commander), libelle: 'Demander un passage complémentaire'
+    };
+  }
+
+  async function afficherPhoto(eleve, nomComplet) {
+    const zone = document.getElementById('zone-photo');
+    if (!zone) return;
+    if (eleve.photo_url) {
+      zone.innerHTML = `<div class="fiche-photo"><img src="${echapper(eleve.photo_url)}" alt="Photo de ${echapper(nomComplet)}" loading="lazy" referrerpolicy="no-referrer" />
+        <div class="texte-photo"><strong>${echapper(nomComplet)}</strong><p>${echapper(eleve.matricule || '')}${eleve.classe_nom ? ' · ' + echapper(eleve.classe_nom) : ''}</p></div></div>`;
+      const img = zone.querySelector('img');
+      // Lien expiré (page restée ouverte longtemps) : on le dit plutôt qu'une image cassée.
+      img.addEventListener('error', () => { img.replaceWith(Object.assign(document.createElement('div'), { className: 'photo-absente', innerHTML: SILHOUETTE, title: 'Rechargez la page pour afficher la photo' })); });
+      return;
+    }
+    zone.innerHTML = `<div class="fiche-photo"><div class="photo-absente">${SILHOUETTE}</div>
+      <div class="texte-photo"><p><span class="spinner"></span>Chargement…</p></div></div>`;
+    const d = await chargerEtatCapture();
+    if (eleveAffiche !== eleve) return; // la fiche a changé entre-temps
+    const t = texteCampagne(eleve, d);
+    zone.querySelector('.texte-photo').innerHTML = `<strong>${t.titre}</strong><p>${t.texte}</p>`
+      + (t.bouton ? `<button type="button" class="bouton bouton-principal" id="bouton-demander-capture">${echapper(t.libelle || 'Demander la campagne de capture')}</button>` : '');
+    const b = document.getElementById('bouton-demander-capture');
+    if (b) b.addEventListener('click', () => ouvrirDemandeCapture());
+  }
+
+  function majEstimationCapture() {
+    const d = etatCapture || {};
+    const q = Math.max(0, parseInt(document.getElementById('capture-quantite').value, 10) || 0);
+    const zone = document.getElementById('capture-estimation');
+    zone.innerHTML = d.prix_unitaire !== null && d.prix_unitaire !== undefined
+      ? `Estimation : <strong>${prix(q * d.prix_unitaire, d.devise)}</strong> (${prix(d.prix_unitaire, d.devise)} par élève, photo comprise). Rien n’est facturé avant la réalisation ; le montant final porte sur les élèves réellement traités.`
+      : 'Le tarif vous sera confirmé par l’équipe avant la campagne.';
+  }
+
+  function ouvrirDemandeCapture() {
+    const d = etatCapture || {};
+    const f = document.getElementById('form-capture');
+    f.reset();
+    document.getElementById('erreur-capture').textContent = '';
+    document.getElementById('capture-quantite').value = Math.max(1, (d.photos && d.photos.eleves) || 1);
+    const radio = f.querySelector(`input[name="liste_eleves"][value="${(d.photos && d.photos.eleves) ? 'complete' : 'absente'}"]`);
+    if (radio) radio.checked = true;
+    document.getElementById('capture-date').min = new Date().toISOString().slice(0, 10);
+    majEstimationCapture();
+    // La fiche s'efface le temps de la demande, puis revient.
+    document.getElementById('voile-fiche').classList.remove('visible');
+    document.getElementById('voile-capture').classList.add('visible');
+    document.getElementById('capture-quantite').focus();
+  }
+
+  document.getElementById('capture-quantite').addEventListener('input', majEstimationCapture);
+  function fermerDemandeCapture() {
+    document.getElementById('voile-capture').classList.remove('visible');
+    if (eleveAffiche) document.getElementById('voile-fiche').classList.add('visible');
+  }
+  document.getElementById('bouton-annuler-capture').addEventListener('click', fermerDemandeCapture);
+  document.getElementById('form-capture').addEventListener('submit', async (evt) => {
+    evt.preventDefault();
+    const erreur = document.getElementById('erreur-capture');
+    const bouton = document.getElementById('bouton-envoyer-capture');
+    const quantite = parseInt(document.getElementById('capture-quantite').value, 10);
+    erreur.textContent = '';
+    if (!quantite || quantite < 1) { erreur.textContent = 'Indiquez le nombre approximatif d’élèves.'; return; }
+    if (!document.getElementById('capture-consentement').checked) {
+      erreur.textContent = 'Cochez la confirmation sur l’information des parents : sans elle, aucune photo ne peut être prise.';
+      return;
+    }
+    const liste = (document.querySelector('input[name="liste_eleves"]:checked') || {}).value || null;
+    bouton.disabled = true;
+    const libelle = bouton.textContent;
+    bouton.innerHTML = '<span class="spinner"></span>Envoi…';
+    try {
+      const r = await appelApi('/services/commander', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          service_code: 'campagne_capture', quantite,
+          date_souhaitee: document.getElementById('capture-date').value || null,
+          contact_nom: document.getElementById('capture-contact').value,
+          contact_telephone: document.getElementById('capture-telephone').value,
+          note: document.getElementById('capture-note').value,
+          liste_eleves: liste, consentement_photos: true
+        })
+      });
+      if (!r) return;
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { erreur.textContent = d.message || 'La demande n’a pas pu être envoyée. Réessayez.'; return; }
+      fermerDemandeCapture();
+      afficherMessage(d.message || 'Demande envoyée.', 'succes');
+      await chargerEtatCapture(true);
+      if (eleveAffiche) afficherPhoto(eleveAffiche, [eleveAffiche.nom, eleveAffiche.postnom, eleveAffiche.prenom].filter(Boolean).join(' '));
+    } catch (e) {
+      erreur.textContent = 'Serveur injoignable. Vérifiez votre connexion et réessayez.';
+    } finally {
+      bouton.disabled = false;
+      bouton.textContent = libelle;
+    }
+  });
+
   function ouvrirFiche(eleve) {
     eleveAffiche = eleve;
     const nomComplet = [eleve.nom, eleve.postnom, eleve.prenom].filter(Boolean).join(' ');
@@ -952,7 +1181,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             color:var(--texte-att); margin:18px 0 4px 0;">${t}</h3>`;
 
     document.getElementById('corps-fiche').innerHTML =
-      titre('Identité')
+      '<div id="zone-photo"></div>'
+      + titre('Identité')
       + ligne('Matricule', eleve.matricule)
       + ligne('Nom complet', nomComplet)
       + ligne('Sexe', eleve.sexe === 'M' ? 'Masculin' : eleve.sexe === 'F' ? 'Féminin' : null)
@@ -981,6 +1211,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('voile-fiche').classList.add('visible');
     const boutonSortie = document.getElementById('bouton-sortie');
     if (boutonSortie) boutonSortie.addEventListener('click', () => ouvrirSortie(eleve, nomComplet));
+    afficherPhoto(eleve, nomComplet);
     chargerParcours(eleve, nomComplet);
   }
 

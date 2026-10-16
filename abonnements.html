@@ -16,6 +16,7 @@
 <link rel="stylesheet" href="ui.css" />
 <link rel="stylesheet" href="support-abonnements.css" />
 <link rel="stylesheet" href="mobile.css" />
+<link rel="stylesheet" href="paiement-scene.css" />
 <script src="session.js"></script>
 <script src="remontee-erreurs.js"></script>
 <style>
@@ -286,32 +287,50 @@
 
         <div class="recap-choix" id="recap-depot"></div>
 
-        <div class="paiement-fiche">
-          <div class="paiement-montant"><small>Montant à déposer</small><strong id="montant-depot">—</strong></div>
-          <div class="paiement-details">
-            <div><small>Réseau</small><strong id="reseau-depot">—</strong></div>
-            <div><small>Numéro</small><strong class="code" id="numero-depot">—</strong></div>
-            <div><small>Titulaire</small><strong id="nom-depot">—</strong></div>
+        <!-- LE TICKET DE PAIEMENT : tout ce qu'il faut pour faire le dépôt,
+             et rien d'autre. Montant et numéro se copient d'un geste. -->
+        <div class="ticket-paiement">
+          <div class="ticket-montant">
+            <small>Montant exact à déposer</small>
+            <strong id="montant-depot">—</strong>
+            <span class="ticket-reseau" id="reseau-depot">—</span>
           </div>
-          <button type="button" class="bouton bouton-secondaire bouton-petit" id="copier-numero">Copier le numéro</button>
+          <div class="ticket-details">
+            <div class="ticket-ligne">
+              <div><small>Numéro de dépôt</small><strong class="code" id="numero-depot">—</strong></div>
+              <button type="button" class="ticket-copier" id="copier-numero">Copier</button>
+            </div>
+            <div class="ticket-ligne">
+              <div><small>Titulaire</small><strong id="nom-depot">—</strong></div>
+            </div>
+            <div class="ticket-ligne">
+              <div><small>Montant</small><strong id="montant-depot-copie">—</strong></div>
+              <button type="button" class="ticket-copier" id="copier-montant">Copier</button>
+            </div>
+          </div>
         </div>
 
         <ol class="mini-etapes">
-          <li><span>1</span><div><strong>Effectuez le dépôt</strong><small>Utilisez exactement le numéro et le montant indiqués.</small></div></li>
-          <li><span>2</span><div><strong>Attendez le SMS</strong><small>Votre opérateur confirme la transaction.</small></div></li>
-          <li><span>3</span><div><strong>Copiez la référence</strong><small>Dans le SMS, après « Ref: », « Réf. » ou « Trans ID ».</small></div></li>
-          <li><span>4</span><div><strong>Saisissez-la ci-dessous</strong><small>Dès que l’opérateur confirme le dépôt, votre abonnement s’active tout seul.</small></div></li>
+          <li><span>1</span><div><strong>Faites le dépôt</strong><small>Au numéro ci-dessus, pour le montant exact.</small></div></li>
+          <li><span>2</span><div><strong>Gardez le SMS</strong><small>Votre opérateur vous envoie une référence.</small></div></li>
+          <li><span>3</span><div><strong>Collez la référence</strong><small>Après « Ref: », « Réf. » ou « Trans ID ».</small></div></li>
         </ol>
+
+        <div class="promesse-auto"><span aria-hidden="true">⚡</span><span><b>Activation automatique.</b>
+          Dès que l’opérateur confirme le dépôt, votre abonnement s’active tout seul — en général en moins de deux minutes.</span></div>
 
         <div class="reference-carte">
           <div class="champ">
             <label for="reference">Référence de transaction</label>
-            <input id="reference" maxlength="120" autocomplete="off" autocapitalize="characters"
-                   placeholder="Saisissez exactement la référence reçue" />
-            <p class="aide">Exemple : PP260817.1234.ABC. Copiez-la depuis le SMS plutôt que de la recopier à la main : une seule lettre différente empêche la confirmation automatique.</p>
+            <div class="reference-saisie">
+              <input id="reference" maxlength="120" autocomplete="off" autocapitalize="characters" spellcheck="false"
+                     inputmode="text" placeholder="Ex. PP261016.0912.B88421" />
+              <button type="button" class="bouton bouton-secondaire" id="coller-reference">Coller</button>
+            </div>
+            <div class="reference-indice" id="reference-indice">Copiez-la depuis le SMS plutôt que de la recopier : une seule lettre différente empêche la confirmation.</div>
           </div>
           <div class="actions-reference">
-            <button type="button" class="bouton bouton-principal" id="btn-reference">Envoyer pour vérification</button>
+            <button type="button" class="bouton bouton-principal" id="btn-reference">Envoyer et vérifier</button>
           </div>
         </div>
       </section>
@@ -335,6 +354,7 @@
 
 <script src="theme.js"></script>
 <script src="ui.js"></script>
+<script src="paiement-scene.js"></script>
 <script src="abonnements-page.js"></script>
 <script src="mobile.js"></script>
 </body>

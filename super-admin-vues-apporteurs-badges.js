@@ -397,7 +397,7 @@
     });
   }
 
-  async function formulaireMission() {
+  async function formulaireMission(commandeId) {
     let commandes = [];
     try { commandes = (await SA.api(`${BASE}/missions/commandes`)).donnees || []; } catch (e) { /* saisie libre possible */ }
     const ecoles = (SA.referentiels && SA.referentiels.ecoles) || [];
@@ -405,7 +405,7 @@
       titre: 'Publier une mission', large: true, libelleValider: 'Publier',
       sousTitre: 'Visible aussitôt des configurateurs (installation) ou formateurs (formation) actifs, sans le contact de l’école tant qu’elle n’est pas confiée.',
       champs: [
-        { cle: 'commande_service_id', libelle: 'À partir d’une commande d’école (recommandé)', type: 'liste',
+        { cle: 'commande_service_id', libelle: 'À partir d’une commande d’école (recommandé)', type: 'liste', valeur: commandeId || '',
           options: [{ valeur: '', libelle: commandes.length ? 'Choisir une commande…' : 'Aucune commande en attente' }]
             .concat(commandes.filter((c) => c.service_code !== 'campagne_capture').map((c) => ({ valeur: c.id, libelle: `${c.ecole_nom} — ${SERVICES[c.service_code] || c.service_nom} (${c.ville || '—'})` }))) },
         { cle: 'ecole_id', libelle: '… ou école (sans commande)', type: 'liste',
@@ -446,7 +446,7 @@
 ${s.options.map((o) => `${o.recommande ? '★ ' : '  '}${o.intervenants} intervenant(s) → ${o.jours} jour(s) sur place`).join('\n')}</div>`;
   }
 
-  async function formulaireCapture() {
+  async function formulaireCapture(commandeId) {
     let commandes = [];
     try { commandes = ((await SA.api(`${BASE}/missions/commandes`)).donnees || []).filter((c) => c.service_code === 'campagne_capture'); } catch (e) { /* saisie libre */ }
     const partenaires = await partenairesCapture();
@@ -503,6 +503,7 @@ ${s.options.map((o) => `${o.recommande ? '★ ' : '  '}${o.intervenants} interve
     f.commande_service_id.addEventListener('change', majSuggestion);
     f.ecole_id.addEventListener('change', majSuggestion);
     f.mode.addEventListener('change', () => { voile.querySelector('#cap-partenaires').hidden = f.mode.value === 'equipe'; });
+    if (commandeId && commandes.some((c) => c.id === commandeId)) { f.commande_service_id.value = commandeId; majSuggestion(); }
     majConsentement();
     voile.querySelector('[data-role="annuler"]').addEventListener('click', () => voile.fermer());
     const bouton = voile.querySelector('[data-role="valider"]');
@@ -590,6 +591,101 @@ ${s.options.map((o) => `${o.recommande ? '★ ' : '  '}${o.intervenants} interve
     const toutes = voile.querySelector('[data-toutes]');
     if (toutes) toutes.addEventListener('click', async () => { if (await agir(`${BASE}/missions/${m.id}/repartition`, { aucune: true })) voile.fermer(); });
   }
+
+
+  /* ======================================================================
+     2 ter. COMMANDES DE SERVICES DES ÉCOLES
+     ----------------------------------------------------------------------
+     Là où mène la notification « Commande de service » : chaque demande
+     d'une école (campagne de capture, installation, formation), son état,
+     et l'action suivante — confirmer, lancer la mission, annuler.
+     ====================================================================== */
+
+  const STATUTS_COMMANDE = {
+    demandee: ['Demandée', 'attention'], confirmee: ['Confirmée', 'info'], planifiee: ['Planifiée', 'info'],
+    en_cours: ['En cours', 'info'], realisee: ['Réalisée', 'succes'], annulee: ['Annulée', 'neutre']
+  };
+  const FILTRES_COMMANDE = [['a_traiter', 'À traiter'], ['en_cours', 'En cours'], ['realisee', 'Réalisées'], ['annulee', 'Annulées'], ['toutes', 'Toutes']];
+  const LISTES_ELEVES = { complete: 'liste complète dans Ardoise', partielle: 'liste partielle', absente: 'élèves à enregistrer' };
+
+  async function majCommande(id, corps, message) {
+    try {
+      await SA.api(`/super-admin/services/commandes/${id}`, { method: 'PATCH', body: JSON.stringify(corps) });
+      SA.toast(message || 'Commande mise à jour.', 'succes');
+      SA.rafraichirVue();
+    } catch (e) { SA.toast(e.message || 'Mise à jour impossible.', 'danger'); }
+  }
+
+  SA.enregistrerVue('services/commandes', {
+    titre: 'Commandes des écoles',
+    sousTitre: 'Campagnes de capture, installations et formations demandées par les écoles : confirmer, confier en mission, suivre.',
+
+    async rendu(conteneur, params) {
+      conteneur.innerHTML = ui.squelette(6, 46);
+      const d = await SA.api('/super-admin/services/commandes');
+      const filtre = params.id ? 'toutes' : (params.filtre || 'a_traiter');
+      const toutes = d.commandes || [];
+      const garder = {
+        a_traiter: (c) => ['demandee', 'confirmee', 'planifiee'].includes(c.statut) && !c.mission,
+        en_cours: (c) => ['confirmee', 'planifiee', 'en_cours'].includes(c.statut) && c.mission,
+        realisee: (c) => c.statut === 'realisee', annulee: (c) => c.statut === 'annulee', toutes: () => true
+      }[filtre] || (() => true);
+      const lignes = toutes.filter(garder);
+      const compte = (k) => toutes.filter({ a_traiter: (c) => ['demandee', 'confirmee', 'planifiee'].includes(c.statut) && !c.mission,
+        en_cours: (c) => ['confirmee', 'planifiee', 'en_cours'].includes(c.statut) && c.mission }[k] || (() => false)).length;
+      conteneur.innerHTML = `
+        <section class="sa-section">
+          <div class="sa-filtres">${FILTRES_COMMANDE.map(([k, l]) => `<button class="sa-bouton sa-bouton-petit ${filtre === k ? 'sa-bouton-principal' : 'sa-bouton-secondaire'}" data-filtre="${k}">${esc(l)}${['a_traiter', 'en_cours'].includes(k) && compte(k) ? ` <span class="sa-mono">${compte(k)}</span>` : ''}</button>`).join('')}</div>
+          ${ui.tableau({
+            lignes, vide: filtre === 'a_traiter' ? 'Aucune commande à traiter' : 'Aucune commande',
+            colonnes: [
+              { cle: 'date', titre: 'Demandée le', rendu: (c) => esc(fmt.date(c.date_demande)) },
+              { cle: 'ecole', titre: 'École', rendu: (c) => `<strong>${esc(c.ecole_nom)}</strong><div class="sa-muet">${esc(c.ville || '')}</div>
+                  ${c.contact_nom || c.contact_telephone ? `<div class="sa-muet">${esc([c.contact_nom, c.contact_telephone].filter(Boolean).join(' · '))}</div>` : ''}` },
+              { cle: 'service', titre: 'Prestation', rendu: (c) => `${esc(c.service_nom)}
+                  <div class="sa-muet">${esc(Number(c.quantite).toLocaleString('fr-FR'))} × ${esc(Number(c.prix_unitaire_applique).toLocaleString('fr-FR', { minimumFractionDigits: 2 }))} = <strong>${esc(Number(c.montant_total).toLocaleString('fr-FR', { minimumFractionDigits: 2 }))} ${esc(c.devise)}</strong></div>
+                  ${c.service_code === 'campagne_capture' ? `<div class="sa-muet">${c.eleves_inscrits !== null ? `${esc(c.eleves_inscrits)} élève(s) déjà dans Ardoise · ` : ''}${esc(LISTES_ELEVES[c.liste_eleves] || 'liste non précisée')}</div>
+                    <div class="${c.consentement_photos_le ? 'sa-muet' : 'sa-attention-texte'}">${c.consentement_photos_le ? '✓ parents informés (attesté par l’école)' : '⚠ attestation des parents manquante'}</div>` : ''}
+                  ${c.date_planifiee ? `<div class="sa-muet">souhaitée le ${esc(fmt.date(c.date_planifiee))}</div>` : ''}
+                  ${c.note ? `<details class="sa-muet"><summary>Note de l’école</summary><div class="ab-apercu">${esc(c.note)}</div></details>` : ''}` },
+              { cle: 'statut', titre: 'Statut', rendu: (c) => `${ui.badge(...(STATUTS_COMMANDE[c.statut] || [c.statut, 'neutre']))}
+                  ${c.mission ? `<div class="sa-muet">mission ${esc(LIBELLES[c.mission.statut] || c.mission.statut)}</div>` : ''}` },
+              { cle: 'act', titre: '', rendu: (c) => {
+                  const ouverte = ['demandee', 'confirmee', 'planifiee'].includes(c.statut);
+                  const mission = c.service_code === 'campagne_capture' ? 'Lancer la campagne' : 'Publier la mission';
+                  return `<div class="ab-actions">
+                    ${ouverte && !c.mission ? `<button class="sa-bouton sa-bouton-principal sa-bouton-petit" data-act="mission" data-id="${esc(c.id)}">${mission}</button>` : ''}
+                    ${c.statut === 'demandee' ? `<button class="sa-bouton sa-bouton-secondaire sa-bouton-petit" data-act="confirmer" data-id="${esc(c.id)}">Confirmer à l’école</button>` : ''}
+                    ${c.mission ? `<a class="sa-bouton sa-bouton-secondaire sa-bouton-petit" style="text-decoration:none" href="#/apporteurs/missions?type=${esc(c.mission.type)}">Voir la mission</a>` : ''}
+                    ${ouverte ? `<button class="sa-bouton sa-bouton-secondaire sa-bouton-petit" data-act="annuler" data-id="${esc(c.id)}">Annuler</button>` : ''}
+                  </div>`;
+                } }
+            ]
+          })}
+          <p class="sa-note">Rien n’est facturé à la demande. « Lancer la campagne » ouvre la proposition du nombre d’intervenants ; la commande passe « planifiée », puis « en cours » à la première photo, et « réalisée » à la clôture de la mission.</p>
+        </section>`;
+      conteneur.querySelectorAll('[data-filtre]').forEach((b) => b.addEventListener('click', () => { SA.majParams({ filtre: b.dataset.filtre }); SA.rafraichirVue(); }));
+      conteneur.querySelectorAll('[data-act]').forEach((b) => b.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const c = toutes.find((x) => x.id === b.dataset.id);
+        if (b.dataset.act === 'mission') {
+          if (c.service_code === 'campagne_capture') formulaireCapture(c.id); else formulaireMission(c.id);
+        }
+        if (b.dataset.act === 'confirmer') await majCommande(c.id, { statut: 'confirmee' }, 'Commande confirmée.');
+        if (b.dataset.act === 'annuler') {
+          const v = await saisir({ titre: 'Annuler la commande', libelle: 'Motif (gardé dans la note de la commande)', libelleValider: 'Annuler la commande', danger: true });
+          if (v) await majCommande(c.id, { statut: 'annulee', note: [c.note, `Annulée : ${v.motif}`].filter(Boolean).join('\n') }, 'Commande annulée.');
+        }
+      }));
+      // Arrivée depuis une notification : la commande visée est mise en évidence.
+      if (params.id) {
+        const bouton = conteneur.querySelector(`[data-id="${CSS.escape(params.id)}"]`);
+        const ligne = bouton && bouton.closest('tr');
+        if (ligne) { ligne.style.outline = '2px solid var(--sa-accent, #C98A3E)'; ligne.scrollIntoView({ block: 'center' }); }
+        else SA.toast('Cette commande n’apparaît plus dans la liste (annulée ou supprimée).', 'info');
+      }
+    }
+  });
 
   /* ======================================================================
      3. CAMPAGNES ET PRÉSOMPTIONS

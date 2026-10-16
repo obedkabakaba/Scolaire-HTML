@@ -1,0 +1,32 @@
+VIDÉO DE PRÉSENTATION D'ARDOISE
+===============================
+
+Déposer ici les DEUX versions finales (pas celles avec les voix provisoires),
+sous ces noms exacts :
+
+  ardoise-explicatif-paysage.mp4    format horizontal (ordinateur, projection)
+  ardoise-explicatif-portrait.mp4   format vertical (téléphone)
+
+Elles servent à deux endroits :
+
+  1. La page d'accueil du site (section « Ardoise en vidéo »). Tant que les
+     fichiers sont absents, la section reste masquée : aucun lecteur vide.
+     Paysage sur ordinateur, portrait sur un téléphone tenu droit.
+  2. L'assistant WhatsApp, qui envoie la vidéo quand quelqu'un demande à
+     comprendre Ardoise et choisit de la voir. Portrait par défaut.
+
+CONTRAINTES (imposées par WhatsApp)
+-----------------------------------
+  · MP4, vidéo H.264, son AAC ;
+  · 16 Mo AU MAXIMUM par fichier, sinon WhatsApp refuse l'envoi.
+
+Pour réduire un fichier trop lourd (ffmpeg) :
+
+  ffmpeg -i source.mp4 -c:v libx264 -crf 28 -preset slow -vf "scale=-2:720" \
+         -c:a aac -b:a 96k -movflags +faststart ardoise-explicatif-paysage.mp4
+
+  (pour le portrait, remplacer scale=-2:720 par scale=720:-2)
+
+Si les vidéos sont hébergées ailleurs (YouTube exclu : WhatsApp exige un
+fichier MP4 direct), renseigner sur le backend ARDOISE_VIDEO_PAYSAGE_URL et
+ARDOISE_VIDEO_PORTRAIT_URL ; la page d'accueil, elle, lit toujours /videos/.

@@ -660,6 +660,14 @@
       stockage.setItem('ardoise_refresh_token', donnees.refresh_token);
       stockage.setItem('ardoise_user', JSON.stringify(donnees.user));
 
+      // Toute première connexion de cette personne : la page d'arrivée joue
+      // une courte animation d'accueil (theme-signatures.js), une seule fois.
+      // Le drapeau vit dans l'onglet et survit au détour éventuel par
+      // « changer le mot de passe ».
+      try {
+        if (donnees.premiere_connexion === true) sessionStorage.setItem('ardoise_premiere_connexion', String(donnees.user?.id || 'oui'));
+      } catch (e) {}
+
       // Mot de passe provisoire : on n'entre pas dans la plateforme tant
       // qu'il n'a pas été remplacé. Le serveur refuse de toute façon toute
       // autre requête, cette redirection évite simplement une page d'erreur.

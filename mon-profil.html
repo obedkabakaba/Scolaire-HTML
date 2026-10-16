@@ -90,6 +90,7 @@
   .carte-theme .pied .nom { font-weight: 600; font-size: 0.93rem; color: var(--texte-sombre); display: flex; align-items: center; justify-content: space-between; gap: 6px; }
   .carte-theme .pied .desc { font-size: 0.76rem; color: var(--texte-att); margin-top: 3px; line-height: 1.35; }
   .carte-theme .coche { color: var(--ocre); font-size: 0.95rem; }
+  .carte-theme .pied .devise { font-family: var(--police-titre); font-style: italic; font-size: 0.82rem; color: var(--texte-sombre); margin-top: 4px; line-height: 1.3; }
 
   .champ { margin-bottom: 16px; }
   .champ label { display: block; font-size: 0.76rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--texte-att); margin-bottom: 6px; }
@@ -421,6 +422,7 @@
         </div>
         <div class="pied">
           <div class="nom">${t.nom}<span class="coche">${t.cle === actuel ? '✓' : ''}</span></div>
+          ${t.devise ? `<div class="devise">« ${t.devise} »</div>` : ''}
           <div class="desc">${t.description}</div>
         </div>
       </button>

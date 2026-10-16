@@ -48,18 +48,18 @@
    sélectionné.
 */
 window.ARDOISE_THEMES = [
-  { cle: 'vibra', nom: 'Vibra', dispositionMenu: false, description: 'Ivoire, or et bleu pétrole. Campus futuriste, connexions lumineuses et priorités à portée de main.', apercu: { fond: '#17343B', surface: '#F6EFE4', accent: '#A5793D', barre: '#EAD8BD', texte: '#17303B' } },
-  { cle: 'fluide', nom: 'Fluide', dispositionMenu: false, description: 'Verre transparent, reflets aquatiques et raccourcis colorés. Votre journée, en toute clarté.', apercu: { fond: '#D1E4EA', surface: '#EBF6F8', accent: '#007E9B', barre: '#C4E8ED', texte: '#10354E' } },
-  { cle: 'orbite', nom: 'Orbite Aube', dispositionMenu: false, description: 'Bleu céleste et blanc. Rail flottant, classes et repères du jour.', apercu: { fond: '#F1F8FF', surface: '#FFFFFF', accent: '#0860D9', barre: '#FFFFFF', texte: '#102B52' } },
-  { cle: 'nexus', nom: 'Nexus', dispositionMenu: false, description: 'Graphite et vert électrique. Carte des espaces, panneau contextuel et commandes rapides.', apercu: { fond: '#101517', surface: '#182024', accent: '#C9F65F', barre: '#101719', texte: '#F0F4EE' } },
-  { cle: 'recre', nom: 'Récré', dispositionMenu: false, description: 'Jaune soleil, papier crème et dessins de cahier. Une navigation joyeuse, des crayons et un agenda.', apercu: { fond: '#FFFCF2', surface: '#FFFFFF', accent: '#FFD34E', barre: '#FFEBA1', texte: '#122642' } },
-  { cle: 'perspective', nom: 'Yohali', dispositionMenu: false, description: 'Crème, vert profond et terre cuite. Architecture, papeterie et navigation horizontale.', apercu: { fond: '#FAF9F5', surface: '#FDFCF9', accent: '#2E5040', barre: '#EAE8DC', texte: '#203C32' } },
-  { cle: 'elan', nom: 'Élan', dispositionMenu: false, description: 'Bleu, menthe et soleil. Navigation horizontale, dessins par rubrique et accueil avec agenda.', apercu: { fond: '#FFFDF8', surface: '#FFFFFF', accent: '#2165B5', barre: '#FFF2BF', texte: '#142D46' } },
-  { cle: 'studio', nom: 'Studio', description: 'Rail sombre déplaçable, accent indigo, cartes sans bordure. Le plus proche des outils professionnels actuels.', apercu: { fond: '#F4F6FB', surface: '#FFFFFF', accent: '#4C5FD5', barre: '#1B2559', texte: '#101828' } },
-  { cle: 'ardoise', nom: 'Ardoise', description: 'Craie et ocre, titres en serif. Chaleureux et identitaire.', apercu: { fond: '#F6F2E7', surface: '#FBF9F3', accent: '#C98A3E', barre: '#1F2B24', texte: '#1F2B24' } },
-  { cle: 'pure', nom: 'Pure', description: 'Fond blanc, angles nets, aucune ombre. Sobre et dense.', apercu: { fond: '#FFFFFF', surface: '#FFFFFF', accent: '#2563A8', barre: '#FAFAFA', texte: '#14171A' } },
-  { cle: 'nuit', nom: 'Nuit', description: 'Thème sombre, reposant en soirée et économe en batterie.', apercu: { fond: '#12171A', surface: '#1B2226', accent: '#5FB08C', barre: '#0C1013', texte: '#E8EDE9' } },
-  { cle: 'yohali', nom: 'Terranga', description: 'Terracotta et vert profond, grands rayons. Expressif.', apercu: { fond: '#FDF6EE', surface: '#FFFFFF', accent: '#C2542F', barre: '#1E5B4F', texte: '#26201B' } }
+  { cle: 'vibra', nom: 'Vibra', dispositionMenu: false, description: 'Le campus vibrant : ivoire, or et bleu pétrole, constellation de lumière et pouls de l’école.', devise: 'Relier, révéler, rayonner.', apercu: { fond: '#17343B', surface: '#F6EFE4', accent: '#A5793D', barre: '#EAD8BD', texte: '#17303B' } },
+  { cle: 'fluide', nom: 'Fluide', dispositionMenu: false, description: 'Le lagon : verre liquide translucide, reflets qui suivent le doigt, dock flottant et île dynamique.', devise: 'Voir clair, en toute fluidité.', apercu: { fond: '#D1E4EA', surface: '#EBF6F8', accent: '#007E9B', barre: '#C4E8ED', texte: '#10354E' } },
+  { cle: 'orbite', nom: 'Orbite Aube', dispositionMenu: false, description: 'L’aube orbitale : bleu céleste, satellites, ciel qui change avec l’heure et course du soleil.', devise: 'Garder le cap, en douceur.', apercu: { fond: '#F1F8FF', surface: '#FFFFFF', accent: '#0860D9', barre: '#FFFFFF', texte: '#102B52' } },
+  { cle: 'nexus', nom: 'Nexus', dispositionMenu: false, description: 'Le réseau : graphite et vert électrique, impulsions de données, carte des espaces et console.', devise: 'Tout est connecté.', apercu: { fond: '#101517', surface: '#182024', accent: '#C9F65F', barre: '#101719', texte: '#F0F4EE' } },
+  { cle: 'recre', nom: 'Récré', dispositionMenu: false, description: 'La récré : jaune soleil, papier crème, post-it, gribouillis et avions en papier.', devise: 'Apprendre en s’amusant.', apercu: { fond: '#FFFCF2', surface: '#FFFFFF', accent: '#FFD34E', barre: '#FFEBA1', texte: '#122642' } },
+  { cle: 'perspective', nom: 'Yohali', dispositionMenu: false, description: 'L’atelier d’architecte : crème, vert profond et terre cuite, lignes de fuite et cartes en relief.', devise: 'Bâtir avec justesse.', apercu: { fond: '#FAF9F5', surface: '#FDFCF9', accent: '#2E5040', barre: '#EAE8DC', texte: '#203C32' } },
+  { cle: 'elan', nom: 'Élan', dispositionMenu: false, description: 'L’élan : bleu, menthe et soleil levant, traînées de vitesse et victoires du jour à cocher.', devise: 'Un pas, puis l’autre, et l’on s’envole.', apercu: { fond: '#FFFDF8', surface: '#FFFFFF', accent: '#2165B5', barre: '#FFF2BF', texte: '#142D46' } },
+  { cle: 'studio', nom: 'Studio', description: 'L’atelier : rail sombre, accent indigo, projecteur qui suit le pointeur et minuteur de concentration.', devise: 'Moins de bruit, plus d’œuvre.', apercu: { fond: '#F4F6FB', surface: '#FFFFFF', accent: '#4C5FD5', barre: '#1B2559', texte: '#101828' } },
+  { cle: 'ardoise', nom: 'Ardoise', description: 'Le tableau : craie et ocre, mot du jour écrit à la craie, poussière qui flotte dans la classe.', devise: 'Écrire, effacer, recommencer.', apercu: { fond: '#F6F2E7', surface: '#FBF9F3', accent: '#C98A3E', barre: '#1F2B24', texte: '#1F2B24' } },
+  { cle: 'pure', nom: 'Pure', description: 'La page blanche : grille suisse, cartes numérotées comme un registre, aucun superflu.', devise: 'L’essentiel, et rien d’autre.', apercu: { fond: '#FFFFFF', surface: '#FFFFFF', accent: '#2563A8', barre: '#FAFAFA', texte: '#14171A' } },
+  { cle: 'nuit', nom: 'Nuit', description: 'La veillée : thème sombre sous un ciel étoilé, étoiles filantes et vraie phase de la Lune.', devise: 'Travailler à la lueur des étoiles.', apercu: { fond: '#12171A', surface: '#1B2226', accent: '#5FB08C', barre: '#0C1013', texte: '#E8EDE9' } },
+  { cle: 'yohali', nom: 'Terranga', description: 'Teranga : terracotta et vert profond, motifs wax et « bienvenue » dans les langues des familles.', devise: 'Ici, chacun est attendu.', apercu: { fond: '#FDF6EE', surface: '#FFFFFF', accent: '#C2542F', barre: '#1E5B4F', texte: '#26201B' } }
 ];
 window.ARDOISE_THEME_DEFAUT = 'ardoise';
 
@@ -128,6 +128,15 @@ window.ARDOISE_THEME_DEFAUT = 'ardoise';
       scriptElan.dataset.ardoiseElan = '';
       scriptElan.onerror = function () { scriptElan.remove(); };
       document.head.appendChild(scriptElan);
+    }
+    /* Signatures (récit, scène, widget, gestes) : communes à toutes les
+       apparences, chargées une seule fois, jamais sur les pages publiques. */
+    if (theme !== 'public' && !document.querySelector('script[data-ardoise-signatures]')) {
+      var scriptSignatures = document.createElement('script');
+      scriptSignatures.src = 'theme-signatures.js';
+      scriptSignatures.dataset.ardoiseSignatures = '';
+      scriptSignatures.onerror = function () { scriptSignatures.remove(); };
+      document.head.appendChild(scriptSignatures);
     }
     if (reglages.synchroniserServeur !== false) enregistrerSurServeur(theme);
     return theme;

@@ -75,8 +75,43 @@ html[data-theme] .sa-badge.ton-succes { color: color-mix(in srgb, var(--vert-ok)
   font-size: 1.25rem;
   line-height: 1;
 }
-.sa-rail-domaines { display: flex; flex-direction: column; gap: 4px; align-items: center; }
-.sa-rail-pied { margin-top: auto; display: flex; flex-direction: column; gap: 6px; align-items: center; }
+/* LE RAIL DÉFILE.
+   Dix domaines et quatre commandes de pied dépassent la hauteur d'un écran de
+   portable (ou d'un navigateur zoomé) : sans défilement, l'Apparence, le
+   compte et donc la déconnexion sortaient de l'écran sans aucun moyen de les
+   atteindre. Ce sont les DOMAINES qui défilent ; le pied reste toujours
+   visible. Si l'écran est vraiment minuscule, le rail entier défile en
+   dernier recours. Les infobulles sont dessinées par super-admin-coque.js en
+   position fixe : un conteneur défilant aurait coupé les pseudo-éléments. */
+.sa-rail { min-height: 0; overflow-x: hidden; overflow-y: auto; scrollbar-width: none; }
+.sa-rail::-webkit-scrollbar { display: none; }
+.sa-rail-domaines {
+  display: flex; flex-direction: column; gap: 4px; align-items: center;
+  flex: 1 1 auto; min-height: 92px; width: 100%;
+  overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain;
+  scrollbar-width: none; padding: 2px 0;
+}
+.sa-rail-domaines::-webkit-scrollbar { display: none; }
+.sa-rail-domaines.sa-defile-haut { -webkit-mask: linear-gradient(transparent, #000 22px); mask: linear-gradient(transparent, #000 22px); }
+.sa-rail-domaines.sa-defile-bas { -webkit-mask: linear-gradient(#000 calc(100% - 22px), transparent); mask: linear-gradient(#000 calc(100% - 22px), transparent); }
+.sa-rail-domaines.sa-defile-haut.sa-defile-bas { -webkit-mask: linear-gradient(transparent, #000 22px, #000 calc(100% - 22px), transparent); mask: linear-gradient(transparent, #000 22px, #000 calc(100% - 22px), transparent); }
+.sa-rail-domaines .sa-rail-domaine { flex: none; }
+.sa-rail-pied { flex: none; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--nav-separateur, transparent); display: flex; flex-direction: column; gap: 6px; align-items: center; }
+.sa-rail-sortie { color: var(--rouge) !important; }
+.sa-rail-sortie:hover { background: color-mix(in srgb, var(--rouge) 14%, transparent) !important; }
+
+.sa-infobulle-flottante {
+  position: fixed; z-index: 200; pointer-events: none;
+  white-space: nowrap; padding: 6px 10px;
+  border-radius: var(--r-petit);
+  background: var(--ardoise, #1F2B24); color: #fff;
+  font-size: 0.78rem; font-weight: 500;
+  box-shadow: var(--ombre-flottante);
+  transform: translateY(-50%);
+  animation: sa-infobulle 0.12s ease-out;
+}
+.sa-infobulle-flottante[hidden] { display: none; }
+@keyframes sa-infobulle { from { opacity: 0; transform: translate(-4px, -50%); } }
 
 .sa-rail-domaine,
 .sa-rail-bouton {
@@ -98,7 +133,7 @@ html[data-theme] .sa-badge.ton-succes { color: color-mix(in srgb, var(--vert-ok)
 .sa-rail-domaine.actif::before {
   content: '';
   position: absolute;
-  left: -11px; top: 10px; bottom: 10px;
+  left: -10px; top: 10px; bottom: 10px;
   width: 3px;
   border-radius: 0 3px 3px 0;
   background: var(--ocre);
@@ -116,26 +151,7 @@ html[data-theme] .sa-badge.ton-succes { color: color-mix(in srgb, var(--vert-ok)
   box-shadow: 0 0 0 2px var(--nav-fond);
 }
 
-/* Infobulle du rail, à droite, sans JavaScript. */
-@media (hover: hover) and (min-width: 981px) {
-  .sa-rail [data-infobulle]:hover::after {
-    content: attr(data-infobulle);
-    position: absolute;
-    left: calc(100% + 12px);
-    top: 50%;
-    transform: translateY(-50%);
-    white-space: nowrap;
-    padding: 6px 10px;
-    border-radius: var(--r-petit);
-    background: var(--ardoise, #1F2B24);
-    color: #fff;
-    font-size: 0.78rem;
-    font-weight: 500;
-    pointer-events: none;
-    box-shadow: var(--ombre-flottante);
-    z-index: 90;
-  }
-}
+/* Infobulle du rail : voir .sa-infobulle-flottante (position fixe, super-admin-coque.js). */
 
 .sa-avatar {
   width: 32px; height: 32px;

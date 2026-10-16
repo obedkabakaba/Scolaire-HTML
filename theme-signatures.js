@@ -57,6 +57,10 @@
     nexus: { titre: 'Le Réseau', recit: 'Nexus voit l’école comme un réseau vivant : chaque élève, chaque classe, chaque note est un nœud. Les données circulent en impulsions de lumière et la console veille.' },
     orbite: { titre: 'L’Aube orbitale', recit: 'Vue depuis l’orbite, l’école est un point lumineux qui s’éveille avec l’aube. Le ciel change de couleur avec l’heure, les satellites veillent et la course du soleil rythme la journée.' },
     fluide: { titre: 'Le Lagon', recit: 'Une école vue à travers l’eau claire d’un lagon. Chaque surface est une goutte de verre : elle laisse passer la lumière, capte le reflet sous votre doigt et la journée s’y remplit comme un verre d’eau.' },
+    pro: { titre: 'Le Cockpit',
+      recit: 'Une salle de pilotage silencieuse : un rail marine, un seul voyant bleu, des chiffres alignés au cordeau. Pro transforme les compteurs de votre école en indicateurs clés et laisse le reste se taire.' },
+    savane: { titre: 'L’Heure dorée',
+      recit: 'Fin d’après-midi dans la savane : le soleil descend, les acacias se découpent sur le ciel et les oiseaux rentrent. On avance d’un pas régulier ; la semaine se lit comme une piste où chaque jour laisse son empreinte.' },
     vibra: { titre: 'Le Campus vibrant', recit: 'Dans un campus afrofuturiste, l’or et le bleu pétrole vibrent ensemble. Chaque connexion entre élèves, professeurs et familles allume un fil de lumière, et le pouls de l’école bat sous vos yeux.' }
   };
 
@@ -156,6 +160,15 @@
       [1, 2, 3].forEach(function (i) {
         var anneau = el('div', 'sg-anneau sg-anneau-' + i); anneau.append(el('i', 'sg-satellite')); s.append(anneau);
       });
+    },
+    pro: function (s) { s.append(el('div', 'sg-quadrillage'), el('div', 'sg-radar')); },
+    savane: function (s) {
+      s.append(el('div', 'sg-soleil-couchant'), el('div', 'sg-acacias'));
+      tirer(s, 4, 'sg-oiseau', function (o, i) {
+        o.style.top = (10 + i * 7) + '%'; o.style.animationDuration = (34 + i * 9) + 's'; o.style.animationDelay = (-i * 11) + 's';
+        o.style.setProperty('--sg-echelle', (1 - i * 0.15).toFixed(2));
+      });
+      tirer(s, 14, 'sg-herbe', function (h, i) { h.style.left = (i / 14 * 100 + aleatoire(0, 5)) + '%'; h.style.animationDelay = (-aleatoire(0, 4)).toFixed(1) + 's'; h.style.height = aleatoire(18, 38).toFixed(0) + 'px'; });
     },
     fluide: null, /* le lagon de verre liquide est dessiné par theme-fluide.js */
     vibra: function (s) { var c = el('canvas', 'sg-constellation'); s.append(c); constellation(c); }
@@ -515,6 +528,80 @@
       }
       chaqueSeconde(rendu);
       return w;
+    },
+
+    /* Indicateurs clés : des rapports calculés à partir des compteurs que
+       l'écran affiche déjà. Rien n'est demandé au serveur, rien n'est inventé ;
+       un indicateur dont les compteurs manquent n'est pas affiché. */
+    pro: function () {
+      var w = carte('pro', 'Indicateurs clés', 'Calculés en direct depuis les compteurs de cet écran.');
+      var grille = el('div', 'sg-pro-grille');
+      var note = el('p', 'sg-w-note');
+      w.append(grille, note);
+      function nombre(id) { var n = document.getElementById(id); var v = n && n.textContent.replace(/[\s\u202f]/g, '').replace(',', '.'); var m = v && v.match(/^-?\d+(\.\d+)?/); return m ? parseFloat(m[0]) : null; }
+      var fmt = new Intl.NumberFormat('fr', { maximumFractionDigits: 1 });
+      function rendu() {
+        if (!w.isConnected) return false;
+        var e = nombre('stat-eleves'), p = nombre('stat-profs'), c = nombre('stat-classes'), r = nombre('stat-impayes'), m = nombre('stat-reussite');
+        var kpi = [];
+        if (e && c) kpi.push(['Élèves par classe', fmt.format(e / c), Math.min(1, e / c / 45), e / c > 40 ? 'alerte' : '']);
+        if (e && p) kpi.push(['Élèves par professeur', fmt.format(e / p), Math.min(1, e / p / 40), e / p > 35 ? 'alerte' : '']);
+        if (e && r !== null) kpi.push(['Retards de paiement', fmt.format(r / e * 100) + ' %', Math.min(1, r / e), r / e > 0.15 ? 'alerte' : '']);
+        if (m !== null) kpi.push(['Moyenne générale', fmt.format(m) + ' %', Math.min(1, m / 100), m < 50 ? 'alerte' : '']);
+        var sig = JSON.stringify(kpi);
+        if (grille.dataset.sig === sig) return;
+        grille.dataset.sig = sig; grille.replaceChildren();
+        kpi.forEach(function (k) {
+          var t = el('div', 'sg-pro-kpi' + (k[3] ? ' sg-pro-alerte' : '')), barre = el('i', 'sg-pro-barre');
+          barre.style.setProperty('--sg-part', (k[2] * 100).toFixed(1) + '%');
+          t.append(el('span', 'sg-pro-lib', k[0]), el('strong', 'sg-pro-valeur', k[1]), barre);
+          grille.append(t);
+        });
+        note.textContent = kpi.length ? 'Mise à jour ' + heure(new Date(), true) + ' · un liseré rouge signale un seuil dépassé.' : 'Les indicateurs apparaissent dès que les compteurs de l’écran sont chargés.';
+      }
+      chaqueSeconde(rendu);
+      return w;
+    },
+
+    /* La marche de la semaine : chaque jour passé laisse une empreinte, le
+       soleil marque aujourd'hui et les événements de l'écran se posent sur
+       leur jour. */
+    savane: function () {
+      var w = carte('savane', 'La marche de la semaine', 'Chaque jour laisse son empreinte sur la piste.');
+      var piste = el('ol', 'sg-piste'), note = el('p', 'sg-w-note');
+      w.append(piste, note);
+      var MOIS = { janv: 0, 'févr': 1, fevr: 1, mars: 2, avr: 3, mai: 4, juin: 5, juil: 6, 'août': 7, aout: 7, sept: 8, oct: 9, nov: 10, 'déc': 11, dec: 11 };
+      function evenements(lundi) {
+        var parJour = {}, src = document.getElementById('liste-evenements');
+        if (!src) return parJour;
+        Array.from(src.children).forEach(function (li) {
+          var t = li.textContent.replace(/\s+/g, ' ').trim(), m = t.match(/(\d{1,2})\s+(janv|févr|fevr|mars|avr|mai|juin|juil|août|aout|sept|oct|nov|déc|dec)/i);
+          if (!m) return;
+          var d = new Date(lundi.getFullYear(), MOIS[m[2].toLowerCase()], +m[1]);
+          if (d < lundi - 180 * 86400000) d.setFullYear(d.getFullYear() + 1);
+          var i = Math.round((d - lundi) / 86400000);
+          if (i >= 0 && i < 7) (parJour[i] = parJour[i] || []).push(t.replace(m[0], '').replace(/^[\s.·—-]+/, '').slice(0, 60));
+        });
+        return parJour;
+      }
+      function rendu() {
+        if (!w.isConnected) return false;
+        var d = new Date(), j = (d.getDay() + 6) % 7, lundi = new Date(d.getFullYear(), d.getMonth(), d.getDate() - j);
+        var ev = evenements(lundi), sig = j + JSON.stringify(ev);
+        if (piste.dataset.sig === sig) return;
+        piste.dataset.sig = sig; piste.replaceChildren();
+        ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'].forEach(function (nom, i) {
+          var li = el('li', 'sg-jour' + (i < j ? ' sg-passe' : i === j ? ' sg-aujourdhui' : '') + (i > 4 ? ' sg-repos' : ''));
+          var date = new Date(lundi.getFullYear(), lundi.getMonth(), lundi.getDate() + i);
+          li.append(el('span', 'sg-trace'), el('span', 'sg-jour-nom', nom), el('span', 'sg-jour-num', String(date.getDate())));
+          if (ev[i]) { li.classList.add('sg-evenement'); li.title = ev[i].join(' · '); li.setAttribute('aria-label', nom + ' ' + date.getDate() + ' : ' + ev[i].join(', ')); }
+          piste.append(li);
+        });
+        var nbEv = Object.keys(ev).reduce(function (n, k) { return n + ev[k].length; }, 0);
+        note.textContent = (j < 5 ? (j === 4 ? 'Dernier jour de classe de la semaine.' : (4 - j) + ' jour' + (4 - j > 1 ? 's' : '') + ' de classe avant le week-end.') : 'C’est le week-end : la savane se repose.') + (nbEv ? ' ' + nbEv + ' événement' + (nbEv > 1 ? 's' : '') + ' cette semaine.' : '');
+      }
+      chaqueSeconde(rendu);
+      return w;
     }
   };
 
@@ -585,7 +672,7 @@
     });
   }, { passive: true });
 
-  var EFFETS = { ardoise: 'poudre', fluide: 'onde', recre: 'etoiles', vibra: 'pulsation', elan: 'etincelles', nexus: 'cible', orbite: 'onde', nuit: 'etoiles', yohali: 'pulsation', perspective: 'cible', studio: 'onde', pure: 'cible' };
+  var EFFETS = { ardoise: 'poudre', fluide: 'onde', recre: 'etoiles', vibra: 'pulsation', elan: 'etincelles', nexus: 'cible', orbite: 'onde', nuit: 'etoiles', yohali: 'pulsation', perspective: 'cible', studio: 'onde', pure: 'cible', pro: 'cible', savane: 'etincelles' };
   document.addEventListener('pointerdown', function (e) {
     if (calme.matches || e.button > 0) return;
     var cible = e.target.closest && e.target.closest('button,.bouton,.nav-item,a.carte-stat,.carte-stat,[role="button"],.fl-onglet,.sg-w-bouton');

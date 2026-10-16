@@ -1,0 +1,81 @@
+/* ==========================================================================
+   Savane — « L'Heure dorée »
+   --------------------------------------------------------------------------
+   La fin d'après-midi dans la savane : un soleil bas et orangé, des acacias
+   en ombre chinoise, la terre chaude et l'herbe sèche. Une apparence pour
+   travailler sans hâte, avec la lumière dorée qui annonce la fin de la
+   journée. Le rail reste déplaçable comme pour les apparences classiques.
+   Scène, widget et gestes : theme-signatures.
+   ========================================================================== */
+html[data-theme="savane"] {
+  --ardoise: #2E2117;
+  --ardoise-2: #3B2A1D;
+  --craie: #F8EFDF;
+  --craie-2: #FFF9EF;
+  --ocre: #AE5418;
+  --ocre-dark: #9E4C14;
+  --ocre-clair: #EDB06B;
+  --encre: #5E7A2E;
+  --rouge: #B23A2E;
+  --vert-ok: #55702A;
+  --texte-sombre: #2E2117;
+  --texte-att: #75634F;
+  --bordure: #EADBC2;
+  --ligne: #EADBC2;
+
+  --police-titre: 'Fraunces', Georgia, serif;
+
+  --r-carte: 14px;
+  --r-bouton: 10px;
+  --r-petit: 8px;
+  --r-pilule: 22px;
+
+  --ombre-carte: 0 2px 10px rgba(94, 52, 18, 0.07);
+  --ombre-flottante: 0 16px 44px rgba(94, 52, 18, 0.20);
+
+  --nav-fond: #3B2617;
+  --nav-texte-fort: #FFF4E2;
+  --nav-texte: rgba(255, 238, 210, 0.68);
+  --nav-texte-faible: rgba(255, 238, 210, 0.42);
+  --nav-actif-fond: rgba(237, 176, 107, 0.18);
+  --nav-separateur: rgba(255, 238, 210, 0.14);
+}
+
+/* Le rail est un ciel de crépuscule : il s'assombrit vers le haut et laisse
+   deviner, tout en bas, la silhouette des acacias. */
+html[data-theme="savane"] .barre-laterale {
+  background-color: var(--nav-fond);
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 90' preserveAspectRatio='xMidYMax slice'%3E%3Cg fill='%231E140C' fill-opacity='.75'%3E%3Cpath d='M0 90V78c30-6 60-4 90 0s70 6 100-2 40-4 50 0v14z'/%3E%3Cpath d='M58 80V56h3v24zM30 58c6-8 20-12 30-10 12-4 30 0 36 8-14 3-50 4-66 2zM172 82V62h2v20zM150 64c6-6 16-8 23-7 9-3 22 0 27 6-11 2-38 3-50 1z'/%3E%3C/g%3E%3C/svg%3E"),
+    linear-gradient(180deg, #2A1B12 0%, #3B2617 45%, #6A3A1A 85%, #8E4A1B 100%);
+  background-repeat: no-repeat;
+  background-position: bottom center, 0 0;
+  background-size: 100% auto, 100% 100%;
+}
+html[data-theme="savane"] .nav-item.actif {
+  background: linear-gradient(90deg, rgba(237, 176, 107, 0.26), rgba(237, 176, 107, 0.06));
+  box-shadow: inset 3px 0 0 var(--ocre-clair);
+  color: #FFF4E2;
+}
+
+/* Les cartes sont posées sur la terre chaude, comme du papier kraft clair. */
+html[data-theme="savane"] :is(.carte-stat, .panneau, .widget, .carte-section, .carte-cours, .carte-recap, .conteneur-tableau) {
+  box-shadow: var(--ombre-carte);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+html[data-theme="savane"] :is(.carte-stat, .carte-cours, .carte-recap):hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px rgba(194, 96, 27, 0.16);
+}
+html[data-theme="savane"] h1 { letter-spacing: -0.01em; }
+html[data-theme="savane"] :is(th, .sa-table th) { background: #F3E4C9; color: #4A3423; }
+html[data-theme="savane"] .conteneur-tableau tbody tr:hover { background: rgba(194, 96, 27, 0.06); }
+html[data-theme="savane"] :is(.bouton-principal, .valider) { background: linear-gradient(180deg, #AA5317, #8C4215); color: #FFF9EF; }
+html[data-theme="savane"] :is(input, select, textarea):focus { outline: none; border-color: var(--ocre); box-shadow: 0 0 0 3px rgba(194, 96, 27, 0.18); }
+
+@media screen and (min-width: 781px) {
+  html[data-theme="savane"]:is([data-nav-position="haut"], [data-nav-position="bas"]) .barre-laterale {
+    background-image: linear-gradient(90deg, #2A1B12, #3B2617 60%, #6A3A1A);
+    box-shadow: 0 6px 20px rgba(94, 52, 18, 0.22);
+  }
+}

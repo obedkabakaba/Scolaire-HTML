@@ -48,6 +48,8 @@
    sélectionné.
 */
 window.ARDOISE_THEMES = [
+  { cle: 'pro', nom: 'Pro', description: 'Le cockpit : rail marine, accent bleu électrique, chiffres alignés au cordeau et indicateurs clés calculés depuis vos compteurs.', devise: 'Piloter, pas subir.', apercu: { fond: '#F3F5F9', surface: '#FFFFFF', accent: '#2563EB', barre: '#0B1220', texte: '#0B1220' } },
+  { cle: 'savane', nom: 'Savane', description: 'L’heure dorée : soleil bas, acacias en ombre chinoise, oiseaux de passage et la marche de la semaine.', devise: 'Avancer sans hâte, arriver sans faute.', apercu: { fond: '#F8EFDF', surface: '#FFF9EF', accent: '#AE5418', barre: '#3B2617', texte: '#2E2117' } },
   { cle: 'vibra', nom: 'Vibra', dispositionMenu: false, description: 'Le campus vibrant : ivoire, or et bleu pétrole, constellation de lumière et pouls de l’école.', devise: 'Relier, révéler, rayonner.', apercu: { fond: '#17343B', surface: '#F6EFE4', accent: '#A5793D', barre: '#EAD8BD', texte: '#17303B' } },
   { cle: 'fluide', nom: 'Fluide', dispositionMenu: false, description: 'Le lagon : verre liquide translucide, reflets qui suivent le doigt, dock flottant et île dynamique.', devise: 'Voir clair, en toute fluidité.', apercu: { fond: '#D1E4EA', surface: '#EBF6F8', accent: '#007E9B', barre: '#C4E8ED', texte: '#10354E' } },
   { cle: 'orbite', nom: 'Orbite Aube', dispositionMenu: false, description: 'L’aube orbitale : bleu céleste, satellites, ciel qui change avec l’heure et course du soleil.', devise: 'Garder le cap, en douceur.', apercu: { fond: '#F1F8FF', surface: '#FFFFFF', accent: '#0860D9', barre: '#FFFFFF', texte: '#102B52' } },

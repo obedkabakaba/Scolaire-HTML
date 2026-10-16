@@ -1,6 +1,6 @@
 # Signatures des apparences
 
-Chaque apparence d'Ardoise raconte désormais une histoire. `theme-signatures.js`
+Chaque apparence d'Ardoise raconte désormais une histoire (quatorze apparences depuis l'arrivée de Pro et Savane). `theme-signatures.js`
 et `theme-signatures.css` sont chargés par `theme.js` pour **toutes** les
 apparences (jamais sur les pages publiques) et leur donnent :
 
@@ -28,6 +28,8 @@ apparences (jamais sur les pages publiques) et leur donnent :
 | Orbite Aube (`orbite`) | L'Aube orbitale | anneaux et satellites ; le ciel change avec l'heure (aube, jour, crépuscule, nuit) | **Course du soleil** de 6 h à 18 h | cartes en apesanteur |
 | Fluide (`fluide`) | Le Lagon | lagon vivant (nappes de couleur, caustiques) | **La journée se remplit** : un verre d'eau qui monte de 7 h à 17 h | verre liquide (voir FLUIDE.md), ondes au clic |
 | Vibra (`vibra`) | Le Campus vibrant | constellation d'or (canevas) | **Pouls de l'école** : électrocardiogramme d'or et compteurs réels de l'écran | reflet d'or sur les cartes, pulsation au clic |
+| Pro (`pro`) | Le Cockpit | quadrillage discret, radar bleu qui balaie le coin de l'écran | **Indicateurs clés** calculés depuis les compteurs de l'écran : élèves par classe, élèves par professeur, part des retards de paiement, moyenne ; liseré rouge au-delà d'un seuil | chiffres en chasse fixe, liseré bleu au survol, galon « PRO » sur la marque |
+| Savane (`savane`) | L'Heure dorée | soleil couchant, acacias en ombre chinoise, oiseaux de passage, herbes dans le vent ; rail en ciel de crépuscule | **La marche de la semaine** : une empreinte par jour passé, le soleil sur aujourd'hui, les événements de l'écran posés sur leur jour | entrée dans la chaleur, étincelles au clic |
 
 ## Règles tenues
 
@@ -86,3 +88,12 @@ changement d'apparence, accueil de première connexion joué une seule fois, et
 rail Super Admin sur un écran de 520 px de haut (Ardoise, Fluide, Nuit).
 `SIGNATURES_BROWSER` choisit un Chromium installé ; `SIGNATURES_SHOT` un
 dossier de captures. Service worker : v93, fichiers précachés.
+
+## Pro et Savane
+
+Deux apparences classiques (le rail reste déplaçable : gauche, droite, haut,
+bas, compact) avec leur fichier de couleurs et de finition :
+`theme-pro.css` et `theme-savane.css`, importés par `theme.css`, précachés par
+le service worker v94. Le serveur accepte les clés `pro` et `savane`
+(`THEMES_AUTORISES`), ainsi que `yohali`, la clé que le navigateur envoie pour
+Terranga et qui était jusqu'ici refusée.

@@ -9,7 +9,7 @@
 const fs = require('fs'), path = require('path'), http = require('http'), assert = require('assert/strict');
 const { chromium } = require('playwright');
 const root = __dirname;
-const THEMES = ['ardoise', 'studio', 'pure', 'nuit', 'yohali', 'elan', 'perspective', 'recre', 'nexus', 'orbite', 'fluide', 'vibra'];
+const THEMES = ['ardoise', 'studio', 'pure', 'nuit', 'yohali', 'elan', 'perspective', 'recre', 'nexus', 'orbite', 'fluide', 'vibra', 'pro', 'savane'];
 const user = { id: 42, ecole_id: 1, nom: 'Exemple', prenom: 'Awa', roles: ['directeur'], email: 'test@example.invalid' };
 const data = { effectifs: { nb_eleves: 428, nb_professeurs: 32, nb_classes: 18 }, taux_reussite_global: 86,
   impayes: { nb_eleves_en_retard: 7 }, annee_active: { libelle: '2026–2027' }, notes: { encodees: 340, attendues: 400, restantes: 60 },

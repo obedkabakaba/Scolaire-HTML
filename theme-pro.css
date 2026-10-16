@@ -1,0 +1,105 @@
+/* ==========================================================================
+   Pro — « Le Cockpit »
+   --------------------------------------------------------------------------
+   L'apparence des directions qui pilotent : rail marine profond, un seul
+   accent bleu électrique, chiffres en police à chasse fixe alignés au
+   pixel, densité d'un outil professionnel. Rien ne décore, tout informe.
+   Le rail reste déplaçable (gauche, droite, haut, bas, compact) comme pour
+   les apparences classiques. Scène, widget et gestes : theme-signatures.
+   ========================================================================== */
+html[data-theme="pro"] {
+  --ardoise: #0B1220;
+  --ardoise-2: #131C2E;
+  --craie: #F3F5F9;
+  --craie-2: #FFFFFF;
+  --ocre: #2563EB;
+  --ocre-dark: #1D4ED8;
+  --ocre-clair: #93C5FD;
+  --encre: #0369A1;
+  --rouge: #DC2626;
+  --vert-ok: #047857;
+  --texte-sombre: #0B1220;
+  --texte-att: #556070;
+  --bordure: #E2E6EE;
+  --ligne: #EDF0F5;
+
+  --police-titre: 'Inter', system-ui, sans-serif;
+  --police-corps: 'Inter', system-ui, sans-serif;
+
+  --r-carte: 8px;
+  --r-bouton: 6px;
+  --r-petit: 4px;
+  --r-pilule: 6px;
+
+  --ombre-carte: 0 1px 2px rgba(11, 18, 32, 0.06), 0 0 0 1px rgba(11, 18, 32, 0.03);
+  --ombre-flottante: 0 12px 32px rgba(11, 18, 32, 0.18);
+
+  --nav-fond: #0B1220;
+  --nav-texte-fort: #F3F5F9;
+  --nav-texte: rgba(203, 213, 225, 0.72);
+  --nav-texte-faible: rgba(203, 213, 225, 0.42);
+  --nav-actif-fond: rgba(37, 99, 235, 0.22);
+  --nav-separateur: rgba(203, 213, 225, 0.12);
+}
+
+/* Titres serrés, chiffres au cordeau. */
+html[data-theme="pro"] h1 { font-weight: 650; letter-spacing: -0.02em; }
+html[data-theme="pro"] :is(h2, h3) { letter-spacing: -0.01em; }
+html[data-theme="pro"] :is(.carte-stat .valeur, .valeur, td, .sg-pro-valeur) { font-variant-numeric: tabular-nums; }
+html[data-theme="pro"] .carte-stat .valeur { font-family: 'IBM Plex Mono', var(--police-mono); font-weight: 500; letter-spacing: -0.03em; }
+
+/* La marque porte son galon. */
+html[data-theme="pro"] .barre-laterale .marque::after {
+  content: 'PRO';
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  vertical-align: middle;
+  background: var(--ocre);
+  color: #fff;
+  font-family: var(--police-mono);
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+}
+
+/* Écran actif : un trait d'accent, comme le voyant d'un tableau de bord. */
+html[data-theme="pro"] .nav-item { border-radius: 6px; }
+html[data-theme="pro"] .nav-item.actif { box-shadow: inset 3px 0 0 var(--ocre); background: var(--nav-actif-fond); color: #fff; }
+
+/* Cartes : un liseré d'accent apparaît au survol, le pointeur se sent. */
+html[data-theme="pro"] :is(.carte-stat, .panneau, .widget, .carte-section, .carte-cours, .carte-recap) {
+  box-shadow: var(--ombre-carte);
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+html[data-theme="pro"] :is(.carte-stat, .carte-cours, .carte-recap):hover {
+  box-shadow: 0 0 0 1px var(--ocre), 0 6px 18px rgba(37, 99, 235, 0.12);
+}
+
+/* Tableaux denses : en-têtes en petites capitales, rangées zébrées. */
+html[data-theme="pro"] :is(th, .sa-table th) {
+  background: #F6F8FB;
+  color: #334155;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+html[data-theme="pro"] .conteneur-tableau tbody tr:nth-child(even) { background: #FAFBFD; }
+html[data-theme="pro"] .conteneur-tableau tbody tr:hover { background: #EEF4FF; }
+
+/* Boutons et champs : nets, focus bleu franc. */
+html[data-theme="pro"] :is(.bouton-principal, .valider) { background: var(--ocre); color: #fff; }
+html[data-theme="pro"] :is(.bouton-principal, .valider):hover { background: var(--ocre-dark); }
+html[data-theme="pro"] :is(input, select, textarea):focus { outline: none; border-color: var(--ocre); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18); }
+html[data-theme="pro"] :is(a, button):focus-visible { outline: 2px solid var(--ocre); outline-offset: 2px; }
+
+/* Barre de défilement fine, couleur de la console. */
+html[data-theme="pro"] * { scrollbar-width: thin; scrollbar-color: #C3CAD6 transparent; }
+
+/* Navigation horizontale (haut ou bas) : ombre discrète, galon conservé. */
+@media screen and (min-width: 781px) {
+  html[data-theme="pro"]:is([data-nav-position="haut"], [data-nav-position="bas"]) .barre-laterale {
+    box-shadow: 0 6px 20px rgba(11, 18, 32, 0.22);
+  }
+}

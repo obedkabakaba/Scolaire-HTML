@@ -522,8 +522,15 @@
 
     const corps = document.getElementById('res-corps');
     if (donnees.bulletins.length === 0) {
+      // La direction peut avoir programmé l'ouverture des résultats : on donne
+      // la date plutôt que de laisser croire que rien n'est prévu.
+      const prochaine = donnees.prochaine_publication
+        ? new Date(donnees.prochaine_publication).toLocaleString('fr-FR', { dateStyle: 'full', timeStyle: 'short' })
+        : null;
       corps.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--texte-doux); padding:24px;">
-        Aucun bulletin n'a encore été publié pour cet élève.</td></tr>`;
+        ${prochaine
+          ? `Les résultats seront disponibles ici à partir du <strong>${echapper(prochaine)}</strong>.`
+          : "Aucun bulletin n'a encore été publié pour cet élève."}</td></tr>`;
     } else {
       corps.innerHTML = donnees.bulletins.map(b => `
         <tr>

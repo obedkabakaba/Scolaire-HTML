@@ -90,6 +90,35 @@ CORPS = """
   </div>
 </div>
 
+<!-- ============================================================== VIDÉO -->
+<!-- Masquée tant que la vidéo n'a pas chargé : sans les fichiers dans
+     /videos/, la page ne montre pas de lecteur vide. Portrait sur un
+     téléphone tenu droit, paysage partout ailleurs. -->
+<section class="section serree" id="video" aria-labelledby="titre-video" data-video-ardoise hidden>
+  <div class="conteneur">
+    <div class="section-entete">
+      <span class="eyebrow">Ardoise en vidéo</span>
+      <h2 id="titre-video">Comprendre Ardoise en quelques minutes</h2>
+      <p class="chapeau">Ce que la plateforme fait pour une école, du registre au bulletin, expliqué simplement.</p>
+    </div>
+    <div style="max-width:960px; margin:0 auto; border-radius:18px; overflow:hidden; background:#111A19;">
+      <video controls playsinline preload="metadata" aria-label="Vidéo de présentation d'Ardoise"
+             style="display:block; width:100%; height:auto; max-height:82vh; margin:0 auto;"></video>
+    </div>
+  </div>
+</section>
+<script>
+(function () {
+  var s = document.querySelector('[data-video-ardoise]');
+  if (!s) return;
+  var v = s.querySelector('video');
+  var portrait = window.matchMedia('(max-width: 700px) and (orientation: portrait)').matches;
+  v.addEventListener('loadedmetadata', function () { s.hidden = false; });
+  v.addEventListener('error', function () { s.hidden = true; });
+  v.src = portrait ? '/videos/ardoise-explicatif-portrait.mp4' : '/videos/ardoise-explicatif-paysage.mp4';
+})();
+</script>
+
 <!-- ============================================================== VALEUR -->
 <section class="section">
   <div class="conteneur">
@@ -444,6 +473,7 @@ JSONLD = [
         "logo": f"{SITE}/icone-512.png",
         "founder": {"@type": "Person", "name": "Obed Kabakaba"},
         "email": "myardoise@gmail.com",
+        "sameAs": ["https://www.instagram.com/myardoise/"],
         "address": {"@type": "PostalAddress", "addressLocality": "Kinshasa",
                     "addressCountry": "CD"},
         "contactPoint": {"@type": "ContactPoint", "telephone": "+243855035693",

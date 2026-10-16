@@ -447,6 +447,7 @@ def apporteurs():
         <h2>Une question avant de vous inscrire&nbsp;?</h2>
         <ul class="mini-liste">
           <li><a href="https://wa.me/243855035693" rel="noopener">WhatsApp : 0855 035 693</a></li>
+          <li><a href="https://www.instagram.com/myardoise/" target="_blank" rel="noopener">Instagram : @myardoise</a></li>
           <li><a href="mailto:myardoise@gmail.com">myardoise@gmail.com</a></li>
           <li>Kinshasa, République démocratique du Congo</li>
         </ul>

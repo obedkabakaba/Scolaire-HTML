@@ -70,7 +70,8 @@
    v69 : l'arrondi intérieur suit le rail déployé ou replié et reste visible
          pendant le défilement du contenu. Terranga (clé interne yohali) et son
          alias Kivu conservent leur apparence d'origine, sans cet ajout. */
-const VERSION='ardoise-v91';
+const VERSION='ardoise-v92';
+/* v92 : Super Admin — domaine « Communications » (boîte de réception, préférences de notification e-mail / WhatsApp), cloche dans la barre haute et bouton « Rédiger avec l'IA » sur chaque zone de message (super-admin-vues-communications.js et super-admin-communications.css, précachés ; super-admin.html modifié). */
 /* v91 : case d'accord obligatoire sur la politique de confidentialité (inscription, essai, contact, « Écrivez-nous » — catalogue.js, site.css) et politique mise à jour (confidentialite.html). */
 /* v90 : espace partenaire refondu (espace-apporteur.html/.css/.js : inscription confirmée par e-mail, prospects, gains, kit de partage, messagerie) et nouvelle rubrique « Messagerie » des apporteurs dans super-admin.html (précaché). */
 /* v89 : Super Admin — QR code à l'activation de la double authentification, choix du canal (notification / e-mail) des annonces et bilan réel des e-mails, note de session courte sur l'écran de connexion. */
@@ -231,7 +232,8 @@ const COQUILLE=[
   'evenements-types.js',
   'hors-ligne.js','didacticiel.js','didacticiel.css','super-admin-styles.css',
   'super-admin-noyau.js','super-admin-coque.js','super-admin-coque.css','super-admin-vues-pilotage.js','super-admin-vues-ecoles.js',
-  'super-admin-vues-explorer.js','super-admin-vues-systeme.js','manifest.json',
+  'super-admin-vues-explorer.js','super-admin-vues-systeme.js',
+  'super-admin-vues-communications.js','super-admin-communications.css','manifest.json',
   'icone-192.png','icone-384.png','icone-512.png','icone-ios-180.png',
   'icone-maskable-192.png','icone-maskable-512.png','manifest.webmanifest'
 ];

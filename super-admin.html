@@ -75,6 +75,8 @@
      que les deux précédentes. -->
 <link rel="stylesheet" href="super-admin-control-center.css" />
 <link rel="stylesheet" href="super-admin-ia.css" />
+<!-- Communications : cloche, boîte de réception, préférences, rédaction IA. -->
+<link rel="stylesheet" href="super-admin-communications.css" />
 <!-- Coque de navigation par domaines (rail, panneau, barre haute, onglets
      d'espace de travail, tour de contrôle). Chargée APRÈS les feuilles
      précédentes : c'est elle qui redessine la charpente de la page. -->
@@ -414,13 +416,27 @@
         </div>
       </section>
 
-      <section class="sa-domaine" data-domaine="relation" data-libelle="Relation client" data-icone="bulle"
-               data-accueil="support" data-description="Tout ce qui attend une réponse : tickets, demandes du site public, annonces.">
-        <h2 class="sa-domaine-titre">Relation client</h2>
+      <section class="sa-domaine" data-domaine="communications" data-libelle="Communications" data-icone="bulle"
+               data-accueil="communications" data-description="Tous les messages au même endroit : ce que la plateforme vous signale, ce que vous recevez, ce que vous envoyez.">
+        <h2 class="sa-domaine-titre">Communications</h2>
         <div class="sa-nav-groupe">
+          <p class="sa-nav-groupe-titre">Notifications</p>
+          <ul class="sa-menu">
+            <li><a href="#/communications" data-route="communications" data-compteur="boite">Boîte de réception</a></li>
+            <li><a href="#/communications/preferences" data-route="communications/preferences">Préférences de notification</a></li>
+          </ul>
+        </div>
+        <div class="sa-nav-groupe">
+          <p class="sa-nav-groupe-titre">Messages reçus</p>
           <ul class="sa-menu">
             <li><a href="#/support" data-route="support" data-compteur="tickets">Tickets de support</a></li>
-            <li><a href="#/prospects" data-route="prospects" data-compteur="prospects">Demandes et messages</a></li>
+            <li><a href="#/prospects" data-route="prospects" data-compteur="prospects">Demandes et messages du site</a></li>
+            <li><a href="#/apporteurs/messagerie" data-route="apporteurs/messagerie">Messagerie des apporteurs</a></li>
+          </ul>
+        </div>
+        <div class="sa-nav-groupe">
+          <p class="sa-nav-groupe-titre">Messages envoyés</p>
+          <ul class="sa-menu">
             <li><a href="#/notifications" data-route="notifications">Annonces aux écoles</a></li>
           </ul>
         </div>
@@ -441,7 +457,6 @@
             <li><a href="#/apporteurs" data-route="apporteurs">Vue d'ensemble</a></li>
             <li class="sa-espace" data-espace="Réseau d'apporteurs">
               <a href="#/apporteurs/profils" data-route="apporteurs/profils">Profils et badges</a>
-              <a href="#/apporteurs/messagerie" data-route="apporteurs/messagerie">Messagerie</a>
               <a href="#/apporteurs/candidatures" data-route="apporteurs/candidatures">Candidatures</a>
               <a href="#/apporteurs/declarations" data-route="apporteurs/declarations">Déclarations</a>
               <a href="#/apporteurs/attributions" data-route="apporteurs/attributions">Attributions</a>
@@ -665,6 +680,14 @@
         <span aria-hidden="true">☰</span>
       </button>
       <nav class="sa-fil" id="sa-fil" aria-label="Fil d'Ariane"></nav>
+      <div class="sa-cloche-zone" id="sa-cloche-zone">
+        <button type="button" class="sa-cloche" id="sa-cloche" aria-haspopup="true" aria-expanded="false"
+                aria-controls="sa-cloche-panneau" aria-label="Notifications">
+          <span class="sa-cloche-icone" aria-hidden="true"></span>
+          <span class="sa-cloche-pastille" id="sa-cloche-pastille" hidden></span>
+        </button>
+        <div class="sa-cloche-panneau" id="sa-cloche-panneau" role="dialog" aria-label="Notifications récentes" hidden></div>
+      </div>
       <button type="button" class="sa-recherche-globale" id="sa-recherche-globale" aria-label="Rechercher ou aller à… (Ctrl K)">
         <span class="sa-recherche-icone" aria-hidden="true"></span>
         <span class="sa-recherche-texte">Rechercher un écran, une école, une erreur…</span>
@@ -728,6 +751,10 @@
      vient après elles. La palette vient en dernier, elle s'appuie sur la
      coque pour connaître tous les écrans. -->
 <script src="super-admin-coque.js"></script>
+<!-- Après la coque (il lui emprunte icônes et pastilles), avant la palette :
+     cloche, boîte de réception, préférences de notification, et le bouton
+     « Rédiger avec l'IA » posé sur chaque zone où l'on écrit un message. -->
+<script src="super-admin-vues-communications.js"></script>
 <script src="super-admin-palette.js"></script>
 
 <script>
@@ -761,6 +788,7 @@
     'super-admin-vues-renouvellements.js',
     'super-admin-vues-compte.js',
     'super-admin-coque.js',
+    'super-admin-vues-communications.js',
     'super-admin-palette.js'
   ];
 

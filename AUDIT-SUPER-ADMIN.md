@@ -20,7 +20,7 @@ onglets, les vues d'ensemble et la palette. Ajouter un écran = une ligne de HTM
 |---|---|
 | **Pilotage** | Tour de contrôle · Analyses · *Rapports et exports* (exports plateforme, exports financiers, rapports automatiques) |
 | **Écoles & clients** | Toutes les écoles · Statistiques · Renouvellements à traiter · *Abonnements* (échéancier, prix payés et remises) · *Explorateur* (écoles, élèves, professeurs, parents, classes) · Recherche dans les écoles |
-| **Relation client** | Tickets de support · Demandes et messages · Annonces aux écoles |
+| **Communications** | *Notifications* : Boîte de réception · Préférences de notification (plateforme / e-mail / WhatsApp, par catégorie) · *Messages reçus* : Tickets de support · Demandes et messages du site · Messagerie des apporteurs · *Messages envoyés* : Annonces aux écoles. Cloche dans la barre haute ; bouton « Rédiger avec l'IA » sous chaque zone de message de l'espace. |
 | **Croissance** | Démonstrations · Apporteurs d'affaires (vue d'ensemble, *Réseau*, *Rémunération*, *Programme*) |
 | **Utilisateurs & accès** | Utilisateurs · Connexions et sessions · Voir comme… · *Droits par rôle* (matrice, par rôle) · Permissions financières |
 | **Finance** | Tableau financier · Alertes · *Analyse* (4) · *Offres et prix* · *Remises* (3) · *Dépenses et services* (5) · Journal financier |

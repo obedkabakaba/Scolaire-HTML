@@ -102,7 +102,7 @@
    try{p=localStorage.getItem('ardoise_nav_position');c=localStorage.getItem('ardoise_nav_compact');}catch(e){}
    if(!c&&th==='studio')c='oui';
    document.documentElement.setAttribute('data-nav-position',['gauche','droite','haut','bas'].indexOf(p)!==-1?p:'gauche');
-   document.documentElement.setAttribute('data-nav-compact',c==='oui'?'oui':'non');})();
+   document.documentElement.setAttribute('data-nav-compact',c==='oui'?'oui':'non');try{if(localStorage.getItem('ardoise_animations')==='non')document.documentElement.setAttribute('data-animations','non');}catch(e){}})();
 </script>
 <link rel="stylesheet" href="theme.css" />
 <link rel="stylesheet" href="ui.css" />

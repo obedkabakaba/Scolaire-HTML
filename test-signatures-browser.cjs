@@ -171,7 +171,51 @@ async function sortieAtteignable(page) {
   }
   console.log('Accueil de première connexion : OK');
 
-  /* 4. Super Admin sur un écran bas : Apparence, compte et sortie restent
+  /* 4. Animations désactivées dans Mon profil : choix gardé sur l'appareil,
+        appliqué avant le premier affichage, rien ne bouge, et réactivable. */
+  {
+    const ctx2 = await browser.newContext({ viewport: { width: 1440, height: 900 }, serviceWorkers: 'block' });
+    await ctx2.addInitScript((u) => {
+      if (sessionStorage.getItem('__init')) return; sessionStorage.setItem('__init', '1');
+      localStorage.setItem('ardoise_user', JSON.stringify(u)); localStorage.setItem('ardoise_access_token', 'test'); localStorage.setItem('ardoise_theme', 'nuit');
+    }, user);
+    await ctx2.route('**/*', (route) => { const url = new URL(route.request().url()); if (url.origin === base) return route.continue(); if (/google|gstatic/.test(url.hostname)) return route.abort(); return route.fulfill({ status: 200, contentType: 'application/json', body: url.pathname.endsWith('/dashboard/directeur') ? JSON.stringify(data) : url.pathname.includes('/notifications') ? '[]' : url.pathname.endsWith('/utilisateurs/moi') ? JSON.stringify(user) : '{}' }); });
+    const page = await ctx2.newPage();
+    await page.goto(base + '/mon-profil.html');
+    await page.waitForFunction(() => document.getElementById('case-animations') && document.getElementById('case-animations').dataset.pret);
+    assert.equal(await page.locator('#case-animations').isChecked(), true, 'activées par défaut');
+    await page.locator('#case-animations').uncheck();
+    assert.equal(await page.evaluate(() => document.documentElement.dataset.animations), 'non');
+    assert.match(await page.locator('#confirmation-animations').innerText(), /désactivées/);
+    // Rechargement : l'attribut est posé par l'amorçage, avant theme.js.
+    await page.addInitScript(() => { document.addEventListener('readystatechange', () => { if (document.readyState === 'interactive') window.__avantTheme = document.documentElement.getAttribute('data-animations'); }); });
+    await page.goto(base + '/dashboard-directeur.html'); await page.waitForSelector('.sg-w-nuit');
+    assert.equal(await page.evaluate(() => window.__avantTheme), 'non', 'appliqué dès le premier affichage');
+    const etoile = await page.locator('.sg-etoile').first().evaluate((n) => getComputedStyle(n).animationName);
+    assert.equal(etoile, 'none', 'le ciel ne scintille plus');
+    assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector('.contenu')).animationDuration), '1e-05s');
+    await page.waitForTimeout(1300);
+    await page.evaluate(() => window.ArdoiseTheme.appliquer('vibra', { synchroniserServeur: false }));
+    await page.waitForSelector('.sg-annonce');
+    assert.equal(await page.locator('.sg-rideau').count(), 0, 'pas de rideau quand les animations sont coupées');
+    // Accueil de première connexion : tout est lisible d'emblée.
+    await page.evaluate(() => { sessionStorage.setItem('ardoise_premiere_connexion', '42'); localStorage.removeItem('ardoise_sg_accueil_vu_42'); });
+    await page.reload(); await page.waitForSelector('.sg-accueil');
+    const lettre = await page.locator('.sg-accueil .sg-lettre').first().evaluate((n) => getComputedStyle(n).transform);
+    assert.equal(lettre, 'none', 'le nom est déjà écrit');
+    assert.equal(await page.locator('.sg-accueil-go').isVisible(), true);
+    await page.keyboard.press('Escape'); await page.waitForSelector('.sg-accueil', { state: 'detached' });
+    // Réactivation depuis le profil.
+    await page.goto(base + '/mon-profil.html');
+    await page.waitForFunction(() => document.getElementById('case-animations').dataset.pret);
+    assert.equal(await page.locator('#case-animations').isChecked(), false, 'le choix est retenu');
+    await page.locator('#case-animations').check();
+    assert.equal(await page.evaluate(() => document.documentElement.hasAttribute('data-animations')), false);
+    await ctx2.close();
+  }
+  console.log('Choix des animations : OK');
+
+  /* 5. Super Admin sur un écran bas : Apparence, compte et sortie restent
         visibles ; les domaines défilent. */
   for (const theme of ['ardoise', 'fluide', 'nuit']) {
     const ctx = await contexte(browser, base, theme, { superAdmin: true });

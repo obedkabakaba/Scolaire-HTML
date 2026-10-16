@@ -18,6 +18,36 @@
   if (document.documentElement.getAttribute('data-theme') !== 'public') window.ArdoiseDisposition.appliquer();
 })();
 
+/*
+   ANIMATIONS : un choix propre à cet appareil, comme la disposition du menu.
+   « Désactivées » fige tout ce qui bouge (scènes, entrées, rideaux, effets au
+   clic, accueil) : chaque élément s'affiche directement dans son état final.
+   « Activées » (par défaut) garde les animations, tout en continuant de
+   respecter le réglage « réduire les animations » du système. Les pages posent
+   déjà l'attribut avant le premier affichage ; ce module en est la source.
+*/
+(function gererAnimations() {
+  var CLE = 'ardoise_animations';
+  function actives() { try { return localStorage.getItem(CLE) !== 'non'; } catch (e) { return true; } }
+  function appliquer() {
+    if (actives()) document.documentElement.removeAttribute('data-animations');
+    else document.documentElement.setAttribute('data-animations', 'non');
+  }
+  window.ArdoiseAnimations = {
+    actives: actives,
+    /* Le système demande-t-il moins de mouvement, ou l'utilisateur les a-t-il coupées ? */
+    calmes: function () { return !actives() || window.matchMedia('(prefers-reduced-motion: reduce)').matches; },
+    definir: function (oui) {
+      try { if (oui) localStorage.removeItem(CLE); else localStorage.setItem(CLE, 'non'); } catch (e) {}
+      appliquer();
+      document.dispatchEvent(new CustomEvent('ardoise:animations-change', { detail: { actives: !!oui } }));
+    }
+  };
+  appliquer();
+  // Un autre onglet a changé le réglage : on suit.
+  window.addEventListener('storage', function (e) { if (e.key === CLE) appliquer(); });
+})();
+
 (function appliquerContrasteArdoise() {
   var style = document.createElement('style');
   style.id = 'ardoise-contraste-wcag';

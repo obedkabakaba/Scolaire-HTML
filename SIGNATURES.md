@@ -97,3 +97,20 @@ bas, compact) avec leur fichier de couleurs et de finition :
 le service worker v94. Le serveur accepte les clés `pro` et `savane`
 (`THEMES_AUTORISES`), ainsi que `yohali`, la clé que le navigateur envoie pour
 Terranga et qui était jusqu'ici refusée.
+
+## Choix des animations
+
+**Mon profil → Apparence → « Animations et effets »** (et la section
+« Navigation et animations » de l'Apparence du Super Admin). Cochée par
+défaut. Décochée, plus rien ne bouge : scènes, entrées des cartes, effets au
+clic, rideaux, avions, accueil de première connexion — chaque élément
+s'affiche directement dans son état final. L'annonce de la devise reste, sans
+rideau. Le réglage système « réduire les animations » est toujours respecté,
+même case cochée.
+
+- Choix propre à l'appareil (`localStorage.ardoise_animations = 'non'`),
+  comme la disposition du menu ; suivi entre onglets.
+- Le script d'amorçage de chaque page pose `data-animations="non"` avant le
+  premier affichage : aucune animation ne démarre avant d'être coupée.
+- `window.ArdoiseAnimations` (`theme.js`) : `actives()`, `calmes()`,
+  `definir(oui)`, événement `ardoise:animations-change`.

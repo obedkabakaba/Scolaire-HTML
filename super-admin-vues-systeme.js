@@ -1831,7 +1831,7 @@
 
           <section class="sa-panneau" style="margin-top:18px;max-width:720px">
             <div class="sa-section-titre">
-              <h2>Navigation</h2>
+              <h2>Navigation et animations</h2>
             </div>
             <label class="sa-interrupteur-disposition">
               <input type="checkbox" id="sa-case-nav-compact" />
@@ -1841,6 +1841,17 @@
                   Seul le rail des domaines reste affiché ; le panneau des sections se déploie
                   par-dessus la page lorsque vous survolez le rail ou l'utilisez au clavier.
                   Ce réglage reste propre à cet appareil.
+                </span>
+              </span>
+            </label>
+            <label class="sa-interrupteur-disposition" style="margin-top:14px">
+              <input type="checkbox" id="sa-case-animations" />
+              <span>
+                <strong>Animations et effets</strong>
+                <span class="sa-aide-disposition">
+                  Décors animés, entrées des cartes, effets au clic et transitions entre apparences.
+                  Décochez pour un affichage immobile. Le réglage « réduire les animations » du
+                  système reste toujours respecté. Ce réglage reste propre à cet appareil.
                 </span>
               </span>
             </label>
@@ -1867,6 +1878,16 @@
             SA.toast(caseCompacte.checked
               ? 'Barre rétractable activée.'
               : 'Barre rétractable désactivée.', 'succes');
+          });
+        }
+        const caseAnimations = conteneur.querySelector('#sa-case-animations');
+        if (caseAnimations && window.ArdoiseAnimations) {
+          caseAnimations.checked = ArdoiseAnimations.actives();
+          caseAnimations.addEventListener('change', () => {
+            ArdoiseAnimations.definir(caseAnimations.checked);
+            SA.toast(caseAnimations.checked
+              ? 'Animations activées sur cet appareil.'
+              : 'Animations désactivées sur cet appareil.', 'succes');
           });
         }
       }

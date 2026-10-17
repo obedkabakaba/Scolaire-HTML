@@ -731,7 +731,7 @@
             </label>
             <label class="sa-champ-bloc"><span>Rôle observé</span>
               <select class="sa-champ" id="champ-role">
-                ${ROLES_OBSERVABLES.map((r) => `<option value="${esc(r.valeur)}">${esc(r.libelle)}</option>`).join('')}
+                ${ROLES_OBSERVABLES.map((r) => `<option value="${esc(r.valeur)}"${r.valeur === params.role ? ' selected' : ''}>${esc(r.libelle)}</option>`).join('')}
               </select>
             </label>
             <label class="sa-champ-bloc"><span>Motif (inscrit au journal)</span>
@@ -788,9 +788,22 @@
           // ce que lisent les pages de l'espace école. Il chasse une éventuelle
           // session d'école ouverte dans cet onglet, jamais la session
           // Super Admin, qui vit sous des clés distinctes.
+          //
+          // Le profil `ardoise_user` est déposé avec lui : c'est lui, et non
+          // le jeton, que lisent les gardes de page pour connaître le rôle.
+          // Sans profil, les rôles étaient vides, `dashboard-directeur.html`
+          // se jugeait interdite et renvoyait vers « Mon profil » : on
+          // n'observait jamais l'interface du rôle choisi.
           try {
             localStorage.setItem('ardoise_access_token', d.jeton_observation);
             localStorage.removeItem('ardoise_refresh_token');
+            localStorage.setItem('ardoise_user', JSON.stringify({
+              id: null,
+              ecole_id: d.ecole.id,
+              roles: [d.role],
+              doit_changer_mot_de_passe: false,
+              observation: true
+            }));
             localStorage.setItem('ardoise_observation', JSON.stringify({
               ecole: d.ecole, role: d.role, expire_at: d.expire_at, observation_id: d.observation_id
             }));
@@ -815,6 +828,7 @@
                 await SA.api(`/super-admin/observation/${d.observation_id}/fin`, { method: 'POST' });
               }
               localStorage.removeItem('ardoise_access_token');
+              localStorage.removeItem('ardoise_user');
               localStorage.removeItem('ardoise_observation');
               SA.toast('Observation terminée.', 'succes');
               SA.rafraichirVue();

@@ -760,5 +760,73 @@
     afficherEcranBlocage: afficherEcranBlocage
   };
 
+  /* ------------------------------------------------------------------
+     7. Mode « Voir comme » du Super Admin
+     ------------------------------------------------------------------
+     L'espace Super Admin dépose `ardoise_observation` avec le jeton
+     d'observation. Toute page de l'école le signale par un bandeau fixe :
+     celui qui regarde doit savoir qu'il n'est pas le directeur, et que le
+     serveur refusera toute modification. Une observation expirée est
+     effacée ici, sans quoi la page suivante renverrait vers la connexion
+     sans dire pourquoi. */
+  function quitterObservation() {
+    effacer();
+    try { localStorage.removeItem('ardoise_observation'); } catch (e) {}
+    try { window.close(); } catch (e) {}
+    // Onglet que le navigateur refuse de fermer : retour à l'écran « Voir comme ».
+    window.location.replace('super-admin.html#/explorer/voir-comme');
+  }
+
+  function bandeauObservation() {
+    var obs = null;
+    try { obs = JSON.parse(localStorage.getItem('ardoise_observation') || 'null'); } catch (e) {}
+    if (!obs || !obs.expire_at) return;
+
+    var expire = new Date(obs.expire_at).getTime();
+    if (!(expire > Date.now())) {
+      // Jeton expiré : sans ceci, le premier appel prendrait un 401 et
+      // renverrait vers la connexion d'une école, sans un mot d'explication.
+      quitterObservation();
+      return;
+    }
+
+    var libelles = {
+      directeur: 'Directeur', prefet: 'Préfet', professeur: 'Professeur',
+      titulaire: 'Titulaire', parent: 'Parent', comptable: 'Comptable',
+      secretaire: 'Secrétaire'
+    };
+    var ecole = (obs.ecole && obs.ecole.nom) || "l'école";
+    var role = libelles[obs.role] || obs.role || '';
+    var fin = new Date(expire).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+
+    var bandeau = document.createElement('div');
+    bandeau.id = 'ardoise-bandeau-observation';
+    bandeau.setAttribute('role', 'status');
+    bandeau.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:2147483000;'
+      + 'display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:center;'
+      + 'padding:9px 16px;background:#3B2F8F;color:#fff;font:500 14px/1.4 system-ui,sans-serif;'
+      + 'box-shadow:0 -2px 10px rgba(0,0,0,.25)';
+    var texte = document.createElement('span');
+    texte.textContent = '👁 Vous voyez ' + ecole + ' comme ' + role
+      + ' — lecture seule, jusqu\'à ' + fin + '.';
+    var bouton = document.createElement('button');
+    bouton.type = 'button';
+    bouton.textContent = 'Quitter l\'observation';
+    bouton.style.cssText = 'border:1px solid rgba(255,255,255,.7);background:transparent;color:#fff;'
+      + 'border-radius:8px;padding:5px 12px;font:inherit;cursor:pointer';
+    bouton.addEventListener('click', quitterObservation);
+    bandeau.appendChild(texte);
+    bandeau.appendChild(bouton);
+
+    function poser() {
+      if (!document.body || document.getElementById(bandeau.id)) return;
+      document.body.appendChild(bandeau);
+      document.body.style.paddingBottom = (bandeau.offsetHeight || 44) + 'px';
+    }
+    if (document.body) poser();
+    else document.addEventListener('DOMContentLoaded', poser);
+  }
+
+  bandeauObservation();
   rafraichirSiProche();
 })();

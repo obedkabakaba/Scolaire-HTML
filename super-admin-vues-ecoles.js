@@ -554,7 +554,7 @@
 
     modale.querySelector('#btn-observer').addEventListener('click', () => {
       modale.fermer();
-      SA.naviguer('explorer/voir-comme', { ecole_id: ecoleId });
+      SA.naviguer('explorer/voir-comme', { ecole_id: ecoleId, role: 'directeur' });
     });
 
     modale.querySelector('#btn-statut').addEventListener('click', async () => {

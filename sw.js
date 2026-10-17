@@ -71,7 +71,8 @@
          pendant le défilement du contenu. Terranga (clé interne yohali) et son
          alias Kivu conservent leur apparence d'origine, sans cet ajout. */
 /* v97 : page Abonnement — scène de vérification du paiement et ticket de dépôt. */
-const VERSION='ardoise-v97';
+/* v98 : session.js — bandeau du mode « Voir comme » du Super Admin. */
+const VERSION='ardoise-v98';
 /* v96 : publication des résultats (publication-resultats.js, précaché) dans Bulletins ; vidéo de présentation et lien Instagram sur le site public. */
 /* v95 : choix « Animations et effets » dans Mon profil et dans l'Apparence du Super Admin — theme.js (ArdoiseAnimations), theme-base.css, theme-signatures.js/.css, amorçage des pages (attribut data-animations posé avant le premier affichage). */
 /* v94 : deux nouvelles apparences, Pro (theme-pro.css) et Savane (theme-savane.css), nouvelles et précachées ; leurs scènes et widgets dans theme-signatures.js/.css et leurs fiches dans theme.js. */

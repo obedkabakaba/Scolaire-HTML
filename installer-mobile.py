@@ -19,6 +19,15 @@ besoin que l'entrée « Aide & Tutoriels » existe déjà au moment où il réor
 le tiroir.
 
 Le script est idempotent : relancé, il ne double aucune balise.
+
+L'ENCOCHE : `viewport-fit=cover`
+--------------------------------
+Sans cette mention dans la balise viewport, iOS déclare des zones sûres
+nulles (`env(safe-area-inset-*)` vaut 0) : la barre du haut passait sous
+l'heure et l'île dynamique, la barre d'onglets se collait à l'indicateur
+d'accueil. Elle n'est ajoutée qu'aux écrans de l'APPLICATION (ceux qui ont une
+`.barre-laterale`) : ce sont eux que la coque mobile protège des bords. Le site
+public n'en a pas besoin et garde sa balise.
 """
 import os
 import re
@@ -68,6 +77,17 @@ def traiter(chemin, racine):
         i = modifie.lower().rindex('</body>')
         modifie = modifie[:i] + js + saut + modifie[i:]
         actions.append('js')
+
+    if 'barre-laterale' in modifie:
+        def couvrir(m):
+            balise = m.group(0)
+            if 'viewport-fit' in balise:
+                return balise
+            return re.sub(r'content="([^"]*)"', lambda c: f'content="{c.group(1)}, viewport-fit=cover"', balise, count=1)
+        couvert = re.sub(r'<meta\s+name="viewport"[^>]*>', couvrir, modifie, count=1)
+        if couvert != modifie:
+            modifie = couvert
+            actions.append('encoche')
 
     if not actions:
         return []

@@ -207,3 +207,37 @@ centrées, ordre du menu. Vérifié à 1280 et 1440 px, et dans les deux sens de
 rotation. La console super-admin garde sa propre coque (tiroir à 980 px) ;
 elle reçoit seulement le filet de largeur. Si `mobile.js` ne se charge pas, la
 plateforme fonctionne exactement comme avant.
+
+---
+
+# Lot « application native » — la coque mobile refaite
+
+Sur téléphone, la plateforme avait encore l'air d'un site de bureau tassé :
+barre du haut sous l'encoche, barre du bas collée à l'indicateur d'accueil,
+tiroir latéral, tableaux aplatis en fiches « INTITULÉ → valeur ». La couche
+mobile (`mobile.css`, `mobile.js`) a été réécrite.
+
+| Avant | Après |
+|---|---|
+| `viewport-fit` absent : zones sûres nulles sur iPhone | `viewport-fit=cover` sur les 32 écrans de l'application (`installer-mobile.py`) |
+| Barre haute sans encoche, hamburger | Barre de navigation sous la barre d'état, grand titre qui remonte dans la barre au défilement, retour, messages, avatar |
+| Barre du bas pleine largeur, collée au bord | iOS : capsule de verre flottante + bouton rond « menu » ; Android : barre Material 3 |
+| Tiroir latéral | Feuille qui monte du bas : profil, recherche d'écran, listes groupées par famille, glisser vers le bas pour fermer |
+| Lignes de tableau en fiches de 6 à 8 lignes | Listes : titre, sous-titre, statut à droite, chiffres en pastilles, actions dans une feuille d'actions « ••• » |
+| Compteurs en cartes géantes | Deux compteurs par rangée |
+| Boutons d'en-tête empilés pleine largeur | Capsules, action principale en tête |
+
+Points d'architecture :
+
+- La feuille de menu EST la `.barre-laterale` de la page, mise en forme
+  autrement : filtrage par rôle, « Aide & Tutoriels » et déconnexion gardent
+  leurs écouteurs. L'avatar garde la classe `ard-mob-bouton` (tests).
+- Les tableaux ne sont pas reconstruits : `mobile.js` pose des classes de rôle
+  (`ard-c-titre`, `ard-c-fin`, `ard-c-meta`…) sur les cellules existantes.
+  Un tableau peut refuser la liste avec `data-mobile="tableau"`.
+- La barre du haut prend la teinte sombre de l'apparence (`--ard-entete`,
+  calculée) : en mode « black-translucent », iOS écrit l'heure en blanc.
+- Transitions entre écrans par `@view-transition` (Safari 18.2+, Chrome 126+),
+  ignorées ailleurs. `sw.js` → `ardoise-v101`.
+
+Rien ne change au-dessus de 780 px. Les listes s'appliquent sous 700 px.

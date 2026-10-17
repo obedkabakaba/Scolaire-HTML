@@ -108,7 +108,8 @@ async function sortieAtteignable(page) {
     if (debord > 2) echecs.push({ theme, mobile: true, debord });
     const bouton = page.locator('.ard-mob-barre .ard-mob-bouton');
     if (await bouton.count()) {
-      await bouton.click(); await page.waitForTimeout(250);
+      // La feuille de menu monte du bas en 0,5 s : on mesure une fois posée.
+      await bouton.click(); await page.waitForTimeout(650);
       const tiroir = await sortieAtteignable(page);
       if (!tiroir.ok) echecs.push({ theme, tiroir: true, ...tiroir });
       await page.keyboard.press('Escape');

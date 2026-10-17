@@ -73,7 +73,8 @@
 /* v97 : page Abonnement — scène de vérification du paiement et ticket de dépôt. */
 /* v98 : session.js — bandeau du mode « Voir comme » du Super Admin. */
 /* v99 : Super Admin — neuf écrans en double fusionnés dans l'écran qui faisait la même chose (redirections), erreurs expliquées en clair, Assistant IA unique. */
-const VERSION='ardoise-v99';
+/* v100 : Super Admin — une seule boîte « Confirmez votre mot de passe » pour toutes les actions sensibles (super-admin-noyau.js). */
+const VERSION='ardoise-v100';
 /* v96 : publication des résultats (publication-resultats.js, précaché) dans Bulletins ; vidéo de présentation et lien Instagram sur le site public. */
 /* v95 : choix « Animations et effets » dans Mon profil et dans l'Apparence du Super Admin — theme.js (ArdoiseAnimations), theme-base.css, theme-signatures.js/.css, amorçage des pages (attribut data-animations posé avant le premier affichage). */
 /* v94 : deux nouvelles apparences, Pro (theme-pro.css) et Savane (theme-savane.css), nouvelles et précachées ; leurs scènes et widgets dans theme-signatures.js/.css et leurs fiches dans theme.js. */

@@ -815,33 +815,16 @@
     }).join('\n');
   }
 
+  /* La demande de mot de passe est traitée par SA.api (super-admin-noyau.js),
+     pour toutes les actions sensibles de l'espace : la boîte s'ouvre, la
+     requête est rejouée après confirmation. Ici ne reste que l'annulation,
+     rendue silencieuse : celui qui a cliqué « Annuler » sait qu'il a annulé. */
   async function avecReauth(action) {
     try {
       return await action();
     } catch (err) {
-      if (!err || err.code !== 'REAUTHENTIFICATION_REQUISE') throw err;
-      const mdp = await new Promise((resoudre) => {
-        const m = SA.modale({
-          titre: 'Confirmez votre mot de passe',
-          sousTitre: 'Cette autorisation touche un fichier sensible.',
-          contenu: `<label class="sa-connexion-champ"><span>Mot de passe</span>
-            <input type="password" class="sa-champ" id="ia-r-mdp" autocomplete="current-password"></label>`,
-          actions: `
-            <button class="sa-bouton sa-bouton-secondaire" data-role="annuler">Annuler</button>
-            <button class="sa-bouton sa-bouton-principal" data-role="ok">Confirmer</button>`
-        });
-        const c = m.querySelector('#ia-r-mdp');
-        const v = () => { const x = c.value; m.fermer(); resoudre(x || null); };
-        m.querySelector('[data-role="ok"]').addEventListener('click', v);
-        m.querySelector('[data-role="annuler"]').addEventListener('click', () => { m.fermer(); resoudre(null); });
-        c.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') v(); });
-        setTimeout(() => c.focus(), 30);
-      });
-      if (!mdp) return null;
-      await SA.api('/super-admin/control-center/reauthentifier', {
-        method: 'POST', body: JSON.stringify({ mot_de_passe: mdp })
-      });
-      return action();
+      if (err && err.code === 'REAUTHENTIFICATION_ANNULEE') return null;
+      throw err;
     }
   }
 

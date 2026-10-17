@@ -29,52 +29,17 @@
      OUTILS COMMUNS
      ====================================================================== */
 
-  /**
-   * Rejoue une action après confirmation du mot de passe.
-   *
-   * Le SERVEUR décide : il répond 403 avec `REAUTHENTIFICATION_REQUISE`, et
-   * l'interface se contente de présenter la boîte au bon moment. Elle ne
-   * devine pas quelles actions sont sensibles, et ne peut donc pas se tromper
-   * dans le sens permissif.
-   */
+  /* La demande de mot de passe est traitée par SA.api (super-admin-noyau.js),
+     pour toutes les actions sensibles de l'espace : la boîte s'ouvre, la
+     requête est rejouée après confirmation. Ici ne reste que l'annulation,
+     rendue silencieuse : celui qui a cliqué « Annuler » sait qu'il a annulé. */
   async function avecReauthentification(action) {
     try {
       return await action();
     } catch (err) {
-      if (!err || err.code !== 'REAUTHENTIFICATION_REQUISE') throw err;
-      const motDePasse = await demanderMotDePasse();
-      if (!motDePasse) return null;
-      await SA.api('/super-admin/control-center/reauthentifier', {
-        method: 'POST', body: JSON.stringify({ mot_de_passe: motDePasse })
-      });
-      return action();
+      if (err && err.code === 'REAUTHENTIFICATION_ANNULEE') return null;
+      throw err;
     }
-  }
-
-  function demanderMotDePasse() {
-    return new Promise((resoudre) => {
-      const modale = SA.modale({
-        titre: 'Confirmez votre mot de passe',
-        sousTitre: "Cette action touche la configuration de l'IA. Un onglet resté ouvert ne suffit pas.",
-        contenu: `
-          <p class="sa-texte" style="margin-top:0">
-            La confirmation ouvre une fenêtre de quelques minutes. Chaque usage de cette
-            fenêtre est tracé, avec l'action qu'il a servi à autoriser.
-          </p>
-          <label class="sa-connexion-champ"><span>Mot de passe</span>
-            <input type="password" class="sa-champ" id="ia-reauth-mdp" autocomplete="current-password"></label>`,
-        actions: `
-          <button class="sa-bouton sa-bouton-secondaire" data-role="annuler">Annuler</button>
-          <button class="sa-bouton sa-bouton-principal" data-role="ok">Confirmer</button>`
-      });
-      const champ = modale.querySelector('#ia-reauth-mdp');
-      const valider = () => { const v = champ.value; modale.fermer(); resoudre(v || null); };
-      modale.querySelector('[data-role="ok"]').addEventListener('click', valider);
-      modale.querySelector('[data-role="annuler"]')
-        .addEventListener('click', () => { modale.fermer(); resoudre(null); });
-      champ.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') valider(); });
-      setTimeout(() => champ.focus(), 30);
-    });
   }
 
   const TONS_ETAT = {

@@ -213,6 +213,10 @@
       super(message);
       this.statut = statut;
       this.corps = corps;
+      // Le code métier du serveur (REAUTHENTIFICATION_REQUISE, MFA_REQUISE…)
+      // à portée directe : les écrans testaient `err.code`, qui n'existait pas,
+      // et ne reconnaissaient donc jamais une demande de mot de passe.
+      this.code = corps && corps.code ? corps.code : undefined;
     }
   }
   SA.ErreurApi = ErreurApi;
@@ -386,6 +390,91 @@
       return appelBrut(chemin, Object.assign({}, options, { body: JSON.stringify(corps) }));
     }
   };
+
+  /* CONFIRMATION DU MOT DE PASSE — UNE SEULE BOÎTE POUR TOUT L'ESPACE
+     Certaines actions (clés d'IA, maintenance, suppression définitive d'une
+     école, drapeau ouvert à toutes les écoles, autorisations de l'IA) exigent
+     une preuve de présence : le serveur répond 403 REAUTHENTIFICATION_REQUISE.
+     Chaque écran avait sa propre boîte… qu'aucun n'ouvrait, faute de lire le
+     bon champ de l'erreur : le Super Admin voyait « confirmez votre mot de
+     passe » sans aucun endroit où le saisir.
+
+     La demande est désormais traitée ICI, pour toutes les routes, présentes
+     et futures : la boîte s'ouvre, le mot de passe ouvre la fenêtre de
+     confirmation (le code de double authentification est demandé au besoin
+     par la couche précédente), puis la requête d'origine est rejouée. Un mot
+     de passe erroné est signalé dans la boîte, qui reste ouverte. Plusieurs
+     requêtes refusées en même temps partagent la même boîte. */
+  let confirmationEnCours = null;
+
+  function demanderMotDePasse(erreurPrecedente) {
+    return new Promise((resoudre) => {
+      let reponse = null;
+      const modale = SA.modale({
+        titre: 'Confirmez votre mot de passe',
+        sousTitre: 'Cette action est sensible : votre mot de passe vous est redemandé.',
+        contenu: `
+          <p class="sa-texte" style="margin-top:0">
+            C'est le mot de passe de votre compte Super Admin, celui de la connexion.
+            Une fois confirmé, vous n'aurez pas à le ressaisir pendant quelques minutes.
+          </p>
+          ${erreurPrecedente ? `<div class="sa-bandeau ton-danger" role="alert">${SA.esc(erreurPrecedente)}</div>` : ''}
+          <label class="sa-connexion-champ"><span>Mot de passe</span>
+            <input type="password" class="sa-champ" id="sa-reauth-mdp" autocomplete="current-password"></label>`,
+        actions: `
+          <button class="sa-bouton sa-bouton-secondaire" data-role="annuler">Annuler</button>
+          <button class="sa-bouton sa-bouton-principal" data-role="ok">Confirmer</button>`
+      });
+      const champ = modale.querySelector('#sa-reauth-mdp');
+      const valider = () => { reponse = champ.value || null; modale.fermer(); };
+      modale.querySelector('[data-role="ok"]').addEventListener('click', valider);
+      modale.querySelector('[data-role="annuler"]').addEventListener('click', () => modale.fermer());
+      champ.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') valider(); });
+      // Toutes les façons de fermer (bouton, ×, Échap, clic hors de la boîte)
+      // doivent répondre : une promesse qui ne se résout jamais figerait le bouton
+      // qui a déclenché l'action.
+      const veille = new MutationObserver(() => {
+        if (!modale.isConnected) { veille.disconnect(); resoudre(reponse); }
+      });
+      veille.observe(document.body, { childList: true });
+      setTimeout(() => champ.focus(), 30);
+    });
+  }
+
+  async function confirmerPresence() {
+    let erreur = null;
+    for (let essai = 0; essai < 3; essai++) {
+      const motDePasse = await demanderMotDePasse(erreur);
+      if (!motDePasse) return false;
+      try {
+        await SA.api(CHEMIN_REAUTH, { method: 'POST', body: JSON.stringify({ mot_de_passe: motDePasse }) });
+        return true;
+      } catch (err) {
+        if (err && err.code === 'MOT_DE_PASSE_INVALIDE') { erreur = 'Mot de passe incorrect. Réessayez.'; continue; }
+        throw err;
+      }
+    }
+    throw new ErreurApi('Trois mots de passe incorrects : action annulée.', 403, { code: 'REAUTHENTIFICATION_ANNULEE' });
+  }
+
+  const appelSansConfirmation = SA.api;
+  SA.api = async function (chemin, options = {}) {
+    try {
+      return await appelSansConfirmation(chemin, options);
+    } catch (err) {
+      if (chemin === CHEMIN_REAUTH || !err || err.code !== 'REAUTHENTIFICATION_REQUISE') throw err;
+      if (!confirmationEnCours) {
+        confirmationEnCours = confirmerPresence().finally(() => { confirmationEnCours = null; });
+      }
+      const confirme = await confirmationEnCours;
+      if (!confirme) {
+        throw new ErreurApi("Action annulée : votre mot de passe n'a pas été confirmé.", 403,
+          { code: 'REAUTHENTIFICATION_ANNULEE' });
+      }
+      return appelSansConfirmation(chemin, options);
+    }
+  };
+  SA.confirmerPresence = confirmerPresence;
 
   /** Construit une URL avec paramètres, en omettant les valeurs vides. */
   SA.url = function (chemin, params = {}) {

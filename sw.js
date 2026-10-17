@@ -78,7 +78,8 @@
 /* v102 : studio — reconstruction d'un bulletin photographié (studio-reconstruction.js). */
 /* v105 : coque mobile « application native » (mobile.css/js) — barre de navigation sous l'encoche, onglets en verre liquide (iOS) ou Material 3 (Android), menu en feuille, tableaux en listes ; Fluide : navigation de la console opaque. */
 /* v106 : session.js et remontee-erreurs.js — une animation de changement de page annulée n'est plus signalée comme erreur. */
-const VERSION='ardoise-v106';
+/* v107 : notifications sur l'appareil (Web Push) — notifications-push.js, icône de barre d'état icone-badge-96.png, réception et toucher des notifications dans ce fichier. */
+const VERSION='ardoise-v107';
 /* v96 : publication des résultats (publication-resultats.js, précaché) dans Bulletins ; vidéo de présentation et lien Instagram sur le site public. */
 /* v95 : choix « Animations et effets » dans Mon profil et dans l'Apparence du Super Admin — theme.js (ArdoiseAnimations), theme-base.css, theme-signatures.js/.css, amorçage des pages (attribut data-animations posé avant le premier affichage). */
 /* v94 : deux nouvelles apparences, Pro (theme-pro.css) et Savane (theme-savane.css), nouvelles et précachées ; leurs scènes et widgets dans theme-signatures.js/.css et leurs fiches dans theme.js. */
@@ -244,7 +245,7 @@ const COQUILLE=[
   'mon-profil.html','messages.html','site-public.html','discipline.html','cours.html',
   'abonnements.html','support.html','support-page.js','support-abonnements.css',
   'archives.html','rapports.html','super-admin.html','theme.css','theme-base.css','ui.css','mobile.css',
-  'mobile.js','theme.js','ui.js','session.js','abonnements-page.js','paiement-scene.js','paiement-scene.css','generation-scene.js','generation-scene.css','studio-bulletins.js','studio-bulletins.css','studio-reconstruction.js','plan-evaluation.js','plan-evaluation.css','publication-resultats.js','acces-presences.js','filtre-cycle.js',
+  'mobile.js','notifications-push.js','icone-badge-96.png','theme.js','ui.js','session.js','abonnements-page.js','paiement-scene.js','paiement-scene.css','generation-scene.js','generation-scene.css','studio-bulletins.js','studio-bulletins.css','studio-reconstruction.js','plan-evaluation.js','plan-evaluation.css','publication-resultats.js','acces-presences.js','filtre-cycle.js',
   'evenements-types.js',
   'hors-ligne.js','didacticiel.js','didacticiel.css','super-admin-styles.css',
   'super-admin-noyau.js','super-admin-coque.js','super-admin-coque.css','super-admin-vues-pilotage.js','super-admin-vues-ecoles.js',
@@ -290,6 +291,47 @@ self.addEventListener('message',(event)=>{
   if(event.data==='ardoise:purger-donnees'){
     event.waitUntil(caches.keys().then((noms)=>Promise.all(noms.filter((n)=>n!==CACHE_COQUILLE).map((n)=>caches.delete(n)))));
   }
+});
+
+/* ---------------------------------------------------------------------------
+   NOTIFICATIONS SUR L'APPAREIL (Web Push)
+   Le serveur (utils/push.service.js) dépose un message chiffré chez le
+   fabricant du navigateur ; il arrive ici, même application fermée.
+   Contenu : { titre, corps, lien, tag, date }.
+   --------------------------------------------------------------------------- */
+self.addEventListener('push',(event)=>{
+  let d={};
+  try{d=event.data?event.data.json():{};}catch(e){d={corps:event.data?event.data.text():''};}
+  event.waitUntil(self.registration.showNotification(d.titre||'Ardoise',{
+    body:d.corps||'',
+    icon:'icone-192.png',
+    // Barre d'état d'Android : une silhouette blanche, pas l'icône en couleur.
+    badge:'icone-badge-96.png',
+    tag:d.tag||undefined,
+    renotify:!!d.tag,
+    timestamp:d.date||Date.now(),
+    lang:'fr',
+    data:{lien:d.lien||'messages.html'}
+  }));
+});
+
+/* Un toucher ouvre l'écran annoncé : dans une fenêtre d'Ardoise déjà ouverte
+   si possible, sinon dans une nouvelle. Le lien reste dans la plateforme. */
+self.addEventListener('notificationclick',(event)=>{
+  event.notification.close();
+  let cible=new URL('messages.html',self.registration.scope).href;
+  try{
+    const u=new URL((event.notification.data&&event.notification.data.lien)||'messages.html',self.registration.scope);
+    if(u.origin===self.location.origin)cible=u.href;
+  }catch(e){}
+  event.waitUntil((async()=>{
+    const fenetres=await self.clients.matchAll({type:'window',includeUncontrolled:true});
+    for(const f of fenetres){if(f.url===cible&&'focus' in f)return f.focus();}
+    for(const f of fenetres){
+      if('focus' in f&&'navigate' in f){try{await f.focus();return await f.navigate(cible);}catch(e){}}
+    }
+    return self.clients.openWindow(cible);
+  })());
 });
 
 async function reseauPuisCacheLocal(req){

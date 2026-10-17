@@ -37,6 +37,7 @@ RACINE = sys.argv[1] if len(sys.argv) > 1 else '.'
 
 LIEN_CSS = '<link rel="stylesheet" href="{prefixe}mobile.css" />'
 BALISE_JS = '<script src="{prefixe}mobile.js"></script>'
+BALISE_PUSH = '<script src="{prefixe}notifications-push.js"></script>'
 
 
 def profondeur(chemin, racine):
@@ -77,6 +78,14 @@ def traiter(chemin, racine):
         i = modifie.lower().rindex('</body>')
         modifie = modifie[:i] + js + saut + modifie[i:]
         actions.append('js')
+
+    # Notifications sur l'appareil : les écrans de l'application (et la
+    # console) en reçoivent le module, juste après mobile.js.
+    if ('barre-laterale' in modifie or os.path.basename(chemin) == 'super-admin.html') \
+            and 'notifications-push.js' not in modifie and 'mobile.js"></script>' in modifie:
+        i = modifie.index('mobile.js"></script>') + len('mobile.js"></script>')
+        modifie = modifie[:i] + saut + BALISE_PUSH.format(prefixe=prefixe) + modifie[i:]
+        actions.append('push')
 
     if 'barre-laterale' in modifie:
         def couvrir(m):

@@ -228,6 +228,19 @@
       <p class="confirmation-disposition" id="confirmation-animations" aria-live="polite"></p>
     </div>
 
+    <!-- Rempli par notifications-push.js : masqué tant qu'il n'a pas répondu. -->
+    <div class="carte-section" id="section-notifications-push" hidden>
+      <h2>Notifications</h2>
+      <label class="interrupteur-disposition">
+        <input type="checkbox" id="case-notifications-push" />
+        <span>
+          <strong>Notifications sur cet appareil</strong>
+          <span class="aide-disposition" id="aide-notifications-push">Recevez sur cet appareil les messages et alertes d’Ardoise, même application fermée.</span>
+        </span>
+      </label>
+      <p class="confirmation-disposition" id="confirmation-notifications-push" aria-live="polite"></p>
+    </div>
+
     <div class="carte-section">
       <h2>Disposition du menu</h2>
       <p style="color:var(--texte-att); font-size:0.88rem; margin:-10px 0 18px 0;">
@@ -627,5 +640,6 @@
 <!-- Didacticiel d'installation : bouton d'aide contextuel, partagé par toutes les pages. -->
 <script src="didacticiel.js" data-ecran="Mon profil"></script>
 <script src="mobile.js"></script>
+<script src="notifications-push.js"></script>
 </body>
 </html>

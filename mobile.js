@@ -141,6 +141,12 @@
     var autonome = window.navigator.standalone === true
       || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
     racine.classList.toggle('ard-autonome', !!autonome);
+    // Réfraction SVG dans `backdrop-filter` : Chromium seulement. WebKit (tous
+    // les navigateurs d'iOS) et Firefox l'ignoreraient — ou effaceraient le
+    // verre entier — : ils gardent le verre en calques.
+    refraction = !ios && /Chrome\/|Chromium|Edg\//.test(ua) && !/Firefox/.test(ua)
+      && !!(window.CSS && CSS.supports('backdrop-filter', 'blur(1px)'));
+    racine.classList.toggle('ard-refraction', refraction);
   }
 
   /* Sans `viewport-fit=cover`, iOS déclare des zones sûres nulles : la barre
@@ -691,6 +697,7 @@
     onglets = el('nav', 'ard-onglets');
     onglets.setAttribute('aria-label', 'Navigation principale');
     capsule = el('div', 'ard-onglets-capsule');
+    poserCouchesVerre(capsule);
     lentille = el('span', 'ard-onglets-lentille');
     lentille.setAttribute('aria-hidden', 'true');
     capsule.appendChild(lentille);
@@ -698,6 +705,9 @@
     choisis.forEach(function (c) {
       var a = el('a', 'ard-onglet');
       a.href = c.href;
+      // Un lien se glisse-dépose nativement : le geste de la lentille serait
+      // annulé (`pointercancel`) dès que le doigt ou la souris se déplace.
+      a.draggable = false;
       if (c.page === courante) {
         a.classList.add('actif');
         a.setAttribute('aria-current', 'page');
@@ -707,20 +717,15 @@
       icone.setAttribute('aria-hidden', 'true');
       a.appendChild(icone);
       a.appendChild(el('span', '', c.libelle));
-      // La lentille part vers l'onglet touché avant que la page suivante
-      // n'arrive : la réponse au doigt est immédiate.
-      a.addEventListener('click', function () {
-        if (a.classList.contains('actif')) return;
-        [].forEach.call(capsule.querySelectorAll('.ard-onglet'), function (o) { o.classList.remove('actif'); });
-        a.classList.add('actif');
-        placerLentille(a);
-      });
       capsule.appendChild(a);
     });
+    // Barre réduite : l'onglet courant reste, sinon l'accueil.
+    (capsule.querySelector('.ard-onglet.actif') || capsule.querySelector('.ard-onglet')).classList.add('ard-garde');
 
     var menu = el('button', 'ard-onglets-menu ard-mob-menu');
     menu.type = 'button';
     menu.setAttribute('aria-label', 'Tous les écrans');
+    poserCouchesVerre(menu);
     menu.appendChild(svg(SVG.menu));
     menu.appendChild(el('span', '', 'Menu'));
     if (pagesOnglets.indexOf(courante) === -1) menu.classList.add('actif');
@@ -729,6 +734,10 @@
     onglets.appendChild(capsule);
     onglets.appendChild(menu);
     document.body.appendChild(onglets);
+
+    installerGlisserOnglets();
+    installerBarreReduite();
+    suivreTailleVerre([capsule, menu]);
 
     requestAnimationFrame(function () {
       placerLentille(capsule.querySelector('.ard-onglet.actif'), true);
@@ -741,11 +750,261 @@
     if (sansAnimation) lentille.style.transition = 'none';
     lentille.style.setProperty('--ard-lentille-x', cible.offsetLeft + 'px');
     lentille.style.setProperty('--ard-lentille-l', cible.offsetWidth + 'px');
+    lentille.style.removeProperty('--ard-etire');
     lentille.classList.add('posee');
     if (sansAnimation) {
       void lentille.offsetWidth;
       lentille.style.transition = '';
     }
+  }
+
+  function ongletsListe() { return [].slice.call(capsule.querySelectorAll('.ard-onglet')); }
+
+  function ongletSous(x) {
+    var trouve = null;
+    ongletsListe().forEach(function (o) {
+      var r = o.getBoundingClientRect();
+      if (x >= r.left && x <= r.right) trouve = o;
+    });
+    return trouve;
+  }
+
+  /**
+   * Le geste d'iOS 26 : on pose le doigt, la lentille enfle et devient une
+   * goutte de verre ; on la fait glisser d'un onglet à l'autre (elle s'étire
+   * avec la vitesse) ; on relâche, elle se pose et l'écran s'ouvre.
+   *
+   * Pointeur capturé : le `click` des liens n'arrive plus — la navigation
+   * est donc faite ici, au relâcher. Au clavier, les liens restent des liens.
+   */
+  function installerGlisserOnglets() {
+    var actif = false, depart = 0, bouge = false, dernierX = 0, dernierT = 0, pointeur = null;
+    var ignorerClic = false;
+
+    function suivre(x) {
+      var r = capsule.getBoundingClientRect();
+      var largeur = parseFloat(lentille.style.getPropertyValue('--ard-lentille-l')) || 64;
+      var gauche = Math.max(4, Math.min(r.width - largeur - 4, x - r.left - largeur / 2));
+      var maintenant = performance.now();
+      var vitesse = Math.abs(x - dernierX) / Math.max(1, maintenant - dernierT);
+      dernierX = x; dernierT = maintenant;
+      lentille.style.setProperty('--ard-lentille-x', gauche + 'px');
+      lentille.style.setProperty('--ard-etire', String(1 + Math.min(0.32, vitesse * 0.35)));
+      capsule.style.setProperty('--ard-reflet-x', (x - r.left) + 'px');
+      var sous = ongletSous(x);
+      ongletsListe().forEach(function (o) { o.classList.toggle('ard-survol', o === sous); });
+    }
+
+    function finir(e, annule) {
+      if (!actif) return;
+      actif = false;
+      racine.classList.remove('ard-onglets-presse');
+      capsule.style.removeProperty('--ard-reflet-x');
+      lentille.style.backdropFilter = ''; lentille.style.webkitBackdropFilter = '';
+      ongletsListe().forEach(function (o) { o.classList.remove('ard-survol'); });
+      try { if (pointeur !== null) capsule.releasePointerCapture(pointeur); } catch (er) {}
+      pointeur = null;
+      var choisi = annule ? null : ongletSous(e.clientX);
+      var courant = capsule.querySelector('.ard-onglet.actif');
+      if (choisi && choisi !== courant) {
+        ongletsListe().forEach(function (o) { o.classList.toggle('actif', o === choisi); });
+        placerLentille(choisi);
+        ignorerClic = true;
+        setTimeout(function () { window.location.href = choisi.href; }, 140);
+      } else {
+        placerLentille(courant);
+        if (bouge) ignorerClic = true;
+      }
+    }
+
+    capsule.addEventListener('pointerdown', function (e) {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      if (racine.classList.contains('ard-onglets-mini')) {
+        // Barre réduite : le premier contact la redéploie.
+        e.preventDefault();
+        ignorerClic = true;
+        reduireOnglets(false);
+        return;
+      }
+      actif = true; bouge = false; depart = dernierX = e.clientX; dernierT = performance.now();
+      pointeur = e.pointerId;
+      try { capsule.setPointerCapture(e.pointerId); } catch (er) {}
+      racine.classList.add('ard-onglets-presse');
+      filtreLentille();
+      suivre(e.clientX);
+    });
+    capsule.addEventListener('pointermove', function (e) {
+      if (!actif) return;
+      if (Math.abs(e.clientX - depart) > 6) bouge = true;
+      suivre(e.clientX);
+    });
+    capsule.addEventListener('pointerup', function (e) { finir(e, false); });
+    capsule.addEventListener('pointercancel', function (e) { finir(e, true); });
+    capsule.addEventListener('lostpointercapture', function (e) { if (actif) finir(e, false); });
+    capsule.addEventListener('click', function (e) {
+      if (!ignorerClic) return;
+      ignorerClic = false;
+      e.preventDefault();
+    }, true);
+  }
+
+  /* ---------------------------------------------- Barre réduite au défilement */
+  var reduite = false;
+
+  function reduireOnglets(oui) {
+    if (reduite === oui || !capsule) return;
+    reduite = oui;
+    racine.classList.toggle('ard-onglets-mini', oui);
+    // La lentille se repose sur l'onglet une fois la capsule redéployée.
+    if (!oui) setTimeout(function () { placerLentille(capsule.querySelector('.ard-onglet.actif'), true); }, 480);
+  }
+
+  function installerBarreReduite() {
+    var dernier = window.scrollY, cumul = 0, attente = false;
+    window.addEventListener('scroll', function () {
+      if (attente) return;
+      attente = true;
+      requestAnimationFrame(function () {
+        attente = false;
+        var y = window.scrollY, delta = y - dernier;
+        dernier = y;
+        if (racine.classList.contains('ard-onglets-presse')) return;
+        cumul = (delta > 0) === (cumul > 0) ? cumul + delta : delta;
+        if (y < 80) reduireOnglets(false);
+        else if (cumul > 36) reduireOnglets(true);
+        else if (cumul < -18) reduireOnglets(false);
+      });
+    }, { passive: true });
+  }
+
+  /* ==========================================================================
+     5 bis. VERRE LIQUIDE
+     Sur iOS, Safari n'expose pas le verre « Liquid Glass » d'Apple aux pages
+     web, et WebKit n'accepte pas de filtre SVG dans `backdrop-filter`. Le
+     verre y est donc composé de calques (voir mobile.css) : givre, anneau de
+     lentille plus flou et plus lumineux, reflets — tous rendus par le GPU via
+     `backdrop-filter`.
+
+     Là où le moteur l'accepte (Chromium), on ajoute la VRAIE réfraction : une
+     carte de déplacement calculée à la taille exacte de la forme (rectangle à
+     coins ronds), qui tord ce qui passe sous le bord du verre comme le ferait
+     une lentille. Le centre reste net ; la lentille d'appui grossit en plus.
+     ========================================================================== */
+  var refraction = false, defsVerre = null, compteurFiltre = 0;
+
+  function poserCouchesVerre(hote) {
+    ['ard-verre-fond', 'ard-verre-bord', 'ard-verre-reflet'].forEach(function (c) {
+      var n = el('span', c);
+      n.setAttribute('aria-hidden', 'true');
+      hote.appendChild(n);
+    });
+  }
+
+  /* Carte de déplacement : R et G codent le décalage horizontal et vertical
+     (128 = aucun). Près du bord, on va chercher l'image plus à l'intérieur,
+     d'autant plus fort qu'on s'approche de la tranche (profil quadratique) ;
+     `loupe` ajoute un grossissement vers le centre. */
+  function carteRefraction(w, h, rayon, biseau, loupe) {
+    var toile = document.createElement('canvas');
+    toile.width = w; toile.height = h;
+    var ctx = toile.getContext('2d'), img = ctx.createImageData(w, h), d = img.data;
+    var hx = w / 2, hy = h / 2, ix = hx - rayon, iy = hy - rayon;
+    for (var y = 0; y < h; y++) {
+      for (var x = 0; x < w; x++) {
+        var px = x + 0.5 - hx, py = y + 0.5 - hy;
+        var sx = px < 0 ? -1 : 1, sy = py < 0 ? -1 : 1;
+        var qx = Math.abs(px) - ix, qy = Math.abs(py) - iy, dist, nx, ny;
+        if (qx > 0 && qy > 0) {
+          var l = Math.sqrt(qx * qx + qy * qy) || 1;
+          dist = rayon - l; nx = (qx / l) * sx; ny = (qy / l) * sy;
+        } else if (qx > qy) { dist = rayon - qx; nx = sx; ny = 0; }
+        else { dist = rayon - qy; nx = 0; ny = sy; }
+        var t = Math.max(0, 1 - Math.max(0, dist) / biseau), m = t * t;
+        var vx = -nx * m, vy = -ny * m;
+        if (loupe) { vx -= (px / hx) * loupe; vy -= (py / hy) * loupe; }
+        vx = Math.max(-1, Math.min(1, vx)); vy = Math.max(-1, Math.min(1, vy));
+        var i = (y * w + x) * 4;
+        d[i] = 128 + vx * 127; d[i + 1] = 128 + vy * 127; d[i + 2] = 128; d[i + 3] = 255;
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+    return toile.toDataURL();
+  }
+
+  function filtreRefraction(cible, force, loupe, suite) {
+    if (!refraction || !cible) return;
+    var w = Math.round(cible.offsetWidth), h = Math.round(cible.offsetHeight);
+    if (w < 8 || h < 8) return;
+    var rayon = Math.min(h / 2, w / 2, parseFloat(getComputedStyle(cible).borderTopLeftRadius) || h / 2);
+    if (!defsVerre) {
+      var hoteSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      // Ni `display: none` ni `visibility: hidden` : le filtre ne serait plus rendu.
+      hoteSvg.setAttribute('width', '0'); hoteSvg.setAttribute('height', '0');
+      hoteSvg.setAttribute('aria-hidden', 'true');
+      hoteSvg.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden';
+      defsVerre = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+      hoteSvg.appendChild(defsVerre);
+      document.body.appendChild(hoteSvg);
+    }
+    var id = cible.dataset.ardFiltre || ('ard-verre-' + (++compteurFiltre));
+    cible.dataset.ardFiltre = id;
+    var ancien = document.getElementById(id);
+    if (ancien) ancien.remove();
+    var ns = 'http://www.w3.org/2000/svg';
+    var f = document.createElementNS(ns, 'filter');
+    f.setAttribute('id', id);
+    f.setAttribute('x', '0'); f.setAttribute('y', '0');
+    f.setAttribute('width', String(w)); f.setAttribute('height', String(h));
+    f.setAttribute('filterUnits', 'userSpaceOnUse');
+    f.setAttribute('primitiveUnits', 'userSpaceOnUse');
+    f.setAttribute('color-interpolation-filters', 'sRGB');
+    var image = document.createElementNS(ns, 'feImage');
+    image.setAttribute('href', carteRefraction(w, h, rayon, Math.min(22, h * 0.42), loupe || 0));
+    image.setAttribute('x', '0'); image.setAttribute('y', '0');
+    image.setAttribute('width', String(w)); image.setAttribute('height', String(h));
+    image.setAttribute('preserveAspectRatio', 'none');
+    image.setAttribute('result', 'carte');
+    var depl = document.createElementNS(ns, 'feDisplacementMap');
+    depl.setAttribute('in', 'SourceGraphic');
+    depl.setAttribute('in2', 'carte');
+    depl.setAttribute('scale', String(force));
+    depl.setAttribute('xChannelSelector', 'R');
+    depl.setAttribute('yChannelSelector', 'G');
+    f.appendChild(image); f.appendChild(depl);
+    defsVerre.appendChild(f);
+    var valeur = 'url(#' + id + ') ' + suite;
+    cible.style.backdropFilter = valeur;
+    cible.style.webkitBackdropFilter = valeur;
+  }
+
+  function appliquerRefraction(hote) {
+    if (!refraction || racine.classList.contains('ard-android')) return;
+    var fond = hote.querySelector(':scope > .ard-verre-fond');
+    var bord = hote.querySelector(':scope > .ard-verre-bord');
+    // La vraie lentille remplace l'anneau d'approximation.
+    if (bord) bord.style.display = 'none';
+    filtreRefraction(fond, 34, 0, 'blur(2px) saturate(190%) brightness(1.05)');
+  }
+
+  /* La forme change (barre réduite, rotation) : la carte est recalculée une
+     fois la taille posée — l'étirer pendant la transition suffit à l'œil. */
+  function suivreTailleVerre(hotes) {
+    if (!refraction) return;
+    hotes.forEach(appliquerRefraction);
+    if (!window.ResizeObserver) return;
+    var minuteur = 0;
+    var obs = new ResizeObserver(function () {
+      clearTimeout(minuteur);
+      minuteur = setTimeout(function () { hotes.forEach(appliquerRefraction); }, 160);
+    });
+    hotes.forEach(function (h) { obs.observe(h); });
+  }
+
+  /* La goutte d'appui grossit ce qu'elle survole. Le filtre n'est actif que
+     pendant l'appui (le style « au repos » n'a pas de `backdrop-filter`). */
+  function filtreLentille() {
+    if (!refraction || !lentille) return;
+    filtreRefraction(lentille, 16, 0.1, 'saturate(160%) brightness(1.03)');
   }
 
   /* Bouton retour : seulement sur un écran qui n'est pas un onglet, atteint

@@ -241,3 +241,32 @@ Points d'architecture :
   ignorées ailleurs. `sw.js` → `ardoise-v101`.
 
 Rien ne change au-dessus de 780 px. Les listes s'appliquent sous 700 px.
+
+## La barre d'onglets iOS : verre liquide
+
+La barre d'iOS 26 n'est pas un flou : c'est une lentille. Ce qu'une page web
+peut en obtenir dépend du moteur :
+
+- **iPhone (WebKit, tous les navigateurs d'iOS)** : Safari n'expose pas le
+  « Liquid Glass » d'Apple aux pages web et n'accepte pas de filtre SVG dans
+  `backdrop-filter`. Le verre est composé de trois calques frères rendus par
+  le GPU : givre léger et saturé (`.ard-verre-fond`), anneau de bord plus flou
+  et plus lumineux qui imite la lentille (`.ard-verre-bord`), liserés et
+  reflets spéculaires (`.ard-verre-reflet`). Frères et non imbriqués : un
+  élément qui porte un `backdrop-filter`, une opacité, un masque ou un
+  `view-transition-name` devient la « racine de fond » de ses enfants, qui ne
+  voient plus la page.
+- **Chromium** : vraie réfraction. `mobile.js` calcule une carte de
+  déplacement à la taille exacte de la forme (coins ronds compris) et la pose
+  en `backdrop-filter: url(#…)` ; la carte est recalculée quand la forme change.
+
+Le comportement suit iOS 26 : appui → la lentille enfle en goutte, on la fait
+glisser d'un onglet à l'autre (elle s'étire avec la vitesse), on relâche → elle
+se pose et l'écran s'ouvre ; en défilant vers le bas la barre se réduit à
+l'onglet courant, elle se redéploie en remontant ou au toucher. Les liens
+restent des liens au clavier. `prefers-reduced-transparency` rend une surface
+pleine.
+
+Le seul moyen d'obtenir le verre natif d'Apple, au pixel près, est une barre
+native (SwiftUI `glassEffect`) dans une application iOS qui embarque la
+plateforme (Capacitor, par exemple).

@@ -405,34 +405,104 @@ body { overflow-wrap: break-word; }
     z-index: 1000;
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 10px;
     pointer-events: none;
     font-family: var(--ard-police);
     -webkit-user-select: none; user-select: none;
     -webkit-touch-callout: none;
     transition: transform 0.42s var(--ard-ressort), opacity 0.25s ease;
-    view-transition-name: ard-onglets;
+    /* PAS de `view-transition-name` ici : un élément nommé devient une
+       « racine de fond » (Filter Effects 2), et le verre ne voyait plus la
+       page qui passe dessous — il restait plat. */
   }
   html.ard-mob-coque .ard-onglets > * { pointer-events: auto; }
 
-  /* Le verre : flou et saturation de ce qui passe dessous, liseré lumineux en
-     haut, ombre portée douce. Sans `backdrop-filter`, une surface pleine. */
+  /* ---------------------------------------------------------------- Verre
+     Le verre liquide d'iOS 26 n'est pas un flou : c'est une lentille. Le
+     centre reste presque clair, le bord concentre la lumière et déforme ce
+     qui passe dessous, un reflet spéculaire court sur la tranche.
+
+     Trois calques FRÈRES, jamais imbriqués : un élément qui porte déjà un
+     `backdrop-filter` (ou une opacité, un masque, un filtre) devient la
+     « racine de fond » de ses enfants, qui ne verraient plus la page.
+
+       .ard-verre-fond    givre léger + saturation (+ réfraction réelle là où
+                          le moteur l'accepte, posée par mobile.js)
+       .ard-verre-bord    anneau plus flou et plus lumineux : la lentille du
+                          bord, l'effet de déformation sur iOS
+       .ard-verre-reflet  liserés et reflets spéculaires, sans flou
+
+     Le conteneur ne porte AUCUN de ces effets lui-même. */
   .ard-onglets-capsule,
   .ard-onglets-menu {
     position: relative;
+    isolation: auto;
     height: var(--ard-onglets-h);
-    background: var(--ard-verre);
-    -webkit-backdrop-filter: blur(24px) saturate(190%);
-    backdrop-filter: blur(24px) saturate(190%);
+    background: transparent;
     box-shadow:
-      inset 0 1px 0 var(--ard-verre-bord),
-      inset 0 0 0 0.5px var(--ard-verre-bord),
-      0 0 0 0.5px rgba(0, 0, 0, 0.06),
-      0 12px 32px -8px rgba(0, 0, 0, 0.28),
-      0 2px 8px rgba(0, 0, 0, 0.06);
+      0 10px 30px -6px rgba(0, 0, 0, 0.22),
+      0 2px 6px rgba(0, 0, 0, 0.06);
+    transition: height 0.45s var(--ard-ressort), width 0.45s var(--ard-ressort),
+      flex-grow 0.5s var(--ard-ressort), transform 0.35s var(--ard-ressort);
   }
+  .ard-verre-fond, .ard-verre-bord, .ard-verre-reflet {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+  }
+  .ard-verre-fond {
+    background: rgba(255, 255, 255, 0.26);
+    -webkit-backdrop-filter: blur(5px) saturate(190%) brightness(1.04);
+    backdrop-filter: blur(5px) saturate(190%) brightness(1.04);
+  }
+  .ard-verre-bord {
+    padding: 7px;
+    background: rgba(255, 255, 255, 0.10);
+    -webkit-backdrop-filter: blur(11px) saturate(230%) brightness(1.14);
+    backdrop-filter: blur(11px) saturate(230%) brightness(1.14);
+    /* Ne garder que l'anneau : le bord de la goutte. */
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  }
+  .ard-verre-reflet {
+    background:
+      radial-gradient(130% 120% at 18% -10%, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0) 42%),
+      radial-gradient(90% 90% at 88% 120%, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 48%),
+      radial-gradient(60px 60px at var(--ard-reflet-x, -100px) 50%, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0) 70%);
+    box-shadow:
+      inset 0 1px 0.5px rgba(255, 255, 255, 0.95),
+      inset 0 -1px 0.5px rgba(255, 255, 255, 0.45),
+      inset 1px 0 0.5px rgba(255, 255, 255, 0.35),
+      inset -1px 0 0.5px rgba(255, 255, 255, 0.35),
+      inset 0 0 0 0.5px rgba(255, 255, 255, 0.35),
+      inset 0 10px 14px -12px rgba(255, 255, 255, 0.9),
+      inset 0 -12px 16px -14px rgba(0, 0, 0, 0.12),
+      0 0 0 0.5px rgba(0, 0, 0, 0.07);
+  }
+  html.ard-mob-sombre .ard-verre-fond { background: rgba(28, 28, 32, 0.34); }
+  html.ard-mob-sombre .ard-verre-bord { background: rgba(255, 255, 255, 0.04); }
+  html.ard-mob-sombre .ard-verre-reflet {
+    background:
+      radial-gradient(130% 120% at 18% -10%, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 42%),
+      radial-gradient(60px 60px at var(--ard-reflet-x, -100px) 50%, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0) 70%);
+    box-shadow:
+      inset 0 1px 0.5px rgba(255, 255, 255, 0.4),
+      inset 0 -1px 0.5px rgba(255, 255, 255, 0.14),
+      inset 0 0 0 0.5px rgba(255, 255, 255, 0.16),
+      0 0 0 0.5px rgba(0, 0, 0, 0.4);
+  }
+  /* Sans `backdrop-filter` (vieux navigateurs, transparence réduite) : une
+     surface pleine, lisible. */
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-    .ard-onglets-capsule, .ard-onglets-menu { background: var(--ard-surface); }
+    .ard-verre-fond { background: var(--ard-surface); }
+    .ard-verre-bord { display: none; }
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    .ard-verre-fond { background: var(--ard-surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
+    .ard-verre-bord { display: none; }
   }
 
   .ard-onglets-capsule {
@@ -441,11 +511,15 @@ body { overflow-wrap: break-word; }
     display: flex;
     padding: 4px;
     border-radius: 999px;
+    touch-action: none;           /* le doigt peut glisser d'un onglet à l'autre */
+    -webkit-user-drag: none;
   }
+  /* Appui : la goutte enfle légèrement sous le doigt. */
+  html.ard-onglets-presse .ard-onglets-capsule { transform: scale(1.025); }
 
   .ard-onglet {
     position: relative;
-    z-index: 1;
+    z-index: 2;
     flex: 1 1 0;
     min-width: 0;
     display: flex;
@@ -453,6 +527,7 @@ body { overflow-wrap: break-word; }
     align-items: center;
     justify-content: center;
     gap: 2px;
+    overflow: hidden;
     border-radius: 999px;
     color: var(--ard-texte);
     text-decoration: none;
@@ -460,38 +535,65 @@ body { overflow-wrap: break-word; }
     font-weight: 600;
     letter-spacing: 0.005em;
     -webkit-tap-highlight-color: transparent;
-    transition: color 0.2s ease;
+    transition: flex 0.5s var(--ard-ressort), opacity 0.25s ease, color 0.2s ease;
   }
+  /* Lisibilité sur un verre clair : une légère auréole, comme la vibrance. */
+  html.ard-mob-coque:not(.ard-mob-sombre) .ard-onglet,
+  html.ard-mob-coque:not(.ard-mob-sombre) .ard-onglets-menu { text-shadow: 0 0 8px rgba(255, 255, 255, 0.85); }
   .ard-onglet span {
     max-width: 100%;
+    max-height: 14px;
     padding: 0 2px;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    transition: opacity 0.2s ease, max-height 0.35s var(--ard-ressort);
   }
   .ard-onglet svg {
+    flex: none;
     width: 25px; height: 25px;
     fill: none; stroke: currentColor;
     stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round;
-    transition: transform 0.3s var(--ard-ressort);
+    transition: transform 0.35s var(--ard-ressort);
   }
-  .ard-onglet:active svg { transform: scale(0.86); }
   .ard-onglet.actif { color: var(--ard-accent); }
   .ard-onglet.actif svg { stroke-width: 2; }
+  .ard-onglet.ard-survol svg { transform: scale(1.12); }
 
-  /* La lentille : une goutte de verre plus claire sous l'onglet actif. Elle
-     glisse vers l'onglet touché avant même que la page suivante arrive. */
+  /* ------------------------------------------------------------ Lentille
+     Au repos : une pastille grise discrète sous l'onglet actif. À l'appui,
+     elle devient une goutte de verre plus grande que la barre, qui suit le
+     doigt, s'étire avec la vitesse et grossit ce qu'elle survole ; relâchée,
+     elle se pose avec un ressort sur l'onglet choisi. */
   .ard-onglets-lentille {
     position: absolute;
+    z-index: 1;
     top: 4px; bottom: 4px; left: 0;
     width: var(--ard-lentille-l, 0px);
     transform: translateX(var(--ard-lentille-x, 0px));
     border-radius: 999px;
-    background: rgba(118, 118, 128, 0.14);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), inset 0 0 0 0.5px rgba(255, 255, 255, 0.35);
+    background: rgba(118, 118, 128, 0.16);
     opacity: 0;
-    transition: transform 0.5s cubic-bezier(0.3, 1.3, 0.5, 1), width 0.5s cubic-bezier(0.3, 1.3, 0.5, 1), opacity 0.2s ease;
+    pointer-events: none;
+    transition: transform 0.55s cubic-bezier(0.3, 1.35, 0.5, 1), width 0.5s cubic-bezier(0.3, 1.3, 0.5, 1),
+      opacity 0.2s ease, background-color 0.25s ease, box-shadow 0.25s ease;
   }
   .ard-onglets-lentille.posee { opacity: 1; }
-  html.ard-mob-sombre .ard-onglets-lentille { background: rgba(255, 255, 255, 0.12); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12); }
+  html.ard-mob-sombre .ard-onglets-lentille { background: rgba(255, 255, 255, 0.12); }
+  html.ard-onglets-presse .ard-onglets-lentille {
+    z-index: 3;
+    transform: translateX(var(--ard-lentille-x, 0px)) scale(calc(1.14 * var(--ard-etire, 1)), 1.3);
+    background: rgba(255, 255, 255, 0.03);
+    /* Pas de flou : sous la goutte, l'icône reste nette (et grossie là où la
+       réfraction réelle est disponible). */
+    -webkit-backdrop-filter: saturate(160%) brightness(1.03);
+    backdrop-filter: saturate(160%) brightness(1.03);
+    box-shadow:
+      inset 0 1px 0.5px rgba(255, 255, 255, 0.95),
+      inset 0 -1px 1px rgba(255, 255, 255, 0.5),
+      inset 0 0 0 0.5px rgba(255, 255, 255, 0.6),
+      inset 0 0 14px rgba(255, 255, 255, 0.22),
+      0 6px 18px rgba(0, 0, 0, 0.16);
+    transition: transform 0.14s ease-out, width 0.3s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+  }
 
   .ard-onglets-menu {
     flex: none;
@@ -504,17 +606,29 @@ body { overflow-wrap: break-word; }
     color: var(--ard-texte);
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
-    transition: transform 0.3s var(--ard-ressort);
   }
-  .ard-onglets-menu:active { transform: scale(0.92); }
+  .ard-onglets-menu:active { transform: scale(1.08); }
   .ard-onglets-menu svg {
+    position: relative;
+    z-index: 2;
     width: 25px; height: 25px;
     fill: none; stroke: currentColor;
     stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
   }
-  .ard-onglets-menu span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .ard-onglets-menu > span:not([class]) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
   /* Écran atteint par le menu : c'est le menu qui est « actif ». */
   .ard-onglets-menu.actif { color: var(--ard-accent); }
+
+  /* ------------------------------------------------- Barre réduite (iOS 26)
+     En défilant vers le bas, la barre se replie sur l'onglet courant pour
+     rendre l'écran au contenu ; elle se redéploie dès qu'on remonte ou qu'on
+     la touche. */
+  html.ard-onglets-mini .ard-onglets-capsule { flex-grow: 0; height: 50px; }
+  html.ard-onglets-mini .ard-onglets-menu { width: 50px; height: 50px; }
+  html.ard-onglets-mini .ard-onglet:not(.ard-garde) { flex: 0 0 0px; opacity: 0; pointer-events: none; }
+  html.ard-onglets-mini .ard-onglet.ard-garde { flex: 0 0 62px; }
+  html.ard-onglets-mini .ard-onglet span { max-height: 0; opacity: 0; }
+  html.ard-onglets-mini .ard-onglets-lentille { opacity: 0; }
 
   /* Le clavier virtuel ouvert, ou le menu ouvert : la barre s'efface. */
   html.ard-clavier .ard-onglets,
@@ -540,7 +654,9 @@ body { overflow-wrap: break-word; }
     box-shadow: none;
     border-radius: 0;
   }
-  html.ard-android .ard-onglets-capsule { padding: 0; }
+  html.ard-android .ard-onglets-capsule { padding: 0; touch-action: auto; }
+  html.ard-android :is(.ard-verre-fond, .ard-verre-bord, .ard-verre-reflet) { display: none; }
+  html.ard-android .ard-onglet { text-shadow: none !important; }
   html.ard-android .ard-onglets-lentille { display: none; }
   html.ard-android .ard-onglet,
   html.ard-android .ard-onglets-menu {

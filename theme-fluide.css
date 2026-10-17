@@ -122,6 +122,36 @@ html[data-theme="fluide"][data-theme="fluide"] :is(.voile .modale,.sa-modale,.ar
 }
 html[data-theme="fluide"][data-theme="fluide"] .voile {background:rgba(10,40,64,.22);backdrop-filter:blur(6px);}
 
+/* Navigation qui passe PAR-DESSUS le contenu : verre épais, presque opaque.
+   Le panneau rétractable de la console, son tiroir sur téléphone et le menu
+   du compte héritaient de la teinte des surfaces POSÉES (`--craie-2`, 42 % de
+   blanc, sans flou) : la page se lisait au travers des menus, titres et
+   libellés mêlés. Une surface posée peut laisser voir le fond vivant ; une
+   surface qui recouvre du texte ne le peut pas. */
+@media (min-width:981px) {
+ html[data-theme="fluide"][data-theme="fluide"][data-nav-compact="oui"] .sa-panneau-nav {
+  background:linear-gradient(170deg,rgba(255,255,255,.94),rgba(236,246,251,.92));
+  backdrop-filter:var(--lg-flou-fort);-webkit-backdrop-filter:var(--lg-flou-fort);
+  border-right:1px solid rgba(255,255,255,.9);
+  box-shadow:inset -1px 0 0 rgba(11,42,63,.06),18px 0 44px rgba(8,38,64,.18);
+ }
+}
+@media (max-width:980px) {
+ html[data-theme="fluide"][data-theme="fluide"] .sa-navigation .sa-panneau-nav {
+  background:linear-gradient(170deg,rgba(255,255,255,.95),rgba(236,246,251,.93));
+  backdrop-filter:var(--lg-flou-fort);-webkit-backdrop-filter:var(--lg-flou-fort);
+ }
+ html[data-theme="fluide"][data-theme="fluide"] .sa-navigation .sa-rail {
+  background:rgba(222,238,245,.96);
+  backdrop-filter:var(--lg-flou-fort);-webkit-backdrop-filter:var(--lg-flou-fort);
+ }
+}
+html[data-theme="fluide"][data-theme="fluide"] .sa-menu-compte {
+ background:linear-gradient(170deg,rgba(255,255,255,.95),rgba(240,248,252,.93));
+ backdrop-filter:var(--lg-flou-fort);-webkit-backdrop-filter:var(--lg-flou-fort);
+ box-shadow:var(--ombre-flottante);
+}
+
 /* ------------------------------------------------------- Composition ---- */
 html[data-theme="fluide"][data-theme="fluide"] .fl-only {display:block;}
 html[data-theme="fluide"][data-theme="fluide"] .fl-content {animation:none;transform:none;}

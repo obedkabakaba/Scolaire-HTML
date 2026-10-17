@@ -338,70 +338,44 @@ html[data-theme="ardoise"] .sa-badge.ton-succes {
    le verre dans le contenu et rendent la coque mobile stable et lisible.
    ========================================================================== */
 @media screen and (max-width: 780px) {
+  /* La barre du haut porte la teinte sombre de l'apparence, calculée par
+     `mobile.js` (`--ard-entete`) : la barre d'état d'iOS y écrit en blanc.
+     Elle reste opaque, même sous Fluide. */
   html.ard-mob-coque .ard-mob-barre {
-    background: var(--ard-mob-barre-fond, var(--nav-fond, #1F2B24)) !important;
+    background: var(--ard-entete, var(--nav-fond, #1F2B24)) !important;
     -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
     isolation: isolate;
   }
 
+  /* La feuille de menu est opaque : aucun texte de la page en transparence. */
   html.ard-mob-coque .barre-laterale,
   html.ard-mob-coque[data-nav-position] .barre-laterale,
   html.ard-mob-coque[data-nav-compact="oui"] .barre-laterale {
-    background: var(--ard-mob-tiroir-fond, var(--nav-fond, #1F2B24)) !important;
+    background: var(--ard-fond, var(--craie, #F6F2E7)) !important;
     -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
-    isolation: isolate;
-  }
-
-  html.ard-mob-coque .ard-mob-pied {
-    position: fixed !important;
-    top: auto !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    z-index: 1090 !important;
-    background: var(--ard-mob-pied-fond, var(--craie-2, #FBF9F3)) !important;
-    -webkit-backdrop-filter: none !important;
-    backdrop-filter: none !important;
-    box-shadow: 0 -8px 24px rgba(15, 31, 42, .10);
     isolation: isolate;
   }
 
   /* Un élément amené au focus ou ciblé par un lien interne doit arriver
-     au-dessus de la barre inférieure, pas juste derrière elle. */
+     au-dessus de la barre d'onglets, pas juste derrière elle. */
   html.ard-mob-coque {
-    scroll-padding-top: calc(var(--mob-barre, 56px) + env(safe-area-inset-top, 0px) + 10px);
-    scroll-padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+    scroll-padding-top: calc(var(--ard-barre, 44px) + env(safe-area-inset-top, 0px) + 10px);
+    scroll-padding-bottom: var(--ard-reserve-bas, calc(96px + env(safe-area-inset-bottom, 0px)));
   }
   html.ard-mob-coque :is(button, a, input, select, textarea, [tabindex]) {
-    scroll-margin-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+    scroll-margin-bottom: var(--ard-reserve-bas, calc(96px + env(safe-area-inset-bottom, 0px)));
   }
 
-  /* Le fond hors tiroir reste visible pour comprendre qu'un tap le referme,
-     mais il est assez sombre pour ne pas concurrencer les libellés du menu. */
   html.ard-mob-ouvert .ard-mob-voile {
-    background: rgba(15, 22, 18, .58) !important;
+    background: rgba(0, 0, 0, .42) !important;
   }
 
-  /* L'aide flottante appartient à la page, pas au tiroir. Elle disparaît
-     pendant l'ouverture du menu au lieu de rester visible dans le voile. */
   html.ard-mob-ouvert :is(.ard-di-bouton, .ard-di-relance) {
     opacity: 0 !important;
     visibility: hidden !important;
     pointer-events: none !important;
-  }
-
-  /* Fluide garde ses cartes de verre ; seule la coque de navigation devient
-     opaque. Les tons restent ceux du thème, sans texte de page en transparence. */
-  html[data-theme="fluide"][data-theme="fluide"] {
-    --ard-mob-barre-fond: #E8F6F9;
-    --ard-mob-tiroir-fond: #E8F6F9;
-    --ard-mob-pied-fond: #F4FAFC;
-  }
-
-  html[data-theme="fluide"][data-theme="fluide"] .ard-mob-pied {
-    border-top-color: #B7CDD6 !important;
   }
 }
 

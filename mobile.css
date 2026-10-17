@@ -1,375 +1,1023 @@
 /* =============================================================================
-   ARDOISE — COUCHE MOBILE
+   ARDOISE — COUCHE MOBILE (« application native »)
    =============================================================================
 
    POURQUOI CE FICHIER EXISTE
    --------------------------
-   La plateforme avait déjà des media queries — dans les trente-sept pages, dans
-   `theme.css` et dans `ui.css`. Elles corrigeaient des symptômes un par un.
-   Mesuré dans un vrai navigateur à 360 px de large (le téléphone d'entrée de
-   gamme qui sert de référence), le résultat était le suivant :
+   La première version de cette couche avait réglé les débordements : plus
+   aucune page ne dépassait de l'écran. Elle n'avait pas réglé l'impression
+   d'ensemble — celle d'un site de bureau tassé dans un téléphone :
 
-     · treize pages dépassaient la largeur de l'écran — jusqu'à 817 px pour
-       `annee-scolaire.html`, soit plus du double. C'est exactement ce que
-       décrit « on doit redimensionner » : le navigateur dézoome, le texte
-       devient minuscule, et il faut faire glisser la page latéralement ;
-     · le menu, sur téléphone, était un accordéon qui poussait le contenu vers
-       le bas ; il n'affichait que cinq entrées sur trente-deux, les autres
-       étant enfermées dans un second tiroir ;
-     · l'entrée « Aide & Tutoriels » était purement et simplement masquée
-       (voir `ui.js`, section 14).
+     · la barre du haut ignorait l'encoche et l'île dynamique, la barre du bas
+       se collait à l'indicateur d'accueil. Cause unique : aucune page ne
+       déclarait `viewport-fit=cover`, donc `env(safe-area-inset-*)` valait 0 ;
+     · le menu était un tiroir latéral de bureau ;
+     · chaque ligne de tableau devenait une fiche « INTITULÉ → valeur » de six
+       à huit lignes : un tableau aplati, pas une liste de téléphone ;
+     · les compteurs du tableau de bord s'empilaient en cartes géantes, les
+       boutons d'en-tête en colonne pleine largeur, une bulle « ? » flottait
+       au-dessus du contenu.
 
-   LA CAUSE COMMUNE DU DÉBORDEMENT
-   -------------------------------
-   `.contenu` est une cellule de grille (`.mise-en-page`). Une cellule de
-   grille a `min-width: auto`, c'est-à-dire « au moins la largeur minimale de
-   mon contenu ». Une seule barre d'onglets non sécable suffisait donc à
-   élargir la colonne — et avec elle toute la page. Un `min-width: 0` sur les
-   cellules règle treize pages d'un coup ; c'est la première règle du fichier.
+   CE QUE FAIT CETTE VERSION
+   -------------------------
+   Elle reprend les codes des applications natives :
+
+     1. une barre de navigation compacte sous la barre d'état, et le titre de
+        l'écran en « grand titre » dans le contenu, qui remonte dans la barre
+        quand on fait défiler (comportement des listes iOS) ;
+     2. une barre d'onglets FLOTTANTE en verre sur iOS (dans l'esprit de
+        l'apparence Fluide et du verre « liquide » d'iOS), une barre de
+        navigation Material 3 sur Android ;
+     3. le menu complet dans une FEUILLE qui monte du bas, avec recherche,
+        profil et écrans groupés en listes arrondies ;
+     4. les tableaux en LISTES : un titre, une ligne de détails, un statut à
+        droite, les chiffres en pastilles, les actions dans une feuille
+        d'actions — au lieu d'une colonne d'intitulés.
 
    PRINCIPE D'ÉCRITURE
    -------------------
-   Cette feuille est chargée EN DERNIER, après `theme.css` et `ui.css`. Elle
-   n'écrase rien au-dessus de 780 px : tout ce qui suit la section 1 vit dans
-   une media query. Le `!important` y est fréquent et assumé — les trente-sept
-   pages portent leurs propres styles en ligne, et une couche corrective qui
-   perdrait la moitié de ses arbitrages ne corrigerait rien.
+   Chargée EN DERNIER. Rien ne change au-dessus de 780 px. Tout ce qui touche
+   à la coque est conditionné à `html.ard-mob-coque`, posé par `mobile.js`
+   seulement sur les écrans qui ont une barre latérale : le site public et les
+   aperçus de bulletin n'en reçoivent rien. Le `!important` reste fréquent et
+   assumé : les pages portent leurs propres styles en ligne, et les apparences
+   des sélecteurs très spécifiques.
    ============================================================================= */
 
 /* =============================================================================
    1. FILET GLOBAL — valable à toutes les largeurs
    ============================================================================= */
 
-/* La règle qui vaut à elle seule treize pages : une cellule de grille ou un
-   élément flexible n'a pas le droit d'imposer sa largeur minimale au reste. */
+/* Une cellule de grille ou un élément flexible n'a pas le droit d'imposer sa
+   largeur minimale au reste (c'était la cause de treize débordements). */
 .mise-en-page > *,
 .contenu,
 .contenu > * {
   min-width: 0;
 }
 
-/* Rien ne dépasse : ni une image large, ni un tableau, ni un bloc de code. */
 img, svg, video, canvas, iframe, table, pre {
   max-width: 100%;
 }
 img, video { height: auto; }
 
-/* Un matricule de trente caractères ou une adresse électronique longue ne
-   doivent pas élargir leur colonne. */
 body { overflow-wrap: break-word; }
 
-/* Les trois éléments de la coque mobile sont posés dans le document par
-   `mobile.js` quelle que soit la largeur — les construire à chaque rotation
-   d'écran produirait un clignotement. Au-dessus de 780 px ils n'existent tout
-   simplement pas visuellement ; la section 2 les rallume. */
-.ard-mob-barre, .ard-mob-pied, .ard-mob-voile, .ard-mob-fermer,
-.ard-mob-famille { display: none; }
+/* Les pièces de la coque sont posées par `mobile.js` quelle que soit la
+   largeur (les reconstruire à chaque rotation ferait clignoter l'écran).
+   Au-dessus de 780 px, elles n'existent pas visuellement. */
+.ard-mob-barre, .ard-onglets, .ard-mob-voile, .ard-feuille-entete,
+.ard-feuille-profil, .ard-feuille-recherche, .ard-mob-famille,
+.ard-actions, .ard-actions-voile { display: none; }
 
 /* =============================================================================
-   2. COQUE APPLICATIVE SUR TÉLÉPHONE
-   La barre latérale devient un tiroir qui glisse par-dessus le contenu, et
-   une barre d'application fixe prend sa place en haut de l'écran.
+   2. JETONS — couleurs, polices, dimensions
+   Tout dérive des variables de l'apparence choisie (`--craie`, `--ocre`…) :
+   la coque suit les quatorze apparences sans en connaître aucune.
    ============================================================================= */
 @media (max-width: 780px) {
+  html.ard-mob-coque {
+    --ard-haut: env(safe-area-inset-top, 0px);
+    --ard-bas: env(safe-area-inset-bottom, 0px);
+    --ard-gauche: env(safe-area-inset-left, 0px);
+    --ard-droite: env(safe-area-inset-right, 0px);
 
-  html { -webkit-text-size-adjust: 100%; }
+    --ard-barre: 44px;                       /* hauteur d'une barre iOS */
+    --ard-entete: #1F2B24;                   /* recalculé par mobile.js */
+    --ard-fond: var(--craie, #F2F2F7);
+    --ard-surface: var(--craie-2, #FFFFFF);
+    --ard-texte: var(--texte-sombre, #1C1C1E);
+    --ard-texte-2: var(--texte-att, #6E6E73);
+    --ard-accent: var(--ocre, #C98A3E);
+    --ard-rouge: var(--rouge, #D93A2F);
+    --ard-ligne: rgba(60, 60, 67, 0.16);
+    --ard-remplissage: rgba(118, 118, 128, 0.12);
+    --ard-verre: rgba(255, 255, 255, 0.78);
+    --ard-verre: color-mix(in srgb, var(--ard-surface) 78%, transparent);
+    --ard-verre-bord: rgba(255, 255, 255, 0.75);
 
-  body {
-    /* `clip` plutôt que `hidden` : il coupe le débordement sans créer de
-       conteneur de défilement, donc sans casser les `position: sticky`. */
-    overflow-x: clip;
+    /* Barre d'onglets flottante : sa hauteur, et sa distance au bord. Elle
+       s'élève au-dessus de l'indicateur d'accueil au lieu de s'y coller. */
+    --ard-onglets-h: 62px;
+    --ard-onglets-bas: max(12px, calc(var(--ard-bas) - 6px));
+    --ard-reserve-bas: calc(var(--ard-onglets-h) + var(--ard-onglets-bas) + 22px);
+
+    --ard-police: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui, sans-serif;
+    --ard-police-titre: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", system-ui, sans-serif;
+    --ard-ressort: cubic-bezier(0.32, 0.72, 0, 1);
   }
 
-  /* Le décalage sous la barre est porté par <body> et non par `.mise-en-page`.
-     Plusieurs écrans insèrent des bandeaux (erreur de chargement, mode hors
-     ligne, reprise de session) en tête de <body>, AVANT la mise en page : sur
-     `.mise-en-page` seule, ces bandeaux passaient sous la barre fixe et
-     devenaient illisibles au moment précis où ils avaient quelque chose à
-     dire.
-
-     CONDITIONNÉ À `html.ard-mob-coque`, drapeau posé par `mobile.js` au moment
-     où il construit RÉELLEMENT la barre. Sans cette condition, les vingt
-     pages du site public — qui n'ont pas de barre latérale, donc pas de coque
-     — recevaient quand même 56 px de vide en haut et 58 px en bas : un bandeau
-     mort au-dessus de l'en-tête, et un en-tête `sticky` décalé au chargement
-     puis remontant d'un coup au premier défilement. */
-  html.ard-mob-coque body {
-    padding-top: calc(var(--mob-barre, 56px) + env(safe-area-inset-top, 0px)) !important;
+  /* Apparences sombres (Nuit, Nexus…) : `mobile.js` mesure le fond réel. */
+  html.ard-mob-coque.ard-mob-sombre {
+    --ard-ligne: rgba(235, 235, 245, 0.16);
+    --ard-remplissage: rgba(118, 118, 128, 0.24);
+    --ard-verre: rgba(36, 38, 42, 0.66);
+    --ard-verre: color-mix(in srgb, var(--ard-surface) 70%, transparent);
+    --ard-verre-bord: rgba(255, 255, 255, 0.14);
   }
 
-  /* La grille à deux colonnes n'a plus lieu d'être : le tiroir est hors flux. */
-  .mise-en-page {
-    display: block !important;
-    min-height: calc(100vh - var(--mob-barre, 56px));
-    min-height: calc(100dvh - var(--mob-barre, 56px));
+  html.ard-mob-coque.ard-android {
+    --ard-barre: 56px;
+    --ard-onglets-h: 80px;
+    --ard-onglets-bas: 0px;
+    --ard-reserve-bas: calc(80px + var(--ard-bas) + 16px);
+    --ard-police: Roboto, "Google Sans", "Inter", system-ui, sans-serif;
+    --ard-police-titre: "Google Sans", Roboto, "Inter", system-ui, sans-serif;
   }
 
-  /* ------------------------------------------------------- Barre supérieure */
-  .ard-mob-barre {
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    height: calc(var(--mob-barre, 56px) + env(safe-area-inset-top, 0px));
-    padding: env(safe-area-inset-top, 0px) 12px 0 6px;
-    background: var(--nav-fond, #1f2b24);
-    color: var(--nav-texte-fort, #f6f2e7);
-    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.16);
+  /* La police du système, comme dans toute application native. Sur un
+     ordinateur à fenêtre étroite (ni iOS ni Android), l'apparence garde la
+     sienne. */
+  html.ard-mob-coque:is(.ard-ios, .ard-android) {
+    --police-corps: var(--ard-police);
   }
-  /* La barre s'efface à l'impression : elle n'appartient pas au document. */
-  @media print { .ard-mob-barre { display: none !important; } }
-
-  .ard-mob-bouton {
-    flex: none;
-    width: 44px; height: 44px;          /* cible tactile confortable */
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    gap: 5px;
-    background: none; border: 0; padding: 0;
-    cursor: pointer; color: inherit;
-    border-radius: 10px;
-  }
-  .ard-mob-bouton:active { background: rgba(255, 255, 255, 0.1); }
-  .ard-mob-bouton span {
-    display: block; width: 20px; height: 2px;
-    background: currentColor; border-radius: 2px;
-    transition: transform 0.22s ease, opacity 0.16s ease;
-  }
-  html.ard-mob-ouvert .ard-mob-bouton span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
-  html.ard-mob-ouvert .ard-mob-bouton span:nth-child(2) { opacity: 0; }
-  html.ard-mob-ouvert .ard-mob-bouton span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
-
-  .ard-mob-titre {
-    flex: 1; min-width: 0;
-    font-family: var(--police-titre, inherit);
-    font-weight: 600; font-size: 1.05rem;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  }
-
-  /* Pastille de messages non lus, reprise sur la barre. */
-  .ard-mob-pastille {
-    flex: none;
-    min-width: 18px; height: 18px; padding: 0 5px;
-    border-radius: 20px; background: var(--rouge, #b23a2e);
-    color: #fff; font-size: 0.7rem; font-weight: 700;
-    display: none; align-items: center; justify-content: center;
-  }
-  .ard-mob-pastille.visible { display: flex; }
-
-  /* ------------------------------------------------------------- Le tiroir */
-  .barre-laterale,
-  html[data-nav-position] .barre-laterale,
-  html[data-nav-compact="oui"] .barre-laterale {
-    position: fixed !important;
-    top: 0; bottom: 0; left: 0; right: auto;
-    width: min(86vw, 320px) !important;
-    max-width: 320px;
-    height: 100% !important;
-    margin: 0 !important;
-    padding: calc(18px + env(safe-area-inset-top, 0px)) 14px
-             calc(18px + env(safe-area-inset-bottom, 0px)) 14px !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: stretch !important;
-    justify-content: flex-start !important;
-    flex-wrap: nowrap !important;
-    gap: 0;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
-    z-index: 1101;
-    transform: translateX(-100%);
-    transition: transform 0.26s cubic-bezier(0.22, 0.61, 0.36, 1);
-    box-shadow: none;
-  }
-  /* `!important` obligatoire ici, et non par confort : la règle ci-dessus vise
-     aussi `html[data-nav-position] .barre-laterale`, dont la spécificité (0,2,1)
-     dépasse celle de `.barre-laterale.nav-ouverte` (0,2,0). Sans cela, le
-     tiroir restait replié même la classe posée — il s'ouvrait dans le DOM et
-     jamais à l'écran. */
-  .barre-laterale.nav-ouverte {
-    transform: none !important;
-    box-shadow: 0 0 34px rgba(0, 0, 0, 0.36);
-  }
-  /* Le conteneur intermédiaire redevient un bloc ordinaire : dans le tiroir,
-     l'ordre du document est le bon. */
-  .barre-laterale > div { display: block !important; }
-
-  /* Le voile derrière le tiroir.
-
-     Il commence APRES le tiroir au lieu de couvrir tout l'écran. C'est une
-     garantie fonctionnelle, pas seulement visuelle : certains navigateurs en
-     mode application installée composent `backdrop-filter` dans un calque qui
-     peut passer devant le panneau malgré son z-index. Le voile interceptait
-     alors les touchers destinés aux liens du menu et floutait aussi le tiroir.
-
-     La largeur de départ reprend exactement celle du panneau. Le reste de la
-     page est simplement assombri et reste une grande cible pour refermer le
-     menu, tandis que la navigation ne peut plus être recouverte. */
-  .ard-mob-voile {
-    display: block;
-    position: fixed;
-    top: 0; right: 0; bottom: 0;
-    left: min(86vw, 320px);
-    background: rgba(15, 22, 18, 0.42);
-    z-index: 1100;
-    opacity: 0; pointer-events: none;
-    transition: opacity 0.26s ease;
-  }
-  html.ard-mob-ouvert .ard-mob-voile { opacity: 1; pointer-events: auto; }
-  /* Le fond ne défile plus derrière le tiroir ouvert. */
-  html.ard-mob-ouvert, html.ard-mob-ouvert body { overflow: hidden !important; }
-
-  /* Le bouton d'origine de `ui.js` vit maintenant dans la barre supérieure ;
-     celui resté dans le tiroir ferait doublon. */
-  .barre-laterale .bouton-menu { display: none !important; }
-
-  /* ---------------------------------------------- Le menu dans le tiroir */
-  .ard-mob-fermer {
-    display: flex;
-    position: absolute;
-    top: calc(12px + env(safe-area-inset-top, 0px));
-    right: 10px;
-    width: 42px; height: 42px;
-    display: flex; align-items: center; justify-content: center;
-    background: none; border: 0; padding: 0;
-    color: var(--nav-texte, rgba(246, 242, 231, 0.75));
-    border-radius: 50%;
-    cursor: pointer;
-  }
-  .ard-mob-fermer:active { background: rgba(255, 255, 255, 0.1); }
-  .ard-mob-fermer svg {
-    width: 20px; height: 20px;
-    stroke: currentColor; fill: none;
-    stroke-width: 1.9; stroke-linecap: round;
-  }
-
-  .barre-laterale .marque {
-    margin: 0 0 16px 4px !important;
-    font-size: 1.35rem !important;
-    text-align: left !important;
-  }
-
-  .nav-liste {
-    display: flex !important;
-    visibility: visible !important;
-    flex-direction: column;
-    width: 100%;
-    margin: 0 0 12px 0 !important;
-    padding: 0 !important;
-    border: 0 !important;
-    animation: none !important;
-    gap: 2px;
-  }
-
-  /* Sur un téléphone, le rail réduit n'a plus de raison d'être : le tiroir a
-     toute la hauteur de l'écran. On rend donc au menu les entrées que
-     `reduireRail()` avait repliées — repérables à leur `data-epingle`, que lui
-     seul pose. Les entrées écartées par le RÔLE, elles, n'en portent pas :
-     elles restent masquées, ce qui est le comportement voulu. */
-  .nav-liste li[data-epingle] { display: block !important; }
-  /* « Tous les menus » n'ouvrirait qu'un tiroir dans un tiroir. */
-  .nav-liste li.ard-mob-sans-objet { display: none !important; }
-
-  .nav-item, .nav-item:visited {
-    padding: 12px 12px !important;
-    font-size: 0.95rem !important;
-    min-height: 46px;
-    border-radius: 10px;
-    -webkit-tap-highlight-color: transparent;
-  }
-  .nav-item:active { background: rgba(255, 255, 255, 0.08); }
-  .nav-icone { width: 20px !important; height: 20px !important; }
-
-  /* Séparateurs de famille, posés par `mobile.js`. */
-  .ard-mob-famille {
-    display: block;
-    list-style: none;
-    margin: 14px 0 4px 12px;
-    font-family: var(--police-mono, monospace);
-    font-size: 0.64rem;
-    text-transform: uppercase;
-    letter-spacing: 0.09em;
-    color: var(--nav-texte-faible, rgba(246, 242, 231, 0.45));
-  }
-
-  .nav-deconnexion {
-    display: flex !important;
-    width: 100%;
-    margin-top: auto !important;
-    padding: 13px 12px !important;
-    border-top: 1px solid var(--nav-separateur, rgba(255, 255, 255, 0.12)) !important;
+  html.ard-mob-coque:is(.ard-ios, .ard-android) body {
+    font-family: var(--ard-police);
+    -webkit-font-smoothing: antialiased;
   }
 }
 
 /* =============================================================================
-   3. BARRE INFÉRIEURE — les quatre écrans les plus utilisés, au pouce
-   Un téléphone se tient d'une main : ce qui est en bas est atteignable, ce qui
-   est en haut ne l'est pas. Les destinations fréquentes descendent donc.
+   3. LA COQUE — fond, décalages, gestes
    ============================================================================= */
 @media (max-width: 780px) {
-  .ard-mob-pied {
-    position: fixed;
-    left: 0; right: 0; bottom: 0;
-    z-index: 999;
-    display: flex;
-    background: var(--craie-2, #fbf9f3);
-    border-top: 1px solid var(--bordure, #e4dfcf);
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-    transition: transform 0.24s ease;
-  }
-  html.ard-mob-ouvert .ard-mob-pied { transform: translateY(110%); }
-  @media print { .ard-mob-pied { display: none !important; } }
+  html { -webkit-text-size-adjust: 100%; }
 
-  .ard-mob-pied a {
-    flex: 1 1 0; min-width: 0;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    gap: 3px;
-    padding: 8px 2px;
-    min-height: 54px;
-    text-decoration: none;
-    color: var(--texte-att, #6b7269);
-    font-size: 0.66rem;
+  body {
+    /* `clip` plutôt que `hidden` : coupe sans créer de conteneur de
+       défilement, donc sans casser les `position: sticky`. */
+    overflow-x: clip;
+  }
+
+  html.ard-mob-coque {
+    background: var(--ard-fond);
+    /* Pas de double tape-zoom ni de surbrillance grise au toucher. */
     -webkit-tap-highlight-color: transparent;
   }
-  .ard-mob-pied a span {
-    max-width: 100%;
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  }
-  .ard-mob-pied a svg {
-    width: 21px; height: 21px;
-    stroke: currentColor; fill: none;
-    stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round;
-  }
-  .ard-mob-pied a.actif { color: var(--ocre, #c98a3e); font-weight: 600; }
-  .ard-mob-pied a:active { background: rgba(0, 0, 0, 0.04); }
-
-  /* La page se termine au-dessus de la barre, jamais dessous. Réservé, là
-     encore, aux écrans qui ont réellement une barre inférieure. */
   html.ard-mob-coque body {
-    padding-bottom: calc(58px + env(safe-area-inset-bottom, 0px)) !important;
+    touch-action: manipulation;
+    background-color: var(--ard-fond);
+    /* Le décalage sous la barre est porté par <body> : les bandeaux insérés
+       en tête de page (hors ligne, reprise de session) restent visibles. */
+    padding-top: calc(var(--ard-barre) + var(--ard-haut)) !important;
+    padding-bottom: var(--ard-reserve-bas) !important;
   }
 
-  /* Les éléments flottants remontent d'autant. */
-  .ard-di-bouton {
-    bottom: calc(70px + env(safe-area-inset-bottom, 0px)) !important;
-    right: 14px !important;
+  /* La grille à deux colonnes n'a plus lieu d'être : le menu est hors flux. */
+  .mise-en-page {
+    display: block !important;
+    min-height: calc(100dvh - var(--ard-barre, 56px));
   }
-  .ard-di-relance { bottom: calc(128px + env(safe-area-inset-bottom, 0px)) !important; }
-  #bandeau-hors-ligne {
-    bottom: calc(58px + env(safe-area-inset-bottom, 0px)) !important;
+
+  /* L'animation d'entrée anime `transform` sur `.contenu`, ce qui en fait le
+     bloc de confinement des modales en `position: fixed` (elles s'ouvraient
+     hors champ sur une page longue). Retirée sur téléphone. */
+  html .contenu { animation: none !important; transform: none !important; }
+
+  html.ard-mob-coque .contenu {
+    padding: 6px calc(16px + var(--ard-droite)) 12px calc(16px + var(--ard-gauche)) !important;
+    background: transparent;
+  }
+
+  /* La bulle « ? » flottante masquait le contenu : l'aide est dans le menu
+     (« Aide & Tutoriels »), comme dans une application. */
+  html.ard-mob-coque .ard-di-bouton { display: none !important; }
+
+  /* Le bandeau « hors ligne » se pose au-dessus de la barre d'onglets. */
+  html.ard-mob-coque #bandeau-hors-ligne {
+    bottom: calc(var(--ard-reserve-bas) - 12px) !important;
+    left: 12px !important; right: 12px !important;
+    border-radius: 14px;
     z-index: 1250 !important;
   }
 }
 
 /* =============================================================================
-   4. ONGLETS — la première cause de débordement
-   Une rangée d'onglets non sécables plus large que l'écran élargissait la page
-   entière. Elle devient une bande qui défile horizontalement, comme dans une
-   application native, avec accrochage.
+   4. BARRE DE NAVIGATION (haut)
+   Sous la barre d'état, sur toute la hauteur de l'encoche. Teinte sombre de
+   l'apparence (la barre d'état d'iOS écrit en blanc). Au repos elle porte la
+   marque ; quand le grand titre passe dessous, elle porte le nom de l'écran.
+   ============================================================================= */
+@media (max-width: 780px) {
+  html.ard-mob-coque .ard-mob-barre {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 1000;
+    display: grid;
+    grid-template-columns: minmax(64px, 1fr) auto minmax(64px, 1fr);
+    align-items: center;
+    height: calc(var(--ard-barre) + var(--ard-haut));
+    padding: var(--ard-haut) calc(8px + var(--ard-droite)) 0 calc(8px + var(--ard-gauche));
+    background: var(--ard-entete);
+    color: #fff;
+    font-family: var(--ard-police);
+    transition: box-shadow 0.25s ease;
+    -webkit-user-select: none; user-select: none;
+    view-transition-name: ard-barre;
+  }
+  html.ard-mob-coque.ard-defile .ard-mob-barre {
+    box-shadow: 0 0.5px 0 rgba(0, 0, 0, 0.35), 0 8px 24px -10px rgba(0, 0, 0, 0.35);
+  }
+
+  .ard-mob-barre [hidden] { display: none !important; }
+  .ard-mob-gauche, .ard-mob-droite { display: flex; align-items: center; gap: 2px; min-width: 0; }
+  .ard-mob-droite { justify-content: flex-end; }
+
+  /* Le centre superpose la marque et le titre dans la même cellule. */
+  .ard-mob-centre {
+    display: grid;
+    min-width: 0;
+    max-width: calc(100vw - 150px);
+    text-align: center;
+  }
+  .ard-mob-centre > * {
+    grid-area: 1 / 1;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    transition: opacity 0.22s ease, transform 0.28s var(--ard-ressort);
+  }
+  .ard-mob-marque {
+    font-family: var(--police-titre, Georgia, serif);
+    font-weight: 600; font-size: 1.12rem; letter-spacing: 0.01em;
+    opacity: 0.92;
+  }
+  .ard-mob-marque .lettre-i { position: relative; }
+  .ard-mob-marque .point-i-marque { display: none; }
+  .ard-mob-titre {
+    font-weight: 600; font-size: 17px; letter-spacing: -0.01em;
+    opacity: 0; transform: translateY(6px);
+  }
+  html.ard-titre-replie .ard-mob-marque { opacity: 0; transform: translateY(-6px); }
+  html.ard-titre-replie .ard-mob-titre { opacity: 1; transform: none; }
+
+  /* Boutons ronds de la barre : retour, messages, compte. */
+  .ard-mob-icone {
+    position: relative;
+    flex: none;
+    width: 40px; height: 40px;
+    display: grid; place-items: center;
+    padding: 0; margin: 0;
+    border: 0; border-radius: 50%;
+    background: none;
+    color: inherit;
+    cursor: pointer;
+    text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: background-color 0.15s ease, transform 0.15s ease;
+  }
+  .ard-mob-icone:active { background: rgba(255, 255, 255, 0.14); transform: scale(0.92); }
+  .ard-mob-icone svg {
+    width: 23px; height: 23px;
+    fill: none; stroke: currentColor;
+    stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+  }
+  .ard-mob-retour { width: auto; padding: 0 8px 0 2px; border-radius: 20px; gap: 0; display: flex; align-items: center; }
+  .ard-mob-retour svg { width: 26px; height: 26px; stroke-width: 2.2; }
+  .ard-mob-retour span { font-size: 17px; }
+
+  /* L'avatar ouvre le menu : c'est le geste « compte et réglages » des
+     applications natives. Il garde la classe historique `ard-mob-bouton`. */
+  .ard-mob-avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: grid; place-items: center;
+    background: rgba(255, 255, 255, 0.18);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+    font-size: 13px; font-weight: 700; letter-spacing: 0.02em;
+    overflow: hidden;
+  }
+  .ard-mob-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+  .ard-mob-pastille {
+    position: absolute;
+    top: 4px; right: 2px;
+    min-width: 17px; height: 17px; padding: 0 4px;
+    border-radius: 9px;
+    background: #FF3B30;
+    color: #fff;
+    font-size: 11px; font-weight: 700; line-height: 17px;
+    text-align: center;
+    box-shadow: 0 0 0 2px var(--ard-entete);
+    display: none;
+  }
+  .ard-mob-pastille.visible { display: block; }
+
+  /* Android : titre à gauche, barre plus haute (Material 3). */
+  html.ard-android .ard-mob-barre { grid-template-columns: auto 1fr auto; }
+  html.ard-android .ard-mob-centre { text-align: left; max-width: none; padding-left: 8px; }
+  html.ard-android .ard-mob-titre { font-size: 20px; font-weight: 500; }
+  html.ard-android .ard-mob-retour span { display: none; }
+
+  /* Le bouton hamburger d'origine (`ui.js`) n'a plus d'objet sur téléphone. */
+  .barre-laterale .bouton-menu { display: none !important; }
+}
+
+/* =============================================================================
+   5. GRAND TITRE ET EN-TÊTE D'ÉCRAN
+   ============================================================================= */
+@media (max-width: 780px) {
+  /* Trois structures coexistent dans les pages : titre + boutons directs,
+     `h1` + `p`, titre + groupe de boutons. Une rangée qui s'enroule les sert
+     toutes : chaque bloc de texte occupe une ligne entière, les boutons se
+     rangent à la suite en capsules. (En colonne avec `flex-wrap: wrap`, que
+     plusieurs pages écrivent, une ligne prenait la largeur de son plus large
+     élément et la page entière se dézoomait.) */
+  html.ard-mob-coque .entete-page {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 20px 0;
+  }
+  html.ard-mob-coque .entete-page > * { flex: 1 1 100%; min-width: 0; }
+  html.ard-mob-coque .entete-page > .bouton { flex: 0 0 auto; order: 2; margin-top: 6px; }
+  html.ard-mob-coque .entete-page > .bouton-principal { order: 1; }
+  html.ard-mob-coque .entete-page > :not(:first-child):has(> .bouton) { margin-top: 6px; }
+  html.ard-mob-coque .entete-page h1 {
+    font-family: var(--ard-police-titre) !important;
+    font-size: 2.1rem !important;
+    font-weight: 700 !important;
+    line-height: 1.12 !important;
+    letter-spacing: -0.025em !important;
+    margin: 8px 0 4px 0 !important;
+  }
+  html.ard-mob-coque .entete-page :is(.sous-titre, p) {
+    font-size: 15px;
+    line-height: 1.4;
+    color: var(--ard-texte-2);
+    margin: 0;
+  }
+
+  /* Les boutons d'en-tête : une rangée de capsules qui défile, action
+     principale en tête. Trois boutons pleine largeur empilés, c'était un
+     formulaire web ; une rangée de capsules, c'est une barre d'actions. */
+  html.ard-mob-coque .entete-page > :not(:first-child):has(> .bouton),
+  html.ard-mob-coque .entete-page .groupe-boutons {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    gap: 8px;
+    width: auto;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin: 0 calc(-16px - var(--ard-droite)) 0 calc(-16px - var(--ard-gauche));
+    padding: 2px calc(16px + var(--ard-droite)) 4px calc(16px + var(--ard-gauche));
+    scroll-padding-inline: 16px;
+  }
+  html.ard-mob-coque .entete-page > :not(:first-child)::-webkit-scrollbar { display: none; }
+  html.ard-mob-coque .entete-page :is(.groupe-boutons, div) > .bouton,
+  html.ard-mob-coque .entete-page > .bouton {
+    flex: none !important;
+    width: auto !important;
+    min-height: 38px !important;
+    padding: 8px 16px !important;
+    border-radius: 999px !important;
+    font-size: 15px !important;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  html.ard-mob-coque .entete-page :is(.groupe-boutons, div) > .bouton-principal { order: -1; }
+  html.ard-mob-coque .entete-page :is(.groupe-boutons, div) > [style*="display: none"],
+  html.ard-mob-coque .entete-page :is(.groupe-boutons, div) > [style*="display:none"] { display: none !important; }
+
+  /* Boutons en général : cible tactile de 44 px, coins arrondis. */
+  html.ard-mob-coque .bouton {
+    min-height: 44px;
+    border-radius: 12px;
+    padding: 11px 16px !important;
+    touch-action: manipulation;
+  }
+  html.ard-mob-coque .bouton:active { transform: scale(0.97); }
+}
+
+/* =============================================================================
+   6. BARRE D'ONGLETS
+   iOS : capsule de verre flottante, une lentille sous l'onglet actif, et un
+   bouton rond à part pour le menu complet (la disposition d'iOS 26).
+   Android : barre Material 3 pleine largeur, pastille derrière l'icône.
+   ============================================================================= */
+@media (max-width: 780px) {
+  html.ard-mob-coque .ard-onglets {
+    position: fixed;
+    left: calc(14px + var(--ard-gauche));
+    right: calc(14px + var(--ard-droite));
+    bottom: var(--ard-onglets-bas);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    pointer-events: none;
+    font-family: var(--ard-police);
+    -webkit-user-select: none; user-select: none;
+    -webkit-touch-callout: none;
+    transition: transform 0.42s var(--ard-ressort), opacity 0.25s ease;
+    /* PAS de `view-transition-name` ici : un élément nommé devient une
+       « racine de fond » (Filter Effects 2), et le verre ne voyait plus la
+       page qui passe dessous — il restait plat. */
+  }
+  html.ard-mob-coque .ard-onglets > * { pointer-events: auto; }
+
+  /* ---------------------------------------------------------------- Verre
+     Le verre liquide d'iOS 26 n'est pas un flou : c'est une lentille. Le
+     centre reste presque clair, le bord concentre la lumière et déforme ce
+     qui passe dessous, un reflet spéculaire court sur la tranche.
+
+     Trois calques FRÈRES, jamais imbriqués : un élément qui porte déjà un
+     `backdrop-filter` (ou une opacité, un masque, un filtre) devient la
+     « racine de fond » de ses enfants, qui ne verraient plus la page.
+
+       .ard-verre-fond    givre léger + saturation (+ réfraction réelle là où
+                          le moteur l'accepte, posée par mobile.js)
+       .ard-verre-bord    anneau plus flou et plus lumineux : la lentille du
+                          bord, l'effet de déformation sur iOS
+       .ard-verre-reflet  liserés et reflets spéculaires, sans flou
+
+     Le conteneur ne porte AUCUN de ces effets lui-même. */
+  .ard-onglets-capsule,
+  .ard-onglets-menu {
+    position: relative;
+    isolation: auto;
+    height: var(--ard-onglets-h);
+    background: transparent;
+    box-shadow:
+      0 10px 30px -6px rgba(0, 0, 0, 0.22),
+      0 2px 6px rgba(0, 0, 0, 0.06);
+    transition: height 0.45s var(--ard-ressort), width 0.45s var(--ard-ressort),
+      flex-grow 0.5s var(--ard-ressort), transform 0.35s var(--ard-ressort);
+  }
+  .ard-verre-fond, .ard-verre-bord, .ard-verre-reflet {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+  }
+  .ard-verre-fond {
+    background: rgba(255, 255, 255, 0.26);
+    -webkit-backdrop-filter: blur(5px) saturate(190%) brightness(1.04);
+    backdrop-filter: blur(5px) saturate(190%) brightness(1.04);
+  }
+  .ard-verre-bord {
+    padding: 7px;
+    background: rgba(255, 255, 255, 0.10);
+    -webkit-backdrop-filter: blur(11px) saturate(230%) brightness(1.14);
+    backdrop-filter: blur(11px) saturate(230%) brightness(1.14);
+    /* Ne garder que l'anneau : le bord de la goutte. */
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  }
+  .ard-verre-reflet {
+    background:
+      radial-gradient(130% 120% at 18% -10%, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0) 42%),
+      radial-gradient(90% 90% at 88% 120%, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 48%),
+      radial-gradient(60px 60px at var(--ard-reflet-x, -100px) 50%, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0) 70%);
+    box-shadow:
+      inset 0 1px 0.5px rgba(255, 255, 255, 0.95),
+      inset 0 -1px 0.5px rgba(255, 255, 255, 0.45),
+      inset 1px 0 0.5px rgba(255, 255, 255, 0.35),
+      inset -1px 0 0.5px rgba(255, 255, 255, 0.35),
+      inset 0 0 0 0.5px rgba(255, 255, 255, 0.35),
+      inset 0 10px 14px -12px rgba(255, 255, 255, 0.9),
+      inset 0 -12px 16px -14px rgba(0, 0, 0, 0.12),
+      0 0 0 0.5px rgba(0, 0, 0, 0.07);
+  }
+  html.ard-mob-sombre .ard-verre-fond { background: rgba(28, 28, 32, 0.34); }
+  html.ard-mob-sombre .ard-verre-bord { background: rgba(255, 255, 255, 0.04); }
+  html.ard-mob-sombre .ard-verre-reflet {
+    background:
+      radial-gradient(130% 120% at 18% -10%, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 42%),
+      radial-gradient(60px 60px at var(--ard-reflet-x, -100px) 50%, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0) 70%);
+    box-shadow:
+      inset 0 1px 0.5px rgba(255, 255, 255, 0.4),
+      inset 0 -1px 0.5px rgba(255, 255, 255, 0.14),
+      inset 0 0 0 0.5px rgba(255, 255, 255, 0.16),
+      0 0 0 0.5px rgba(0, 0, 0, 0.4);
+  }
+  /* Sans `backdrop-filter` (vieux navigateurs, transparence réduite) : une
+     surface pleine, lisible. */
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .ard-verre-fond { background: var(--ard-surface); }
+    .ard-verre-bord { display: none; }
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    .ard-verre-fond { background: var(--ard-surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
+    .ard-verre-bord { display: none; }
+  }
+
+  .ard-onglets-capsule {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    padding: 4px;
+    border-radius: 999px;
+    touch-action: none;           /* le doigt peut glisser d'un onglet à l'autre */
+    -webkit-user-drag: none;
+  }
+  /* Appui : la goutte enfle légèrement sous le doigt. */
+  html.ard-onglets-presse .ard-onglets-capsule { transform: scale(1.025); }
+
+  .ard-onglet {
+    position: relative;
+    z-index: 2;
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    overflow: hidden;
+    border-radius: 999px;
+    color: var(--ard-texte);
+    text-decoration: none;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.005em;
+    -webkit-tap-highlight-color: transparent;
+    transition: flex 0.5s var(--ard-ressort), opacity 0.25s ease, color 0.2s ease;
+  }
+  /* Lisibilité sur un verre clair : une légère auréole, comme la vibrance. */
+  html.ard-mob-coque:not(.ard-mob-sombre) .ard-onglet,
+  html.ard-mob-coque:not(.ard-mob-sombre) .ard-onglets-menu { text-shadow: 0 0 8px rgba(255, 255, 255, 0.85); }
+  .ard-onglet span {
+    max-width: 100%;
+    max-height: 14px;
+    padding: 0 2px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    transition: opacity 0.2s ease, max-height 0.35s var(--ard-ressort);
+  }
+  .ard-onglet svg {
+    flex: none;
+    width: 25px; height: 25px;
+    fill: none; stroke: currentColor;
+    stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round;
+    transition: transform 0.35s var(--ard-ressort);
+  }
+  .ard-onglet.actif { color: var(--ard-accent); }
+  .ard-onglet.actif svg { stroke-width: 2; }
+  .ard-onglet.ard-survol svg { transform: scale(1.12); }
+
+  /* ------------------------------------------------------------ Lentille
+     Au repos : une pastille grise discrète sous l'onglet actif. À l'appui,
+     elle devient une goutte de verre plus grande que la barre, qui suit le
+     doigt, s'étire avec la vitesse et grossit ce qu'elle survole ; relâchée,
+     elle se pose avec un ressort sur l'onglet choisi. */
+  .ard-onglets-lentille {
+    position: absolute;
+    z-index: 1;
+    top: 4px; bottom: 4px; left: 0;
+    width: var(--ard-lentille-l, 0px);
+    transform: translateX(var(--ard-lentille-x, 0px));
+    border-radius: 999px;
+    background: rgba(118, 118, 128, 0.16);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.55s cubic-bezier(0.3, 1.35, 0.5, 1), width 0.5s cubic-bezier(0.3, 1.3, 0.5, 1),
+      opacity 0.2s ease, background-color 0.25s ease, box-shadow 0.25s ease;
+  }
+  .ard-onglets-lentille.posee { opacity: 1; }
+  html.ard-mob-sombre .ard-onglets-lentille { background: rgba(255, 255, 255, 0.12); }
+  html.ard-onglets-presse .ard-onglets-lentille {
+    z-index: 3;
+    transform: translateX(var(--ard-lentille-x, 0px)) scale(calc(1.14 * var(--ard-etire, 1)), 1.3);
+    background: rgba(255, 255, 255, 0.03);
+    /* Pas de flou : sous la goutte, l'icône reste nette (et grossie là où la
+       réfraction réelle est disponible). */
+    -webkit-backdrop-filter: saturate(160%) brightness(1.03);
+    backdrop-filter: saturate(160%) brightness(1.03);
+    box-shadow:
+      inset 0 1px 0.5px rgba(255, 255, 255, 0.95),
+      inset 0 -1px 1px rgba(255, 255, 255, 0.5),
+      inset 0 0 0 0.5px rgba(255, 255, 255, 0.6),
+      inset 0 0 14px rgba(255, 255, 255, 0.22),
+      0 6px 18px rgba(0, 0, 0, 0.16);
+    transition: transform 0.14s ease-out, width 0.3s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .ard-onglets-menu {
+    flex: none;
+    width: var(--ard-onglets-h);
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    color: var(--ard-texte);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .ard-onglets-menu:active { transform: scale(1.08); }
+  .ard-onglets-menu svg {
+    position: relative;
+    z-index: 2;
+    width: 25px; height: 25px;
+    fill: none; stroke: currentColor;
+    stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+  }
+  .ard-onglets-menu > span:not([class]) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  /* Écran atteint par le menu : c'est le menu qui est « actif ». */
+  .ard-onglets-menu.actif { color: var(--ard-accent); }
+
+  /* ------------------------------------------------- Barre réduite (iOS 26)
+     En défilant vers le bas, la barre se replie sur l'onglet courant pour
+     rendre l'écran au contenu ; elle se redéploie dès qu'on remonte ou qu'on
+     la touche. */
+  html.ard-onglets-mini .ard-onglets-capsule { flex-grow: 0; height: 50px; }
+  html.ard-onglets-mini .ard-onglets-menu { width: 50px; height: 50px; }
+  html.ard-onglets-mini .ard-onglet:not(.ard-garde) { flex: 0 0 0px; opacity: 0; pointer-events: none; }
+  html.ard-onglets-mini .ard-onglet.ard-garde { flex: 0 0 62px; }
+  html.ard-onglets-mini .ard-onglet span { max-height: 0; opacity: 0; }
+  html.ard-onglets-mini .ard-onglets-lentille { opacity: 0; }
+
+  /* Le clavier virtuel ouvert, ou le menu ouvert : la barre s'efface. */
+  html.ard-clavier .ard-onglets,
+  html.ard-mob-ouvert .ard-onglets {
+    transform: translateY(calc(100% + 40px));
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* -------------------------------------------------------------- Android */
+  html.ard-android .ard-onglets {
+    left: 0; right: 0; bottom: 0;
+    gap: 0;
+    padding: 0 var(--ard-droite) var(--ard-bas) var(--ard-gauche);
+    background: color-mix(in srgb, var(--ard-surface) 90%, var(--ard-accent) 10%);
+    box-shadow: 0 -0.5px 0 var(--ard-ligne);
+    pointer-events: auto;
+  }
+  html.ard-android :is(.ard-onglets-capsule, .ard-onglets-menu) {
+    height: 80px;
+    background: transparent;
+    -webkit-backdrop-filter: none; backdrop-filter: none;
+    box-shadow: none;
+    border-radius: 0;
+  }
+  html.ard-android .ard-onglets-capsule { padding: 0; touch-action: auto; }
+  html.ard-android :is(.ard-verre-fond, .ard-verre-bord, .ard-verre-reflet) { display: none; }
+  html.ard-android .ard-onglet { text-shadow: none !important; }
+  html.ard-android .ard-onglets-lentille { display: none; }
+  html.ard-android .ard-onglet,
+  html.ard-android .ard-onglets-menu {
+    gap: 4px;
+    font-size: 12px; font-weight: 500;
+    border-radius: 0;
+    padding-top: 4px;
+  }
+  html.ard-android .ard-onglets-menu {
+    width: auto; flex: 1 1 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  html.ard-android .ard-onglets-menu span { position: static; width: auto; height: auto; clip: auto; overflow: visible; }
+  html.ard-android :is(.ard-onglet, .ard-onglets-menu) svg {
+    width: 64px; height: 32px;
+    padding: 4px 20px;
+    box-sizing: border-box;
+    border-radius: 16px;
+    transition: background-color 0.25s ease;
+  }
+  html.ard-android :is(.ard-onglet, .ard-onglets-menu).actif { color: var(--ard-texte); font-weight: 700; }
+  html.ard-android :is(.ard-onglet, .ard-onglets-menu).actif svg {
+    background: color-mix(in srgb, var(--ard-accent) 26%, transparent);
+  }
+}
+
+/* =============================================================================
+   7. LE MENU — une feuille qui monte du bas
+   C'est la VRAIE `.barre-laterale` qui est mise en forme ici, et non une
+   copie : le filtrage par rôle, l'entrée « Aide & Tutoriels », le bouton de
+   déconnexion et ses gestionnaires restent ceux de la page.
+   ============================================================================= */
+@media (max-width: 780px) {
+  html.ard-mob-coque .barre-laterale,
+  html.ard-mob-coque[data-nav-position] .barre-laterale,
+  html.ard-mob-coque[data-nav-compact="oui"] .barre-laterale {
+    position: fixed !important;
+    top: calc(var(--ard-haut) + 10px) !important;
+    bottom: 0 !important; left: 0 !important; right: 0 !important;
+    width: auto !important; max-width: none !important;
+    height: auto !important; min-height: 0 !important; max-height: none !important;
+    /* Les pages écrivent `align-self: start` (rail collant de bureau). Les
+       navigateurs récents l'appliquent aussi aux éléments positionnés : la
+       feuille prenait alors la hauteur de son contenu, et ne défilait plus. */
+    align-self: stretch !important;
+    justify-self: stretch !important;
+    margin: 0 !important;
+    padding: 0 calc(16px + var(--ard-droite)) calc(28px + var(--ard-bas)) calc(16px + var(--ard-gauche)) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+    flex-wrap: nowrap !important;
+    gap: 0 !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    z-index: 1101 !important;
+    border: 0 !important;
+    border-radius: 22px 22px 0 0 !important;
+    background: var(--ard-fond) !important;
+    background-image: none !important;
+    color: var(--ard-texte) !important;
+    font-family: var(--ard-police);
+    box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.22) !important;
+    -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+    opacity: 1 !important;
+    visibility: hidden;
+    transform: translateY(104%) !important;
+    transition: transform 0.5s var(--ard-ressort), visibility 0s linear 0.5s !important;
+  }
+  html.ard-mob-coque .barre-laterale.nav-ouverte {
+    visibility: visible;
+    transform: translateY(var(--ard-tire, 0px)) !important;
+    transition: transform 0.5s var(--ard-ressort), visibility 0s !important;
+  }
+  html.ard-mob-coque .barre-laterale.ard-tire-en-cours { transition: none !important; }
+  html.ard-mob-coque .barre-laterale::before,
+  html.ard-mob-coque .barre-laterale::after { display: none !important; }
+
+  /* Le conteneur intermédiaire redevient un bloc ordinaire. */
+  html.ard-mob-coque .barre-laterale > div:not(.ard-feuille-entete) { display: block !important; width: 100% !important; }
+  html.ard-mob-coque .barre-laterale .marque { display: none !important; }
+
+  /* Le voile : tout l'écran, sans flou (un `backdrop-filter` ici passait
+     devant le panneau dans certaines applications installées). */
+  html.ard-mob-coque .ard-mob-voile {
+    display: block;
+    position: fixed; inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 1100;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.4s ease;
+  }
+  html.ard-mob-ouvert .ard-mob-voile { opacity: 1; pointer-events: auto; }
+  html.ard-mob-ouvert, html.ard-mob-ouvert body { overflow: hidden !important; }
+
+  /* ------------------------------------------------------------ En-tête */
+  html.ard-mob-coque .ard-feuille-entete {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    display: grid;
+    grid-template-columns: 44px 1fr 44px;
+    align-items: center;
+    flex: none;
+    min-height: 58px;
+    margin: 0 calc(-16px - var(--ard-droite)) 0 calc(-16px - var(--ard-gauche));
+    padding: 10px calc(12px + var(--ard-droite)) 4px calc(12px + var(--ard-gauche));
+    background: var(--ard-fond);
+    touch-action: none;
+  }
+  .ard-feuille-poignee {
+    position: absolute;
+    top: 6px; left: 50%;
+    width: 38px; height: 5px;
+    margin-left: -19px;
+    border-radius: 3px;
+    background: var(--ard-texte-2);
+    opacity: 0.35;
+  }
+  .ard-feuille-titre {
+    grid-column: 2;
+    margin: 0;
+    text-align: center;
+    font-family: var(--ard-police);
+    font-size: 17px; font-weight: 600;
+    color: var(--ard-texte);
+  }
+  html.ard-mob-coque .ard-mob-fermer {
+    grid-column: 3;
+    position: static !important;
+    display: grid; place-items: center;
+    width: 32px; height: 32px;
+    justify-self: end;
+    padding: 0; border: 0;
+    border-radius: 50%;
+    background: var(--ard-remplissage);
+    color: var(--ard-texte-2);
+    cursor: pointer;
+  }
+  .ard-mob-fermer svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2.6; stroke-linecap: round; }
+
+  /* ------------------------------------------------------------ Profil */
+  html.ard-mob-coque .ard-feuille-profil {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex: none;
+    margin: 8px 0 14px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: var(--ard-surface);
+    color: var(--ard-texte);
+    text-decoration: none;
+  }
+  .ard-feuille-profil:active { background: var(--ard-remplissage); }
+  .ard-feuille-profil .ard-mob-avatar {
+    width: 54px; height: 54px;
+    font-size: 20px;
+    background: var(--ard-accent);
+    color: #fff;
+    box-shadow: none;
+  }
+  .ard-feuille-profil-texte { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .ard-feuille-profil-texte strong { font-size: 19px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ard-feuille-profil-texte span { font-size: 14px; color: var(--ard-texte-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* ---------------------------------------------------------- Recherche */
+  html.ard-mob-coque .ard-feuille-recherche {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: none;
+    height: 38px;
+    margin: 0 0 6px;
+    padding: 0 10px;
+    border-radius: 11px;
+    background: var(--ard-remplissage);
+    color: var(--ard-texte-2);
+  }
+  .ard-feuille-recherche svg { flex: none; width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
+  html.ard-mob-coque .ard-feuille-recherche input {
+    flex: 1; min-width: 0;
+    height: 100%;
+    min-height: 0 !important;
+    margin: 0; padding: 0 !important;
+    border: 0 !important; outline: none;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: var(--ard-texte);
+    font-family: var(--ard-police);
+    font-size: 16px !important;
+    -webkit-appearance: none; appearance: none;
+  }
+  .ard-feuille-recherche input::placeholder { color: var(--ard-texte-2); opacity: 0.85; }
+  .ard-feuille-vide { padding: 28px 0; text-align: center; color: var(--ard-texte-2); font-size: 15px; }
+
+  /* ---------------------------------------------- Listes groupées du menu */
+  html.ard-mob-coque .nav-liste {
+    display: flex !important;
+    visibility: visible !important;
+    flex-direction: column !important;
+    gap: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: none !important;
+    animation: none !important;
+  }
+
+  /* Le rail réduit n'a plus d'objet : on rend les entrées repliées par
+     `reduireRail()` — repérables à leur `data-epingle`, que lui seul pose.
+     Celles écartées par le RÔLE n'en portent pas et restent masquées. */
+  .nav-liste li[data-epingle] { display: block !important; }
+  .nav-liste li.ard-mob-sans-objet,
+  html.ard-mob-coque .nav-liste li.ard-mob-doublon,
+  html.ard-mob-coque .nav-liste li.ard-cache-recherche,
+  html.ard-mob-coque .nav-liste .ard-mob-famille.ard-cache-recherche { display: none !important; }
+
+  html.ard-mob-coque .ard-mob-famille {
+    display: block;
+    list-style: none;
+    margin: 22px 0 7px 16px;
+    font-family: var(--ard-police) !important;
+    font-size: 13px;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: var(--ard-texte-2);
+  }
+
+  html.ard-mob-coque .nav-liste > li:not(.ard-mob-famille) {
+    position: relative;
+    list-style: none;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: var(--ard-surface) !important;
+    border: 0 !important;
+    border-radius: 0;
+  }
+  html.ard-mob-coque .nav-liste > li.ard-premier { border-top-left-radius: 14px; border-top-right-radius: 14px; }
+  html.ard-mob-coque .nav-liste > li.ard-dernier { border-bottom-left-radius: 14px; border-bottom-right-radius: 14px; }
+  html.ard-mob-coque .nav-liste > li.ard-seul { margin-top: 22px !important; }
+  /* Séparateur fin, décalé après l'icône comme dans les réglages d'iOS. */
+  html.ard-mob-coque .nav-liste > li:not(.ard-mob-famille):not(.ard-premier)::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 58px; right: 0;
+    height: 1px;
+    transform: scaleY(0.5);
+    transform-origin: top;
+    background: var(--ard-ligne);
+    z-index: 1;
+  }
+
+  html.ard-mob-coque .nav-liste .nav-item,
+  html.ard-mob-coque .nav-liste .nav-item:visited {
+    position: relative;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 14px !important;
+    width: 100% !important;
+    min-height: 50px;
+    margin: 0 !important;
+    padding: 9px 14px 9px 14px !important;
+    border: 0 !important;
+    border-radius: inherit !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: var(--ard-texte) !important;
+    font-family: var(--ard-police) !important;
+    font-size: 17px !important;
+    font-weight: 400 !important;
+    letter-spacing: -0.01em;
+    text-align: left;
+    text-decoration: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+    -webkit-tap-highlight-color: transparent;
+  }
+  html.ard-mob-coque .nav-liste .nav-item:active { background: var(--ard-remplissage) !important; }
+  html.ard-mob-coque .nav-liste .nav-item.actif { font-weight: 600 !important; color: var(--ard-accent) !important; }
+  html.ard-mob-coque .nav-liste .nav-item .nav-libelle { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  html.ard-mob-coque .nav-liste .nav-item .chevron { display: none !important; }
+
+  /* Les décorations des apparences (soulignés à la craie, lentilles…)
+     appartiennent au rail de bureau. Le chevron les remplace. */
+  html.ard-mob-coque .nav-liste .nav-item::before { display: none !important; }
+  html.ard-mob-coque .nav-liste .nav-item::after {
+    content: '' !important;
+    display: block !important;
+    position: static !important;
+    flex: none;
+    width: 8px !important; height: 14px !important;
+    margin-left: auto;
+    border: 0 !important; border-radius: 0 !important;
+    background: var(--ard-texte-2) !important;
+    opacity: 0.45;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 14'%3E%3Cpath d='M1 1l6 6-6 6' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 14'%3E%3Cpath d='M1 1l6 6-6 6' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+    animation: none !important;
+  }
+
+  /* L'icône dans un carré de couleur — la couleur dit la famille. */
+  html.ard-mob-coque .nav-liste .nav-item .nav-icone {
+    flex: none;
+    width: 30px !important; height: 30px !important;
+    padding: 5px;
+    box-sizing: border-box;
+    border-radius: 8px;
+    background: var(--ard-teinte, #8E8E93);
+    color: #fff !important;
+    stroke: #fff !important;
+    fill: none;
+    stroke-width: 1.9;
+    opacity: 1 !important;
+  }
+  html.ard-mob-coque .nav-liste .nav-item .nav-icone * { stroke: #fff !important; }
+  html.ard-android .nav-liste .nav-item .nav-icone { border-radius: 50%; }
+
+  html.ard-mob-coque .nav-liste .badge-nav-messages {
+    margin-left: auto;
+    order: 2;
+  }
+
+  /* La déconnexion : une ligne rouge à part, au bout de la feuille. */
+  html.ard-mob-coque .barre-laterale .nav-deconnexion {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex: none;
+    width: 100% !important;
+    min-height: 50px;
+    margin: 22px 0 0 0 !important;
+    padding: 12px !important;
+    border: 0 !important;
+    border-radius: 14px !important;
+    background: var(--ard-surface) !important;
+    color: #FF3B30 !important;
+    font-family: var(--ard-police) !important;
+    font-size: 17px !important;
+    font-weight: 500 !important;
+    position: static !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  html.ard-mob-sombre .barre-laterale .nav-deconnexion { color: #FF453A !important; }
+  html.ard-mob-coque .barre-laterale .nav-deconnexion:active { background: var(--ard-remplissage) !important; }
+
+  html.ard-android .barre-laterale { border-radius: 28px 28px 0 0 !important; }
+  html.ard-android .ard-feuille-poignee { width: 32px; height: 4px; margin-left: -16px; top: 8px; }
+}
+
+/* =============================================================================
+   8. ONGLETS D'ÉCRAN — des capsules qui défilent
+   Une rangée d'onglets non sécables élargissait la page entière. Elle devient
+   une bande de capsules qui défile, l'onglet actif plein.
    ============================================================================= */
 @media (max-width: 780px) {
   .onglets,
@@ -382,9 +1030,9 @@ body { overflow-wrap: break-word; }
     -webkit-overflow-scrolling: touch;
     scroll-snap-type: x proximity;
     scrollbar-width: none;
-    max-width: 100%;
+    max-width: none;
     min-width: 0;
-    margin-left: -16px;                  /* la bande touche les deux bords */
+    margin-left: -16px;
     margin-right: -16px;
     padding: 0 16px 2px 16px;
   }
@@ -400,55 +1048,41 @@ body { overflow-wrap: break-word; }
     display: flex !important;
     align-items: center;
   }
+
+  html.ard-mob-coque :is(.onglets, .barre-onglets, .onglets-secondaires) {
+    gap: 8px !important;
+    border-bottom: 0 !important;
+    padding-top: 2px;
+    padding-bottom: 6px;
+    margin-bottom: 16px !important;
+  }
+  html.ard-mob-coque .onglet {
+    min-height: 36px;
+    margin: 0 !important;
+    padding: 7px 15px !important;
+    border: 0 !important;
+    border-radius: 999px !important;
+    background: var(--ard-remplissage) !important;
+    color: var(--ard-texte) !important;
+    font-family: var(--ard-police);
+    font-size: 15px !important;
+    font-weight: 500 !important;
+    box-shadow: none !important;
+    cursor: pointer;
+  }
+  html.ard-mob-coque .onglet.actif,
+  html.ard-mob-coque .onglet[aria-selected="true"] {
+    background: var(--ard-texte) !important;
+    color: var(--ard-fond) !important;
+    font-weight: 600 !important;
+  }
+  html.ard-mob-coque .onglet::after { display: none !important; }
 }
 
 /* =============================================================================
-   5. EN-TÊTE DE PAGE, FILTRES ET ACTIONS
+   9. CONTENU — cartes, compteurs, filtres
    ============================================================================= */
 @media (max-width: 780px) {
-  .contenu {
-    padding: 18px 16px calc(28px + env(safe-area-inset-bottom, 0px)) 16px !important;
-  }
-
-  /* L'ANIMATION D'ENTRÉE EST RETIRÉE SUR TÉLÉPHONE — et ce n'est pas une
-     question de goût.
-
-     `theme.css` anime `transform` sur `.contenu`. Tout élément qui anime
-     `transform` devient un « bloc de confinement » pour ses descendants en
-     `position: fixed`, y compris après la fin de l'animation avec
-     `fill-mode: both`. Or les modales (`.voile`) sont des enfants de
-     `.contenu` dans les trente-sept pages : leur `inset: 0` se calculait donc
-     par rapport au CONTENU DE LA PAGE et non par rapport à l'écran. Sur une
-     page longue, la boîte de dialogue s'ouvrait quelque part au-dessus de la
-     position courante — invisible, et donnant l'impression que le bouton ne
-     faisait rien.
-
-     `ui.js` avait déjà dû déplacer `#message-flash` hors de `.contenu` pour la
-     même raison. Une modale, elle, ne peut pas être déplacée sans casser le
-     code de chaque page : on supprime donc la cause. Le fondu reste, seul le
-     déplacement de six pixels disparaît. */
-  html .contenu { animation: none !important; transform: none !important; }
-
-  .entete-page {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
-    margin-bottom: 18px;
-  }
-  .entete-page h1 { font-size: 1.45rem !important; line-height: 1.25; }
-  .entete-page .sous-titre { font-size: 0.88rem; }
-
-  /* Une rangée de boutons devient une colonne : trois boutons côte à côte sur
-     360 px, ce sont trois cibles trop étroites pour un pouce. */
-  .groupe-boutons { width: 100%; }
-  .groupe-boutons > .bouton,
-  .barre-actions > .bouton { flex: 1 1 auto; justify-content: center; }
-
-  .bouton {
-    min-height: 44px;
-    padding: 11px 16px !important;
-  }
-
   .barre-selecteurs,
   .barre-filtres,
   .barre-filtres-compta,
@@ -461,20 +1095,14 @@ body { overflow-wrap: break-word; }
   .barre-filtres > *,
   .barre-filtres-compta > * { width: 100%; min-width: 0; }
 
-  /* Toutes les grilles de la plateforme repassent en une colonne. */
-  .grille-stats, .grille-recap, .grille-widgets, .grille-2col,
+  .grille-widgets, .grille-2col,
   .grille-formulaire, .grille-periodes, .grille-liens, .grille-tresorerie,
   .ligne-champs, .grille-correspondance, .grille-cartes {
     grid-template-columns: 1fr !important;
   }
-
-  /* Ramener une grille à une colonne ne suffit pas. Plusieurs pages écrivent
-     `style="grid-column: span 2"` sur un champ qui doit occuper toute la
-     largeur — c'est juste sur deux colonnes, c'est destructeur sur une : le
-     navigateur CRÉE une deuxième colonne implicite, dimensionnée sur le
-     contenu, et la grille redevient plus large que l'écran. C'était le dernier
-     débordement d'`inscriptions.html`. Chaque enfant reprend donc une colonne
-     et une seule. */
+  /* `grid-column: span 2` sur une grille d'une colonne crée une deuxième
+     colonne implicite plus large que l'écran : chaque enfant reprend une
+     colonne et une seule. */
   .grille-stats > *, .grille-recap > *, .grille-widgets > *, .grille-2col > *,
   .grille-formulaire > *, .grille-periodes > *, .grille-liens > *,
   .grille-tresorerie > *, .ligne-champs > *, .grille-correspondance > *,
@@ -483,14 +1111,39 @@ body { overflow-wrap: break-word; }
     min-width: 0;
   }
 
+  /* Les compteurs : deux par rangée, compacts — comme les widgets d'un
+     téléphone, et non une colonne de cartes géantes. */
+  .grille-stats, .grille-recap { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px !important; }
+  html.ard-mob-coque .carte-recap {
+    padding: 12px 14px !important;
+    border-radius: 18px !important;
+    min-height: 0 !important;
+  }
+  html.ard-mob-coque .carte-recap .valeur { font-size: 1.6rem !important; line-height: 1.1 !important; }
+  html.ard-mob-coque .carte-recap .etiquette { font-size: 13px !important; margin-top: 2px; }
+  html.ard-mob-coque .carte-stat {
+    padding: 14px 14px 13px !important;
+    border-radius: 18px !important;
+    text-align: left !important;
+    min-height: 0 !important;
+  }
+  html.ard-mob-coque .carte-stat .valeur {
+    font-size: 1.7rem !important;
+    line-height: 1.1 !important;
+    padding-right: 34px;
+  }
+  html.ard-mob-coque .carte-stat .etiquette { font-size: 13px !important; margin-top: 4px; }
+  html.ard-mob-coque .carte-stat .pictogramme { transform: scale(0.78); transform-origin: top right; }
+
   .carte, .widget, .carte-config { padding: 16px !important; }
+  html.ard-mob-coque :is(.carte, .widget, .carte-config, .carte-stat, .conteneur-tableau, .tuile, .fiche) {
+    border-radius: 18px !important;
+  }
 }
 
 /* =============================================================================
-   6. CHAMPS DE SAISIE
-   Sous 16 px, iOS zoome automatiquement à la mise au point du champ — et ne
-   dézoome jamais. C'est la cause la plus fréquente de « la page a bougé toute
-   seule et je dois la remettre en place ».
+   10. CHAMPS DE SAISIE
+   Sous 16 px, iOS zoome à la mise au point du champ — et ne dézoome jamais.
    ============================================================================= */
 @media (max-width: 780px) {
   input, select, textarea {
@@ -503,19 +1156,14 @@ body { overflow-wrap: break-word; }
     min-height: 44px;
     width: 100%;
   }
-  /* CASES À COCHER ET BOUTONS RADIO
-     ------------------------------------------------------------------------
-     La taille (18 px) et l'alignement vertical sont posés une fois pour toutes
-     dans `ui.css`, parce que le défaut qu'ils corrigent — la case étirée par
-     `.champ input { width: 100% }` — existe à TOUTES les largeurs, et se voit
-     même mieux sur un grand écran. Il ne reste ici que ce qui relève du doigt :
-     la rangée cliquable de 44 px. */
-  input[type="checkbox"], input[type="radio"] {
-    min-height: 0;
+  html.ard-mob-coque :is(input[type="text"], input[type="search"], input[type="email"],
+    input[type="password"], input[type="number"], input[type="date"], input[type="tel"],
+    input:not([type]), select, textarea) {
+    border-radius: 12px !important;
   }
+  input[type="checkbox"], input[type="radio"] { min-height: 0; }
 
-  /* Un libellé qui enveloppe sa case devient une cible tactile complète :
-     case ET texte, sur 44 px de haut. */
+  /* Un libellé qui enveloppe sa case devient une cible tactile complète. */
   label.case, label.case-a-cocher, label.champ-case, .groupe-cases label {
     display: flex;
     align-items: center;
@@ -523,40 +1171,40 @@ body { overflow-wrap: break-word; }
     cursor: pointer;
   }
   .groupe-cases { min-width: 0; }
-  html.ard-mob-coque label { font-size: 0.82rem; }
+  html.ard-mob-coque label { font-size: 0.86rem; }
 }
 
 /* =============================================================================
-   7. MODALES — en feuille montante
-   Une boîte centrée avec des marges gaspille une surface déjà rare, et son
-   pied de page part sous le clavier virtuel.
+   11. MODALES — en feuilles, et feuille d'actions
    ============================================================================= */
 @media (max-width: 780px) {
   .voile {
     padding: 0 !important;
     align-items: flex-end !important;
-    /* Au-dessus de la barre d'application et du tiroir : une modale ouverte
-       est le seul objet avec lequel on interagit. */
     z-index: 1200 !important;
   }
   .modale, .modale-large {
     max-width: 100% !important;
     width: 100% !important;
     max-height: 92dvh !important;
-    border-radius: 16px 16px 0 0 !important;
-    padding: 20px 16px calc(20px + env(safe-area-inset-bottom, 0px)) 16px !important;
-    animation: ard-mob-monte 0.24s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+    border-radius: 22px 22px 0 0 !important;
+    padding: 22px calc(18px + env(safe-area-inset-right, 0px)) calc(20px + env(safe-area-inset-bottom, 0px)) calc(18px + env(safe-area-inset-left, 0px)) !important;
+    animation: ard-mob-monte 0.42s cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
+  html.ard-mob-coque :is(.modale, .modale-large) {
+    max-height: calc(100dvh - env(safe-area-inset-top, 0px) - 12px) !important;
   }
   .modale h2 { font-size: 1.2rem !important; }
 
-  /* Poignée de préhension : le signal visuel qu'on peut refermer. */
+  /* Poignée : le signal qu'il s'agit d'une feuille. */
   .modale::before {
     content: '';
     display: block;
-    width: 38px; height: 4px;
-    margin: -6px auto 14px auto;
-    border-radius: 4px;
-    background: var(--bordure, #e4dfcf);
+    width: 38px; height: 5px;
+    margin: -10px auto 16px auto;
+    border-radius: 3px;
+    background: currentColor;
+    opacity: 0.2;
   }
 
   .actions-modale {
@@ -569,36 +1217,332 @@ body { overflow-wrap: break-word; }
   }
   .actions-modale .bouton { width: 100%; justify-content: center; }
 
-  /* Le guide et le tiroir « tous les menus » passent au-dessus de la coque. */
   .ard-di-voile { z-index: 1300 !important; }
   .voile-tiroir { z-index: 1210 !important; }
   #message-flash, .message-flash {
     z-index: 1400 !important;
     left: 12px !important; right: 12px !important;
     width: auto !important; max-width: none !important;
-    top: calc(var(--mob-barre, 56px) + env(safe-area-inset-top, 0px) + 8px) !important;
+    top: calc(var(--ard-barre, 56px) + env(safe-area-inset-top, 0px) + 8px) !important;
+    border-radius: 14px !important;
   }
+
+  /* --------------------------------------------- Feuille d'actions (iOS) */
+  html.ard-mob-coque .ard-actions-voile {
+    display: block;
+    position: fixed; inset: 0;
+    z-index: 1300;
+    background: rgba(0, 0, 0, 0.36);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  html.ard-mob-coque .ard-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: fixed;
+    left: calc(10px + var(--ard-gauche));
+    right: calc(10px + var(--ard-droite));
+    bottom: calc(10px + var(--ard-bas));
+    z-index: 1301;
+    font-family: var(--ard-police);
+    transform: translateY(calc(100% + 30px));
+    visibility: hidden;
+    transition: transform 0.45s var(--ard-ressort), visibility 0s linear 0.45s;
+  }
+  html.ard-actions-ouvert .ard-actions-voile { opacity: 1; pointer-events: auto; }
+  html.ard-actions-ouvert .ard-actions { transform: none; visibility: visible; transition: transform 0.45s var(--ard-ressort), visibility 0s; }
+
+  .ard-actions-groupe {
+    display: flex;
+    flex-direction: column;
+    border-radius: 16px;
+    overflow: hidden;
+    background: var(--ard-verre);
+    -webkit-backdrop-filter: blur(30px) saturate(190%);
+    backdrop-filter: blur(30px) saturate(190%);
+  }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .ard-actions-groupe { background: var(--ard-surface); }
+  }
+  html.ard-mob-coque:not(.ard-mob-sombre) .ard-actions-groupe { background: rgba(250, 250, 252, 0.86); }
+  .ard-actions-titre {
+    padding: 14px 16px 12px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ard-texte-2);
+    border-bottom: 0.5px solid var(--ard-ligne);
+  }
+  .ard-actions button {
+    width: 100%;
+    min-height: 56px;
+    margin: 0;
+    padding: 12px 16px;
+    border: 0;
+    border-top: 0.5px solid var(--ard-ligne);
+    background: transparent;
+    color: var(--ard-accent);
+    font-family: var(--ard-police);
+    font-size: 19px;
+    font-weight: 400;
+    cursor: pointer;
+  }
+  .ard-actions-groupe > button:first-child,
+  .ard-actions-titre + button { border-top: 0; }
+  .ard-actions button:active { background: var(--ard-remplissage); }
+  .ard-actions button.ard-destructif { color: #FF3B30; }
+  .ard-actions button:disabled { opacity: 0.4; }
+  .ard-actions .ard-actions-annuler { border-radius: 16px; font-weight: 600; background: var(--ard-surface); }
+  html.ard-mob-coque:not(.ard-mob-sombre) .ard-actions .ard-actions-annuler { background: #fff; }
 }
 
 @keyframes ard-mob-monte {
-  from { transform: translateY(14px); opacity: 0.6; }
+  from { transform: translateY(40%); opacity: 0.5; }
   to { transform: none; opacity: 1; }
 }
 
 /* =============================================================================
-   8. TABLEAUX
-   `ui.css` transforme déjà les lignes en cartes sous 700 px. Ce qui manquait :
-   le même traitement pour les tableaux qu'aucune page n'avait enveloppés, et
-   une cible tactile correcte sur les actions de ligne.
+   12. TABLEAUX → LISTES
+   `mobile.js` (listes natives) classe chaque cellule selon son rôle :
+
+     .ard-c-sel      case de sélection, en tête de ligne
+     .ard-c-titre    le nom de la ligne (élève, cours, classe…), en gras ;
+                     les identifiants courts (matricule, classe, date) sont
+                     recopiés dessous en sous-titre (`data-ard-sous`)
+     .ard-c-sous     ces identifiants, masqués puisqu'ils sont déjà dits
+     .ard-c-fin      le statut ou le chiffre clé, à droite
+     .ard-c-actions  « Modifier / Supprimer… » : un bouton « ••• » ouvre la
+                     feuille d'actions (une seule action reste visible)
+     .ard-c-meta     les autres colonnes, en pastilles « intitulé / valeur »
+     .ard-c-saisie   champs, sélecteurs, boutons de choix : pleine largeur
+     .ard-c-compact  un champ de note isolé : à droite, comme une valeur
+
+   Aucun nœud n'est déplacé : les scripts des pages retrouvent leurs
+   cellules, leurs boutons et leurs écouteurs à l'identique.
    ============================================================================= */
-@media (max-width: 780px) {
-  .conteneur-tableau { max-width: 100%; }
-  .conteneur-tableau td .lien-action,
-  .conteneur-tableau td .bouton {
-    min-height: 40px;
-    display: inline-flex;
-    align-items: center;
+@media (max-width: 700px) {
+  html.ard-mob-coque .conteneur-tableau:has(> table.ard-liste),
+  html.ard-mob-coque .conteneur-tableau.ard-liste-boite {
+    overflow: hidden !important;
+    padding: 0 !important;
+    background: var(--ard-surface) !important;
+    border-radius: 18px !important;
   }
+  .conteneur-tableau table.ard-liste,
+  .conteneur-tableau table.ard-liste tbody,
+  .conteneur-tableau table.ard-liste tfoot {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    border: 0 !important;
+  }
+  .conteneur-tableau table.ard-liste thead { display: none !important; }
+
+  .conteneur-tableau table.ard-liste tr {
+    position: relative;
+    display: flex !important;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: 12px;
+    row-gap: 8px;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 13px 16px !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+  /* Séparateur fin entre deux lignes, décalé comme dans une liste iOS. */
+  .conteneur-tableau table.ard-liste tr + tr::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 16px; right: 0;
+    height: 1px;
+    transform: scaleY(0.5);
+    transform-origin: top;
+    background: var(--ard-ligne, rgba(60, 60, 67, 0.18));
+  }
+  .conteneur-tableau table.ard-liste tr.ard-avec-avatar + tr::before { left: 64px; }
+
+  /* Saut de ligne entre l'en-tête de la ligne et ses détails. */
+  .conteneur-tableau table.ard-liste tr.ard-a-suite::after {
+    content: '';
+    order: 4;
+    flex-basis: 100%;
+    height: 0;
+  }
+
+  /* Pas de `!important` sur `display` : une cellule masquée par la page
+     (style en ligne, colonne conditionnelle) doit le rester. */
+  .conteneur-tableau table.ard-liste td,
+  .conteneur-tableau table.ard-liste th {
+    display: block;
+    width: auto !important;
+    min-width: 0;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: none !important;
+    text-align: left !important;
+    font-size: 15px;
+    line-height: 1.3;
+  }
+  .conteneur-tableau table.ard-liste td::before { content: none !important; }
+
+  .conteneur-tableau table.ard-liste .ard-c-sel { order: 0; flex: none; }
+  .conteneur-tableau table.ard-liste .ard-c-sel input { width: 22px; height: 22px; margin: 0; }
+
+  .conteneur-tableau table.ard-liste .ard-c-titre {
+    order: 1;
+    flex: 1 1 0;
+    font-size: 16.5px;
+    font-weight: 600;
+    color: var(--ard-texte, inherit);
+    letter-spacing: -0.01em;
+  }
+  .conteneur-tableau table.ard-liste .ard-c-titre .cellule-personne { gap: 12px; }
+  .conteneur-tableau table.ard-liste .ard-c-titre .avatar { width: 38px !important; height: 38px !important; flex: none; }
+  .conteneur-tableau table.ard-liste .ard-c-titre .nom-personne { font-weight: 600; }
+  .conteneur-tableau table.ard-liste .ard-c-titre :is(.sous-nom) { font-size: 13.5px; font-weight: 400; color: var(--ard-texte-2, #6b7269); }
+
+  /* Le sous-titre recopié : identifiants courts, séparés par des points. */
+  .conteneur-tableau table.ard-liste .ard-c-titre[data-ard-sous]:not(:has(.identite))::after,
+  .conteneur-tableau table.ard-liste .ard-c-titre .identite[data-ard-sous]::after {
+    content: attr(data-ard-sous);
+    display: block;
+    margin-top: 2px;
+    font-size: 13.5px;
+    font-weight: 400;
+    letter-spacing: 0;
+    color: var(--ard-texte-2, #6b7269);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .conteneur-tableau table.ard-liste .ard-c-titre .sous-nom[data-ard-sous]::after {
+    content: ' · ' attr(data-ard-sous);
+  }
+  .conteneur-tableau table.ard-liste .ard-c-sous { display: none !important; }
+
+  .conteneur-tableau table.ard-liste .ard-c-fin,
+  .conteneur-tableau table.ard-liste .ard-c-compact {
+    order: 2;
+    flex: none;
+    max-width: 48%;
+    text-align: right !important;
+    font-size: 15px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .conteneur-tableau table.ard-liste .ard-c-compact input { width: 92px !important; text-align: center; }
+  .conteneur-tableau table.ard-liste .ard-c-fin.ard-fin-legende { font-size: 17px; line-height: 1.15; }
+  .conteneur-tableau table.ard-liste .ard-c-fin.ard-fin-legende::after {
+    content: attr(data-libelle);
+    display: block;
+    font-size: 11.5px;
+    font-weight: 500;
+    color: var(--ard-texte-2, #6b7269);
+  }
+
+  /* Actions : un seul bouton reste visible ; plusieurs se rangent derrière
+     « ••• » (la cellule entière est la cible, le geste ouvre la feuille). */
+  .conteneur-tableau table.ard-liste .ard-c-actions { order: 3; flex: none; }
+  .conteneur-tableau table.ard-liste .ard-c-actions.ard-plusieurs {
+    position: relative;
+    width: 36px !important; height: 36px;
+    border-radius: 50% !important;
+    background: var(--ard-remplissage, rgba(118, 118, 128, 0.12)) !important;
+    cursor: pointer;
+    overflow: hidden;
+  }
+  .conteneur-tableau table.ard-liste .ard-c-actions.ard-plusieurs > * { display: none !important; }
+  .conteneur-tableau table.ard-liste .ard-c-actions.ard-plusieurs::after {
+    content: '' !important;
+    position: absolute; inset: 0;
+    background: var(--ard-texte, #333);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='5.5' cy='12' r='1.9'/%3E%3Ccircle cx='12' cy='12' r='1.9'/%3E%3Ccircle cx='18.5' cy='12' r='1.9'/%3E%3C/svg%3E") center / 20px no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='5.5' cy='12' r='1.9'/%3E%3Ccircle cx='12' cy='12' r='1.9'/%3E%3Ccircle cx='18.5' cy='12' r='1.9'/%3E%3C/svg%3E") center / 20px no-repeat;
+  }
+  .conteneur-tableau table.ard-liste .ard-c-actions.ard-plusieurs:active { transform: scale(0.9); }
+  .conteneur-tableau table.ard-liste .ard-c-actions:not(.ard-plusieurs) :is(button, a, .lien-action, .bouton) {
+    min-height: 34px !important;
+    padding: 6px 14px !important;
+    border-radius: 999px !important;
+    background: var(--ard-remplissage, rgba(118, 118, 128, 0.12));
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    display: inline-flex; align-items: center;
+    text-decoration: none;
+  }
+
+  /* Les autres colonnes : des pastilles « intitulé au-dessus, valeur ». */
+  .conteneur-tableau table.ard-liste .ard-c-meta {
+    order: 5;
+    flex: 1 1 auto;
+    min-width: 84px;
+    padding: 7px 10px !important;
+    border-radius: 11px !important;
+    background: var(--ard-remplissage, rgba(118, 118, 128, 0.1)) !important;
+    font-size: 15px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+  .conteneur-tableau table.ard-liste .ard-c-meta.ard-long { flex-basis: 100%; font-weight: 400; }
+  .conteneur-tableau table.ard-liste .ard-c-meta[data-libelle]::before,
+  .conteneur-tableau table.ard-liste .ard-c-saisie[data-libelle]::before {
+    content: attr(data-libelle) !important;
+    display: block !important;
+    margin-bottom: 2px;
+    font-size: 11.5px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    text-transform: none;
+    color: var(--ard-texte-2, #6b7269);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    max-width: none;
+  }
+
+  .conteneur-tableau table.ard-liste .ard-c-saisie { order: 6; flex: 1 1 100%; }
+  .conteneur-tableau table.ard-liste .ard-c-saisie :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) { width: 100% !important; }
+  /* Un groupe de boutons de choix (présent / absent / retard…) devient une
+     commande segmentée pleine largeur. */
+  .conteneur-tableau table.ard-liste .ard-c-saisie :is(.groupe-statut, .groupe-choix, .segment) {
+    display: flex !important;
+    gap: 6px;
+    width: 100%;
+  }
+  .conteneur-tableau table.ard-liste .ard-c-saisie :is(.groupe-statut, .groupe-choix, .segment) > button {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 38px;
+    padding: 6px 4px !important;
+    border-radius: 10px !important;
+    font-size: 13.5px !important;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  .conteneur-tableau table.ard-liste td.ard-cellule-vide:not(.ard-c-titre):not(.ard-c-saisie):not(.ard-c-compact) { display: none !important; }
+
+  /* Ligne d'état (« Aucun résultat », « Chargement… ») : pleine largeur. */
+  .conteneur-tableau table.ard-liste tr.ard-ligne-pleine { display: block !important; padding: 0 !important; }
+  .conteneur-tableau table.ard-liste tr.ard-ligne-pleine td {
+    display: block !important;
+    width: 100% !important;
+    padding: 22px 16px !important;
+    text-align: center !important;
+    color: var(--ard-texte-2, #6b7269);
+  }
+  .conteneur-tableau table.ard-liste tr.ard-ligne-pleine::before { display: none; }
+
+  .conteneur-tableau table.ard-liste tr:active:not(:has(:is(input, select, textarea, button):active)) {
+    background: rgba(118, 118, 128, 0.06) !important;
+  }
+
+  /* La sélection multiple des élèves reste masquée hors du mode dédié
+     (`ui.css` l'affichait dans chaque fiche, case vide comprise). */
+  .conteneur-tableau table.ard-liste:not(.mode-selection) .col-selection { display: none !important; }
+
   /* Un tableau resté hors conteneur défile au lieu d'élargir la page. */
   .contenu > table,
   .carte > table {
@@ -609,11 +1553,22 @@ body { overflow-wrap: break-word; }
 }
 
 /* =============================================================================
-   9. APERÇUS DE BULLETIN
-   Ces quatre pages sont des feuilles A4 exprimées en millimètres : elles ne
-   peuvent pas « devenir responsives » sans cesser d'être des bulletins. On les
-   met donc à l'échelle de l'écran, comme le ferait un lecteur de PDF.
-   `mobile.js` calcule le facteur ; ici, seule la mécanique.
+   13. APPARENCES À COQUE PROPRE (Fluide, Orbite, Vibra, Nexus…)
+   Sur téléphone, leur barre haute et leur dock deviennent des doublons de la
+   coque native : ils redescendaient dans le flux de la page, en bloc statique
+   au milieu du tableau de bord. On les retire ; la barre d'onglets et la
+   feuille de menu (avec sa recherche) prennent le relais.
+   ============================================================================= */
+@media (max-width: 780px) {
+  html.ard-mob-coque :is(.fl-top, .fl-dock, .ob-top, .ob-dock, .vb-top, .vb-dock, .nx-dock, .nx-top) {
+    display: none !important;
+  }
+}
+
+/* =============================================================================
+   14. APERÇUS DE BULLETIN
+   Feuilles A4 en millimètres : mises à l'échelle de l'écran, comme un lecteur
+   de PDF. `mobile.js` calcule le facteur.
    ============================================================================= */
 @media (max-width: 780px) {
   body.ard-mob-feuille { overflow-x: hidden; padding-bottom: 0 !important; }
@@ -627,10 +1582,7 @@ body { overflow-wrap: break-word; }
 }
 
 /* =============================================================================
-   9 bis. SITE PUBLIC
-   Les pages de vente tenaient déjà dans l'écran à une exception près : le
-   simulateur de campagne de capture, dont les deux champs côte à côte
-   totalisent plus que la largeur disponible. Ils passent l'un sous l'autre.
+   15. SITE PUBLIC
    ============================================================================= */
 @media (max-width: 780px) {
   .conteneur { max-width: 100%; }
@@ -641,11 +1593,6 @@ body { overflow-wrap: break-word; }
   .simulateur .champ { flex-wrap: wrap; gap: 8px; }
   .simulateur .champ > * { min-width: 0; flex: 1 1 140px; }
 
-  /* Le sélecteur Mensuel / Semestriel / Annuel de la page des tarifs.
-     Trois boutons à 20 px de marge intérieure font 303 px à eux seuls : la
-     pilule tenait sur un iPhone récent et débordait de vingt pixels sur un
-     écran de 320 px — la moitié du parc en RDC. Le bloc devient une pilule
-     pleine largeur dont les trois parts se partagent la place. */
   .selecteur-periode {
     display: flex !important;
     width: 100%;
@@ -658,17 +1605,12 @@ body { overflow-wrap: break-word; }
     white-space: nowrap;
   }
 }
-
 @media (max-width: 380px) {
   .selecteur-periode button { font-size: 0.8rem !important; }
 }
 
 /* =============================================================================
-   9 ter. CONSOLE SUPER-ADMIN
-   Cet écran a sa propre coque (`.sa-navigation`, tiroir à 980 px) : la coque
-   de `mobile.js` ne s'y applique pas et ne doit pas s'y appliquer. Restent les
-   mêmes pièges de largeur qu'ailleurs — une cellule flex à `min-width: auto`,
-   une grille à colonne minimale de 360 px, un tableau non contraint.
+   16. CONSOLE SUPER-ADMIN — sa propre coque ; seulement les filets de largeur.
    ============================================================================= */
 @media (max-width: 780px) {
   .sa-application > *, .sa-principal, .sa-principal > * { min-width: 0; }
@@ -688,36 +1630,58 @@ body { overflow-wrap: break-word; }
 }
 
 /* =============================================================================
-   10. TRÈS PETITS ÉCRANS (≤ 380 px)
+   17. TRÈS PETITS ÉCRANS (≤ 380 px) ET PAYSAGE COURT
    ============================================================================= */
 @media (max-width: 380px) {
-  .contenu { padding-left: 13px !important; padding-right: 13px !important; }
+  html.ard-mob-coque .contenu { padding-left: 13px !important; padding-right: 13px !important; }
   .onglets, .barre-onglets, .onglets-secondaires {
     margin-left: -13px; margin-right: -13px;
     padding-left: 13px; padding-right: 13px;
   }
-  .entete-page h1 { font-size: 1.32rem !important; }
-  .ard-mob-pied a { font-size: 0.62rem; }
+  html.ard-mob-coque .entete-page h1 { font-size: 1.85rem !important; }
+  html.ard-mob-coque { --ard-onglets-h: 58px; }
+  .ard-onglet { font-size: 10px; }
+  html.ard-mob-coque .ard-onglets { left: 10px; right: 10px; gap: 8px; }
+}
+
+/* Téléphone couché : la hauteur est la ressource rare. La barre d'onglets
+   s'affine, sans libellés. */
+@media (max-width: 950px) and (max-height: 460px) and (orientation: landscape) {
+  html.ard-mob-coque { --ard-onglets-h: 50px; }
+  html.ard-mob-coque .ard-onglet span { display: none; }
+  html.ard-mob-coque .ard-onglets { left: 25%; right: 25%; }
 }
 
 /* =============================================================================
-   11. PAYSAGE COURT
-   Sur un téléphone couché, la hauteur devient la ressource rare : la barre
-   inférieure mangerait un quart de l'écran.
+   18. TRANSITIONS ENTRE ÉCRANS
+   Navigateurs récents (Safari 18.2+, Chrome 126+) : la page suivante arrive
+   en fondu, la barre du haut et la barre d'onglets ne bougent pas — c'est ce
+   qui fait la différence entre « une page qui se recharge » et « un écran qui
+   change ». Ailleurs, la règle est simplement ignorée.
    ============================================================================= */
-@media (max-width: 900px) and (max-height: 460px) and (orientation: landscape) {
-  .ard-mob-pied { display: none !important; }
-  body { padding-bottom: 12px !important; }
-  .ard-di-bouton { bottom: 14px !important; }
+@media (max-width: 780px) and (prefers-reduced-motion: no-preference) {
+  @view-transition { navigation: auto; }
+  ::view-transition-old(root) { animation: ard-vt-sortie 0.18s ease both; }
+  ::view-transition-new(root) { animation: ard-vt-entree 0.26s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
 }
+@keyframes ard-vt-sortie { to { opacity: 0; } }
+@keyframes ard-vt-entree { from { opacity: 0; transform: translateY(8px); } }
 
 /* =============================================================================
-   12. MOUVEMENT RÉDUIT
+   19. MOUVEMENT RÉDUIT ET IMPRESSION
    ============================================================================= */
 @media (prefers-reduced-motion: reduce) {
-  .barre-laterale, .ard-mob-voile, .ard-mob-pied,
-  .ard-mob-bouton span, .modale {
+  .barre-laterale, .ard-mob-voile, .ard-onglets, .ard-onglets-lentille,
+  .ard-mob-centre > *, .ard-actions, .modale {
     transition: none !important;
     animation: none !important;
   }
+}
+html[data-animations="non"] :is(.barre-laterale, .ard-mob-voile, .ard-onglets, .ard-onglets-lentille, .ard-actions, .modale) {
+  transition: none !important;
+  animation: none !important;
+}
+@media print {
+  .ard-mob-barre, .ard-onglets, .ard-mob-voile, .ard-actions, .ard-actions-voile { display: none !important; }
+  html.ard-mob-coque body { padding: 0 !important; }
 }

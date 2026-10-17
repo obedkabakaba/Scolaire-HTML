@@ -207,3 +207,66 @@ centrées, ordre du menu. Vérifié à 1280 et 1440 px, et dans les deux sens de
 rotation. La console super-admin garde sa propre coque (tiroir à 980 px) ;
 elle reçoit seulement le filet de largeur. Si `mobile.js` ne se charge pas, la
 plateforme fonctionne exactement comme avant.
+
+---
+
+# Lot « application native » — la coque mobile refaite
+
+Sur téléphone, la plateforme avait encore l'air d'un site de bureau tassé :
+barre du haut sous l'encoche, barre du bas collée à l'indicateur d'accueil,
+tiroir latéral, tableaux aplatis en fiches « INTITULÉ → valeur ». La couche
+mobile (`mobile.css`, `mobile.js`) a été réécrite.
+
+| Avant | Après |
+|---|---|
+| `viewport-fit` absent : zones sûres nulles sur iPhone | `viewport-fit=cover` sur les 32 écrans de l'application (`installer-mobile.py`) |
+| Barre haute sans encoche, hamburger | Barre de navigation sous la barre d'état, grand titre qui remonte dans la barre au défilement, retour, messages, avatar |
+| Barre du bas pleine largeur, collée au bord | iOS : capsule de verre flottante + bouton rond « menu » ; Android : barre Material 3 |
+| Tiroir latéral | Feuille qui monte du bas : profil, recherche d'écran, listes groupées par famille, glisser vers le bas pour fermer |
+| Lignes de tableau en fiches de 6 à 8 lignes | Listes : titre, sous-titre, statut à droite, chiffres en pastilles, actions dans une feuille d'actions « ••• » |
+| Compteurs en cartes géantes | Deux compteurs par rangée |
+| Boutons d'en-tête empilés pleine largeur | Capsules, action principale en tête |
+
+Points d'architecture :
+
+- La feuille de menu EST la `.barre-laterale` de la page, mise en forme
+  autrement : filtrage par rôle, « Aide & Tutoriels » et déconnexion gardent
+  leurs écouteurs. L'avatar garde la classe `ard-mob-bouton` (tests).
+- Les tableaux ne sont pas reconstruits : `mobile.js` pose des classes de rôle
+  (`ard-c-titre`, `ard-c-fin`, `ard-c-meta`…) sur les cellules existantes.
+  Un tableau peut refuser la liste avec `data-mobile="tableau"`.
+- La barre du haut prend la teinte sombre de l'apparence (`--ard-entete`,
+  calculée) : en mode « black-translucent », iOS écrit l'heure en blanc.
+- Transitions entre écrans par `@view-transition` (Safari 18.2+, Chrome 126+),
+  ignorées ailleurs. `sw.js` → `ardoise-v101`.
+
+Rien ne change au-dessus de 780 px. Les listes s'appliquent sous 700 px.
+
+## La barre d'onglets iOS : verre liquide
+
+La barre d'iOS 26 n'est pas un flou : c'est une lentille. Ce qu'une page web
+peut en obtenir dépend du moteur :
+
+- **iPhone (WebKit, tous les navigateurs d'iOS)** : Safari n'expose pas le
+  « Liquid Glass » d'Apple aux pages web et n'accepte pas de filtre SVG dans
+  `backdrop-filter`. Le verre est composé de trois calques frères rendus par
+  le GPU : givre léger et saturé (`.ard-verre-fond`), anneau de bord plus flou
+  et plus lumineux qui imite la lentille (`.ard-verre-bord`), liserés et
+  reflets spéculaires (`.ard-verre-reflet`). Frères et non imbriqués : un
+  élément qui porte un `backdrop-filter`, une opacité, un masque ou un
+  `view-transition-name` devient la « racine de fond » de ses enfants, qui ne
+  voient plus la page.
+- **Chromium** : vraie réfraction. `mobile.js` calcule une carte de
+  déplacement à la taille exacte de la forme (coins ronds compris) et la pose
+  en `backdrop-filter: url(#…)` ; la carte est recalculée quand la forme change.
+
+Le comportement suit iOS 26 : appui → la lentille enfle en goutte, on la fait
+glisser d'un onglet à l'autre (elle s'étire avec la vitesse), on relâche → elle
+se pose et l'écran s'ouvre ; en défilant vers le bas la barre se réduit à
+l'onglet courant, elle se redéploie en remontant ou au toucher. Les liens
+restent des liens au clavier. `prefers-reduced-transparency` rend une surface
+pleine.
+
+Le seul moyen d'obtenir le verre natif d'Apple, au pixel près, est une barre
+native (SwiftUI `glassEffect`) dans une application iOS qui embarque la
+plateforme (Capacitor, par exemple).

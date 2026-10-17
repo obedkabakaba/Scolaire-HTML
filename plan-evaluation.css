@@ -1,0 +1,43 @@
+/* ==========================================================================
+   Ardoise — Plan d'évaluation (plan-evaluation.js), onglet de Année scolaire.
+   ========================================================================== */
+#onglet-plan .panneau + .panneau { margin-top: 18px; }
+#onglet-plan .aide { font-size: 0.84rem; color: var(--texte-att); line-height: 1.55; margin: 0 0 14px; }
+#onglet-plan h3 { font-family: var(--police-titre); margin: 0 0 8px; }
+
+.plan-legende { list-style: none; display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 0; margin: 4px 0 10px; font-size: .78rem; color: var(--texte-att); }
+.plan-legende li { display: inline-flex; align-items: center; gap: 6px; }
+.plan-pastille { width: 16px; height: 12px; border-radius: 3px; border: 1px solid var(--bordure); background: var(--craie-2); }
+.plan-pastille.exception { background: color-mix(in srgb, var(--ocre) 25%, var(--craie-2)); border-color: var(--ocre); }
+.plan-pastille.heritee { background: color-mix(in srgb, var(--encre, #3C5A62) 14%, var(--craie-2)); }
+.plan-pastille.noire { background: #1d1d1d; border-color: #1d1d1d; }
+.plan-pastille.modifiee { box-shadow: inset 0 0 0 2px var(--vert-ok); }
+
+.plan-defilement { overflow: auto; max-height: 62vh; border: 1px solid var(--bordure); border-radius: var(--r-petit, 6px); }
+.plan-table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: .82rem; }
+.plan-table th, .plan-table td { border-right: 1px solid var(--bordure); border-bottom: 1px solid var(--bordure); padding: 0; text-align: center; }
+.plan-table thead th { position: sticky; top: 0; background: var(--craie); padding: 6px 4px; font-weight: 600; z-index: 2; white-space: nowrap; }
+.plan-table thead tr + tr th { top: 29px; }
+.plan-table th.plan-examen { background: color-mix(in srgb, var(--ocre) 12%, var(--craie)); }
+.plan-table .plan-branche { position: sticky; left: 0; background: var(--craie-2); text-align: left; padding: 6px 10px; min-width: 170px; z-index: 1; font-weight: 500; }
+.plan-table thead .plan-branche { z-index: 3; background: var(--craie); }
+.plan-table .plan-total { padding: 6px 8px; font-weight: 600; background: var(--craie); min-width: 56px; }
+.plan-case input {
+  width: 100%; min-width: 52px; box-sizing: border-box; border: 0; background: transparent; text-align: center;
+  padding: 8px 4px; font: inherit; color: var(--texte-sombre);
+}
+.plan-case input:focus { outline: 2px solid var(--ocre); outline-offset: -2px; background: var(--craie-2); }
+.plan-case input:disabled { color: var(--texte-att); cursor: not-allowed; }
+.plan-case input::placeholder { color: var(--texte-att); font-style: italic; font-size: .74rem; }
+.plan-case.exception { background: color-mix(in srgb, var(--ocre) 22%, transparent); }
+.plan-case.heritee { background: color-mix(in srgb, var(--encre, #3C5A62) 12%, transparent); }
+.plan-case.noire { background: #1d1d1d; }
+.plan-case.noire input { color: #f2f2f2; font-weight: 600; letter-spacing: .04em; }
+.plan-case.modifiee { box-shadow: inset 0 0 0 2px var(--vert-ok); }
+
+.plan-barre { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 14px; }
+.plan-barre input { flex: 1; min-width: 220px; padding: 9px 11px; border: 1.5px solid var(--bordure); border-radius: var(--r-bouton, 8px); font: inherit; font-size: .86rem; background: var(--craie-2); }
+.plan-etat { font-size: .8rem; color: var(--texte-att); }
+.plan-alerte { background: color-mix(in srgb, var(--ocre) 14%, transparent); border-radius: var(--r-petit, 6px); padding: 12px 14px; font-size: .86rem; margin: 0; }
+.plan-report-cours { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 4px 14px; margin: 10px 0 14px; font-size: .84rem; }
+.plan-report-cours label { display: flex; gap: 6px; align-items: center; }

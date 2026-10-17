@@ -162,6 +162,7 @@
 </script>
 <link rel="stylesheet" href="theme.css" />
 <link rel="stylesheet" href="ui.css" />
+<link rel="stylesheet" href="plan-evaluation.css" />
 
   <!-- Session partagée : renouvellement du jeton et rejeu des requêtes
        expirées. Doit rester AVANT les autres scripts. -->
@@ -224,6 +225,7 @@
     <div class="barre-onglets">
       <div class="onglet actif" data-onglet="annees">Années</div>
       <div class="onglet" data-onglet="periodes">Périodes, trimestres, semestres &amp; examens</div>
+      <div class="onglet" data-onglet="plan">Plan d'évaluation</div>
       <div class="onglet" data-onglet="promotion">Promotion vers l'année suivante</div>
     </div>
 
@@ -280,6 +282,58 @@
           <h3>Structure de l'année</h3>
           <div id="conteneur-semestres"><p class="etat-vide-tableau">Choisis une année.</p></div>
         </div>
+      </div>
+    </div>
+
+    <!-- ===== Onglet Plan d'évaluation (plan-evaluation.js) ===== -->
+    <div class="panneau-onglet" id="onglet-plan">
+      <div class="panneau">
+        <h3>Ce qui est coté, à quelle épreuve, et sur combien</h3>
+        <p class="aide">
+          Par défaut, chaque branche est cotée à chaque période sur son maximum, et à chaque examen sur son
+          maximum d'examen (le double s'il n'est pas réglé). Si votre école — ou une réforme — change cette
+          logique, réglez ici les <strong>exceptions</strong> : une case à <strong>NE</strong> (non évalué) est noircie
+          sur les bulletins et refuse la saisie ; un autre nombre change le maximum de cette épreuve.
+          Tout le reste — saisie des cotes, pourcentages, places, repêchage, bulletins — suit automatiquement.
+        </p>
+        <div class="form-inline">
+          <label style="font-size:0.85rem; color:var(--texte-att);">Année :</label>
+          <select id="plan-annee"></select>
+          <label style="font-size:0.85rem; color:var(--texte-att);">Pour :</label>
+          <select id="plan-portee"><option value="">Toute l’école (règle commune)</option></select>
+        </div>
+        <ul class="plan-legende">
+          <li><span class="plan-pastille"></span>barème habituel</li>
+          <li><span class="plan-pastille exception"></span>exception enregistrée</li>
+          <li><span class="plan-pastille heritee"></span>règle de l’école (vue d’une classe)</li>
+          <li><span class="plan-pastille noire"></span>NE : non évalué</li>
+          <li><span class="plan-pastille modifiee"></span>modifié, à enregistrer</li>
+        </ul>
+        <p class="aide" style="margin-top:0">Tapez un nombre, ou <strong>0</strong> / <strong>NE</strong> pour « non évalué ». Videz une case pour la remettre au barème.</p>
+        <div id="plan-grille" class="plan-defilement"><p class="etat-vide-tableau">Choisissez une année.</p></div>
+
+        <div class="plan-barre plan-ecriture">
+          <input type="text" id="plan-motif" maxlength="200" placeholder="Motif (facultatif) — ex. matière reportée à l'examen du 2nd semestre" />
+          <span id="plan-etat" class="plan-etat"></span>
+          <button type="button" class="bouton bouton-secondaire" id="plan-annuler" disabled>Annuler</button>
+          <button type="button" class="bouton bouton-principal" id="plan-enregistrer" disabled>Enregistrer le plan</button>
+        </div>
+      </div>
+
+      <div class="panneau plan-ecriture" id="plan-report" hidden>
+        <h3>Assistant : reporter des branches à un autre examen</h3>
+        <p class="aide">
+          Exemple : « les branches de la 1re période ne sont pas examinées en décembre, elles le seront à l'examen
+          de juin ». Cochez les branches, choisissez les deux examens : la case de départ passe à NE et, si vous
+          le souhaitez, son maximum s'ajoute à celui de l'examen d'accueil.
+        </p>
+        <div class="form-inline">
+          <label style="font-size:0.85rem; color:var(--texte-att);">De :</label><select id="plan-report-de"></select>
+          <label style="font-size:0.85rem; color:var(--texte-att);">vers :</label><select id="plan-report-vers"></select>
+          <label style="font-size:0.85rem;"><input type="checkbox" id="plan-report-cumuler" checked /> ajouter le maximum à l'examen d'accueil</label>
+        </div>
+        <div id="plan-report-cours" class="plan-report-cours"></div>
+        <button type="button" class="bouton bouton-secondaire" id="plan-report-appliquer">Appliquer à la grille</button>
       </div>
     </div>
 
@@ -342,6 +396,7 @@
 
 <script src="theme.js"></script>
 <script src="ui.js"></script>
+<script src="plan-evaluation.js"></script>
 <script src="hors-ligne.js"></script>
 <!-- Didacticiel d'installation : bouton d'aide contextuel, partagé par toutes les pages. -->
 <script src="didacticiel.js" data-ecran="Annee scolaire"></script>
@@ -414,6 +469,9 @@ document.addEventListener('DOMContentLoaded', function() {
       document.querySelectorAll('.panneau-onglet').forEach((p) => p.classList.remove('visible'));
       onglet.classList.add('actif');
       document.getElementById(`onglet-${onglet.dataset.onglet}`).classList.add('visible');
+      if (onglet.dataset.onglet === 'plan' && window.ArdoisePlanEvaluation) {
+        ArdoisePlanEvaluation.initialiser({ annees: anneesCache, api: appelApi, message: afficherMessage });
+      }
     });
   });
 

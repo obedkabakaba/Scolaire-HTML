@@ -159,6 +159,7 @@
 </script>
 <link rel="stylesheet" href="theme.css" />
 <link rel="stylesheet" href="ui.css" />
+<link rel="stylesheet" href="generation-scene.css" />
 
   <!-- Session partagée : renouvellement du jeton et rejeu des requêtes
        expirées. Doit rester AVANT les autres scripts. -->
@@ -696,22 +697,31 @@
       ? `/bulletins/semestre/classe/${classeId}/imprimer?semestreId=${periodeId}`
       : `/bulletins/classe/${classeId}/imprimer?periodeId=${periodeId}`;
 
-    const bouton = document.getElementById('bouton-generer-pdf');
-    bouton.disabled = true; bouton.textContent = 'Génération en cours…';
-
-    const r = await appelApi(chemin);
-    bouton.disabled = false; bouton.textContent = '📄 Générer les bulletins de la classe';
-
-    if (!r || !r.ok) {
-      let detail = '';
-      try { const d = await r.json(); detail = d.message ? ` (${d.message})` : ''; } catch (e) {}
-      afficherMessage(`Erreur lors de la génération du PDF${detail}.`, 'erreur');
-      return;
-    }
-
-    const blob = await r.blob();
-    const url = window.URL.createObjectURL(blob);
-    window.open(url, '_blank');
+    // La scène s'ouvre DANS le clic, et le PDF s'affiche ensuite dans la
+    // page : l'ancien window.open() lancé après l'attente réseau était pris
+    // pour une fenêtre surgissante et bloqué par le navigateur.
+    const selectClasse = document.getElementById('select-classe');
+    const nomClasse = selectClasse.selectedOptions[0]?.textContent.trim() || '';
+    const nomPeriode = selectPeriode.selectedOptions[0]?.textContent.trim() || '';
+    await ArdoiseGeneration.lancer({
+      titre: 'Génération des bulletins',
+      sujet: [nomClasse, nomPeriode].filter(Boolean).join(' · '),
+      etapes: [
+        'Rassemblement des cotes de la classe',
+        'Calcul des totaux, pourcentages et places',
+        'Mise en page des bulletins',
+        'Signature et cachet de l’école',
+        'Assemblage du PDF'
+      ],
+      astuces: [
+        'Une classe de 40 élèves prend en général 20 à 40 secondes.',
+        'Les élèves retenus par le contrôle financier ne sont pas imprimés : accordez une dérogation si nécessaire.'
+      ],
+      dureeEstimee: 25,
+      requete: () => appelApi(chemin),
+      nomFichier: `bulletins-${(nomClasse || 'classe').replace(/[^\w-]+/g, '-')}.pdf`,
+      libellePret: 'Vos bulletins sont prêts'
+    });
   }
 
   (async () => {
@@ -973,6 +983,7 @@
 <script src="publication-resultats.js"></script>
 <script src="theme.js"></script>
 <script src="ui.js"></script>
+<script src="generation-scene.js"></script>
 <script src="hors-ligne.js"></script>
 <!-- Didacticiel d'installation : bouton d'aide contextuel, partagé par toutes les pages. -->
 <script src="didacticiel.js" data-ecran="Bulletins"></script>

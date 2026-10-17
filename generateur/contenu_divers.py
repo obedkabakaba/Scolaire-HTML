@@ -493,6 +493,7 @@ FORMULAIRE = """
         <label style="font-weight:400"><input type="checkbox" name="services_souhaites" value="installation" /> Installation &amp; configuration</label>
         <label style="font-weight:400"><input type="checkbox" name="services_souhaites" value="formation_complete" /> Formation du personnel</label>
         <label style="font-weight:400"><input type="checkbox" name="services_souhaites" value="campagne_capture" /> Campagne de capture</label>
+        <label style="font-weight:400"><input type="checkbox" name="services_souhaites" value="conception_site" /> Conception du site vitrine</label>
       </fieldset>
 
       <div>

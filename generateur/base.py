@@ -89,6 +89,7 @@ MENU = [
                     ("/services/installation/", "Installation et configuration", "60 $, forfait unique"),
                     ("/services/formation/", "Formation du personnel", "30, 60 ou 100 $"),
                     ("/services/campagne-de-capture/", "Campagne de capture", "0,50 $ par élève"),
+                    ("/services/site-vitrine/", "Site vitrine de l'école", "50 $, conçu par notre équipe"),
                 ],
             },
         ],
@@ -234,6 +235,7 @@ PIED = """<footer class="pied">
           <li><a href="/services/installation/">Installation</a></li>
           <li><a href="/services/formation/">Formation</a></li>
           <li><a href="/services/campagne-de-capture/">Campagne de capture</a></li>
+          <li><a href="/services/site-vitrine/">Site vitrine</a></li>
         </ul>
       </div>
       <div>

@@ -242,7 +242,7 @@ super-admin.html eleves.html notes.html bulletins.html classes.html cours.html
 cours-classe-titulaire.html presences.html discipline.html frais-scolaires.html
 comptabilite.html emploi-du-temps.html calendrier.html inscriptions.html
 orientation.html repechage.html archives.html rapports.html journal.html
-messages.html parametres.html utilisateurs.html annee-scolaire.html ecole.html
+messages.html parametres.html utilisateurs.html annee-scolaire.html
 generateur-modeles.html bulletin-annuel.html apercu-bulletin-primaire.html
 apercu-bulletin-secondaire.html apercu-bulletin-semestre.html
 apercu-bulletin-terminale.html espace-apporteur.html""".split()
@@ -267,12 +267,17 @@ Allow: /$
 Allow: /site-public.html
 Allow: /confidentialite.html
 
+# Sites des écoles (ecole.html?code=…) : chacun est le site d'un
+# établissement, qui doit pouvoir être trouvé par son nom.
+Allow: /ecole.html
+
 # Anciennes adresses, conservées en redirection.
 Allow: /tarifs.html
 Allow: /services.html
 
 # Écrans de l'application — inutiles hors session.
 {interdits}
+Disallow: /origine/
 
 Sitemap: {SITE}/sitemap.xml
 """
@@ -283,7 +288,16 @@ Sitemap: {SITE}/sitemap.xml
 # ------------------------------------------------------------------- Main
 
 def main():
+    # SORTIE est EFFACÉ avant reconstruction. Pointé par erreur sur le dépôt
+    # lui-même (SORTIE=. ou SORTIE=$SOURCE_HTML), il emportait tout — écrans
+    # de l'application et dossier .git compris. On refuse donc d'effacer un
+    # dossier qui contient un dépôt git ou qui est la source des pages.
     if os.path.isdir(SORTIE):
+        if (os.path.exists(os.path.join(SORTIE, ".git"))
+                or os.path.realpath(SORTIE) == os.path.realpath(SOURCE_HTML)):
+            raise SystemExit(
+                f"REFUS : SORTIE={SORTIE} est un dépôt git ou la source des pages ; "
+                "il serait effacé. Construisez dans un dossier dédié, puis copiez.")
         shutil.rmtree(SORTIE)
     os.makedirs(SORTIE, exist_ok=True)
 

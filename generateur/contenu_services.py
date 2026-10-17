@@ -62,10 +62,10 @@ def hub():
     corps = f_html + hero(
         "Services complémentaires",
         "Nous pouvons faire le travail d'installation à votre place",
-        "Trois prestations ponctuelles, facturées une fois, indépendantes de "
+        "Des prestations ponctuelles, facturées une fois, indépendantes de "
         "l'abonnement : paramétrer votre école, former votre personnel, saisir vos "
-        "élèves. Aucune n'est obligatoire, et toutes sont disponibles avec les "
-        "quatre offres.",
+        "élèves, concevoir le site de l'école. Aucune n'est obligatoire, et toutes "
+        "sont disponibles avec les quatre offres.",
         [("/contact/", "Demander un accompagnement", "ocre"),
          ("/tarifs/", "Voir les offres d'abonnement", "secondaire")],
         illustration=("services",
@@ -121,6 +121,20 @@ def hub():
       </article>
     </div>
 
+    <article class="service" style="margin-top:18px">
+      <h2>Conception de votre site vitrine</h2>
+      <div class="tarif">50&nbsp;$ <small>forfait unique</small></div>
+      <div class="rythme-facturation">Une semaine après réception de vos contenus</div>
+      <p>Votre école a déjà son site, avec espace parents et préinscription en
+         ligne. Nous le rendons à votre image : apparence, textes de chaque
+         rubrique, photos, équipe, questions des parents.</p>
+      <ul>
+        <li>Aucune marque Ardoise visible par les familles</li>
+        <li>Une série de corrections après relecture</li>
+      </ul>
+      <a class="bouton secondaire pleine-largeur" href="/services/site-vitrine/">Ce qui est fait, en détail</a>
+    </article>
+
     <p class="rappel-separation">
       <strong>Deux choses distinctes.</strong> L'abonnement est ce que vous payez
       pour utiliser Ardoise, tous les mois. Les services sont ce que vous payez
@@ -175,8 +189,8 @@ def hub():
          "Express, complète ou personnalisée : laquelle pour qui."),
         ("/services/campagne-de-capture/", "Campagne de capture",
          "Combien coûte la saisie de 500, 1 000 ou 2 000 élèves."),
-        ("/tarifs/", "Offres d'abonnement",
-         "Ce que vous payez pour utiliser Ardoise, tous les mois."),
+        ("/services/site-vitrine/", "Conception du site vitrine",
+         "Le site de votre école, rédigé et illustré par notre équipe."),
     ])
 
     corps += cta_final(
@@ -189,9 +203,8 @@ def hub():
     return rendre(
         "services/index.html", "/services/",
         "Installation, formation et saisie des élèves — Services Ardoise",
-        "Installation et configuration de votre école (60 $), formation du personnel "
-        "(30 à 100 $), campagne de capture des élèves (0,50 $ par élève). "
-        "Optionnels.",
+        "Installation (60 $), formation du personnel (30 à 100 $), saisie des "
+        "élèves (0,50 $ par élève), site vitrine de l'école (50 $). Optionnels.",
         corps, actif="services", jsonld=[f_ld, faq_jsonld(questions)],
     )
 
@@ -714,5 +727,174 @@ def capture():
     )
 
 
+# ================================================ /services/site-vitrine/
+def site_vitrine():
+    f_html, f_ld = fil([("Accueil", "/"), ("Services", "/services/"),
+                        ("Conception du site vitrine", None)])
+
+    questions = [
+        ("Mon école a-t-elle déjà un site sans cette prestation&nbsp;?",
+         "<p>Oui. Toute école dont l'offre comprend le site public dispose d'un site "
+         "complet dès son ouverture : accueil, présentation, inscriptions, vie "
+         "scolaire, informations pratiques, contact, espace parents et espace "
+         "élève. Les chiffres, les options, le calendrier et les sessions "
+         "d'inscription y apparaissent seuls, depuis vos données. La prestation "
+         "sert à le rendre <em>vraiment</em> vôtre : vos textes, vos photos, votre "
+         "équipe.</p>"),
+        ("Puis-je le faire moi-même&nbsp;?",
+         "<p>Oui. L'écran « Site de l'école » permet de tout régler — apparence, "
+         "couleur, rubriques, textes — avec un aperçu en direct. Un assistant "
+         "propose même une première rédaction à partir de quelques phrases sur "
+         "votre école. La prestation existe pour les directions qui préfèrent "
+         "qu'on le fasse à leur place.</p>"),
+        ("Le site porte-t-il le nom d'Ardoise&nbsp;?",
+         "<p>Non. Le site est celui de votre école : votre nom, votre blason ou "
+         "votre logo, vos couleurs. Aucune mention de la plateforme n'apparaît "
+         "aux familles.</p>"),
+        ("Que se passe-t-il après la mise en ligne&nbsp;?",
+         "<p>Vous gardez la main. Les actualités, le calendrier et les résultats "
+         "se mettent à jour depuis Ardoise, et vous pouvez modifier n'importe "
+         "quel texte à tout moment, sans nous solliciter.</p>"),
+    ]
+
+    aparte = """<h2>Inclus dans chaque site</h2>
+      <ul class="mini-liste">
+        <li>Six apparences au choix, à vos couleurs</li>
+        <li>Préinscription en ligne et demandes de rendez-vous</li>
+        <li>Espace parents : bulletins, présences, frais, emploi du temps</li>
+        <li>Espace élève : sa journée, ses résultats, l'agenda</li>
+        <li>Aucune marque Ardoise visible par les familles</li>
+      </ul>"""
+
+    corps = f_html + hero(
+        "Services · Site vitrine",
+        "Le site de votre école, conçu par notre équipe",
+        "Votre école a déjà son site, alimenté par Ardoise. Nous le rendons à votre "
+        "image : apparence, textes de chaque rubrique, photos, équipe, questions "
+        "des parents. Vous relisez, nous corrigeons, le site est publié.",
+        [("/contact/?service=conception_site", "Demander la conception", "ocre"),
+         ("/services/", "Voir les autres services", "secondaire")],
+        mention="50 $, forfait unique · une semaine après réception de vos contenus",
+        aparte=aparte,
+    ) + """
+<section class="section">
+  <div class="conteneur grille-deux">
+    <div>
+      <span class="eyebrow">Ce qui est fait</span>
+      <h2>Un site qui ressemble à votre école, pas à un modèle</h2>
+      <p class="chapeau">
+        Les parents jugent une école à son site avant d'en franchir la porte.
+        Un texte soigné, de vraies photos et une équipe nommée font plus pour
+        les inscriptions qu'une page vide aux couleurs par défaut.
+      </p>
+      <a class="bouton secondaire" href="/contact/?service=conception_site">Demander la conception</a>
+    </div>
+    <ul class="liste-points numerotee">
+      <li>Choix de l'apparence, de la couleur et de l'image de couverture</li>
+      <li>Rédaction de la présentation, de la mission et des valeurs</li>
+      <li>Mot du directeur ou du préfet, signé</li>
+      <li>Rubrique inscriptions : conditions, pièces, formulaire en ligne</li>
+      <li>Vie scolaire : activités, clubs, galerie photos</li>
+      <li>Informations pratiques, horaires, plan d'accès, questions fréquentes</li>
+      <li>Une série de corrections après relecture, puis mise en ligne</li>
+    </ul>
+  </div>
+</section>
+
+<section class="section alt">
+  <div class="conteneur">
+    <div class="section-entete">
+      <span class="eyebrow">Comment ça se passe</span>
+      <h2>Trois échanges, et le site est en ligne</h2>
+    </div>
+    <div class="grille-etapes">
+      <article class="etape">
+        <span class="num">1</span>
+        <h3>Vous nous envoyez</h3>
+        <p>Votre logo, quelques photos de l'école, l'histoire de l'établissement
+           en quelques lignes, la liste de l'équipe de direction. Une photo de
+           document manuscrit suffit.</p>
+      </article>
+      <article class="etape">
+        <span class="num">2</span>
+        <h3>Nous concevons</h3>
+        <p>Nous choisissons avec vous l'apparence, puis rédigeons et remplissons
+           chaque rubrique du site.</p>
+      </article>
+      <article class="etape">
+        <span class="num">3</span>
+        <h3>Vous relisez, il est publié</h3>
+        <p>Vous voyez le site avant tout le monde, grâce à l'aperçu. Nous
+           corrigeons ce qui doit l'être, puis le lien est prêt à partager :
+           bulletins, reçus, page Facebook, groupe WhatsApp des parents.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="conteneur">
+    <div class="grille-cartes deux">
+      <article class="carte etoffee">
+        <h3>Ce que nous vous demandons</h3>
+        <ul class="mini-liste">
+          <li>Un abonnement Ardoise incluant le site public</li>
+          <li>Votre logo, si l'école en a un</li>
+          <li>Quelques photos de l'établissement et de ses activités</li>
+          <li>L'histoire de l'école et ce qui la distingue, en quelques lignes</li>
+          <li>Les noms et fonctions de l'équipe de direction</li>
+        </ul>
+      </article>
+      <article class="carte etoffee">
+        <h3>Ce qui n'est pas compris</h3>
+        <ul class="mini-liste">
+          <li><strong>La prise de vue sur place</strong> — nous travaillons avec
+              les photos que vous nous transmettez.</li>
+          <li><strong>Un nom de domaine propre à l'école</strong> — le site
+              fonctionne avec l'adresse fournie par Ardoise.</li>
+        </ul>
+        <p class="apres-liste">Les actualités, le calendrier et les résultats ne
+           sont pas à saisir : ils viennent de vos données dans Ardoise.</p>
+      </article>
+    </div>
+  </div>
+</section>
+"""
+
+    corps += faq_bloc("Questions sur la conception du site", questions,
+                      id_section="faq-site-vitrine")
+
+    corps += pour_aller_plus_loin([
+        ("/fonctionnalites/vie-scolaire/", "Communication avec les familles",
+         "Annonces, calendrier, résultats publiés : ce qui alimente le site."),
+        ("/services/installation/", "Installation et configuration",
+         "Faire paramétrer l'école avant d'ouvrir son site."),
+        ("/services/campagne-de-capture/", "Campagne de capture",
+         "Les élèves saisis, avec leurs codes d'accès pour l'espace parents."),
+        ("/tarifs/", "Offres d'abonnement",
+         "Les offres qui comprennent le site public de l'école."),
+    ])
+
+    corps += cta_final(
+        "Envoyez-nous vos photos, nous vous rendons un site.",
+        "Un logo, quelques photos, l'histoire de votre école en quelques lignes : "
+        "c'est suffisant pour commencer.",
+        [("/contact/?service=conception_site", "Demander la conception", "principal"),
+         ("/services/", "Voir les autres services", "secondaire")])
+
+    return rendre(
+        "services/site-vitrine/index.html", "/services/site-vitrine/",
+        "Conception du site vitrine de votre école — Ardoise (50 $)",
+        "Notre équipe conçoit le site public de votre école : apparence, textes, "
+        "photos, équipe, inscriptions en ligne et espace parents. Forfait 50 $.",
+        corps, actif="services",
+        jsonld=[f_ld,
+                service_ld("Conception du site vitrine d'une école",
+                           "Conception et rédaction du site public d'un établissement "
+                           "scolaire, avec espace parents et préinscription en ligne.", 50),
+                faq_jsonld(questions)],
+    )
+
+
 def construire():
-    return [hub(), installation(), formation(), capture()]
+    return [hub(), installation(), formation(), capture(), site_vitrine()]

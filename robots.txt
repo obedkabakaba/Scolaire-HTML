@@ -27,6 +27,7 @@ Allow: /services/
 Allow: /services/installation/
 Allow: /services/formation/
 Allow: /services/campagne-de-capture/
+Allow: /services/site-vitrine/
 Allow: /securite/
 Allow: /faq/
 Allow: /contact/
@@ -41,6 +42,10 @@ Allow: /guides/prix-logiciel-gestion-scolaire-rdc/
 Allow: /a-propos/
 Allow: /site-public.html
 Allow: /confidentialite.html
+
+# Sites des écoles (ecole.html?code=…) : chacun est le site d'un
+# établissement, qui doit pouvoir être trouvé par son nom.
+Allow: /ecole.html
 
 # Anciennes adresses, conservées en redirection.
 Allow: /tarifs.html
@@ -78,7 +83,6 @@ Disallow: /messages.html
 Disallow: /parametres.html
 Disallow: /utilisateurs.html
 Disallow: /annee-scolaire.html
-Disallow: /ecole.html
 Disallow: /generateur-modeles.html
 Disallow: /bulletin-annuel.html
 Disallow: /apercu-bulletin-primaire.html

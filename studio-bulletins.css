@@ -206,3 +206,15 @@ html[data-animations="non"] .st-points i { animation: none; opacity: 1; }
 @media (prefers-reduced-motion: reduce) { .sr-faisceau, .sr-etapes li.actif::before { animation: none; } }
 html[data-animations="non"] .sr-faisceau, html[data-animations="non"] .sr-etapes li.actif::before { animation: none; }
 .st-ia-secondaire { margin-top: 8px; border-color: var(--bordure); background: var(--craie-2); }
+.sr-infos { font-size: .78rem; line-height: 1.45; border-radius: var(--r-petit, 6px); padding: 8px 10px; margin: 0 0 8px;
+  background: color-mix(in srgb, var(--encre, #3C5A62) 9%, var(--craie-2)); }
+.sr-logique { border: 1px solid var(--bordure); border-radius: var(--r-petit, 6px); padding: 8px 10px; margin: 0 0 8px; font-size: .8rem; line-height: 1.5; background: var(--craie-2); }
+.sr-logique summary { font-weight: 700; cursor: pointer; font-family: var(--police-titre); font-size: .9rem; }
+.sr-logique p { margin: 6px 0; }
+.sr-compositions, .sr-noirs-lus { margin: 4px 0; padding-left: 16px; }
+.sr-compositions li, .sr-noirs-lus li { margin-bottom: 3px; }
+.sr-verifie { color: var(--vert-ok); font-weight: 600; font-size: .72rem; }
+.sr-role { display: inline-block; font-size: .68rem; font-weight: 700; padding: 1px 6px; border-radius: 3px; border: 1px solid; }
+.sr-role-decor { background: #1d1d1d; color: #fff; border-color: #1d1d1d; }
+.sr-role-sans_objet { border-color: var(--bordure); background: var(--craie); }
+.sr-role-non_evalue { border-color: var(--ocre); color: var(--ocre-dark, #a96f2e); }

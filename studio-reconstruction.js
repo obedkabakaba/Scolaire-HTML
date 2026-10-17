@@ -43,10 +43,11 @@
     ['pourcentage', '% de la branche'], ['p1', '1re période'], ['p2', '2e période'], ['ex', 'Examen S1'],
     ['tot1', 'Total S1'], ['p3', '3e période'], ['p4', '4e période'], ['ex2', 'Examen S2'], ['tot2', 'Total S2'],
     ['tg', 'Total général'], ['max_p1', 'Max. période'], ['max_ex', 'Max. examen S1'], ['max_tot1', 'Max. total S1'],
-    ['max_ex2', 'Max. examen S2'], ['max_tot2', 'Max. total S2'], ['max_tg', 'Max. total général'], ['vide', '(ne rien écrire)']
+    ['max_ex2', 'Max. examen S2'], ['max_tot2', 'Max. total S2'], ['max_tg', 'Max. total général'], ['vide', '(ne rien écrire)'],
+    ['decor', '▮ Présentation : colonne noire']
   ];
   var FAMILLES = [['total', 'Totaux'], ['pourcentage', 'Pourcentages'], ['place', 'Places'], ['maxima', 'Maxima généraux'],
-    ['application', 'Application'], ['conduite', 'Conduite'], ['vide', '(ligne vide)']];
+    ['application', 'Application'], ['conduite', 'Conduite'], ['vide', '(ligne vide)'], ['bande', '▬ Bande décorative noire']];
   var TAILLES = [['petit', 'Petit'], ['normal', 'Normal'], ['grand', 'Grand'], ['tres_grand', 'Très grand']];
 
   var racine = null, modele = null, options = {}, spec = null, nbDemo = 13, minuteur = null, ouvert = null;
@@ -293,13 +294,44 @@
   function afficherControles() {
     var boite = racine && racine.querySelector('.sr-controles');
     if (!boite) return;
-    var c = controles || { alertes: [], corrections: [] };
-    if (!c.alertes.length && !c.corrections.length) {
-      boite.innerHTML = controles ? '<p class="sr-ok">✓ Chaque colonne du tableau reçoit la donnée que son en-tête annonce.</p>' : '';
-      return;
-    }
-    boite.innerHTML = (c.alertes.length ? '<div class="sr-alertes"><b>À vérifier</b><ul>' + c.alertes.map(function (a) { return '<li>' + esc(a) + '</li>'; }).join('') + '</ul></div>' : '')
-      + (c.corrections.length ? '<div class="sr-corrections"><b>Corrigé automatiquement</b><ul>' + c.corrections.map(function (a) { return '<li>' + esc(a) + '</li>'; }).join('') + '</ul></div>' : '');
+    var c = controles || { alertes: [], corrections: [], informations: [] };
+    var liste = function (titre, classe, items) {
+      return items && items.length ? '<div class="' + classe + '"><b>' + titre + '</b><ul>' + items.map(function (a) { return '<li>' + esc(a) + '</li>'; }).join('') + '</ul></div>' : '';
+    };
+    boite.innerHTML = logiqueHtml()
+      + (controles && !c.alertes.length ? '<p class="sr-ok">✓ Chaque colonne reçoit la donnée que son en-tête annonce, et les totaux se calculent comme sur votre bulletin.</p>' : '')
+      + liste('À vérifier', 'sr-alertes', c.alertes)
+      + liste('Corrigé automatiquement', 'sr-corrections', c.corrections)
+      + liste('Bon à savoir', 'sr-infos', c.informations);
+  }
+
+  var ROLES_NOIRS = { decor: ['Présentation', 'dessinée telle quelle, sans effet sur les notes'],
+    sans_objet: ['Rien à noter', 'case noircie là où aucune note n’est attendue'],
+    non_evalue: ['Non évalué', 'règle d’évaluation : à régler dans le plan d’évaluation'] };
+
+  /**
+   * Ce que l'analyse a COMPRIS du bulletin avant de le décrire : comment il
+   * se lit, comment se forment ses totaux, ce que veut dire chaque zone
+   * noire. L'école voit ainsi le raisonnement, pas seulement le résultat.
+   */
+  function logiqueHtml() {
+    var l = spec && spec.logique;
+    if (!l) return '';
+    var noms = { p1: '1re P.', p2: '2e P.', ex: 'Examen S1', tot1: 'Total S1', p3: '3e P.', p4: '4e P.', ex2: 'Examen S2', tot2: 'Total S2', tg: 'T.G.' };
+    var nom = function (k) { return noms[k] || k; };
+    return '<details class="sr-logique" open><summary>Comment se lit ce bulletin</summary>'
+      + (l.lecture ? '<p>' + esc(l.lecture) + '</p>' : '')
+      + ((l.compositions || []).length ? '<ul class="sr-compositions">' + l.compositions.map(function (c) {
+        var op = c.operation === 'moyenne' ? ' (moyenne)' : (c.operation === 'autre' ? ' (calcul particulier)' : '');
+        return '<li><b>' + esc(nom(c.resultat)) + '</b> = ' + esc(c.composantes.map(nom).join(' + ')) + esc(op)
+          + (c.verifie ? ' <span class="sr-verifie" title="Vérifié sur les nombres écrits sur la photo">✓ vérifié</span>' : '') + '</li>';
+      }).join('') + '</ul>' : '')
+      + ((l.noirs || []).length ? '<p class="sr-sous">Les zones noires</p><ul class="sr-noirs-lus">' + l.noirs.map(function (n) {
+        var r = ROLES_NOIRS[n.role] || ROLES_NOIRS.decor;
+        return '<li><span class="sr-role sr-role-' + esc(n.role) + '" title="' + esc(r[1]) + '">' + esc(r[0]) + '</span> ' + esc(n.ou)
+          + (n.raison ? ' <small>— ' + esc(n.raison) + '</small>' : '') + '</li>';
+      }).join('') + '</ul>' : '')
+      + '</details>';
   }
 
   function deplacer(i, sens) {
@@ -361,7 +393,7 @@
           + '<input type="text" placeholder="Groupe" data-c="' + p + '.groupe" value="' + esc(c.groupe || '') + '" />'
           + '<input type="text" placeholder="Sous-groupe" data-c="' + p + '.sous_groupe" value="' + esc(c.sous_groupe || '') + '" />'
           + '<input type="text" placeholder="En-tête" data-c="' + p + '.entete" value="' + esc(c.entete) + '" />'
-          + '<select data-c="' + p + '.source">' + options_(SOURCES, c.source) + '</select>'
+          + '<select data-c="' + p + '.source">' + options_(SOURCES, c.role === 'decor' ? 'decor' : c.source) + '</select>'
           + '<input type="number" min="1" max="100" step="0.5" data-c="' + p + '.largeur" data-nombre="1" value="' + c.largeur + '" title="Largeur relative" />'
           + '<button type="button" data-retirer="' + p + '" aria-label="Retirer la colonne">✕</button>'
           + '<label class="sr-coche-colonne"><input type="checkbox" data-c="' + p + '.noire_sur_maxima"' + (c.noire_sur_maxima ? ' checked' : '') + ' /> noire sur les lignes MAXIMA</label></div>';
@@ -376,6 +408,8 @@
             + '<div class="sr-noires"><button type="button" class="' + (auto ? 'actif' : '') + '" data-noires-auto="' + i + '.' + k + '">Auto</button>'
             + b.colonnes.map(function (col, n) {
               if (n === 0) return '';
+              // Colonne de présentation : toujours pleine, rien à choisir.
+              if (col.role === 'decor') return '<button type="button" class="noire" disabled title="Colonne de présentation">' + n + '</button>';
               var noire = !auto && s.noires.indexOf(n) !== -1;
               return '<button type="button" class="' + (noire ? 'noire' : '') + '" data-noire="' + i + '.' + k + '.' + n + '" title="' + esc([col.groupe, col.sous_groupe, col.entete].filter(Boolean).join(' › ')) + '">' + n + '</button>';
             }).join('') + '</div>';
@@ -400,6 +434,11 @@
         if (el.dataset.nombre) valeur = Number(valeur);
         if (['groupe', 'sous_groupe', 'cle'].indexOf(t.cle) !== -1 && valeur === '') valeur = null;
         t.objet[t.cle] = valeur;
+        // « Présentation » n'est pas une donnée : c'est un rôle de la colonne.
+        if (t.cle === 'source') {
+          if (valeur === 'decor') { t.objet.role = 'decor'; t.objet.source = 'vide'; }
+          else delete t.objet.role;
+        }
         enregistrer();
         if (el.tagName === 'SELECT' && (t.cle === 'branches')) construireStructure();
         else majResumes();

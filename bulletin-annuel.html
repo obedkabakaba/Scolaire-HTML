@@ -88,6 +88,7 @@
 </script>
 <link rel="stylesheet" href="theme.css" />
 <link rel="stylesheet" href="ui.css" />
+<link rel="stylesheet" href="generation-scene.css" />
 
   <!-- Session partagée : renouvellement du jeton et rejeu des requêtes
        expirées. Doit rester AVANT les autres scripts. -->
@@ -334,26 +335,26 @@
     if (!classeId || !anneeScolaireId) { afficherMessage('Choisis une classe et une année scolaire.', 'erreur'); return; }
     if (portee === 'semestre' && !semestreId) { afficherMessage('Choisis un semestre.', 'erreur'); return; }
 
-    const bouton = document.getElementById('bouton-generer-pdf');
-    bouton.disabled = true; bouton.textContent = 'Génération en cours…';
-
     const chemin = portee === 'semestre'
       ? `/bulletins/semestre/classe/${classeId}/imprimer?semestreId=${semestreId}`
       : `/bulletins/annuel/classe/${classeId}/imprimer?anneeScolaireId=${anneeScolaireId}`;
 
-    const r = await appelApi(chemin);
-    bouton.disabled = false; bouton.textContent = '📄 Générer le PDF de la classe';
-
-    if (!r || !r.ok) {
-      let detail = '';
-      try { const d = await r.json(); detail = d.message ? ` (${d.message})` : ''; } catch (e) {}
-      afficherMessage(`Erreur lors de la génération du PDF${detail}.`, 'erreur');
-      return;
-    }
-
-    const blob = await r.blob();
-    const url = window.URL.createObjectURL(blob);
-    window.open(url, '_blank');
+    const nomClasse = document.getElementById('select-classe').selectedOptions[0]?.textContent.trim() || '';
+    await ArdoiseGeneration.lancer({
+      titre: portee === 'semestre' ? 'Génération des bulletins du semestre' : 'Génération des bulletins annuels',
+      sujet: nomClasse,
+      etapes: [
+        'Rassemblement des cotes de toute l’année',
+        'Totaux par semestre et total général',
+        'Places et décisions de passage',
+        'Mise en page officielle',
+        'Assemblage du PDF'
+      ],
+      dureeEstimee: 30,
+      requete: () => appelApi(chemin),
+      nomFichier: `bulletins-${portee}-${(nomClasse || 'classe').replace(/[^\w-]+/g, '-')}.pdf`,
+      libellePret: 'Vos bulletins sont prêts'
+    });
   });
 
   chargerSelecteurs();
@@ -412,6 +413,7 @@
 
 <script src="theme.js"></script>
 <script src="ui.js"></script>
+<script src="generation-scene.js"></script>
 <script src="hors-ligne.js"></script>
 <!-- Didacticiel d'installation : bouton d'aide contextuel, partagé par toutes les pages. -->
 <script src="didacticiel.js" data-ecran="Bulletin annuel"></script>

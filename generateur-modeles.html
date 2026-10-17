@@ -90,56 +90,8 @@
   .carte-modele .actions button:disabled { opacity: 0.4; cursor: not-allowed; }
   .etat-vide { color: var(--texte-att); text-align: center; padding: 60px 20px; }
 
-  /* ---------- Éditeur visuel ---------- */
+  /* ---------- Studio (styles dans studio-bulletins.css) ---------- */
   #vue-editeur { display: none; }
-  .barre-editeur { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
-  .zone-travail { display: grid; grid-template-columns: 1fr 260px; gap: 20px; align-items: start; }
-  @media (max-width: 900px) { .zone-travail { grid-template-columns: 1fr; } }
-
-  .conteneur-canvas {
-    position: relative;
-    background: #ddd;
-    border: 1px solid var(--bordure);
-    border-radius:  var(--r-bouton);
-    overflow: hidden;
-    max-width: 100%;
-    user-select: none;
-  }
-  .conteneur-canvas img { display: block; width: 100%; height: auto; pointer-events: none; }
-
-  .zone-boite {
-    position: absolute;
-    border: 1.5px dashed var(--ocre);
-    background: rgba(201, 138, 62, 0.15);
-    cursor: move;
-    min-width: 20px; min-height: 14px;
-    display: flex; align-items: flex-start; justify-content: flex-start;
-  }
-  .zone-boite.selectionnee { border-color: var(--rouge); background: rgba(178,58,46,0.15); z-index: 5; }
-  .zone-boite .etiquette {
-    background: var(--nav-fond); color: var(--nav-texte-fort); font-size: 0.62rem; padding: 1px 5px;
-    font-family: var(--police-mono); white-space: nowrap; transform: translateY(-100%);
-    border-radius:  var(--r-petit) 3px 0 0;
-  }
-  .zone-boite .poignee {
-    position: absolute; right: -4px; bottom: -4px; width: 10px; height: 10px;
-    background: var(--ocre); border-radius: 50%; cursor: nwse-resize;
-  }
-  .zone-boite .suppr-zone {
-    position: absolute; top: -22px; right: -1px; background: var(--rouge); color: #fff;
-    border: none; border-radius:  var(--r-petit); font-size: 0.6rem; padding: 1px 4px; cursor: pointer;
-  }
-
-  .panneau-zones { background: var(--craie-2); border: 1px solid var(--bordure); border-radius:  var(--r-carte); padding: 18px; }
-  .panneau-zones h3 { font-family: var(--police-titre); font-size: 1rem; margin: 0 0 12px 0; }
-  .liste-cles-rapides { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
-  .cle-rapide { background: var(--craie); border: 1px solid var(--bordure); border-radius:  var(--r-pilule); padding: 4px 10px; font-size: 0.76rem; cursor: pointer; }
-  .cle-rapide:hover { border-color: var(--ocre); }
-  .champ-cle-perso { display: flex; gap: 6px; margin-bottom: 16px; }
-  .champ-cle-perso input { flex: 1; padding: 8px 10px; border: 1.5px solid var(--bordure); border-radius:  var(--r-petit); font-size: 0.85rem; }
-  .liste-zones-existantes { list-style: none; margin: 0; padding: 0; max-height: 320px; overflow-y: auto; }
-  .liste-zones-existantes li { padding: 7px 8px; border-radius:  var(--r-petit); font-size: 0.82rem; font-family: var(--police-mono); cursor: pointer; display: flex; justify-content: space-between; }
-  .liste-zones-existantes li:hover, .liste-zones-existantes li.actif { background: var(--craie); }
 
   .voile { position: fixed; inset: 0; background: rgba(31,43,36,0.45); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 10; }
   .voile.visible { display: flex; }
@@ -179,6 +131,8 @@
 </script>
 <link rel="stylesheet" href="theme.css" />
 <link rel="stylesheet" href="ui.css" />
+<link rel="stylesheet" href="generation-scene.css" />
+<link rel="stylesheet" href="studio-bulletins.css" />
 
   <!-- Session partagée : renouvellement du jeton et rejeu des requêtes
        expirées. Doit rester AVANT les autres scripts. -->
@@ -246,44 +200,8 @@
       </div>
     </div>
 
-    <!-- ===== Vue éditeur ===== -->
-    <div id="vue-editeur">
-      <div class="barre-editeur">
-        <div>
-          <button class="bouton bouton-secondaire bouton-petit" id="bouton-retour-liste">← Retour aux modèles</button>
-          <h1 id="titre-editeur" style="font-family:var(--police-titre); font-size:1.5rem; margin: 10px 0 0 0;"></h1>
-        </div>
-        <div>
-          <span id="badge-actif" style="display:none; font-size:0.78rem; color:var(--vert-ok); font-weight:600; margin-right:12px;">✓ Modèle actif</span>
-          <button class="bouton bouton-principal" id="bouton-activer-modele">Activer ce modèle pour les bulletins</button>
-        </div>
-      </div>
-
-      <div class="zone-travail">
-        <div class="conteneur-canvas" id="conteneur-canvas">
-          <img id="image-modele" src="" alt="Modèle importé" />
-        </div>
-
-        <div class="panneau-zones">
-          <h3>Ajouter une zone</h3>
-          <button type="button" class="bouton bouton-secondaire" id="bouton-suggerer-zones-ia" style="width:100%; margin-bottom:16px;">🪄 Suggérer les zones automatiquement (IA)</button>
-          <div class="liste-cles-rapides" id="liste-cles-rapides"></div>
-          <div class="champ-cle-perso">
-            <input type="text" id="champ-cle-perso" placeholder="ou clé personnalisée…" />
-            <button class="bouton bouton-secondaire bouton-petit" id="bouton-ajouter-cle-perso">+</button>
-          </div>
-
-          <h3>Zones sur ce modèle</h3>
-          <ul class="liste-zones-existantes" id="liste-zones-existantes">
-            <li style="color:var(--texte-att); cursor:default;">Aucune zone pour l'instant.</li>
-          </ul>
-          <p style="font-size:0.76rem; color:var(--texte-att); margin-top:14px;">
-            Glisse une zone pour la déplacer, tire le point orange en bas à droite pour la redimensionner.
-            Les positions sont enregistrées automatiquement.
-          </p>
-        </div>
-      </div>
-    </div>
+    <!-- ===== Studio (studio-bulletins.js) ===== -->
+    <div id="vue-editeur"></div>
   </main>
 </div>
 
@@ -296,14 +214,18 @@
       <div class="champ"><label for="champ-type-modele">Type</label>
         <select id="champ-type-modele">
           <option value="periode">Bulletin de période</option>
-          <option value="annuel">Bulletin annuel</option>
+          <option value="annuel">Bulletin annuel (grille des deux semestres)</option>
         </select>
       </div>
       <div class="champ">
-        <label>Image du modèle (photo ou scan)</label>
+        <label>Votre bulletin vierge : photo, scan ou PDF</label>
         <button type="button" class="bouton bouton-secondaire" id="bouton-choisir-fichier">Choisir un fichier</button>
-        <input type="file" id="input-fichier-modele" accept="image/*" />
+        <input type="file" id="input-fichier-modele" accept="image/*,application/pdf" />
         <span id="nom-fichier-choisi" style="font-size:0.82rem; color:var(--texte-att); margin-left:8px;"></span>
+        <p style="font-size:0.76rem; color:var(--texte-att); margin:8px 0 0;">
+          Photographiez le bulletin bien à plat, de face, cadré au ras de la feuille. Un PDF est converti en image
+          (sa première page). Ensuite, Ardoise repère les zones et vous les ajustez dans le studio.
+        </p>
       </div>
       <div class="actions-modale">
         <button type="button" class="bouton bouton-secondaire" id="bouton-annuler-nouveau-modele">Annuler</button>
@@ -316,11 +238,6 @@
 <script>
   const API_BASE_URL = "https://scolaire-saas-backend.onrender.com";
 
-  const CLES_SUGGEREES = [
-    'nom_eleve', 'postnom_eleve', 'prenom_eleve', 'matricule', 'classe', 'option',
-    'annee_scolaire', 'periode', 'total', 'pourcentage', 'classement', 'mention',
-    'conduite', 'application', 'observation', 'signature', 'cachet', 'date', 'logo_ecole'
-  ];
 
 
   // Session par défaut = sessionStorage (effacée à la fermeture du navigateur),
@@ -449,11 +366,13 @@
             ${m.actif ? '<span style="color:var(--vert-ok); font-size:0.75rem;"> ✓ actif</span>' : ''}
             ${m.est_officiel ? '<span class="badge-officiel">Officiel</span>' : ''}
           </div>
-          <div class="type">${m.type === 'annuel' ? 'Bulletin annuel' : 'Bulletin de période'}</div>
+          <div class="type">${m.type === 'annuel' ? 'Bulletin annuel' : 'Bulletin de période'}${m.est_global ? '' : ' · ouvrir le studio'}</div>
         </div>
         <div class="actions">
           ${m.actif
-            ? '<button type="button" disabled>Déjà actif</button>'
+            ? (m.est_global
+              ? '<button type="button" disabled>Déjà actif</button>'
+              : `<button type="button" data-action="desactiver" data-id="${m.id}">Désactiver</button>`)
             : `<button type="button" data-action="activer" data-id="${m.id}">Activer</button>`}
           <button type="button" class="danger" data-action="supprimer" data-id="${m.id}"
                   data-nom="${echapper(m.nom)}" ${m.est_officiel ? 'disabled title="Modèle officiel : non supprimable"' : ''}>
@@ -477,20 +396,30 @@
         // ce qui donnait l'impression que l'aperçu ne fonctionnait plus. On
         // génère à la place un vrai PDF de démonstration.
         if (modele.est_officiel) {
-          afficherMessage('Génération de l\'aperçu…', 'succes');
-          const r = await appelApi(`/modeles-bulletins/${modele.id}/apercu`);
-          if (!r || !r.ok) {
-            const d = r ? await r.json().catch(() => ({})) : {};
-            afficherMessage(d.message || "Impossible de générer l'aperçu.", 'erreur');
-            return;
-          }
-          const url = URL.createObjectURL(await r.blob());
-          window.open(url, '_blank');
-          setTimeout(() => URL.revokeObjectURL(url), 60000);
+          await ArdoiseGeneration.lancer({
+            titre: 'Aperçu du modèle',
+            sujet: modele.nom,
+            etapes: ['Élèves et cotes de démonstration', 'Mise en page du modèle', 'Assemblage du PDF'],
+            dureeEstimee: 10,
+            requete: () => appelApi(`/modeles-bulletins/${modele.id}/apercu`),
+            nomFichier: 'apercu-modele.pdf',
+            libellePret: 'Aperçu du modèle'
+          });
           return;
         }
 
         ouvrirEditeur(modele);
+      });
+    });
+
+    grille.querySelectorAll('[data-action="desactiver"]').forEach((bouton) => {
+      bouton.addEventListener('click', async (evt) => {
+        evt.stopPropagation();
+        bouton.disabled = true;
+        const r = await appelApi(`/modeles-bulletins/${bouton.dataset.id}/desactiver`, { method: 'POST' });
+        if (!r || !r.ok) { bouton.disabled = false; afficherMessage('Désactivation impossible.', 'erreur'); return; }
+        afficherMessage('Modèle désactivé : la mise en page officielle reprend.', 'succes');
+        chargerModeles();
       });
     });
 
@@ -540,16 +469,65 @@
     document.getElementById('nom-fichier-choisi').textContent = fichier ? fichier.name : '';
   });
 
+  /** Charge pdf.js à la demande : la page n'en a besoin que pour un import PDF. */
+  function chargerPdfJs() {
+    if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+      script.onload = () => {
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        resolve(window.pdfjsLib);
+      };
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+  }
+
+  /** Première page d'un PDF → PNG à ~150 dpi (largeur A4 ≈ 1240 px). */
+  async function pdfVersImage(fichier) {
+    const pdfjs = await chargerPdfJs();
+    const doc = await pdfjs.getDocument({ data: await fichier.arrayBuffer() }).promise;
+    const page = await doc.getPage(1);
+    const base = page.getViewport({ scale: 1 });
+    const viewport = page.getViewport({ scale: 1240 / Math.min(base.width, base.height) });
+    const toile = document.createElement('canvas');
+    toile.width = Math.round(viewport.width);
+    toile.height = Math.round(viewport.height);
+    const ctx = toile.getContext('2d');
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, toile.width, toile.height);
+    await page.render({ canvasContext: ctx, viewport }).promise;
+    const blob = await new Promise((ok) => toile.toBlob(ok, 'image/png'));
+    return new File([blob], fichier.name.replace(/\.pdf$/i, '') + '.png', { type: 'image/png' });
+  }
+
   document.getElementById('formulaire-nouveau-modele').addEventListener('submit', async (evt) => {
     evt.preventDefault();
     const fichier = document.getElementById('input-fichier-modele').files[0];
-    if (!fichier) { afficherMessage('Choisis une image du modèle.', 'erreur'); return; }
+    if (!fichier) { afficherMessage('Choisis une image ou un PDF du modèle.', 'erreur'); return; }
 
     const bouton = document.getElementById('bouton-creer-modele');
     bouton.disabled = true; bouton.textContent = 'Import en cours…';
 
+    // Un PDF devient une image AVANT l'envoi : l'image sert de fond au
+    // bulletin imprimé (le moteur PDF ne sait pas poser un PDF en fond), et
+    // l'analyse des zones par l'IA lit une image quel que soit le fournisseur.
+    let aEnvoyer = fichier;
+    if (fichier.type === 'application/pdf' || /\.pdf$/i.test(fichier.name)) {
+      bouton.textContent = 'Conversion du PDF…';
+      try {
+        aEnvoyer = await pdfVersImage(fichier);
+      } catch (e) {
+        afficherMessage("Ce PDF n'a pas pu être lu. Essayez une photo ou une capture du bulletin.", 'erreur');
+        bouton.disabled = false; bouton.textContent = 'Créer';
+        return;
+      }
+      bouton.textContent = 'Import en cours…';
+    }
+
     const formData = new FormData();
-    formData.append('fichier', fichier);
+    formData.append('fichier', aEnvoyer);
     formData.append('type', 'modele_bulletin');
     const rUpload = await appelApi('/uploads/document', { method: 'POST', body: formData });
 
@@ -560,205 +538,43 @@
     }
     const { url } = await rUpload.json();
 
+    const nom = document.getElementById('champ-nom-modele').value.trim();
+    const type = document.getElementById('champ-type-modele').value;
     const rModele = await appelApi('/modeles-bulletins', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        nom: document.getElementById('champ-nom-modele').value.trim(),
-        type: document.getElementById('champ-type-modele').value,
+        nom, type,
         fichier_source_url: url
       })
     });
 
     bouton.disabled = false; bouton.textContent = 'Créer';
 
-    if (!rModele || !rModele.ok) { afficherMessage('Erreur lors de la création du modèle.', 'erreur'); return; }
+    if (!rModele || !rModele.ok) {
+      const d = rModele ? await rModele.json().catch(() => ({})) : {};
+      afficherMessage(d.message || 'Erreur lors de la création du modèle.', 'erreur');
+      return;
+    }
     const { id } = await rModele.json();
 
     document.getElementById('voile-nouveau-modele').classList.remove('visible');
     document.getElementById('formulaire-nouveau-modele').reset();
     document.getElementById('nom-fichier-choisi').textContent = '';
-    afficherMessage('Modèle créé.', 'succes');
-    ouvrirEditeur({ id, nom: document.getElementById('champ-nom-modele').value, fichier_source_url: url });
+    afficherMessage('Modèle importé. Lancez « Ardoise repère les zones » pour un premier placement automatique.', 'succes');
+    ouvrirEditeur({ id, nom, type, fichier_source_url: url, actif: false, layout: null });
     chargerModeles();
   });
 
-  // ---------- Éditeur visuel ----------
-  let modeleCourantId = null;
-  let zonesCache = [];
-
+  // ---------- Studio ----------
+  // Toute l'édition (zones, tableau des cotes, IA, aperçu) vit dans
+  // studio-bulletins.js : cette page ne fait que l'ouvrir et la refermer.
   function ouvrirEditeur(modele) {
-    modeleCourantId = modele.id;
     document.getElementById('vue-liste').style.display = 'none';
-    document.getElementById('vue-editeur').style.display = 'block';
-    document.getElementById('titre-editeur').textContent = modele.nom;
-    document.getElementById('image-modele').src = modele.fichier_source_url || '';
-
-    document.getElementById('badge-actif').style.display = modele.actif ? 'inline' : 'none';
-    document.getElementById('bouton-activer-modele').textContent = modele.actif
-      ? 'Déjà actif'
-      : 'Activer ce modèle pour les bulletins';
-    document.getElementById('bouton-activer-modele').disabled = !!modele.actif;
-
-    document.getElementById('liste-cles-rapides').innerHTML = CLES_SUGGEREES.map(cle =>
-      `<span class="cle-rapide" data-cle="${cle}">${cle}</span>`
-    ).join('');
-    document.querySelectorAll('.cle-rapide').forEach(el => {
-      el.addEventListener('click', () => creerZone(el.dataset.cle));
-    });
-
-    chargerZones();
-  }
-
-  document.getElementById('bouton-activer-modele').addEventListener('click', async () => {
-    if (!await ArdoiseUI.confirmer('Utiliser ce modèle pour générer les bulletins de cette école à partir de maintenant ?')) return;
-    const r = await appelApi(`/modeles-bulletins/${modeleCourantId}/activer`, { method: 'POST' });
-    if (!r || !r.ok) { afficherMessage("Erreur lors de l'activation.", 'erreur'); return; }
-    afficherMessage('Modèle activé — il sera utilisé pour la génération des bulletins.', 'succes');
-    document.getElementById('badge-actif').style.display = 'inline';
-    document.getElementById('bouton-activer-modele').textContent = 'Déjà actif';
-    document.getElementById('bouton-activer-modele').disabled = true;
-  });
-
-  document.getElementById('bouton-retour-liste').addEventListener('click', () => {
-    document.getElementById('vue-editeur').style.display = 'none';
-    document.getElementById('vue-liste').style.display = 'block';
-    modeleCourantId = null;
-  });
-
-  document.getElementById('bouton-ajouter-cle-perso').addEventListener('click', () => {
-    const champ = document.getElementById('champ-cle-perso');
-    const cle = champ.value.trim();
-    if (!cle) return;
-    creerZone(cle);
-    champ.value = '';
-  });
-
-  document.getElementById('bouton-suggerer-zones-ia').addEventListener('click', async () => {
-    if (!modeleCourantId) { afficherMessage("Importe d'abord un fichier de modèle.", 'erreur'); return; }
-    if (!await ArdoiseUI.confirmer("L'IA va analyser l'image de ton modèle et proposer un premier placement des zones. Tu pourras ensuite tout ajuster ou supprimer. Continuer ?")) return;
-
-    const bouton = document.getElementById('bouton-suggerer-zones-ia');
-    bouton.disabled = true; bouton.textContent = 'Analyse en cours… (peut prendre 15-20 secondes)';
-
-    const r = await appelApi(`/modeles-bulletins/${modeleCourantId}/suggerer-zones`, { method: 'POST' });
-
-    bouton.disabled = false; bouton.textContent = '🪄 Suggérer les zones automatiquement (IA)';
-
-    if (!r) return;
-    const donnees = await r.json();
-    if (!r.ok) { afficherMessage(donnees.message || "Erreur lors de la suggestion.", 'erreur'); return; }
-
-    afficherMessage(donnees.message, donnees.nb > 0 ? 'succes' : 'erreur');
-    if (donnees.nb > 0) { await chargerZones(); }
-  });
-
-  async function chargerZones() {
-    const r = await appelApi(`/modeles-bulletins/${modeleCourantId}/zones`);
-    if (!r || !r.ok) return;
-    zonesCache = await r.json();
-    dessinerZones();
-    majListeZones();
-  }
-
-  function dessinerZones() {
-    const conteneur = document.getElementById('conteneur-canvas');
-    conteneur.querySelectorAll('.zone-boite').forEach(b => b.remove());
-    zonesCache.forEach(zone => creerBoiteZone(zone));
-  }
-
-  function majListeZones() {
-    const liste = document.getElementById('liste-zones-existantes');
-    liste.innerHTML = zonesCache.length === 0
-      ? '<li style="color:var(--texte-att); cursor:default;">Aucune zone pour l\'instant.</li>'
-      : zonesCache.map(z => `<li data-id="${z.id}">${z.cle} <span style="color:var(--texte-att);">✕</span></li>`).join('');
-
-    liste.querySelectorAll('li[data-id]').forEach(li => {
-      li.addEventListener('click', async () => {
-        if (!await ArdoiseUI.confirmer(`Supprimer la zone "${li.dataset.id === undefined ? '' : ''}" ?`)) return;
-        const r = await appelApi(`/modeles-bulletins/zones/${li.dataset.id}`, { method: 'DELETE' });
-        if (r && r.ok) { chargerZones(); afficherMessage('Zone supprimée.', 'succes'); }
-      });
-    });
-  }
-
-  async function creerZone(cle) {
-    const r = await appelApi(`/modeles-bulletins/${modeleCourantId}/zones`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ cle, x: 40, y: 40, largeur: 15, hauteur: 6 })
-    });
-    if (!r || !r.ok) { afficherMessage("Erreur lors de l'ajout de la zone.", 'erreur'); return; }
-    chargerZones();
-  }
-
-  function creerBoiteZone(zone) {
-    const conteneur = document.getElementById('conteneur-canvas');
-    const boite = document.createElement('div');
-    boite.className = 'zone-boite';
-    boite.dataset.id = zone.id;
-    boite.style.left = zone.x + '%';
-    boite.style.top = zone.y + '%';
-    boite.style.width = (zone.largeur || 15) + '%';
-    boite.style.height = (zone.hauteur || 6) + '%';
-    boite.innerHTML = `<span class="etiquette">${zone.cle}</span><span class="poignee"></span><button class="suppr-zone" type="button">✕</button>`;
-    conteneur.appendChild(boite);
-
-    // Déplacement (glisser-déposer)
-    let deplacement = null;
-    boite.addEventListener('mousedown', (evt) => {
-      if (evt.target.classList.contains('poignee') || evt.target.classList.contains('suppr-zone')) return;
-      const rect = conteneur.getBoundingClientRect();
-      deplacement = {
-        decalageX: evt.clientX - boite.getBoundingClientRect().left,
-        decalageY: evt.clientY - boite.getBoundingClientRect().top,
-        rectConteneur: rect
-      };
-      evt.preventDefault();
-    });
-
-    // Redimensionnement
-    let redimensionnement = null;
-    boite.querySelector('.poignee').addEventListener('mousedown', (evt) => {
-      const rect = conteneur.getBoundingClientRect();
-      redimensionnement = { rectConteneur: rect, origineX: evt.clientX, origineY: evt.clientY,
-        largeurInitiale: boite.offsetWidth, hauteurInitiale: boite.offsetHeight };
-      evt.stopPropagation();
-      evt.preventDefault();
-    });
-
-    document.addEventListener('mousemove', (evt) => {
-      if (deplacement) {
-        const x = ((evt.clientX - deplacement.decalageX - deplacement.rectConteneur.left) / deplacement.rectConteneur.width) * 100;
-        const y = ((evt.clientY - deplacement.decalageY - deplacement.rectConteneur.top) / deplacement.rectConteneur.height) * 100;
-        boite.style.left = Math.max(0, Math.min(95, x)) + '%';
-        boite.style.top = Math.max(0, Math.min(95, y)) + '%';
+    ArdoiseStudio.ouvrir(modele, {
+      surRetour: () => {
+        document.getElementById('vue-liste').style.display = 'block';
+        chargerModeles();
       }
-      if (redimensionnement) {
-        const deltaX = evt.clientX - redimensionnement.origineX;
-        const deltaY = evt.clientY - redimensionnement.origineY;
-        const largeur = ((redimensionnement.largeurInitiale + deltaX) / redimensionnement.rectConteneur.width) * 100;
-        const hauteur = ((redimensionnement.hauteurInitiale + deltaY) / redimensionnement.rectConteneur.height) * 100;
-        boite.style.width = Math.max(3, largeur) + '%';
-        boite.style.height = Math.max(2, hauteur) + '%';
-      }
-    });
-
-    document.addEventListener('mouseup', async () => {
-      if (deplacement || redimensionnement) {
-        deplacement = null; redimensionnement = null;
-        await appelApi(`/modeles-bulletins/zones/${zone.id}`, {
-          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            x: parseFloat(boite.style.left), y: parseFloat(boite.style.top),
-            largeur: parseFloat(boite.style.width), hauteur: parseFloat(boite.style.height)
-          })
-        });
-      }
-    });
-
-    boite.querySelector('.suppr-zone').addEventListener('click', async (evt) => {
-      evt.stopPropagation();
-      const r = await appelApi(`/modeles-bulletins/zones/${zone.id}`, { method: 'DELETE' });
-      if (r && r.ok) { chargerZones(); afficherMessage('Zone supprimée.', 'succes'); }
     });
   }
 
@@ -818,6 +634,8 @@
 
 <script src="theme.js"></script>
 <script src="ui.js"></script>
+<script src="generation-scene.js"></script>
+<script src="studio-bulletins.js"></script>
 <script src="hors-ligne.js"></script>
 <!-- Didacticiel d'installation : bouton d'aide contextuel, partagé par toutes les pages. -->
 <script src="didacticiel.js" data-ecran="Generateur modeles"></script>

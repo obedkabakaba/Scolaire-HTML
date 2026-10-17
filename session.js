@@ -827,6 +827,21 @@
     else document.addEventListener('DOMContentLoaded', poser);
   }
 
+  /* Transitions entre pages (`@view-transition` dans mobile.css). Quand le
+     navigateur en annule une — page qui redirige aussitôt, double clic,
+     onglet masqué —, ses promesses sont rejetées sans que personne ne les
+     attende, et la rejection remontait comme une « erreur haute ». On les
+     attend ici, à la source : une animation sautée n'est pas une panne. */
+  function ignorerTransitionAnnulee(e) {
+    var t = e && e.viewTransition;
+    if (!t) return;
+    ['ready', 'finished', 'updateCallbackDone'].forEach(function (nom) {
+      try { if (t[nom] && t[nom].catch) t[nom].catch(function () {}); } catch (x) {}
+    });
+  }
+  window.addEventListener('pagereveal', ignorerTransitionAnnulee);
+  window.addEventListener('pageswap', ignorerTransitionAnnulee);
+
   bandeauObservation();
   rafraichirSiProche();
 })();

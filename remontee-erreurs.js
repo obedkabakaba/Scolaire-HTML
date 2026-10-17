@@ -286,8 +286,21 @@
     });
   }, true);
 
+  /* Animation de passage d'une page à l'autre annulée par le navigateur
+     (`@view-transition` dans mobile.css) : changement de page rapide, page
+     qui redirige aussitôt, onglet passé en arrière-plan. Le navigateur rejette
+     alors la promesse de l'animation — « Skipping view transition because
+     skipTransition() was called » — sans que rien n'ait mal fonctionné. Ce
+     n'est pas une erreur : on ne la signale pas. */
+  function transitionAnnulee(r) {
+    var nom = r && r.name;
+    return (nom === 'AbortError' || nom === 'InvalidStateError' || nom === 'TimeoutError')
+      && /view transition|skiptransition/i.test(String((r && r.message) || ''));
+  }
+
   window.addEventListener('unhandledrejection', function (e) {
     var r = e && e.reason;
+    if (transitionAnnulee(r)) { try { e.preventDefault(); } catch (x) {} return; }
     signaler({
       message: 'Promesse rejetée : ' + ((r && r.message) || r || 'sans motif'),
       stack: r && r.stack,

@@ -156,6 +156,11 @@
      STRUCTURE
      ------------------------------------------------------------------ */
   function ouvrir(m, opts) {
+    // Un bulletin RECONSTRUIT (photo déjà remplie, mal cadrée…) a son propre
+    // écran : il n'y a pas de zones à poser, Ardoise redessine le modèle.
+    if (m.layout && m.layout.mode === 'reconstruit' && window.ArdoiseReconstruction) {
+      window.ArdoiseReconstruction.ouvrir(m, opts); return;
+    }
     modele = m; options = opts || {}; zones = []; selection = null;
     racine = document.getElementById('vue-editeur');
     racine.innerHTML =
@@ -266,6 +271,8 @@
     var html = '<button type="button" class="st-ia" data-action="ia"><span class="st-ia-icone">🪄</span>'
       + '<span><b>Ardoise repère les zones</b><small>L’IA lit votre modèle et propose un placement, tableau des cotes compris.</small></span></button>'
       + '<div class="st-ia-etat" hidden></div>'
+      + '<button type="button" class="st-ia st-ia-secondaire" data-action="reconstruire"><span class="st-ia-icone">🔁</span>'
+      + '<span><b>Reconstruire le bulletin</b><small>Pour une photo déjà remplie, prise de travers ou floue : Ardoise redessine le modèle à neuf, sans ce qui y était écrit.</small></span></button>'
       + '<h4>Tableau des cotes</h4><div class="st-presets">';
     Object.keys(PRESETS_TABLEAU).forEach(function (k) {
       html += '<button type="button" class="st-preset" data-preset="' + k + '">▦ ' + esc(PRESETS_TABLEAU[k].titre) + '</button>';
@@ -302,6 +309,7 @@
       message('Ligne ajoutée : ajustez sa position sous les colonnes du tableau.', 'succes');
     });
     v.querySelector('[data-action="ia"]').addEventListener('click', lancerIA);
+    v.querySelector('[data-action="reconstruire"]').addEventListener('click', proposerReconstruction);
   }
 
   async function lancerIA() {
@@ -322,8 +330,20 @@
     if (!r) return;
     var d = await r.json().catch(function () { return {}; });
     if (!r.ok) { message(d.message || 'Analyse impossible.', 'erreur'); return; }
+    if (d.rempli) {
+      // Garde-fou : la photo porte déjà des données d'élève.
+      if (await window.ArdoiseUI.confirmer(d.message, { libelleValider: 'Reconstruire le bulletin', libelleAnnuler: 'Plus tard' })) {
+        window.ArdoiseReconstruction.lancer(modele, options);
+      }
+      return;
+    }
     message(d.message, d.nb > 0 ? 'succes' : 'erreur');
     if (d.nb > 0) { await chargerZones(); montrerOnglet('zones'); }
+  }
+
+  async function proposerReconstruction() {
+    if (zones.length && !await window.ArdoiseUI.confirmer('Le bulletin sera redessiné par Ardoise : les zones posées sur l’image ne serviront plus (elles restent conservées si vous revenez à ce mode). Continuer ?', { libelleValider: 'Reconstruire' })) return;
+    window.ArdoiseReconstruction.lancer(modele, options);
   }
 
   /* ------------------------------------------------------------------

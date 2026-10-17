@@ -18,6 +18,14 @@ ${Array.from({ length: 12 }, () => '<tr style="height:28px">' + '<td></td>'.repe
 </table><p style="margin-top:30px">POURCENTAGE : ........ PLACE : ........</p></div></body></html>`;
 
 let zones = [], suivant = 1;
+const patchsModele = [], apercusDemandes = [];
+const RECONSTRUCTION = { version: 1, rempli: true, orientation: 'portrait', police: 'serif', images: [], remarques: 'Données manuscrites ignorées.',
+  blocs: [
+    { type: 'champs', colonnes: 2, champs: [{ libelle: 'ÉLÈVE', cle: 'nom_complet' }, { libelle: 'CLASSE', cle: 'classe' }] },
+    { type: 'tableau', branches: 'dynamique', ordre: 'maximum', maxima: 'par_groupe',
+      colonnes: [{ entete: 'BRANCHES', groupe: null, sous_groupe: null, source: 'cours', largeur: 40 }, { entete: 'T.G.', groupe: null, sous_groupe: null, source: 'tg', largeur: 20 }],
+      synthese: [{ libelle: 'TOTAUX', famille: 'total' }] }
+  ] };
 const patchs = [];
 
 const server = http.createServer((req, res) => {
@@ -79,11 +87,22 @@ const server = http.createServer((req, res) => {
           { source: 'cours', largeur: 34 }, ...['p1', 'p2', 'ex', 'tot1', 'p3', 'p4', 'ex2', 'tot2', 'tg'].map((s) => ({ source: s, largeur: 7.33 }))] } });
       return json({ nb: 2, message: '2 zone(s) proposée(s).' });
     }
-    if (p === '/modeles-bulletins/m1/apercu') {
+    if (p === '/modeles-bulletins/m1/apercu' && url.searchParams.get('format') !== 'html') {
       await new Promise((ok) => setTimeout(ok, 2500));
       return route.fulfill({ status: 200, contentType: 'application/pdf', body: pdf });
     }
     if (p === '/modeles-bulletins/m1/activer') { modele.actif = true; return json({ message: 'ok' }); }
+    if (p === '/modeles-bulletins/m1/reconstruire') {
+      await new Promise((ok) => setTimeout(ok, 700));
+      return json({ message: 'Bulletin reconstruit.', reconstruction: RECONSTRUCTION });
+    }
+    if (p === '/modeles-bulletins/m1' && m === 'PATCH') { patchsModele.push(JSON.parse(r.postData())); return json({ message: 'ok' }); }
+    if (p === '/modeles-bulletins/m1/apercu' && url.searchParams.get('format') === 'html') {
+      const n = Number(url.searchParams.get('nb')) || 8; apercusDemandes.push(n);
+      const lignes = Array.from({ length: n }, (_, i) => `<tr><td class="branche">Branche ${i + 1}</td><td>12</td></tr>`).join('');
+      return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8',
+        body: `<!doctype html><html><head><style>table{border-collapse:collapse}td{border:1px solid #000}</style></head><body><div class="page"><h3>BULLETIN</h3><table>${lignes}</table></div></body></html>` });
+    }
     return json({});
   });
 
@@ -177,6 +196,24 @@ const server = http.createServer((req, res) => {
   await planPage.waitForTimeout(400);
   assert.deepEqual(envoiPlan.cases.map((c) => [c.periode_id, c.maximum]).sort(), [['e1', 0], ['e2', 80]]);
   await planPage.close();
+
+  // 6 bis. Photo déjà remplie : reconstruction du bulletin, aperçu adapté au nombre de branches.
+  await page.locator('[data-onglet="ajouter"]').click();
+  await page.locator('[data-action="reconstruire"]').click();
+  await page.locator('.voile-confirmation .valider').click();
+  await page.waitForSelector('.sr-analyse');
+  if (dossierCaptures) await page.screenshot({ path: path.join(dossierCaptures, 'reconstruction-analyse.png') });
+  await page.waitForSelector('.sr-apercu iframe');
+  await page.waitForFunction(() => { const f = document.querySelector('.sr-apercu iframe'); return f && f.contentDocument && f.contentDocument.querySelectorAll('td.branche').length === 13; });
+  await page.locator('[data-a="nb"]').selectOption('8');
+  await page.waitForFunction(() => document.querySelector('.sr-apercu iframe').contentDocument.querySelectorAll('td.branche').length === 8);
+  assert.deepEqual(apercusDemandes.slice(-2), [13, 8], 'l’aperçu suit le nombre de branches choisi');
+  await page.locator('[data-ouvrir="0"]').click();
+  await page.locator('input[data-c="blocs.0.champs.0.libelle"]').fill('NOM DE L’ÉLÈVE');
+  await page.waitForTimeout(900);
+  const dernierPatch = patchsModele.filter((x) => x.reconstruction).pop();
+  assert.equal(dernierPatch.reconstruction.blocs[0].champs[0].libelle, 'NOM DE L’ÉLÈVE');
+  if (dossierCaptures) await page.screenshot({ path: path.join(dossierCaptures, 'reconstruction-studio.png') });
 
   // 6. Sur téléphone : pas de cadre PDF, deux grands boutons, toujours sans fenêtre surgissante.
   const mobile = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, serviceWorkers: 'block',

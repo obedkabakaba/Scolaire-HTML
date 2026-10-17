@@ -223,9 +223,20 @@
         <input type="file" id="input-fichier-modele" accept="image/*,application/pdf" />
         <span id="nom-fichier-choisi" style="font-size:0.82rem; color:var(--texte-att); margin-left:8px;"></span>
         <p style="font-size:0.76rem; color:var(--texte-att); margin:8px 0 0;">
-          Photographiez le bulletin bien à plat, de face, cadré au ras de la feuille. Un PDF est converti en image
-          (sa première page). Ensuite, Ardoise repère les zones et vous les ajustez dans le studio.
+          Photographiez le bulletin bien à plat et de face. Un PDF est converti en image (sa première page).
         </p>
+      </div>
+      <div class="champ">
+        <label>Comment Ardoise doit-il utiliser votre bulletin ?</label>
+        <label style="display:flex; gap:8px; align-items:flex-start; font-weight:400; margin:6px 0;">
+          <input type="radio" name="mode-modele" value="reconstruit" checked style="margin-top:3px;" />
+          <span><strong>Le reconstruire</strong> (recommandé) — Ardoise lit la photo, même déjà remplie, et redessine
+          le bulletin à neuf ; le tableau s'adapte au nombre de cours de chaque classe.</span>
+        </label>
+        <label style="display:flex; gap:8px; align-items:flex-start; font-weight:400; margin:6px 0;">
+          <input type="radio" name="mode-modele" value="image" style="margin-top:3px;" />
+          <span><strong>Écrire directement sur mon image</strong> — seulement pour un bulletin VIERGE, scanné bien droit.</span>
+        </label>
       </div>
       <div class="actions-modale">
         <button type="button" class="bouton bouton-secondaire" id="bouton-annuler-nouveau-modele">Annuler</button>
@@ -366,7 +377,7 @@
             ${m.actif ? '<span style="color:var(--vert-ok); font-size:0.75rem;"> ✓ actif</span>' : ''}
             ${m.est_officiel ? '<span class="badge-officiel">Officiel</span>' : ''}
           </div>
-          <div class="type">${m.type === 'annuel' ? 'Bulletin annuel' : 'Bulletin de période'}${m.est_global ? '' : ' · ouvrir le studio'}</div>
+          <div class="type">${m.type === 'annuel' ? 'Bulletin annuel' : 'Bulletin de période'}${m.est_global ? '' : ((m.layout && m.layout.mode === 'reconstruit') ? ' · reconstruit' : ' · ouvrir le studio')}</div>
         </div>
         <div class="actions">
           ${m.actif
@@ -560,8 +571,15 @@
     document.getElementById('voile-nouveau-modele').classList.remove('visible');
     document.getElementById('formulaire-nouveau-modele').reset();
     document.getElementById('nom-fichier-choisi').textContent = '';
-    afficherMessage('Modèle importé. Lancez « Ardoise repère les zones » pour un premier placement automatique.', 'succes');
-    ouvrirEditeur({ id, nom, type, fichier_source_url: url, actif: false, layout: null });
+    const modeChoisi = (document.querySelector('input[name="mode-modele"]:checked') || {}).value || 'reconstruit';
+    const nouveau = { id, nom, type, fichier_source_url: url, actif: false, layout: null };
+    if (modeChoisi === 'reconstruit') {
+      document.getElementById('vue-liste').style.display = 'none';
+      ArdoiseReconstruction.lancer(nouveau, { surRetour: () => { document.getElementById('vue-liste').style.display = 'block'; chargerModeles(); } });
+    } else {
+      afficherMessage('Modèle importé. Lancez « Ardoise repère les zones » pour un premier placement automatique.', 'succes');
+      ouvrirEditeur(nouveau);
+    }
     chargerModeles();
   });
 
@@ -636,6 +654,7 @@
 <script src="ui.js"></script>
 <script src="generation-scene.js"></script>
 <script src="studio-bulletins.js"></script>
+<script src="studio-reconstruction.js"></script>
 <script src="hors-ligne.js"></script>
 <!-- Didacticiel d'installation : bouton d'aide contextuel, partagé par toutes les pages. -->
 <script src="didacticiel.js" data-ecran="Generateur modeles"></script>

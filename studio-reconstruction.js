@@ -203,7 +203,7 @@
     if (!r || !r.ok) return;
     var html = await r.text();
     html = html.replace('</style>', '@media screen { body { background: #fff; padding: 22px; width: 794px; box-sizing: border-box; } '
-      + '.page { padding-bottom: 26px; margin-bottom: 26px; border-bottom: 2px dashed #bbb; } .page:last-child { border: 0; } }</style>');
+      + '.page { margin-bottom: 30px; outline: 1px dashed #bbb; outline-offset: 6px; } }</style>');
     var iframe = racine.querySelector('.sr-apercu iframe');
     iframe.onload = ajusterApercu;
     iframe.srcdoc = html;

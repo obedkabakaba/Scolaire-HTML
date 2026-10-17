@@ -76,7 +76,7 @@
 /* v100 : Super Admin — une seule boîte « Confirmez votre mot de passe » pour toutes les actions sensibles (super-admin-noyau.js). */
 /* v101 : scène de génération des PDF (generation-scene.js/.css), studio de bulletins et plan d'évaluation. */
 /* v102 : studio — reconstruction d'un bulletin photographié (studio-reconstruction.js). */
-const VERSION='ardoise-v103';
+const VERSION='ardoise-v104';
 /* v96 : publication des résultats (publication-resultats.js, précaché) dans Bulletins ; vidéo de présentation et lien Instagram sur le site public. */
 /* v95 : choix « Animations et effets » dans Mon profil et dans l'Apparence du Super Admin — theme.js (ArdoiseAnimations), theme-base.css, theme-signatures.js/.css, amorçage des pages (attribut data-animations posé avant le premier affichage). */
 /* v94 : deux nouvelles apparences, Pro (theme-pro.css) et Savane (theme-savane.css), nouvelles et précachées ; leurs scènes et widgets dans theme-signatures.js/.css et leurs fiches dans theme.js. */

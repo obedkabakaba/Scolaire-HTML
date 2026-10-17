@@ -529,57 +529,15 @@
   });
 
   /* ======================================================================
-     7. INFRASTRUCTURE ET COÛTS
+     Infrastructure et coûts — fusionné
+
+     Ses trois blocs existaient ailleurs : les services déclarés et leur coût
+     dans Finance → Dépenses et services (même table `services_externes`),
+     la présence des clés de configuration dans Supervision → Santé (même
+     liste, complétée des deux variables qui n'étaient qu'ici), le coût moyen
+     par école dans Finance → Rentabilité.
      ====================================================================== */
 
-  SA.enregistrerVue('cc/infrastructure', {
-    titre: 'Infrastructure et coûts',
-    sousTitre: 'Services externes, variables configurées, coût par école.',
+  SA.enregistrerRedirection('cc/infrastructure', 'couts/services');
 
-    async rendu(conteneur) {
-      conteneur.innerHTML = ui.squelette(6);
-      const d = await SA.api('/super-admin/control-center/infrastructure');
-      const c = d.couts || {};
-
-      conteneur.innerHTML = `
-        <div class="sa-grille-stats" style="margin-bottom:20px">
-          ${ui.carteStat({ valeur: `${esc(c.total_estime_mensuel)} $`, etiquette: 'Coût mensuel estimé' })}
-          ${ui.carteStat({ valeur: `${esc(c.services_declares_mensuel)} $`, etiquette: 'Services déclarés' })}
-          ${ui.carteStat({ valeur: `${esc(c.ia_mois_courant)} $`, etiquette: 'IA ce mois-ci' })}
-          ${ui.carteStat({ valeur: c.par_ecole === null ? '—' : `${esc(c.par_ecole)} $`, etiquette: 'Coût par école' })}
-          ${ui.carteStat({ valeur: c.par_utilisateur === null ? '—' : `${esc(c.par_utilisateur)} $`,
-                           etiquette: 'Coût par utilisateur' })}
-        </div>
-
-        <section class="sa-section">
-          <h2 class="sa-section-titre">Variables d'environnement</h2>
-          ${ui.tableau({
-            colonnes: [
-              { cle: 'service', titre: 'Service' },
-              { cle: 'variable', titre: 'Variable', classe: 'sa-mono' },
-              { cle: 'defini', titre: 'État', rendu: (l) => l.defini
-                ? ui.badge('configurée', 'succes') : ui.badge('absente', 'danger') },
-              { cle: 'apercu', titre: 'Aperçu', classe: 'sa-mono',
-                rendu: (l) => l.apercu ? esc(l.apercu) : '—' }
-            ], lignes: d.variables_environnement || [], vide: ''
-          })}
-          <div class="cc-encart-fait">${esc(d.note_secrets || '')}</div>
-        </section>
-
-        <section class="sa-section">
-          <h2 class="sa-section-titre">Services déclarés</h2>
-          ${ui.tableau({
-            colonnes: [
-              { cle: 'nom', titre: 'Service' },
-              { cle: 'cout_mensuel', titre: 'Coût mensuel', classe: 'sa-num',
-                rendu: (l) => l.cout_mensuel ? `${esc(l.cout_mensuel)} ${esc(l.devise || '')}` : '—' },
-              { cle: 'statut', titre: 'Statut', rendu: (l) => ui.badgeStatut(l.statut) }
-            ], lignes: d.services_declares || [],
-            vide: "Aucun service déclaré — renseignez-les dans « Services & coûts »"
-          })}
-        </section>
-
-        <div class="cc-encart-hypothese">${esc(d.limites_de_la_mesure || '')}</div>`;
-    }
-  });
 })();

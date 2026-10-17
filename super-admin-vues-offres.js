@@ -1039,18 +1039,22 @@
      ====================================================================== */
 
   SA.enregistrerVue('offres/abonnements', {
-    titre: 'Abonnements clients',
-    sousTitre: 'Prix catalogue, prix réellement payé, et l\'écart entre les deux.',
+    titre: 'Abonnements',
+    sousTitre: 'Échéances, prix catalogue, prix réellement payé, remises et encaissements.',
 
     async rendu(conteneur, params) {
       conteneur.innerHTML = ui.squelette(10, 46);
 
-      const [d, offres] = await Promise.all([
+      const [d, offres, repartition] = await Promise.all([
         SA.api(SA.url('/super-admin/abonnements-detail', {
           page: params.page, statut: params.statut, plan_id: params.plan_id,
           recherche: params.recherche, avec_remise: params.avec_remise
         })),
-        SA.api('/super-admin/offres')
+        SA.api('/super-admin/offres'),
+        // Répartition des abonnements actifs par offre : calculée par la route
+        // de l'ancien échéancier, seule à la fournir. Facultative.
+        SA.api(SA.url('/super-admin/abonnements', { taille: 1 }))
+          .then((r) => r.repartition_par_plan || []).catch(() => [])
       ]);
 
       const s = d.synthese || {};
@@ -1075,7 +1079,9 @@
                   <div class="sa-muet">${j < 0 ? `échu depuis ${Math.abs(j)} j` : `dans ${j} j`}</div>`;
         } },
         { cle: 'statut', titre: 'Statut', rendu: (l) => l.en_periode_essai
-          ? ui.badge('Essai actif', 'info') : ui.badgeStatut(l.statut) }
+          ? ui.badge('Essai actif', 'info') : ui.badgeStatut(l.statut) },
+        { cle: 'encaisser', titre: '', rendu: (l, i) => SA.ouvrirEncaissement
+          ? `<button class="sa-bouton sa-bouton-secondaire sa-bouton-petit" data-encaisser="${i}">Encaisser</button>` : '' }
       ];
 
       conteneur.innerHTML = `
@@ -1089,6 +1095,14 @@
           <p class="sa-note">${esc(s.note_page || '')}</p>
         </section>
 
+        ${repartition.length ? `
+          <section class="sa-panneau" style="margin-bottom:16px">
+            <h3 class="sa-section-titre">Répartition des abonnements actifs</h3>
+            ${SA.graphe.repartition(repartition.map((r) => ({
+              libelle: r.plan_nom || 'sans offre', valeur: Number(r.nb)
+            })))}
+          </section>` : ''}
+
         <section class="sa-section">
           <div class="sa-barre-filtres">
             <label class="sa-champ-bloc"><span>Recherche</span>
@@ -1101,13 +1115,13 @@
             <label class="sa-champ-bloc"><span>Statut</span>
               <select class="sa-champ" id="filtre-statut">
                 <option value="">Tous</option>
-                ${['actif', 'expire', 'suspendu', 'annule'].map((v) => `<option value="${v}" ${params.statut === v ? 'selected' : ''}>${v}</option>`).join('')}
+                ${['actif', 'en_attente', 'expire', 'suspendu', 'annule'].map((v) => `<option value="${v}" ${params.statut === v ? 'selected' : ''}>${v}</option>`).join('')}
               </select></label>
             <label class="sa-champ-inline" style="align-self:flex-end">
               <input type="checkbox" id="filtre-remise" ${params.avec_remise === 'oui' ? 'checked' : ''} />
               <span>Seulement les remises</span></label>
           </div>
-          ${ui.tableau({ colonnes, lignes: d.donnees, vide: 'Aucun abonnement' })}
+          ${ui.tableau({ colonnes, lignes: d.donnees, cliquable: true, vide: 'Aucun abonnement' })}
           ${ui.pagination(d.pagination)}
         </section>`;
 
@@ -1128,6 +1142,24 @@
 
       conteneur.querySelectorAll('[data-page]').forEach((b) =>
         b.addEventListener('click', () => majEtRendre({ page: b.dataset.page })));
+
+      // Encaisser : posé avant l'écouteur de ligne, et la propagation est
+      // coupée — sinon la fiche école s'ouvrirait par-dessus le formulaire.
+      conteneur.querySelectorAll('[data-encaisser]').forEach((bouton) => {
+        bouton.addEventListener('click', (evenement) => {
+          evenement.stopPropagation();
+          const l = d.donnees[Number(bouton.dataset.encaisser)];
+          // Le formulaire d'encaissement attend `prix` : ici, le prix réellement payé.
+          if (l) SA.ouvrirEncaissement(Object.assign({}, l, { prix: l.prix_paye }), () => SA.rafraichirVue());
+        });
+      });
+
+      conteneur.querySelectorAll('tbody tr').forEach((ligne, index) => {
+        ligne.addEventListener('click', () => {
+          const l = d.donnees[index];
+          if (l && SA.ouvrirFicheEcole) SA.ouvrirFicheEcole(l.ecole_id, () => SA.rafraichirVue());
+        });
+      });
     }
   });
 

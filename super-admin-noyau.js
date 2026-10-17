@@ -978,6 +978,27 @@
     vues.set(cle, vue);
   };
 
+  /**
+   * Ancienne adresse d'un écran fusionné dans un autre.
+   *
+   * Les favoris, les liens d'e-mail et l'historique du navigateur continuent
+   * de fonctionner : l'ancienne route mène à l'écran qui a repris son contenu,
+   * avec ses paramètres (filtres, page) et, au besoin, des paramètres imposés.
+   * `location.replace` plutôt que `naviguer` : « Précédent » ne doit pas
+   * ramener sur la redirection, qui renverrait aussitôt en avant.
+   */
+  SA.enregistrerRedirection = function (ancienne, cible, imposes) {
+    vues.set(ancienne, {
+      titre: '…',
+      redirection: cible,
+      rendu(conteneur, params) {
+        const tous = Object.assign({}, params, imposes || {});
+        const requete = Object.keys(tous).length ? '?' + new URLSearchParams(tous).toString() : '';
+        location.replace(`#/${cible}${requete}`);
+      }
+    });
+  };
+
   SA.routeCourante = null;
 
   function analyserHash() {

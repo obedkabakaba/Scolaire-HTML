@@ -35,54 +35,14 @@
   }
 
   /* ======================================================================
-     Explorateur — choix de l'école
+     Explorateur — choix de l'école : fusionné dans « Toutes les écoles »
+
+     Cette grille répétait la liste des écoles. « Toutes les écoles » la
+     tient déjà, et chaque fiche y ouvre l'exploration en lecture seule
+     (bouton « Explorer »). L'ancienne adresse y mène.
      ====================================================================== */
 
-  SA.enregistrerVue('explorer', {
-    titre: 'Explorateur',
-    sousTitre: "Parcourir une école comme le ferait son directeur — sans rien pouvoir y changer.",
-
-    async rendu(conteneur) {
-      const ecoles = (SA.referentiels && SA.referentiels.ecoles) || [];
-
-      conteneur.innerHTML = BANDEAU_LECTURE + `
-        <div class="sa-barre-filtres">
-          <input type="search" class="sa-champ sa-champ-recherche" id="filtre-ecoles"
-                 placeholder="Filtrer les écoles…" />
-        </div>
-        <div class="sa-grille-3" id="grille-ecoles"></div>`;
-
-      const grille = document.getElementById('grille-ecoles');
-
-      function dessiner(motif) {
-        const filtrees = ecoles.filter((e) =>
-          !motif || (e.nom + ' ' + e.code).toLowerCase().includes(motif.toLowerCase()));
-
-        if (!filtrees.length) {
-          grille.innerHTML = ui.etatVide('Aucune école', 'Ajustez le filtre.');
-          return;
-        }
-
-        grille.innerHTML = filtrees.map((e) => `
-          <button class="sa-panneau" data-ecole="${esc(e.id)}"
-                  style="text-align:left;cursor:pointer;font:inherit;color:inherit;border-width:1px">
-            <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
-              <strong>${esc(e.nom)}</strong>
-              ${ui.badgeStatut(e.statut)}
-            </div>
-            <div class="sa-muet" style="font-size:.78rem;margin-top:5px">${esc(e.code)}</div>
-          </button>`).join('');
-
-        grille.querySelectorAll('[data-ecole]').forEach((carte) => {
-          carte.addEventListener('click', () => SA.naviguer(`explorer/ecole/${carte.getAttribute('data-ecole')}`));
-        });
-      }
-
-      dessiner('');
-      document.getElementById('filtre-ecoles')
-        .addEventListener('input', SA.antiRebond((e) => dessiner(e.target.value), 200));
-    }
-  });
+  SA.enregistrerRedirection('explorer', 'ecoles');
 
   /* ======================================================================
      Explorateur — une école
@@ -207,7 +167,8 @@
     async rendu(conteneur, params, segments) {
       const ecoleId = segments[0];
       if (!ecoleId) {
-        conteneur.innerHTML = ui.etatVide('Aucune école sélectionnée', 'Revenez à l\'Explorateur.');
+        conteneur.innerHTML = ui.etatVide('Aucune école sélectionnée',
+          'Ouvrez « Toutes les écoles », puis « Explorer » sur la fiche de l\'école.');
         return;
       }
 

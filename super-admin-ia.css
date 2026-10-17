@@ -348,6 +348,8 @@
 .ia-registre-FAIT { color: var(--vert-ok, #4C7A3E); }
 .ia-registre-HYPOTHÈSE { color: var(--ocre-dark, #8A5F2C); }
 .ia-registre-RECOMMANDATION { color: var(--texte-sombre, #2E2A24); }
+.ia-registre-bref { display: inline-block; margin-bottom: 2px; color: var(--texte-sombre, #2E2A24); font-size: 1.02em; }
+.ia-registre-technique { color: var(--texte-att, #6B6358); }
 
 .ia-code, .ia-diff, .ia-pr-corps pre {
   background: var(--texte-sombre, #2E2A24);

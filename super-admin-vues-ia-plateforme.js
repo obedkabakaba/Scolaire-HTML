@@ -971,8 +971,15 @@
       conteneur.innerHTML = ui.squeletteCartes(4) + ui.squelette(6);
 
       let d;
+      // L'historique mensuel (jetons compris) vient de la route du Control
+      // Center, seule à le calculer : c'était le seul apport de l'ancien écran
+      // « Copilote et budgets », qui lisait les mêmes tables que celui-ci.
+      let mensuel = null;
       try {
-        d = await SA.api(`${BASE}/couts?jours=${jours}`);
+        [d, mensuel] = await Promise.all([
+          SA.api(`${BASE}/couts?jours=${jours}`),
+          SA.api('/super-admin/control-center/ia/couts').catch(() => null)
+        ]);
       } catch (err) {
         conteneur.innerHTML = ui.etatErreur(err.message);
         return;
@@ -1048,7 +1055,22 @@
         ${tableauSimple('Par fonction', d.par_usage, 'Utilisation')}
         ${tableauSimple('Par modèle', d.par_modele, 'Modèle')}
         ${tableauSimple('Par école', d.par_ecole, 'École')}
-        ${tableauSimple('Par utilisateur', d.par_utilisateur, 'Utilisateur')}`;
+        ${tableauSimple('Par utilisateur', d.par_utilisateur, 'Utilisateur')}
+
+        ${mensuel && (mensuel.par_mois || []).length ? `
+          <section class="sa-section">
+            <h3 class="sa-section-titre">Par mois</h3>
+            ${ui.tableau({
+              colonnes: [
+                { titre: 'Mois', cle: 'mois' },
+                { titre: 'Appels', cle: 'appels', classe: 'sa-col-nombre' },
+                { titre: 'Jetons entrée', cle: 'jetons_entree', classe: 'sa-col-nombre' },
+                { titre: 'Jetons sortie', cle: 'jetons_sortie', classe: 'sa-col-nombre' },
+                { titre: 'Coût', cle: 'cout_usd', classe: 'sa-col-nombre', rendu: (l) => argent(l.cout_usd) }
+              ],
+              lignes: mensuel.par_mois
+            })}
+          </section>` : ''}`;
 
       conteneur.querySelectorAll('[data-jours]').forEach((b) => {
         b.addEventListener('click', () => SA.majParams({ jours: b.dataset.jours }) || SA.rafraichirVue());

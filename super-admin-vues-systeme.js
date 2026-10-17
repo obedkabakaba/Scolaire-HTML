@@ -259,191 +259,15 @@
   });
 
   /* ======================================================================
-     Bugs et erreurs
+     Bugs & erreurs — fusionné dans Supervision → Erreurs (cc/erreurs)
+
+     Les deux écrans lisaient la même table `bugs_plateforme`. La fiche de
+     cc/erreurs portait le code concerné, l'analyse IA et l'ouverture
+     d'incident ; celle-ci, le statut, la gravité et les commentaires. Tout
+     est désormais sur la première. L'ancienne adresse y mène.
      ====================================================================== */
 
-  SA.enregistrerVue('bugs', {
-    titre: 'Bugs & erreurs',
-    sousTitre: 'Erreurs remontées par les interfaces et par le serveur, regroupées par empreinte.',
-
-    async rendu(conteneur, params) {
-      conteneur.innerHTML = '';
-      const barre = document.createElement('div');
-      const zone = document.createElement('div');
-      zone.innerHTML = ui.squelette(8);
-      conteneur.append(barre, zone);
-
-      const filtres = SA.ui.barreFiltres(barre, [
-        { type: 'recherche', nom: 'recherche', libelle: 'Message, page, pile d\'appels…', valeur: params.recherche },
-        {
-          type: 'select', nom: 'statut', libelle: 'Tous les statuts', valeur: params.statut,
-          options: [
-            { valeur: 'ouvert', libelle: 'Ouverts' },
-            { valeur: 'en_cours', libelle: 'En cours' },
-            { valeur: 'resolu', libelle: 'Résolus' },
-            { valeur: 'ignore', libelle: 'Ignorés' }
-          ]
-        },
-        {
-          type: 'select', nom: 'gravite', libelle: 'Toutes les gravités', valeur: params.gravite,
-          options: [
-            { valeur: 'critique', libelle: 'Critique' },
-            { valeur: 'haute', libelle: 'Haute' },
-            { valeur: 'moyenne', libelle: 'Moyenne' },
-            { valeur: 'basse', libelle: 'Basse' }
-          ]
-        },
-        {
-          type: 'select', nom: 'origine', libelle: 'Toutes les origines', valeur: params.origine,
-          options: [
-            { valeur: 'frontend', libelle: 'Interface' },
-            { valeur: 'backend', libelle: 'Serveur' },
-            { valeur: 'job', libelle: 'Tâche planifiée' }
-          ]
-        },
-        { type: 'ecoles', nom: 'ecole_id', libelle: 'Toutes les écoles', valeur: params.ecole_id }
-      ], (valeurs) => SA.naviguer('bugs', Object.assign({}, valeurs, { page: 1 })));
-
-      const requete = Object.assign({}, filtres.lire(), { page: params.page || 1 });
-      const d = await SA.api(SA.url('/super-admin/bugs', requete));
-      const s = d.statistiques || {};
-
-      zone.innerHTML = `
-        <div class="sa-grille-stats" style="margin-bottom:16px">
-          ${ui.carteStat({ valeur: fmt.nombre(s.ouverts), etiquette: 'Ouverts', ton: Number(s.ouverts) ? 'attention' : 'succes' })}
-          ${ui.carteStat({ valeur: fmt.nombre(s.en_cours), etiquette: 'En cours', ton: 'info' })}
-          ${ui.carteStat({ valeur: fmt.nombre(s.critiques), etiquette: 'Critiques non résolus', ton: Number(s.critiques) ? 'danger' : 'succes' })}
-          ${ui.carteStat({ valeur: fmt.nombre(s.resolus), etiquette: 'Résolus' })}
-          ${ui.carteStat({ valeur: fmt.nombre(s.occurrences_totales), etiquette: 'Occurrences cumulées' })}
-        </div>
-
-        ${ui.tableau({
-          cliquable: true,
-          colonnes: [
-            { cle: 'gravite', titre: 'Gravité', rendu: (l) => ui.badgeStatut(l.gravite) },
-            {
-              cle: 'message', titre: 'Erreur',
-              rendu: (l) => `<span class="sa-tronque" title="${esc(l.message)}">${esc(l.message)}</span>
-                             <div class="sa-muet" style="font-size:.74rem">${esc(l.page || l.chemin || '—')}</div>`
-            },
-            { cle: 'origine', titre: 'Origine', rendu: (l) => ui.badge(l.origine, 'neutre') },
-            { cle: 'ecole_nom', titre: 'École' },
-            { cle: 'occurrences', titre: 'Occurrences', classe: 'sa-num', rendu: (l) => fmt.nombre(l.occurrences) },
-            { cle: 'derniere_occurrence', titre: 'Dernière', rendu: (l) => esc(fmt.relatif(l.derniere_occurrence)) },
-            { cle: 'statut', titre: 'Statut', rendu: (l) => ui.badgeStatut(l.statut) }
-          ],
-          lignes: d.donnees,
-          vide: 'Aucun bug enregistré'
-        })}
-        ${ui.pagination(d.pagination)}`;
-
-      paginationSimple(zone, 'bugs', requete);
-      zone.querySelectorAll('tbody tr[data-id]').forEach((ligne) => {
-        ligne.addEventListener('click', () => ouvrirBug(ligne.getAttribute('data-id')));
-      });
-    }
-  });
-
-  async function ouvrirBug(id) {
-    const modale = SA.modale({ titre: 'Chargement…', large: true, contenu: ui.squelette(5) });
-
-    let d;
-    try {
-      d = await SA.api(`/super-admin/bugs/${id}`);
-    } catch (erreur) {
-      modale.querySelector('.sa-modale-corps').innerHTML = ui.etatErreur(erreur.message);
-      return;
-    }
-
-    const b = d.bug;
-    modale.querySelector('.sa-modale-entete h2').textContent = 'Détail de l\'erreur';
-
-    modale.querySelector('.sa-modale-corps').innerHTML = `
-      <div class="sa-liste-infos">
-        <div class="sa-ligne-info"><span>Message</span><span>${esc(b.message)}</span></div>
-        <div class="sa-ligne-info"><span>Origine</span><span>${ui.badge(b.origine, 'neutre')}</span></div>
-        <div class="sa-ligne-info"><span>Page</span><span class="sa-mono">${esc(b.page || '—')}</span></div>
-        <div class="sa-ligne-info"><span>Requête</span><span class="sa-mono">${esc([b.methode, b.chemin].filter(Boolean).join(' ') || '—')}${b.code_http ? ' → ' + esc(b.code_http) : ''}</span></div>
-        <div class="sa-ligne-info"><span>École</span><span>${esc(b.ecole_nom || '—')}</span></div>
-        <div class="sa-ligne-info"><span>Utilisateur</span><span>${esc(b.utilisateur || '—')}${b.utilisateur_email ? ' · ' + esc(b.utilisateur_email) : ''}</span></div>
-        <div class="sa-ligne-info"><span>Navigateur</span><span><span class="sa-tronque" title="${esc(b.navigateur)}">${esc(b.navigateur || '—')}</span></span></div>
-        <div class="sa-ligne-info"><span>Système</span><span>${esc(b.systeme || '—')}</span></div>
-        <div class="sa-ligne-info"><span>Occurrences</span><span>${esc(fmt.nombre(b.occurrences))}</span></div>
-        <div class="sa-ligne-info"><span>Première fois</span><span>${esc(fmt.dateHeure(b.premiere_occurrence))}</span></div>
-        <div class="sa-ligne-info"><span>Dernière fois</span><span>${esc(fmt.dateHeure(b.derniere_occurrence))}</span></div>
-      </div>
-
-      ${b.stack ? `<h4 class="sa-section-titre" style="margin-top:18px">Pile d'appels</h4>
-        <div class="sa-bloc-code">${esc(b.stack)}</div>` : ''}
-
-      <h4 class="sa-section-titre" style="margin-top:18px">Traitement</h4>
-      <div class="sa-grille-2">
-        <label class="sa-champ-bloc"><span>Statut</span>
-          <select class="sa-champ" id="bug-statut">
-            ${['ouvert', 'en_cours', 'resolu', 'ignore'].map((v) =>
-              `<option value="${v}" ${b.statut === v ? 'selected' : ''}>${v.replace('_', ' ')}</option>`).join('')}
-          </select>
-        </label>
-        <label class="sa-champ-bloc"><span>Gravité</span>
-          <select class="sa-champ" id="bug-gravite">
-            ${['basse', 'moyenne', 'haute', 'critique'].map((v) =>
-              `<option value="${v}" ${b.gravite === v ? 'selected' : ''}>${v}</option>`).join('')}
-          </select>
-        </label>
-      </div>
-      <button class="sa-bouton sa-bouton-principal sa-bouton-petit" id="bug-enregistrer">Enregistrer</button>
-
-      <h4 class="sa-section-titre" style="margin-top:22px">Commentaires</h4>
-      <div id="bug-commentaires">
-        ${(d.commentaires || []).length
-          ? d.commentaires.map((c) => `
-              <div class="sa-panneau" style="margin-bottom:8px">
-                <div class="sa-muet" style="font-size:.76rem">${esc(c.auteur || 'inconnu')} · ${esc(fmt.dateHeure(c.created_at))}</div>
-                <div style="margin-top:5px;font-size:.88rem">${esc(c.contenu)}</div>
-              </div>`).join('')
-          : `<p class="sa-muet">Aucun commentaire.</p>`}
-      </div>
-      <label class="sa-champ-bloc" style="margin-top:12px"><span>Ajouter un commentaire</span>
-        <textarea class="sa-champ" id="bug-commentaire" placeholder="Diagnostic, cause identifiée, correctif prévu…"></textarea>
-      </label>
-      <button class="sa-bouton sa-bouton-secondaire sa-bouton-petit" id="bug-commenter">Publier</button>`;
-
-    modale.querySelector('#bug-enregistrer').addEventListener('click', async (evenement) => {
-      const bouton = evenement.currentTarget;
-      bouton.disabled = true;
-      try {
-        await SA.api(`/super-admin/bugs/${id}`, {
-          method: 'PATCH',
-          body: JSON.stringify({
-            statut: modale.querySelector('#bug-statut').value,
-            gravite: modale.querySelector('#bug-gravite').value
-          })
-        });
-        SA.toast('Bug mis à jour.', 'succes');
-        modale.fermer();
-        SA.rafraichirVue();
-      } catch (erreur) {
-        SA.toast(erreur.message, 'erreur');
-        bouton.disabled = false;
-      }
-    });
-
-    modale.querySelector('#bug-commenter').addEventListener('click', async () => {
-      const champ = modale.querySelector('#bug-commentaire');
-      if (!champ.value.trim()) return;
-      try {
-        await SA.api(`/super-admin/bugs/${id}/commentaires`, {
-          method: 'POST',
-          body: JSON.stringify({ contenu: champ.value.trim() })
-        });
-        SA.toast('Commentaire publié.', 'succes');
-        modale.fermer();
-        ouvrirBug(id);
-      } catch (erreur) {
-        SA.toast(erreur.message, 'erreur');
-      }
-    });
-  }
+  SA.enregistrerRedirection('bugs', 'cc/erreurs', { heures: '2160' });
 
   /* ======================================================================
      Journal d'activité (route existante /journal-activite)
@@ -568,18 +392,10 @@
     }
   });
 
-  /* Les actions des Super Admins eux-mêmes : qui a suspendu une école, validé
-     un paiement, changé un prix, activé la maintenance. Même écran, filtre
-     posé d'office — on y vient pour cela, on ne devrait pas avoir à le chercher. */
-  SA.enregistrerVue('journal/super-admin', {
-    titre: 'Actions des Super Admins',
-    sousTitre: "Tout ce qui a été fait depuis cet espace d'administration, connexions comprises.",
-    rendu(conteneur, params) {
-      // Filtre posé d'office ; « Tous les acteurs » choisi explicitement (valeur vide) le lève.
-      return SA.vues.get('journal').rendu(conteneur,
-        Object.assign({}, params, { acteur: params.acteur === '' ? '' : 'super_admin' }));
-    }
-  });
+  /* Les actions des Super Admins eux-mêmes : c'est le journal d'activité avec
+     le filtre « Super Admins uniquement ». Il avait son propre onglet, qui
+     montrait exactement cet écran-ci ; l'ancienne adresse pose le filtre. */
+  SA.enregistrerRedirection('journal/super-admin', 'journal', { acteur: 'super_admin' });
 
   /* ======================================================================
      Sécurité

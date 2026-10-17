@@ -719,11 +719,17 @@
               </div>
               ${p.pourquoi ? `<p class="sa-texte">${esc(p.pourquoi)}</p>` : ''}
               ${p.diff_propose ? `<pre class="cc-code">${esc(p.diff_propose)}</pre>` : ''}
+              ${p.motif_decision ? `<div class="cc-champ"><dt>Décision</dt><dd>${esc(p.motif_decision)}${p.decide_par_nom ? ' — ' + esc(p.decide_par_nom) : ''}</dd></div>` : ''}
               ${p.statut === 'proposee' ? `
                 <div style="display:flex;gap:8px;margin-top:9px">
                   <button class="sa-bouton sa-bouton-principal sa-bouton-petit" data-correctif="${esc(p.id)}" data-decision="acceptee">Accepter</button>
                   <button class="sa-bouton sa-bouton-secondaire sa-bouton-petit" data-correctif="${esc(p.id)}" data-decision="rejetee">Rejeter</button>
-                </div>` : ''}
+                </div>` : p.statut === 'acceptee' ? `
+                <p class="sa-note" style="margin:9px 0 6px">
+                  Accepter enregistre votre décision ; la modification du code se fait ensuite dans le dépôt.
+                  Une fois faite et mise en ligne, indiquez-le ici.
+                </p>
+                <button class="sa-bouton sa-bouton-secondaire sa-bouton-petit" data-correctif="${esc(p.id)}" data-decision="appliquee">Marquer appliqué dans le dépôt</button>` : ''}
             </div>`).join('')}
         </section>` : ''}
 
@@ -816,9 +822,11 @@
           await SA.api(`/super-admin/control-center/correctifs/${b.getAttribute('data-correctif')}`, {
             method: 'PATCH', body: JSON.stringify({ statut: decision, motif })
           });
-          SA.toast(decision === 'acceptee'
-            ? "Correctif accepté. Son application dans le dépôt reste un acte humain distinct."
-            : 'Correctif rejeté.', 'succes', 7000);
+          SA.toast({
+            acceptee: "Correctif accepté. Son application dans le dépôt reste un acte humain distinct.",
+            appliquee: 'Correctif marqué comme appliqué.',
+            rejetee: 'Correctif rejeté.'
+          }[decision] || 'Décision enregistrée.', 'succes', 7000);
           SA.rafraichirVue();
         } catch (err) { SA.toast(err.message, 'danger'); }
       });

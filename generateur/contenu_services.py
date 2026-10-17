@@ -762,7 +762,7 @@ def site_vitrine():
         <li>Six apparences au choix, à vos couleurs</li>
         <li>Préinscription en ligne et demandes de rendez-vous</li>
         <li>Espace parents : bulletins, présences, frais, emploi du temps</li>
-        <li>Espace élève : sa journée, ses résultats, l'agenda</li>
+        <li>Espace élève : sa journée, ses résultats, ses frais, sa conduite, l'agenda</li>
         <li>Aucune marque Ardoise visible par les familles</li>
       </ul>"""
 

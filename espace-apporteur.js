@@ -48,7 +48,7 @@
     campagnes: ['partenaire_strategique']
   };
   const ROUTE_FONCTION = {
-    prospects: 'prospects', kit: 'kit', missions_installation: 'missions', missions_formation: 'missions', missions_capture: 'missions',
+    prospects: 'prospects', kit: 'kit', missions_installation: 'missions', missions_formation: 'missions', missions_capture: 'missions', missions_site: 'missions',
     guide_configuration: 'ressources', kit_formateur: 'ressources', campagnes: 'campagnes', partenariats: 'campagnes'
   };
   const SECTIONS = {
@@ -84,10 +84,20 @@
       ['responsables_saisis', 'Responsable et téléphone saisis pour chaque élève'],
       ['absents_signales', 'Élèves absents signalés à la direction'],
       ['liste_remise_direction', 'Point de fin fait avec la direction']
+    ],
+    site: [
+      ['contenus_recus', 'Textes, logo et photos recueillis auprès de l’école'],
+      ['apparence', 'Apparence, couleur et image de couverture choisies avec la direction'],
+      ['presentation_direction', 'Présentation, mission, valeurs et mot de la direction rédigés'],
+      ['inscriptions', 'Rubrique inscriptions : conditions, pièces, préinscription en ligne'],
+      ['vie_scolaire', 'Vie scolaire : activités, clubs et galerie photos'],
+      ['infos_pratiques', 'Informations pratiques, horaires et questions fréquentes'],
+      ['relecture_direction', 'Site relu et corrigé avec la direction'],
+      ['site_publie', 'Site mis en ligne et adresse remise à l’école']
     ]
   };
-  const TYPES_MISSION = { installation: 'Installation & configuration', formation: 'Formation', capture: 'Campagne de capture' };
-  const SERVICES = { campagne_capture: 'Campagne de capture', installation: 'Installation', formation_express: 'Formation express', formation_complete: 'Formation complète', formation_personnalisee: 'Formation personnalisée' };
+  const TYPES_MISSION = { installation: 'Installation & configuration', formation: 'Formation', capture: 'Campagne de capture', site: 'Conception du site vitrine' };
+  const SERVICES = { campagne_capture: 'Campagne de capture', installation: 'Installation', formation_express: 'Formation express', formation_complete: 'Formation complète', formation_personnalisee: 'Formation personnalisée', conception_site: 'Conception du site vitrine' };
   const CANAUX = {
     communique_officiel: 'Communiqué ou annonce officielle', reseaux_sociaux: 'Réseaux sociaux', radio_tv: 'Radio ou télévision',
     evenement: 'Réunion, atelier ou événement', presse: 'Presse écrite', autre: 'Autre canal'
@@ -987,7 +997,7 @@
           <td><strong>${esc(l.libelle)}</strong><div class="muet petit">${esc(l.ecole_nom)}</div></td>
           <td class="muet">${Number(l.part_pourcent).toLocaleString('fr-FR')} % de ${argent(l.remuneration_totale, l.devise)}</td>
           <td class="num"><strong>${argent(l.montant, l.devise)}</strong></td><td>${etiquette(l.statut)}</td></tr>`).join('')}
-        </tbody></table></div>` : etatVide('ecole', 'Aucune prestation enregistrée', 'Installations, formations et campagnes de capture réalisées avec un badge actif apparaîtront ici.'),
+        </tbody></table></div>` : etatVide('ecole', 'Aucune prestation enregistrée', 'Installations, formations, campagnes de capture et sites vitrines réalisés avec un badge actif apparaîtront ici.'),
       versements: () => (r.reglements || []).length ? `<div class="tableau-conteneur"><table class="tableau tableau-mobile">
         <thead><tr><th>Date</th><th>Mode et référence</th><th class="num">Montant</th></tr></thead><tbody>
         ${r.reglements.map((l) => `<tr><td>${esc(dateLongue(l.date_reglement))}</td>
@@ -1653,9 +1663,9 @@
     const peutDesister = mienne && ['candidat', 'retenu'].includes(m.mon_statut) && ['ouverte', 'attribuee'].includes(m.statut) && !partFinie;
     const cases = m.checklist ? Object.values(m.checklist) : [];
     const acces = m.acces_capture;
-    const icon = capture ? 'appareil' : (m.type === 'installation' ? 'outils' : 'livre');
+    const icon = capture ? 'appareil' : (m.type === 'installation' ? 'outils' : (m.type === 'site' ? 'ecole' : 'livre'));
     return `<article class="carte mission">
-      <div class="mission-tete"><span class="stat-icone ${m.type === 'installation' ? '' : (capture ? 'vert' : 'bleu')}">${icone(icon)}</span>
+      <div class="mission-tete"><span class="stat-icone ${m.type === 'installation' || m.type === 'site' ? '' : (capture ? 'vert' : 'bleu')}">${icone(icon)}</span>
         <div><h3>${esc(m.ecole_nom)}</h3><p class="muet petit">${esc([m.ville, m.province].filter(Boolean).join(' · ') || 'Lieu à préciser')} · ${esc(type)}</p></div>
         ${etiquette(statut, partFinie ? 'Ma part est terminée' : null)}</div>
       <div class="mission-infos">
@@ -1667,6 +1677,7 @@
       </div>
       ${m.description ? `<p class="petit">${esc(m.description)}</p>` : ''}
       ${!mienne && capture ? `<p class="petit muet">Sur place : appeler les classes, photographier chaque élève, vérifier ou compléter sa fiche (et l’enregistrer s’il manque). Accès à la liste des élèves pendant la mission seulement.</p>` : ''}
+      ${m.type === 'site' && !(mienne && m.compte_rendu) ? `<p class="petit muet">Avec la direction : recueillir les textes, le logo et les photos de l’école, puis remplir son site depuis l’écran « Site de l’école » de son espace (apparence, présentation, inscriptions, vie scolaire, infos pratiques), le faire relire et le mettre en ligne.</p>` : ''}
       ${mienne && (m.contact_nom || m.contact_telephone) ? `<div class="alerte info">Contact à l’école : <strong>${esc([m.contact_nom, m.contact_telephone].filter(Boolean).join(' · '))}</strong></div>` : ''}
       ${mienne && m.equipe && m.equipe.length ? `<p class="petit muet">Avec : ${esc(m.equipe.join(', '))}</p>` : ''}
       ${mienne && capture && m.mon_statut === 'retenu' && acces && !acces.ouvert && !partFinie && ['ouverte', 'attribuee'].includes(m.statut) ? `<div class="alerte attention">${esc(acces.message)}</div>` : ''}
@@ -1687,7 +1698,7 @@
 
   vues.missions = async (contenu, params) => {
     const d = await api('/apporteurs/portail/missions');
-    const types = d.types.map((x) => ({ installation: 'installations', formation: 'formations', capture: 'campagnes de capture' })[x]).join(', ');
+    const types = d.types.map((x) => ({ installation: 'installations', formation: 'formations', capture: 'campagnes de capture', site: 'sites vitrines à concevoir' })[x]).join(', ');
     entete('Missions', `Les ${types || 'missions'} commandées par les écoles, confiées aux partenaires qualifiés.`);
     const aFaire = d.miennes.filter((m) => m.mon_statut === 'retenu' && (m.type === 'capture' ? m.acces_capture && m.acces_capture.ouvert : m.statut === 'attribuee')).length;
     const onglet = params.onglet || (aFaire ? 'miennes' : 'ouvertes');

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="fr" data-apparence="prestige" data-page-introuvable>
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Site de l'établissement</title>
+<meta name="theme-color" content="#0E1C33" />
+<!--
+  ADRESSES COURTES DES SITES D'ÉCOLES — myardoise.com/<adresse-de-l-ecole>
+  GitHub Pages sert cette page pour toute adresse sans fichier. site-ecole.js
+  lit le chemin : s'il désigne une école dont le site est publié, il affiche
+  son site, sans changer l'adresse dans la barre du navigateur ; sinon, il
+  affiche « page introuvable ».
+  Chemins ABSOLUS obligatoires : cette page est servie à n'importe quelle
+  profondeur (/les-batisseurs, /guides/inexistant/…).
+  Garder les numéros de version alignés sur ceux d'ecole.html.
+-->
+<link rel="icon" href="data:," />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://scolaire-saas-backend.onrender.com" crossorigin>
+<link id="police-site" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/site-ecole.css?v=2" />
+</head>
+<body>
+  <div id="chargement" class="ecran-etat" role="status"><div class="anneau"></div><span>Chargement…</span></div>
+  <div id="site" style="display:none"></div>
+  <script src="/site-ecole.js?v=2"></script>
+</body>
+</html>

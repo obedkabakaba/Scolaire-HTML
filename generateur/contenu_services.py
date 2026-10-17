@@ -123,7 +123,7 @@ def hub():
 
     <article class="service" style="margin-top:18px">
       <h2>Conception de votre site vitrine</h2>
-      <div class="tarif">50&nbsp;$ <small>forfait unique</small></div>
+      <div class="tarif">25&nbsp;$ <small>forfait unique</small></div>
       <div class="rythme-facturation">Une semaine après réception de vos contenus</div>
       <p>Votre école a déjà son site, avec espace parents et préinscription en
          ligne. Nous le rendons à votre image : apparence, textes de chaque
@@ -204,7 +204,7 @@ def hub():
         "services/index.html", "/services/",
         "Installation, formation et saisie des élèves — Services Ardoise",
         "Installation (60 $), formation du personnel (30 à 100 $), saisie des "
-        "élèves (0,50 $ par élève), site vitrine de l'école (50 $). Optionnels.",
+        "élèves (0,50 $ par élève), site vitrine de l'école (25 $). Optionnels.",
         corps, actif="services", jsonld=[f_ld, faq_jsonld(questions)],
     )
 
@@ -774,7 +774,7 @@ def site_vitrine():
         "des parents. Vous relisez, nous corrigeons, le site est publié.",
         [("/contact/?service=conception_site", "Demander la conception", "ocre"),
          ("/services/", "Voir les autres services", "secondaire")],
-        mention="50 $, forfait unique · une semaine après réception de vos contenus",
+        mention="25 $, forfait unique · une semaine après réception de vos contenus",
         aparte=aparte,
     ) + """
 <section class="section">
@@ -884,14 +884,14 @@ def site_vitrine():
 
     return rendre(
         "services/site-vitrine/index.html", "/services/site-vitrine/",
-        "Conception du site vitrine de votre école — Ardoise (50 $)",
+        "Conception du site vitrine de votre école — Ardoise (25 $)",
         "Notre équipe conçoit le site public de votre école : apparence, textes, "
-        "photos, équipe, inscriptions en ligne et espace parents. Forfait 50 $.",
+        "photos, équipe, inscriptions en ligne et espace parents. Forfait 25 $.",
         corps, actif="services",
         jsonld=[f_ld,
                 service_ld("Conception du site vitrine d'une école",
                            "Conception et rédaction du site public d'un établissement "
-                           "scolaire, avec espace parents et préinscription en ligne.", 50),
+                           "scolaire, avec espace parents et préinscription en ligne.", 25),
                 faq_jsonld(questions)],
     )
 

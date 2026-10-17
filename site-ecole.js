@@ -7,6 +7,12 @@
      #/inscriptions                   #/contact
      #/parents   espace parents       #/eleve     espace élève
 
+   Deux adresses mènent ici :
+     · myardoise.com/ecole.html?code=CODE   — l'ancienne, toujours valable ;
+     · myardoise.com/<adresse-de-l-ecole>   — l'adresse courte. Aucun fichier
+       ne porte ce nom : GitHub Pages sert alors 404.html, qui charge ce
+       même script ; l'adresse est lue dans le chemin.
+
    Tout ce qui s'affiche vient de GET /public/ecole/:code. Une école qui n'a
    rien configuré obtient malgré tout un site complet : les textes par défaut
    ci-dessous sont volontairement GÉNÉRAUX (aucun chiffre, aucune date, aucun
@@ -23,6 +29,16 @@
   var params = new URLSearchParams(window.location.search);
   var CODE = (params.get('code') || '').trim();
   var APERCU = params.get('apercu') === '1';
+  // Adresse courte : premier segment du chemin, s'il a la forme d'une
+  // adresse d'école. `/faq/` ou `/ecole.html` n'en sont pas.
+  var ADRESSE_COURTE = false;
+  if (!CODE && !APERCU) {
+    var segment = decodeURIComponent(window.location.pathname).replace(/^\/+|\/+$/g, '');
+    if (/^[a-z0-9]+(-[a-z0-9]+)*$/i.test(segment) && segment.length >= 3 && segment.length <= 40) {
+      CODE = segment.toLowerCase();
+      ADRESSE_COURTE = true;
+    }
+  }
 
   var etat = { d: null, c: null, page: 'accueil', famille: { liste: [], actif: 0, donnees: null, onglet: null } };
 
@@ -323,7 +339,7 @@
       (ec.email ? '<li><a href="mailto:' + e(ec.email) + '">' + e(ec.email) + '</a></li>' : '') +
       '</ul></div></div>' +
       '<div class="bas"><span>© ' + new Date().getFullYear() + ' ' + e(ec.nom) + '. Tous droits réservés.</span>' +
-      '<a href="connexion.html">Accès du personnel</a></div></div></footer>';
+      '<a href="/connexion.html">Accès du personnel</a></div></div></footer>';
   }
 
   /* ------------------------------------------------------------------ */
@@ -1120,6 +1136,17 @@
     $('#site').style.display = '';
     etat.page = null;
     naviguer();
+    adresseDansLaBarre(donnees.ecole);
+  }
+
+  /* Un ancien lien (ecole.html?code=…) affiche l'adresse courte dans la
+     barre du navigateur : c'est elle que les familles recopient et
+     partagent. Seulement sur le vrai domaine — ailleurs (aperçu, test
+     local), le chemin court ne serait pas servi par 404.html. */
+  function adresseDansLaBarre(ecole) {
+    if (APERCU || ADRESSE_COURTE || !ecole.site_adresse) return;
+    if (!/(^|\.)myardoise\.com$/.test(window.location.hostname)) return;
+    try { history.replaceState(null, '', '/' + ecole.site_adresse + window.location.hash); } catch (x) { /* navigateur ancien */ }
   }
 
   /* Le serveur renvoie une configuration déjà nettoyée ; l'aperçu, lui,
@@ -1151,8 +1178,9 @@
     l.href = 'data:image/svg+xml,' + encodeURIComponent(svg);
   }
 
-  function erreur(texte) {
-    $('#chargement').innerHTML = '<svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.6">' + TRACES.vide + '</svg><p style="max-width:420px">' + e(texte) + '</p>';
+  function erreur(texte, retourAccueil) {
+    $('#chargement').innerHTML = '<svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.6">' + TRACES.vide + '</svg><p style="max-width:420px">' + e(texte) + '</p>' +
+      (retourAccueil ? '<a class="bouton" href="/">Revenir à l’accueil</a>' : '');
   }
 
   window.addEventListener('hashchange', naviguer);
@@ -1174,13 +1202,24 @@
     return;
   }
 
+  // 404.html sans adresse d'école reconnaissable : c'est une vraie page
+  // introuvable du site, pas un site d'école.
+  if (!CODE && document.documentElement.hasAttribute('data-page-introuvable')) {
+    document.title = 'Page introuvable';
+    erreur('Cette page n’existe pas ou a été déplacée.', true);
+    return;
+  }
   if (!CODE) { erreur('Adresse incomplète : le code de l’école est manquant.'); return; }
   fetch(API + '/public/ecole/' + encodeURIComponent(CODE))
     .then(function (r) {
+      if (r.status === 404 && ADRESSE_COURTE) {
+        document.title = 'Page introuvable';
+        throw Object.assign(new Error('Aucun site ne correspond à cette adresse. Vérifiez l’orthographe, ou demandez l’adresse exacte à l’école.'), { accueil: true });
+      }
       if (r.status === 404) throw new Error('Ce site n’est pas disponible pour le moment.');
       if (!r.ok) throw new Error('Une erreur est survenue. Réessayez dans quelques instants.');
       return r.json();
     })
     .then(rendre)
-    .catch(function (x) { erreur(x && x.message && !/fetch/i.test(x.message) ? x.message : 'Impossible de joindre le serveur. Vérifiez votre connexion et réessayez.'); });
+    .catch(function (x) { erreur(x && x.message && !/fetch/i.test(x.message) ? x.message : 'Impossible de joindre le serveur. Vérifiez votre connexion et réessayez.', x && x.accueil); });
 })();

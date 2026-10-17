@@ -799,7 +799,7 @@
     var titre = parents ? 'Espace parents' : 'Espace élève';
     var h = herosPage(titre, parents
       ? 'Suivez la scolarité de votre enfant : résultats, présences, frais et emploi du temps.'
-      : 'Ton emploi du temps, tes résultats et l’agenda de l’école, au même endroit.');
+      : 'Ton emploi du temps, tes résultats, tes frais, ta conduite et l’agenda de l’école, au même endroit.');
     h += '<section class="section" style="padding-top:clamp(40px,6vw,70px)"><div class="contenant" id="zone-famille"></div></section>';
     setTimeout(function () {
       if (etat.famille.liste.length) chargerFamille(vue, etat.famille.actif < etat.famille.liste.length ? etat.famille.actif : 0);
@@ -872,7 +872,8 @@
       ? [['apercu', 'accueil', 'Vue d’ensemble'], ['resultats', 'resultats', 'Résultats'], D.finances ? ['finances', 'portefeuille', 'Frais scolaires'] : null,
         D.presences ? ['presences', 'presence', 'Présences'] : null, D.discipline ? ['discipline', 'bouclier', 'Discipline'] : null,
         D.emploi_du_temps ? ['edt', 'horloge', 'Emploi du temps'] : null, ['agenda', 'calendrier', 'Agenda']]
-      : [['journee', 'soleil', 'Ma journée'], ['resultats', 'resultats', 'Mes résultats'], D.presences ? ['presences', 'presence', 'Mes présences'] : null,
+      : [['journee', 'soleil', 'Ma journée'], ['resultats', 'resultats', 'Mes résultats'], D.finances ? ['finances', 'portefeuille', 'Mes frais'] : null,
+        D.presences ? ['presences', 'presence', 'Mes présences'] : null,
         D.discipline ? ['discipline', 'etoile', 'Ma conduite'] : null, ['agenda', 'calendrier', 'Agenda']];
     onglets = onglets.filter(Boolean);
     if (!onglets.some(function (o) { return o[0] === etat.famille.onglet; })) etat.famille.onglet = onglets[0][0];
@@ -916,8 +917,8 @@
     if (R.bloque) {
       return '<div class="panneau"><div class="ico" style="width:52px;height:52px;border-radius:14px;background:#FDECEA;color:#B5361F;display:flex;align-items:center;justify-content:center;margin-bottom:18px">' + ico('cadenas') + '</div>' +
         '<h3>Les résultats ne sont pas encore consultables</h3><p class="petit" style="margin-top:10px">' +
-        (parents ? 'Un solde de <strong>' + e(montant(R.reste_du, (etat.famille.donnees.finances || {}).devise)) + '</strong> reste dû sur les frais scolaires de l’année. ' : '') +
-        'Rapprochez-vous du secrétariat de l’établissement.</p></div>';
+        'Un solde de <strong>' + e(montant(R.reste_du, (etat.famille.donnees.finances || {}).devise)) + '</strong> reste dû sur les frais scolaires de l’année. ' +
+        (parents ? 'Rapprochez-vous du secrétariat de l’établissement.' : 'Parles-en à tes parents ; ils peuvent se rapprocher du secrétariat.') + '</p></div>';
     }
     if (!R.bulletins.length) {
       return '<div class="vide">' + ico('resultats') + (R.prochaine_publication
@@ -946,19 +947,19 @@
         '</tbody></table></div>' : '<div class="vide">' + ico('coche') + 'Aucune absence ni aucun retard enregistré.</div>');
   }
 
-  function voletDiscipline(Q, parents) {
+  function voletDiscipline(Q) {
     var ratio = Q.capital ? Math.max(0, Math.min(100, Math.round(Q.solde / Q.capital * 100))) : 0;
     return '<div class="panneau" style="margin-bottom:20px"><small style="font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--texte-doux)">Points de conduite</small>' +
       '<div style="font-family:var(--police-titre);font-size:2.6rem;line-height:1.1;margin-top:6px">' + e(Q.solde) + ' <span style="font-size:1.1rem;color:var(--texte-doux)">/ ' + e(Q.capital) + '</span></div>' +
       '<div class="barre-progression"><i data-largeur="' + ratio + '%" style="width:0;' + (ratio < 60 ? 'background:#D2462E' : '') + '"></i></div></div>' +
-      (parents ? (Q.incidents.length ? '<div class="tableau-conteneur"><table><thead><tr><th>Date</th><th>Fait</th><th>Mesure</th><th class="nombre">Points</th></tr></thead><tbody>' +
+      (Q.incidents.length ? '<div class="tableau-conteneur"><table><thead><tr><th>Date</th><th>Fait</th><th>Mesure</th><th class="nombre">Points</th></tr></thead><tbody>' +
         Q.incidents.map(function (i) {
           return '<tr><td>' + e(dateLongue(i.date_incident)) + '</td><td>' + e(i.type || '') + (i.description ? '<div class="petit" style="color:var(--texte-doux)">' + e(i.description) + '</div>' : '') + '</td><td>' + e(i.mesure || '—') + '</td>' +
             '<td class="nombre" style="color:' + (i.sens === 'positif' ? '#1D7A45' : '#B5361F') + '">' + (i.sens === 'positif' ? '+' : '−') + e(i.points) + '</td></tr>';
-        }).join('') + '</tbody></table></div>' : '<div class="vide">' + ico('bouclier') + 'Aucun incident enregistré cette année.</div>') : '');
+        }).join('') + '</tbody></table></div>' : '<div class="vide">' + ico('bouclier') + 'Aucun incident enregistré cette année.</div>');
   }
 
-  function voletFinances(F) {
+  function voletFinances(F, parents) {
     var ratio = F.attendu > 0 ? Math.min(100, Math.round(F.verse / F.attendu * 100)) : 0;
     return '<div class="tuiles"><div class="tuile"><small>Frais de l’année</small><b>' + e(montant(F.attendu, F.devise)) + '</b></div>' +
       '<div class="tuile bonne"><small>Déjà versé</small><b>' + e(montant(F.verse, F.devise)) + '</b></div>' +
@@ -967,7 +968,9 @@
       (F.paiements.length ? '<div class="tableau-conteneur"><table><thead><tr><th>Date</th><th>Libellé</th><th>Référence</th><th class="nombre">Montant</th></tr></thead><tbody>' +
         F.paiements.map(function (p) { return '<tr><td>' + e(dateLongue(p.date_paiement)) + '</td><td>' + e(p.libelle || 'Paiement') + '</td><td>' + e(p.reference || '—') + '</td><td class="nombre">' + e(montant(p.montant, p.devise)) + '</td></tr>'; }).join('') +
         '</tbody></table></div>' : '<div class="vide">' + ico('portefeuille') + 'Aucun paiement enregistré cette année.</div>') +
-      '<p class="petit" style="color:var(--texte-doux);margin-top:16px">Pour toute question sur un paiement, munissez-vous de votre reçu et adressez-vous au secrétariat.</p>';
+      '<p class="petit" style="color:var(--texte-doux);margin-top:16px">' + (parents
+        ? 'Pour toute question sur un paiement, munissez-vous de votre reçu et adressez-vous au secrétariat.'
+        : 'Ces informations te sont données à titre indicatif : les paiements se règlent entre tes parents et le secrétariat.') + '</p>';
   }
 
   function voletEdt(edt, seulementAujourdhui) {
@@ -994,9 +997,9 @@
     var R = D.resultats;
     switch (onglet) {
       case 'resultats': return titreVolet(parents ? 'Résultats scolaires' : 'Mes résultats', 'Bulletins validés et publiés par l’école' + (D.annee ? ' pour l’année ' + D.annee : '') + '.') + voletResultats(R, parents);
-      case 'finances': return titreVolet('Frais scolaires', 'Situation de l’année en cours.') + voletFinances(D.finances);
+      case 'finances': return titreVolet(parents ? 'Frais scolaires' : 'Mes frais scolaires', 'Situation de l’année en cours.') + voletFinances(D.finances, parents);
       case 'presences': return titreVolet(parents ? 'Présences' : 'Mes présences', 'Depuis le début de l’année scolaire.') + voletPresences(D.presences);
-      case 'discipline': return titreVolet(parents ? 'Discipline' : 'Ma conduite') + voletDiscipline(D.discipline, parents);
+      case 'discipline': return titreVolet(parents ? 'Discipline' : 'Ma conduite') + voletDiscipline(D.discipline);
       case 'edt': return titreVolet('Emploi du temps', 'Semaine type de la classe.') + voletEdt(D.emploi_du_temps);
       case 'agenda': return titreVolet('Agenda de l’école') + '<div class="panneau">' + evenements(D.evenements, 10) + '</div>';
       case 'journee': {
@@ -1005,6 +1008,7 @@
           '<div class="grille g2" style="align-items:start"><div class="panneau">' + voletEdt(D.emploi_du_temps, true) + '</div>' +
           '<div class="grille">' + (b && !R.bloque ? '<div class="tuile"><small>Dernier bulletin — ' + e(b.periode) + '</small><b>' + (b.pourcentage != null ? e(b.pourcentage) + '%' : '—') + '</b></div>' : '') +
           (D.discipline ? '<div class="tuile"><small>Points de conduite</small><b>' + e(D.discipline.solde) + ' / ' + e(D.discipline.capital) + '</b></div>' : '') +
+          (D.finances ? '<div class="tuile ' + (D.finances.reste > 0 ? 'alerte' : 'bonne') + '"><small>Frais restant à payer</small><b>' + e(montant(D.finances.reste, D.finances.devise)) + '</b></div>' : '') +
           '<div class="panneau"><h3 style="margin-bottom:6px">Bientôt</h3>' + evenements(D.evenements, 3) + '</div></div></div>';
       }
       default: {

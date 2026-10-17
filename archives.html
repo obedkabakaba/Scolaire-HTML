@@ -134,6 +134,7 @@
 </script>
 <link rel="stylesheet" href="theme.css" />
 <link rel="stylesheet" href="ui.css" />
+<link rel="stylesheet" href="generation-scene.css" />
 
   <!-- Session partagée : renouvellement du jeton et rejeu des requêtes
        expirées. Doit rester AVANT les autres scripts. -->
@@ -777,46 +778,23 @@
   //  le fichier via appelApi, puis on déclenche l'enregistrement.
   // ============================================================
   /**
-   * Ouvre un PDF dans un nouvel onglet.
+   * Affiche un duplicata dans la visionneuse intégrée d'Ardoise.
    *
    * On ne peut pas pointer un <a href> directement sur l'API : la requête a
-   * besoin du jeton d'authentification, qui ne voyage pas dans une navigation
-   * classique. On récupère donc le PDF en mémoire puis on l'affiche.
-   *
-   * L'onglet est ouvert AVANT l'attente réseau : ouvert après, il serait bloqué
-   * comme popup par le navigateur, le clic n'étant plus considéré comme à
-   * l'origine de l'ouverture.
+   * besoin du jeton d'authentification. On récupère donc le PDF en mémoire,
+   * puis on l'affiche DANS la page — un onglet ouvert d'avance restait blanc
+   * pendant toute l'attente, et un onglet ouvert après était bloqué comme
+   * fenêtre surgissante.
    */
-  async function ouvrirPdf(chemin, bouton) {
-    const onglet = window.open('', '_blank');
-    const texte = bouton ? bouton.textContent : null;
-    if (bouton) { bouton.disabled = true; bouton.textContent = 'Préparation…'; }
-
-    try {
-      const r = await appelApi(chemin);
-      if (!r || !r.ok) {
-        if (onglet) onglet.close();
-        const err = r ? await r.json().catch(() => ({})) : {};
-        afficherMessage(err.message || 'Impression impossible.', 'erreur');
-        return;
-      }
-      const url = URL.createObjectURL(await r.blob());
-      if (onglet) {
-        onglet.location = url;
-      } else {
-        // Onglet bloqué : on retombe sur un téléchargement, plutôt que de
-        // laisser l'utilisateur devant un bouton qui ne fait rien.
-        const lien = document.createElement('a');
-        lien.href = url; lien.download = 'duplicata.pdf';
-        document.body.appendChild(lien); lien.click(); document.body.removeChild(lien);
-      }
-      setTimeout(() => URL.revokeObjectURL(url), 60000);
-    } catch (e) {
-      if (onglet) onglet.close();
-      afficherMessage('Impression impossible.', 'erreur');
-    } finally {
-      if (bouton) { bouton.disabled = false; bouton.textContent = texte; }
-    }
+  function ouvrirPdf(chemin, bouton) {
+    return ArdoiseGeneration.lancer({
+      titre: 'Préparation du duplicata',
+      etapes: ['Lecture des archives de l’année', 'Reconstitution du bulletin', 'Mention « duplicata » et signatures', 'Assemblage du PDF'],
+      dureeEstimee: 12,
+      requete: () => appelApi(chemin),
+      nomFichier: 'duplicata.pdf',
+      libellePret: 'Duplicata prêt'
+    });
   }
 
   async function telecharger(chemin) {
@@ -1013,6 +991,7 @@
 
 <script src="theme.js"></script>
 <script src="ui.js"></script>
+<script src="generation-scene.js"></script>
 <script src="hors-ligne.js"></script>
 <!-- Didacticiel d'installation : bouton d'aide contextuel, partagé par toutes les pages. -->
 <script src="didacticiel.js" data-ecran="Archives"></script>

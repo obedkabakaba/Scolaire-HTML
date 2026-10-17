@@ -147,6 +147,7 @@
 </script>
 <link rel="stylesheet" href="theme.css" />
 <link rel="stylesheet" href="ui.css" />
+<link rel="stylesheet" href="generation-scene.css" />
 
   <!-- Session partagée : renouvellement du jeton et rejeu des requêtes
        expirées. Doit rester AVANT les autres scripts. -->
@@ -793,16 +794,20 @@
   }
 
   /**
-   * Ouvre le reçu dans un nouvel onglet. On passe par appelApi plutôt que par
-   * un lien direct : sans le jeton, le serveur renverrait une page vide.
+   * Affiche le reçu dans la visionneuse intégrée. On passe par appelApi plutôt
+   * que par un lien direct : sans le jeton, le serveur renverrait une page
+   * vide. Et l'ancien window.open() lancé après l'attente était bloqué comme
+   * fenêtre surgissante.
    */
-  async function imprimerRecu(paiementId) {
-    const r = await appelApi(`/frais/paiements/${paiementId}/recu`);
-    if (!r || !r.ok) { afficherMessage('Impression du reçu impossible.', 'erreur'); return; }
-    const blob = await r.blob();
-    const url = URL.createObjectURL(blob);
-    window.open(url, '_blank');
-    setTimeout(() => URL.revokeObjectURL(url), 30000);
+  function imprimerRecu(paiementId) {
+    return ArdoiseGeneration.lancer({
+      titre: 'Préparation du reçu',
+      etapes: ['Lecture du paiement', 'Mise en page du reçu', 'Assemblage du PDF'],
+      dureeEstimee: 5,
+      requete: () => appelApi(`/frais/paiements/${paiementId}/recu`),
+      nomFichier: 'recu.pdf',
+      libellePret: 'Reçu prêt'
+    });
   }
 
   // Aperçu de l'équivalent pendant la saisie : le comptable voit tout de suite
@@ -1084,6 +1089,7 @@
 
 <script src="theme.js"></script>
 <script src="ui.js"></script>
+<script src="generation-scene.js"></script>
 <script src="hors-ligne.js"></script>
 <!-- Didacticiel d'installation : bouton d'aide contextuel, partagé par toutes les pages. -->
 <script src="didacticiel.js" data-ecran="Frais scolaires"></script>

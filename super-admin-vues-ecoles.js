@@ -554,7 +554,7 @@
 
     modale.querySelector('#btn-observer').addEventListener('click', () => {
       modale.fermer();
-      SA.naviguer('explorer/voir-comme', { ecole_id: ecoleId });
+      SA.naviguer('explorer/voir-comme', { ecole_id: ecoleId, role: 'directeur' });
     });
 
     modale.querySelector('#btn-statut').addEventListener('click', async () => {
@@ -1042,112 +1042,20 @@
   }
 
   SA.ouvrirEncaissement = ouvrirEncaissement;
+  // Utilisé par Finance → Abonnements, qui a repris l'échéancier.
+  SA.ouvrirFicheEcole = ouvrirFicheEcole;
 
   /* ======================================================================
-     Abonnements
+     Abonnements (échéancier) — fusionné dans Finance → Abonnements
+
+     « Échéancier » et « Prix payés et remises » listaient les mêmes
+     abonnements, colonne pour colonne à quelques exceptions près. L'écran
+     conservé (offres/abonnements) a repris ce qui n'existait qu'ici : le
+     bouton Encaisser, l'ouverture de la fiche école, la répartition par
+     offre et le statut « en attente ».
      ====================================================================== */
 
-  SA.enregistrerVue('ecoles/abonnements', {
-    titre: 'Abonnements',
-    sousTitre: 'Échéances, plans et revenus par établissement.',
-
-    async rendu(conteneur, params) {
-      conteneur.innerHTML = '';
-      const barre = document.createElement('div');
-      const zone = document.createElement('div');
-      zone.innerHTML = ui.squelette(8);
-      conteneur.append(barre, zone);
-
-      const plans = (SA.referentiels && SA.referentiels.plans) || [];
-
-      const filtres = SA.ui.barreFiltres(barre, [
-        { type: 'recherche', nom: 'recherche', libelle: 'Nom ou code d\'école…', valeur: params.recherche },
-        {
-          type: 'select', nom: 'statut', libelle: 'Tous les statuts', valeur: params.statut,
-          options: [
-            { valeur: 'actif', libelle: 'Actif' },
-            { valeur: 'en_attente', libelle: 'En attente' },
-            { valeur: 'expire', libelle: 'Expiré' },
-            { valeur: 'suspendu', libelle: 'Suspendu' }
-          ]
-        },
-        {
-          type: 'select', nom: 'plan_id', libelle: 'Tous les plans', valeur: params.plan_id,
-          options: plans.map((p) => ({ valeur: p.id, libelle: p.nom }))
-        }
-      ], (valeurs) => SA.naviguer('ecoles/abonnements', Object.assign({}, valeurs, { page: 1 })));
-
-      const requete = Object.assign({}, filtres.lire(), { page: params.page || 1 });
-      const d = await SA.api(SA.url('/super-admin/abonnements', requete));
-
-      zone.innerHTML = `
-        ${(d.repartition_par_plan && d.repartition_par_plan.length) ? `
-        <div class="sa-panneau" style="margin-bottom:16px">
-          <h3 class="sa-section-titre">Répartition des abonnements actifs</h3>
-          ${SA.graphe.repartition(d.repartition_par_plan.map((r) => ({
-            libelle: r.plan_nom || 'sans plan', valeur: Number(r.nb)
-          })))}
-        </div>` : ''}
-
-        ${ui.tableau({
-          cliquable: true,
-          colonnes: [
-            {
-              cle: 'ecole_nom', titre: 'École',
-              rendu: (l) => `<strong>${esc(l.ecole_nom)}</strong>
-                             <div class="sa-muet" style="font-size:.76rem">${esc(l.ecole_code)}</div>`
-            },
-            { cle: 'plan_nom', titre: 'Plan' },
-            { cle: 'prix', titre: 'Tarif', classe: 'sa-num', rendu: (l) => esc(fmt.montant(l.prix, l.devise)) },
-            { cle: 'statut', titre: 'Statut', rendu: (l) => l.en_periode_essai
-              ? ui.badge('Essai actif', 'info') : ui.badgeStatut(l.statut) },
-            {
-              cle: 'en_periode_essai', titre: 'Essai',
-              rendu: (l) => l.en_periode_essai ? ui.badge('oui', 'info') : '<span class="sa-muet">—</span>'
-            },
-            { cle: 'date_expiration', titre: 'Expire le', rendu: (l) => esc(fmt.date(l.date_expiration)) },
-            {
-              cle: 'jours_restants', titre: 'Reste', classe: 'sa-num',
-              rendu: (l) => {
-                const j = Number(l.jours_restants);
-                if (!Number.isFinite(j)) return '<span class="sa-muet">—</span>';
-                const ton = j < 0 ? 'danger' : j <= 14 ? 'attention' : 'succes';
-                return ui.badge(j < 0 ? `${Math.abs(j)} j de retard` : `${j} j`, ton);
-              }
-            },
-            { cle: 'revenu_cumule', titre: 'Revenu cumulé', classe: 'sa-num', rendu: (l) => esc(fmt.nombre(l.revenu_cumule)) },
-            {
-              cle: 'encaisser', titre: '',
-              rendu: (l, i) => `<button class="sa-bouton sa-bouton-secondaire sa-bouton-petit"
-                                        data-encaisser="${i}">Encaisser</button>`
-            }
-          ],
-          lignes: d.donnees,
-          vide: 'Aucun abonnement'
-        })}
-        ${ui.pagination(d.pagination)}`;
-
-      brancherPagination(zone, 'ecoles/abonnements', requete);
-
-      // Le bouton d'encaissement est posé AVANT l'écouteur de ligne et coupe
-      // la propagation : sans cela, un clic dessus ouvrirait aussi la fiche
-      // école par-dessus le formulaire de paiement.
-      zone.querySelectorAll('[data-encaisser]').forEach((bouton) => {
-        bouton.addEventListener('click', (evenement) => {
-          evenement.stopPropagation();
-          const abonnement = d.donnees[Number(bouton.getAttribute('data-encaisser'))];
-          if (abonnement) ouvrirEncaissement(abonnement, () => SA.rafraichirVue());
-        });
-      });
-
-      zone.querySelectorAll('tbody tr').forEach((ligne, index) => {
-        ligne.addEventListener('click', () => {
-          const abonnement = d.donnees[index];
-          if (abonnement) ouvrirFicheEcole(abonnement.ecole_id, () => SA.rafraichirVue());
-        });
-      });
-    }
-  });
+  SA.enregistrerRedirection('ecoles/abonnements', 'offres/abonnements');
 
   /* ======================================================================
      Statistiques par école

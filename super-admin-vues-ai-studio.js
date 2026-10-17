@@ -43,12 +43,37 @@
    * relève les blocs de code et les listes. Interpréter du Markdown produit par
    * un modèle, c'est accepter d'injecter du HTML qu'on n'a pas écrit.
    */
+  /** Titres de réponse en langage courant → registre affiché (voir l'invite système). */
+  const CLASSE_TITRE = {
+    'En bref': 'bref',
+    'Ce qui est sûr': 'FAIT',
+    'Ce que je suppose': 'HYPOTHÈSE',
+    'Ce que je conseille': 'RECOMMANDATION',
+    'Détails techniques': 'technique'
+  };
+
+  /**
+   * Questions toutes prêtes. Elles reprennent ce que faisaient le Copilote et
+   * l'analyse de cause racine, fusionnés ici : l'assistant dispose des mêmes
+   * outils de lecture qu'eux, et de davantage.
+   */
+  const SUGGESTIONS = [
+    "Qu'est-ce qui ne va pas sur la plateforme en ce moment ? Dis-moi ce qui est grave et ce qui ne l'est pas.",
+    "Les erreurs des dernières 24 heures viennent-elles d'une même cause ?",
+    "Explique-moi simplement l'erreur la plus fréquente de la semaine, et ce que je dois faire.",
+    "Un directeur dit qu'il ne voit pas un écran. Qu'est-ce que ce rôle a le droit de voir ?",
+    "Parmi les écarts constatés, lesquels sont les plus graves, et pourquoi ?",
+    "Quels sont les risques de sécurité actuels ?"
+  ];
+
   function formaterReponse(texte) {
     const echappe = esc(String(texte || ''));
     return echappe
       .replace(/```(\w*)\n([\s\S]*?)```/g,
         (m, lang, code) => `<pre class="ia-code" data-langue="${esc(lang || '')}"><code>${code}</code></pre>`)
       .replace(/`([^`\n]+)`/g, '<code>$1</code>')
+      .replace(/^(En bref|Ce qui est sûr|Ce que je suppose|Ce que je conseille|Détails techniques)((?:\s*\([^)\n]*\))?\s*[—:-]?)/gm,
+        (m, titre, suite) => `<strong class="ia-registre ia-registre-${CLASSE_TITRE[titre]}">${titre}</strong>${suite}`)
       .replace(/^(FAIT|HYPOTHÈSE|RECOMMANDATION)(\s*[—:-])/gm,
         '<strong class="ia-registre ia-registre-$1">$1</strong>$2')
       .replace(/\n/g, '<br>');
@@ -68,11 +93,11 @@
    * serait jamais atteint.
    */
   SA.enregistrerVue('ia/studio', {
-    titre: 'AI Studio',
-    sousTitre: "Réservé au Super Admin. L'IA propose ; vous autorisez.",
+    titre: 'Assistant IA',
+    sousTitre: "Posez votre question en français : il lit Ardoise et vous répond. Il ne modifie rien sans votre accord.",
 
     async rendu(conteneur, params, segments) {
-      if (segments && segments[0]) return rendreConversation(conteneur, segments[0]);
+      if (segments && segments[0]) return rendreConversation(conteneur, segments[0], params);
       return rendreListe(conteneur);
     }
   });
@@ -95,19 +120,38 @@
       return;
     }
 
-    const nouvelle = document.getElementById('ia-nouvelle');
-    if (nouvelle) {
-      nouvelle.addEventListener('click', async () => {
-        try {
-          const r = await SA.api(`${BASE}/studio/conversations`, {
-            method: 'POST', body: JSON.stringify({ espace: 'ai_studio', usage_code: 'ai_studio' })
-          });
-          SA.naviguer(`ia/studio/${r.conversation.id}`);
-        } catch (err) { SA.toast(err.message, 'erreur'); }
-      });
-    }
+    const ouvrirNouvelle = async (question) => {
+      try {
+        const r = await SA.api(`${BASE}/studio/conversations`, {
+          method: 'POST', body: JSON.stringify({ espace: 'ai_studio', usage_code: 'ai_studio' })
+        });
+        SA.naviguer(`ia/studio/${r.conversation.id}`, question ? { question } : undefined);
+      } catch (err) { SA.toast(err.message, 'erreur'); }
+    };
 
-    conteneur.innerHTML = d.conversations.length ? `
+    const nouvelle = document.getElementById('ia-nouvelle');
+    if (nouvelle) nouvelle.addEventListener('click', () => ouvrirNouvelle());
+
+    const suggestions = `
+      <section class="sa-panneau" style="margin-bottom:18px">
+        <h3 class="sa-section-titre">Que lui demander ?</h3>
+        <p class="sa-texte" style="margin:0 0 10px">
+          Un seul assistant pour toutes les questions techniques : santé de la plateforme,
+          erreurs, droits des rôles, écarts. Cliquez sur une question pour l'ouvrir, puis
+          modifiez-la si besoin avant d'envoyer.
+        </p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          ${SUGGESTIONS.map((q, i) => `
+            <button class="sa-bouton sa-bouton-secondaire sa-bouton-petit" data-suggestion="${i}"
+                    style="text-align:left;white-space:normal">${esc(q)}</button>`).join('')}
+        </div>
+        <p class="sa-note" style="margin:12px 0 0">
+          Pour une analyse commerciale, financière ou d'adoption, utilisez plutôt
+          <a href="#/cc/conseil">Conseil stratégique</a>, qui lit les abonnements et l'activité des écoles.
+        </p>
+      </section>`;
+
+    conteneur.innerHTML = suggestions + (d.conversations.length ? `
       <div class="ia-conversations">
         ${d.conversations.map((c) => `
           <article class="ia-conv-carte" data-id="${esc(c.id)}">
@@ -127,7 +171,11 @@
           </article>`).join('')}
       </div>`
       : ui.etatVide('Aucune conversation',
-          "Ouvrez-en une pour analyser Ardoise, ou pour demander une correction.");
+          "Choisissez une question ci-dessus, ou ouvrez une nouvelle conversation."));
+
+    conteneur.querySelectorAll('[data-suggestion]').forEach((b) => {
+      b.addEventListener('click', () => ouvrirNouvelle(SUGGESTIONS[Number(b.dataset.suggestion)]));
+    });
 
     conteneur.querySelectorAll('[data-ouvrir]').forEach((b) => {
       b.addEventListener('click', () => SA.naviguer(`ia/studio/${b.dataset.ouvrir}`));
@@ -188,7 +236,7 @@
      2. UNE CONVERSATION
      ====================================================================== */
 
-  async function rendreConversation(conteneur, id) {
+  async function rendreConversation(conteneur, id, params) {
     conteneur.innerHTML = ui.squelette(8);
     let d;
     try {
@@ -254,6 +302,16 @@
       </div>`;
 
     brancherConversation(conteneur, d, id);
+
+    // Question choisie parmi les suggestions : préremplie, jamais envoyée
+    // d'office — un envoi coûte un appel au modèle, il reste un geste.
+    const preremplie = params && params.question;
+    const champ = conteneur.querySelector('#ia-question');
+    if (preremplie && champ && !champ.value) {
+      champ.value = preremplie;
+      champ.focus();
+      SA.majParams({});
+    }
   }
 
   function barreMoteur(m) {

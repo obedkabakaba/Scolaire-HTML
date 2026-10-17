@@ -68,12 +68,11 @@
     { groupe: 'Qualité & audit', icone: '👤', libelle: 'Ce que peut faire le Professeur', route: 'cc/roles/professeur' },
     { groupe: 'Qualité & audit', icone: '👤', libelle: 'Ce que peut faire le Titulaire', route: 'cc/roles/titulaire' },
 
-    { groupe: 'Intelligence artificielle', icone: '🤖', libelle: "Demander à l'IA", route: 'cc/copilote' },
+    { groupe: 'Intelligence artificielle', icone: '🤖', libelle: "Demander à l'IA (Assistant IA)", route: 'ia/studio' },
     { groupe: 'Intelligence artificielle', icone: '🧭', libelle: 'Conseil stratégique', route: 'cc/conseil' },
-    { groupe: 'Intelligence artificielle', icone: '🔬', libelle: 'Analyse de cause racine', route: 'cc/cause-racine' },
-    { groupe: 'Intelligence artificielle', icone: '🩹', libelle: 'Correctifs proposés', route: 'cc/correctifs' },
+    { groupe: 'Intelligence artificielle', icone: '🩹', libelle: 'Correctifs proposés (dans chaque écart)', route: 'cc/constats' },
     { groupe: 'Intelligence artificielle', icone: '📄', libelle: 'Rapports automatiques', route: 'cc/rapports' },
-    { groupe: 'Intelligence artificielle', icone: '💸', libelle: "Coût de l'IA", route: 'cc/couts-ia' },
+    { groupe: 'Intelligence artificielle', icone: '💸', libelle: "Coût de l'IA", route: 'ia/couts' },
 
     { groupe: 'Configuration', icone: '🚩', libelle: 'Drapeaux de fonctionnalités', route: 'cc/drapeaux' },
     { groupe: 'Configuration', icone: '🛑', libelle: 'Mode maintenance', route: 'cc/maintenance' },
@@ -81,7 +80,7 @@
     { groupe: 'Configuration', icone: '📚', libelle: 'Base de connaissance (Knowledge Hub)', route: 'ia/connaissance' },
     { groupe: 'Configuration', icone: '📦', libelle: 'Dépendances', route: 'cc/dependances' },
     { groupe: 'Configuration', icone: '🗄', libelle: 'Inspecteur de base', route: 'cc/base' },
-    { groupe: 'Configuration', icone: '☁', libelle: 'Infrastructure et coûts', route: 'cc/infrastructure' },
+    { groupe: 'Configuration', icone: '☁', libelle: 'Services et coûts d\'infrastructure', route: 'couts/services' },
 
 
     /* École de test — la seule commande de cette palette qui ÉCRIT.

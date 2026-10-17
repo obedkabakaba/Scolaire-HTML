@@ -355,7 +355,7 @@
       }
 
       const btnIA = document.getElementById('cc-btn-ia');
-      if (btnIA) btnIA.addEventListener('click', () => SA.naviguer('cc/copilote'));
+      if (btnIA) btnIA.addEventListener('click', () => SA.naviguer('ia/studio'));
     }
   });
 
@@ -548,15 +548,129 @@
      3. ERREURS
      ====================================================================== */
 
+  /**
+   * Ce que veut dire une erreur, en langage courant.
+   *
+   * Le centre d'erreurs mélange trois choses très différentes : de vraies
+   * pannes d'Ardoise, des coupures réseau chez l'utilisateur, et des refus
+   * qui sont la sécurité qui fonctionne. Sans les distinguer, « HTTP 500 —
+   * Origine non autorisée » ressemble à une catastrophe alors que ce n'est
+   * qu'un test lancé sur un ordinateur. Le classement repose sur l'origine,
+   * le code HTTP et le message : des faits enregistrés, rien de deviné.
+   *
+   * @returns {{ etiquette, ton, titre, texte, action }}
+   */
+  function expliquerErreur(e) {
+    const message = String(e.message || '');
+    const code = Number(e.code_http) || 0;
+    const origine = e.origine || '';
+
+    const refus = message.match(/Origine non autorisée : (\S+)/);
+    if (refus) {
+      const adresse = refus[1];
+      if (/^http:\/\//.test(adresse) && !/127\.0\.0\.1|localhost/.test(adresse)) {
+        return {
+          etiquette: 'Réglage du site', ton: 'attention',
+          titre: 'Des visiteurs ouvrent le site sans « https »',
+          texte: `Le serveur a refusé une demande venue de ${adresse} : la même adresse que le site, mais sans le « s » de https. `
+            + "Ces visiteurs voient des pages qui ne chargent pas (offres, connexion…). Ce n'est pas un bug du code.",
+          action: "Dans GitHub, dépôt du site → Settings → Pages, cochez « Enforce HTTPS ». Ensuite, marquez cette erreur « résolu »."
+        };
+      }
+      return {
+        etiquette: 'Pas un bug', ton: 'succes',
+        titre: 'Accès refusé depuis une adresse inconnue',
+        texte: `Une page ouverte depuis ${adresse} a essayé d'appeler le serveur, qui a refusé : c'est la protection qui fonctionne. `
+          + (/127\.0\.0\.1|localhost/.test(adresse)
+            ? "Cette adresse est celle d'un ordinateur de test (127.0.0.1 / localhost)."
+            : "Il s'agit sans doute d'une ancienne adresse du site ou d'une copie de test."),
+        action: 'Rien à corriger. Vous pouvez la marquer « ignoré ».'
+      };
+    }
+
+    if (origine === 'frontend' && !code
+        && /failed to fetch|load failed|networkerror|fetch is aborted|aborterror|trop de temps à répondre/i.test(message)) {
+      return {
+        etiquette: 'Coupure réseau', ton: 'neutre',
+        titre: "Le téléphone ou l'ordinateur n'a pas pu joindre le serveur",
+        texte: "Connexion internet faible ou coupée, serveur qui se réveillait après une pause, ou page fermée pendant le chargement. "
+          + "Rien n'a planté dans Ardoise.",
+        action: "Rien à corriger. À surveiller seulement si beaucoup d'écoles sont touchées au même moment (le serveur était peut-être arrêté)."
+      };
+    }
+
+    if (/Ressource non chargée/i.test(message)) {
+      return {
+        etiquette: 'Fichier manquant', ton: 'attention',
+        titre: "Une image ou un fichier de la page n'a pas pu être chargé",
+        texte: "Soit le lien vers ce fichier est cassé, soit la connexion de l'utilisateur a coupé pendant le chargement.",
+        action: "Si elle revient souvent sur la même page, vérifiez que le fichier existe toujours."
+      };
+    }
+
+    if (code === 502 || code === 503 || code === 504) {
+      return {
+        etiquette: 'Service extérieur', ton: 'attention',
+        titre: "Un service dont Ardoise dépend n'a pas répondu",
+        texte: "Le serveur attendait un service extérieur (intelligence artificielle, e-mails, paiement…) qui n'a pas répondu à temps, "
+          + "ou le serveur redémarrait. C'est souvent passager.",
+        action: "Si elle se répète, vérifiez l'état du service concerné dans Supervision → Santé."
+      };
+    }
+
+    if (origine === 'tache') {
+      return {
+        etiquette: 'Tâche automatique', ton: 'danger',
+        titre: 'Une tâche automatique a échoué',
+        texte: "Ardoise exécute seul certaines tâches (envoi des e-mails, relances, rapports). L'une d'elles n'a pas abouti : "
+          + "ce qu'elle devait faire n'a peut-être pas été fait.",
+        action: "Demandez l'analyse de l'IA ci-dessous pour connaître la cause probable."
+      };
+    }
+
+    if (code >= 500 || origine === 'backend') {
+      return {
+        etiquette: 'Vrai bug serveur', ton: 'danger',
+        titre: 'Le serveur a planté en traitant cette demande',
+        texte: `L'action demandée${e.chemin ? ` (${e.methode || ''} ${e.chemin})` : ''} n'a pas abouti pour l'utilisateur : `
+          + "il a vu un message d'erreur. C'est un défaut d'Ardoise à corriger dans le code.",
+        action: "Demandez l'analyse de l'IA ci-dessous pour la cause probable, puis faites corriger le code."
+      };
+    }
+
+    if (origine === 'frontend') {
+      return {
+        etiquette: "Bug d'écran", ton: 'danger',
+        titre: "Une page de l'application a rencontré une erreur",
+        texte: "Le problème est dans le navigateur de l'utilisateur : une partie de l'écran a pu ne pas s'afficher ou un bouton ne pas répondre.",
+        action: "Demandez l'analyse de l'IA ci-dessous ; la page concernée est indiquée dans le détail."
+      };
+    }
+
+    return {
+      etiquette: 'À examiner', ton: 'info',
+      titre: 'Erreur non classée',
+      texte: "Cette erreur ne correspond à aucun cas connu.",
+      action: "Demandez l'analyse de l'IA ci-dessous."
+    };
+  }
+
+  /** Une erreur que personne n'a revue depuis longtemps a souvent été corrigée par une mise à jour. */
+  function ancienneteErreur(e) {
+    if (!e.derniere_occurrence || !['ouvert', 'en_cours'].includes(e.statut)) return null;
+    const jours = Math.floor((Date.now() - new Date(e.derniere_occurrence).getTime()) / 86400000);
+    return jours >= 14 ? jours : null;
+  }
+
   SA.enregistrerVue('cc/erreurs', {
-    titre: 'Suivi des erreurs',
-    sousTitre: "Chaque erreur rattachée à sa route, son contrôleur et sa fonction.",
+    titre: 'Erreurs',
+    sousTitre: "Chaque erreur expliquée en clair, rattachée à son code, avec son traitement.",
 
     async rendu(conteneur, params, segments) {
       if (segments && segments.length) return rendreFicheErreur(conteneur, segments[0]);
 
       const requete = {
-        gravite: params.gravite || '', statut: params.statut || '',
+        gravite: params.gravite || '', statut: params.statut || '', origine: params.origine || '',
         q: params.q || '', heures: params.heures || '168', page: params.page || 1
       };
 
@@ -576,12 +690,18 @@
           <label class="cc-filtre"><span>Statut</span>
             <select class="sa-champ" id="cc-err-statut">
               <option value="">Tous</option>
-              ${['ouvert', 'resolu', 'ignore'].map((s) =>
-                `<option value="${s}"${requete.statut === s ? ' selected' : ''}>${s}</option>`).join('')}
+              ${[['ouvert', 'ouvert'], ['en_cours', 'en cours'], ['resolu', 'résolu'], ['ignore', 'ignoré']].map(([v, l]) =>
+                `<option value="${v}"${requete.statut === v ? ' selected' : ''}>${l}</option>`).join('')}
+            </select></label>
+          <label class="cc-filtre"><span>Origine</span>
+            <select class="sa-champ" id="cc-err-origine">
+              <option value="">Toutes</option>
+              ${[['frontend', 'Interface'], ['backend', 'Serveur'], ['tache', 'Tâche planifiée'], ['service_externe', 'Service externe']].map(([v, l]) =>
+                `<option value="${v}"${requete.origine === v ? ' selected' : ''}>${l}</option>`).join('')}
             </select></label>
           <label class="cc-filtre"><span>Période</span>
             <select class="sa-champ" id="cc-err-heures">
-              ${[['24', '24 h'], ['168', '7 jours'], ['720', '30 jours']].map(([v, l]) =>
+              ${[['24', '24 h'], ['168', '7 jours'], ['720', '30 jours'], ['2160', '90 jours']].map(([v, l]) =>
                 `<option value="${v}"${String(requete.heures) === v ? ' selected' : ''}>${l}</option>`).join('')}
             </select></label>
         </div>
@@ -590,6 +710,10 @@
           colonnes: [
             { cle: 'occurrences', titre: '×', classe: 'sa-num', rendu: (l) => `<strong>${esc(fmt.nombre(l.occurrences))}</strong>` },
             { cle: 'gravite', titre: 'Gravité', rendu: (l) => ui.badge(l.gravite, SA.ui.tonStatut(l.gravite)) },
+            { cle: 'nature', titre: 'En clair', rendu: (l) => {
+              const x = expliquerErreur(l);
+              return ui.badge(x.etiquette, x.ton);
+            } },
             { cle: 'message', titre: 'Erreur', rendu: (l) =>
               `<div>${esc(String(l.message).slice(0, 130))}</div>`
               + `<div class="sa-mono sa-annexe">${esc(l.methode || '')} ${esc(l.chemin || '')}${l.code_http ? ` → ${esc(l.code_http)}` : ''}</div>` },
@@ -608,7 +732,7 @@
       const relancer = (modif) => SA.naviguer('cc/erreurs', Object.assign({}, requete, modif, { page: 1 }));
       const champQ = document.getElementById('cc-err-q');
       if (champQ) champQ.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') relancer({ q: champQ.value.trim() }); });
-      ['gravite', 'statut', 'heures'].forEach((n) => {
+      ['gravite', 'statut', 'origine', 'heures'].forEach((n) => {
         const el = document.getElementById(`cc-err-${n}`);
         if (el) el.addEventListener('change', () => relancer({ [n]: el.value }));
       });
@@ -623,11 +747,33 @@
   async function rendreFicheErreur(conteneur, id) {
     {
       conteneur.innerHTML = ui.squelette(6);
-      const d = await SA.api(`/super-admin/control-center/erreurs/${id}`);
+      // Le détail du centre de bugs apporte les noms (école, utilisateur) que
+      // la fiche technique ne joint pas. Son échec ne doit pas masquer la fiche.
+      const [d, triage] = await Promise.all([
+        SA.api(`/super-admin/control-center/erreurs/${id}`),
+        SA.api(`/super-admin/bugs/${id}`).catch(() => null)
+      ]);
       const e = d.erreur;
       const c = d.code;
+      const b = (triage && triage.bug) || {};
+      const clair = expliquerErreur(e);
+      const ancienne = ancienneteErreur(e);
 
       conteneur.innerHTML = `
+        <section class="sa-panneau cc-en-clair">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
+            ${ui.badge(clair.etiquette, clair.ton)}
+            <strong>${esc(clair.titre)}</strong>
+          </div>
+          <p class="sa-texte" style="margin:0 0 8px">${esc(clair.texte)}</p>
+          <p class="sa-texte" style="margin:0"><strong>Que faire :</strong> ${esc(clair.action)}</p>
+          ${ancienne ? `
+            <p class="sa-note" style="margin:10px 0 0">
+              Elle n'est plus apparue depuis ${esc(ancienne)} jours : une mise à jour l'a probablement corrigée.
+              Marquez-la « résolu » ci-dessous ; si elle revient, elle se rouvrira toute seule.
+            </p>` : ''}
+        </section>
+
         <section class="sa-panneau">
           <h3 class="sa-section-titre">${esc(String(e.message).slice(0, 160))}</h3>
           <dl>
@@ -639,7 +785,31 @@
             <div class="cc-champ"><dt>Première</dt><dd>${esc(fmt.dateHeure(e.premiere_occurrence))}</dd></div>
             <div class="cc-champ"><dt>Dernière</dt><dd>${esc(fmt.dateHeure(e.derniere_occurrence))}</dd></div>
             <div class="cc-champ"><dt>Navigateur</dt><dd>${esc(e.navigateur || '—')}</dd></div>
+            <div class="cc-champ"><dt>École</dt><dd>${esc(b.ecole_nom || '—')}</dd></div>
+            <div class="cc-champ"><dt>Utilisateur</dt><dd>${esc(b.utilisateur || '—')}${b.utilisateur_email ? ' · ' + esc(b.utilisateur_email) : ''}</dd></div>
+            ${e.page ? `<div class="cc-champ"><dt>Page</dt><dd class="sa-mono">${esc(e.page)}</dd></div>` : ''}
+            ${b.systeme ? `<div class="cc-champ"><dt>Système</dt><dd>${esc(b.systeme)}</dd></div>` : ''}
           </dl>
+        </section>
+
+        <section class="sa-section">
+          <h2 class="sa-section-titre">Traitement</h2>
+          <div class="sa-grille-2">
+            <label class="sa-champ-bloc"><span>Statut</span>
+              <select class="sa-champ" id="cc-err-t-statut">
+                ${[['ouvert', 'ouvert'], ['en_cours', 'en cours'], ['resolu', 'résolu'], ['ignore', 'ignoré']].map(([v, l]) =>
+                  `<option value="${v}" ${e.statut === v ? 'selected' : ''}>${l}</option>`).join('')}
+              </select></label>
+            <label class="sa-champ-bloc"><span>Gravité</span>
+              <select class="sa-champ" id="cc-err-t-gravite">
+                ${['basse', 'moyenne', 'haute', 'critique'].map((v) =>
+                  `<option value="${v}" ${e.gravite === v ? 'selected' : ''}>${v}</option>`).join('')}
+              </select></label>
+          </div>
+          <button class="sa-bouton sa-bouton-principal sa-bouton-petit" id="cc-err-t-enregistrer">Enregistrer</button>
+          <label class="sa-champ-bloc" style="margin-top:14px"><span>Ajouter un commentaire</span>
+            <textarea class="sa-champ" id="cc-err-t-commentaire" placeholder="Diagnostic, cause identifiée, correctif prévu…"></textarea></label>
+          <button class="sa-bouton sa-bouton-secondaire sa-bouton-petit" id="cc-err-t-commenter">Publier</button>
         </section>
 
         ${c ? `
@@ -714,6 +884,47 @@
           } finally {
             btnIA.disabled = false;
             btnIA.textContent = "Demander l'analyse de l'IA";
+          }
+        });
+      }
+
+      const btnTraiter = document.getElementById('cc-err-t-enregistrer');
+      if (btnTraiter) {
+        btnTraiter.addEventListener('click', async () => {
+          btnTraiter.disabled = true;
+          try {
+            await SA.api(`/super-admin/bugs/${e.id}`, {
+              method: 'PATCH',
+              body: JSON.stringify({
+                statut: document.getElementById('cc-err-t-statut').value,
+                gravite: document.getElementById('cc-err-t-gravite').value
+              })
+            });
+            SA.toast('Erreur mise à jour.', 'succes');
+            SA.rafraichirVue();
+          } catch (err) {
+            SA.toast(err.message, 'danger');
+            btnTraiter.disabled = false;
+          }
+        });
+      }
+
+      const btnCommenter = document.getElementById('cc-err-t-commenter');
+      if (btnCommenter) {
+        btnCommenter.addEventListener('click', async () => {
+          const champ = document.getElementById('cc-err-t-commentaire');
+          if (!champ.value.trim()) return;
+          btnCommenter.disabled = true;
+          try {
+            await SA.api(`/super-admin/bugs/${e.id}/commentaires`, {
+              method: 'POST',
+              body: JSON.stringify({ contenu: champ.value.trim() })
+            });
+            SA.toast('Commentaire publié.', 'succes');
+            SA.rafraichirVue();
+          } catch (err) {
+            SA.toast(err.message, 'danger');
+            btnCommenter.disabled = false;
           }
         });
       }

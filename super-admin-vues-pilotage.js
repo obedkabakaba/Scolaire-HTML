@@ -130,7 +130,7 @@
     if (r.tdb) {
       const e = r.tdb.ecoles || {};
       ajouter({ nombre: n(e.abonnements_expirant), libelle: 'Abonnements expirant sous 14 j', icone: 'horloge', ton: 'attention',
-        detail: 'À relancer avant l’échéance', route: 'ecoles/abonnements' });
+        detail: 'À relancer avant l’échéance', route: 'offres/abonnements' });
       ajouter({ nombre: n(e.suspendues), libelle: 'Écoles suspendues', icone: 'ecole', ton: 'danger',
         detail: 'Sans accès à la plateforme', route: 'ecoles', params: { statut: 'suspendu' } });
     }

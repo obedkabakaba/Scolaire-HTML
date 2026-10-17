@@ -35,54 +35,14 @@
   }
 
   /* ======================================================================
-     Explorateur — choix de l'école
+     Explorateur — choix de l'école : fusionné dans « Toutes les écoles »
+
+     Cette grille répétait la liste des écoles. « Toutes les écoles » la
+     tient déjà, et chaque fiche y ouvre l'exploration en lecture seule
+     (bouton « Explorer »). L'ancienne adresse y mène.
      ====================================================================== */
 
-  SA.enregistrerVue('explorer', {
-    titre: 'Explorateur',
-    sousTitre: "Parcourir une école comme le ferait son directeur — sans rien pouvoir y changer.",
-
-    async rendu(conteneur) {
-      const ecoles = (SA.referentiels && SA.referentiels.ecoles) || [];
-
-      conteneur.innerHTML = BANDEAU_LECTURE + `
-        <div class="sa-barre-filtres">
-          <input type="search" class="sa-champ sa-champ-recherche" id="filtre-ecoles"
-                 placeholder="Filtrer les écoles…" />
-        </div>
-        <div class="sa-grille-3" id="grille-ecoles"></div>`;
-
-      const grille = document.getElementById('grille-ecoles');
-
-      function dessiner(motif) {
-        const filtrees = ecoles.filter((e) =>
-          !motif || (e.nom + ' ' + e.code).toLowerCase().includes(motif.toLowerCase()));
-
-        if (!filtrees.length) {
-          grille.innerHTML = ui.etatVide('Aucune école', 'Ajustez le filtre.');
-          return;
-        }
-
-        grille.innerHTML = filtrees.map((e) => `
-          <button class="sa-panneau" data-ecole="${esc(e.id)}"
-                  style="text-align:left;cursor:pointer;font:inherit;color:inherit;border-width:1px">
-            <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
-              <strong>${esc(e.nom)}</strong>
-              ${ui.badgeStatut(e.statut)}
-            </div>
-            <div class="sa-muet" style="font-size:.78rem;margin-top:5px">${esc(e.code)}</div>
-          </button>`).join('');
-
-        grille.querySelectorAll('[data-ecole]').forEach((carte) => {
-          carte.addEventListener('click', () => SA.naviguer(`explorer/ecole/${carte.getAttribute('data-ecole')}`));
-        });
-      }
-
-      dessiner('');
-      document.getElementById('filtre-ecoles')
-        .addEventListener('input', SA.antiRebond((e) => dessiner(e.target.value), 200));
-    }
-  });
+  SA.enregistrerRedirection('explorer', 'ecoles');
 
   /* ======================================================================
      Explorateur — une école
@@ -207,7 +167,8 @@
     async rendu(conteneur, params, segments) {
       const ecoleId = segments[0];
       if (!ecoleId) {
-        conteneur.innerHTML = ui.etatVide('Aucune école sélectionnée', 'Revenez à l\'Explorateur.');
+        conteneur.innerHTML = ui.etatVide('Aucune école sélectionnée',
+          'Ouvrez « Toutes les écoles », puis « Explorer » sur la fiche de l\'école.');
         return;
       }
 
@@ -731,7 +692,7 @@
             </label>
             <label class="sa-champ-bloc"><span>Rôle observé</span>
               <select class="sa-champ" id="champ-role">
-                ${ROLES_OBSERVABLES.map((r) => `<option value="${esc(r.valeur)}">${esc(r.libelle)}</option>`).join('')}
+                ${ROLES_OBSERVABLES.map((r) => `<option value="${esc(r.valeur)}"${r.valeur === params.role ? ' selected' : ''}>${esc(r.libelle)}</option>`).join('')}
               </select>
             </label>
             <label class="sa-champ-bloc"><span>Motif (inscrit au journal)</span>
@@ -788,9 +749,22 @@
           // ce que lisent les pages de l'espace école. Il chasse une éventuelle
           // session d'école ouverte dans cet onglet, jamais la session
           // Super Admin, qui vit sous des clés distinctes.
+          //
+          // Le profil `ardoise_user` est déposé avec lui : c'est lui, et non
+          // le jeton, que lisent les gardes de page pour connaître le rôle.
+          // Sans profil, les rôles étaient vides, `dashboard-directeur.html`
+          // se jugeait interdite et renvoyait vers « Mon profil » : on
+          // n'observait jamais l'interface du rôle choisi.
           try {
             localStorage.setItem('ardoise_access_token', d.jeton_observation);
             localStorage.removeItem('ardoise_refresh_token');
+            localStorage.setItem('ardoise_user', JSON.stringify({
+              id: null,
+              ecole_id: d.ecole.id,
+              roles: [d.role],
+              doit_changer_mot_de_passe: false,
+              observation: true
+            }));
             localStorage.setItem('ardoise_observation', JSON.stringify({
               ecole: d.ecole, role: d.role, expire_at: d.expire_at, observation_id: d.observation_id
             }));
@@ -815,6 +789,7 @@
                 await SA.api(`/super-admin/observation/${d.observation_id}/fin`, { method: 'POST' });
               }
               localStorage.removeItem('ardoise_access_token');
+              localStorage.removeItem('ardoise_user');
               localStorage.removeItem('ardoise_observation');
               SA.toast('Observation terminée.', 'succes');
               SA.rafraichirVue();

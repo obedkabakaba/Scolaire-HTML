@@ -144,3 +144,41 @@ Première livraison :
   `prospects-reponse-officielle` (contrat frontend ↔ backend) — 85/85.
 - Audits du dépôt : frontend, cloisonnement, responsive, parcours abonnement, écritures
   Super Admin, fenêtre rail, e-mails, offline ; 7 tests de thèmes.
+
+## 8. Doublons fusionnés (quatrième livraison)
+
+Règle suivie : un écran n'est retiré que si un autre écran **existant** donne déjà le même
+résultat, à partir des mêmes données. Ce qui n'existait que sur l'écran retiré a été reporté
+sur l'écran conservé avant le retrait. Les écrans métier (apporteurs, finance, offres, coûts,
+démonstrations…) sont tous conservés. Chaque ancienne adresse redirige
+(`SA.enregistrerRedirection`) : favoris et liens continuent de fonctionner.
+
+| Retiré | Conservé | Même source | Reporté sur l'écran conservé |
+|---|---|---|---|
+| Triage et commentaires (`bugs`) | Erreurs (`cc/erreurs`) | `bugs_plateforme` | statut, gravité, commentaires, école, utilisateur, filtre d'origine, période 90 jours |
+| Copilote et budgets (`cc/couts-ia`) | Coût de l'IA (`ia/couts`) | `ia_consommation`, `ia_budgets` | tableau par mois (jetons) |
+| Copilote (`cc/copilote`) | Assistant IA (`ia/studio`) | mêmes outils de lecture (`FAMILLE_PAR_OUTIL`) | questions toutes prêtes |
+| Cause racine (`cc/cause-racine`) | Assistant IA (`ia/studio`) | erreurs, journaux, vérifications, incidents (outils de l'assistant) | question « cause commune ? » parmi les suggestions |
+| Correctifs proposés (`cc/correctifs`) | fiche de chaque écart (`cc/constats`) | `propositions_correctifs` | bouton « Marquer appliqué », décision et motif |
+| Échéancier (`ecoles/abonnements`) | Abonnements (`offres/abonnements`) | abonnements | Encaisser, fiche école au clic, répartition par offre, statut « en attente » |
+| Explorateur → Écoles (`explorer`) | Toutes les écoles (`ecoles`) | liste des écoles | — (la fiche école ouvre déjà l'exploration) |
+| Actions des Super Admins (`journal/super-admin`) | Journal d'activité, filtre « Super Admins uniquement » | `journal_activite` | — (c'était le même écran, filtre posé) |
+| Infrastructure (`cc/infrastructure`) | Dépenses et services (`couts/services`) + Santé | `services_externes`, variables d'environnement | `AUDIT_INGEST_SECRET` et `SUPER_ADMIN_EMAIL` dans la liste de Santé |
+
+Examinés et **conservés**, faute de doublon réel : Matrice / Ce que peut faire un rôle (grille
+contre routes atteignables), Santé / Performance / Vérifications (recouvrement partiel
+seulement), Statistiques par école / Explorer une école (présence, réussite, frais d'un côté),
+Outils développeur (tests d'envoi, tâches, cache), Conseil stratégique (seul à lire les données
+commerciales), Actions IA et Journal IA, Rapports et exports.
+
+### Lisibilité
+
+- **Erreurs en clair** : chaque erreur reçoit une nature (« Vrai bug serveur », « Coupure
+  réseau », « Pas un bug », « Réglage du site », « Service extérieur »…), une explication sans
+  jargon et « Que faire ». Une erreur ouverte qui n'est plus apparue depuis 14 jours le signale.
+- **Assistant IA** : l'invite système commune (Copilote, Assistant) commence désormais chaque
+  réponse par « En bref », en langage courant, puis sépare toujours « Ce qui est sûr (FAIT) »,
+  « Ce que je suppose (HYPOTHÈSE) », « Ce que je conseille (RECOMMANDATION) » ; les détails
+  techniques viennent en dernier.
+- Côté serveur : un refus CORS répond 403 et n'est plus enregistré comme bug ; une coupure
+  réseau du navigateur est enregistrée en gravité basse.

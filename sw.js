@@ -77,7 +77,8 @@
 /* v101 : scène de génération des PDF (generation-scene.js/.css), studio de bulletins et plan d'évaluation. */
 /* v102 : studio — reconstruction d'un bulletin photographié (studio-reconstruction.js). */
 /* v105 : coque mobile « application native » (mobile.css/js) — barre de navigation sous l'encoche, onglets en verre liquide (iOS) ou Material 3 (Android), menu en feuille, tableaux en listes ; Fluide : navigation de la console opaque. */
-const VERSION='ardoise-v105';
+/* v106 : session.js et remontee-erreurs.js — une animation de changement de page annulée n'est plus signalée comme erreur. */
+const VERSION='ardoise-v106';
 /* v96 : publication des résultats (publication-resultats.js, précaché) dans Bulletins ; vidéo de présentation et lien Instagram sur le site public. */
 /* v95 : choix « Animations et effets » dans Mon profil et dans l'Apparence du Super Admin — theme.js (ArdoiseAnimations), theme-base.css, theme-signatures.js/.css, amorçage des pages (attribut data-animations posé avant le premier affichage). */
 /* v94 : deux nouvelles apparences, Pro (theme-pro.css) et Savane (theme-savane.css), nouvelles et précachées ; leurs scènes et widgets dans theme-signatures.js/.css et leurs fiches dans theme.js. */

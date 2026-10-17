@@ -599,6 +599,17 @@
       };
     }
 
+    if (/skipping view transition|skiptransition|view transition/i.test(message)) {
+      return {
+        etiquette: 'Pas un bug', ton: 'succes',
+        titre: "Une animation de changement de page a été sautée",
+        texte: "En passant d'une page à l'autre, le navigateur joue une petite animation. Il l'a annulée "
+          + "(changement de page très rapide, page qui redirige aussitôt, onglet passé en arrière-plan). "
+          + "La page s'est affichée normalement.",
+        action: "Rien à corriger. Vous pouvez la marquer « ignoré »."
+      };
+    }
+
     if (/Ressource non chargée/i.test(message)) {
       return {
         etiquette: 'Fichier manquant', ton: 'attention',

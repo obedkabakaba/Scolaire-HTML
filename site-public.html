@@ -152,6 +152,14 @@
   .bandeau-site .carte-config { margin-bottom: 0; display: flex; flex-direction: column; }
   .bandeau-site .carte-config .bouton { margin-top: auto; align-self: flex-start; }
   .carte-action { position: relative; overflow: hidden; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .champ-adresse { display: flex; align-items: stretch; border: 1.5px solid var(--bordure); border-radius: var(--r-petit); background: var(--craie); overflow: hidden; margin-bottom: 6px; }
+  .champ-adresse:focus-within { border-color: var(--ocre); }
+  .champ-adresse .prefixe { display: flex; align-items: center; padding: 0 4px 0 13px; font-family: var(--police-mono); font-size: 0.86rem; color: var(--texte-att); white-space: nowrap; }
+  .champ-adresse input { flex: 1; min-width: 0; border: none; background: none; padding: 11px 13px 11px 0; font-family: var(--police-mono); font-size: 0.92rem; color: var(--texte-sombre); outline: none; }
+  .etat-adresse { font-size: 0.8rem; margin: 0 0 12px; min-height: 1.2em; color: var(--texte-att); }
+  .etat-adresse.ok { color: var(--vert-ok); }
+  .etat-adresse.ko { color: var(--rouge); }
   .carte-action .pictogramme { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; background: rgba(201,138,62,0.14); color: var(--ocre-dark); }
   .carte-action .pictogramme svg { width: 22px; height: 22px; }
   .carte-action.ia .pictogramme { background: rgba(60,90,98,0.14); color: var(--encre); }
@@ -335,7 +343,13 @@
             <h3>Adresse du site</h3>
             <span class="etat-pastille hors-ligne" id="etat-pastille">Non publié</span>
           </div>
-          <p class="aide">À communiquer aux familles : sur les bulletins, les reçus, la page Facebook de l'école.</p>
+          <p class="aide">Courte et facile à retenir : à communiquer aux familles sur les bulletins, les reçus, la page Facebook de l'école.</p>
+          <label class="sr-only" for="champ-adresse">Adresse du site</label>
+          <div class="champ-adresse">
+            <span class="prefixe" id="prefixe-adresse">myardoise.com/</span>
+            <input type="text" id="champ-adresse" maxlength="40" spellcheck="false" autocomplete="off" autocapitalize="none" placeholder="nom-de-l-ecole" />
+          </div>
+          <p class="etat-adresse" id="etat-adresse"></p>
           <div class="bloc-lien">
             <code id="lien-public">—</code>
             <button class="bouton bouton-secondaire" id="bouton-copier">Copier</button>
@@ -714,6 +728,14 @@
   // L'adresse publique se déduit de l'emplacement du site : elle reste
   // correcte si le dépôt est renommé ou déplacé sous un domaine propre.
   const BASE_PUBLIQUE = window.location.href.replace(/[#?].*$/, '').replace(/\/[^\/]*$/, '/') + 'ecole.html';
+  /* Adresse courte : https://myardoise.com/<adresse>. Servie par 404.html,
+     qui ne vit qu'à la racine du domaine. */
+  const lienCourt = (adresse) => `${window.location.origin}/${adresse}`;
+  /* Même règle que le serveur (utils/site-ecole.utils.js → versAdresse) :
+     la direction voit, pendant la frappe, l'adresse qui sera réellement retenue. */
+  const versAdresse = (v) => String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+/, '').slice(0, 40);
+  let minuterieAdresse = null;
 
   let parametres = null;
   let classes = [];
@@ -769,6 +791,7 @@
       document.getElementById('bouton-copier').addEventListener('click', copierLien);
       document.getElementById('champ-description').addEventListener('input', majCompteur);
       brancherEditeur();
+      brancherAdresse();
       brancherApercu();
       brancherAssistant();
       brancherConception();
@@ -1196,9 +1219,12 @@
     const donnees = await r.json();
     parametres = donnees.ecole;
 
-    const lien = `${BASE_PUBLIQUE}?code=${encodeURIComponent(parametres.code)}`;
-    document.getElementById('lien-public').textContent = lien;
-    document.getElementById('bouton-ouvrir').href = lien;
+    const adresse = parametres.site_adresse || parametres.site_adresse_proposee || '';
+    document.getElementById('champ-adresse').value = adresse;
+    afficherLien(parametres.site_adresse || adresse);
+    etatAdresse(parametres.site_adresse
+      ? 'Adresse actuelle du site. Vous pouvez la raccourcir.'
+      : 'Adresse proposée : elle vous est réservée à l’enregistrement.', '');
 
     document.getElementById('case-actif').checked = !!parametres.site_public_actif;
     document.getElementById('champ-accueil').value = parametres.site_message_accueil || '';
@@ -1215,6 +1241,44 @@
     modifie = false;
     const ind = document.getElementById('indication-modifie');
     ind.textContent = 'Tout est enregistré.'; ind.classList.remove('modifie');
+  }
+
+  function afficherLien(adresse) {
+    // Sans adresse courte (ne devrait pas arriver après la migration 075),
+    // l'ancien lien par code reste valable.
+    const lien = adresse ? lienCourt(adresse) : `${BASE_PUBLIQUE}?code=${encodeURIComponent(parametres.code)}`;
+    document.getElementById('lien-public').textContent = lien;
+    document.getElementById('bouton-ouvrir').href = lien;
+  }
+
+  function etatAdresse(texte, classe) {
+    const zone = document.getElementById('etat-adresse');
+    zone.textContent = texte;
+    zone.className = `etat-adresse ${classe || ''}`;
+  }
+
+  /* Vérification pendant la frappe : format, mot réservé, adresse prise. */
+  function brancherAdresse() {
+    document.getElementById('prefixe-adresse').textContent = `${window.location.host}/`;
+    const champ = document.getElementById('champ-adresse');
+    champ.addEventListener('input', () => {
+      const normalisee = versAdresse(champ.value);
+      if (normalisee !== champ.value) {
+        const fin = champ.selectionStart === champ.value.length;
+        champ.value = normalisee;
+        if (fin) champ.setSelectionRange(normalisee.length, normalisee.length);
+      }
+      clearTimeout(minuterieAdresse);
+      const valeur = normalisee.replace(/-+$/, '');
+      if (parametres && valeur === parametres.site_adresse) { etatAdresse('Adresse actuelle du site.', ''); afficherLien(valeur); return; }
+      etatAdresse('Vérification…', '');
+      minuterieAdresse = setTimeout(async () => {
+        const r = await appelApi(`/site-public/adresse?valeur=${encodeURIComponent(valeur)}`);
+        if (!r || !r.ok || champ.value.replace(/-+$/, '') !== valeur) return;
+        const d = await r.json();
+        etatAdresse(d.disponible ? `Disponible : ${lienCourt(d.adresse)} — enregistrez pour la réserver.` : d.message, d.disponible ? 'ok' : 'ko');
+      }, 400);
+    });
   }
 
   function majEtatPublication() {
@@ -1237,14 +1301,23 @@
         site_public_actif: document.getElementById('case-actif').checked,
         site_message_accueil: document.getElementById('champ-accueil').value.trim(),
         site_description: document.getElementById('champ-description').value.trim(),
-        site_config: configCourante()
+        site_config: configCourante(),
+        site_adresse: document.getElementById('champ-adresse').value.replace(/-+$/, '')
       })
     });
 
     bouton.disabled = false; bouton.textContent = 'Enregistrer';
     if (!r) return;
     const rep = await r.json().catch(() => ({}));
-    if (!r.ok) { afficherMessage(rep.message || 'Erreur.', 'erreur'); return; }
+    if (!r.ok) {
+      if (rep.champ === 'site_adresse') {
+        etatAdresse(rep.message, 'ko');
+        document.getElementById('champ-adresse').focus();
+        document.getElementById('champ-adresse').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      afficherMessage(rep.message || 'Erreur.', 'erreur');
+      return;
+    }
     afficherMessage(rep.message || 'Site mis à jour.', 'succes');
     await chargerParametres();
     planifierApercu();

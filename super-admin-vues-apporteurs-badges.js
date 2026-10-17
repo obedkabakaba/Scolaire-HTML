@@ -49,7 +49,7 @@
     communique_officiel: 'Communiqué officiel', reseaux_sociaux: 'Réseaux sociaux', radio_tv: 'Radio / TV',
     evenement: 'Événement', presse: 'Presse', autre: 'Autre'
   };
-  const SERVICES = { campagne_capture: 'Campagne de capture', installation: 'Installation', formation_express: 'Formation express', formation_complete: 'Formation complète', formation_personnalisee: 'Formation personnalisée' };
+  const SERVICES = { campagne_capture: 'Campagne de capture', installation: 'Installation', formation_express: 'Formation express', formation_complete: 'Formation complète', formation_personnalisee: 'Formation personnalisée', conception_site: 'Conception du site vitrine' };
 
   const statut = (s) => ui.badge(LIBELLES[s] || String(s || '—').replace(/_/g, ' '), TONS[s] || 'neutre');
   const nomComplet = (p, n) => [p, n].filter(Boolean).join(' ');
@@ -315,7 +315,7 @@
 
   SA.enregistrerVue('apporteurs/missions', {
     titre: 'Missions des partenaires',
-    sousTitre: 'Installations, formations et campagnes de capture commandées par les écoles, confiées aux partenaires puis rémunérées comme prestations.',
+    sousTitre: 'Installations, formations, campagnes de capture et sites vitrines commandés par les écoles, confiés aux partenaires puis rémunérés comme prestations.',
 
     async rendu(conteneur, params) {
       conteneur.innerHTML = ui.squelette(6, 46);
@@ -328,7 +328,7 @@
         <section class="sa-section">
           <div class="sa-filtres">${[['', 'Toutes'], ['ouverte', 'Ouvertes'], ['attribuee', 'Attribuées'], ['realisee', 'À clôturer'], ['cloturee', 'Clôturées'], ['annulee', 'Annulées']].map(([k, l]) =>
             `<button class="sa-bouton sa-bouton-petit ${(params.statut || '') === k ? 'sa-bouton-principal' : 'sa-bouton-secondaire'}" data-statut="${k}">${esc(l)}${k && c[k] ? ` <span class="sa-mono">${c[k]}</span>` : ''}</button>`).join('')}
-            <span class="sa-muet" style="margin:0 6px">·</span>${[['', 'Tous types'], ['capture', 'Capture'], ['installation', 'Installation'], ['formation', 'Formation']].map(([k, l]) =>
+            <span class="sa-muet" style="margin:0 6px">·</span>${[['', 'Tous types'], ['capture', 'Capture'], ['installation', 'Installation'], ['formation', 'Formation'], ['site', 'Site vitrine']].map(([k, l]) =>
             `<button class="sa-bouton sa-bouton-petit ${(params.type || '') === k ? 'sa-bouton-principal' : 'sa-bouton-secondaire'}" data-type="${k}">${esc(l)}</button>`).join('')}</div>
           ${ui.tableau({
             lignes: d.donnees, vide: 'Aucune mission',
@@ -403,7 +403,7 @@
     const ecoles = (SA.referentiels && SA.referentiels.ecoles) || [];
     F().formulaire({
       titre: 'Publier une mission', large: true, libelleValider: 'Publier',
-      sousTitre: 'Visible aussitôt des configurateurs (installation) ou formateurs (formation) actifs, sans le contact de l’école tant qu’elle n’est pas confiée.',
+      sousTitre: 'Visible aussitôt des partenaires qualifiés actifs — configurateurs (installation), formateurs (formation), apporteurs d’affaires (site vitrine) — sans le contact de l’école tant qu’elle n’est pas confiée.',
       champs: [
         { cle: 'commande_service_id', libelle: 'À partir d’une commande d’école (recommandé)', type: 'liste', valeur: commandeId || '',
           options: [{ valeur: '', libelle: commandes.length ? 'Choisir une commande…' : 'Aucune commande en attente' }]
@@ -618,7 +618,7 @@ ${s.options.map((o) => `${o.recommande ? '★ ' : '  '}${o.intervenants} interve
 
   SA.enregistrerVue('services/commandes', {
     titre: 'Commandes des écoles',
-    sousTitre: 'Campagnes de capture, installations et formations demandées par les écoles : confirmer, confier en mission, suivre.',
+    sousTitre: 'Campagnes de capture, installations, formations et sites vitrines demandés par les écoles : confirmer, confier en mission, suivre.',
 
     async rendu(conteneur, params) {
       conteneur.innerHTML = ui.squelette(6, 46);

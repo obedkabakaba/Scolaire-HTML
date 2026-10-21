@@ -88,9 +88,9 @@ const server=http.createServer((req,res)=>{
  await page.screenshot({path:process.env.PERSPECTIVE_SHOT||path.join(root,'perspective-preview.png')});
  const scenes=await page.evaluate(()=>ArdoisePerspective.scenes);
  await page.goto(base+'/mon-profil.html');await page.waitForSelector('.carte-theme[data-theme="perspective"]');
- await page.locator('.carte-theme[data-theme="nuit"]').click();
+ await page.locator('.carte-theme[data-theme="nuit"]').click();await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>setTimeout(r,20))));
  assert.equal(await page.locator('.perspective-hero').isVisible(),false);
- await page.locator('.carte-theme[data-theme="perspective"]').click();
+ await page.locator('.carte-theme[data-theme="perspective"]').click();await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>setTimeout(r,20))));
  assert.equal(await page.locator('.perspective-hero').isVisible(),true);
  assert.equal(await page.evaluate(()=>localStorage.getItem('ardoise_theme')),'perspective');
  await page.reload();await page.waitForSelector('.perspective-hero');

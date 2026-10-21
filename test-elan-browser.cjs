@@ -77,9 +77,9 @@ const server=http.createServer((req,res)=>{
  await page.screenshot({path:process.env.ELAN_SHOT||path.join(root,'elan-preview.png')});
  const scenes=await page.evaluate(()=>ArdoiseElan.scenes);
  await page.goto(base+'/mon-profil.html');await page.waitForSelector('.carte-theme[data-theme="elan"]');
- await page.locator('.carte-theme[data-theme="nuit"]').click();
+ await page.locator('.carte-theme[data-theme="nuit"]').click();await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>setTimeout(r,20))));
  assert.equal(await page.locator('.elan-hero').isVisible(),false);
- await page.locator('.carte-theme[data-theme="elan"]').click();
+ await page.locator('.carte-theme[data-theme="elan"]').click();await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>setTimeout(r,20))));
  assert.equal(await page.locator('.elan-hero').isVisible(),true);
  assert.equal(await page.evaluate(()=>localStorage.getItem('ardoise_theme')),'elan');
  await page.reload();await page.waitForSelector('.elan-hero');

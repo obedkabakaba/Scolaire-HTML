@@ -452,9 +452,25 @@
 
     grille.querySelectorAll('.carte-theme').forEach((bouton) => {
       bouton.addEventListener('click', () => {
-        window.ArdoiseTheme.appliquer(bouton.dataset.theme);
-        dessinerGrilleThemes();
-        afficherMessage('Thème appliqué.', 'succes');
+        if (bouton.classList.contains('actif')) return;
+        /* La carte touchée s'allume tout de suite ; le thème est appliqué à
+           l'image suivante. Reconstruire les quatorze cartes à chaque clic,
+           comme avant, coûtait plus que le changement de thème lui-même et
+           figeait l'écran au moment précis où l'on attend une réponse. */
+        grille.querySelectorAll('.carte-theme').forEach((b) => {
+          const choisi = b === bouton;
+          b.classList.toggle('actif', choisi);
+          b.setAttribute('aria-pressed', String(choisi));
+          const coche = b.querySelector('.coche');
+          if (coche) coche.textContent = choisi ? '✓' : '';
+        });
+        // La coche s'affiche d'abord (une image), puis le thème — dont le
+        // recalcul complet des styles est lourd — s'applique juste après :
+        // le doigt a une réponse immédiate au lieu d'un écran figé.
+        requestAnimationFrame(() => setTimeout(() => {
+          window.ArdoiseTheme.appliquer(bouton.dataset.theme);
+          afficherMessage('Thème appliqué.', 'succes');
+        }, 0));
       });
     });
   }

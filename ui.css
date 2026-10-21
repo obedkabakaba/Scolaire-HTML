@@ -765,79 +765,94 @@ html[data-theme="nuit"] .tuile .jeton { background: rgba(95, 176, 140, 0.16); }
 }
 .nav-item.nav-tiroir .chevron { margin-left: auto; opacity: 0.55; font-size: 0.8rem; }
 
-/* Page pleine plutôt que fenêtre : « Tous les menus » EST un écran de
-   navigation, pas une boîte de dialogue. Une modale étroite donnerait
-   l'impression d'un réglage annexe. */
+/* Un panneau qui flotte au-dessus de l'écran courant, dans le même langage
+   que la feuille de menu du téléphone : recherche en capsule, écrans groupés
+   par famille, pictogrammes dans un carré de la couleur de la famille. On
+   voit encore l'écran qu'on quitte : c'est une navigation, pas un départ. */
 .voile-tiroir {
   position: fixed; inset: 0; z-index: 200;
-  background: var(--craie);
+  background: rgba(12, 18, 16, 0.42);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
   display: none;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 5vh 24px;
 }
-.voile-tiroir.ouvert { display: block; }
+.voile-tiroir.ouvert { display: block; animation: tiroir-voile 0.2s ease both; }
 
 .tiroir {
-  max-width: 1080px;
+  max-width: 1040px;
   margin: 0 auto;
-  padding: 40px 32px 60px 32px;
+  padding: 0 28px 22px 28px;
+  background: var(--craie);
+  color: var(--texte-sombre);
+  border-radius: 26px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  animation: tiroir-entree 0.34s cubic-bezier(0.32, 0.72, 0, 1) both;
 }
+@keyframes tiroir-voile { from { opacity: 0; } }
+@keyframes tiroir-entree { from { opacity: 0; transform: translateY(14px) scale(0.985); } }
+
 .tiroir-entete {
   display: flex; align-items: center; gap: 14px;
-  flex-wrap: wrap; margin-bottom: 8px;
-  position: sticky; top: 0; z-index: 2;
+  flex-wrap: wrap; margin: 0 -28px 6px -28px;
+  position: sticky; top: -5vh; z-index: 2;
   background: var(--craie);
-  padding: 16px 0;
+  padding: 22px 28px 14px 28px;
+  border-radius: 26px 26px 0 0;
 }
 .tiroir-entete h2 {
-  font-family: var(--police-titre); font-weight: 600;
-  font-size: 1.6rem; margin: 0;
+  font-family: var(--police-titre); font-weight: 650;
+  font-size: 1.5rem; margin: 0; letter-spacing: -0.01em;
 }
 .tiroir-recherche {
   flex: 1; min-width: 200px;
-  border: 1px solid var(--bordure); border-radius: var(--r-bouton);
-  padding: 9px 13px; font-family: var(--police-corps); font-size: 0.9rem;
-  background: var(--craie); color: var(--texte-sombre);
+  border: 0; border-radius: 999px;
+  padding: 11px 16px 11px 42px;
+  font-family: var(--police-corps); font-size: 0.95rem;
+  background: rgba(118, 118, 128, 0.12) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a8a8e' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='6.5'/%3E%3Cpath d='m20 20-4.2-4.2'/%3E%3C/svg%3E") 15px center / 18px no-repeat;
+  color: var(--texte-sombre);
 }
 .tiroir-recherche:focus { outline: 2px solid var(--ocre); outline-offset: 1px; }
 .tiroir-fermer {
-  background: none; border: 1px solid var(--bordure);
-  border-radius: var(--r-bouton); padding: 8px 13px;
-  font-family: var(--police-corps); font-size: 0.85rem;
-  color: var(--texte-att); cursor: pointer;
+  width: 38px; height: 38px; flex: none;
+  display: grid; place-items: center;
+  background: rgba(118, 118, 128, 0.14); border: 0; border-radius: 50%;
+  color: var(--texte-att); cursor: pointer; padding: 0;
 }
-.tiroir-aide { font-size: 0.83rem; color: var(--texte-att); margin: 0 0 18px 0; }
+.tiroir-fermer svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2.6; stroke-linecap: round; }
+.tiroir-fermer:hover { background: rgba(118, 118, 128, 0.24); color: var(--texte-sombre); }
+.tiroir-aide { font-size: 0.86rem; color: var(--texte-att); margin: 0 0 18px 0; }
 
-.tiroir-groupe { margin-bottom: 20px; }
+.tiroir-groupe { margin-bottom: 22px; }
 .tiroir-groupe > .titre {
-  font-size: 0.71rem; text-transform: uppercase; letter-spacing: 0.08em;
-  color: var(--texte-att); font-weight: 600; margin-bottom: 9px;
+  font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--texte-att); font-weight: 600; margin: 0 0 10px 4px;
 }
 .tiroir-grille {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(258px, 1fr)); gap: 14px;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px;
 }
-.tiroir-groupe > .titre { font-size: 0.76rem; margin-bottom: 12px; }
 
 .tiroir-ligne {
-  display: flex; align-items: center; gap: 13px;
-  border: 1px solid var(--bordure); border-radius: var(--r-carte);
-  padding: 16px 16px; background: var(--craie-2);
-  transition: border-color var(--transition-base), box-shadow var(--transition-base);
+  display: flex; align-items: center; gap: 10px;
+  border: 0; border-radius: 16px;
+  padding: 10px 8px 10px 12px; background: var(--craie-2);
+  box-shadow: 0 0 0 1px var(--bordure);
+  transition: box-shadow 0.18s ease, transform 0.18s ease;
 }
-.tiroir-ligne:hover { box-shadow: var(--ombre-carte); }
-.tiroir-ligne:hover { border-color: var(--ocre); }
+.tiroir-ligne:hover { transform: translateY(-1px); box-shadow: 0 0 0 1px var(--bordure), 0 8px 22px rgba(0, 0, 0, 0.08); }
 .tiroir-ligne .lien {
   flex: 1; text-decoration: none; color: var(--texte-sombre);
   font-size: 0.95rem; font-weight: 500;
   display: flex; align-items: center; gap: 12px; min-width: 0;
 }
-/* Le pictogramme reçoit son propre jeton coloré, comme sur les tuiles du
-   lanceur : les deux surfaces appartiennent au même produit. */
+/* Le pictogramme dans un carré de la couleur de sa famille. */
 .tiroir-ligne .lien .jeton-menu {
-  width: 36px; height: 36px; border-radius: var(--r-bouton); flex: none;
-  background: rgba(201, 138, 62, 0.13);
+  width: 34px; height: 34px; border-radius: 9px; flex: none;
+  background: var(--teinte, var(--ocre));
   display: flex; align-items: center; justify-content: center;
 }
-.tiroir-ligne .lien svg { width: 19px; height: 19px; flex: none; stroke: var(--ocre); fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.tiroir-ligne .lien svg { width: 19px; height: 19px; flex: none; stroke: #fff; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
 .tiroir-ligne .lien .texte { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* Épingle : c'est elle qui fait entrer ou sortir un écran du rail. */
@@ -863,7 +878,9 @@ html[data-theme="nuit"] .tuile .jeton { background: rgba(95, 176, 140, 0.16); }
 }
 
 @media (max-width: 640px) {
-  .tiroir { padding: 16px 16px 40px 16px; }
+  .voile-tiroir { padding: 0; }
+  .tiroir { padding: 0 16px 40px 16px; border-radius: 0; min-height: 100%; }
+  .tiroir-entete { margin: 0 -16px 6px -16px; padding: 16px; top: 0; border-radius: 0; }
   .tiroir-entete h2 { font-size: 1.3rem; }
   .tiroir-grille { grid-template-columns: 1fr; }
 }

@@ -86,9 +86,9 @@ const server=http.createServer((req,res)=>{
  await page.screenshot({path:process.env.RECRE_SHOT||path.join(root,'recre-preview.png')});
  const scenes=await page.evaluate(()=>ArdoiseRecre.scenes);
  await page.goto(base+'/mon-profil.html');await page.waitForSelector('.carte-theme[data-theme="recre"]');
- await page.locator('.carte-theme[data-theme="nuit"]').click();
+ await page.locator('.carte-theme[data-theme="nuit"]').click();await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>setTimeout(r,20))));
  assert.equal(await page.locator('.recre-hero').isVisible(),false);
- await page.locator('.carte-theme[data-theme="recre"]').click();
+ await page.locator('.carte-theme[data-theme="recre"]').click();await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>setTimeout(r,20))));
  assert.ok((await page.locator('.carte-theme[data-theme="recre"]').textContent()).includes('Récré'));
  assert.equal(await page.locator('.recre-hero').isVisible(),true);
  assert.equal(await page.evaluate(()=>localStorage.getItem('ardoise_theme')),'recre');

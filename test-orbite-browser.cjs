@@ -84,9 +84,9 @@ const server=http.createServer((req,res)=>{
  if(process.env.ORBITE_SHOT)await page.screenshot({path:process.env.ORBITE_SHOT.replace('.png','-profil.png')});
  await page.setViewportSize({width:390,height:844});
  await page.waitForFunction(()=>getComputedStyle(document.getElementById('choix-position').closest('.champ-disposition')).display==='none');
- await page.locator('.carte-theme[data-theme="nuit"]').click();assert.equal(await page.locator('.ob-banner').isVisible(),false);
+ await page.locator('.carte-theme[data-theme="nuit"]').click();await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>setTimeout(r,20))));assert.equal(await page.locator('.ob-banner').isVisible(),false);
  await page.waitForFunction(()=>getComputedStyle(document.getElementById('choix-position').closest('.champ-disposition')).display!=='none');
- await page.locator('.carte-theme[data-theme="orbite"]').click();assert.equal(await page.locator('.ob-banner').isVisible(),true);
+ await page.locator('.carte-theme[data-theme="orbite"]').click();await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>setTimeout(r,20))));assert.equal(await page.locator('.ob-banner').isVisible(),true);
  await page.reload();await page.waitForSelector('.ob-banner');assert.equal(await page.locator('.carte-theme[data-theme="orbite"]').getAttribute('aria-pressed'),'true');
  await page.locator('.ard-mob-barre .ard-mob-bouton').click();assert.equal(await page.locator('.barre-laterale').getAttribute('aria-hidden'),'false');
  await page.keyboard.press('Escape');assert.equal(await page.locator('.barre-laterale').getAttribute('aria-hidden'),'true');
@@ -98,6 +98,8 @@ const server=http.createServer((req,res)=>{
    for(const width of [1536,1024,390]){
      await page.setViewportSize({width,height:1000});await page.waitForTimeout(80);
      const state=await page.evaluate(()=>({workspace:!!document.querySelector('.ob-banner'),overflow:document.documentElement.scrollWidth-innerWidth}));
+     // Juste après un redimensionnement, la mise en page peut déborder un instant : on remesure avant de conclure.
+     if(state.overflow>2){await page.waitForTimeout(600);Object.assign(state,await page.evaluate(()=>({workspace:!!document.querySelector('.ob-banner'),overflow:document.documentElement.scrollWidth-innerWidth})));}
      if(!state.workspace||state.overflow>2)failures.push({name,width,...state,culprits:await page.evaluate(()=>Array.from(document.querySelectorAll('main *')).filter(n=>n.getBoundingClientRect().right>innerWidth+2).slice(0,8).map(n=>({tag:n.tagName,cls:n.className,right:n.getBoundingClientRect().right})))});
      if(process.env.ORBITE_SHOT&&width===1536&&['classes','inscriptions'].includes(name))await page.screenshot({path:process.env.ORBITE_SHOT.replace('.png','-'+name+'.png')});
    }

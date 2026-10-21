@@ -439,7 +439,7 @@ def rendre(chemin, url, titre, description, corps, actif=None,
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="preconnect" href="https://scolaire-saas-backend.onrender.com" />
-<link href="{POLICES}" rel="stylesheet" />
+<link href="{POLICES}" rel="stylesheet" media="print" onload="this.media='all'" />
 <link rel="stylesheet" href="/site.css?v={RESSOURCES_VERSION}" />
 
 {bloc_ld}

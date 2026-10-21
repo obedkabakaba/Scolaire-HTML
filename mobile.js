@@ -88,6 +88,7 @@
     menu: '<circle cx="5" cy="6" r="1.4"/><circle cx="5" cy="12" r="1.4"/>'
       + '<circle cx="5" cy="18" r="1.4"/><path d="M10 6h10"/><path d="M10 12h10"/><path d="M10 18h10"/>',
     retour: '<path d="M15 4.5 7.5 12l7.5 7.5"/>',
+    personne: '<circle cx="12" cy="8.5" r="3.6"/><path d="M5 19.5c1.2-3.4 4-5.2 7-5.2s5.8 1.8 7 5.2"/>',
     cloche: '<path d="M6 16.5V11a6 6 0 1 1 12 0v5.5l1.5 2h-15z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/>',
     fermer: '<path d="m6 6 12 12"/><path d="m18 6-12 12"/>',
     loupe: '<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/>'
@@ -202,14 +203,24 @@
      l'apparence. On prend la teinte sombre de l'apparence — son rail si
      celui-ci est sombre, sinon son encre — pour que la barre lui appartienne.
      ========================================================================== */
+  /* Normalise une couleur CSS par un contexte 2D hors document : insérer une
+     sonde dans la page et lire son style forçait un recalcul complet des
+     styles à chaque couleur — quatre fois par changement d'apparence. */
+  var toileCouleur = null;
   function lireRgb(valeur) {
     if (!valeur) return null;
-    var sonde = document.createElement('span');
-    sonde.style.display = 'none';
-    sonde.style.color = valeur;
-    document.body.appendChild(sonde);
-    var calcule = getComputedStyle(sonde).color;
-    sonde.remove();
+    if (!toileCouleur) toileCouleur = document.createElement('canvas').getContext('2d');
+    if (!toileCouleur) return null;
+    toileCouleur.fillStyle = '#000';
+    toileCouleur.fillStyle = valeur;
+    var calcule = toileCouleur.fillStyle;
+    var hex = /^#([0-9a-f]{6})$/i.exec(calcule);
+    if (hex) {
+      var n = parseInt(hex[1], 16);
+      // Une valeur illisible laisse le noir posé juste avant : on l'écarte.
+      if (n === 0 && !/^\s*(#0{3,6}|black|rgba?\(\s*0[ ,]+0[ ,]+0)/i.test(valeur)) return null;
+      return [n >> 16, (n >> 8) & 255, n & 255];
+    }
     var m = calcule.match(/rgba?\(\s*([\d.]+)[ ,]+([\d.]+)[ ,]+([\d.]+)(?:\s*[,/]\s*([\d.]+))?/);
     if (!m) return null;
     if (m[4] !== undefined && parseFloat(m[4]) < 0.5) return null;   // transparent
@@ -224,13 +235,33 @@
     return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
   }
 
-  function appliquerTeintes() {
-    var cs = getComputedStyle(racine);
-    var candidats = ['--nav-fond', '--texte-sombre', '--ardoise'];
-    var choisi = null;
-    for (var i = 0; i < candidats.length && !choisi; i++) {
-      var rgb = lireRgb(cs.getPropertyValue(candidats[i]).trim());
-      // 0,18 de luminance : le blanc y garde un contraste supérieur à 4,5:1.
+  function definitionTheme(cle) {
+    var liste = window.ARDOISE_THEMES || [];
+    for (var i = 0; i < liste.length; i++) if (liste[i].cle === cle) return liste[i];
+    return null;
+  }
+
+  /**
+   * Les teintes sont tirées de la FICHE de l'apparence (`ARDOISE_THEMES`,
+   * theme.js) : ses couleurs de barre, d'encre et de surface. Les relire dans
+   * les styles calculés juste après un changement d'apparence forçait le
+   * navigateur à recalculer toute la page une fois de plus. Les styles ne
+   * servent plus que de repli, pour une apparence sans fiche.
+   */
+  function appliquerTeintes(cleTheme) {
+    var def = definitionTheme(cleTheme || racine.getAttribute('data-theme'));
+    var ap = def && def.apercu;
+    var choisi = null, fond = null, cs = null;
+    // 0,18 de luminance : le blanc y garde un contraste supérieur à 4,5:1.
+    var valeurs = ap ? [ap.barre, ap.texte] : [];
+    if (ap) fond = lireRgb(ap.surface);
+    if (!ap || !fond) {
+      cs = getComputedStyle(racine);
+      valeurs = ['--nav-fond', '--texte-sombre', '--ardoise'].map(function (v) { return cs.getPropertyValue(v).trim(); });
+      fond = lireRgb(cs.getPropertyValue('--craie').trim());
+    }
+    for (var i = 0; i < valeurs.length && !choisi; i++) {
+      var rgb = lireRgb(valeurs[i]);
       if (rgb && luminance(rgb) < 0.18) choisi = rgb;
     }
     var teinte = 'rgb(' + (choisi || [28, 28, 30]).join(',') + ')';
@@ -240,7 +271,6 @@
     var meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute('content', teinte);
 
-    var fond = lireRgb(getComputedStyle(document.body).backgroundColor);
     racine.classList.toggle('ard-mob-sombre', !!fond && luminance(fond) < 0.25);
   }
 
@@ -249,24 +279,75 @@
      ========================================================================== */
   var barre = null, titreEl = null, pastilleEl = null, retourEl = null, clocheEl = null;
 
-  function initiales(u) {
-    var p = (u.prenom || '').trim(), n = (u.nom || '').trim();
-    var s = (p.charAt(0) + n.charAt(0)) || (u.email || '?').charAt(0);
-    return s.toUpperCase();
+  /* La session ne garde que l'identifiant et les rôles : sans le nom, l'avatar
+     affichait un « ? » que l'on prenait pour le bouton d'aide. Le profil est
+     donc demandé une fois à `/utilisateurs/moi` et gardé par compte. */
+  var CLE_PROFIL = 'ardoise_profil_mobile';
+
+  function profilEnCache(id) {
+    try {
+      var p = JSON.parse(localStorage.getItem(CLE_PROFIL) || 'null');
+      return (p && p.id === id) ? p : null;
+    } catch (e) { return null; }
   }
 
-  function avatar(u) {
-    var a = el('span', 'ard-mob-avatar');
+  function utilisateurComplet() {
+    var u = utilisateur();
+    var p = u.id ? profilEnCache(u.id) : null;
+    if (!p) return u;
+    var fusion = {};
+    for (var k in u) fusion[k] = u[k];
+    ['prenom', 'nom', 'email', 'photo_url'].forEach(function (c) { if (p[c]) fusion[c] = p[c]; });
+    return fusion;
+  }
+
+  function initiales(u) {
+    var p = (u.prenom || '').trim(), n = (u.nom || '').trim();
+    return ((p.charAt(0) + n.charAt(0)) || (u.email || '').charAt(0)).toUpperCase();
+  }
+
+  function remplirAvatar(a, u) {
+    a.textContent = '';
+    var lettres = initiales(u);
+    function repli() {
+      a.textContent = '';
+      if (lettres) a.textContent = lettres;
+      else a.appendChild(svg(SVG.personne));
+    }
     if (u.photo_url) {
       var img = document.createElement('img');
       img.alt = '';
       img.src = u.photo_url;
-      img.onerror = function () { img.remove(); a.textContent = initiales(u); };
+      img.onerror = repli;
       a.appendChild(img);
     } else {
-      a.textContent = initiales(u);
+      repli();
     }
+  }
+
+  function avatar(u) {
+    var a = el('span', 'ard-mob-avatar');
+    remplirAvatar(a, u);
     return a;
+  }
+
+  function chargerProfil() {
+    var u = utilisateur();
+    if (!u.id || !window.ArdoiseSession || !window.ArdoiseSession.appelApi) return;
+    window.ArdoiseSession.appelApi('/utilisateurs/moi').then(function (r) {
+      return r.ok ? r.json() : null;
+    }).then(function (d) {
+      var m = d && (d.utilisateur || d.user || d.data || d);
+      if (!m || (m.id && m.id !== u.id)) return;
+      var p = { id: u.id, prenom: m.prenom || '', nom: m.nom || '', email: m.email || '', photo_url: m.photo_url || '' };
+      var avant = profilEnCache(u.id);
+      try { localStorage.setItem(CLE_PROFIL, JSON.stringify(p)); } catch (e) {}
+      if (avant && JSON.stringify(avant) === JSON.stringify(p)) return;
+      var complet = utilisateurComplet();
+      document.querySelectorAll('.ard-mob-avatar').forEach(function (a) { remplirAvatar(a, complet); });
+      var nom = profilEl && profilEl.querySelector('.ard-feuille-profil-texte strong');
+      if (nom) nom.textContent = [complet.prenom, complet.nom].filter(Boolean).join(' ') || complet.email || 'Mon compte';
+    }).catch(function () { /* l'avatar garde son repli */ });
   }
 
   function construireBarreHaute(nav) {
@@ -307,7 +388,7 @@
     compte.setAttribute('aria-label', 'Ouvrir le menu');
     compte.setAttribute('aria-expanded', 'false');
     compte.setAttribute('aria-controls', nav.id || 'ard-mob-tiroir');
-    compte.appendChild(avatar(utilisateur()));
+    compte.appendChild(avatar(utilisateurComplet()));
     compte.addEventListener('click', function () { basculer(); });
 
     droite.appendChild(clocheEl);
@@ -334,27 +415,58 @@
     return (document.title || 'Ardoise').replace(/^Ardoise\s*[—–-]\s*/, '');
   }
 
-  /* Le grand titre remonte dans la barre quand il passe dessous. */
+  /**
+   * Le grand titre remonte dans la barre quand il passe dessous.
+   *
+   * Un `IntersectionObserver` le signale sans rien mesurer. Lire la position
+   * du titre à chaque défilement forçait un recalcul complet de la page — et,
+   * juste après un changement d'apparence, le plus coûteux de tous.
+   */
   function suivreDefilement() {
-    var enAttente = false;
-    function maj() {
-      enAttente = false;
-      var y = window.scrollY || document.documentElement.scrollTop;
-      racine.classList.toggle('ard-defile', y > 2);
-      var h1 = document.querySelector('.entete-page h1, .contenu h1');
-      var bas = barre ? barre.getBoundingClientRect().bottom : 0;
-      var replie = (h1 && h1.getClientRects().length)
-        ? h1.getBoundingClientRect().bottom < bas + 2
-        : y > 40;
-      racine.classList.toggle('ard-titre-replie', replie);
+    var h1 = null, observateur = null;
+
+    function brancherTitre() {
+      var nouveau = document.querySelector('.entete-page h1, .contenu h1');
+      if (nouveau === h1 && observateur) return;
+      if (observateur) observateur.disconnect();
+      observateur = null;
+      h1 = nouveau;
+      if (!h1 || !window.IntersectionObserver) return;
+      var hauteurBarre = barre ? barre.offsetHeight : 0;
+      observateur = new IntersectionObserver(function (entrees) {
+        var e = entrees[entrees.length - 1];
+        racine.classList.toggle('ard-titre-replie', !e.isIntersecting && e.boundingClientRect.top < hauteurBarre);
+      }, { rootMargin: '-' + hauteurBarre + 'px 0px 0px 0px', threshold: 0 });
+      observateur.observe(h1);
     }
-    window.addEventListener('scroll', function () {
-      if (enAttente) return;
-      enAttente = true;
-      requestAnimationFrame(maj);
-    }, { passive: true });
-    maj();
-    return maj;
+
+    /* « La page a-t-elle défilé ? » : deux repères invisibles en haut du
+       document (3 px et 40 px), observés eux aussi. Lire `scrollY` à chaque
+       défilement obligeait le navigateur à finir sa mise en page sur-le-champ. */
+    var defile = false, au40 = false;
+    function majDefilement() {
+      racine.classList.toggle('ard-defile', defile);
+      // Écran sans grand titre : la barre prend le nom de l'écran au défilement.
+      if (!h1) racine.classList.toggle('ard-titre-replie', au40);
+    }
+    function repere(hauteur, rappel) {
+      var r = document.createElement('div');
+      r.setAttribute('aria-hidden', 'true');
+      r.style.cssText = 'position:absolute;top:0;left:0;width:1px;height:' + hauteur + 'px;pointer-events:none;visibility:hidden';
+      document.body.appendChild(r);
+      new IntersectionObserver(function (entrees) {
+        rappel(!entrees[entrees.length - 1].isIntersecting);
+        majDefilement();
+      }).observe(r);
+    }
+    if (window.IntersectionObserver) {
+      repere(3, function (v) { defile = v; });
+      repere(40, function (v) { au40 = v; });
+    }
+    window.addEventListener('orientationchange', function () { observateur = null; setTimeout(brancherTitre, 300); });
+
+    brancherTitre();
+    return function () { brancherTitre(); majDefilement(); };
   }
 
   /* ==========================================================================
@@ -616,7 +728,7 @@
 
   function construireProfil(nav) {
     if (profilEl || !nav) return;
-    var u = utilisateur();
+    var u = utilisateurComplet();
     var lienProfil = nav.querySelector('.nav-item[href$="mon-profil.html"]');
     var liProfil = lienProfil && lienProfil.closest('li');
     var accessible = liProfil && !masqueeParRole(liProfil);
@@ -1417,6 +1529,19 @@
     try { surveillerClavier(); } catch (e) {}
     try { surveillerListes(); } catch (e) {}
     try { installerActions(); } catch (e) {}
+    try { chargerProfil(); } catch (e) {}
+
+    /* « Tous les menus » et « Tous les écrans » (ui.js) passent par ici : sur
+       téléphone, ils ouvrent la feuille de menu, pas l'ancien panneau. */
+    window.ArdoiseMobile = {
+      ouvrirMenu: function () {
+        if (!petitEcran.matches || !racine.classList.contains('ard-mob-coque')) return false;
+        var voile = document.getElementById('voile-tiroir');
+        if (voile) voile.classList.remove('ouvert');
+        basculer(true);
+        return true;
+      }
+    };
 
     // Un lien de la feuille la referme. Par délégation : les entrées
     // ajoutées après coup (« Aide & Tutoriels ») en profitent aussi.
@@ -1438,9 +1563,9 @@
     });
     synchroniser();
 
-    // L'apparence change (profil) : la barre suit sa teinte.
-    document.addEventListener('ardoise:theme-change', function () {
-      setTimeout(function () { try { appliquerTeintes(); } catch (e) {} }, 60);
+    // L'apparence change (profil) : la barre suit sa teinte, lue dans sa fiche.
+    document.addEventListener('ardoise:theme-change', function (e) {
+      try { appliquerTeintes(e.detail && e.detail.theme); } catch (er) {}
     });
 
     // Retour arrière restauré depuis le cache : feuilles fermées, lentille

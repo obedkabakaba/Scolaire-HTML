@@ -86,9 +86,9 @@ const server=http.createServer((req,res)=>{
  if(process.env.FLUIDE_SHOT)await page.screenshot({path:process.env.FLUIDE_SHOT.replace('.png','-profil.png')});
  await page.setViewportSize({width:390,height:844});
  await page.waitForFunction(()=>getComputedStyle(document.getElementById('choix-position').closest('.champ-disposition')).display==='none');
- await page.locator('.carte-theme[data-theme="nuit"]').click();assert.equal(await page.locator('.fl-banner').isVisible(),false);
+ await page.locator('.carte-theme[data-theme="nuit"]').click();await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>setTimeout(r,20))));assert.equal(await page.locator('.fl-banner').isVisible(),false);
  await page.waitForFunction(()=>getComputedStyle(document.getElementById('choix-position').closest('.champ-disposition')).display!=='none');
- await page.locator('.carte-theme[data-theme="fluide"]').click();assert.equal(await page.locator('.fl-banner').isVisible(),true);
+ await page.locator('.carte-theme[data-theme="fluide"]').click();await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>setTimeout(r,20))));assert.equal(await page.locator('.fl-banner').isVisible(),true);
  await page.reload();await page.waitForSelector('.fl-banner');assert.equal(await page.locator('.carte-theme[data-theme="fluide"]').getAttribute('aria-pressed'),'true');
  await page.locator('.ard-mob-barre .ard-mob-bouton').click();assert.equal(await page.locator('.barre-laterale').getAttribute('aria-hidden'),'false');
  await page.keyboard.press('Escape');assert.equal(await page.locator('.barre-laterale').getAttribute('aria-hidden'),'true');
@@ -104,6 +104,8 @@ const server=http.createServer((req,res)=>{
      // On attend que la mise en page se stabilise ; un débordement réel reste au-delà de 1,5 s et est signalé.
      await page.waitForFunction(()=>document.documentElement.scrollWidth-innerWidth<=2,null,{timeout:1500}).catch(()=>{});
      const state=await page.evaluate(()=>({workspace:!!document.querySelector('.fl-banner'),overflow:document.documentElement.scrollWidth-innerWidth}));
+     // Juste après un redimensionnement, la mise en page peut déborder un instant : on remesure avant de conclure.
+     if(state.overflow>2){await page.waitForTimeout(600);Object.assign(state,await page.evaluate(()=>({workspace:!!document.querySelector('.fl-banner'),overflow:document.documentElement.scrollWidth-innerWidth})));}
      if(!state.workspace||state.overflow>2)failures.push({name,width,...state,culprits:await page.evaluate(()=>Array.from(document.querySelectorAll('main *')).filter(n=>n.getBoundingClientRect().right>innerWidth+2).slice(0,8).map(n=>({tag:n.tagName,cls:n.className,right:n.getBoundingClientRect().right})))});
      if(process.env.FLUIDE_SHOT&&width===1536&&['classes','inscriptions'].includes(name))await page.screenshot({path:process.env.FLUIDE_SHOT.replace('.png','-'+name+'.png')});
    }

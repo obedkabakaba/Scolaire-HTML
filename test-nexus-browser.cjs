@@ -90,8 +90,8 @@ const server=http.createServer((req,res)=>{
  await page.locator('.nx-node[data-group="eleves"]').click();
  assert.equal(await page.locator('#nx-context').getAttribute('data-group'),'eleves');
  await page.goto(base+'/mon-profil.html');await page.waitForSelector('.carte-theme[data-theme="nexus"]');
- await page.locator('.carte-theme[data-theme="nuit"]').click();assert.equal(await page.locator('.nx-workspace').isVisible(),false);
- await page.locator('.carte-theme[data-theme="nexus"]').click();assert.equal(await page.locator('.nx-workspace').isVisible(),true);
+ await page.locator('.carte-theme[data-theme="nuit"]').click();await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>setTimeout(r,20))));assert.equal(await page.locator('.nx-workspace').isVisible(),false);
+ await page.locator('.carte-theme[data-theme="nexus"]').click();await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>setTimeout(r,20))));assert.equal(await page.locator('.nx-workspace').isVisible(),true);
  await page.reload();await page.waitForSelector('.nx-workspace');assert.equal(await page.locator('.carte-theme[data-theme="nexus"]').getAttribute('aria-pressed'),'true');
  await page.locator('.ard-mob-barre .ard-mob-bouton').click();assert.equal(await page.locator('.barre-laterale').getAttribute('aria-hidden'),'false');
  await page.keyboard.press('Escape');assert.equal(await page.locator('.barre-laterale').getAttribute('aria-hidden'),'true');
@@ -103,6 +103,8 @@ const server=http.createServer((req,res)=>{
    for(const width of [1536,1024,390]){
      await page.setViewportSize({width,height:1000});await page.waitForTimeout(80);
      const state=await page.evaluate(()=>({workspace:!!document.querySelector('.nx-workspace'),overflow:document.documentElement.scrollWidth-innerWidth}));
+     // Juste après un redimensionnement, la mise en page peut déborder un instant : on remesure avant de conclure.
+     if(state.overflow>2){await page.waitForTimeout(600);Object.assign(state,await page.evaluate(()=>({workspace:!!document.querySelector('.nx-workspace'),overflow:document.documentElement.scrollWidth-innerWidth})));}
      if(!state.workspace||state.overflow>2)failures.push({name,width,...state});
      if(process.env.NEXUS_SHOT&&width===1536&&['classes','inscriptions'].includes(name))await page.screenshot({path:process.env.NEXUS_SHOT.replace('.png','-'+name+'.png')});
    }

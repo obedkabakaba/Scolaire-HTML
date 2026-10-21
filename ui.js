@@ -543,7 +543,10 @@
   window.ArdoiseUI = {
     anneau: anneau, anneauCompact: anneauCompact, barres: barres,
     marquerTuile: marquerTuile,
-    ouvrirTousLesMenus: function () { if (window.ArdoiseRail) window.ArdoiseRail.ouvrir(); },
+    ouvrirTousLesMenus: function () {
+      if (window.ArdoiseMobile && window.ArdoiseMobile.ouvrirMenu()) return;
+      if (window.ArdoiseRail) window.ArdoiseRail.ouvrir();
+    },
     avatar: avatar, cellulePersonne: cellulePersonne, pileAvatars: pileAvatars,
     badge: badge, decorerCarte: decorerCarte, decorerCartes: decorerCartes
   };
@@ -608,14 +611,16 @@
      lanceur est automatiquement juste pour chaque utilisateur — et il le
      restera quand de nouvelles pages seront ajoutées.
      ------------------------------------------------------------------ */
+  /* `teinte` : la couleur de la famille, la même que dans la feuille de menu
+     du téléphone (mobile.js) — un écran a la même couleur partout. */
   var GROUPES = [
-    { titre: 'Élèves et parcours', pages: ['eleves.html', 'inscriptions.html', 'orientation.html', 'presences.html'] },
-    { titre: 'Pédagogie', pages: ['classes.html', 'cours.html', 'emploi-du-temps.html', 'notes.html', 'cours-classe-titulaire.html'] },
-    { titre: 'Bulletins', pages: ['bulletins.html', 'bulletin-annuel.html', 'generateur-modeles.html', 'repechage.html'] },
-    { titre: 'Vie scolaire', pages: ['discipline.html', 'calendrier.html', 'messages.html'] },
-    { titre: 'Finances', pages: ['frais-scolaires.html', 'comptabilite.html'] },
-    { titre: 'Pilotage', pages: ['rapports.html', 'archives.html', 'journal.html'] },
-    { titre: 'Administration', pages: ['annee-scolaire.html', 'utilisateurs.html', 'site-public.html', 'parametres.html', 'mon-profil.html'] }
+    { titre: 'Élèves et parcours', teinte: '#34C759', pages: ['eleves.html', 'inscriptions.html', 'orientation.html', 'presences.html'] },
+    { titre: 'Pédagogie', teinte: '#FF9500', pages: ['classes.html', 'cours.html', 'emploi-du-temps.html', 'notes.html', 'cours-classe-titulaire.html'] },
+    { titre: 'Bulletins', teinte: '#AF52DE', pages: ['bulletins.html', 'bulletin-annuel.html', 'generateur-modeles.html', 'repechage.html'] },
+    { titre: 'Vie scolaire', teinte: '#FF2D55', pages: ['discipline.html', 'calendrier.html', 'messages.html'] },
+    { titre: 'Finances', teinte: '#30B0C7', pages: ['frais-scolaires.html', 'comptabilite.html'] },
+    { titre: 'Pilotage', teinte: '#5856D6', pages: ['rapports.html', 'archives.html', 'journal.html'] },
+    { titre: 'Administration', teinte: '#8E8E93', pages: ['annee-scolaire.html', 'utilisateurs.html', 'site-public.html', 'parametres.html', 'mon-profil.html'] }
   ];
 
   var DESCRIPTIONS = {
@@ -930,6 +935,10 @@
   }
 
   function ouvrirTiroir(elements, disponibles) {
+    /* Sur téléphone, la coque mobile a sa propre feuille de menu : c'est elle
+       qu'ouvrent « Tous les menus » et « Tous les écrans », pas l'ancien
+       panneau de bureau. */
+    if (window.ArdoiseMobile && window.ArdoiseMobile.ouvrirMenu()) return;
     var voile = document.getElementById('voile-tiroir');
     if (!voile) {
       voile = document.createElement('div');
@@ -937,6 +946,8 @@
       voile.className = 'voile-tiroir';
       voile.innerHTML = '<div class="tiroir" role="dialog" aria-label="Tous les menus"></div>';
       document.body.appendChild(voile);
+      // Le panneau flotte : toucher le fond autour le referme.
+      voile.addEventListener('click', function (e) { if (e.target === voile) fermerTiroir(); });
       document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape' && voile.classList.contains('ouvert')) fermerTiroir();
       });
@@ -962,7 +973,8 @@
     var html = '<div class="tiroir-entete">'
       + '<h2>Tous les menus</h2>'
       + '<input type="search" class="tiroir-recherche" id="tiroir-recherche" placeholder="Rechercher un écran…" aria-label="Rechercher un écran" />'
-      + '<button type="button" class="tiroir-fermer" id="tiroir-fermer">← Retour</button>'
+      + '<button type="button" class="tiroir-fermer" id="tiroir-fermer" aria-label="Fermer">'
+      + '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12"/><path d="m18 6-12 12"/></svg></button>'
       + '</div>'
       + '<p class="tiroir-aide">Épinglez les écrans que vous utilisez le plus : ils apparaîtront directement dans le menu de gauche.</p>';
 
@@ -971,14 +983,14 @@
       var dedans = elements.filter(function (e) { return GROUPES[g].pages.indexOf(e.page) !== -1; });
       if (!dedans.length) continue;
       dedans.forEach(function (e) { placees[e.page] = true; });
-      html += '<div class="tiroir-groupe" data-groupe><div class="titre">' + GROUPES[g].titre + '</div>'
+      html += '<div class="tiroir-groupe" data-groupe style="--teinte:' + GROUPES[g].teinte + '"><div class="titre">' + GROUPES[g].titre + '</div>'
         + '<div class="tiroir-grille">' + dedans.map(ligne).join('') + '</div></div>';
     }
     // Les écrans hors catalogue restent accessibles : une page ajoutée
     // demain ne doit pas disparaître faute d'avoir été classée.
     var orphelines = elements.filter(function (e) { return !placees[e.page]; });
     if (orphelines.length) {
-      html += '<div class="tiroir-groupe" data-groupe><div class="titre">Autres</div>'
+      html += '<div class="tiroir-groupe" data-groupe style="--teinte:#A2845E"><div class="titre">Autres</div>'
         + '<div class="tiroir-grille">' + orphelines.map(ligne).join('') + '</div></div>';
     }
 

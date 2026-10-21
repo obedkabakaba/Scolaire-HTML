@@ -645,14 +645,19 @@
   var CARTES = '.carte-stat,.panneau,.widget,.carte-section,.carte-config,.carte-cours,.carte-recap,.sg-widget,.sa-carte,.sa-panneau';
   function entree() {
     if (calme.matches) return;
-    var i = 0;
-    document.querySelectorAll(CARTES).forEach(function (c) {
-      if (i > 14) return;
-      var r = c.getBoundingClientRect();
-      if (!r.width || r.top > innerHeight) return;
-      c.style.setProperty('--sg-i', i++);
-      c.classList.remove('sg-entre'); void c.offsetWidth; c.classList.add('sg-entre');
-    });
+    /* Toutes les mesures d'abord, toutes les écritures ensuite, et une seule
+       mise en page forcée pour relancer l'animation. Mesurer puis écrire carte
+       par carte (avec un `offsetWidth` à chaque tour) recalculait la page
+       jusqu'à quinze fois de suite à chaque changement d'apparence. */
+    var visibles = [];
+    var cartes = document.querySelectorAll(CARTES);
+    for (var k = 0; k < cartes.length && visibles.length <= 14; k++) {
+      var r = cartes[k].getBoundingClientRect();
+      if (r.width && r.top <= innerHeight) visibles.push(cartes[k]);
+    }
+    visibles.forEach(function (c, i) { c.style.setProperty('--sg-i', i); c.classList.remove('sg-entre'); });
+    if (visibles.length) void document.body.offsetWidth;
+    visibles.forEach(function (c) { c.classList.add('sg-entre'); });
     setTimeout(function () { document.querySelectorAll('.sg-entre').forEach(function (c) { c.classList.remove('sg-entre'); }); }, 1800);
   }
 

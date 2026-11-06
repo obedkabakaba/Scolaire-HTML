@@ -246,7 +246,51 @@
         </div>
       </div>
 
-      <div>
+      <fieldset class="choix-structure" style="border:0;padding:0;margin:0">
+        <legend style="font-weight:600;margin-bottom:8px">Type d'établissement *</legend>
+        <div class="duo">
+          <label style="display:flex;gap:10px;align-items:flex-start;border:1.5px solid #E4DFCF;border-radius:12px;padding:12px;cursor:pointer">
+            <input type="radio" name="type_structure" value="ecole" checked style="margin-top:4px" />
+            <span><strong>École</strong><br><small>Maternelle, primaire, secondaire : classes, notes, bulletins officiels.</small></span>
+          </label>
+          <label style="display:flex;gap:10px;align-items:flex-start;border:1.5px solid #E4DFCF;border-radius:12px;padding:12px;cursor:pointer">
+            <input type="radio" name="type_structure" value="centre_formation" style="margin-top:4px" />
+            <span><strong>Centre de formation</strong><br><small>Anglais, langues, informatique, métiers : programmes, coachs, apprenants, certificats.</small></span>
+          </label>
+        </div>
+      </fieldset>
+
+      <div class="duo" data-si-centre hidden>
+        <div>
+          <label for="domaine_formation">Domaine de formation *</label>
+          <select id="domaine_formation" name="domaine_formation">
+            <option value="anglais">Anglais</option>
+            <option value="langues">Autres langues étrangères</option>
+            <option value="francais">Français</option>
+            <option value="informatique">Informatique et numérique</option>
+            <option value="bureautique">Bureautique</option>
+            <option value="comptabilite">Comptabilité et gestion</option>
+            <option value="couture">Couture et mode</option>
+            <option value="coiffure">Coiffure et esthétique</option>
+            <option value="cuisine">Cuisine et pâtisserie</option>
+            <option value="conduite">Auto-école</option>
+            <option value="musique">Musique et arts</option>
+            <option value="soutien_scolaire">Soutien scolaire</option>
+            <option value="metiers">Métiers techniques</option>
+            <option value="autre">Autre domaine</option>
+          </select>
+        </div>
+        <div>
+          <label for="taille_structure">Taille du centre</label>
+          <select id="taille_structure" name="taille_structure">
+            <option value="petite">Moins de 50 apprenants</option>
+            <option value="moyenne">50 à 200 apprenants</option>
+            <option value="grande">Plus de 200 apprenants</option>
+          </select>
+        </div>
+      </div>
+
+      <div data-si-ecole>
         <label for="type_enseignement">Type d'enseignement</label>
         <select id="type_enseignement" name="type_enseignement">
           <option value="les_deux">Primaire et secondaire</option>
@@ -435,6 +479,26 @@
 </footer>
 
 <script src="/catalogue.js?v=20261015-1" defer></script>
+<script>
+/* École ou centre de formation : le formulaire s'adapte au choix. Le serveur
+   relit et borne chaque valeur ; ce script ne fait que montrer les bons champs. */
+(function () {
+  var radios = document.querySelectorAll('input[name="type_structure"]');
+  function maj() {
+    var centre = document.querySelector('input[name="type_structure"]:checked').value === 'centre_formation';
+    document.querySelectorAll('[data-si-centre]').forEach(function (x) { x.hidden = !centre; x.style.display = centre ? '' : 'none'; });
+    document.querySelectorAll('[data-si-ecole]').forEach(function (x) { x.hidden = centre; x.style.display = centre ? 'none' : ''; });
+    var nom = document.getElementById('ecole_nom');
+    if (nom) nom.placeholder = centre ? 'ex. Speak Up English Center' : 'ex. Institut Saint-Joseph';
+    var fonction = document.getElementById('responsable_fonction');
+    if (fonction) fonction.placeholder = centre ? 'ex. Chef de centre, Fondateur' : 'ex. Directeur, Préfet des études';
+    radios.forEach(function (r) { r.closest('label').style.borderColor = r.checked ? '#C98A3E' : '#E4DFCF'; });
+  }
+  radios.forEach(function (r) { r.addEventListener('change', maj); });
+  if (/centre/.test(location.search)) { var c = document.querySelector('input[value="centre_formation"]'); if (c) c.checked = true; }
+  maj();
+})();
+</script>
 <script src="/nav.js?v=20260812-3" defer></script>
 <script>
 /* Préremplit l'offre ou le service quand on arrive depuis /tarifs/ ou /services/

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Ardoise — Centre de formation</title>
+<meta name="robots" content="noindex" />
+<link rel="icon" href="favicon.ico" />
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" type="image/png" sizes="192x192" href="icone-192.png" />
+<meta name="theme-color" content="#1F2B24" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="Ardoise" />
+<link rel="apple-touch-icon" sizes="180x180" href="icone-ios-180.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<script>
+  /* Thème avant le premier affichage (même règle que les autres écrans). */
+  (function(){var t;
+   try{t=localStorage.getItem('ardoise_theme')||sessionStorage.getItem('ardoise_theme');}catch(e){}
+   var th=(t&&/^[a-z][a-z0-9-]{1,19}$/.test(t))?t:'ardoise';
+   document.documentElement.setAttribute('data-theme', th);})();
+</script>
+<!-- Seules les VARIABLES du thème sont chargées : cet espace a sa propre
+     coque (préfixe cf-), que les habillages d'école ne doivent pas restyler. -->
+<link rel="stylesheet" href="theme-base.css" />
+<link rel="stylesheet" href="centre-formation.css?v=1" />
+<!-- Session partagée : renouvellement du jeton, rejeu des requêtes expirées,
+     écran de blocage d'abonnement. Doit rester AVANT le script de la page. -->
+<script src="session.js"></script>
+<script src="remontee-erreurs.js"></script>
+</head>
+<body class="cf-racine">
+<div class="cf-coque">
+  <nav class="cf-rail" id="cf-rail" aria-label="Menu du centre">
+    <div class="cf-marque">Ardoise<small>Centre de formation</small></div>
+    <div class="cf-centre-nom" id="cf-centre"></div>
+    <button class="cf-menu-mobile" type="button" aria-label="Ouvrir le menu">☰ Menu</button>
+    <ul class="cf-nav" id="cf-nav"></ul>
+    <div class="cf-rail-bas" id="cf-rail-bas"></div>
+  </nav>
+  <main class="cf-principal" id="cf-principal">
+    <div id="cf-chargement-initial" class="cf-chargement">Ouverture de l’espace du centre…</div>
+  </main>
+</div>
+<script src="centre-formation.js?v=1"></script>
+</body>
+</html>

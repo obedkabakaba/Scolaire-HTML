@@ -1125,6 +1125,12 @@
   }
 
   function rendre(donnees) {
+    // Centre de formation : un autre site (programmes, test de niveau,
+    // espace apprenant), dessiné par site-centre.js avec les mêmes thèmes.
+    if (donnees && donnees.formation && donnees.ecole && donnees.ecole.type_structure === 'centre_formation') {
+      rendreCentre(donnees);
+      return;
+    }
     etat.d = donnees;
     etat.d.annonces = donnees.annonces || [];
     etat.d.evenements = donnees.evenements || [];
@@ -1141,6 +1147,32 @@
     etat.page = null;
     naviguer();
     adresseDansLaBarre(donnees.ecole);
+  }
+
+  /* Le site d'un centre de formation vit dans son propre fichier, chargé à
+     la demande : les écoles ne le téléchargent jamais. Il reçoit les outils
+     de ce fichier (échappement, icônes, thèmes) pour rester identique de
+     facture et de sécurité. Chemin absolu : 404.html sert n'importe quelle
+     profondeur d'adresse. */
+  function rendreCentre(donnees) {
+    var outils = {
+      API: API, CODE: CODE, APERCU: APERCU, e: e, urlSure: urlSure, ico: ico, blason: blason, blasonSvg: blasonSvg,
+      initiales: initiales, dateLongue: dateLongue, dateObj: dateObj, montant: montant, tel: tel, MOIS_COURTS: MOIS_COURTS,
+      appliquerApparence: appliquerApparence, normaliser: normaliser, illustration: illustration, liensReseaux: liensReseaux,
+      favicon: favicon, afficher: afficher, animer: animer
+    };
+    function lancer() {
+      try {
+        window.ArdoiseSiteCentre(donnees, outils);
+        adresseDansLaBarre(donnees.ecole);
+      } catch (x) { erreur('Le site du centre n’a pas pu s’afficher. Réessayez dans un instant.'); }
+    }
+    if (window.ArdoiseSiteCentre) { lancer(); return; }
+    var s = document.createElement('script');
+    s.src = '/site-centre.js?v=1';
+    s.onload = lancer;
+    s.onerror = function () { erreur('Impossible de charger le site du centre. Vérifiez votre connexion et réessayez.'); };
+    document.head.appendChild(s);
   }
 
   /* Un ancien lien (ecole.html?code=…) affiche l'adresse courte dans la

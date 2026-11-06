@@ -641,7 +641,11 @@
        paiement : ces gestes engagent l'école. Ils appartiennent à celui qui
        en répond. Le Préfet en est exclu au même titre que le Professeur —
        le serveur ne lui ouvre ni /abonnements/renouvellement ni le paiement. */
-    'abonnements.html': ['directeur']
+    'abonnements.html': ['directeur'],
+    /* Centres de formation (type d'établissement « centre_formation ») : un
+       seul espace, dont le menu dépend du rôle. Le serveur refuse ce module à
+       une école classique, et chaque route y vérifie le rôle. */
+    'centre-formation.html': ['directeur', 'prefet', 'secretaire', 'comptable', 'professeur']
   };
 
   /* Ouvertes à tout compte connecté : elles ne parlent que du compte de
@@ -727,6 +731,32 @@
     // Aucun espace métier : reste le compte, qui est à tout le monde.
     return 'mon-profil.html';
   }
+
+  /* ==================================================================
+     CENTRE DE FORMATION — LE BON ESPACE, MÊME PAR UN ANCIEN LIEN
+
+     Un compte de centre de formation n'a rien à faire sur le tableau de
+     bord d'une école (classes, bulletins, notes) : ces écrans attendent une
+     année scolaire qu'un centre n'a pas. Un favori, un lien d'e-mail ou un
+     ancien raccourci l'y mènerait pourtant. On le renvoie vers son espace ;
+     les pages communes (messages, paramètres, profil, abonnement, support,
+     site public, utilisateurs) restent ouvertes.
+     ================================================================== */
+  var PAGES_ECOLE_SEULEMENT = [
+    'dashboard-directeur.html', 'espace-secretaire.html', 'espace-professeur.html', 'espace-titulaire.html',
+    'annee-scolaire.html', 'cours-classe-titulaire.html', 'eleves.html', 'inscriptions.html', 'orientation.html',
+    'frais-scolaires.html', 'comptabilite.html', 'classes.html', 'cours.html', 'presences.html',
+    'emploi-du-temps.html', 'discipline.html', 'notes.html', 'bulletins.html', 'bulletin-annuel.html',
+    'repechage.html', 'generateur-modeles.html', 'archives.html', 'rapports.html'
+  ];
+  (function redirigerCentre() {
+    try {
+      var u = utilisateur();
+      if (!u || u.type_structure !== 'centre_formation') return;
+      if (PAGES_ECOLE_SEULEMENT.indexOf(pageCourante()) === -1) return;
+      window.location.replace('centre-formation.html');
+    } catch (e) { /* jamais bloquant */ }
+  })();
 
   window.ArdoiseAcces = {
     rolesParPage: ROLES_PAR_PAGE,

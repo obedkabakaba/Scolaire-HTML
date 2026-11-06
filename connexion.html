@@ -411,8 +411,13 @@
   const champMotDePasse = document.getElementById('mot_de_passe');
 
   /** Page d'accueil correspondant au rôle principal de l'utilisateur. */
-  function pageAtterrissagePourRoles(roles = []) {
+  function pageAtterrissagePourRoles(roles = [], typeStructure) {
     if (roles.includes('super_admin')) return 'super-admin.html';
+    // Centre de formation : un seul espace pour tout le personnel, menu selon le rôle.
+    if (typeStructure === 'centre_formation'
+        && ['directeur', 'prefet', 'secretaire', 'comptable', 'professeur'].some((r) => roles.includes(r))) {
+      return 'centre-formation.html';
+    }
     if (roles.includes('directeur') || roles.includes('prefet')) return 'dashboard-directeur.html';
     if (roles.includes('secretaire')) return 'espace-secretaire.html';
     if (roles.includes('comptable')) return 'frais-scolaires.html';
@@ -548,7 +553,7 @@
 
     let utilisateur = null;
     try { utilisateur = JSON.parse(localStorage.getItem('ardoise_user') || 'null'); } catch (e) {}
-    const destination = pageAtterrissagePourRoles(utilisateur?.roles || []);
+    const destination = pageAtterrissagePourRoles(utilisateur?.roles || [], utilisateur?.type_structure);
     if (!destination) return; // Super Admin ou rôle sans page dédiée : formulaire normal
 
     // On masque le formulaire pendant la tentative pour éviter l'effet de clignotement
@@ -682,7 +687,7 @@
       // l'apprendre.
       if (routerAccesBloque(await accesDeLEcole(donnees), roles)) return;
 
-      const pageAtterrissage = pageAtterrissagePourRoles(roles);
+      const pageAtterrissage = pageAtterrissagePourRoles(roles, donnees.user?.type_structure);
 
       if (pageAtterrissage) {
         window.location.href = pageAtterrissage;

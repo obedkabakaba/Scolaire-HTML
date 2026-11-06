@@ -232,7 +232,9 @@
     finances: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7v10"/><path d="M14.5 9.5A2.5 2.5 0 0 0 12 8.5h-.5a2 2 0 0 0 0 4h1a2 2 0 0 1 0 4H12a2.5 2.5 0 0 1-2.5-1"/>',
     demandes: '<path d="M4 4h16v12H5.2L4 17.5z"/><path d="M8 9h8"/><path d="M8 12h5"/>',
     assistant: '<path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8z"/><path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9z"/>',
-    site: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18"/><path d="M12 3a15 15 0 0 0 0 18"/>'
+    site: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18"/><path d="M12 3a15 15 0 0 0 0 18"/>',
+    calendrier: '<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/><path d="M8 2v4"/><path d="M16 2v4"/><path d="M7 13h2"/><path d="M11 13h2"/><path d="M15 13h2"/><path d="M7 17h2"/><path d="M11 17h2"/>',
+    reglages: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>'
   };
   var NAV = [
     ['tableau', 'Tableau de bord', ['directeur', 'prefet', 'comptable']],
@@ -241,6 +243,7 @@
     ['apprenants', 'Apprenants', ['directeur', 'prefet', 'secretaire', 'comptable', 'professeur']],
     ['groupes', 'Groupes', ['directeur', 'prefet', 'secretaire', 'comptable', 'professeur']],
     ['seances', 'Planning et appel', ['directeur', 'prefet', 'secretaire', 'professeur']],
+    ['calendrier', 'Calendrier', ['directeur', 'prefet', 'secretaire', 'comptable', 'professeur']],
     ['lecons', 'Leçons en ligne', ['directeur', 'prefet', 'professeur']],
     ['evaluations', 'Évaluations', ['directeur', 'prefet', 'secretaire', 'professeur']],
     ['certificats', 'Certificats', ['directeur', 'prefet', 'secretaire']],
@@ -249,11 +252,20 @@
     ['finances', 'Finances', ['directeur', 'comptable', 'secretaire']],
     ['demandes', 'Demandes du site', ['directeur', 'prefet', 'secretaire']],
     ['assistant', 'Assistant IA', ['directeur', 'prefet', 'secretaire', 'professeur']],
-    ['site', 'Site du centre', ['directeur', 'prefet']]
+    ['site', 'Site du centre', ['directeur', 'prefet']],
+    ['reglages', 'Réglages du centre', ['directeur', 'prefet']]
   ];
+  function libelleNav(n) {
+    var L = { moi: 'Mon espace ' + voc('coach', 'coach').toLowerCase(), apprenants: voc('apprenants', 'Apprenants'), groupes: voc('groupes', 'Groupes'),
+      sessions: voc('sessions', 'Sessions'), coachs: voc('coachs', 'Coachs') + ' et KPI' };
+    return L[n[0]] || n[1];
+  }
   function rubriquesPermises() {
     return NAV.filter(function (n) {
       if (n[0] === 'moi') return a('professeur');
+      if (n[0] === 'sessions' && cfg().fonctionnement && cfg().fonctionnement.sessions === false) return false;
+      // Accès ouverts par le chef de centre (Réglages) : la rubrique apparaît.
+      if (n[0] === 'finances' && ((a('prefet') && acces('adjoint_finances')) || (a('professeur') && acces('coach_encaisse')))) return true;
       return n[2].some(a);
     });
   }
@@ -267,12 +279,19 @@
     $('#cf-centre').innerHTML = '<strong>' + e(c.centre.nom) + '</strong><span>' + e(c.centre.domaine_libelle) + (c.centre.ville ? ' · ' + e(c.centre.ville) : '') + '</span>';
     $('#cf-nav').innerHTML = rubriquesPermises().map(function (n) {
       var pastille = n[0] === 'demandes' && c.compteurs.demandes_nouvelles ? '<span class="pastille">' + c.compteurs.demandes_nouvelles + '</span>' : '';
-      return '<li><a href="#/' + n[0] + '" data-route="' + n[0] + '"><svg viewBox="0 0 24 24" aria-hidden="true">' + IC[n[0]] + '</svg>' + e(n[1]) + pastille + '</a></li>';
+      if (n[0] === 'calendrier' && c.compteurs.rappels_a_envoyer && unDe('directeur', 'prefet', 'secretaire')) pastille = '<span class="pastille" title="Rappels WhatsApp à envoyer">' + c.compteurs.rappels_a_envoyer + '</span>';
+      return '<li><a href="#/' + n[0] + '" data-route="' + n[0] + '"><svg viewBox="0 0 24 24" aria-hidden="true">' + IC[n[0]] + '</svg>' + e(libelleNav(n)) + pastille + '</a></li>';
     }).join('');
     var bas = '<a href="messages.html">Messages</a>';
     if (a('directeur')) bas += '<a href="parametres.html">Paramètres du centre</a><a href="utilisateurs.html">Comptes du personnel</a><a href="abonnements.html">Abonnement</a>';
     bas += '<a href="mon-profil.html">Mon profil</a><a href="support.html">Aide et support</a><button type="button" id="cf-deconnexion">↩ Se déconnecter</button>';
     $('#cf-rail-bas').innerHTML = bas;
+    if (!$('#cf-aide')) {
+      var ba = document.createElement('button');
+      ba.id = 'cf-aide'; ba.className = 'cf-aide'; ba.type = 'button'; ba.setAttribute('aria-label', 'Aide et tutoriels'); ba.textContent = '?';
+      ba.addEventListener('click', aideEcran);
+      document.body.appendChild(ba);
+    }
     $('#cf-deconnexion').addEventListener('click', function () {
       var rt = S.lire('ardoise_refresh_token');
       fetch(S.baseAPI() + '/auth/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refresh_token: rt }) })
@@ -284,13 +303,15 @@
   function naviguer() {
     var route = (window.location.hash.replace(/^#\/?/, '').split('?')[0]) || accueil();
     var permises = rubriquesPermises().map(function (n) { return n[0]; });
+    // La salle virtuelle s'ouvre depuis une séance ; elle n'est pas au menu.
+    if (unDe('directeur', 'prefet', 'secretaire', 'professeur')) permises.push('salle');
     if (permises.indexOf(route) === -1) route = accueil();
     etat.route = route;
     $$('#cf-nav a').forEach(function (l) { l.classList.toggle('actif', l.getAttribute('data-route') === route); });
     $('#cf-rail').classList.remove('ouvert');
     document.title = 'Ardoise — ' + ((NAV.filter(function (n) { return n[0] === route; })[0] || [])[1] || 'Centre de formation');
     window.scrollTo(0, 0);
-    try { ROUTES[route](); } catch (err) { console.error(err); echec(err); }
+    try { ROUTES[route](); astucePremiereVisite(); } catch (err) { console.error(err); echec(err); }
   }
 
   /* ------------------------------------------------------------------ */
@@ -304,7 +325,7 @@
     Promise.all([api('/tableau-de-bord'), a('directeur') || a('comptable') ? api('/bilan?mois=6').catch(function () { return null; }) : Promise.resolve(null)]).then(function (r) {
       var d = r[0], bilan = r[1], k = d.chiffres, dv = d.devise;
       var evol = k.encaisse_mois_precedent > 0 ? Math.round((k.encaisse_mois - k.encaisse_mois_precedent) / k.encaisse_mois_precedent * 100) : null;
-      var html = banniereSessions(d);
+      var html = carteDemarrage() + (cfg().fonctionnement && cfg().fonctionnement.sessions === false ? '' : banniereSessions(d));
       html += '<div class="cf-grille-kpi">' +
         kpi('Apprenants actifs', nombre(k.apprenants_actifs, 0), '+' + k.nouveaux_30j + ' sur 30 jours' + (k.prospects ? ' · ' + k.prospects + ' prospect(s)' : '')) +
         kpi('Groupes en cours', nombre(k.groupes_en_cours, 0), k.groupes_planifies + ' planifié(s) · ' + k.coachs_actifs + ' coach(s)') +
@@ -359,6 +380,7 @@
         }).join('') : '<div class="cf-vide">Aucun groupe ouvert.</div>') + '</div></div>';
       }
       z.innerHTML = html;
+      brancherDemarrage(z);
       $$('[data-appel]', z).forEach(function (bt) { bt.addEventListener('click', function () { ouvrirAppel(bt.getAttribute('data-appel')); }); });
       brancherClic($('[data-risques]', z), d.a_risque, function (x) { ficheApprenant(x.id); });
       brancherBulles(z);
@@ -541,7 +563,7 @@
         return '<div class="item"><div class="date">' + e(dateFr(s.date_seance)) + '<br>' + e(heure(s.heure_debut)) + '</div><div><strong>' + e(s.groupe_nom) + '</strong> ' + badgeStatut('statut_seance', s.statut) +
           '<div class="doux" style="font-size:.82rem">' + e(s.theme || 'Thème à préciser') + (s.salle ? ' · ' + e(s.salle) : '') + '</div>' +
           '<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap"><button class="cf-btn petit' + (urgent ? ' principal' : '') + '" data-appel="' + e(s.id) + '">' + (s.statut === 'faite' ? 'Revoir l’appel' : 'Faire l’appel') + '</button>' +
-          (urlSure(s.lien_visio) ? '<a class="cf-btn petit" target="_blank" rel="noopener" href="' + e(s.lien_visio) + '">Ouvrir la visio</a>' : '') + '</div></div></div>';
+          (['en_ligne', 'hybride', 'enregistre'].indexOf(s.mode) >= 0 ? '<a class="cf-btn petit" href="#/salle?s=' + e(s.id) + '">🎥 Salle virtuelle</a>' : (cfg().en_ligne && cfg().en_ligne.pointage_qr ? '<a class="cf-btn petit" href="#/salle?s=' + e(s.id) + '">▦ QR de présence</a>' : '')) + '</div></div></div>';
       }).join('') + '</div>' : '<div class="cf-vide"><strong>Aucune séance planifiée</strong>Le chef de centre planifie les séances de vos groupes.</div>') + '</div>';
       html += '<div><div class="cf-carte"><h2>Mes groupes</h2>' + tableau([
         { titre: 'Groupe', rendu: function (g) { return '<strong>' + e(g.nom) + '</strong><div class="doux">' + e(g.programme_nom || '') + '</div>'; } },
@@ -552,11 +574,14 @@
         { titre: 'Apprenant', rendu: function (x) { return '<strong>' + e(nomComplet(x)) + '</strong><div class="doux">' + e(x.indicateurs.risque.raisons.join(' · ')) + '</div>'; } },
         { titre: 'Présence', rendu: function (x) { return jauge(x.indicateurs.taux_presence); } }
       ], d.a_risque, { videTitre: 'Tout le monde suit', vide: 'Aucun de vos apprenants n’est en alerte.' }) + '</div>';
+      html += blocSignatureCoach();
       html += '<div class="cf-carte"><h2>Avis récents de mes apprenants</h2>' + (d.avis.length ? d.avis.map(function (av) {
         return '<div style="padding:6px 0;border-bottom:1px solid var(--cf-ligne)"><strong>' + '★★★★★'.slice(0, av.note) + '<span class="doux">' + '★★★★★'.slice(av.note) + '</span></strong> <span class="doux">' + e(dateFr(av.created_at)) + ' · ' + e(av.groupe_nom || '') + '</span>' + (av.commentaire ? '<div style="font-size:.86rem">' + e(av.commentaire) + '</div>' : '') + '</div>';
       }).join('') : '<div class="cf-vide">Pas encore d’avis. Les apprenants notent leurs séances depuis leur espace.</div>') + '</div></div></div>';
       z.innerHTML = html;
       $$('[data-appel]', z).forEach(function (b) { b.addEventListener('click', function () { ouvrirAppel(b.getAttribute('data-appel'), ROUTES.moi); }); });
+      $$('[data-televerser]', z).forEach(function (inp) { inp.addEventListener('change', function () { televerserIdentite(inp.getAttribute('data-televerser'), inp); }); });
+      if ($('[data-apercu="signature"]', z)) chargerApercuDocument('signature', true);
       brancherClic(z, d.groupes, function (g) { detailGroupe(g.id); });
     }).catch(function (err) { z.innerHTML = '<div class="cf-vide"><strong>Impossible de charger votre espace</strong>' + e(err.message) + '</div>'; });
   };
@@ -575,7 +600,7 @@
   ];
 
   ROUTES.apprenants = function () {
-    var peutCreer = unDe('directeur', 'prefet', 'secretaire');
+    var peutCreer = unDe('directeur', 'prefet', 'secretaire') || (a('professeur') && acces('coach_inscrit'));
     var z = page('Apprenants', 'Indicateurs individuels : assiduité, progression, leçons suivies, paiements et risque d’abandon.',
       peutCreer ? '<button class="cf-btn" data-export>Exporter (CSV)</button><button class="cf-btn principal" data-nouveau>+ Nouvel apprenant</button>' : '');
     z.innerHTML = '<div class="cf-filtres"><input type="search" placeholder="Rechercher (nom, matricule, téléphone)" data-q style="min-width:260px"><select data-statut><option value="actif">Actifs</option><option value="prospect">Prospects</option><option value="en_pause">En pause</option><option value="termine">Terminés</option><option value="abandon">Abandons</option><option value="tous">Tous</option></select><select data-risque><option value="">Tous les risques</option><option value="eleve">Risque élevé</option><option value="moyen">Risque moyen</option></select></div><div data-liste><div class="cf-chargement">Chargement…</div></div>';
@@ -902,7 +927,7 @@
     ];
   }
   ROUTES.groupes = function () {
-    var gere = unDe('directeur', 'prefet');
+    var gere = unDe('directeur', 'prefet') || (a('secretaire') && acces('accueil_planifie'));
     var z = page('Groupes', 'Chaque groupe suit un programme avec un coach, sur un horaire. Ouvrez-en un pour voir ses membres, ses séances et faire l’appel.', gere ? '<button class="cf-btn principal" data-nouveau>+ Nouveau groupe</button>' : '');
     function lister(forcer) {
       charger('groupes', '/groupes', forcer).then(function (gs) {
@@ -946,10 +971,11 @@
   function detailGroupe(id) {
     var m = modale('Groupe', '<div class="cf-chargement">Chargement…</div>', { large: true });
     api('/groupes/' + id).then(function (d) {
-      var g = d.groupe, gere = unDe('directeur', 'prefet');
+      var g = d.groupe, gere = unDe('directeur', 'prefet') || (a('secretaire') && acces('accueil_planifie'));
+      var planifie = gere || (a('professeur') && acces('coach_planifie'));
       $('header h2', m.el).textContent = g.nom;
       var html = '<div class="doux" style="margin-bottom:10px">' + e([g.session_nom, g.programme_nom, g.coach_nom ? 'Coach : ' + g.coach_nom : '', g.horaire, g.salle, LIBELLES.mode[g.mode]].filter(Boolean).join(' · ')) + ' ' + badgeStatut('statut_groupe', g.statut) + '</div>' +
-        '<div class="cf-actions" style="margin-bottom:12px">' + (gere ? '<button class="cf-btn petit" data-modifier>Modifier</button><button class="cf-btn petit" data-planifier>Planifier des séances</button>' : '') +
+        '<div class="cf-actions" style="margin-bottom:12px">' + (gere ? '<button class="cf-btn petit" data-modifier>Modifier</button>' : '') + (planifie ? '<button class="cf-btn petit" data-planifier>Planifier des séances</button>' : '') +
         (unDe('directeur', 'prefet', 'professeur') ? '<button class="cf-btn petit" data-seance>+ Séance</button>' : '') +
         '<button class="cf-btn petit" data-evaluer>Saisir une évaluation</button>' + (urlSure(g.lien_visio) ? '<a class="cf-btn petit" target="_blank" rel="noopener" href="' + e(g.lien_visio) + '">Lien visio</a>' : '') +
         '<button class="cf-btn petit" data-wa>Message au groupe</button></div>';
@@ -1041,6 +1067,8 @@
         { nom: 'groupe_id', libelle: 'Groupe', type: 'select', requis: true, options: r[0].filter(function (g) { return g.statut !== 'termine' && g.statut !== 'annule'; }).map(function (g) { return [g.id, g.nom]; }) },
         { nom: 'date_seance', libelle: 'Date', type: 'date', requis: true, defaut: aujourdhui() },
         { nom: 'heure_debut', libelle: 'Heure', type: 'heure' }, { nom: 'duree_minutes', libelle: 'Durée (minutes)', type: 'nombre', defaut: 90 },
+        { nom: 'mode', libelle: 'Mode', type: 'select', vide: false, options: [['presentiel', 'Présentiel'], ['en_ligne', 'En ligne (visio)'], ['hybride', 'Hybride'], ['enregistre', 'Cours préenregistré (replay)']] },
+        { nom: 'enregistrement_url', libelle: 'Lien de la vidéo (cours préenregistré)', type: 'url', placeholder: 'https://youtu.be/…' },
         { nom: 'theme', libelle: 'Thème', plein: true },
         { nom: 'lecon_id', libelle: 'Leçon en ligne associée', type: 'select', plein: true, options: r[1].map(function (l) { return [l.id, l.titre]; }) }
       ];
@@ -1052,10 +1080,14 @@
     var m = modale('Appel', '<div class="cf-chargement">Chargement…</div>', { large: true });
     api('/seances/' + seanceId + '/appel').then(function (d) {
       var s = d.seance, choix = {};
-      d.apprenants.forEach(function (x) { choix[x.id] = x.statut || 'present'; });
+      var enLigneS = ['en_ligne', 'hybride', 'enregistre'].indexOf(s.mode) >= 0;
+      // En ligne : seuls ceux qui ont rejoint (ou suivi le replay) sont présents par défaut.
+      d.apprenants.forEach(function (x) { choix[x.id] = x.statut || (enLigneS ? 'absent' : 'present'); });
       $('header h2', m.el).textContent = 'Appel — ' + dateFr(s.date_seance, true) + (s.heure_debut ? ' à ' + heure(s.heure_debut) : '');
       var html = (s.statut === 'faite' ? '<div class="cf-encadre">Séance déjà clôturée : vous pouvez corriger l’appel.</div>' : '') +
-        '<div class="cf-actions" style="margin-bottom:10px"><button class="cf-btn petit" data-tous="present">Tous présents</button><span class="doux" style="align-self:center;font-size:.82rem">Par défaut, chacun est noté présent.</span></div>' +
+        '<div class="cf-actions" style="margin-bottom:10px"><button class="cf-btn petit" data-tous="present">Tous présents</button>' +
+        (enLigneS || (cfg().en_ligne && cfg().en_ligne.pointage_qr) ? '<a class="cf-btn petit" href="#/salle?s=' + e(seanceId) + '" data-fermer>' + (enLigneS ? '🎥 Salle virtuelle' : '▦ QR de présence') + '</a>' : '') +
+        '<span class="doux" style="align-self:center;font-size:.82rem">' + (enLigneS ? 'Les apprenants connectés à la classe sont déjà notés.' : 'Par défaut, chacun est noté présent.') + '</span></div>' +
         (d.apprenants.length ? '<div class="cf-appel">' + d.apprenants.map(function (x) {
           return '<div class="ligne" data-id="' + e(x.id) + '"><div><strong>' + e(nomComplet(x)) + '</strong> <span class="doux">' + e(x.matricule) + '</span></div><div class="choix">' + ['present', 'retard', 'absent', 'excuse'].map(function (st) {
             return '<button type="button" data-st="' + st + '" class="' + st + '">' + { present: 'Présent', retard: 'Retard', absent: 'Absent', excuse: 'Excusé' }[st] + '</button>';
@@ -1116,6 +1148,7 @@
         { nom: 'resume', libelle: 'Résumé', type: 'textarea', plein: true, lignes: 2 },
         { nom: 'contenu', libelle: 'Contenu de la leçon', type: 'textarea', plein: true, lignes: 10 },
         { nom: 'video_url', libelle: 'Lien vidéo (YouTube…)', type: 'url' }, { nom: 'ressource_url', libelle: 'Document (Drive, PDF…)', type: 'url' },
+        { nom: 'audio_url', libelle: 'Version audio (connexions faibles)', type: 'url', aide: 'Un audio de 10 minutes pèse 20 fois moins qu’une vidéo.' },
         { nom: 'ordre', libelle: 'Ordre', type: 'nombre', pas: 1 }, { nom: 'publiee', libelle: 'Publier pour les apprenants', type: 'case' }
       ];
       var quiz = (l.quiz || []).map(function (q) { return { question: q.question, choix: q.choix.slice(), bonne: q.bonne, explication: q.explication || '' }; });
@@ -1256,36 +1289,113 @@
     w.document.close();
   }
 
+  /* Guilloché : un motif de rosace tracé en SVG, comme sur les diplômes et les
+     billets. Impossible à reproduire proprement à la photocopieuse — c'est
+     aussi pour cela qu'on l'emploie. */
+  function guilloche(couleur, rayon, n, opacite) {
+    var d = '';
+    for (var k = 0; k < n; k++) {
+      var pts = [];
+      for (var t = 0; t <= 360; t += 3) {
+        var rad = t * Math.PI / 180;
+        var r = rayon * (0.72 + 0.28 * Math.cos(6 * rad + k * Math.PI / n));
+        pts.push((r * Math.cos(rad + k * 0.12)).toFixed(1) + ',' + (r * Math.sin(rad + k * 0.12)).toFixed(1));
+      }
+      d += '<polyline points="' + pts.join(' ') + '" fill="none" stroke="' + couleur + '" stroke-width=".45" opacity="' + opacite + '"/>';
+    }
+    return d;
+  }
+  function bordureGuilloche(couleur) {
+    var motif = '';
+    for (var k = 0; k < 7; k++) {
+      var p = 'M0 ' + (6 + k * 0.6);
+      for (var x = 0; x <= 240; x += 3) p += ' L' + x + ' ' + (6 + 5 * Math.sin((x + k * 4) / 6.5)).toFixed(2);
+      motif += '<path d="' + p + '" fill="none" stroke="' + couleur + '" stroke-width=".35" opacity=".55"/>';
+    }
+    return motif;
+  }
+
   function imprimerCertificat(id) {
     api('/certificats/' + id).then(function (c) {
-      var logo = urlSure(c.logo_url);
-      var sceau = '<svg viewBox="0 0 120 120" width="112" height="112" aria-hidden="true"><defs><path id="arc" d="M60 60 m-44 0 a44 44 0 1 1 88 0 a44 44 0 1 1 -88 0"/></defs>' +
-        '<circle cx="60" cy="60" r="56" fill="none" stroke="#A96F2E" stroke-width="2"/><circle cx="60" cy="60" r="50" fill="none" stroke="#A96F2E" stroke-width="1" stroke-dasharray="2 3"/>' +
-        '<text font-family="Georgia,serif" font-size="9.5" letter-spacing="2" fill="#A96F2E"><textPath href="#arc">' + e(String(c.centre_nom).toUpperCase().slice(0, 40)) + ' • CERTIFIÉ •</textPath></text>' +
-        '<text x="60" y="58" text-anchor="middle" font-family="Georgia,serif" font-size="13" font-weight="700" fill="#A96F2E">' + e(c.niveau || '★') + '</text>' +
-        '<text x="60" y="74" text-anchor="middle" font-family="Georgia,serif" font-size="8" fill="#A96F2E">' + e(new Date(c.date_delivrance).getFullYear() || '') + '</text></svg>';
-      fenetreImpression('Certificat ' + c.numero,
-        '<style>@page{size:A4 landscape;margin:0}body{padding:0;background:#fff}' +
-        '.page{width:297mm;height:210mm;box-sizing:border-box;padding:12mm;position:relative}' +
-        '.cadre{height:100%;box-sizing:border-box;border:3px solid #1F2B24;outline:1px solid #C98A3E;outline-offset:-9px;padding:14mm 20mm;display:flex;flex-direction:column;align-items:center;text-align:center;position:relative;background:radial-gradient(circle at 50% 40%,#FFFDF7,#FBF6EA)}' +
-        '.coin{position:absolute;width:18mm;height:18mm;border:2px solid #C98A3E}.c1{top:6mm;left:6mm;border-right:0;border-bottom:0}.c2{top:6mm;right:6mm;border-left:0;border-bottom:0}.c3{bottom:6mm;left:6mm;border-right:0;border-top:0}.c4{bottom:6mm;right:6mm;border-left:0;border-top:0}' +
-        '.entete{display:flex;align-items:center;gap:14px;justify-content:center}.entete img{max-height:22mm;max-width:40mm;object-fit:contain}' +
-        '.centre{font:600 15pt Georgia,serif;letter-spacing:.12em;text-transform:uppercase;color:#1F2B24}.ville{font:10pt Arial,sans-serif;color:#6B7269;letter-spacing:.08em}' +
-        'h1{font:400 40pt Georgia,serif;letter-spacing:.18em;margin:7mm 0 1mm;color:#A96F2E}.sous{font:italic 13pt Georgia,serif;color:#3C5A62;margin:0}' +
-        '.nom{font:italic 30pt Georgia,serif;color:#1F2B24;margin:7mm 0 3mm;padding:0 14mm 2mm;border-bottom:1px solid #C98A3E}' +
-        '.texte{font:13pt/1.6 Georgia,serif;color:#1F2B24;max-width:200mm}.texte strong{font-size:16pt}' +
-        '.pied{margin-top:auto;width:100%;display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:10mm;font:10pt Arial,sans-serif;color:#1F2B24}' +
-        '.sign{border-top:1px solid #1F2B24;padding-top:2mm;width:60mm;margin:0 auto}.qr{text-align:left;display:flex;gap:4mm;align-items:center}.qr svg{width:24mm;height:24mm}.qr small{font:8pt/1.35 monospace;color:#555}</style>' +
-        '<div class="page"><div class="cadre"><span class="coin c1"></span><span class="coin c2"></span><span class="coin c3"></span><span class="coin c4"></span>' +
-        '<div class="entete">' + (logo ? '<img src="' + e(logo) + '" alt="">' : '') + '<div><div class="centre">' + e(c.centre_nom) + '</div>' + (c.ville ? '<div class="ville">' + e([c.commune, c.ville].filter(Boolean).join(' · ')) + '</div>' : '') + '</div></div>' +
-        '<h1>CERTIFICAT</h1><p class="sous">de formation</p>' +
-        '<p class="texte" style="margin-top:6mm">Nous certifions que</p><div class="nom">' + e(nomComplet(c)) + '</div>' +
-        '<p class="texte">a suivi avec succès la formation<br><strong>' + e(c.programme_nom) + '</strong>' +
-        (c.niveau ? '<br>Niveau atteint : <strong>' + e(c.niveau) + '</strong>' : '') + (c.mention ? ' — Mention <strong>' + e(c.mention) + '</strong>' : '') +
-        (c.heures ? '<br>' + e(nombre(c.heures)) + ' heures de formation effectivement suivies' : '') + '</p>' +
-        '<div class="pied"><div class="qr">' + (c.qr_svg || '') + '<small>Certificat N° ' + e(c.numero) + '<br>Vérification : ' + e(c.code_verification) + '<br>Scannez pour vérifier l’authenticité</small></div>' +
-        '<div>' + sceau + '</div><div style="text-align:center">Fait à ' + e(c.ville || '…') + ', le ' + e(dateFr(c.date_delivrance)) + '<br><br><br><div class="sign">' + e(c.signataire || 'Le chef de centre') + '<br><small>Le chef de centre</small></div></div></div>' +
-        '</div></div>');
+      var m = c.modele || {}, couleur = /^#[0-9a-f]{6}$/i.test(m.couleur || '') ? m.couleur : '#1E4E8C', or = '#B08A3E';
+      var logo = urlSure(c.logo_url), cachet = urlSure(c.cachet_url), sigChef = urlSure(c.signature_url), sigCoach = urlSure(c.signature_coach_url);
+      var nom = nomComplet(c), annee = new Date(c.date_delivrance).getFullYear();
+      var detail = [c.niveau ? 'Niveau <strong>' + e(c.niveau) + '</strong>' : '', m.afficher_mentions !== false && c.mention ? 'Mention <strong>' + e(c.mention) + '</strong>' : '', m.afficher_heures !== false && c.heures ? '<strong>' + e(nombre(c.heures)) + '</strong> heures de formation' : ''].filter(Boolean).join('<span class="sep">◆</span>');
+      var sceau = '<svg class="sceau" viewBox="-60 -60 120 120" aria-hidden="true"><defs><radialGradient id="or" cx="35%" cy="30%"><stop offset="0" stop-color="#F6E3A1"/><stop offset=".55" stop-color="#D4AF5A"/><stop offset="1" stop-color="#9C7428"/></radialGradient>' +
+        '<path id="arc" d="M0,0 m-40,0 a40,40 0 1,1 80,0 a40,40 0 1,1 -80,0"/></defs>' +
+        '<path d="M-22 30 L-34 62 L-22 55 L-14 66 L-8 34 Z" fill="' + couleur + '"/><path d="M22 30 L34 62 L22 55 L14 66 L8 34 Z" fill="' + couleur + '"/>' +
+        (function () { var d = ''; for (var k = 0; k < 36; k++) { var a = k * 10 * Math.PI / 180; d += (k ? ' L' : 'M') + (52 * Math.cos(a)).toFixed(1) + ' ' + (52 * Math.sin(a)).toFixed(1) + ' L' + (46 * Math.cos(a + 0.087)).toFixed(1) + ' ' + (46 * Math.sin(a + 0.087)).toFixed(1); } return '<path d="' + d + ' Z" fill="url(#or)"/>'; })() +
+        '<circle r="43" fill="none" stroke="#FFF7DA" stroke-width="1.2" opacity=".8"/><circle r="31" fill="none" stroke="#8A6420" stroke-width=".8" stroke-dasharray="1.5 2"/>' +
+        '<text font-family="Montserrat,Arial" font-size="6.6" font-weight="700" letter-spacing="1.6" fill="#5E4310"><textPath href="#arc" startOffset="2%">' + e(String(c.centre_nom).toUpperCase().slice(0, 34)) + ' ★ CERTIFIÉ ★</textPath></text>' +
+        '<text y="4" text-anchor="middle" font-family="Cormorant Garamond,Georgia" font-size="' + (c.niveau && String(c.niveau).length > 3 ? 11 : 17) + '" font-weight="700" fill="#5E4310">' + e(c.niveau || '★') + '</text>' +
+        '<text y="17" text-anchor="middle" font-family="Montserrat,Arial" font-size="6.5" font-weight="600" fill="#5E4310">' + annee + '</text></svg>';
+      var signatures = '<div class="signature">' + (sigChef ? '<img src="' + e(sigChef) + '" alt="">' : '<div class="vide"></div>') + '<div class="trait"></div><strong>' + e(c.signataire || 'Le chef de centre') + '</strong><small>Chef de centre</small></div>' +
+        (c.coach_nom ? '<div class="signature">' + (sigCoach ? '<img src="' + e(sigCoach) + '" alt="">' : '<div class="vide"></div>') + '<div class="trait"></div><strong>' + e(c.coach_nom) + '</strong><small>' + e(voc('coach', 'Coach')) + ' formateur</small></div>' : '');
+      var verif = '<div class="verif">' + (c.qr_svg || '') + '<div><strong style="white-space:nowrap">N° ' + e(c.numero) + '</strong><br>Code de vérification<br><span class="code">' + e(c.code_verification) + '</span><br><small>Scannez pour vérifier l’authenticité</small></div></div>';
+      var polices = '<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Great+Vibes&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">';
+      var commun = '@page{size:A4 landscape;margin:0}html,body{margin:0;padding:0;background:#fff}*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+        '.page{width:297mm;height:210mm;position:relative;overflow:hidden;font-family:Montserrat,Arial,sans-serif;color:#1d2430}' +
+        '.nom{font-family:"Great Vibes","Allura","Brush Script MT","Segoe Script","Lucida Handwriting",cursive;font-size:46pt;line-height:1.1;color:#1d2430}.sep{color:' + or + ';margin:0 10px;font-size:8pt;vertical-align:2px}' +
+        '.signature{width:58mm;text-align:center;font-size:8.5pt}.signature img{height:16mm;max-width:52mm;object-fit:contain;display:block;margin:0 auto -3mm}.signature .vide{height:13mm}.signature .trait{border-top:1px solid #1d2430;margin:0 4mm 1.5mm}.signature small{display:block;color:#6b7280;font-size:7.5pt}' +
+        '.verif{display:flex;gap:3mm;align-items:center;font-size:7.4pt;line-height:1.45;color:#374151}.verif svg{width:22mm;height:22mm}.verif .code{font-family:"IBM Plex Mono",monospace;font-size:9pt;letter-spacing:1px;color:#111}' +
+        '.sceau{width:34mm;height:34mm;filter:drop-shadow(0 1mm 1.2mm rgba(0,0,0,.25))}.cachet{position:absolute;width:30mm;height:30mm;object-fit:contain;opacity:.85;mix-blend-mode:multiply}';
+      var html;
+      if (m.modele === 'moderne') {
+        html = '<style>' + commun + '.bande{position:absolute;left:0;top:0;bottom:0;width:78mm;background:' + couleur + ';color:#fff;padding:16mm 10mm;display:flex;flex-direction:column;align-items:center;text-align:center}' +
+          '.bande img.logo{max-width:50mm;max-height:34mm;object-fit:contain;filter:drop-shadow(0 1mm 2mm rgba(0,0,0,.25))}.bande .centre{font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-size:10pt;margin-top:6mm}.bande .lieu{opacity:.8;font-size:8pt;margin-top:1mm}' +
+          '.bande .niveau{margin-top:auto;border:1.5px solid rgba(255,255,255,.6);border-radius:50%;width:38mm;height:38mm;display:flex;flex-direction:column;align-items:center;justify-content:center}.bande .niveau b{font-size:24pt;font-family:"Cormorant Garamond",serif}.bande .niveau small{font-size:7pt;letter-spacing:.2em}' +
+          '.contenu{position:absolute;left:78mm;right:0;top:0;bottom:0;padding:20mm 18mm 14mm 20mm;display:flex;flex-direction:column}' +
+          '.titre{font-size:9pt;letter-spacing:.42em;color:' + couleur + ';font-weight:700}.grand{font-family:"Cormorant Garamond",serif;font-size:44pt;font-weight:600;margin:2mm 0 8mm;color:#111}' +
+          '.texte{font-size:10.5pt;color:#4b5563}.formation{font-family:"Cormorant Garamond",serif;font-size:24pt;font-weight:600;color:' + couleur + ';margin:3mm 0}.detail{font-size:10pt;margin-top:3mm}' +
+          '.pied{margin-top:auto;display:flex;align-items:flex-end;justify-content:space-between;gap:6mm}.filigrane{position:absolute;right:-20mm;bottom:-20mm;width:130mm;opacity:.05}' +
+          '.rosace-m{position:absolute;right:-38mm;top:-38mm;width:130mm;height:130mm}.filet{width:60mm;height:1.2mm;background:linear-gradient(90deg,' + or + ',transparent);margin:-4mm 0 8mm}</style>' +
+          '<div class="page"><svg class="rosace-m" viewBox="-100 -100 200 200">' + guilloche(couleur, 96, 12, .08) + '</svg><div class="bande">' + (logo ? '<img class="logo" src="' + e(logo) + '" alt="">' : '') + '<div class="centre">' + e(c.centre_nom) + '</div><div class="lieu">' + e([c.commune, c.ville].filter(Boolean).join(' · ')) + '</div>' +
+          (c.niveau ? '<div class="niveau"><small>NIVEAU</small><b>' + e(c.niveau) + '</b></div>' : '') + '</div>' +
+          (logo ? '<img class="filigrane" src="' + e(logo) + '" alt="">' : '') +
+          '<div class="contenu"><div class="titre">CERTIFICAT DE FORMATION</div><div class="grand">Certificat</div><div class="filet"></div><div class="texte">Décerné à</div><div class="nom">' + e(nom) + '</div>' +
+          '<div class="texte" style="margin-top:4mm">pour avoir suivi avec succès la formation</div><div class="formation">' + e(c.programme_nom) + '</div><div class="detail">' + detail + '</div>' +
+          '<div class="texte" style="margin-top:5mm;font-size:9pt">Délivré à ' + e(c.ville || '') + ', le ' + e(dateFr(c.date_delivrance)) + '</div>' +
+          '<div class="pied">' + verif + '<div style="display:flex;gap:6mm;position:relative">' + (cachet ? '<img class="cachet" style="left:8mm;top:-6mm" src="' + e(cachet) + '" alt="">' : '') + signatures + '</div></div></div></div>';
+      } else if (m.modele === 'classique') {
+        html = '<style>' + commun + '.page{padding:12mm}.cadre{height:100%;border:2.5px solid #1d2430;outline:1px solid #1d2430;outline-offset:-6px;padding:14mm 22mm;text-align:center;display:flex;flex-direction:column;align-items:center}' +
+          '.entete img{max-height:22mm;max-width:50mm;object-fit:contain}.centre{font-family:"Cormorant Garamond",serif;font-size:17pt;letter-spacing:.12em;text-transform:uppercase;font-weight:600;margin-top:2mm}' +
+          'h1{font-family:"Cormorant Garamond",serif;font-weight:500;font-size:38pt;letter-spacing:.3em;margin:6mm 0 2mm}.texte{font-family:"Cormorant Garamond",serif;font-size:14pt}.formation{font-family:"Cormorant Garamond",serif;font-size:21pt;font-weight:700;margin:2mm 0}' +
+          '.pied{margin-top:auto;width:100%;display:flex;justify-content:space-between;align-items:flex-end}</style>' +
+          '<div class="page"><div class="cadre"><div class="entete">' + (logo ? '<img src="' + e(logo) + '" alt="">' : '') + '<div class="centre">' + e(c.centre_nom) + '</div></div><h1>CERTIFICAT</h1><div class="texte">Nous certifions que</div><div class="nom" style="margin:3mm 0">' + e(nom) + '</div>' +
+          '<div class="texte">a suivi avec succès la formation</div><div class="formation">' + e(c.programme_nom) + '</div><div class="texte" style="font-size:12pt">' + detail + '</div>' +
+          '<div class="texte" style="font-size:11pt;margin-top:4mm">Fait à ' + e(c.ville || '') + ', le ' + e(dateFr(c.date_delivrance)) + '</div>' +
+          '<div class="pied">' + verif + '<div style="display:flex;gap:6mm;position:relative">' + (cachet ? '<img class="cachet" style="left:8mm;top:-8mm" src="' + e(cachet) + '" alt="">' : '') + signatures + '</div></div></div></div>';
+      } else {
+        // PRESTIGE
+        html = '<style>' + commun + '.fond{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 42%,#fffdf6 0%,#fbf5e6 60%,#f3e8cc 100%)}' +
+          '.bord{position:absolute;inset:7mm;border:1.6mm solid ' + couleur + ';}.bord2{position:absolute;inset:10.5mm;border:.4mm solid ' + or + '}.bord3{position:absolute;inset:12mm;border:.2mm solid ' + or + '}' +
+          '.frise{position:absolute;left:12mm;right:12mm;height:12px}.frise svg{width:100%;height:12px}.frise.h{top:13mm}.frise.b{bottom:13mm;transform:scaleY(-1)}' +
+          '.rosace{position:absolute;width:120mm;height:120mm;left:50%;top:50%;transform:translate(-50%,-52%);opacity:.9}' +
+          '.coin{position:absolute;width:22mm;height:22mm}.coin svg{width:100%;height:100%}.c1{left:11mm;top:11mm}.c2{right:11mm;top:11mm;transform:scaleX(-1)}.c3{left:11mm;bottom:11mm;transform:scaleY(-1)}.c4{right:11mm;bottom:11mm;transform:scale(-1,-1)}' +
+          '.filigrane{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);max-width:120mm;max-height:110mm;opacity:.06}' +
+          '.contenu{position:absolute;inset:20mm 34mm 21mm;display:flex;flex-direction:column;align-items:center;text-align:center}' +
+          '.entete{display:flex;align-items:center;gap:5mm}.entete img{max-height:20mm;max-width:42mm;object-fit:contain}.centre{font-family:"Cormorant Garamond",serif;font-size:16pt;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:' + couleur + '}.lieu{font-size:7.5pt;letter-spacing:.3em;color:#6b7280;text-transform:uppercase}' +
+          '.sur{font-size:8.5pt;letter-spacing:.5em;color:' + or + ';font-weight:600;margin-top:6mm}h1{font-family:"Cormorant Garamond",serif;font-size:50pt;font-weight:600;letter-spacing:.12em;margin:0;color:#1d2430;line-height:1}' +
+          '.orn{color:' + or + ';letter-spacing:6px;font-size:10pt;margin:1mm 0 3mm}.texte{font-family:"Cormorant Garamond",serif;font-size:14pt;color:#374151;font-style:italic}' +
+          '.nom{margin:1mm 0 0}.soul{width:120mm;height:4mm}.formation{font-family:"Cormorant Garamond",serif;font-size:23pt;font-weight:700;color:' + couleur + ';margin:1mm 0 2mm}.detail{font-size:9.5pt;letter-spacing:.04em}' +
+          '.pied{margin-top:auto;width:100%;display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:6mm}.pied .gauche{justify-self:start}.pied .droite{justify-self:end;display:flex;gap:4mm;position:relative}.date{font-size:8.5pt;color:#4b5563;margin-top:2mm}</style>' +
+          '<div class="page"><div class="fond"></div><svg class="rosace" viewBox="-100 -100 200 200">' + guilloche(or, 96, 14, .11) + guilloche(couleur, 60, 10, .06) + '</svg>' +
+          (logo ? '<img class="filigrane" src="' + e(logo) + '" alt="">' : '') +
+          '<div class="bord"></div><div class="bord2"></div><div class="bord3"></div>' +
+          '<div class="frise h"><svg viewBox="0 0 240 12" preserveAspectRatio="none">' + bordureGuilloche(or) + '</svg></div><div class="frise b"><svg viewBox="0 0 240 12" preserveAspectRatio="none">' + bordureGuilloche(or) + '</svg></div>' +
+          [1, 2, 3, 4].map(function (k) { return '<div class="coin c' + k + '"><svg viewBox="0 0 40 40"><path d="M2 38 C2 18 18 2 38 2" fill="none" stroke="' + or + '" stroke-width="1.2"/><path d="M8 38 C8 22 22 8 38 8" fill="none" stroke="' + couleur + '" stroke-width=".8"/><circle cx="10" cy="10" r="3.2" fill="' + or + '"/></svg></div>'; }).join('') +
+          '<div class="contenu"><div class="entete">' + (logo ? '<img src="' + e(logo) + '" alt="">' : '') + '<div><div class="centre">' + e(c.centre_nom) + '</div><div class="lieu">' + e([c.commune, c.ville].filter(Boolean).join(' · ')) + '</div></div></div>' +
+          '<div class="sur">CERTIFICAT DE RÉUSSITE</div><h1>Certificat</h1><div class="orn">◆ ◆ ◆</div><div class="texte">Il est certifié que</div>' +
+          '<div class="nom">' + e(nom) + '</div><svg class="soul" viewBox="0 0 300 10"><path d="M0 5 Q75 0 150 5 T300 5" fill="none" stroke="' + or + '" stroke-width="1"/></svg>' +
+          '<div class="texte">a suivi avec succès et assiduité la formation</div><div class="formation">' + e(c.programme_nom) + '</div><div class="detail">' + detail + '</div>' +
+          '<div class="pied"><div class="gauche">' + verif + '</div><div style="text-align:center">' + sceau + '<div class="date">Fait à ' + e(c.ville || '') + ', le ' + e(dateFr(c.date_delivrance)) + '</div></div>' +
+          '<div class="droite">' + (cachet ? '<img class="cachet" style="right:30mm;top:-12mm" src="' + e(cachet) + '" alt="">' : '') + signatures + '</div></div></div></div>';
+      }
+      var w = window.open('', '_blank');
+      if (!w) { toast('Autorisez les fenêtres surgissantes pour imprimer.', true); return; }
+      w.document.write('<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><title>Certificat ' + e(c.numero) + ' — ' + e(nom) + '</title>' + polices + '</head><body>' + html +
+        '<script>(document.fonts?document.fonts.ready:Promise.resolve()).then(function(){setTimeout(function(){window.print()},400)})<\/script></body></html>');
+      w.document.close();
     }).catch(echec);
   }
   function imprimerRecu(id) {
@@ -1305,7 +1415,7 @@
   /* ------------------------------------------------------------------ */
   var ongletFinances = 'encaissements';
   ROUTES.finances = function () {
-    var caisse = unDe('directeur', 'comptable');
+    var caisse = unDe('directeur', 'comptable') || (a('secretaire') && acces('accueil_finances')) || (a('prefet') && acces('adjoint_finances'));
     var z = page('Finances', 'Encaissements, dépenses, paie des coachs et bilan. Chaque montant garde sa devise ; les totaux sont convertis au taux du centre.',
       '<button class="cf-btn principal" data-encaisser>+ Encaisser</button>' + (caisse ? '<button class="cf-btn" data-depense>+ Dépense</button>' : ''));
     var onglets = [['encaissements', 'Encaissements'], ['impayes', 'Restes à payer']];
@@ -1588,6 +1698,463 @@
       '<div class="cf-carte"><h2>Conseils pour remplir votre centre</h2><ul style="line-height:1.7;margin:0;padding-left:18px"><li>Mettez l’adresse du site sur vos affiches, flyers et cartes de visite.</li><li>Publiez-la en statut WhatsApp chaque début de mois, avec la date du prochain groupe.</li><li>Rappelez chaque demande le jour même : la conversion chute après 48 h.</li><li>Demandez à vos apprenants satisfaits de laisser un avis depuis leur espace.</li></ul></div></div>';
     $('[data-copier]', z).addEventListener('click', function () { navigator.clipboard.writeText(adresse).then(function () { toast('Adresse copiée.'); }); });
   };
+
+  /* ------------------------------------------------------------------ */
+  /*  Réglages du centre : vocabulaire, accès ouverts, en ligne, rappels  */
+  /* ------------------------------------------------------------------ */
+  function cfg() { return (etat.ctx && etat.ctx.config) || {}; }
+  function acces(cle) { return !!(cfg().acces && cfg().acces[cle]); }
+  function voc(cle, defaut) { var v = cfg().vocabulaire || {}; return v[cle] || defaut; }
+
+  var SECTIONS_REGLAGES = [
+    ['fonctionnement', 'Fonctionnement du centre', 'Chaque centre a sa manière de faire : adaptez Ardoise à la vôtre.', [
+      ['sessions', 'case', 'Nous travaillons par sessions (rentrées datées)', 'Décochez si vos apprenants entrent toute l’année (entrées permanentes) : la rubrique Sessions disparaît.'],
+      ['capacite_stricte', 'case', 'Respecter strictement le nombre de places d’un groupe', 'Décochez pour autoriser le surbooking.'],
+      ['liste_attente', 'case', 'Proposer une liste d’attente quand un groupe est complet'],
+      ['frais_inscription', 'case', 'Facturer des frais d’inscription aux nouveaux apprenants'],
+      ['seuil_admission', 'nombre', 'Note minimale pour passer au niveau suivant (/100)'],
+      ['seuil_alerte_presence', 'nombre', 'Signaler un apprenant sous ce taux d’assiduité (%)'],
+      ['avis_apprenants', 'case', 'Les apprenants peuvent noter leurs cours'],
+      ['test_niveau', 'case', 'Proposer le test de niveau sur le site (centres d’anglais)']
+    ]],
+    ['acces', 'Accès ouverts', 'Par défaut chaque rôle a un périmètre prudent. Ouvrez seulement ce dont votre équipe a besoin : chaque accès est vérifié par le serveur.', [
+      ['coach_encaisse', 'case', 'Le coach peut encaisser les paiements de SES apprenants'],
+      ['coach_voit_soldes', 'case', 'Le coach voit ce que doivent ses apprenants'],
+      ['coach_planifie', 'case', 'Le coach planifie les séances de SES groupes'],
+      ['coach_inscrit', 'case', 'Le coach peut inscrire des apprenants dans SES groupes'],
+      ['accueil_planifie', 'case', 'L’accueil crée les groupes et planifie les séances'],
+      ['accueil_finances', 'case', 'L’accueil voit les dépenses, la paie et le bilan'],
+      ['adjoint_finances', 'case', 'L’adjoint pédagogique voit les finances']
+    ]],
+    ['paie', 'Paie des coachs', 'Le montant saisi pour chaque coach est payé par unité choisie ici.', [
+      ['mode', 'choix', 'Mode de paie', '', [['heure', 'À l’heure de cours donnée'], ['seance', 'À la séance donnée'], ['mensuel', 'Forfait mensuel']]]
+    ]],
+    ['en_ligne', 'Cours en ligne et présence', 'La présence se compte même si la connexion coupe : au clic sur « Rejoindre », au QR code en salle, ou par le replay.', [
+      ['fournisseur', 'choix', 'Outil de visio', '', [['jitsi', 'Jitsi Meet (gratuit, sans compte pour les apprenants)'], ['lien', 'Notre lien Google Meet / Zoom / Teams']]],
+      ['domaine_jitsi', 'texte', 'Serveur Jitsi', 'meet.jit.si par défaut. Avec votre propre serveur (ou 8x8.vc), la visio peut s’afficher directement dans Ardoise.'],
+      ['integrer', 'case', 'Afficher la visio directement dans Ardoise (serveur propre uniquement)'],
+      ['retard_minutes', 'nombre', 'Au-delà de combien de minutes un apprenant est « en retard »'],
+      ['pointage_qr', 'case', 'Pointage par QR code en présentiel (l’apprenant scanne, la présence est faite)'],
+      ['replay_compte_presence', 'case', 'Suivre le cours enregistré (replay) compte comme présent'],
+      ['replay_minutes_min', 'nombre', 'Temps minimal passé sur le replay (minutes)'],
+      ['replay_jours', 'nombre', 'Délai pour suivre un replay (jours)']
+    ]],
+    ['rappels', 'Rappels automatiques', 'Ardoise rappelle les cours aux coachs et aux apprenants, relance les soldes et vous prévient avant la clôture des inscriptions.', [
+      ['actifs', 'case', 'Envoyer les rappels automatiques'],
+      ['coach_veille', 'case', 'Rappeler au coach son cours la veille au soir'],
+      ['coach_heures_avant', 'nombre', 'Rappeler au coach … heures avant'],
+      ['apprenant_veille', 'case', 'Rappeler aux apprenants leur cours la veille au soir'],
+      ['apprenant_heures_avant', 'nombre', 'Rappeler aux apprenants … heures avant'],
+      ['appel_oublie', 'case', 'Rappeler au coach une séance passée sans appel'],
+      ['paiement_jours', 'nombre', 'Relancer un solde … jours après l’inscription (au plus une fois par semaine)'],
+      ['email', 'case', 'Envoyer aussi par e-mail'],
+      ['whatsapp_manuel', 'case', 'Préparer les messages WhatsApp des apprenants sans e-mail (envoi en un clic)']
+    ]],
+    ['certificat', 'Certificat', 'Le document que vos apprenants montreront à leurs employeurs.', [
+      ['modele', 'choix', 'Modèle', '', [['prestige', 'Prestige — guilloché, sceau doré'], ['moderne', 'Moderne — bandeau de couleur'], ['classique', 'Classique — sobre']]],
+      ['couleur', 'couleur', 'Couleur du centre'],
+      ['signature_coach', 'case', 'Le coach signe aux côtés du chef de centre'],
+      ['afficher_heures', 'case', 'Afficher les heures de formation suivies'],
+      ['afficher_mentions', 'case', 'Afficher la mention']
+    ]],
+    ['vocabulaire', 'Vocabulaire', 'Les mots de votre centre : formateur, professeur, stagiaire, étudiant, module, cycle…', [
+      ['coach', 'texte', 'Au singulier — coach'], ['coachs', 'texte', 'Au pluriel — coachs'],
+      ['apprenant', 'texte', 'Au singulier — apprenant'], ['apprenants', 'texte', 'Au pluriel — apprenants'],
+      ['session', 'texte', 'Au singulier — session'], ['sessions', 'texte', 'Au pluriel — sessions'],
+      ['groupe', 'texte', 'Au singulier — groupe'], ['groupes', 'texte', 'Au pluriel — groupes']
+    ]]
+  ];
+
+  ROUTES.reglages = function () {
+    var chef = a('directeur');
+    var z = page('Réglages du centre', 'Identité visuelle, fonctionnement, accès de l’équipe, cours en ligne, rappels et certificat.' + (chef ? '' : ' Seul le chef de centre peut les modifier.'),
+      chef ? '<button class="cf-btn principal" data-enregistrer>Enregistrer les réglages</button>' : '');
+    api('/reglages').then(function (d) {
+      var c = d.config;
+      var html = '<div class="cf-carte"><h2>Identité visuelle <small>le fond du logo est retiré automatiquement</small></h2><div class="cf-identite">' +
+        ['logo', 'cachet', 'signature'].map(function (t) {
+          var titres = { logo: 'Logo du centre', cachet: 'Cachet', signature: 'Ma signature' };
+          var aides = { logo: 'Certificats, reçus, site, espace apprenant.', cachet: 'Apposé sur les certificats.', signature: 'Signature du chef de centre sur les certificats.' };
+          return '<div class="cf-identite-bloc"><div class="cf-identite-apercu damier" data-apercu="' + t + '">' + (t === 'logo' && urlSure(etat.ctx.centre.logo_url) ? '<img src="' + e(etat.ctx.centre.logo_url) + '" alt="">' : '<span class="doux">Aucun</span>') + '</div>' +
+            '<strong>' + titres[t] + '</strong><div class="doux" style="font-size:.78rem">' + aides[t] + '</div>' + (chef ? '<label class="cf-btn petit" style="margin-top:6px">Choisir une image<input type="file" accept="image/*" hidden data-televerser="' + t + '"></label>' : '') + '</div>';
+        }).join('') + '</div></div>';
+      html += SECTIONS_REGLAGES.map(function (sec) {
+        return '<div class="cf-carte"><h2>' + e(sec[1]) + '</h2><p class="doux" style="margin:-4px 0 12px;font-size:.86rem">' + e(sec[2]) + '</p><div class="cf-reglages">' + sec[3].map(function (ch) {
+          var val = (c[sec[0]] || {})[ch[0]], nom = sec[0] + '.' + ch[0], dis = chef ? '' : ' disabled';
+          if (ch[1] === 'case') return '<label class="cf-interrupteur"><input type="checkbox" data-cle="' + nom + '"' + (val ? ' checked' : '') + dis + '><span class="cf-curseur"></span><span><strong>' + e(ch[2]) + '</strong>' + (ch[3] ? '<small>' + e(ch[3]) + '</small>' : '') + '</span></label>';
+          if (ch[1] === 'choix') return '<label class="cf-champ-reglage"><span><strong>' + e(ch[2]) + '</strong></span><select data-cle="' + nom + '"' + dis + '>' + ch[4].map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === val ? ' selected' : '') + '>' + e(o[1]) + '</option>'; }).join('') + '</select></label>';
+          var type = ch[1] === 'nombre' ? 'number' : ch[1] === 'couleur' ? 'color' : 'text';
+          return '<label class="cf-champ-reglage"><span><strong>' + e(ch[2]) + '</strong>' + (ch[3] ? '<small>' + e(ch[3]) + '</small>' : '') + '</span><input type="' + type + '" data-cle="' + nom + '" value="' + e(val) + '"' + dis + '></label>';
+        }).join('') + '</div></div>';
+      }).join('');
+      html += '<div class="cf-encadre">Devise, taux de change USD/FC, adresse et téléphone du centre : <a href="parametres.html">Paramètres généraux</a>.</div>';
+      z.innerHTML = html;
+      chargerApercuDocument('cachet'); chargerApercuDocument('signature');
+      $$('[data-televerser]', z).forEach(function (inp) { inp.addEventListener('change', function () { televerserIdentite(inp.getAttribute('data-televerser'), inp); }); });
+      var be = $('[data-enregistrer]');
+      if (be) be.addEventListener('click', function () {
+        var corps = {};
+        $$('[data-cle]', z).forEach(function (el) {
+          var p = el.getAttribute('data-cle').split('.');
+          corps[p[0]] = corps[p[0]] || {};
+          corps[p[0]][p[1]] = el.type === 'checkbox' ? el.checked : el.type === 'number' ? Number(el.value) : el.value;
+        });
+        be.disabled = true;
+        envoyer('/reglages', 'PUT', corps).then(function (r) {
+          etat.ctx.config = r.config; toast(r.message); dessinerRail();
+        }).catch(echec).then(function () { be.disabled = false; });
+      });
+    }).catch(function (err) { z.innerHTML = '<div class="cf-vide">' + e(err.message) + '</div>'; });
+  };
+
+  function chargerApercuDocument(type, mien) {
+    var chemin = ['/uploads/documents', '?type=', type, mien ? '&mine=true' : ''].join('');
+    S.appelApi(chemin).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+      var z = document.querySelector('[data-apercu="' + type + '"]');
+      if (z && d && urlSure(d.url)) z.innerHTML = '<img src="' + e(d.url) + '" alt="">';
+    }).catch(function () {});
+  }
+
+  /** Logo, cachet ou signature : détourage dans le navigateur, puis envoi. */
+  function televerserIdentite(type, input) {
+    var brut = input.files && input.files[0];
+    input.value = '';
+    if (!brut) return;
+    var titres = { logo: 'Détourer le logo', cachet: 'Détourer le cachet', signature: 'Détourer la signature' };
+    var preparer = window.ArdoiseDetourage ? window.ArdoiseDetourage.proposer(brut, { titre: titres[type], tolerance: type === 'logo' ? 55 : 80 }) : Promise.resolve(brut);
+    preparer.then(function (fichier) {
+      var fd = new FormData();
+      fd.append('fichier', fichier, fichier.name || (type + '.png'));
+      if (type !== 'logo') fd.append('type', type);
+      return S.appelApi(type === 'logo' ? '/uploads/logo-ecole' : '/uploads/document', { method: 'POST', body: fd }).then(function (r) {
+        return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.message || 'Envoi impossible.'); return j; });
+      });
+    }).then(function (j) {
+      var z = document.querySelector('[data-apercu="' + type + '"]');
+      if (z && urlSure(j.url)) z.innerHTML = '<img src="' + e(j.url) + '" alt="">';
+      if (type === 'logo' && urlSure(j.url)) etat.ctx.centre.logo_url = j.url;
+      toast({ logo: 'Logo enregistré.', cachet: 'Cachet enregistré.', signature: 'Signature enregistrée.' }[type]);
+    }).catch(echec);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /*  Calendrier et rappels                                               */
+  /* ------------------------------------------------------------------ */
+  var calendrierEtat = { mois: null, vue: null };
+  var TYPES_EVT = { examen: 'Examen', reunion: 'Réunion', portes_ouvertes: 'Portes ouvertes', ferie: 'Jour férié / fermeture', atelier: 'Atelier', ceremonie: 'Remise de certificats', autre: 'Autre' };
+  ROUTES.calendrier = function () {
+    if (!calendrierEtat.mois) { var d0 = new Date(); calendrierEtat.mois = new Date(d0.getFullYear(), d0.getMonth(), 1); }
+    if (!calendrierEtat.vue) calendrierEtat.vue = window.matchMedia('(max-width: 900px)').matches ? 'agenda' : 'mois';
+    var gere = unDe('directeur', 'prefet', 'secretaire');
+    var z = page('Calendrier', 'Séances, rentrées, clôtures d’inscription, examens et événements du centre. Abonnez-vous pour tout retrouver dans votre agenda de téléphone.',
+      '<button class="cf-btn" data-prec>‹</button><button class="cf-btn" data-auj>Aujourd’hui</button><button class="cf-btn" data-suiv>›</button>' +
+      '<button class="cf-btn" data-vue>' + (calendrierEtat.vue === 'mois' ? 'Vue agenda' : 'Vue mois') + '</button>' +
+      '<button class="cf-btn" data-abonner>📅 S’abonner dans mon agenda</button>' + (gere ? '<button class="cf-btn principal" data-evt>+ Événement</button>' : ''));
+    var iso = function (d) { return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
+    function afficher() {
+      var m = calendrierEtat.mois;
+      var debut = new Date(m.getFullYear(), m.getMonth(), 1), fin = new Date(m.getFullYear(), m.getMonth() + 1, 0);
+      var g0 = new Date(debut); g0.setDate(g0.getDate() - ((g0.getDay() + 6) % 7));
+      var g1 = new Date(fin); g1.setDate(g1.getDate() + (6 - (g1.getDay() + 6) % 7));
+      z.innerHTML = '<div class="cf-chargement">Chargement…</div>';
+      Promise.all([api('/calendrier?du=' + iso(g0) + '&au=' + iso(g1)), unDe('directeur', 'prefet', 'secretaire', 'professeur') ? api('/rappels').catch(function () { return []; }) : Promise.resolve([])]).then(function (r) {
+        var d = r[0], rappels = r[1];
+        var items = {};
+        function ajouter(jour, it) { (items[jour] = items[jour] || []).push(it); }
+        d.seances.forEach(function (s) { ajouter(s.date_seance, { genre: 'seance', s: s, heure: heure(s.heure_debut), titre: s.groupe_nom, cls: s.statut === 'faite' ? 'faite' : s.statut === 'annulee' ? 'annulee' : (s.date_seance < aujourdhui() ? 'a-cloturer' : (['en_ligne', 'enregistre', 'hybride'].indexOf(s.mode) >= 0 ? 'en-ligne' : '')) }); });
+        d.evenements.forEach(function (ev) {
+          var j = new Date(ev.date_debut + 'T00:00:00'), f = new Date((ev.date_fin || ev.date_debut) + 'T00:00:00');
+          for (var x = new Date(j); x <= f; x.setDate(x.getDate() + 1)) ajouter(iso(x), { genre: 'evenement', ev: ev, heure: heure(ev.heure_debut), titre: ev.titre, cls: 'evt-' + ev.type });
+        });
+        d.sessions.forEach(function (s) {
+          ajouter(s.date_debut, { genre: 'session', titre: 'Début — ' + s.nom, cls: 'jalon' });
+          ajouter(s.date_fin, { genre: 'session', titre: 'Fin — ' + s.nom, cls: 'jalon' });
+          if (s.inscriptions_fin) ajouter(s.inscriptions_fin, { genre: 'session', titre: 'Clôture des inscriptions — ' + s.nom, cls: 'jalon' });
+        });
+        var titreMois = m.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+        var html = '<div class="cf-cal-titre">' + e(titreMois.charAt(0).toUpperCase() + titreMois.slice(1)) + '</div>' +
+          '<div class="cf-legende"><span><i style="background:var(--cf-bleu)"></i>Séance</span><span><i style="background:#6250d6"></i>En ligne</span><span><i style="background:var(--cf-vert)"></i>Donnée</span><span><i style="background:var(--cf-ambre)"></i>Sans appel</span><span><i style="background:var(--cf-accent)"></i>Événement</span><span><i style="background:#1F2B24"></i>Session</span></div>';
+        if (calendrierEtat.vue === 'mois') {
+          html += '<div class="cf-cal">' + ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'].map(function (j) { return '<div class="cf-cal-entete">' + j + '</div>'; }).join('');
+          for (var x = new Date(g0); x <= g1; x.setDate(x.getDate() + 1)) {
+            var j = iso(x), liste = (items[j] || []).sort(function (p, q) { return (p.heure || '') < (q.heure || '') ? -1 : 1; });
+            html += '<div class="cf-cal-jour' + (x.getMonth() !== m.getMonth() ? ' hors' : '') + (j === aujourdhui() ? ' aujourdhui' : '') + '" data-jour="' + j + '"><div class="num">' + x.getDate() + '</div>' +
+              liste.slice(0, 4).map(function (it, k) { return '<div class="cf-cal-item ' + e(it.cls) + '" data-j="' + j + '" data-k="' + k + '">' + (it.heure ? '<b>' + e(it.heure) + '</b> ' : '') + e(it.titre) + '</div>'; }).join('') +
+              (liste.length > 4 ? '<div class="cf-cal-plus" data-voir="' + j + '">+' + (liste.length - 4) + ' de plus</div>' : '') + '</div>';
+          }
+          html += '</div>';
+        } else {
+          var jours = Object.keys(items).filter(function (j) { return j >= iso(debut) && j <= iso(fin); }).sort();
+          html += jours.length ? '<div class="cf-agenda">' + jours.map(function (j) {
+            return '<div class="cf-agenda-jour' + (j === aujourdhui() ? ' aujourdhui' : '') + '"><h4>' + e(dateFr(j, true)) + '</h4>' + items[j].map(function (it, k) {
+              return '<div class="cf-cal-item ' + e(it.cls) + '" data-j="' + j + '" data-k="' + k + '">' + (it.heure ? '<b>' + e(it.heure) + '</b> ' : '') + e(it.titre) + (it.s && it.s.coach_nom ? ' <span class="doux">· ' + e(it.s.coach_nom) + '</span>' : '') + '</div>';
+            }).join('') + '</div>';
+          }).join('') + '</div>' : '<div class="cf-vide"><strong>Rien ce mois-ci</strong>Planifiez des séances ou ajoutez un événement.</div>';
+        }
+        html += panneauRappels(rappels);
+        z.innerHTML = html;
+        $$('.cf-cal-item', z).forEach(function (el) {
+          el.addEventListener('click', function () {
+            var it = items[el.getAttribute('data-j')][Number(el.getAttribute('data-k'))];
+            if (it.genre === 'seance') choisirActionSeance(it.s, afficher);
+            else if (it.genre === 'evenement' && gere) editerEvenement(it.ev, afficher);
+          });
+        });
+        $$('[data-voir]', z).forEach(function (el) { el.addEventListener('click', function () { calendrierEtat.vue = 'agenda'; naviguer(); }); });
+        if (gere) $$('.cf-cal-jour', z).forEach(function (el) { el.addEventListener('dblclick', function () { editerEvenement({ date_debut: el.getAttribute('data-jour') }, afficher); }); });
+        brancherRappels(z, afficher);
+      }).catch(function (err) { z.innerHTML = '<div class="cf-vide">' + e(err.message) + '</div>'; });
+    }
+    $('[data-prec]').addEventListener('click', function () { calendrierEtat.mois = new Date(calendrierEtat.mois.getFullYear(), calendrierEtat.mois.getMonth() - 1, 1); afficher(); });
+    $('[data-suiv]').addEventListener('click', function () { calendrierEtat.mois = new Date(calendrierEtat.mois.getFullYear(), calendrierEtat.mois.getMonth() + 1, 1); afficher(); });
+    $('[data-auj]').addEventListener('click', function () { var t = new Date(); calendrierEtat.mois = new Date(t.getFullYear(), t.getMonth(), 1); afficher(); });
+    $('[data-vue]').addEventListener('click', function () { calendrierEtat.vue = calendrierEtat.vue === 'mois' ? 'agenda' : 'mois'; naviguer(); });
+    $('[data-abonner]').addEventListener('click', abonnementAgenda);
+    var bev = $('[data-evt]'); if (bev) bev.addEventListener('click', function () { editerEvenement({ date_debut: aujourdhui() }, afficher); });
+    afficher();
+  };
+
+  function choisirActionSeance(s, apres) {
+    var enLigne = ['en_ligne', 'hybride', 'enregistre'].indexOf(s.mode) >= 0;
+    var m = modale(s.groupe_nom + ' — ' + dateFr(s.date_seance, true), '<p class="doux">' + e([heure(s.heure_debut), s.salle, s.coach_nom, LIBELLES.mode[s.mode] || (s.mode === 'enregistre' ? 'Cours enregistré' : '')].filter(Boolean).join(' · ')) + ' ' + badgeStatut('statut_seance', s.statut) + '</p>' +
+      (s.theme ? '<p><strong>Thème :</strong> ' + e(s.theme) + '</p>' : ''),
+      { pied: '<button class="cf-btn" data-fermer>Fermer</button>' + (enLigne || cfg().en_ligne.pointage_qr ? '<a class="cf-btn" href="#/salle?s=' + e(s.id) + '" data-fermer>' + (enLigne ? '🎥 Salle virtuelle' : '▦ QR de présence') + '</a>' : '') + '<button class="cf-btn principal" data-appel>Faire l’appel</button>' });
+    $('[data-appel]', m.el).addEventListener('click', function () { m.fermer(); ouvrirAppel(s.id, apres); });
+  }
+
+  function editerEvenement(ev, apres) {
+    charger('groupes', '/groupes').then(function (gs) {
+      var champs = [
+        { nom: 'titre', libelle: 'Titre', requis: true, plein: true }, { nom: 'type', libelle: 'Type', type: 'select', vide: false, options: Object.keys(TYPES_EVT).map(function (k) { return [k, TYPES_EVT[k]]; }) },
+        { nom: 'groupe_id', libelle: 'Groupe concerné', type: 'select', vide: '— Tout le centre —', options: gs.map(function (g) { return [g.id, g.nom]; }) },
+        { nom: 'date_debut', libelle: 'Date', type: 'date', requis: true }, { nom: 'date_fin', libelle: 'Jusqu’au (facultatif)', type: 'date' },
+        { nom: 'heure_debut', libelle: 'Heure de début', type: 'heure' }, { nom: 'heure_fin', libelle: 'Heure de fin', type: 'heure' },
+        { nom: 'description', libelle: 'Description', type: 'textarea', plein: true, lignes: 3 }, { nom: 'visible_apprenants', libelle: 'Visible par les apprenants (espace et agenda)', type: 'case', defaut: true }
+      ];
+      var m = modaleFormulaire(ev.id ? 'Modifier l’événement' : 'Nouvel événement', champs, ev, function (d) {
+        return (ev.id ? envoyer('/evenements/' + ev.id, 'PATCH', d) : envoyer('/evenements', 'POST', d)).then(function () { toast('Événement enregistré.'); if (apres) apres(); });
+      }, { large: true });
+      if (ev.id) {
+        $('footer', m.el).insertAdjacentHTML('afterbegin', '<button class="cf-btn danger" data-suppr style="margin-right:auto">Supprimer</button>');
+        $('[data-suppr]', m.el).addEventListener('click', function () { api('/evenements/' + ev.id, { method: 'DELETE' }).then(function () { m.fermer(); toast('Événement supprimé.'); if (apres) apres(); }).catch(echec); });
+      }
+    });
+  }
+
+  function abonnementAgenda() {
+    api('/calendrier/abonnement').then(function (l) {
+      var m = modale('Mon agenda Ardoise', '<p>Ajoutez ' + (l.portee === 'coach' ? 'vos cours' : 'le calendrier du centre') + ' à <strong>Google Agenda</strong>, au calendrier de votre <strong>téléphone</strong> ou à Outlook : tout se met à jour tout seul, avec une alerte une heure avant chaque cours.</p>' +
+        '<div class="cf-actions" style="margin:12px 0"><a class="cf-btn principal" target="_blank" rel="noopener" href="' + e(l.google) + '">Ajouter à Google Agenda</a><a class="cf-btn" href="' + e(l.webcal) + '">iPhone / Outlook</a><button class="cf-btn" data-copier>Copier le lien</button></div>' +
+        '<p class="doux" style="font-size:.82rem">Ce lien est personnel : ne le partagez pas. Il ne montre que ' + (l.portee === 'coach' ? 'vos propres cours' : 'le planning du centre') + '.</p>', {});
+      $('[data-copier]', m.el).addEventListener('click', function () { navigator.clipboard.writeText(l.ics).then(function () { toast('Lien copié.'); }); });
+    }).catch(echec);
+  }
+
+  function panneauRappels(rappels) {
+    if (!unDe('directeur', 'prefet', 'secretaire', 'professeur')) return '';
+    var aEnvoyer = rappels.filter(function (r) { return r.statut === 'a_envoyer'; });
+    var envoyes = rappels.filter(function (r) { return r.statut !== 'a_envoyer'; });
+    var r = cfg().rappels || {};
+    return '<div class="cf-carte" style="margin-top:16px"><h2>Rappels <small>' + (r.actifs ? 'automatiques : activés' : 'automatiques : désactivés') + '</small></h2>' +
+      '<p class="doux" style="font-size:.86rem;margin-top:-4px">Coachs : la veille' + (r.coach_veille ? '' : ' (désactivé)') + ' et ' + (r.coach_heures_avant || 0) + ' h avant leur cours, dans Ardoise et sur leur téléphone. Apprenants : la veille et ' + (r.apprenant_heures_avant || 0) + ' h avant, par e-mail — ou par WhatsApp en un clic ci-dessous pour ceux qui n’ont pas d’e-mail.</p>' +
+      (aEnvoyer.length ? '<h3 style="font-size:.95rem;margin:14px 0 8px">À envoyer par WhatsApp (' + aEnvoyer.length + ')</h3><div class="cf-rappels">' + aEnvoyer.slice(0, 60).map(function (x) {
+        var w = lienWhatsApp(x.telephone, x.message);
+        return '<div class="cf-rappel"><div><strong>' + e(nomComplet(x)) + '</strong> <span class="cf-badge ' + (x.nature === 'paiement' ? 'ambre' : 'bleu') + '">' + e(x.nature === 'paiement' ? 'Solde' : 'Cours') + '</span><div class="doux" style="font-size:.8rem">' + e(x.message.slice(0, 160)) + (x.message.length > 160 ? '…' : '') + '</div></div>' +
+          '<div class="cf-actions">' + (w ? '<a class="cf-btn petit principal" target="_blank" rel="noopener" href="' + e(w) + '" data-envoye="' + e(x.id) + '">Envoyer</a>' : '') + '<button class="cf-btn petit" data-ignorer="' + e(x.id) + '">Ignorer</button></div></div>';
+      }).join('') + '</div>' : '<div class="cf-vide" style="padding:16px">Aucun message en attente.</div>') +
+      (envoyes.length ? '<details style="margin-top:10px"><summary class="doux" style="cursor:pointer;font-size:.84rem">' + envoyes.length + ' rappel(s) déjà envoyé(s) ces 14 derniers jours</summary>' + tableau([
+        { titre: 'Quand', rendu: function (x) { return e(dateFr(x.created_at)); } },
+        { titre: 'Apprenant', rendu: function (x) { return e(nomComplet(x)); } },
+        { titre: 'Canal', rendu: function (x) { return e({ email: 'E-mail', whatsapp_manuel: 'WhatsApp', interne: 'Ardoise' }[x.canal] || x.canal); } },
+        { titre: 'Message', rendu: function (x) { return '<span class="doux">' + e(x.message.slice(0, 90)) + '</span>'; } }
+      ], envoyes.slice(0, 50)) + '</details>' : '') +
+      (unDe('directeur', 'prefet') ? '<div class="cf-actions" style="margin-top:12px"><button class="cf-btn petit" data-lancer>Préparer les rappels maintenant</button><a class="cf-btn petit" href="#/reglages">Régler les rappels</a></div>' : '') + '</div>';
+  }
+  function brancherRappels(z, apres) {
+    $$('[data-envoye]', z).forEach(function (b) { b.addEventListener('click', function () { envoyer('/rappels/' + b.getAttribute('data-envoye'), 'PATCH', { statut: 'fait' }).then(function () { b.closest('.cf-rappel').remove(); }).catch(function () {}); }); });
+    $$('[data-ignorer]', z).forEach(function (b) { b.addEventListener('click', function () { envoyer('/rappels/' + b.getAttribute('data-ignorer'), 'PATCH', { statut: 'ignore' }).then(function () { b.closest('.cf-rappel').remove(); }).catch(echec); }); });
+    var bl = $('[data-lancer]', z); if (bl) bl.addEventListener('click', function () {
+      bl.disabled = true;
+      envoyer('/rappels/executer', 'POST').then(function (r) { toast((r.coachs + r.apprenants + r.paiements + r.appels) + ' rappel(s) préparé(s).'); apres(); }).catch(echec).then(function () { bl.disabled = false; });
+    });
+  }
+
+  /* ------------------------------------------------------------------ */
+  /*  Salle virtuelle (coach) — visio, présents, leçon, replay, QR        */
+  /* ------------------------------------------------------------------ */
+  var minuteurSalle = null;
+  ROUTES.salle = function () {
+    var id = (window.location.hash.split('?s=')[1] || '').split('&')[0];
+    if (minuteurSalle) { clearInterval(minuteurSalle); minuteurSalle = null; }
+    var z = page('Salle virtuelle', 'Votre classe en ligne : les apprenants qui rejoignent sont notés présents automatiquement, même si leur connexion coupe ensuite.', '<a class="cf-btn" href="#/seances">← Planning</a>');
+    if (!id) { z.innerHTML = '<div class="cf-vide">Ouvrez la salle depuis une séance du planning.</div>'; return; }
+    var leger = false;
+    function dessiner(d) {
+      var s = d.seance, v = d.visio, enLigne = v.en_ligne;
+      $('.cf-entete h1').textContent = (enLigne ? 'Salle virtuelle — ' : 'Présence — ') + s.groupe_nom;
+      $('.cf-entete p').textContent = dateFr(s.date_seance, true) + (s.heure_debut ? ' à ' + heure(s.heure_debut) : '') + (s.theme ? ' · ' + s.theme : '');
+      var presents = d.presences.filter(function (p) { return p.statut === 'present' || p.statut === 'retard'; }).length;
+      var visio;
+      if (!enLigne) visio = '<div class="cf-salle-visio vide"><strong>Séance en présentiel</strong><p>Affichez le QR code ci-contre sur un écran ou imprimez-le : chaque apprenant le scanne avec son téléphone et sa présence est faite.</p></div>';
+      else if (v.integrer && v.url) visio = '<iframe class="cf-salle-iframe" src="' + e(leger ? v.url_leger : v.url) + '" allow="camera; microphone; fullscreen; display-capture; autoplay" allowfullscreen></iframe>';
+      else if (v.url) visio = '<div class="cf-salle-visio"><div class="cf-salle-icone">🎥</div><strong>La salle est prête</strong><p>La visio s’ouvre dans l’application Jitsi Meet (téléphone) ou un nouvel onglet. Les apprenants rejoignent depuis leur espace apprenant ; vous voyez ici qui est connecté.</p>' +
+        '<div class="cf-actions" style="justify-content:center"><a class="cf-btn principal" target="_blank" rel="noopener" href="' + e(v.url) + '">Démarrer la visio</a><a class="cf-btn" target="_blank" rel="noopener" href="' + e(v.url_leger) + '">Mode connexion faible</a>' + (v.url_application ? '<a class="cf-btn" href="' + e(v.url_application) + '">Ouvrir dans l’application</a>' : '') + '<button class="cf-btn" data-copier-salle>Copier le lien</button></div></div>';
+      else visio = '<div class="cf-salle-visio vide"><strong>Aucun lien de visio</strong><p>Ajoutez votre lien Google Meet / Zoom sur le groupe ou la séance, ou choisissez Jitsi dans les Réglages du centre.</p></div>';
+      z.innerHTML = '<div class="cf-salle"><div class="cf-salle-principal">' + visio +
+        (enLigne ? '<div class="cf-salle-faible"><strong>Connexion difficile ?</strong> <span>1. Passez en <a href="#" data-leger>mode connexion faible</a> (audio seul, image 180p). 2. Coupez votre caméra : le son passe mieux. 3. Publiez l’enregistrement après le cours : les apprenants qui ont décroché le suivent en replay et leur présence est comptée.</span></div>' : '') +
+        '</div><aside class="cf-salle-cote"><div class="cf-onglets" data-onglets-salle><button class="actif" data-o="presents">Présents ' + presents + '/' + d.presences.length + '</button><button data-o="lecon">Leçon</button><button data-o="notes">Devoirs</button><button data-o="replay">Replay</button>' + (d.pointage ? '<button data-o="qr">QR</button>' : '') + '</div><div data-volet-salle></div>' +
+        '<button class="cf-btn principal" style="width:100%;margin-top:12px;justify-content:center" data-cloturer>Clôturer et enregistrer l’appel</button></aside></div>';
+      var volets = {
+        presents: function () {
+          return '<div class="cf-appel">' + d.presences.map(function (p) {
+            var etatP = p.statut === 'present' || p.statut === 'retard' ? '<span class="cf-badge ' + (p.statut === 'retard' ? 'ambre' : 'vert') + '">' + (p.statut === 'retard' ? 'En retard' : 'Présent') + '</span>' : p.statut ? badgeStatut('', p.statut) : '<span class="cf-badge">Pas encore</span>';
+            return '<div class="ligne"><div><strong>' + e(nomComplet(p)) + '</strong><div class="doux" style="font-size:.76rem">' + e({ visio: 'via la classe en ligne', pointage: 'via le QR code', replay: 'via le replay', appel: 'appel du coach' }[p.source] || '') + (p.arrivee_at ? ' · ' + new Date(p.arrivee_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '') + '</div></div>' + etatP + '</div>';
+          }).join('') + '</div><p class="doux" style="font-size:.78rem">Actualisé toutes les 20 secondes.</p>';
+        },
+        lecon: function () {
+          var l = s.lecon;
+          return l ? '<h3 style="margin:4px 0 8px">' + e(l.titre) + '</h3>' + (urlSure(l.video_url) ? '<a class="cf-btn petit" target="_blank" rel="noopener" href="' + e(l.video_url) + '">Vidéo</a> ' : '') + (urlSure(l.ressource_url) ? '<a class="cf-btn petit" target="_blank" rel="noopener" href="' + e(l.ressource_url) + '">Document</a>' : '') + '<div style="white-space:pre-wrap;font-size:.88rem;line-height:1.6;margin-top:10px">' + e(l.contenu || '') + '</div>'
+            : '<div class="cf-vide" style="padding:16px">Aucune leçon associée. Associez-en une à la séance (planning) pour l’avoir sous les yeux pendant le cours.</div>';
+        },
+        notes: function () {
+          return '<form class="cf-form" style="grid-template-columns:1fr"><label>Thème<input name="theme" value="' + e(s.theme || '') + '"></label><label>Devoirs (visibles par les apprenants)<textarea name="devoirs" rows="4">' + e(s.devoirs || '') + '</textarea></label><label>Notes du coach<textarea name="notes_coach" rows="3">' + e(s.notes_coach || '') + '</textarea></label></form><button class="cf-btn petit" data-sauver-notes>Enregistrer</button>';
+        },
+        replay: function () {
+          return '<p class="doux" style="font-size:.84rem">Collez le lien de l’enregistrement (YouTube non répertorié, Google Drive…). Les apprenants le suivent depuis leur espace ; ' + (d.reglages.replay_compte_presence ? 'après ' + d.reglages.replay_minutes_min + ' min, leur présence est comptée.' : 'la présence n’est pas comptée (réglage du centre).') + '</p>' +
+            '<form class="cf-form" style="grid-template-columns:1fr"><label>Lien de l’enregistrement<input name="enregistrement_url" type="url" value="' + e(s.enregistrement_url || '') + '" placeholder="https://youtu.be/…"></label></form>' +
+            '<div class="cf-actions"><button class="cf-btn petit principal" data-publier-replay>Publier le replay</button>' + (s.mode === 'enregistre' && s.statut !== 'faite' ? '<button class="cf-btn petit" data-cours-enregistre>Marquer le cours enregistré comme donné</button>' : '') + '</div>';
+        },
+        qr: function () {
+          return d.pointage ? '<div class="cf-qr">' + d.pointage.qr_svg + '<div class="cf-code" style="font-size:1.4rem;margin-top:8px">' + e(d.pointage.code) + '</div><p class="doux" style="font-size:.8rem">Les apprenants scannent ce QR avec leur téléphone (appareil photo). Valable de 30 min avant le cours à 15 min après la fin.</p><button class="cf-btn petit" data-plein-ecran-qr>Afficher en grand</button></div>' : '';
+        }
+      };
+      var courant = 'presents';
+      function voir(o) {
+        courant = o;
+        $$('[data-onglets-salle] button', z).forEach(function (b) { b.classList.toggle('actif', b.getAttribute('data-o') === o); });
+        var vz = $('[data-volet-salle]', z); vz.innerHTML = volets[o]();
+        var bn = $('[data-sauver-notes]', vz); if (bn) bn.addEventListener('click', function () { var f = $('form', vz); envoyer('/seances/' + id, 'PATCH', { theme: f.elements.theme.value, devoirs: f.elements.devoirs.value, notes_coach: f.elements.notes_coach.value }).then(function () { toast('Enregistré.'); }).catch(echec); });
+        var br = $('[data-publier-replay]', vz); if (br) br.addEventListener('click', function () { envoyer('/seances/' + id, 'PATCH', { enregistrement_url: $('form', vz).elements.enregistrement_url.value || null }).then(function () { toast('Replay publié dans l’espace des apprenants.'); recharger(); }).catch(echec); });
+        var bc = $('[data-cours-enregistre]', vz); if (bc) bc.addEventListener('click', function () { envoyer('/seances/' + id, 'PATCH', { statut: 'faite' }).then(function () { toast('Cours enregistré marqué comme donné : il compte dans vos heures.'); recharger(); }).catch(echec); });
+        var bq = $('[data-plein-ecran-qr]', vz); if (bq) bq.addEventListener('click', function () { var mm = modale('Présence — ' + s.groupe_nom, '<div class="cf-qr grand">' + d.pointage.qr_svg + '<div class="cf-code" style="font-size:2rem;margin-top:10px">' + e(d.pointage.code) + '</div><p>Scannez avec l’appareil photo de votre téléphone.</p></div>', { large: true }); mm.el.classList.add('cf-voile-qr'); });
+      }
+      $$('[data-onglets-salle] button', z).forEach(function (b) { b.addEventListener('click', function () { voir(b.getAttribute('data-o')); }); });
+      voir(courant);
+      var bl = $('[data-leger]', z); if (bl) bl.addEventListener('click', function (ev) { ev.preventDefault(); if (v.integrer) { leger = !leger; dessiner(d); } else window.open(v.url_leger, '_blank', 'noopener'); });
+      var bcp = $('[data-copier-salle]', z); if (bcp) bcp.addEventListener('click', function () { navigator.clipboard.writeText(v.url.split('#')[0]).then(function () { toast('Lien de la salle copié.'); }); });
+      $('[data-cloturer]', z).addEventListener('click', function () { ouvrirAppel(id, recharger); });
+      dessiner.majPresences = function (nd) { d.presences = nd.presences; if (courant === 'presents') voir('presents'); var b = $('[data-o="presents"]', z); if (b) b.textContent = 'Présents ' + nd.presences.filter(function (p) { return p.statut === 'present' || p.statut === 'retard'; }).length + '/' + nd.presences.length; };
+    }
+    function recharger() { api('/seances/' + id + '/salle').then(dessiner).catch(function (err) { z.innerHTML = '<div class="cf-vide">' + e(err.message) + '</div>'; }); }
+    recharger();
+    minuteurSalle = setInterval(function () {
+      if (etat.route !== 'salle') { clearInterval(minuteurSalle); minuteurSalle = null; return; }
+      api('/seances/' + id + '/salle').then(function (nd) { if (dessiner.majPresences) dessiner.majPresences(nd); }).catch(function () {});
+    }, 20000);
+  };
+
+  /* ------------------------------------------------------------------ */
+  /*  Didacticiel : premiers pas, visite guidée, astuces par écran        */
+  /* ------------------------------------------------------------------ */
+  function etapesDemarrage() {
+    var c = etat.ctx.compteurs, k = etat.ctx.centre;
+    var e2 = [
+      { cle: 'logo', titre: 'Ajoutez votre logo', texte: 'Il apparaît sur les certificats, les reçus et votre site. Son fond est retiré automatiquement.', fait: !!k.logo_url, route: 'reglages', cible: '[data-televerser="logo"]' },
+      { cle: 'programmes', titre: 'Créez vos programmes', texte: 'Ce que vous vendez : niveaux, durées, prix. Reliez-les en parcours (A1 → A2 → B1).', fait: c.programmes > 0, route: 'programmes', cible: '[data-nouveau]' },
+      { cle: 'coachs', titre: 'Ajoutez vos ' + voc('coachs', 'coachs').toLowerCase(), texte: 'Chacun reçoit son compte et ne voit que ses groupes.', fait: c.coachs > 0, route: 'coachs', cible: '[data-nouveau]' }
+    ];
+    if (cfg().fonctionnement && cfg().fonctionnement.sessions !== false) e2.push({ cle: 'sessions', titre: 'Ouvrez votre première ' + voc('session', 'session').toLowerCase(), texte: 'La rentrée : dates, période d’inscription, objectif d’inscrits.', fait: c.sessions > 0, route: 'sessions', cible: '[data-nouvelle]' });
+    e2.push(
+      { cle: 'groupes', titre: 'Créez un ' + voc('groupe', 'groupe').toLowerCase(), texte: 'Un programme, un coach, un horaire, des places.', fait: c.groupes > 0, route: 'groupes', cible: '[data-nouveau]' },
+      { cle: 'seances', titre: 'Planifiez les séances', texte: 'En deux clics depuis le groupe : jours, heure, durée. Les rappels partent tout seuls.', fait: c.seances > 0, route: 'groupes', cible: 'tr.cliquable' },
+      { cle: 'apprenants', titre: 'Inscrivez vos ' + voc('apprenants', 'apprenants').toLowerCase(), texte: 'Ils reçoivent leur accès à l’espace apprenant (planning, cours en ligne, résultats).', fait: c.apprenants > 0, route: 'apprenants', cible: '[data-nouveau]' },
+      { cle: 'lecons', titre: 'Publiez une leçon en ligne', texte: 'Pour réviser entre les cours — l’assistant IA peut la préparer pour vous.', fait: c.lecons > 0, route: 'lecons', cible: '[data-ia]' },
+      { cle: 'site', titre: 'Publiez votre site', texte: 'myardoise.com/votre-centre : formations, test de niveau, inscriptions en ligne.', fait: !!k.site_publie, route: 'site', cible: '.cf-entete .cf-btn.principal' }
+    );
+    return e2;
+  }
+  function carteDemarrage() {
+    if (!a('directeur')) return '';
+    var etapes = etapesDemarrage(), faites = etapes.filter(function (x) { return x.fait; }).length;
+    if (faites === etapes.length || localStorage.getItem('cf-demarrage-masque') === etat.ctx.centre.code) return '';
+    return '<div class="cf-carte cf-demarrage"><h2>Premiers pas — ' + faites + ' / ' + etapes.length + ' <small><button class="cf-lien" data-masquer-demarrage>Masquer</button></small></h2>' + jauge(Math.round(faites / etapes.length * 100), true) +
+      '<div class="cf-etapes">' + etapes.map(function (x, i) {
+        return '<div class="cf-etape' + (x.fait ? ' faite' : '') + '"><span class="cf-etape-num">' + (x.fait ? '✓' : i + 1) + '</span><div><strong>' + e(x.titre) + '</strong><div class="doux" style="font-size:.8rem">' + e(x.texte) + '</div></div>' + (x.fait ? '' : '<button class="cf-btn petit" data-guider="' + e(x.cle) + '">Me guider</button>') + '</div>';
+      }).join('') + '</div></div>';
+  }
+  function brancherDemarrage(z) {
+    var bm = $('[data-masquer-demarrage]', z); if (bm) bm.addEventListener('click', function () { localStorage.setItem('cf-demarrage-masque', etat.ctx.centre.code); bm.closest('.cf-carte').remove(); });
+    $$('[data-guider]', z).forEach(function (b) {
+      b.addEventListener('click', function () {
+        var x = etapesDemarrage().filter(function (y) { return y.cle === b.getAttribute('data-guider'); })[0];
+        window.location.hash = '#/' + x.route;
+        setTimeout(function () { projecteur([{ cible: x.cible, titre: x.titre, texte: x.texte }]); }, 700);
+      });
+    });
+  }
+
+  var ASTUCES = {
+    tableau: [['.cf-sessions-bandeaux, .cf-encadre', 'Vos sessions', 'La rentrée en cours et la prochaine : inscrits, remplissage, objectif.'], ['.cf-grille-kpi', 'Vos indicateurs', 'Assiduité, satisfaction, encaissements, réinscription : l’essentiel du centre en un coup d’œil.'], ['.cf-alerte', 'À faire aujourd’hui', 'Chaque alerte dit quoi faire et mène au bon écran.']],
+    sessions: [['[data-nouvelle]', 'Une session = une rentrée', 'Créez-la, rattachez-y vos groupes. À la fin : clôturez, préparez la suivante, réinscrivez.']],
+    apprenants: [['[data-nouveau]', 'Inscrire un apprenant', 'Il reçoit un matricule et un code pour son espace en ligne.'], ['.cf-filtres', 'Filtrer', 'Cherchez un nom, un téléphone, ou affichez seulement les apprenants à risque.']],
+    groupes: [['tr.cliquable', 'Ouvrir un groupe', 'Membres, séances, planification, message WhatsApp au groupe.']],
+    seances: [['.cf-semaine', 'Votre semaine', 'Cliquez une séance pour faire l’appel. En orange : séance passée sans appel.']],
+    calendrier: [['[data-abonner]', 'Dans votre téléphone', 'Abonnez-vous : vos cours apparaissent dans Google Agenda avec une alerte.'], ['.cf-cal, .cf-agenda', 'Double-cliquez un jour', 'pour y ajouter un examen, une réunion ou une fermeture.']],
+    salle: [['[data-onglets-salle]', 'Présents en direct', 'Les apprenants qui rejoignent sont notés tout seuls. Clôturez l’appel à la fin.']],
+    lecons: [['[data-ia]', 'Laissez l’IA préparer', 'Une leçon complète avec quiz en quelques secondes, à relire et publier.']],
+    finances: [['[data-encaisser]', 'Encaisser', 'Chaque paiement donne un reçu numéroté, imprimable.']],
+    reglages: [['.cf-interrupteur', 'À votre manière', 'Ouvrez des accès à votre équipe, choisissez la paie, les rappels, le certificat.']]
+  };
+  function projecteur(etapes, i) {
+    i = i || 0;
+    $$('.cf-projo, .cf-bulle-guide').forEach(function (x) { x.remove(); });
+    var et = etapes[i]; if (!et) return;
+    var cible = null;
+    String(et.cible).split(',').some(function (sel) { cible = document.querySelector(sel.trim()); return !!cible; });
+    if (!cible) { if (i + 1 < etapes.length) projecteur(etapes, i + 1); else toast(et.titre + ' — ' + et.texte); return; }
+    cible.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    setTimeout(function () {
+      var r = cible.getBoundingClientRect();
+      var p = document.createElement('div'); p.className = 'cf-projo';
+      p.style.cssText = 'top:' + (r.top - 6) + 'px;left:' + (r.left - 6) + 'px;width:' + (r.width + 12) + 'px;height:' + (Math.min(r.height, window.innerHeight * .6) + 12) + 'px';
+      var b = document.createElement('div'); b.className = 'cf-bulle-guide';
+      b.innerHTML = '<strong>' + e(et.titre) + '</strong><p>' + e(et.texte) + '</p><div class="cf-actions"><span class="doux" style="font-size:.76rem;margin-right:auto">' + (i + 1) + ' / ' + etapes.length + '</span><button class="cf-btn petit" data-fin>Terminer</button>' + (i + 1 < etapes.length ? '<button class="cf-btn petit principal" data-suite>Suivant</button>' : '') + '</div>';
+      document.body.appendChild(p); document.body.appendChild(b);
+      var bas = r.bottom + 14 + 160 < window.innerHeight;
+      b.style.top = (bas ? r.bottom + 14 : Math.max(10, r.top - 14 - b.offsetHeight)) + 'px';
+      b.style.left = Math.max(10, Math.min(window.innerWidth - b.offsetWidth - 10, r.left)) + 'px';
+      $('[data-fin]', b).addEventListener('click', function () { p.remove(); b.remove(); });
+      var bs = $('[data-suite]', b); if (bs) bs.addEventListener('click', function () { projecteur(etapes, i + 1); });
+    }, 350);
+  }
+  function aideEcran() {
+    var astuces = ASTUCES[etat.route] || [];
+    var m = modale('Aide et tutoriels', '<p>Écran : <strong>' + e(((NAV.filter(function (n) { return n[0] === etat.route; })[0] || [])[1]) || etat.route) + '</strong></p>' +
+      (astuces.length ? '<ul style="line-height:1.7">' + astuces.map(function (x) { return '<li><strong>' + e(x[1]) + '</strong> — ' + e(x[2]) + '</li>'; }).join('') + '</ul>' : '<p class="doux">Pas d’astuce particulière pour cet écran.</p>') +
+      (a('directeur') ? '<h3 style="font-size:1rem">Premiers pas du centre</h3><div class="cf-etapes">' + etapesDemarrage().map(function (x, i) { return '<div class="cf-etape' + (x.fait ? ' faite' : '') + '"><span class="cf-etape-num">' + (x.fait ? '✓' : i + 1) + '</span><div><strong>' + e(x.titre) + '</strong></div></div>'; }).join('') + '</div>' : ''),
+      { pied: '<a class="cf-btn" href="#/assistant?question" data-fermer>Poser une question à l’assistant</a><a class="cf-btn" href="support.html">Contacter le support</a>' + (astuces.length ? '<button class="cf-btn principal" data-visite>Visite guidée de l’écran</button>' : '') });
+    var bv = $('[data-visite]', m.el); if (bv) bv.addEventListener('click', function () { m.fermer(); projecteur(astuces.map(function (x) { return { cible: x[0], titre: x[1], texte: x[2] }; })); });
+  }
+  function astucePremiereVisite() {
+    var cle = 'cf-vu-' + etat.route;
+    try { if (localStorage.getItem(cle) || !ASTUCES[etat.route]) return; localStorage.setItem(cle, '1'); } catch (x) { return; }
+    var t = ASTUCES[etat.route][0];
+    setTimeout(function () {
+      var b = document.createElement('div'); b.className = 'cf-astuce';
+      b.innerHTML = '<strong>💡 ' + e(t[1]) + '</strong><span>' + e(t[2]) + '</span><button class="cf-lien" data-visite>Visite guidée</button><button class="cf-lien" data-ok>OK</button>';
+      document.body.appendChild(b);
+      $('[data-ok]', b).addEventListener('click', function () { b.remove(); });
+      $('[data-visite]', b).addEventListener('click', function () { b.remove(); projecteur(ASTUCES[etat.route].map(function (x) { return { cible: x[0], titre: x[1], texte: x[2] }; })); });
+      setTimeout(function () { if (b.parentNode) b.remove(); }, 12000);
+    }, 1200);
+  }
+
+  /* Le coach dépose sa signature (certificats) depuis son espace. */
+  function blocSignatureCoach() {
+    if (!a('professeur') || !(cfg().certificat || {}).signature_coach) return '';
+    return '<div class="cf-carte"><h2>Ma signature <small>apposée sur les certificats de vos apprenants</small></h2><div class="cf-identite"><div class="cf-identite-bloc"><div class="cf-identite-apercu damier" data-apercu="signature"><span class="doux">Aucune</span></div>' +
+      '<label class="cf-btn petit" style="margin-top:6px">Photographier ma signature<input type="file" accept="image/*" capture="environment" hidden data-televerser="signature"></label><div class="doux" style="font-size:.78rem">Signez sur une feuille blanche, photographiez : le fond est retiré.</div></div></div></div>';
+  }
 
   /* ------------------------------------------------------------------ */
   /*  Démarrage                                                           */

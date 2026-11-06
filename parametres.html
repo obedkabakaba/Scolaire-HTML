@@ -141,6 +141,8 @@
   <!-- Session partagée : renouvellement du jeton et rejeu des requêtes
        expirées. Doit rester AVANT les autres scripts. -->
   <script src="session.js"></script>
+  <!-- Détourage des logos, cachets et signatures avant envoi (dans le navigateur). -->
+  <script src="detourage.js?v=1"></script>
   <script src="remontee-erreurs.js"></script>
   <script src="acces-presences.js"></script>
 <link rel="stylesheet" href="mobile.css" />
@@ -711,8 +713,12 @@
 
   document.getElementById('bouton-changer-logo').addEventListener('click', () => document.getElementById('input-logo').click());
   document.getElementById('input-logo').addEventListener('change', async (evt) => {
-    const fichier = evt.target.files[0];
-    if (!fichier) return;
+    const brut = evt.target.files[0];
+    evt.target.value = '';
+    if (!brut) return;
+    // Fond retiré avant l'envoi : le logo se pose proprement sur les bulletins,
+    // les certificats, les reçus et le site, quelle que soit leur couleur.
+    const fichier = window.ArdoiseDetourage ? await window.ArdoiseDetourage.proposer(brut, { titre: 'Détourer le logo' }) : brut;
     const formData = new FormData();
     formData.append('fichier', fichier);
     const r = await appelApi('/uploads/logo-ecole', { method: 'POST', body: formData });
@@ -823,8 +829,10 @@
 
   document.getElementById('bouton-changer-cachet').addEventListener('click', () => document.getElementById('input-cachet').click());
   document.getElementById('input-cachet').addEventListener('change', async (evt) => {
-    const fichier = evt.target.files[0];
-    if (!fichier) return;
+    const brut = evt.target.files[0];
+    evt.target.value = '';
+    if (!brut) return;
+    const fichier = window.ArdoiseDetourage ? await window.ArdoiseDetourage.proposer(brut, { titre: 'Détourer le cachet', tolerance: 70 }) : brut;
     const formData = new FormData();
     formData.append('fichier', fichier);
     formData.append('type', 'cachet');
@@ -967,7 +975,12 @@
     const bouton = document.getElementById('bouton-confirmer-rognage');
     bouton.disabled = true; bouton.textContent = 'Enregistrement…';
 
-    canvasRogne.toBlob(async (blob) => {
+    canvasRogne.toBlob(async (blobRogne) => {
+      // La signature, scannée sur papier, perd son fond blanc : elle se pose
+      // sur le cachet et sur le document comme une vraie signature à l'encre.
+      const blob = window.ArdoiseDetourage
+        ? await window.ArdoiseDetourage.proposer(new File([blobRogne], 'signature.png', { type: 'image/png' }), { titre: 'Détourer la signature', tolerance: 80 })
+        : blobRogne;
       const formData = new FormData();
       formData.append('fichier', blob, 'signature-rognee.png');
       formData.append('type', 'signature');

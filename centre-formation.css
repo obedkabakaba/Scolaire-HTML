@@ -232,3 +232,106 @@ body { margin: 0; }
 .cf-session-chiffres b { display: block; font-size: 1.35rem; color: #F6F2E7; font-variant-numeric: tabular-nums; }
 .cf-session-chiffres small { font-size: .8rem; color: rgba(246, 242, 231, .6); }
 .cf-cartes-sessions { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
+
+/* ---------------- Réglages ---------------- */
+.cf-identite { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+.cf-identite-bloc { display: flex; flex-direction: column; gap: 4px; }
+.cf-identite-apercu { height: 110px; border: 1px solid var(--cf-ligne); border-radius: 12px; display: flex; align-items: center; justify-content: center; padding: 10px; margin-bottom: 4px; }
+.cf-identite-apercu img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.damier { background-color: #fff; background-image: linear-gradient(45deg, #ececec 25%, transparent 25%), linear-gradient(-45deg, #ececec 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ececec 75%), linear-gradient(-45deg, transparent 75%, #ececec 75%); background-size: 16px 16px; background-position: 0 0, 0 8px, 8px -8px, -8px 0; }
+.cf-reglages { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 10px 18px; }
+.cf-interrupteur { display: flex; gap: 12px; align-items: flex-start; cursor: pointer; padding: 8px 0; }
+.cf-interrupteur input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.cf-curseur { flex: none; width: 40px; height: 22px; border-radius: 999px; background: #D9D4C5; position: relative; transition: background .2s; margin-top: 1px; }
+.cf-curseur::after { content: ''; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: transform .2s; }
+.cf-interrupteur input:checked + .cf-curseur { background: var(--cf-vert); }
+.cf-interrupteur input:checked + .cf-curseur::after { transform: translateX(18px); }
+.cf-interrupteur input:focus-visible + .cf-curseur { outline: 2px solid var(--cf-accent); outline-offset: 2px; }
+.cf-interrupteur strong, .cf-champ-reglage strong { font-weight: 600; font-size: .88rem; display: block; }
+.cf-interrupteur small, .cf-champ-reglage small { color: var(--cf-doux); font-size: .78rem; display: block; margin-top: 2px; line-height: 1.4; }
+.cf-champ-reglage { display: flex; flex-direction: column; gap: 6px; padding: 6px 0; }
+.cf-champ-reglage input, .cf-champ-reglage select { padding: 8px 10px; border: 1.5px solid var(--cf-ligne); border-radius: var(--cf-r-petit); font: inherit; font-size: .88rem; background: #fff; max-width: 420px; }
+.cf-champ-reglage input[type=color] { width: 70px; height: 38px; padding: 3px; }
+.cf-lien { background: none; border: 0; color: var(--cf-bleu); text-decoration: underline; cursor: pointer; font: inherit; font-size: .8rem; padding: 0 4px; }
+
+/* ---------------- Calendrier ---------------- */
+.cf-cal-titre { font-family: var(--police-titre, Georgia, serif); font-size: 1.35rem; font-weight: 600; margin-bottom: 6px; }
+.cf-cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); border: 1px solid var(--cf-ligne); border-radius: var(--cf-r); overflow: hidden; background: var(--cf-ligne); gap: 1px; }
+.cf-cal-entete { background: var(--cf-carte); font-size: .74rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--cf-doux); padding: 8px; text-align: center; }
+.cf-cal-jour { background: #fff; min-height: 112px; padding: 6px; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.cf-cal-jour.hors { background: #FAF8F2; opacity: .6; }
+.cf-cal-jour.aujourdhui { box-shadow: inset 0 0 0 2px var(--cf-accent); }
+.cf-cal-jour .num { font-size: .78rem; font-weight: 700; color: var(--cf-doux); }
+.cf-cal-jour.aujourdhui .num { color: var(--cf-accent-fonce); }
+.cf-cal-item { font-size: .72rem; line-height: 1.3; padding: 3px 6px; border-radius: 6px; background: #E2ECEE; color: #23404A; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-left: 3px solid var(--cf-bleu); }
+.cf-cal-item.faite { background: #E1EDE3; color: #2E5A3B; border-left-color: var(--cf-vert); }
+.cf-cal-item.annulee { opacity: .55; text-decoration: line-through; border-left-color: var(--cf-rouge); }
+.cf-cal-item.a-cloturer { background: #F7ECD6; color: #7A5212; border-left-color: var(--cf-ambre); }
+.cf-cal-item.en-ligne { background: #ECEAFB; color: #3B2F9A; border-left-color: #6250d6; }
+.cf-cal-item[class*="evt-"] { background: #FFF3E0; color: #7A4A12; border-left-color: var(--cf-accent); }
+.cf-cal-item.evt-ferie { background: #F8E1DE; color: #8E2B22; border-left-color: var(--cf-rouge); }
+.cf-cal-item.jalon { background: #1F2B24; color: #F6F2E7; border-left-color: var(--cf-accent); cursor: default; }
+.cf-cal-plus { font-size: .7rem; color: var(--cf-bleu); cursor: pointer; }
+.cf-agenda { display: flex; flex-direction: column; gap: 10px; }
+.cf-agenda-jour { background: var(--cf-carte); border: 1px solid var(--cf-ligne); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 5px; }
+.cf-agenda-jour.aujourdhui { border-color: var(--cf-accent); }
+.cf-agenda-jour h4 { margin: 0 0 4px; font-size: .84rem; text-transform: capitalize; }
+.cf-agenda .cf-cal-item { white-space: normal; font-size: .84rem; padding: 7px 9px; }
+.cf-rappels { display: flex; flex-direction: column; gap: 8px; }
+.cf-rappel { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 10px 12px; border: 1px solid var(--cf-ligne); border-radius: 10px; background: #fff; flex-wrap: wrap; }
+.cf-rappel > div:first-child { flex: 1; min-width: 220px; }
+
+/* ---------------- Salle virtuelle ---------------- */
+.cf-salle { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; align-items: start; }
+.cf-salle-principal { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.cf-salle-iframe { width: 100%; aspect-ratio: 16 / 10; border: 0; border-radius: var(--cf-r); background: #111; box-shadow: var(--cf-ombre); }
+.cf-salle-visio { background: linear-gradient(160deg, #1F2B24, #2D3E35 60%, #3C5A62); color: #F6F2E7; border-radius: var(--cf-r); padding: 34px 26px; text-align: center; min-height: 300px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
+.cf-salle-visio p { max-width: 520px; color: rgba(246, 242, 231, .8); margin: 0 0 8px; line-height: 1.5; }
+.cf-salle-visio strong { font-family: var(--police-titre, Georgia, serif); font-size: 1.35rem; }
+.cf-salle-visio .cf-btn:not(.principal) { background: rgba(255, 255, 255, .08); color: #F6F2E7; border-color: rgba(255, 255, 255, .25); }
+.cf-salle-visio.vide { background: var(--cf-carte); color: var(--cf-encre); border: 1px dashed var(--cf-ligne); }
+.cf-salle-visio.vide p { color: var(--cf-doux); }
+.cf-salle-icone { font-size: 2.4rem; }
+.cf-salle-faible { background: #FFF8EE; border: 1px solid #F0D9B5; border-radius: 12px; padding: 10px 14px; font-size: .86rem; line-height: 1.5; }
+.cf-salle-cote { background: var(--cf-carte); border: 1px solid var(--cf-ligne); border-radius: var(--cf-r); padding: 12px; box-shadow: var(--cf-ombre); position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow: auto; }
+.cf-qr { text-align: center; }
+.cf-qr svg { width: 100%; max-width: 240px; height: auto; background: #fff; border-radius: 12px; padding: 6px; }
+.cf-qr.grand svg { max-width: 520px; }
+
+/* ---------------- Didacticiel ---------------- */
+.cf-demarrage { border-color: #F0D9B5; background: linear-gradient(180deg, #FFFBF3, var(--cf-carte)); }
+.cf-etapes { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px; margin-top: 12px; }
+.cf-etape { display: flex; gap: 10px; align-items: center; padding: 10px; border: 1px solid var(--cf-ligne); border-radius: 10px; background: #fff; }
+.cf-etape > div { flex: 1; min-width: 0; }
+.cf-etape.faite { opacity: .65; }
+.cf-etape-num { flex: none; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: .82rem; background: #ECE8DB; }
+.cf-etape.faite .cf-etape-num { background: var(--cf-vert); color: #fff; }
+.cf-projo { position: fixed; z-index: 1500; border-radius: 12px; box-shadow: 0 0 0 9999px rgba(15, 20, 18, .55); pointer-events: none; transition: all .25s; }
+.cf-bulle-guide { position: fixed; z-index: 1501; width: min(340px, calc(100vw - 20px)); background: #fff; border-radius: 14px; padding: 14px 16px; box-shadow: 0 16px 40px rgba(0, 0, 0, .3); font-size: .9rem; }
+.cf-bulle-guide p { margin: 6px 0 10px; color: var(--cf-doux); line-height: 1.45; }
+.cf-astuce { position: fixed; z-index: 1200; right: 20px; bottom: 80px; max-width: min(360px, calc(100vw - 40px)); background: #1F2B24; color: #F6F2E7; border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; font-size: .86rem; box-shadow: 0 12px 30px rgba(0, 0, 0, .3); }
+.cf-astuce span { color: rgba(246, 242, 231, .8); }
+.cf-astuce .cf-lien { color: #F2C98A; align-self: flex-start; }
+.cf-aide { position: fixed; right: 20px; bottom: 20px; z-index: 1100; width: 46px; height: 46px; border-radius: 50%; border: 0; background: var(--cf-accent); color: #fff; font: 700 1.25rem var(--police-corps, Inter, sans-serif); cursor: pointer; box-shadow: 0 8px 20px rgba(169, 111, 46, .45); }
+.cf-aide:hover { background: var(--cf-accent-fonce); }
+
+@media (max-width: 900px) {
+  .cf-salle { grid-template-columns: 1fr; }
+  .cf-salle-cote { position: static; max-height: none; }
+  .cf-cal-jour { min-height: 72px; padding: 3px; }
+  .cf-cal-item { font-size: .62rem; padding: 2px 3px; border-left-width: 2px; }
+  .cf-cal-item b { display: none; }
+  .cf-reglages { grid-template-columns: 1fr; }
+  .cf-actions .cf-btn { flex: 1 1 auto; justify-content: center; }
+  .cf-entete .cf-actions { width: 100%; }
+  .cf-aide { right: 14px; bottom: 14px; width: 42px; height: 42px; }
+  .cf-astuce { right: 12px; left: 12px; bottom: 66px; max-width: none; }
+  .cf-sessions-bandeaux { grid-template-columns: 1fr; }
+  .cf-session-chiffres { gap: 12px; }
+  .cf-table { font-size: .82rem; }
+  .cf-modale .corps { padding: 14px; }
+  .cf-voile { padding: 2vh 8px; }
+}
+.cf-salle-cote .cf-onglets { flex-wrap: wrap; overflow: visible; }
+.cf-salle-cote .cf-onglets button { padding: 8px 9px; font-size: .84rem; }
+@media (max-width: 900px) { .cf-agenda .cf-cal-item b { display: inline; } .cf-agenda .cf-cal-item { font-size: .86rem; padding: 7px 9px; } }

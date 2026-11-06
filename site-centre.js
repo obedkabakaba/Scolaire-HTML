@@ -314,14 +314,49 @@ window.ArdoiseSiteCentre = function (donnees, o) {
   function memoriser(v) { try { if (v) sessionStorage.setItem(CLE, JSON.stringify(v)); else sessionStorage.removeItem(CLE); } catch (x) { /* privé */ } }
   function appelApprenant(chemin, corps) {
     return fetch(API + '/public/centre/' + encodeURIComponent(CODE) + '/apprenant' + chemin, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.assign({}, identifiants(), corps || {})) })
-      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) { var er = new Error(j.message || 'Erreur'); er.status = r.status; throw er; } return j; }); });
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) { var er = new Error(j.message || 'Erreur'); er.status = r.status; throw er; } return j; }); },
+        function () { var er = new Error('Pas de connexion internet.'); er.horsLigne = true; throw er; });
+  }
+
+  /* HORS CONNEXION — l'espace reste lisible, les réponses partent plus tard.
+     La dernière version de l'espace et les leçons ouvertes sont gardées sur
+     le téléphone (localStorage). Une réponse de quiz envoyée sans réseau est
+     mise en file et renvoyée dès que la connexion revient. */
+  var CLE_CACHE = 'centre-' + String(CODE).toLowerCase() + '-cache';
+  var CLE_FILE = 'centre-' + String(CODE).toLowerCase() + '-file';
+  function lireCache() { try { return JSON.parse(localStorage.getItem(CLE_CACHE) || '{}'); } catch (x) { return {}; } }
+  function ecrireCache(c) { try { localStorage.setItem(CLE_CACHE, JSON.stringify(c)); } catch (x) { /* plein : tant pis */ } }
+  function mettreEnCache(cle, valeur) { var id = identifiants(); if (!id) return; var c = lireCache(); if (c.matricule !== id.matricule) c = { matricule: id.matricule }; c[cle] = { valeur: valeur, le: Date.now() }; ecrireCache(c); }
+  function depuisCache(cle) { var id = identifiants(), c = lireCache(); return id && c.matricule === id.matricule && c[cle] ? c[cle] : null; }
+  function fileAttente() { try { return JSON.parse(localStorage.getItem(CLE_FILE) || '[]'); } catch (x) { return []; } }
+  function enFile(chemin, corps) { var f = fileAttente(); f.push({ chemin: chemin, corps: corps, le: Date.now() }); try { localStorage.setItem(CLE_FILE, JSON.stringify(f.slice(-30))); } catch (x) {} }
+  function viderFile() {
+    var f = fileAttente(); if (!f.length || !identifiants()) return;
+    try { localStorage.setItem(CLE_FILE, '[]'); } catch (x) {}
+    f.reduce(function (p, item) { return p.then(function () { return appelApprenant(item.chemin, item.corps).catch(function (err) { if (err.horsLigne) enFile(item.chemin, item.corps); }); }); }, Promise.resolve())
+      .then(function () { if (!fileAttente().length && etat.apprenant) { bandeau('Connexion retrouvée : vos réponses en attente ont été envoyées.', 'succes'); } });
+  }
+  window.addEventListener('online', viderFile);
+  function bandeau(texte, type) {
+    var b = $('#bandeau-reseau'); if (!b) { b = document.createElement('div'); b.id = 'bandeau-reseau'; b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:50;padding:12px 14px;border-radius:12px;font-size:.9rem;box-shadow:0 8px 24px rgba(0,0,0,.2)'; document.body.appendChild(b); }
+    b.style.background = type === 'succes' ? '#E7F6EC' : '#FFF4E0'; b.style.color = type === 'succes' ? '#1D5E33' : '#7A4A12';
+    b.textContent = texte; clearTimeout(b._t); b._t = setTimeout(function () { b.remove(); }, 7000);
+  }
+  function lecteurVideo(url) {
+    var u = urlSure(url); if (!u) return '';
+    var yt = u.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([A-Za-z0-9_-]{6,})/);
+    if (yt) return '<div style="position:relative;padding-top:56.25%;border-radius:14px;overflow:hidden;background:#000"><iframe src="https://www.youtube-nocookie.com/embed/' + e(yt[1]) + '?rel=0" title="Vidéo" style="position:absolute;inset:0;width:100%;height:100%;border:0" allow="accelerometer; encrypted-media; picture-in-picture; fullscreen" allowfullscreen loading="lazy"></iframe></div>';
+    var dr = u.match(/drive\.google\.com\/file\/d\/([A-Za-z0-9_-]+)/);
+    if (dr) return '<div style="position:relative;padding-top:56.25%;border-radius:14px;overflow:hidden;background:#000"><iframe src="https://drive.google.com/file/d/' + e(dr[1]) + '/preview" title="Vidéo" style="position:absolute;inset:0;width:100%;height:100%;border:0" allow="autoplay; fullscreen" allowfullscreen loading="lazy"></iframe></div>';
+    if (/\.(mp4|webm|ogg)(\?|$)/i.test(u)) return '<video controls preload="none" src="' + e(u) + '" style="width:100%;border-radius:14px;background:#000"></video>';
+    return '<a class="bouton" target="_blank" rel="noopener" href="' + e(u) + '">▶ Ouvrir la vidéo</a>';
   }
   function pageApprenant() {
     setTimeout(etat.apprenant ? dessinerEspace : (identifiants() ? chargerEspace : formulaireConnexion), 0);
     return heros('Espace apprenant', 'Votre planning, vos leçons en ligne, vos résultats, vos paiements et vos certificats.') +
       '<section class="section" style="padding-top:clamp(40px,6vw,70px)"><div class="contenant" id="zone-apprenant"><div class="ecran-etat" style="min-height:200px"><div class="anneau"></div>Chargement…</div></div></section>';
   }
-  function formulaireConnexion(message) {
+  function formulaireConnexion(message, apres) {
     var z = $('#zone-apprenant'); if (!z) return;
     z.innerHTML = '<div class="connexion-famille"><div class="apparait vu"><span class="surtitre">Connexion</span><h2>Accédez à votre espace</h2><p class="chapeau" style="margin:18px 0 28px">Le centre vous a remis un matricule et un code d’accès à votre inscription. Vous les avez perdus ? Demandez-les à l’accueil.</p>' +
       '<div class="carte-code" aria-hidden="true"><div class="puce-or"></div><div style="font-weight:700">' + e(ec.nom) + '</div><div class="ligne-code"><span>Matricule</span><span>Code d’accès</span></div><div style="display:flex;justify-content:space-between;margin-top:4px"><span class="valeur-code">AP-2026-00001</span><span class="valeur-code">K7P•••</span></div></div></div>' +
@@ -333,14 +368,20 @@ window.ArdoiseSiteCentre = function (donnees, o) {
       ev.preventDefault();
       if (APERCU) { o.afficher($('.message', this), 'Aperçu : l’espace apprenant fonctionnera une fois le site publié.', 'info'); return; }
       memoriser({ matricule: $('#ap-mat').value.trim(), code_acces: $('#ap-code').value.trim().toUpperCase() });
-      chargerEspace();
+      (apres || chargerEspace)();
     });
   }
   function chargerEspace() {
     var z = $('#zone-apprenant'); if (!z) return;
     z.innerHTML = '<div class="ecran-etat" style="min-height:200px"><div class="anneau"></div>Chargement…</div>';
-    appelApprenant('').then(function (D) { etat.apprenant = D; dessinerEspace(); }).catch(function (err) {
+    appelApprenant('').then(function (D) { etat.apprenant = D; mettreEnCache('espace', D); dessinerEspace(); viderFile(); }).catch(function (err) {
       if (err.status === 401 || err.status === 404) { memoriser(null); formulaireConnexion(err.message); return; }
+      var c = depuisCache('espace');
+      if (c) {
+        etat.apprenant = c.valeur; etat.horsLigne = true; dessinerEspace();
+        bandeau('Hors connexion : vous consultez la version enregistrée le ' + new Date(c.le).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + '.', 'info');
+        return;
+      }
       z.innerHTML = vide('vide', 'Connexion au serveur impossible. Vérifiez votre réseau puis rechargez la page.');
     });
   }
@@ -348,13 +389,22 @@ window.ArdoiseSiteCentre = function (donnees, o) {
   function dessinerEspace() {
     var z = $('#zone-apprenant'), D = etat.apprenant; if (!z || !D) return;
     var A = D.apprenant, I = D.indicateurs;
-    var onglets = [['accueil', 'accueil', 'Mon planning'], ['lecons', 'livre', 'Leçons en ligne'], ['resultats', 'resultats', 'Mes résultats'], ['paiements', 'portefeuille', 'Paiements'], ['certificats', 'etoile', 'Certificats'], ['avis', 'coeur', 'Donner mon avis']];
+    var onglets = [['accueil', 'accueil', 'Mon planning'], ['replays', 'presence', 'Cours enregistrés' + ((D.replays || []).filter(function (r) { return !r.valide_at; }).length ? ' (' + D.replays.filter(function (r) { return !r.valide_at; }).length + ')' : '')], ['lecons', 'livre', 'Leçons en ligne'], ['resultats', 'resultats', 'Mes résultats'], ['paiements', 'portefeuille', 'Paiements'], ['certificats', 'etoile', 'Certificats']];
+    if (!D.reglages || D.reglages.avis !== false) onglets.push(['avis', 'coeur', 'Donner mon avis']);
     z.innerHTML = '<div class="tableau-bord"><aside class="panneau profil-eleve"><div class="avatar">' + e(o.initiales([A.prenom, A.nom].join(' '))) + '</div><h3 style="margin:0">' + e([A.prenom, A.nom].filter(Boolean).join(' ')) + '</h3>' +
       '<div class="meta">' + e(A.niveau_actuel ? 'Niveau ' + A.niveau_actuel : 'Niveau à évaluer') + '</div><span class="matricule">' + e(A.matricule) + '</span>' +
       '<nav class="onglets-famille">' + onglets.map(function (x) { return '<button data-onglet="' + x[0] + '" class="' + (x[0] === etat.onglet ? 'actif' : '') + '">' + ico(x[1]) + e(x[2]) + '</button>'; }).join('') + '</nav>' +
-      '<button class="bouton contour plein" style="margin-top:14px" data-sortir>' + ico('sortie') + 'Se déconnecter</button></aside><div class="panneau" id="volet-apprenant"></div></div>';
+      '<button class="bouton contour plein" style="margin-top:14px" data-agenda>' + ico('calendrier') + 'Ajouter à mon agenda</button>' +
+      '<button class="bouton contour plein" style="margin-top:8px" data-sortir>' + ico('sortie') + 'Se déconnecter</button></aside><div class="panneau" id="volet-apprenant"></div></div>';
     $$('[data-onglet]', z).forEach(function (b) { b.addEventListener('click', function () { etat.onglet = b.getAttribute('data-onglet'); dessinerEspace(); }); });
-    $('[data-sortir]', z).addEventListener('click', function () { memoriser(null); etat.apprenant = null; formulaireConnexion(); });
+    $('[data-sortir]', z).addEventListener('click', function () { memoriser(null); etat.apprenant = null; try { localStorage.removeItem(CLE_CACHE); } catch (x) {} formulaireConnexion(); });
+    $('[data-agenda]', z).addEventListener('click', function () {
+      appelApprenant('/agenda').then(function (l) {
+        var v2 = $('#volet-apprenant');
+        v2.innerHTML = '<h2 style="font-size:1.5rem">Mon agenda</h2><p class="chapeau">Vos cours apparaissent dans l’agenda de votre téléphone, avec une alerte une heure avant. Tout se met à jour automatiquement.</p>' +
+          '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px"><a class="bouton" target="_blank" rel="noopener" href="' + e(l.google) + '">Android / Google Agenda</a><a class="bouton contour" href="' + e(l.webcal) + '">iPhone</a></div><p class="petit" style="margin-top:14px;color:var(--texte-doux)">Ce lien est personnel : ne le partagez pas.</p>';
+      }).catch(function (err) { bandeau(err.message, 'info'); });
+    });
     var v = $('#volet-apprenant');
     var titre = function (t, s) { return '<div style="margin-bottom:22px"><h2 style="font-size:1.6rem">' + e(t) + '</h2>' + (s ? '<p class="petit" style="color:var(--texte-doux);margin:6px 0 0">' + e(s) + '</p>' : '') + '</div>'; };
     if (etat.onglet === 'accueil') {
@@ -364,10 +414,20 @@ window.ArdoiseSiteCentre = function (donnees, o) {
         '<div class="tuiles">' + tuile('Assiduité', I.taux_presence === null ? '—' : Math.round(I.taux_presence) + ' %', I.taux_presence >= 85 ? 'bonne' : I.taux_presence !== null && I.taux_presence < 70 ? 'alerte' : '') + tuile('Séances suivies', e(I.seances_suivies)) + tuile('Leçons terminées', e(I.lecons_terminees) + ' / ' + e(I.lecons_disponibles)) + '</div>' +
         '<h3 style="margin:26px 0 10px">Prochaines séances</h3>' + (aVenir.length ? '<div class="agenda">' + aVenir.slice(0, 8).map(function (s) {
           var dt = o.dateObj(s.date_seance);
-          return '<div class="evenement"><div class="jour"><b>' + (dt ? dt.getDate() : '') + '</b><small>' + (dt ? o.MOIS_COURTS[dt.getMonth()] : '') + '</small></div><div><strong>' + e(s.groupe) + (s.heure_debut ? ' — ' + e(heure(s.heure_debut)) : '') + '</strong><span>' + e(s.theme || MODES[s.mode] || '') + '</span>' +
-            (urlSure(s.lien_visio) ? '<div style="margin-top:6px"><a class="bouton" style="padding:6px 12px;font-size:.85rem" target="_blank" rel="noopener" href="' + e(s.lien_visio) + '">Rejoindre en ligne</a></div>' : '') + '</div></div>';
+          var ajd = String(s.date_seance).slice(0, 10) === new Date().toISOString().slice(0, 10);
+          return '<div class="evenement"><div class="jour"><b>' + (dt ? dt.getDate() : '') + '</b><small>' + (dt ? o.MOIS_COURTS[dt.getMonth()] : '') + '</small></div><div><strong>' + e(s.groupe) + (s.heure_debut ? ' — ' + e(heure(s.heure_debut)) : '') + '</strong><span>' + e(s.theme || (s.mode === 'enregistre' ? 'Cours enregistré' : MODES[s.mode]) || '') + '</span>' +
+            (s.ma_presence ? '<div class="petit" style="color:#1D5E33;margin-top:4px">✓ Présence enregistrée</div>' : '') +
+            (s.en_ligne ? '<div style="margin-top:6px"><a class="bouton" style="padding:6px 12px;font-size:.85rem" href="#/classe?s=' + e(s.ref) + '">' + (ajd ? 'Rejoindre la classe' : 'Voir la classe en ligne') + '</a></div>' : (D.reglages && D.reglages.pointage_qr && ajd ? '<div class="petit" style="margin-top:4px;color:var(--texte-doux)">En salle : scannez le QR code affiché par votre coach.</div>' : '')) + '</div></div>';
         }).join('') + '</div>' : vide('calendrier', 'Aucune séance programmée pour le moment.')) +
         (devoirs.length ? '<h3 style="margin:26px 0 10px">Devoirs</h3>' + devoirs.map(function (s) { return '<div class="carte" style="margin-bottom:10px"><small class="petit" style="color:var(--texte-doux)">' + e(dateCourte(s.date_seance)) + ' · ' + e(s.groupe) + '</small><p style="margin:6px 0 0" class="texte-libre">' + e(s.devoirs) + '</p></div>'; }).join('') : '');
+    } else if (etat.onglet === 'replays') {
+      var rs = D.replays || [];
+      v.innerHTML = titre('Cours enregistrés', D.reglages && D.reglages.replay_compte_presence ? 'Vous avez manqué un cours ou votre connexion a coupé ? Suivez l’enregistrement : votre présence est comptée après ' + D.reglages.replay_minutes_min + ' minutes.' : 'Revoyez vos cours quand vous voulez.') +
+        (rs.length ? '<div class="grille g2">' + rs.map(function (r) {
+          return '<article class="carte" style="display:flex;flex-direction:column;gap:6px"><span class="petit" style="color:var(--texte-doux)">' + e(dateCourte(r.date_seance)) + ' · ' + e(r.groupe) + '</span><h3 style="margin:2px 0">' + e(r.theme || 'Cours du ' + dateCourte(r.date_seance)) + '</h3>' +
+            (r.valide_at ? '<span class="etiquette" style="background:#E7F6EC;color:#1D5E33;align-self:flex-start">Suivi ✓</span>' : '') +
+            '<a class="bouton" style="margin-top:auto" href="#/replay?s=' + e(r.ref) + '">' + (r.valide_at ? 'Revoir' : 'Suivre le cours') + '</a></article>';
+        }).join('') + '</div>' : vide('presence', 'Aucun cours enregistré pour le moment. Votre coach les publie après les séances en ligne.'));
     } else if (etat.onglet === 'lecons') {
       v.innerHTML = titre('Leçons en ligne', 'Révisez entre les séances. Chaque quiz est corrigé immédiatement.') + (D.lecons.length ? '<div class="grille g2">' + D.lecons.map(function (l) {
         return '<article class="carte" style="display:flex;flex-direction:column;gap:6px"><div style="display:flex;gap:6px;flex-wrap:wrap">' + (l.niveau ? '<span class="etiquette">' + e(l.niveau) + '</span>' : '') + (l.progression === 'terminee' ? '<span class="etiquette" style="background:#E7F6EC;color:#1D5E33">Terminée' + (l.score !== null ? ' · ' + Math.round(l.score) + ' %' : '') + '</span>' : '') + '</div>' +
@@ -412,11 +472,16 @@ window.ArdoiseSiteCentre = function (donnees, o) {
   function ouvrirLecon(id) {
     var v = $('#volet-apprenant');
     v.innerHTML = '<div class="ecran-etat" style="min-height:200px"><div class="anneau"></div>Ouverture de la leçon…</div>';
-    appelApprenant('/lecon', { lecon: id, action: 'ouvrir' }).then(function (r) {
+    appelApprenant('/lecon', { lecon: id, action: 'ouvrir' }).then(function (r) { mettreEnCache('lecon:' + id, r); return r; }, function (err) {
+      var c = err.horsLigne && depuisCache('lecon:' + id);
+      if (c) { bandeau('Hors connexion : leçon enregistrée sur votre téléphone.', 'info'); return c.valeur; }
+      throw err;
+    }).then(function (r) {
       var l = r.lecon, choix = new Array(l.quiz.length);
       var video = urlSure(l.video_url), doc = urlSure(l.ressource_url);
       v.innerHTML = '<button class="lien-fleche" data-retour style="background:none;border:0;cursor:pointer;padding:0;margin-bottom:14px">← Toutes les leçons</button><h2 style="font-size:1.6rem;margin:0 0 6px">' + e(l.titre) + '</h2>' +
         (l.resume ? '<p class="chapeau">' + e(l.resume) + '</p>' : '') + '<div style="display:flex;gap:10px;flex-wrap:wrap;margin:14px 0">' + (video ? '<a class="bouton" target="_blank" rel="noopener" href="' + e(video) + '">▶ Regarder la vidéo</a>' : '') + (doc ? '<a class="bouton contour" target="_blank" rel="noopener" href="' + e(doc) + '">' + ico('document') + 'Document</a>' : '') + '</div>' +
+        (urlSure(l.audio_url) ? '<div class="carte" style="margin:10px 0"><strong>Version audio</strong> <span class="petit" style="color:var(--texte-doux)">— idéale avec une petite connexion</span><audio controls preload="none" src="' + e(l.audio_url) + '" style="width:100%;margin-top:8px"></audio></div>' : '') +
         (l.contenu ? '<div class="texte-libre" style="line-height:1.7;margin:18px 0">' + e(l.contenu) + '</div>' : '') +
         (l.quiz.length ? '<h3 style="margin-top:26px">Quiz — ' + l.quiz.length + ' question(s)</h3><form id="form-quiz" novalidate>' + l.quiz.map(function (q) {
           return '<div class="carte" style="margin-bottom:10px" data-q="' + q.numero + '"><p style="font-weight:600;margin:0 0 10px">' + (q.numero + 1) + '. ' + e(q.question) + '</p><div style="display:grid;gap:6px">' + q.choix.map(function (ch, j) {
@@ -438,7 +503,10 @@ window.ArdoiseSiteCentre = function (donnees, o) {
           }
           etat.apprenant = null;
           appelApprenant('').then(function (D) { etat.apprenant = D; }).catch(function () {});
-        }).catch(function (err) { o.afficher(zoneMsg, err.message, 'erreur'); });
+        }).catch(function (err) {
+          if (err.horsLigne) { enFile('/lecon', { lecon: id, action: 'terminer', reponses: reponses }); o.afficher(zoneMsg, 'Pas de connexion : vos réponses sont gardées et seront envoyées automatiquement dès que le réseau revient.', 'info'); return; }
+          o.afficher(zoneMsg, err.message, 'erreur');
+        });
       }
       var fq = $('#form-quiz', v);
       if (fq) {
@@ -448,6 +516,82 @@ window.ArdoiseSiteCentre = function (donnees, o) {
         $('[data-terminer]', v).addEventListener('click', function () { terminer([], $('.message', v)); });
       }
     }).catch(function (err) { v.innerHTML = vide('vide', err.message || 'Leçon indisponible.'); });
+  }
+
+  /* ---------------------------- Classe en ligne ---------------------- */
+  function parametreHash(nom) {
+    var m = (window.location.hash.split('?')[1] || '').split('&').map(function (x) { return x.split('='); }).filter(function (x) { return x[0] === nom; })[0];
+    return m ? decodeURIComponent(m[1] || '') : '';
+  }
+  function exigerConnexion(suite) {
+    if (identifiants()) { suite(); return; }
+    formulaireConnexion(null, suite);
+  }
+  function pageClasse() {
+    setTimeout(function () { exigerConnexion(chargerClasse); }, 0);
+    return heros('Classe en ligne', 'Votre présence est enregistrée dès que vous rejoignez — même si la connexion coupe ensuite.') +
+      '<section class="section" style="padding-top:clamp(30px,5vw,60px)"><div class="contenant" id="zone-apprenant"><div class="ecran-etat" style="min-height:200px"><div class="anneau"></div>Ouverture de la classe…</div></div></section>';
+  }
+  function chargerClasse() {
+    var z = $('#zone-apprenant'); if (!z) return;
+    var ref = parametreHash('s');
+    appelApprenant('/rejoindre', { seance: ref }).then(function (r) {
+      var v = r.visio || {}, leger = window.matchMedia('(max-width: 700px)').matches;
+      var visio = '';
+      if (r.ouverte && v.integrer && v.url) visio = '<iframe src="' + e(leger ? v.url_leger : v.url) + '" allow="camera; microphone; fullscreen; autoplay" allowfullscreen style="width:100%;aspect-ratio:16/10;border:0;border-radius:16px;background:#111"></iframe>';
+      else if (r.ouverte && v.url) visio = '<div class="panneau" style="text-align:center"><h3>La classe est ouverte</h3><p class="chapeau" style="margin:8px auto 18px;max-width:520px">La visio s’ouvre dans l’application <strong>Jitsi Meet</strong> (gratuite, à installer une fois) ou dans votre navigateur.</p>' +
+        '<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center"><a class="bouton" target="_blank" rel="noopener" href="' + e(leger ? v.url_leger : v.url) + '">Rejoindre la visio</a>' + (v.url_application ? '<a class="bouton contour" href="' + e(v.url_application) + '">Ouvrir dans l’application</a>' : '') + '<a class="bouton contour" target="_blank" rel="noopener" href="' + e(v.url_leger) + '">Mode connexion faible</a></div></div>';
+      else if (!r.ouverte) visio = '<div class="panneau" style="text-align:center"><h3>La classe n’est pas encore ouverte</h3><p class="chapeau">' + e(r.message) + '</p></div>';
+      z.innerHTML = '<div class="message visible ' + (r.presence || !r.ouverte ? (r.ouverte ? 'succes' : 'info') : 'info') + '" style="margin-bottom:16px">' + e(r.message) + '</div>' + visio +
+        '<div class="grille g2" style="margin-top:18px"><div class="carte"><h3>Connexion difficile ?</h3><ul class="liste-coches" style="margin-top:10px"><li><span>Choisissez le <strong>mode connexion faible</strong> : le son passe en priorité, l’image est réduite.</span></li><li><span>Coupez votre caméra et gardez le micro fermé quand vous ne parlez pas.</span></li><li><span>Si ça coupe : pas de panique, votre présence est déjà comptée. Le cours sera disponible en <strong>replay</strong> dans « Cours enregistrés ».</span></li></ul></div>' +
+        '<div class="carte"><h3>' + e(r.seance.groupe) + '</h3><p class="petit">' + e(dateCourte(r.seance.date_seance)) + (r.seance.heure_debut ? ' à ' + e(heure(r.seance.heure_debut)) : '') + (r.seance.theme ? ' · ' + e(r.seance.theme) : '') + '</p>' + (r.seance.devoirs ? '<p class="texte-libre" style="margin-top:8px"><strong>Devoirs :</strong> ' + e(r.seance.devoirs) + '</p>' : '') +
+        '<a class="lien-fleche" href="#/apprenant" style="margin-top:10px;display:inline-block">Retour à mon espace</a></div></div>';
+    }).catch(function (err) {
+      if (err.status === 401) { memoriser(null); formulaireConnexion(err.message, chargerClasse); return; }
+      z.innerHTML = vide('vide', err.horsLigne ? 'Pas de connexion internet. Dès qu’elle revient, rechargez cette page : le cours sera aussi disponible en replay.' : err.message);
+    });
+  }
+  function pageReplay() {
+    setTimeout(function () { exigerConnexion(chargerReplay); }, 0);
+    return heros('Cours enregistré', 'Suivez le cours à votre rythme ; votre présence est comptée quand vous l’avez suivi.') +
+      '<section class="section" style="padding-top:clamp(30px,5vw,60px)"><div class="contenant" id="zone-apprenant"><div class="ecran-etat" style="min-height:200px"><div class="anneau"></div>Chargement…</div></div></section>';
+  }
+  function chargerReplay() {
+    var z = $('#zone-apprenant'); if (!z) return;
+    var ref = parametreHash('s');
+    appelApprenant('/replay', { seance: ref, action: 'ouvrir' }).then(function (r) {
+      var depart = Date.now() - r.minutes_passees * 60000;
+      z.innerHTML = '<h2 style="font-size:1.5rem;margin:0 0 4px">' + e(r.theme || 'Cours du ' + dateCourte(r.date_seance)) + '</h2><p class="petit" style="color:var(--texte-doux);margin:0 0 14px">' + e(r.groupe) + ' · ' + e(dateCourte(r.date_seance)) + '</p>' + lecteurVideo(r.url) +
+        (r.devoirs ? '<div class="carte" style="margin-top:14px"><strong>Devoirs</strong><p class="texte-libre" style="margin:6px 0 0">' + e(r.devoirs) + '</p></div>' : '') +
+        '<div class="panneau" style="margin-top:16px;display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap"><div><strong data-chrono></strong><div class="petit" style="color:var(--texte-doux)">' + (r.compte_presence ? 'Votre présence est comptée après ' + r.minutes_min + ' minutes de suivi.' : 'Validez quand vous avez terminé.') + '</div></div>' +
+        '<button class="bouton" data-valider' + (r.valide ? ' disabled' : '') + '>' + (r.valide ? 'Cours suivi ✓' : 'J’ai suivi le cours') + '</button></div><div class="message" role="status" style="margin-top:10px"></div>';
+      var chrono = $('[data-chrono]', z), bouton = $('[data-valider]', z);
+      function tic() {
+        var min = Math.floor((Date.now() - depart) / 60000);
+        if (!chrono || !document.body.contains(chrono)) return;
+        chrono.textContent = r.valide ? 'Cours validé' : (min >= r.minutes_min ? 'Temps de suivi atteint (' + min + ' min)' : 'Temps de suivi : ' + min + ' / ' + r.minutes_min + ' min');
+        setTimeout(tic, 15000);
+      }
+      tic();
+      bouton.addEventListener('click', function () {
+        appelApprenant('/replay', { seance: ref, action: 'valider' }).then(function (v) { bouton.disabled = true; bouton.textContent = 'Cours suivi ✓'; r.valide = true; tic(); o.afficher($('.message', z), v.message, 'succes'); etat.apprenant = null; })
+          .catch(function (err) { o.afficher($('.message', z), err.horsLigne ? 'Pas de connexion : réessayez dans un instant.' : err.message, 'info'); });
+      });
+    }).catch(function (err) { z.innerHTML = vide('vide', err.message); });
+  }
+  function pagePointer() {
+    setTimeout(function () { exigerConnexion(pointerMaintenant); }, 0);
+    return heros('Présence', 'Pointage de votre présence au cours.') + '<section class="section"><div class="contenant" id="zone-apprenant" style="max-width:640px"><div class="ecran-etat" style="min-height:200px"><div class="anneau"></div>Enregistrement de votre présence…</div></div></section>';
+  }
+  function pointerMaintenant() {
+    var z = $('#zone-apprenant'); if (!z) return;
+    appelApprenant('/pointer', { seance: parametreHash('s'), code: parametreHash('c') }).then(function (r) {
+      z.innerHTML = '<div class="panneau" style="text-align:center"><div style="font-size:3rem">✅</div><h2>' + e(r.message) + '</h2><a class="bouton" href="#/apprenant" style="margin-top:14px">Mon espace</a></div>';
+    }).catch(function (err) {
+      if (err.status === 401) { memoriser(null); formulaireConnexion(err.message, pointerMaintenant); return; }
+      z.innerHTML = '<div class="panneau" style="text-align:center"><div style="font-size:3rem">⚠️</div><h2>Présence non enregistrée</h2><p class="chapeau">' + e(err.horsLigne ? 'Pas de connexion internet. Réessayez, ou signalez-vous à votre coach.' : err.message) + '</p><button class="bouton" data-retry style="margin-top:14px">Réessayer</button></div>';
+      $('[data-retry]', z).addEventListener('click', pointerMaintenant);
+    });
   }
 
   /* ------------------------------------------------------------------ */
@@ -476,8 +620,9 @@ window.ArdoiseSiteCentre = function (donnees, o) {
   /* ------------------------------------------------------------------ */
   /*  Navigation                                                         */
   /* ------------------------------------------------------------------ */
-  var PAGES = { accueil: pageAccueil, formations: pageFormations, 'test-niveau': pageTest, inscription: pageInscription, apprenant: pageApprenant, certificat: pageCertificat, contact: pageContact };
-  var TITRES = { formations: 'Formations', 'test-niveau': 'Test de niveau', inscription: 'S’inscrire', apprenant: 'Espace apprenant', certificat: 'Vérifier un certificat', contact: 'Contact' };
+  var PAGES = { accueil: pageAccueil, formations: pageFormations, 'test-niveau': pageTest, inscription: pageInscription, apprenant: pageApprenant, certificat: pageCertificat, contact: pageContact,
+    classe: pageClasse, replay: pageReplay, pointer: pagePointer };
+  var TITRES = { classe: 'Classe en ligne', replay: 'Cours enregistré', pointer: 'Présence', formations: 'Formations', 'test-niveau': 'Test de niveau', inscription: 'S’inscrire', apprenant: 'Espace apprenant', certificat: 'Vérifier un certificat', contact: 'Contact' };
   function naviguer() {
     var cle = (window.location.hash.replace(/^#\/?/, '').split(/[/?]/)[0] || 'accueil');
     if (!PAGES[cle]) cle = 'accueil';

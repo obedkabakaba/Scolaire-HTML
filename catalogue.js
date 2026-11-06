@@ -80,9 +80,19 @@
    */
   function chargerOffres() {
     if (etat.offres) return Promise.resolve(etat.offres);
-    return recuperer('/catalogue/offres')
-      .then(function (d) { etat.offres = d; return d; })
-      .catch(function () { return null; });
+    // Les offres des écoles, puis celles des centres de formation (cartes
+    // « Formation » de /tarifs/). Le vocabulaire reste celui des écoles : le
+    // comparatif des écoles ne doit pas se remplir de lignes de centres.
+    return Promise.all([
+      recuperer('/catalogue/offres'),
+      recuperer('/catalogue/offres?type=centre_formation').catch(function () { return null; })
+    ]).then(function (r) {
+      var d = r[0];
+      var vus = {};
+      (d.offres || []).forEach(function (o) { vus[o.code] = true; });
+      if (r[1] && r[1].type === 'centre_formation') (r[1].offres || []).forEach(function (o) { if (!vus[o.code]) d.offres.push(o); });
+      etat.offres = d; return d;
+    }).catch(function () { return null; });
   }
 
   function chargerServices() {

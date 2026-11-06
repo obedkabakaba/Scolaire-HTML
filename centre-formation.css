@@ -335,3 +335,4 @@ body { margin: 0; }
 .cf-salle-cote .cf-onglets { flex-wrap: wrap; overflow: visible; }
 .cf-salle-cote .cf-onglets button { padding: 8px 9px; font-size: .84rem; }
 @media (max-width: 900px) { .cf-agenda .cf-cal-item b { display: inline; } .cf-agenda .cf-cal-item { font-size: .86rem; padding: 7px 9px; } }
+.cf-ca-illus { font-size: 3.2rem; line-height: 1; filter: drop-shadow(0 6px 10px rgba(0,0,0,.3)); }

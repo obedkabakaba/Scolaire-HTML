@@ -538,7 +538,11 @@ window.ArdoiseSiteCentre = function (donnees, o) {
     appelApprenant('/rejoindre', { seance: ref }).then(function (r) {
       var v = r.visio || {}, leger = window.matchMedia('(max-width: 700px)').matches;
       var visio = '';
-      if (r.ouverte && v.integrer && v.url) visio = '<iframe src="' + e(leger ? v.url_leger : v.url) + '" allow="camera; microphone; fullscreen; autoplay" allowfullscreen style="width:100%;aspect-ratio:16/10;border:0;border-radius:16px;background:#111"></iframe>';
+      if (r.ouverte && v.fournisseur === 'ardoise') {
+        visio = '<div class="panneau" style="text-align:center"><div style="font-size:3rem" aria-hidden="true">🏫</div><h3>La classe est ouverte</h3><p class="chapeau" style="margin:8px auto 18px;max-width:540px">Choisissez votre avatar, prenez une place, levez la main pour parler. Ça marche dans votre navigateur, sans rien installer ; si votre connexion est lente, la classe vous propose le <strong>mode connexion faible</strong> (le son et le tableau d’abord).</p>' +
+          '<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center"><button class="bouton" data-entrer-classe>Entrer dans la classe</button>' + (v.secours && v.secours.url ? '<a class="bouton contour" target="_blank" rel="noopener" href="' + e(v.secours.url_leger || v.secours.url) + '">Visio de secours</a>' : '') + '</div></div>';
+      }
+      else if (r.ouverte && v.integrer && v.url) visio = '<iframe src="' + e(leger ? v.url_leger : v.url) + '" allow="camera; microphone; fullscreen; autoplay" allowfullscreen style="width:100%;aspect-ratio:16/10;border:0;border-radius:16px;background:#111"></iframe>';
       else if (r.ouverte && v.url) visio = '<div class="panneau" style="text-align:center"><h3>La classe est ouverte</h3><p class="chapeau" style="margin:8px auto 18px;max-width:520px">La visio s’ouvre dans l’application <strong>Jitsi Meet</strong> (gratuite, à installer une fois) ou dans votre navigateur.</p>' +
         '<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center"><a class="bouton" target="_blank" rel="noopener" href="' + e(leger ? v.url_leger : v.url) + '">Rejoindre la visio</a>' + (v.url_application ? '<a class="bouton contour" href="' + e(v.url_application) + '">Ouvrir dans l’application</a>' : '') + '<a class="bouton contour" target="_blank" rel="noopener" href="' + e(v.url_leger) + '">Mode connexion faible</a></div></div>';
       else if (!r.ouverte) visio = '<div class="panneau" style="text-align:center"><h3>La classe n’est pas encore ouverte</h3><p class="chapeau">' + e(r.message) + '</p></div>';
@@ -546,9 +550,28 @@ window.ArdoiseSiteCentre = function (donnees, o) {
         '<div class="grille g2" style="margin-top:18px"><div class="carte"><h3>Connexion difficile ?</h3><ul class="liste-coches" style="margin-top:10px"><li><span>Choisissez le <strong>mode connexion faible</strong> : le son passe en priorité, l’image est réduite.</span></li><li><span>Coupez votre caméra et gardez le micro fermé quand vous ne parlez pas.</span></li><li><span>Si ça coupe : pas de panique, votre présence est déjà comptée. Le cours sera disponible en <strong>replay</strong> dans « Cours enregistrés ».</span></li></ul></div>' +
         '<div class="carte"><h3>' + e(r.seance.groupe) + '</h3><p class="petit">' + e(dateCourte(r.seance.date_seance)) + (r.seance.heure_debut ? ' à ' + e(heure(r.seance.heure_debut)) : '') + (r.seance.theme ? ' · ' + e(r.seance.theme) : '') + '</p>' + (r.seance.devoirs ? '<p class="texte-libre" style="margin-top:8px"><strong>Devoirs :</strong> ' + e(r.seance.devoirs) + '</p>' : '') +
         '<a class="lien-fleche" href="#/apprenant" style="margin-top:10px;display:inline-block">Retour à mon espace</a></div></div>';
+      var bec = $('[data-entrer-classe]', z);
+      if (bec) {
+        var entrer = function () {
+          bec.disabled = true; bec.textContent = 'Ouverture…';
+          Promise.all([appelApprenant('/classe', { seance: ref }), chargerClasseArdoise()]).then(function (res) {
+            window.ClasseArdoise.ouvrir({ api: API, paquet: res[0], quitter: function () { bec.disabled = false; bec.textContent = 'Revenir dans la classe'; } });
+          }).catch(function (err) { bec.disabled = false; bec.textContent = 'Entrer dans la classe'; window.alert(err.horsLigne ? 'Pas de connexion internet.' : err.message); });
+        };
+        bec.addEventListener('click', entrer);
+      }
     }).catch(function (err) {
       if (err.status === 401) { memoriser(null); formulaireConnexion(err.message, chargerClasse); return; }
       z.innerHTML = vide('vide', err.horsLigne ? 'Pas de connexion internet. Dès qu’elle revient, rechargez cette page : le cours sera aussi disponible en replay.' : err.message);
+    });
+  }
+  function chargerClasseArdoise() {
+    if (window.ClasseArdoise) return Promise.resolve();
+    return new Promise(function (ok, ko) {
+      var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = '/classe-ardoise.css?v=1'; document.head.appendChild(l);
+      var sc = document.createElement('script'); sc.src = '/classe-ardoise.js?v=1'; sc.onload = function () { ok(); };
+      sc.onerror = function () { var er = new Error('Impossible de charger la classe.'); er.horsLigne = true; ko(er); };
+      document.head.appendChild(sc);
     });
   }
   function pageReplay() {

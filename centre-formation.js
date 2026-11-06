@@ -100,7 +100,10 @@
       if (r.status === 204) return null;
       return r.json().catch(function () { return {}; }).then(function (corps) {
         if (!r.ok) {
-          var err = new Error((corps && corps.message) || 'Erreur ' + r.status);
+          var msg = (corps && corps.message) || 'Erreur ' + r.status;
+          // Fonction réservée à une offre supérieure : dire laquelle et où la prendre.
+          if (corps && corps.code === 'offre_insuffisante') msg += ' Elle est comprise dans Formation Pro et Premium : menu Abonnement (chef de centre).';
+          var err = new Error(msg);
           err.status = r.status; err.code = corps && corps.code; throw err;
         }
         return corps;
@@ -1730,8 +1733,10 @@
       ['mode', 'choix', 'Mode de paie', '', [['heure', 'À l’heure de cours donnée'], ['seance', 'À la séance donnée'], ['mensuel', 'Forfait mensuel']]]
     ]],
     ['en_ligne', 'Cours en ligne et présence', 'La présence se compte même si la connexion coupe : au clic sur « Rejoindre », au QR code en salle, ou par le replay.', [
-      ['fournisseur', 'choix', 'Outil de visio', '', [['jitsi', 'Jitsi Meet (gratuit, sans compte pour les apprenants)'], ['lien', 'Notre lien Google Meet / Zoom / Teams']]],
-      ['domaine_jitsi', 'texte', 'Serveur Jitsi', 'meet.jit.si par défaut. Avec votre propre serveur (ou 8x8.vc), la visio peut s’afficher directement dans Ardoise.'],
+      ['fournisseur', 'choix', 'Outil de classe en ligne', 'La Classe Ardoise est intégrée : sans limite de durée, avatars, main levée, tableau, sondages, mode connexion faible. Une visio Jitsi de secours reste proposée.', [['ardoise', 'Classe Ardoise (intégrée, recommandée)'], ['jitsi', 'Jitsi Meet (gratuit, s’ouvre dans l’application)'], ['lien', 'Notre lien Google Meet / Zoom / Teams']]],
+      ['micros_libres', 'case', 'Classe Ardoise : les apprenants ouvrent leur micro sans attendre que le coach leur donne la parole'],
+      ['debit_video_max', 'nombre', 'Classe Ardoise : débit total que le coach partage entre les apprenants (kbit/s, 2500 conseillé)'],
+      ['domaine_jitsi', 'texte', 'Serveur Jitsi (visio de secours ou outil Jitsi)', 'meet.jit.si par défaut. Avec votre propre serveur (ou 8x8.vc), la visio Jitsi peut s’afficher directement dans Ardoise.'],
       ['integrer', 'case', 'Afficher la visio directement dans Ardoise (serveur propre uniquement)'],
       ['retard_minutes', 'nombre', 'Au-delà de combien de minutes un apprenant est « en retard »'],
       ['pointage_qr', 'case', 'Pointage par QR code en présentiel (l’apprenant scanne, la présence est faite)'],
@@ -1983,6 +1988,15 @@
   /*  Salle virtuelle (coach) — visio, présents, leçon, replay, QR        */
   /* ------------------------------------------------------------------ */
   var minuteurSalle = null;
+  /** La Classe Ardoise (classe-ardoise.js / .css), chargée à la première entrée seulement. */
+  function chargerClasseArdoise() {
+    if (window.ClasseArdoise) return Promise.resolve();
+    return new Promise(function (ok, ko) {
+      var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'classe-ardoise.css?v=1'; document.head.appendChild(l);
+      var sc = document.createElement('script'); sc.src = 'classe-ardoise.js?v=1'; sc.onload = function () { ok(); }; sc.onerror = function () { ko(new Error('Impossible de charger la classe : vérifiez la connexion.')); };
+      document.head.appendChild(sc);
+    });
+  }
   ROUTES.salle = function () {
     var id = (window.location.hash.split('?s=')[1] || '').split('&')[0];
     if (minuteurSalle) { clearInterval(minuteurSalle); minuteurSalle = null; }
@@ -1995,13 +2009,17 @@
       $('.cf-entete p').textContent = dateFr(s.date_seance, true) + (s.heure_debut ? ' à ' + heure(s.heure_debut) : '') + (s.theme ? ' · ' + s.theme : '');
       var presents = d.presences.filter(function (p) { return p.statut === 'present' || p.statut === 'retard'; }).length;
       var visio;
-      if (!enLigne) visio = '<div class="cf-salle-visio vide"><strong>Séance en présentiel</strong><p>Affichez le QR code ci-contre sur un écran ou imprimez-le : chaque apprenant le scanne avec son téléphone et sa présence est faite.</p></div>';
+      if (enLigne && v.fournisseur === 'ardoise') visio = '<div class="cf-salle-visio cf-classe-ardoise"><div class="cf-ca-illus" aria-hidden="true">🏫</div><strong>La Classe Ardoise est prête</strong>' +
+        '<p>Votre salle de classe en ligne, sans limite de durée : les apprenants entrent avec leur avatar et prennent une place, lèvent la main, répondent aux sondages. Vous donnez la parole, écrivez au tableau, partagez votre écran.</p>' +
+        '<div class="cf-actions" style="justify-content:center"><button class="cf-btn principal" data-entrer-classe>Entrer dans la classe</button>' + (v.secours && v.secours.url ? '<a class="cf-btn" target="_blank" rel="noopener" href="' + e(v.secours.url) + '" title="Si un réseau bloque tout : une visio Jitsi de secours">Visio de secours</a>' : '') + '</div>' +
+        '<p class="doux" style="font-size:.78rem;margin-top:10px">Conseil : branchez-vous en Wi-Fi ou en 4G et gardez cette page au premier plan. Si votre connexion sature, passez au tableau sans vidéo.</p></div>';
+      else if (!enLigne) visio = '<div class="cf-salle-visio vide"><strong>Séance en présentiel</strong><p>Affichez le QR code ci-contre sur un écran ou imprimez-le : chaque apprenant le scanne avec son téléphone et sa présence est faite.</p></div>';
       else if (v.integrer && v.url) visio = '<iframe class="cf-salle-iframe" src="' + e(leger ? v.url_leger : v.url) + '" allow="camera; microphone; fullscreen; display-capture; autoplay" allowfullscreen></iframe>';
       else if (v.url) visio = '<div class="cf-salle-visio"><div class="cf-salle-icone">🎥</div><strong>La salle est prête</strong><p>La visio s’ouvre dans l’application Jitsi Meet (téléphone) ou un nouvel onglet. Les apprenants rejoignent depuis leur espace apprenant ; vous voyez ici qui est connecté.</p>' +
         '<div class="cf-actions" style="justify-content:center"><a class="cf-btn principal" target="_blank" rel="noopener" href="' + e(v.url) + '">Démarrer la visio</a><a class="cf-btn" target="_blank" rel="noopener" href="' + e(v.url_leger) + '">Mode connexion faible</a>' + (v.url_application ? '<a class="cf-btn" href="' + e(v.url_application) + '">Ouvrir dans l’application</a>' : '') + '<button class="cf-btn" data-copier-salle>Copier le lien</button></div></div>';
       else visio = '<div class="cf-salle-visio vide"><strong>Aucun lien de visio</strong><p>Ajoutez votre lien Google Meet / Zoom sur le groupe ou la séance, ou choisissez Jitsi dans les Réglages du centre.</p></div>';
       z.innerHTML = '<div class="cf-salle"><div class="cf-salle-principal">' + visio +
-        (enLigne ? '<div class="cf-salle-faible"><strong>Connexion difficile ?</strong> <span>1. Passez en <a href="#" data-leger>mode connexion faible</a> (audio seul, image 180p). 2. Coupez votre caméra : le son passe mieux. 3. Publiez l’enregistrement après le cours : les apprenants qui ont décroché le suivent en replay et leur présence est comptée.</span></div>' : '') +
+        (enLigne && v.fournisseur !== 'ardoise' ? '<div class="cf-salle-faible"><strong>Connexion difficile ?</strong> <span>1. Passez en <a href="#" data-leger>mode connexion faible</a> (audio seul, image 180p). 2. Coupez votre caméra : le son passe mieux. 3. Publiez l’enregistrement après le cours : les apprenants qui ont décroché le suivent en replay et leur présence est comptée.</span></div>' : '') +
         '</div><aside class="cf-salle-cote"><div class="cf-onglets" data-onglets-salle><button class="actif" data-o="presents">Présents ' + presents + '/' + d.presences.length + '</button><button data-o="lecon">Leçon</button><button data-o="notes">Devoirs</button><button data-o="replay">Replay</button>' + (d.pointage ? '<button data-o="qr">QR</button>' : '') + '</div><div data-volet-salle></div>' +
         '<button class="cf-btn principal" style="width:100%;margin-top:12px;justify-content:center" data-cloturer>Clôturer et enregistrer l’appel</button></aside></div>';
       var volets = {
@@ -2043,6 +2061,13 @@
       var bl = $('[data-leger]', z); if (bl) bl.addEventListener('click', function (ev) { ev.preventDefault(); if (v.integrer) { leger = !leger; dessiner(d); } else window.open(v.url_leger, '_blank', 'noopener'); });
       var bcp = $('[data-copier-salle]', z); if (bcp) bcp.addEventListener('click', function () { navigator.clipboard.writeText(v.url.split('#')[0]).then(function () { toast('Lien de la salle copié.'); }); });
       $('[data-cloturer]', z).addEventListener('click', function () { ouvrirAppel(id, recharger); });
+      var bec = $('[data-entrer-classe]', z);
+      if (bec) bec.addEventListener('click', function () {
+        bec.disabled = true; bec.textContent = 'Ouverture…';
+        Promise.all([envoyer('/seances/' + id + '/classe', 'POST', {}), chargerClasseArdoise()]).then(function (r) {
+          window.ClasseArdoise.ouvrir({ api: S.baseAPI(), paquet: r[0], quitter: function () { recharger(); } });
+        }).catch(echec).then(function () { bec.disabled = false; bec.textContent = 'Entrer dans la classe'; });
+      });
       dessiner.majPresences = function (nd) { d.presences = nd.presences; if (courant === 'presents') voir('presents'); var b = $('[data-o="presents"]', z); if (b) b.textContent = 'Présents ' + nd.presences.filter(function (p) { return p.statut === 'present' || p.statut === 'retard'; }).length + '/' + nd.presences.length; };
     }
     function recharger() { api('/seances/' + id + '/salle').then(dessiner).catch(function (err) { z.innerHTML = '<div class="cf-vide">' + e(err.message) + '</div>'; }); }

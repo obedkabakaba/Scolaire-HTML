@@ -60,6 +60,81 @@ def carte(code, nom, positionnement, prix, mois, semestriel, annuel,
 </article>"""
 
 
+
+def carte_formation(code, nom, positionnement, prix, semestriel, annuel, mois_sem, mois_an,
+                    eco_sem, eco_an, cible, points, limites, badge=None):
+    """Une offre « Formation » (centres de formation, migration 080) : même
+    gabarit et mêmes attributs data- que les offres des écoles, sans
+    illustration, et le bouton mène à l'essai gratuit."""
+    b = f'<span class="badge">{badge}</span>' if badge else ""
+    lis = "".join(f"<li>{p}</li>" for p in points)
+    lim = "".join(f"<span>{l}</span>" for l in limites)
+    classe = "offre mise-en-avant" if badge else "offre"
+    bouton = "ocre" if badge else "secondaire"
+    mois_txt = str(mois_an).replace(".", ",")
+    return f"""<article class="{classe}" id="{code}" data-offre="{code}" data-devise="USD"
+  data-prix-mensuel="{prix}" data-mois-mensuel="{prix}" data-eco-mensuel="0" data-pct-mensuel="0"
+  data-prix-semestriel="{semestriel}" data-mois-semestriel="{mois_sem}" data-eco-semestriel="{eco_sem}" data-pct-semestriel="8"
+  data-prix-annuel="{annuel}" data-mois-annuel="{mois_an}" data-eco-annuel="{eco_an}" data-pct-annuel="17">
+  {b}
+  <h2 class="nom">{nom}</h2>
+  <div class="positionnement">{positionnement}</div>
+  <div class="prix" data-prix><span class="devise">$</span>{annuel}<span class="periode-prix">/ an</span></div>
+  <div class="par-mois" data-par-mois>soit {mois_txt}&nbsp;$ par mois</div>
+  <div class="facturation" data-facturation>Facturé {annuel}&nbsp;$ en une fois, une fois par an.</div>
+  <span class="economie" data-economie hidden></span>
+  <div class="cible">{cible}</div>
+  <ul>{lis}</ul>
+  <div class="limites">{lim}</div>
+  <a class="bouton {bouton} pleine-largeur" href="/essai/">Essayer 7 jours gratuitement</a>
+</article>"""
+
+
+CARTES_CENTRES = "\n".join([
+    carte_formation("formation_essentiel", "Formation Essentiel", "Le centre entier, pour démarrer",
+                    19, 105, 190, "17.50", "15.83", 9, 38,
+                    "Centres qui démarrent ou qui accueillent jusqu’à 60 apprenants à la fois.",
+                    ["Programmes, niveaux et sessions", "Groupes, planning et appel",
+                     "Paiements par tranches et reçus (FC et&nbsp;$)", "Certificats avec QR code vérifiable",
+                     "Site du centre, préinscription et test de niveau", "Calendrier et rappels automatiques",
+                     "Classe Ardoise : classe en ligne, avatars, tableau, sondages", "Espace apprenant, même hors connexion"],
+                    ["<strong>Jusqu’à 60 apprenants actifs</strong> · coachs illimités", "40 générations IA / mois"]),
+    carte_formation("formation_pro", "Formation Pro", "Piloter, pas seulement gérer",
+                    39, 215, 390, "35.83", "32.50", 19, 78,
+                    "Centres de 60 à 250 apprenants, avec plusieurs coachs et une caisse.",
+                    ['<span class="herite">Tout Essentiel</span>', "Dépenses, paie des coachs et bilan",
+                     "Score de chaque coach", "Assiduité, progression et risque d’abandon de chaque apprenant",
+                     "Assistant IA : leçons, quiz, messages", "Messages groupés aux apprenants"],
+                    ["<strong>Jusqu’à 250 apprenants actifs</strong> · coachs illimités", "400 générations IA / mois"],
+                    badge="Le plus choisi"),
+    carte_formation("formation_premium", "Formation Premium", "Grandir sans compter",
+                    79, 435, 790, "72.50", "65.83", 39, 158,
+                    "Grands centres, écoles de langues à plusieurs sites, réseaux.",
+                    ['<span class="herite">Tout Pro</span>', "Assistant WhatsApp et messages par WhatsApp",
+                     "1 500 générations IA par mois", "E-mails sans limite", "Support prioritaire"],
+                    ["<strong>Apprenants illimités</strong> · coachs illimités", "1 500 générations IA / mois · e-mails sans limite"]),
+])
+
+SECTION_CENTRES = f"""<section class="section" id="centres-de-formation" aria-labelledby="titre-centres">
+  <div class="conteneur">
+    <div class="section-entete">
+      <span class="eyebrow">Nouveau</span>
+      <h2 id="titre-centres">Centres de formation</h2>
+      <p>Centre d’anglais, de langues, d’informatique, de couture, de métiers… Sessions, groupes, coachs,
+      paiements par tranches, certificats vérifiables, site du centre avec test de niveau, et la
+      <strong>Classe Ardoise</strong> : votre salle de classe en ligne, sans limite de durée. Toutes les
+      offres contiennent le métier entier ; elles se distinguent par la taille du centre et les outils de pilotage.</p>
+    </div>
+    <div class="grille-offres">
+      {CARTES_CENTRES}
+    </div>
+    <p class="rappel-separation">Un apprenant compte comme <strong>actif</strong> tant qu’il suit une
+    formation : ceux qui ont terminé ou abandonné ne comptent plus. Changer d’offre se fait à tout moment,
+    sans perte de données.</p>
+  </div>
+</section>
+"""
+
 CARTES = "\n".join([
     carte("ascension", "Ardoise Ascension", "L'essentiel pour gérer votre établissement",
           30, 30, 165, 300, "27.50", "25", 15, 60,
@@ -193,6 +268,7 @@ def tarifs():
   </div>
 </section>
 
+{SECTION_CENTRES}
 <section class="section alt">
   <div class="conteneur">
     <div class="section-entete">

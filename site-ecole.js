@@ -1169,7 +1169,7 @@
     }
     if (window.ArdoiseSiteCentre) { lancer(); return; }
     var s = document.createElement('script');
-    s.src = '/site-centre.js?v=3';
+    s.src = '/site-centre.js?v=4';
     s.onload = lancer;
     s.onerror = function () { erreur('Impossible de charger le site du centre. Vérifiez votre connexion et réessayez.'); };
     document.head.appendChild(s);

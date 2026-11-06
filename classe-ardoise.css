@@ -112,10 +112,10 @@ html.ca-ouverte, html.ca-ouverte body { overflow: hidden !important; }
 .ca-avatar.parle .ca-halo { box-shadow: 0 0 0 3px #41c47b, 0 0 18px 4px rgba(65,196,123,.55); animation: ca-halo 1s infinite; }
 .ca-avatar.parole:not(.parle) .ca-halo { box-shadow: 0 0 0 2px rgba(65,196,123,.7); }
 @keyframes ca-halo { 50% { box-shadow: 0 0 0 5px #41c47b, 0 0 26px 8px rgba(65,196,123,.35); } }
-.ca-avatar.moi .ca-etiquette { background: var(--ca-accent); }
-.ca-etiquette { position: absolute; left: 50%; top: 96%; transform: translateX(-50%); white-space: nowrap; background: rgba(16,26,43,.86); color: #fff; border-radius: 6px;
+.ca-etiquette.moi { background: var(--ca-accent); }
+.ca-etiquette { position: absolute; transform: translateX(-50%); transition: left 1.5s cubic-bezier(.45,.05,.35,1), top 1.5s cubic-bezier(.45,.05,.35,1); white-space: nowrap; background: rgba(16,26,43,.86); color: #fff; border-radius: 6px;
   padding: 1px 6px; font-size: clamp(7px, 1.15cqw, 12px); font-weight: 600; display: flex; gap: 3px; align-items: center; z-index: 2; pointer-events: none; }
-.ca-avatar.coach .ca-etiquette { background: var(--ca-orange); }
+.ca-etiquette.coach { background: var(--ca-orange); }
 .ca-icones:empty { display: none; }
 .ca-main-levee { position: absolute; left: 50%; top: -42%; transform: translateX(-50%) scale(0); font-size: clamp(10px, 2.4cqw, 24px); transition: transform .25s; filter: drop-shadow(0 2px 2px rgba(0,0,0,.3)); }
 .ca-avatar.main .ca-main-levee { transform: translateX(-50%) scale(1); animation: ca-saute 1s infinite; }
@@ -290,3 +290,8 @@ html.ca-ouverte, html.ca-ouverte body { overflow: hidden !important; }
 @media (prefers-reduced-motion: reduce) {
   .ca-avatar, .ca-avatar * { animation: none !important; transition: none !important; }
 }
+/* Le site du centre étire ses boutons (largeur pleine) : dans la classe, jamais. */
+.ca-groupe-choix > div > button { width: auto !important; max-width: none !important; flex: 0 0 auto !important; display: inline-flex !important; align-items: center; justify-content: center; }
+.ca-groupe-choix > div > button.pastille { width: 30px !important; height: 30px !important; }
+.ca-actions-avatar > button, .ca-carte-fin button, .ca-toast button, .ca-barre .ca-b, .ca-commandes button, .ca-rapides button { width: auto !important; }
+.ca-rep { width: 100% !important; }

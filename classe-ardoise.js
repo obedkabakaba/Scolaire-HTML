@@ -358,7 +358,12 @@
         var nouveau = !n;
         if (nouveau) {
           n = el('<div class="ca-avatar"><div class="ca-halo"></div><div class="ca-carton" data-carton></div><div class="ca-main-levee" aria-hidden="true">✋</div>' +
-            '<div class="ca-corps-avatar"></div><div class="ca-etiquette"><span class="ca-nom"></span><span class="ca-icones"></span></div></div>');
+            '<div class="ca-corps-avatar"></div></div>');
+          // Le nom est posé sur le devant du banc (un chevalet), au-dessus des bancs :
+          // sous l'avatar, il serait caché par le banc.
+          n._tag = el('<div class="ca-etiquette"><span class="ca-nom"></span><span class="ca-icones"></span></div>');
+          n._tag.style.left = pct(PORTE.x, 'x'); n._tag.style.top = pct(PORTE.y, 'y');
+          sc.appendChild(n._tag);
           n.style.left = pct(PORTE.x - 36, 'x'); n.style.top = pct(PORTE.y - 62, 'y');
           sc.appendChild(n);
           elements[p.pid] = n;
@@ -367,12 +372,16 @@
         var cle = JSON.stringify(p.avatar);
         if (n.getAttribute('data-av') !== cle) { $('.ca-corps-avatar', n).innerHTML = avatarSvg(p.avatar); n.setAttribute('data-av', cle); }
         n.className = classesAvatar(p) + (pos.debout ? ' debout' : '');
-        $('.ca-nom', n).textContent = p.pid === S.animateur ? 'Coach ' + p.nom : p.nom + (p.pid === MOI ? ' (vous)' : '');
-        $('.ca-icones', n).textContent = (p.micro ? '🎙️' : '') + (p.faible ? '🐢' : '');
+        var tag = n._tag;
+        $('.ca-nom', tag).textContent = p.pid === S.animateur ? 'Coach ' + p.nom : p.nom + (p.pid === MOI ? ' (vous)' : '');
+        $('.ca-icones', tag).textContent = (p.micro ? '🎙️' : '') + (p.faible ? '🐢' : '');
+        tag.className = 'ca-etiquette' + (p.pid === MOI ? ' moi' : '') + (p.pid === S.animateur ? ' coach' : '');
         var cible = { left: pct(pos.x - 36, 'x'), top: pct(pos.y - (pos.coach ? 70 : 62), 'y') };
         n.style.zIndex = String(pos.rang < 0 ? 4 : pos.rang * 10 + 3);
+        tag.style.zIndex = String(pos.rang < 0 ? 6 : pos.rang * 10 + 6);
+        var cibleTag = { left: pct(pos.x, 'x'), top: pct(pos.y + (pos.coach ? 10 : pos.debout ? 4 : 8), 'y') };
         if (n.style.left !== cible.left || n.style.top !== cible.top) {
-          var deplacer = function () { n.classList.add('marche'); n.style.left = cible.left; n.style.top = cible.top; clearTimeout(n._fin); n._fin = setTimeout(function () { n.classList.remove('marche'); }, 1700); };
+          var deplacer = function () { n.classList.add('marche'); n.style.left = cible.left; n.style.top = cible.top; tag.style.left = cibleTag.left; tag.style.top = cibleTag.top; clearTimeout(n._fin); n._fin = setTimeout(function () { n.classList.remove('marche'); }, 1700); };
           if (nouveau) requestAnimationFrame(function () { requestAnimationFrame(deplacer); }); else deplacer();
         }
         // Carton du sondage, levé une fois les réponses révélées.
@@ -387,6 +396,7 @@
         if (vus[pid]) return;
         var n = elements[pid]; delete elements[pid];
         n.classList.add('marche', 'sortie'); n.style.left = pct(PORTE.x - 32, 'x'); n.style.top = pct(PORTE.y - 30, 'y');
+        if (n._tag) n._tag.remove();
         setTimeout(function () { n.remove(); }, 1600);
       });
       var nb = Object.keys(S.participants).filter(function (k) { return S.participants[k].en_ligne; }).length;

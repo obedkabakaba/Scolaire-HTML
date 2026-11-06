@@ -156,11 +156,14 @@
     var S = {
       participants: {}, animateur: null, scene: 'attente', micros_libres: !!(P.salle && P.salle.micros_libres), places_verrouillees: false,
       places: (P.salle && P.salle.places) || 20, chat: [], tableau: { traits: [], texte: '' }, sondage: null, minuteur: null,
-      parleurs: [], decalage: 0, terminee: false, nonLus: 0
+      parleurs: [], decalage: 0, terminee: false, nonLus: 0,
+      vue: (P.salle && P.salle.vue) || 'salle', ecran: [], cameras_apprenants: !(P.salle && P.salle.cameras_apprenants === false)
     };
     var PLACES = dispositionPlaces(S.places);
     var monAvatar = chargerAvatar();
-    var vueCourante = etroit() ? 'tableau' : 'salle';
+    function vueParDefaut(mode) { return mode === 'visio' ? 'visio' : (etroit() ? 'tableau' : 'salle'); }
+    var vueCourante = vueParDefaut(S.vue);
+    var premierEtat = true;
     var panneau = etroit() ? null : 'discussion';
     var source = null, fermee = false;
 
@@ -172,7 +175,7 @@
     /* ---------- Squelette ---------- */
     var racine = el('<div class="ca-racine" data-role="' + esc(P.role) + '" role="dialog" aria-label="Classe Ardoise">' +
       '<header class="ca-entete"><div class="ca-titre"><span class="ca-pastille" aria-hidden="true"></span><div><strong>' + esc(P.salle.titre || 'Cours') + '</strong><span>' + esc([P.salle.theme, P.salle.heure_debut ? String(P.salle.heure_debut).slice(0, 5).replace(':', ' h ') : ''].filter(Boolean).join(' · ')) + '</span></div></div>' +
-      '<div class="ca-vues" role="tablist"><button data-vue="salle" role="tab">🏫 Salle</button><button data-vue="tableau" role="tab">🖥 Tableau</button></div>' +
+      '<div class="ca-vues" role="tablist"><button data-vue="salle" role="tab" title="La salle de classe dessinée, avec les avatars">🏫 Salle</button><button data-vue="visio" role="tab" title="La visio classique : le coach en grand, les vignettes des participants">🎥 Visio</button><button data-vue="tableau" role="tab" title="Le tableau en grand">🖥 Tableau</button></div>' +
       '<div class="ca-etat-reseau" data-reseau title="Qualité de votre connexion"><i></i><i></i><i></i><span>Connexion…</span></div>' +
       '<div class="ca-compte" data-compte>👥 0</div><button class="ca-quitter" data-quitter>Quitter</button></header>' +
       '<div class="ca-corps"><div class="ca-zone" data-zone><div class="ca-piece" data-piece>' + decorSvg() +
@@ -180,7 +183,7 @@
       '<div class="ca-tableau-attente" data-attente><span>🧑‍🏫</span><strong>En attente du coach…</strong><small>La classe est ouverte : choisissez votre place.</small></div>' +
       '<button class="ca-agrandir" data-agrandir title="Agrandir le tableau">⤢</button><div class="ca-outils-craie" data-outils-craie></div></div>' +
       '<div class="ca-minuteur" data-minuteur hidden></div><div class="ca-scene" data-scene></div><div class="ca-flottants" data-flottants></div></div>' +
-      '<div class="ca-bande" data-bande></div></div>' +
+      '<div class="ca-bande" data-bande></div><div class="ca-vignettes" data-vignettes></div></div>' +
       '<aside class="ca-panneau" data-panneau><div class="ca-onglets"><button data-onglet="discussion">💬 Discussion<b data-non-lus hidden></b></button><button data-onglet="participants">👥 Classe</button><button data-onglet="sondage">📊 Sondage</button><button class="ca-fermer-panneau" data-fermer-panneau aria-label="Fermer">✕</button></div><div class="ca-volet" data-volet></div></aside></div>' +
       '<footer class="ca-barre" data-barre></footer><div class="ca-toasts" data-toasts></div><audio data-son autoplay></audio></div>');
     document.body.appendChild(racine);
@@ -228,6 +231,10 @@
           S.participants = {}; m.participants.forEach(function (p) { S.participants[p.pid] = p; });
           S.participants[MOI] = m.moi;
           ['animateur', 'scene', 'micros_libres', 'places_verrouillees', 'tableau', 'sondage', 'minuteur', 'parleurs', 'terminee'].forEach(function (k) { S[k] = m[k]; });
+          if (m.vue) S.vue = m.vue;
+          S.ecran = m.ecran || [];
+          if (typeof m.cameras_apprenants === 'boolean') S.cameras_apprenants = m.cameras_apprenants;
+          if (premierEtat) { premierEtat = false; voirVue(vueParDefaut(S.vue)); }
           S.chat = m.chat || [];
           if (m.places && m.places !== S.places) { S.places = m.places; PLACES = dispositionPlaces(S.places); }
           if (m.terminee) { finir(); return; }
@@ -274,7 +281,17 @@
           break;
         case 'minuteur': S.decalage = m.maintenant - Date.now(); S.minuteur = m.minuteur; rendreMinuteur(); break;
         case 'scene': S.scene = m.scene; rendreTableau(); break;
-        case 'reglages': S.micros_libres = m.micros_libres; S.places_verrouillees = m.places_verrouillees; rendreBarre(); if (panneau === 'participants') rendreVolet(); break;
+        case 'reglages':
+          S.micros_libres = m.micros_libres; S.places_verrouillees = m.places_verrouillees;
+          if (typeof m.cameras_apprenants === 'boolean') S.cameras_apprenants = m.cameras_apprenants;
+          rendreBarre(); if (panneau === 'participants') rendreVolet(); break;
+        case 'vue':
+          S.vue = m.vue;
+          voirVue(vueParDefaut(m.vue));
+          if (!jeSuisAnimateur()) toast(m.vue === 'visio' ? '🎥 Le coach passe la classe en mode visio. Vous pouvez revenir à la salle en haut de l’écran.' : '🏫 Le coach passe la classe en mode salle.');
+          break;
+        case 'ecran': S.ecran = m.pids || []; Media.majEcran(); rendreVisio(); break;
+        case 'cameras_coupees': Media.couperCamera(true); toast('Le coach a désactivé les caméras des apprenants.'); break;
         case 'signal': Media.surSignal(m.de, m.donnees); break;
         case 'fin': finir(null, m.bilan); break;
         case 'ping': S.decalage = m.maintenant - Date.now(); break;
@@ -402,11 +419,64 @@
       var nb = Object.keys(S.participants).filter(function (k) { return S.participants[k].en_ligne; }).length;
       $('[data-compte]', racine).textContent = '👥 ' + nb;
       rendreBande();
+      rendreVisio();
     }
 
     function rendreParleurs() {
       Object.keys(elements).forEach(function (pid) { elements[pid].classList.toggle('parle', S.parleurs.indexOf(pid) >= 0); });
       $$('[data-bande] .ca-mini', racine).forEach(function (m) { m.classList.toggle('parle', S.parleurs.indexOf(m.getAttribute('data-pid')) >= 0); });
+      $$('[data-vignettes] .ca-vignette', racine).forEach(function (m) { m.classList.toggle('parle', S.parleurs.indexOf(m.getAttribute('data-pid')) >= 0); });
+    }
+
+    /* ---------- Mode visio : les vignettes des participants ---------- */
+    var vignettes = {};       // pid → élément
+    var epingles = [];        // animateur : apprenants mis à l'écran à la main, dans l'ordre
+    function rendreVisio() {
+      var z = $('[data-vignettes]', racine);
+      if (vueCourante !== 'visio') return;
+      var liste = Object.keys(S.participants).map(function (k) { return S.participants[k]; }).filter(function (p) { return p.en_ligne || p.pid === MOI; })
+        .sort(function (a, b) {
+          var ra = a.pid === MOI ? 0 : a.pid === S.animateur ? 1 : (S.ecran.indexOf(a.pid) >= 0 ? 2 : a.camera ? 3 : 4);
+          var rb = b.pid === MOI ? 0 : b.pid === S.animateur ? 1 : (S.ecran.indexOf(b.pid) >= 0 ? 2 : b.camera ? 3 : 4);
+          return ra - rb || String(a.nom).localeCompare(b.nom);
+        });
+      var vus = {};
+      liste.forEach(function (p, i) {
+        vus[p.pid] = true;
+        var v = vignettes[p.pid];
+        if (!v) {
+          v = el('<div class="ca-vignette" data-pid="' + esc(p.pid) + '"><video muted playsinline autoplay></video><div class="ca-vi-av"></div>' +
+            '<div class="ca-vi-bas"><span class="ca-vi-nom"></span><span class="ca-vi-ic"></span></div><i class="ca-vi-main">✋</i><span class="ca-vi-note"></span></div>');
+          v.addEventListener('click', function () { cliquerVignette(p.pid); });
+          vignettes[p.pid] = v;
+        }
+        if (z.children[i] !== v) z.insertBefore(v, z.children[i] || null);
+        var flux = Media.fluxDe(p.pid);
+        var vid = $('video', v);
+        if (vid.srcObject !== flux) { vid.srcObject = flux || null; if (flux) vid.play().catch(function () {}); }
+        var cle = JSON.stringify(p.avatar);
+        if (v.getAttribute('data-av') !== cle) { $('.ca-vi-av', v).innerHTML = avatarSvg(p.avatar); v.setAttribute('data-av', cle); }
+        v.className = 'ca-vignette' + (flux ? ' avec-video' : '') + (p.pid === MOI ? ' moi' : '') + (p.pid === S.animateur ? ' coach' : '') + (p.main ? ' main' : '') +
+          (S.parleurs.indexOf(p.pid) >= 0 ? ' parle' : '') + (epingles.indexOf(p.pid) >= 0 ? ' epingle' : '');
+        $('.ca-vi-nom', v).textContent = (p.pid === S.animateur ? 'Coach ' : '') + p.nom + (p.pid === MOI ? ' (vous)' : '');
+        $('.ca-vi-ic', v).textContent = (p.micro ? '🎙️' : '🔇') + (p.faible ? ' 🐢' : '') + (epingles.indexOf(p.pid) >= 0 ? ' 📌' : '');
+        var note = '';
+        if (p.pid === S.animateur) note = 'au tableau';
+        else if (p.pid === MOI && p.camera && !jeSuisAnimateur()) note = S.ecran.indexOf(MOI) >= 0 ? 'vous êtes à l’écran' : 'visible par le coach';
+        else if (!jeSuisAnimateur() && p.camera && S.ecran.indexOf(p.pid) < 0) note = '📷';
+        $('.ca-vi-note', v).textContent = note;
+      });
+      Object.keys(vignettes).forEach(function (pid) { if (!vus[pid]) { vignettes[pid].remove(); delete vignettes[pid]; } });
+    }
+    function cliquerVignette(pid) {
+      var p = participant(pid); if (!p || pid === MOI) return;
+      if (!jeSuisAnimateur() || p.role !== 'apprenant') return;
+      var i = epingles.indexOf(pid);
+      if (i >= 0) { epingles.splice(i, 1); toast(p.nom + ' n’est plus épinglé à l’écran.'); }
+      else if (!p.camera) { toast(p.nom + ' n’a pas ouvert sa caméra.', '', { bouton: p.parole ? 'Reprendre la parole' : 'Donner la parole', action: function () { agirSilencieux('parole', { pid: pid, donner: !p.parole }); } }); return; }
+      else { epingles.unshift(pid); toast('📌 ' + p.nom + ' est à l’écran de toute la classe.'); }
+      Media.choisirEcran(true);
+      rendreVisio();
     }
 
     function rendreBande() {
@@ -666,7 +736,10 @@
       if (anim) {
         html += '<div class="ca-commandes"><button data-cmd="muet_tous">🔇 Couper les micros</button><button data-cmd="mains_baisser">✋ Baisser les mains</button>' +
           '<label class="ca-interrupteur"><input type="checkbox" data-reg="micros_libres"' + (S.micros_libres ? ' checked' : '') + '><span>Micros libres</span></label>' +
-          '<label class="ca-interrupteur"><input type="checkbox" data-reg="places_verrouillees"' + (S.places_verrouillees ? ' checked' : '') + '><span>Figer les places</span></label></div>';
+          '<label class="ca-interrupteur"><input type="checkbox" data-reg="places_verrouillees"' + (S.places_verrouillees ? ' checked' : '') + '><span>Figer les places</span></label>' +
+          '<label class="ca-interrupteur"><input type="checkbox" data-reg="cameras_apprenants"' + (S.cameras_apprenants ? ' checked' : '') + '><span>Caméras des apprenants</span></label></div>' +
+          '<div class="ca-commandes ca-modes"><span>Toute la classe en mode :</span><button data-mode="salle"' + (S.vue === 'salle' ? ' class="actif"' : '') + '>🏫 Salle</button><button data-mode="visio"' + (S.vue === 'visio' ? ' class="actif"' : '') + '>🎥 Visio</button></div>' +
+          (S.ecran.length ? '<p class="ca-aide">À l’écran de toute la classe : ' + S.ecran.map(function (x) { return esc((participant(x) || {}).nom || '?'); }).join(', ') + '. En mode visio, touchez une vignette pour épingler un apprenant.</p>' : '<p class="ca-aide">En mode visio, touchez la vignette d’un apprenant qui a ouvert sa caméra pour la montrer à toute la classe.</p>');
       }
       if (mains.length) {
         html += '<h4>✋ Mains levées</h4><ol class="ca-file">' + mains.map(function (p) {
@@ -687,6 +760,7 @@
     }
     function brancherVoletParticipants(v) {
       $$('[data-cmd]', v).forEach(function (b) { b.addEventListener('click', function () { agirSilencieux(b.getAttribute('data-cmd')); }); });
+      $$('[data-mode]', v).forEach(function (b) { b.addEventListener('click', function () { agirSilencieux('vue', { vue: b.getAttribute('data-mode') }); }); });
       $$('[data-reg]', v).forEach(function (c) { c.addEventListener('change', function () { var o = {}; o[c.getAttribute('data-reg')] = c.checked; agirSilencieux('reglages', o); }); });
       $$('[data-parole]', v).forEach(function (b) { b.addEventListener('click', function () { agirSilencieux('parole', { pid: b.getAttribute('data-parole'), donner: true }); }); });
       $$('[data-retirer]', v).forEach(function (b) { b.addEventListener('click', function () { agirSilencieux('parole', { pid: b.getAttribute('data-retirer'), donner: false }); }); });
@@ -756,6 +830,7 @@
           bouton('craie', '✏️', 'Tableau', { actif: outil.actif }) + bouton('sondage', '📊', 'Sondage', { actif: panneau === 'sondage' }) + bouton('minuteur', '⏱', 'Minuteur', { actif: !!S.minuteur }) +
           bouton('enregistrer', Media.enregistre() ? '⏺' : '⏺', Media.enregistre() ? 'Arrêter' : 'Enregistrer', { actif: Media.enregistre(), classe: Media.enregistre() ? 'rec' : '' });
       } else {
+        if (S.cameras_apprenants) html += bouton('camera_moi', Media.cameraActive() ? '📷' : '📷', Media.cameraActive() ? 'Caméra ouverte' : 'Caméra', { actif: Media.cameraActive(), desactive: !!m.faible, titre: m.faible ? 'Indisponible en mode connexion faible' : 'Ouvrir votre caméra (le coach vous voit ; il peut vous mettre à l’écran de toute la classe)' });
         html += bouton('main', '✋', m.main ? 'Baisser' : 'Lever la main', { actif: !!m.main }) + bouton('reactions', '😀', 'Réagir') +
           bouton('compris', '❓', 'Pas compris', { titre: 'Signaler au coach que vous n’avez pas compris' });
       }
@@ -779,6 +854,7 @@
         case 'faible': Media.modeFaible(!m.faible); break;
         case 'avatar': choisirAvatar(false); break;
         case 'camera': Media.camera(); break;
+        case 'camera_moi': Media.basculerCamera(!Media.cameraActive()); break;
         case 'ecran': Media.ecran(); break;
         case 'craie':
           outil.actif = !outil.actif;
@@ -817,6 +893,7 @@
       vueCourante = v;
       racine.setAttribute('data-vue', v);
       $$('[data-vue]', racine).forEach(function (b) { b.classList.toggle('actif', b.getAttribute('data-vue') === v); });
+      rendreVisio();
       setTimeout(redimensionnerCraie, 50);
     }
     $$('.ca-vues [data-vue]', racine).forEach(function (b) { b.addEventListener('click', function () { voirVue(b.getAttribute('data-vue')); }); });
@@ -851,6 +928,8 @@
       var fluxRecu = null, enregistreur = null, morceaux = [];
       var qualiteMoi = null, mauvais = 0, bons = 0, refusFaibleJusqua = 0, precedent = {};
       var parleursLocaux = [];
+      var NB_ECRAN = 4;          // emplacements vidéo relayés par l'animateur (= MAX_ECRAN côté serveur)
+      var camFluxMoi = null, camPisteMoi = null, slotsRecus = [];
 
       function audioCtx() {
         if (!ctx) { ctx = new (window.AudioContext || window.webkitAudioContext)(); micGain = ctx.createGain(); micGain.gain.value = 0; micAnalyse = ctx.createAnalyser(); micAnalyse.fftSize = 512; micGain.connect(micAnalyse); }
@@ -923,11 +1002,24 @@
         var flux = new MediaStream();
         var tv = p.addTransceiver('video', { direction: 'sendonly', streams: [flux] });
         var ta = p.addTransceiver(dest.stream.getAudioTracks()[0], { direction: 'sendrecv', streams: [flux] });
-        var l = { pid: pid, pc: p, dest: dest, tv: tv, ta: ta, entree: null, analyse: null, audio: null, facteur: 1, faible: !!(participant(pid) || {}).faible, qualite: null, prec: {} };
+        // Mode visio : quatre emplacements où l'animateur relaie la vidéo d'autres
+        // apprenants, puis la caméra de CET apprenant, qui ne va qu'à l'animateur.
+        var slots = [];
+        for (var k = 0; k < NB_ECRAN; k += 1) slots.push(p.addTransceiver('video', { direction: 'sendonly' }));
+        var tcam = p.addTransceiver('video', { direction: 'recvonly' });
+        var l = { pid: pid, pc: p, dest: dest, tv: tv, ta: ta, slots: slots, tcam: tcam, cam: null, entree: null, analyse: null, audio: null, facteur: 1, faible: !!(participant(pid) || {}).faible, qualite: null, prec: {} };
         liens[pid] = l;
         if (videoPiste && !l.faible) tv.sender.replaceTrack(videoPiste);
+        majEcranPour(l);
         p.onicecandidate = function (ev) { if (ev.candidate) signaler(pid, { cand: ev.candidate }); };
-        p.ontrack = function (ev) { if (ev.track.kind === 'audio') brancherVoix(l, ev.streams[0] || new MediaStream([ev.track])); };
+        p.ontrack = function (ev) {
+          if (ev.track.kind === 'audio') { brancherVoix(l, ev.streams[0] || new MediaStream([ev.track])); return; }
+          if (ev.transceiver === tcam) {
+            l.cam = new MediaStream([ev.track]);
+            ev.track.onunmute = ev.track.onmute = function () { majEcran(); rendreVisio(); };
+            majEcran(); rendreVisio();
+          }
+        };
         p.onconnectionstatechange = function () {
           if (p.connectionState === 'connected') { appliquerDebits(); rendrePanneauSiBesoin(); }
           if (p.connectionState === 'failed') redemarrer(l);
@@ -1017,13 +1109,113 @@
           if (!s.getParameters) return;
           var prm = s.getParameters();
           if (!prm.encodings || !prm.encodings.length) prm.encodings = [{}];
-          var debit = Math.round(borne(part * l.facteur, 60000, 900000));
+          var nbRelais = l.slots ? l.slots.filter(function (t) { return t._piste; }).length : 0;
+          var debit = Math.round(borne(part * l.facteur - nbRelais * 110000, 60000, 900000));
           prm.encodings[0].active = !l.faible && !!videoPiste;
           prm.encodings[0].maxBitrate = debit;
           prm.encodings[0].scaleResolutionDownBy = S.scene === 'ecran' ? 1 : debit > 500000 ? 1 : debit > 260000 ? 1.5 : debit > 150000 ? 2 : 3;
           prm.encodings[0].maxFramerate = S.scene === 'ecran' ? 8 : debit < 150000 ? 15 : 24;
           s.setParameters(prm).catch(function () {});
         });
+      }
+
+      /* ----- Mode visio : qui est à l'écran de toute la classe ----- */
+      function partParApprenant() {
+        var actifs = Object.keys(liens).filter(function (pid) { return !liens[pid].faible; });
+        return ((P.salle && P.salle.debit) || 2500) * 1000 / Math.max(1, actifs.length);
+      }
+      function pisteCam(pid) {
+        var l = liens[pid];
+        var t = l && l.cam && l.cam.getVideoTracks()[0];
+        return t && t.readyState === 'live' && (participant(pid) || {}).camera ? t : null;
+      }
+      /** Animateur : choisit les vidéos relayées, autant que le débit le permet. */
+      function choisirEcran(force) {
+        if (!jeSuisAnimateur()) return;
+        var part = partParApprenant();
+        var nb = part >= 600000 ? 4 : part >= 420000 ? 2 : part >= 260000 ? 1 : 0;
+        var avecCam = Object.keys(liens).filter(function (pid) { return pisteCam(pid); });
+        var choix = [];
+        function ajouter(pid) { if (choix.length < nb && choix.indexOf(pid) < 0 && avecCam.indexOf(pid) >= 0) choix.push(pid); }
+        epingles.forEach(ajouter);
+        avecCam.filter(function (pid) { return (participant(pid) || {}).parole; }).forEach(ajouter);
+        avecCam.filter(function (pid) { return dernierFort[pid] && Date.now() - dernierFort[pid] < 20000; })
+          .sort(function (a, b) { return dernierFort[b] - dernierFort[a]; }).forEach(ajouter);
+        if (vueCourante === 'visio' || S.vue === 'visio') S.ecran.concat(avecCam).forEach(ajouter);
+        if (force || choix.join() !== S.ecran.join()) {
+          if (choix.join() !== S.ecran.join()) agir('ecran', { pids: choix }).catch(function () {});
+        }
+      }
+      function majEcranPour(l) {
+        if (!l.slots) return;
+        l.slots.forEach(function (t, k) {
+          var pid = S.ecran[k];
+          var piste = !l.faible && pid && pid !== l.pid ? pisteCam(pid) : null;
+          if (t._piste === piste) return;
+          t._piste = piste;
+          t.sender.replaceTrack(piste).catch(function () {});
+          if (t.sender.getParameters) {
+            var prm = t.sender.getParameters();
+            if (!prm.encodings || !prm.encodings.length) prm.encodings = [{}];
+            prm.encodings[0].active = !!piste; prm.encodings[0].maxBitrate = 110000; prm.encodings[0].maxFramerate = 15;
+            t.sender.setParameters(prm).catch(function () {});
+          }
+        });
+      }
+      function majEcran() { Object.keys(liens).forEach(function (pid) { majEcranPour(liens[pid]); }); appliquerDebits(); }
+
+      /* ----- Caméra de l'apprenant (mode visio) ----- */
+      function cameraActive() { return !!(camPisteMoi && camPisteMoi.readyState === 'live'); }
+      function transceiverCam() {
+        if (!pc) return null;
+        var tr = pc.getTransceivers();
+        return tr.length > 2 + NB_ECRAN ? tr[tr.length - 1] : null;
+      }
+      function brancherCamMoi() {
+        var t = transceiverCam(); if (!t) return;
+        t.sender.replaceTrack(cameraActive() ? camPisteMoi : null).catch(function () {});
+        if (t.sender.getParameters) {
+          var prm = t.sender.getParameters();
+          if (!prm.encodings || !prm.encodings.length) prm.encodings = [{}];
+          prm.encodings[0].maxBitrate = 150000; prm.encodings[0].maxFramerate = 15;
+          t.sender.setParameters(prm).catch(function () {});
+        }
+      }
+      function basculerCamera(ouvrirCam) {
+        if (!ouvrirCam) return couperCamera(false);
+        if (moi().faible) { toast('La caméra est coupée en mode connexion faible.'); return Promise.resolve(); }
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { toast('Ce navigateur ne permet pas d’utiliser la caméra.', 'alerte'); return Promise.resolve(); }
+        return navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 320 }, height: { ideal: 240 }, frameRate: { ideal: 15, max: 15 }, facingMode: 'user' } }).then(function (f) {
+          camFluxMoi = f; camPisteMoi = f.getVideoTracks()[0];
+          brancherCamMoi();
+          return agir('camera', { actif: true });
+        }).then(function () {
+          rendreBarre(); rendreVisio();
+          if (vueCourante !== 'visio') toast('📷 Caméra ouverte. Passez en mode Visio pour voir les vignettes.', '', { bouton: 'Mode visio', action: function () { voirVue('visio'); } });
+        }).catch(function (e) {
+          couperCamera(true);
+          toast(e && e.name === 'NotAllowedError' ? 'Autorisez la caméra dans votre navigateur.' : (e && e.message) || 'Caméra indisponible.', 'alerte');
+        });
+      }
+      function couperCamera(silencieux) {
+        var etait = cameraActive();
+        if (camFluxMoi) camFluxMoi.getTracks().forEach(function (t) { t.stop(); });
+        camFluxMoi = null; camPisteMoi = null;
+        brancherCamMoi();
+        rendreBarre(); rendreVisio();
+        if (etait) agirSilencieux('camera', { actif: false });
+        return Promise.resolve();
+      }
+
+      /** Le flux à montrer dans la vignette d'un participant (ou null : son avatar). */
+      function fluxDe(pid) {
+        if (pid === MOI) return cameraActive() ? camFluxMoi : null;
+        if (pid === S.animateur) return null; // il est en grand, au tableau
+        if (jeSuisAnimateur()) { var t = pisteCam(pid); return t ? liens[pid].cam : null; }
+        var k = S.ecran.indexOf(pid);
+        var f = k >= 0 ? slotsRecus[k] : null;
+        var piste = f && f.getVideoTracks()[0];
+        return piste && piste.readyState === 'live' && !piste.muted ? f : null;
       }
 
       /* ----- Apprenant (et visiteur) ----- */
@@ -1050,6 +1242,15 @@
         pc = new RTCPeerConnection({ iceServers: P.ice, bundlePolicy: 'max-bundle' });
         pc.onicecandidate = function (ev) { if (ev.candidate && S.animateur) signaler(S.animateur, { cand: ev.candidate }); };
         pc.ontrack = function (ev) {
+          var idx = pc.getTransceivers().indexOf(ev.transceiver);
+          if (idx >= 2 && idx < 2 + NB_ECRAN) {
+            // Un emplacement « à l'écran » : la vidéo d'un autre apprenant, relayée par le coach.
+            slotsRecus[idx - 2] = new MediaStream([ev.track]);
+            ev.track.onunmute = ev.track.onmute = function () { rendreVisio(); };
+            rendreVisio();
+            return;
+          }
+          if (idx >= 2 + NB_ECRAN) return;
           fluxRecu = ev.streams[0] || fluxRecu || new MediaStream();
           if (!ev.streams[0]) fluxRecu.addTrack(ev.track);
           if (ev.track.kind === 'video') {
@@ -1078,10 +1279,16 @@
         if (d.sdp && d.sdp.type === 'offer') {
           // Une offre de redémarrage réseau reprend la même connexion ; toute autre en ouvre une neuve.
           var p = d.restart && pc && pc.signalingState !== 'closed' ? pc : nouveauPc();
+          if (!d.restart) slotsRecus = []; // avant : ontrack arrive PENDANT setRemoteDescription
           p.setRemoteDescription(d.sdp).then(function () {
             var t = transceiverAudio();
             if (t) { t.direction = 'sendrecv'; t.sender.replaceTrack(micOuvert && micPiste ? micPiste : null); }
-            p.getTransceivers().forEach(function (x) { if (x.receiver.track && x.receiver.track.kind === 'video') x.direction = 'recvonly'; });
+            var tr = p.getTransceivers();
+            tr.forEach(function (x, i) {
+              if (!x.receiver.track || x.receiver.track.kind !== 'video') return;
+              x.direction = tr.length > 2 + NB_ECRAN && i === tr.length - 1 ? 'sendonly' : 'recvonly';
+            });
+            brancherCamMoi();
             return p.createAnswer();
           }).then(function (r) { return p.setLocalDescription(r); }).then(function () {
             signaler(de, { sdp: p.localDescription });
@@ -1169,12 +1376,13 @@
       }, 3000);
       // Qui parle ? Le coach seul entend tout le monde : il écoute souvent (150 ms) et
       // annonce la liste au plus toutes les 700 ms. « Parle » = un son net depuis moins d'une seconde.
-      var dernierFort = {}, derniereAnnonce = 0;
+      var dernierFort = {}, derniereAnnonce = 0, dernierChoixEcran = 0;
       var surveillanceParole = setInterval(function () {
         if (!jeSuisAnimateur() || fermee) return;
         var t = Date.now();
         if (micOuvert && niveau(micAnalyse) > 0.03) dernierFort[MOI] = t;
         Object.keys(liens).forEach(function (pid) { if (liens[pid].analyse && (participant(pid) || {}).micro && niveau(liens[pid].analyse) > 0.03) dernierFort[pid] = t; });
+        if (t - dernierChoixEcran > 2000) { dernierChoixEcran = t; choisirEcran(); }
         if (t - derniereAnnonce < 700) return;
         var parlent = Object.keys(dernierFort).filter(function (pid) { return t - dernierFort[pid] < 1000 && (pid === MOI ? micOuvert : (participant(pid) || {}).micro); }).sort();
         if (parlent.join() !== parleursLocaux.join()) { derniereAnnonce = t; parleursLocaux = parlent; S.parleurs = parlent; rendreParleurs(); agir('parleurs', { pids: parlent }).catch(function () {}); }
@@ -1188,6 +1396,7 @@
       }
 
       function modeFaible(actif) {
+        if (actif) couperCamera(false);
         agir('faible', { actif: actif }).then(function () {
           toast(actif ? '🐢 Mode connexion faible : le son et le tableau d’abord, sans l’image.' : 'Image du coach réactivée.', 'succes');
           rendreTableau();
@@ -1247,9 +1456,10 @@
           var l = liens[p.pid];
           if (l && !!p.faible !== l.faible) { l.faible = !!p.faible; l.tv.sender.replaceTrack(l.faible ? null : videoPiste).catch(function () {}); appliquerDebits(); }
           if (!avant || !!avant.micro !== !!p.micro) reconstruireMelange();
+          if (l && (!avant || !!avant.camera !== !!p.camera || !!avant.parole !== !!p.parole)) { if (!p.camera) { var e = epingles.indexOf(p.pid); if (e >= 0) epingles.splice(e, 1); } choisirEcran(); majEcran(); }
         } else if (p.pid === MOI && avant && !!avant.faible !== !!p.faible) rendreTableau();
       }
-      function surDepart(pid) { if (jeSuisAnimateur()) fermerLien(pid); }
+      function surDepart(pid) { if (jeSuisAnimateur()) { fermerLien(pid); var e = epingles.indexOf(pid); if (e >= 0) epingles.splice(e, 1); choisirEcran(); } }
       function surAnimateur() {
         if (jeSuisAnimateur()) { audioCtx(); Object.keys(liens).forEach(fermerLien); if (micOuvert) micGain.gain.value = 1; return; }
         if (pc) { try { pc.close(); } catch (x) { /* rien */ } pc = null; }
@@ -1262,7 +1472,7 @@
         clearInterval(surveillance); clearInterval(surveillanceParole);
         Object.keys(liens).forEach(fermerLien);
         if (pc) { try { pc.close(); } catch (x) { /* rien */ } }
-        [micFlux, camFlux, ecranFlux].forEach(function (f) { if (f) f.getTracks().forEach(function (t) { t.stop(); }); });
+        [micFlux, camFlux, ecranFlux, camFluxMoi].forEach(function (f) { if (f) f.getTracks().forEach(function (t) { t.stop(); }); });
         if (enregistreur) try { enregistreur.stop(); } catch (x) { /* rien */ }
         if (ctx) ctx.close().catch(function () {});
       }
@@ -1271,7 +1481,9 @@
         basculerMicro: basculerMicro, couperMicro: couperMicro, micActif: micActif, videoDisponible: videoDisponible,
         camera: camera, ecran: ecran, enregistrer: enregistrer, enregistre: enregistre, modeFaible: modeFaible,
         surSignal: surSignal, surEtat: surEtat, surParticipant: surParticipant, surDepart: surDepart, surAnimateur: surAnimateur,
-        qualite: qualite, arreter: arreter, audioCtx: audioCtx, assurerMicro: assurerMicro, connecte: function () { return connecteUneFois; }
+        qualite: qualite, arreter: arreter, audioCtx: audioCtx, assurerMicro: assurerMicro, connecte: function () { return connecteUneFois; },
+        basculerCamera: basculerCamera, couperCamera: couperCamera, cameraActive: cameraActive, fluxDe: fluxDe,
+        majEcran: function () { majEcran(); }, choisirEcran: choisirEcran
       };
     })();
 

@@ -1734,6 +1734,8 @@
     ]],
     ['en_ligne', 'Cours en ligne et présence', 'La présence se compte même si la connexion coupe : au clic sur « Rejoindre », au QR code en salle, ou par le replay.', [
       ['fournisseur', 'choix', 'Outil de classe en ligne', 'La Classe Ardoise est intégrée : sans limite de durée, avatars, main levée, tableau, sondages, mode connexion faible. Une visio Jitsi de secours reste proposée.', [['ardoise', 'Classe Ardoise (intégrée, recommandée)'], ['jitsi', 'Jitsi Meet (gratuit, s’ouvre dans l’application)'], ['lien', 'Notre lien Google Meet / Zoom / Teams']]],
+      ['mode_classe', 'choix', 'Classe Ardoise : mode d’ouverture', 'Chacun peut basculer à tout moment entre la salle et la visio ; le coach peut faire basculer toute la classe.', [['salle', 'La salle de classe (avatars, bancs, tableau)'], ['visio', 'La visio classique (vidéo du coach et vignettes)']]],
+      ['cameras_apprenants', 'case', 'Classe Ardoise : les apprenants peuvent ouvrir leur caméra (mode visio)'],
       ['micros_libres', 'case', 'Classe Ardoise : les apprenants ouvrent leur micro sans attendre que le coach leur donne la parole'],
       ['debit_video_max', 'nombre', 'Classe Ardoise : débit total que le coach partage entre les apprenants (kbit/s, 2500 conseillé)'],
       ['domaine_jitsi', 'texte', 'Serveur Jitsi (visio de secours ou outil Jitsi)', 'meet.jit.si par défaut. Avec votre propre serveur (ou 8x8.vc), la visio Jitsi peut s’afficher directement dans Ardoise.'],
@@ -1992,8 +1994,8 @@
   function chargerClasseArdoise() {
     if (window.ClasseArdoise) return Promise.resolve();
     return new Promise(function (ok, ko) {
-      var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'classe-ardoise.css?v=2'; document.head.appendChild(l);
-      var sc = document.createElement('script'); sc.src = 'classe-ardoise.js?v=2'; sc.onload = function () { ok(); }; sc.onerror = function () { ko(new Error('Impossible de charger la classe : vérifiez la connexion.')); };
+      var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'classe-ardoise.css?v=3'; document.head.appendChild(l);
+      var sc = document.createElement('script'); sc.src = 'classe-ardoise.js?v=3'; sc.onload = function () { ok(); }; sc.onerror = function () { ko(new Error('Impossible de charger la classe : vérifiez la connexion.')); };
       document.head.appendChild(sc);
     });
   }

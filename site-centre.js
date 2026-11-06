@@ -568,8 +568,8 @@ window.ArdoiseSiteCentre = function (donnees, o) {
   function chargerClasseArdoise() {
     if (window.ClasseArdoise) return Promise.resolve();
     return new Promise(function (ok, ko) {
-      var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = '/classe-ardoise.css?v=2'; document.head.appendChild(l);
-      var sc = document.createElement('script'); sc.src = '/classe-ardoise.js?v=2'; sc.onload = function () { ok(); };
+      var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = '/classe-ardoise.css?v=3'; document.head.appendChild(l);
+      var sc = document.createElement('script'); sc.src = '/classe-ardoise.js?v=3'; sc.onload = function () { ok(); };
       sc.onerror = function () { var er = new Error('Impossible de charger la classe.'); er.horsLigne = true; ko(er); };
       document.head.appendChild(sc);
     });

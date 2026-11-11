@@ -313,6 +313,21 @@
   /* ---------------- Visionneuse ---------------- */
   function telecharger() {
     if (!urlCourante) return;
+    /* Sur téléphone (application installée surtout), un lien de
+       téléchargement ouvre le PDF dans une vue sans retour : on passe par la
+       feuille de partage du téléphone (Enregistrer, WhatsApp, Imprimer…). */
+    if (navigator.canShare && window.matchMedia('(hover: none) and (pointer: coarse)').matches) {
+      fetch(urlCourante).then(function (r) { return r.blob(); }).then(function (b) {
+        var f = new File([b], nomCourant || 'document.pdf', { type: b.type || 'application/pdf' });
+        if (navigator.canShare({ files: [f] })) return navigator.share({ files: [f], title: nomCourant });
+        throw new Error('partage impossible');
+      }).catch(function (e) {
+        if (e && e.name === 'AbortError') return;
+        var a2 = document.createElement('a'); a2.href = urlCourante; a2.download = nomCourant;
+        document.body.appendChild(a2); a2.click(); a2.remove();
+      });
+      return;
+    }
     var a = document.createElement('a');
     a.href = urlCourante; a.download = nomCourant;
     document.body.appendChild(a); a.click(); a.remove();

@@ -63,15 +63,14 @@ html[data-animations="non"] .cf-marque .point-i-marque { animation: none; }
 .cf-nav { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; visibility: hidden; }
 .cf-nav-titre { font-size: .64rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--cf-nav-texte); opacity: .7; padding: 12px 10px 4px; }
 .cf-nav-titre:first-child { padding-top: 2px; }
-@media (min-width: 781px) {
-  .cf-nav .nav-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--cf-r-petit); color: var(--cf-nav-texte); text-decoration: none; font-size: .88rem; transition: background .15s, color .15s; }
-  .cf-nav .nav-item:hover { color: var(--cf-nav-fort); background: rgba(255, 255, 255, .05); }
-  .cf-nav .nav-item.actif { color: var(--cf-nav-fort); background: var(--cf-nav-actif); font-weight: 600; box-shadow: inset 3px 0 0 var(--cf-accent); }
-  .cf-nav .nav-icone { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
-  .cf-nav .nav-libelle { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .cf-deconnexion { background: none; border: 0; border-top: 1px solid rgba(255, 255, 255, .08); color: var(--cf-nav-texte); text-align: left; padding: 12px 10px 4px; font: inherit; font-size: .85rem; cursor: pointer; }
-  .cf-deconnexion:hover { color: var(--cf-nav-fort); }
-}
+/* Hors coque du téléphone (ordinateur, quelle que soit la largeur). */
+html:not(.ard-mob-coque) .cf-nav .nav-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--cf-r-petit); color: var(--cf-nav-texte); text-decoration: none; font-size: .88rem; transition: background .15s, color .15s; }
+html:not(.ard-mob-coque) .cf-nav .nav-item:hover { color: var(--cf-nav-fort); background: rgba(255, 255, 255, .05); }
+html:not(.ard-mob-coque) .cf-nav .nav-item.actif { color: var(--cf-nav-fort); background: var(--cf-nav-actif); font-weight: 600; box-shadow: inset 3px 0 0 var(--cf-accent); }
+html:not(.ard-mob-coque) .cf-nav .nav-icone { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+html:not(.ard-mob-coque) .cf-nav .nav-libelle { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+html:not(.ard-mob-coque) .cf-deconnexion { background: none; border: 0; border-top: 1px solid rgba(255, 255, 255, .08); color: var(--cf-nav-texte); text-align: left; padding: 12px 10px 4px; font: inherit; font-size: .85rem; cursor: pointer; }
+html:not(.ard-mob-coque) .cf-deconnexion:hover { color: var(--cf-nav-fort); }
 .cf-nav .pastille { margin-left: auto; background: var(--cf-accent); color: #fff; border-radius: 999px; font-size: .7rem; padding: 1px 7px; font-weight: 700; }
 .cf-verrou { width: 14px; height: 14px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; opacity: .55; margin-left: auto; }
 .cf-btn.verrou { opacity: .75; }
@@ -206,7 +205,12 @@ html[data-animations="non"] .cf-marque .point-i-marque { animation: none; }
 
 .cf-quiz-q { border: 1px solid var(--cf-ligne); border-radius: 10px; padding: 10px; margin-bottom: 8px; background: var(--cf-surface); }
 .cf-quiz-q .entete { display: flex; justify-content: space-between; font-size: .8rem; color: var(--cf-doux); margin-bottom: 6px; }
-.cf-ia-sortie { background: var(--cf-surface); border: 1px solid var(--cf-ligne); border-radius: 12px; padding: 16px; line-height: 1.55; font-size: .92rem; white-space: pre-wrap; }
+.cf-ia-sortie { background: var(--cf-surface); border: 1px solid var(--cf-ligne); border-radius: 12px; padding: 16px 18px; line-height: 1.6; font-size: .94rem; }
+.cf-ia-sortie p { margin: 0 0 10px; }
+.cf-ia-sortie h4 { margin: 14px 0 6px; font-size: .98rem; font-family: var(--police-titre, Georgia, serif); }
+.cf-ia-sortie ol, .cf-ia-sortie ul { margin: 4px 0 12px; padding-left: 22px; }
+.cf-ia-sortie li { margin-bottom: 8px; }
+.cf-ia-sortie li::marker { color: var(--cf-accent); font-weight: 700; }
 .cf-ia-sortie h3 { margin: 12px 0 6px; font-size: .95rem; }
 .cf-ia-sortie ul { margin: 4px 0 8px; padding-left: 20px; white-space: normal; }
 .cf-ia-modes { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-bottom: 16px; }
@@ -234,14 +238,17 @@ html[data-animations="non"] .cf-marque .point-i-marque { animation: none; }
 
 /* ---------------- Téléphone : la coque d'application (mobile.css) ---------------- */
 @media (max-width: 780px) {
-  /* Avant que la coque du téléphone ne prenne le menu en charge : caché,
-     pour ne pas l'afficher une fraction de seconde au chargement. */
-  html:not(.ard-mob-coque) .cf-rail { display: none; }
-  .cf-coque { display: block; }
-  .cf-nav { visibility: visible; }
-  .cf-nav-titre, .cf-centre-nom, .cf-marque { display: none !important; }
+  /* Sur un APPAREIL MOBILE, avant que la coque ne prenne le menu en charge :
+     caché, pour ne pas l'afficher une fraction de seconde au chargement.
+     Sur un ordinateur dont on rétrécit la fenêtre, le rail reste à gauche. */
+  html.ard-appareil-mobile:not(.ard-mob-coque) .cf-rail { display: none; }
+  html.ard-ordinateur .cf-coque { grid-template-columns: 200px minmax(0, 1fr); }
+  html.ard-ordinateur .cf-principal { padding: 22px 18px 48px; }
+  html.ard-mob-coque .cf-coque { display: block; }
+  html.ard-mob-coque .cf-nav { visibility: visible; }
+  html.ard-mob-coque :is(.cf-nav-titre, .cf-centre-nom, .cf-marque) { display: none !important; }
   .cf-verrou { margin-left: 6px; }
-  .cf-principal { padding: 4px 14px 40px; }
+  html.ard-mob-coque .cf-principal { padding: 4px 14px 40px; }
   .cf-form { grid-template-columns: 1fr; }
   .cf-entete { margin-bottom: 14px; }
   .cf-entete h1 { font-size: 1.4rem; }
@@ -398,8 +405,8 @@ html[data-animations="non"] .cf-marque .point-i-marque { animation: none; }
 }
 @media (max-width: 780px) {
   /* Les modales montent du bas, comme une feuille d'application. */
-  .cf-voile { align-items: flex-end; padding: 0 !important; z-index: 1150; }
-  .cf-modale { border-radius: 22px 22px 0 0; max-height: 92vh; overflow-y: auto; width: 100% !important;
+  html.ard-mob-coque .cf-voile { align-items: flex-end; padding: 0 !important; z-index: 1150; }
+  html.ard-mob-coque .cf-modale { border-radius: 22px 22px 0 0; max-height: 92vh; overflow-y: auto; width: 100% !important;
     padding-bottom: env(safe-area-inset-bottom); animation: cf-feuille .32s cubic-bezier(.2,.9,.3,1); }
   @keyframes cf-feuille { from { transform: translateY(40px); opacity: .4; } to { transform: none; opacity: 1; } }
   html[data-animations="non"] .cf-modale { animation: none; }

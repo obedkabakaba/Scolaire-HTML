@@ -164,7 +164,7 @@ body { overflow-wrap: break-word; }
   }
 
   /* La grille à deux colonnes n'a plus lieu d'être : le menu est hors flux. */
-  .mise-en-page {
+  html.ard-mob-coque .mise-en-page {
     display: block !important;
     min-height: calc(100dvh - var(--ard-barre, 56px));
   }
@@ -1694,4 +1694,47 @@ html[data-animations="non"] :is(.barre-laterale, .ard-mob-voile, .ard-onglets, .
 @media print {
   .ard-mob-barre, .ard-onglets, .ard-mob-voile, .ard-actions, .ard-actions-voile { display: none !important; }
   html.ard-mob-coque body { padding: 0 !important; }
+}
+
+
+/* ---------------- Fenêtres en feuilles (mobile.js : installerFeuillesGlissables) ---------------- */
+@media (max-width: 780px) {
+  /* Le voile ne défile plus : seule la feuille défile (une barre, pas deux). */
+  html.ard-mob-coque :is(.voile, .cf-voile, .voile-confirmation)[data-ard-feuille="oui"] {
+    overflow: hidden !important; padding: 0 !important; align-items: flex-end !important; justify-content: center !important;
+    overscroll-behavior: contain;
+  }
+  html.ard-mob-coque .ard-feuille-mobile {
+    width: 100% !important; max-width: 100% !important;
+    max-height: calc(100dvh - env(safe-area-inset-top, 0px) - 16px) !important;
+    overflow-y: auto !important; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+    border-radius: 22px 22px 0 0 !important; margin: 0 !important;
+    padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px)) !important;
+    will-change: transform; touch-action: pan-y;
+  }
+  /* La poignée : on la prend pour faire descendre la feuille. Une seule
+     poignée : celle que dessinaient déjà les « .modale » est retirée. */
+  html.ard-mob-coque .ard-feuille-poignee {
+    position: sticky; top: 0; z-index: 2; height: 22px; margin: -14px -4px 4px; display: flex; justify-content: center; align-items: center;
+    background: inherit; border-radius: 22px 22px 0 0;
+  }
+  html.ard-mob-coque .ard-feuille-poignee::after { content: ''; width: 38px; height: 5px; border-radius: 3px; background: currentColor; opacity: .22; }
+  html.ard-mob-coque .modale.ard-feuille-mobile::before { display: none !important; }
+}
+
+/* ---------------- Visionneuse de documents (reçus, factures, certificats) ---------------- */
+.ard-visionneuse { position: fixed; inset: 0; z-index: 2000; display: flex; flex-direction: column; background: #f2f2f7;
+  animation: ard-mob-monte .38s cubic-bezier(0.32, 0.72, 0, 1) both; }
+.ard-visionneuse-barre { display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: calc(8px + env(safe-area-inset-top, 0px)) 12px 8px; background: var(--ard-entete, #1F2B24); color: #fff; }
+.ard-visionneuse-titre { flex: 1; text-align: center; font-weight: 600; font-size: .95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ard-visionneuse-bouton { border: 0; border-radius: 999px; padding: 8px 14px; font: inherit; font-size: .92rem; font-weight: 600;
+  background: rgba(255,255,255,.14); color: #fff; }
+.ard-visionneuse-bouton.principal { background: var(--ocre, #C98A3E); }
+.ard-visionneuse-cadre { flex: 1; width: 100%; border: 0; background: #fff; }
+html.ard-visionneuse-ouverte, html.ard-visionneuse-ouverte body { overflow: hidden !important; }
+/* Les fiches d'astuce du didacticiel se posent AU-DESSUS de la barre d'onglets. */
+@media (max-width: 780px) {
+  html.ard-mob-coque .ard-di-tuto { left: 12px !important; right: 12px !important; width: auto !important; max-width: none !important;
+    bottom: calc(var(--ard-reserve-bas, 100px) + 6px) !important; }
 }

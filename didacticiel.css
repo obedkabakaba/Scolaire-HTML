@@ -267,13 +267,13 @@ html:is([data-theme="nuit"], [data-theme="nexus"]) .ard-di-btn-principal:hover {
    dire « cliquez ici » ne peut pas cliquer. C'est le défaut classique de ce
    genre de guidage, et il ruine tout l'exercice.
    -------------------------------------------------------------------------- */
-.ard-di-projecteur { position: fixed; inset: 0; z-index: 398; pointer-events: none; }
+.ard-di-projecteur { position: fixed; inset: 0; z-index: 1398; pointer-events: none; }
 .ard-di-projecteur .ard-di-vitre {
   position: fixed; background: rgba(20, 24, 21, 0.55);
   pointer-events: auto; transition: all 0.3s cubic-bezier(0.2, 0.8, 0.3, 1);
 }
 .ard-di-halo {
-  position: fixed; z-index: 399; pointer-events: none;
+  position: fixed; z-index: 1399; pointer-events: none;
   border-radius: var(--r-bouton, 7px);
   box-shadow: 0 0 0 3px var(--ocre, #C98A3E), 0 0 22px 6px rgba(201, 138, 62, 0.4);
   transition: all 0.3s cubic-bezier(0.2, 0.8, 0.3, 1);
@@ -295,7 +295,7 @@ html:is([data-theme="nuit"], [data-theme="nexus"]) .ard-di-btn-principal:hover {
    8. LA BULLE
    -------------------------------------------------------------------------- */
 .ard-di-bulle {
-  position: fixed; z-index: 402; width: 320px; max-width: calc(100vw - 32px);
+  position: fixed; z-index: 1402; width: 320px; max-width: calc(100vw - 32px);
   background: var(--craie-2, #FBF9F3); color: var(--texte-sombre, #1F2B24);
   border: 1px solid var(--bordure, #E4DFCF);
   border-radius: var(--r-carte, 10px);
@@ -336,7 +336,7 @@ html:is([data-theme="nuit"], [data-theme="nexus"]) .ard-di-btn-principal:hover {
    « Notes » se ferme sans être lue.
    -------------------------------------------------------------------------- */
 .ard-di-tuto {
-  position: fixed; right: 20px; bottom: 78px; z-index: 397;
+  position: fixed; right: 20px; bottom: 78px; z-index: 1397;
   width: 330px; max-width: calc(100vw - 40px);
   background: var(--craie-2, #FBF9F3); color: var(--texte-sombre, #1F2B24);
   border: 1px solid var(--bordure, #E4DFCF);

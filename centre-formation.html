@@ -28,6 +28,9 @@
      if(t2&&/^[a-z][a-z0-9-]{1,19}$/.test(t2)&&t2!==document.documentElement.getAttribute('data-theme')){document.documentElement.setAttribute('data-theme',t2);
        try{document.dispatchEvent(new CustomEvent('ardoise:theme-change',{detail:{theme:t2}}));}catch(e){}}}
    window.ArdoiseRelireTheme=relire;
+   /* Appareil mobile ou ordinateur (même règle que mobile.js), avant le premier affichage. */
+   try{var ua=navigator.userAgent||'';var mob=matchMedia('(hover: none) and (pointer: coarse)').matches||matchMedia('(display-mode: standalone)').matches||/Android.+Mobile|iPhone|iPod|Windows Phone/i.test(ua)||navigator.standalone===true;
+     document.documentElement.classList.add(mob?'ard-appareil-mobile':'ard-ordinateur');}catch(e){}
    window.addEventListener('pageshow',function(e){if(e.persisted)relire();});
    window.addEventListener('storage',function(e){if(e.key==='ardoise_theme')relire();});
    document.addEventListener('visibilitychange',function(){if(!document.hidden)relire();});})();
@@ -37,7 +40,7 @@
 <link rel="stylesheet" href="theme-base.css" />
 <!-- Les couleurs de TOUTES les apparences (variables seulement). -->
 <link rel="stylesheet" href="theme-variables.css?v=1" />
-<link rel="stylesheet" href="centre-formation.css?v=7" />
+<link rel="stylesheet" href="centre-formation.css?v=8" />
 <!-- La coque « application » du téléphone et le didacticiel : les mêmes que
      dans l'espace des écoles (barre d'onglets, menu en feuille, accueil,
      projecteur, checklist). -->

@@ -500,7 +500,7 @@
        clair, et `audit-cloisonnement-menus.py` vérifie qu'elle continue de
        dire la même chose que la table de session.js. */
     if (roles.includes('directeur') || roles.includes('super_admin')) {
-      window.location.href = 'abonnements.html';
+      window.location.replace('abonnements.html');
       return true;
     }
 
@@ -547,6 +547,24 @@
   // obtenir un nouvel access token, puis on redirige directement.
   // Sans ceci, la case "Se souvenir de moi" enregistrait bien la session…
   // que plus personne ne relisait, et le mot de passe était redemandé.
+  /* RETOUR ARRIÈRE VERS CETTE PAGE (bouton « retour » du téléphone) : le
+     navigateur la réaffichait figée, bouton grisé sur « Connexion en
+     cours… ». On la remet à neuf ; et si la personne est encore connectée,
+     on la renvoie dans son espace au lieu de lui redemander son mot de passe. */
+  window.addEventListener('pageshow', function (e) {
+    if (!e.persisted) return;
+    boutonConnexion.disabled = false;
+    boutonConnexion.textContent = 'Se connecter';
+    const bandeau = document.getElementById('bandeau-reconnexion');
+    if (bandeau) bandeau.style.display = 'none';
+    formulaire.style.display = '';
+    let u = null;
+    try { u = JSON.parse(localStorage.getItem('ardoise_user') || sessionStorage.getItem('ardoise_user') || 'null'); } catch (er) {}
+    const jeton = localStorage.getItem('ardoise_access_token') || sessionStorage.getItem('ardoise_access_token');
+    const dest = u && jeton ? pageAtterrissagePourRoles(u.roles || [], u.type_structure) : null;
+    if (dest) window.location.replace(dest);
+  });
+
   (async function reconnexionAutomatique() {
     const refreshTokenPersistant = localStorage.getItem('ardoise_refresh_token');
     if (!refreshTokenPersistant) return; // pas de "se souvenir de moi" : formulaire normal
@@ -576,7 +594,7 @@
       const donnees = await reponse.json();
       localStorage.setItem('ardoise_access_token', donnees.access_token);
       if (routerAccesBloque(await accesDeLEcole(donnees), utilisateur?.roles || [])) return;
-      window.location.href = destination;
+      window.location.replace(destination);
     } catch (e) {
       // Backend injoignable (Render en veille, coupure réseau) : on laisse la
       // session en place et on affiche simplement le formulaire.
@@ -677,7 +695,7 @@
       // qu'il n'a pas été remplacé. Le serveur refuse de toute façon toute
       // autre requête, cette redirection évite simplement une page d'erreur.
       if (donnees.doit_changer_mot_de_passe === true) {
-        window.location.href = 'changer-mot-de-passe.html';
+        window.location.replace('changer-mot-de-passe.html');
         return;
       }
 
@@ -690,7 +708,7 @@
       const pageAtterrissage = pageAtterrissagePourRoles(roles, donnees.user?.type_structure);
 
       if (pageAtterrissage) {
-        window.location.href = pageAtterrissage;
+        window.location.replace(pageAtterrissage);
         return;
       }
 

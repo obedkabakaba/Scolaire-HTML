@@ -1788,23 +1788,47 @@
     if (!items || !items.length) return '';
     return '<h3>' + e(titre) + '</h3><ul>' + items.map(function (x) { return '<li>' + (fn ? fn(x) : e(x)) + '</li>'; }).join('') + '</ul>';
   }
+  /* Un texte de l'assistant, mis en page : paragraphes, listes à puces ou
+     numérotées, et l'intitulé d'un point (« 1. Ateliers de conversation : … »)
+     en gras. Tout est échappé d'abord : aucun HTML venu de l'IA n'est rendu. */
+  function texteRiche(t) {
+    var lignes = String(t || '').replace(/\*\*(.+?)\*\*/g, '$1').split(/\n/);
+    var html = '', liste = null;
+    function fermer() { if (liste) { html += '</' + liste + '>'; liste = null; } }
+    function intitule(x) {
+      var m = x.match(/^([^:.!?]{2,70})\s:\s*(.*)$/);
+      return m ? '<strong>' + e(m[1]) + '</strong> : ' + e(m[2]) : e(x);
+    }
+    lignes.forEach(function (l) {
+      var x = l.trim();
+      var num = x.match(/^(\d+)[.)]\s+(.*)$/), puce = x.match(/^[•\-*]\s+(.*)$/);
+      if (num || puce) {
+        var type = num ? 'ol' : 'ul';
+        if (liste !== type) { fermer(); html += '<' + type + '>'; liste = type; }
+        html += '<li>' + intitule(num ? num[2] : puce[1]) + '</li>';
+      } else if (!x) { fermer(); }
+      else { fermer(); html += (x.length < 60 && !/[.!?:,;]$/.test(x) ? '<h4>' + e(x) + '</h4>' : '<p>' + intitule(x) + '</p>'); }
+    });
+    fermer();
+    return html;
+  }
   function rendreSortieIa(zone, mode, r, demande) {
     var html = '<div class="cf-carte"><h2>Proposition de l’assistant <small>à relire avant usage</small></h2><div class="cf-ia-sortie">';
-    if (r.texte) html += e(r.texte);
+    if (r.texte) html += texteRiche(r.texte);
     if (mode === 'lecon') {
       html += '<h3 style="margin-top:0">' + e(r.titre || '') + '</h3>' + (r.resume ? '<p>' + e(r.resume) + '</p>' : '') + liste('Objectifs', r.objectifs) +
         liste('Déroulé', r.deroule, function (x) { return '<strong>' + e(x.etape) + '</strong> (' + e(x.minutes) + ' min) — ' + e(x.activite); }) +
-        (r.contenu ? '<h3>Contenu</h3>' + e(r.contenu) : '') + liste('Vocabulaire', r.vocabulaire, function (v) { return '<strong>' + e(v.terme) + '</strong> : ' + e(v.sens) + (v.exemple ? ' — <em>' + e(v.exemple) + '</em>' : ''); }) +
-        liste('Exercices', r.exercices) + (r.devoirs ? '<h3>Devoirs</h3>' + e(r.devoirs) : '');
+        (r.contenu ? '<h3>Contenu</h3>' + texteRiche(r.contenu) : '') + liste('Vocabulaire', r.vocabulaire, function (v) { return '<strong>' + e(v.terme) + '</strong> : ' + e(v.sens) + (v.exemple ? ' — <em>' + e(v.exemple) + '</em>' : ''); }) +
+        liste('Exercices', r.exercices) + (r.devoirs ? '<h3>Devoirs</h3>' + texteRiche(r.devoirs) : '');
     }
     if (r.quiz && r.quiz.length) html += liste('Quiz (' + r.quiz.length + ' questions)', r.quiz, function (q) { return e(q.question) + '<br><span class="doux">' + q.choix.map(function (c, i) { return (i === q.bonne ? '✔ ' : '') + e(c); }).join(' · ') + '</span>'; });
     if (mode === 'analyse') {
-      html += (r.synthese ? '<p>' + e(r.synthese) + '</p>' : '') + liste('Points forts', r.points_forts) + liste('Points d’attention', r.points_attention) +
+      html += (r.synthese ? texteRiche(r.synthese) : '') + liste('Points forts', r.points_forts) + liste('Points d’attention', r.points_attention) +
         liste('Plan d’action', r.actions, function (x) { return '<span class="cf-badge ' + (x.priorite === 'haute' ? 'rouge' : x.priorite === 'moyenne' ? 'ambre' : '') + '">' + e(x.priorite) + '</span> <strong>' + e(x.action) + '</strong> — ' + e(x.responsable) + (x.indicateur ? ' <span class="doux">(' + e(x.indicateur) + ')</span>' : ''); }) +
         liste('Conseils par coach', r.coachs, function (x) { return '<strong>' + e(x.coach) + '</strong> : ' + e(x.conseil); });
     }
     if (mode === 'suivi') {
-      html += (r.bilan ? '<p>' + e(r.bilan) + '</p>' : '') + liste('Forces', r.forces) + liste('À travailler', r.a_travailler) + liste('Conseils pour la semaine', r.conseils) + (r.message_apprenant ? '<h3>Message à l’apprenant</h3>' + e(r.message_apprenant) : '');
+      html += (r.bilan ? texteRiche(r.bilan) : '') + liste('Forces', r.forces) + liste('À travailler', r.a_travailler) + liste('Conseils pour la semaine', r.conseils) + (r.message_apprenant ? '<h3>Message à l’apprenant</h3>' + e(r.message_apprenant) : '');
     }
     html += '</div><div class="cf-actions" style="margin-top:12px">';
     if (mode === 'lecon' || mode === 'quiz') html += '<button class="cf-btn principal" data-enregistrer>Enregistrer comme leçon (brouillon)</button>';

@@ -1352,8 +1352,21 @@
     else if (l - d > lb + 20) { cote = 'droite'; x = d + 12; y = Math.max(12, r.top); }
     else { cote = 'gauche'; x = Math.max(12, g - lb - 12); y = Math.max(12, r.top); }
 
-    x = Math.max(12, Math.min(x, l - lb - 12));
-    y = Math.max(12, Math.min(y, h - hb - 12));
+    /* Zones à éviter : la barre du haut et la barre d'onglets du téléphone,
+       et le menu latéral de l'ordinateur (sauf si c'est lui qu'on montre). */
+    var hautLibre = 12, basLibre = h - 12, gaucheLibre = 12;
+    var barreHaute = document.querySelector('.ard-mob-barre');
+    if (barreHaute && barreHaute.offsetParent !== null) hautLibre = Math.max(hautLibre, barreHaute.getBoundingClientRect().bottom + 8);
+    var onglets = document.querySelector('.ard-onglets');
+    if (onglets && getComputedStyle(onglets).display !== 'none') basLibre = Math.min(basLibre, onglets.getBoundingClientRect().top - 8);
+    var rail = document.querySelector('.barre-laterale');
+    if (rail && !rail.contains(cibleCourante) && !document.documentElement.classList.contains('ard-mob-coque')) {
+      var rr = rail.getBoundingClientRect();
+      if (rr.width > 0 && rr.width < l * 0.5 && rr.left <= 0 + 30) gaucheLibre = Math.max(gaucheLibre, rr.right + 12);
+    }
+    if (gaucheLibre + lb > l - 12) gaucheLibre = 12;
+    x = Math.max(gaucheLibre, Math.min(x, l - lb - 12));
+    y = Math.max(hautLibre, Math.min(y, basLibre - hb));
     bulle.style.width = lb + 'px';
     bulle.style.left = x + 'px';
     bulle.style.top = y + 'px';

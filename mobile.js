@@ -37,7 +37,32 @@
   'use strict';
 
   var SEUIL = 780;
-  var petitEcran = window.matchMedia('(max-width: ' + SEUIL + 'px)');
+  /* TÉLÉPHONE OU ORDINATEUR ? La largeur seule ne suffit pas : une fenêtre
+     d'ordinateur rétrécie deviendrait une « application ». La coque native ne
+     s'installe que sur un vrai appareil mobile — écran tactile sans souris,
+     application installée sur l'écran d'accueil, ou navigateur mobile — ET
+     sur un écran étroit. */
+  var largeurEtroite = window.matchMedia('(max-width: ' + SEUIL + 'px)');
+  var toucherSeul = window.matchMedia('(hover: none) and (pointer: coarse)');
+  var installee = window.matchMedia('(display-mode: standalone)');
+  function appareilMobile() {
+    var ua = navigator.userAgent || '';
+    var uaMobile = /Android.+Mobile|iPhone|iPod|Windows Phone|IEMobile|Opera Mini/i.test(ua)
+      || !!(navigator.userAgentData && navigator.userAgentData.mobile)
+      || window.navigator.standalone === true;
+    return toucherSeul.matches || installee.matches || uaMobile;
+  }
+  var petitEcran = {
+    get matches() { return largeurEtroite.matches && appareilMobile(); },
+    addEventListener: function (type, fn) {
+      [largeurEtroite, toucherSeul, installee].forEach(function (m) {
+        if (m.addEventListener) m.addEventListener(type, fn); else if (m.addListener) m.addListener(fn);
+      });
+    }
+  };
+  // Lu par les feuilles de style : « appareil mobile » ou « ordinateur ».
+  document.documentElement.classList.toggle('ard-appareil-mobile', appareilMobile());
+  document.documentElement.classList.toggle('ard-ordinateur', !appareilMobile());
   var ecranListes = window.matchMedia('(max-width: 700px)');
   var racine = document.documentElement;
 
@@ -380,7 +405,14 @@
     retourEl.setAttribute('aria-label', 'Retour');
     retourEl.appendChild(svg(SVG.retour));
     retourEl.appendChild(el('span', '', 'Retour'));
-    retourEl.addEventListener('click', function () { window.history.back(); });
+    retourEl.addEventListener('click', function () {
+      // Un historique dans l'application : on y revient. Sinon (lien ouvert
+      // depuis une notification, application relancée) : l'écran d'accueil.
+      var ref = document.referrer, memeOrigine = false;
+      try { memeOrigine = !!ref && new URL(ref).origin === window.location.origin; } catch (e) {}
+      if ((memeOrigine || window.location.hash.indexOf('#/') === 0) && window.history.length > 1) window.history.back();
+      else window.location.href = accueilHref();
+    });
     gauche.appendChild(retourEl);
 
     var centre = el('div', 'ard-mob-centre');
@@ -459,7 +491,9 @@
        affiché, glissait sous les yeux de l'utilisateur jusqu'à sa place
        cachée (le « flash » de la feuille au chargement). */
     racine.classList.add('ard-mob-sans-transition');
-    racine.classList.add('ard-mob-coque');
+    // Seulement sur un appareil mobile (voir `appareilMobile`) : une fenêtre
+    // d'ordinateur rétrécie garde sa mise en page d'ordinateur.
+    racine.classList.toggle('ard-mob-coque', petitEcran.matches);
     requestAnimationFrame(function () { requestAnimationFrame(function () {
       setTimeout(function () { racine.classList.remove('ard-mob-sans-transition'); }, 60);
     }); });
@@ -858,6 +892,43 @@
     return choisis;
   }
 
+  /* LE MÊME MENU PARTOUT. Chaque page d'école porte sa propre liste, parfois
+     incomplète (« Élèves » sans « Inscriptions »…) : la feuille de menu
+     changeait d'une page à l'autre. La liste complète, vue sur l'écran
+     d'accueil, est mémorisée pour cet utilisateur et complète les autres. */
+  function completerMenu(liste) {
+    if (!liste) return;
+    var id = '';
+    try { id = (JSON.parse(localStorage.getItem('ardoise_user') || sessionStorage.getItem('ardoise_user') || '{}') || {}).id || ''; } catch (e) { /* rien */ }
+    if (!id) return;
+    var cle = 'ard-menu:' + id;
+    var entrees = [].slice.call(liste.querySelectorAll(':scope > li')).map(function (li) {
+      var a = li.querySelector('.nav-item[href]');
+      if (!a || masqueeParRole(li)) return null;
+      var href = a.getAttribute('href');
+      if (!href || href.charAt(0) === '#') return null;
+      return { href: href, html: li.outerHTML };
+    }).filter(Boolean);
+    try {
+      if (FAMILLES[0].pages.indexOf(page()) !== -1) {
+        if (entrees.length) localStorage.setItem(cle, JSON.stringify(entrees));
+        return;
+      }
+      var memo = JSON.parse(localStorage.getItem(cle) || 'null');
+      if (!Array.isArray(memo)) return;
+      var presentes = {};
+      entrees.forEach(function (x) { presentes[page(x.href)] = true; });
+      memo.forEach(function (m) {
+        if (presentes[page(m.href)]) return;
+        var t = document.createElement('ul'); t.innerHTML = m.html;
+        var li = t.firstElementChild; if (!li) return;
+        li.style.display = '';
+        var a = li.querySelector('.nav-item'); if (a) a.classList.remove('actif');
+        liste.appendChild(li);
+      });
+    } catch (e) { /* menu de la page tel quel */ }
+  }
+
   /* LES MÊMES ONGLETS PARTOUT. Chaque page a son propre menu, pas toujours
      identique (Support, Messages…) : la barre du bas changeait d'une page à
      l'autre. Les onglets calculés sur l'écran d'ACCUEIL sont mémorisés pour
@@ -1209,14 +1280,20 @@
 
   /* Bouton retour : seulement sur un écran qui n'est pas un onglet, atteint
      depuis un autre écran de l'application. */
+  /* « Retour » sur TOUS les écrans, sauf l'écran d'accueil — comme une
+     application. Sans historique, il ramène à l'accueil. */
+  function accueilHref() {
+    var lien = null;
+    FAMILLES[0].pages.some(function (p) {
+      var a = document.querySelector('.barre-laterale .nav-item[href="' + p + '"], .barre-laterale .nav-item[href$="/' + p + '"]');
+      if (a) { lien = a.getAttribute('href'); return true; }
+      return false;
+    });
+    return lien || 'index.html';
+  }
   function majRetour() {
     if (!retourEl) return;
-    var ref = document.referrer, memeOrigine = false;
-    try { memeOrigine = !!ref && new URL(ref).origin === window.location.origin; } catch (e) {}
-    var afficher = memeOrigine && window.history.length > 1
-      && page(new URL(ref).pathname) !== page()
-      && pagesOnglets.indexOf(page()) === -1;
-    retourEl.hidden = !afficher;
+    retourEl.hidden = FAMILLES[0].pages.indexOf(page()) !== -1;
   }
 
   function majCloche(nav) {
@@ -1600,6 +1677,154 @@
      ========================================================================== */
   var majDefilement = null;
 
+  /* ==========================================================================
+     FENÊTRES EN FEUILLES QU'ON FAIT GLISSER
+     Toute fenêtre posée sur un voile (« .voile » des écoles, « .cf-voile » des
+     centres, fiche d'élève des bulletins…) devient, sur téléphone, une feuille
+     d'application : poignée en haut, UNE seule zone qui défile (le voile ne
+     défile plus — fini les deux barres de défilement), et un glissement vers le
+     bas la referme, comme partout ailleurs sur le téléphone.
+     ========================================================================== */
+  function installerFeuillesGlissables() {
+    var VOILES = '.voile, .cf-voile, .voile-confirmation';
+    function visible(v) { return v.isConnected && getComputedStyle(v).display !== 'none' && getComputedStyle(v).visibility !== 'hidden'; }
+    function feuilleDe(v) {
+      var f = v.firstElementChild;
+      while (f && (f.tagName === 'SCRIPT' || f.tagName === 'STYLE')) f = f.nextElementSibling;
+      return f;
+    }
+    function fermer(v) {
+      var bouton = v.querySelector('[data-fermer], .fermer, .bouton-fermer, [id^="bouton-fermer"], [id*="fermer"], button[aria-label="Fermer"], .cf-modale header button');
+      if (bouton) { bouton.click(); return; }
+      // Les fenêtres qui se ferment d'un toucher sur le fond.
+      v.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      setTimeout(function () {
+        if (v.isConnected && getComputedStyle(v).display !== 'none') { v.classList.remove('visible'); v.style.display = 'none'; }
+      }, 60);
+    }
+    function preparer(v) {
+      if (!petitEcran.matches || v.dataset.ardFeuille === 'oui') return;
+      var f = feuilleDe(v);
+      if (!f) return;
+      v.dataset.ardFeuille = 'oui';
+      f.classList.add('ard-feuille-mobile');
+      if (!f.querySelector(':scope > .ard-feuille-poignee')) {
+        var poignee = document.createElement('div');
+        poignee.className = 'ard-feuille-poignee';
+        poignee.setAttribute('aria-hidden', 'true');
+        f.insertBefore(poignee, f.firstChild);
+      }
+      var depart = null, dernierY = 0, dernierT = 0, vitesse = 0, tire = false;
+      f.addEventListener('touchstart', function (e) {
+        if (e.touches.length !== 1) return;
+        var surPoignee = e.target.closest('.ard-feuille-poignee, header, h2, h3');
+        // On ne tire la feuille que si son contenu est déjà tout en haut.
+        if (f.scrollTop > 0 && !surPoignee) { depart = null; return; }
+        if (e.target.closest('input, textarea, select, [contenteditable="true"], canvas')) { depart = null; return; }
+        depart = e.touches[0].clientY; dernierY = depart; dernierT = Date.now(); vitesse = 0; tire = false;
+      }, { passive: true });
+      f.addEventListener('touchmove', function (e) {
+        if (depart === null) return;
+        var y = e.touches[0].clientY, dy = y - depart;
+        if (dy <= 0 && !tire) { depart = null; return; }
+        tire = true;
+        var t = Date.now();
+        vitesse = (y - dernierY) / Math.max(1, t - dernierT);
+        dernierY = y; dernierT = t;
+        f.style.transition = 'none';
+        f.style.transform = 'translateY(' + Math.max(0, dy) + 'px)';
+        if (e.cancelable) e.preventDefault();
+      }, { passive: false });
+      f.addEventListener('touchend', function () {
+        if (depart === null || !tire) { depart = null; return; }
+        var dy = dernierY - depart;
+        depart = null;
+        f.style.transition = 'transform .28s cubic-bezier(.32,.72,0,1)';
+        if (dy > Math.min(160, f.offsetHeight * 0.3) || vitesse > 0.6) {
+          f.style.transform = 'translateY(100%)';
+          setTimeout(function () { f.style.transform = ''; f.style.transition = ''; fermer(v); v.dataset.ardFeuille = ''; }, 240);
+        } else {
+          f.style.transform = '';
+          setTimeout(function () { f.style.transition = ''; }, 300);
+        }
+      });
+    }
+    function balayer() {
+      if (!petitEcran.matches) return;
+      [].forEach.call(document.querySelectorAll(VOILES), function (v) { if (visible(v)) preparer(v); });
+    }
+    var enAttente = false;
+    new MutationObserver(function () {
+      if (enAttente) return;
+      enAttente = true;
+      requestAnimationFrame(function () { enAttente = false; balayer(); });
+    }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
+    balayer();
+  }
+
+  /* ==========================================================================
+     DOCUMENTS DANS L'APPLICATION
+     Reçus, factures, certificats, cartes… s'ouvraient « dans une nouvelle
+     fenêtre » : dans l'application installée, cette fenêtre n'a pas de bouton
+     retour, et il fallait quitter l'application. Sur téléphone, ils s'ouvrent
+     désormais dans une visionneuse au-dessus de l'écran, avec « Fermer » et
+     « Imprimer ». Les liens externes (WhatsApp, site d'un tiers) ne sont pas
+     concernés.
+     ========================================================================== */
+  function installerVisionneuseDocuments() {
+    var ouvrirOrigine = window.open;
+    window.open = function (url, cible, options) {
+      if (!petitEcran.matches) return ouvrirOrigine.apply(window, arguments);
+      var u = String(url || '');
+      var interne = !u || u === 'about:blank' || /^blob:|^data:/.test(u);
+      if (!interne) {
+        try { interne = new URL(u, window.location.href).origin === window.location.origin; } catch (e) { interne = false; }
+      }
+      if (!interne) return ouvrirOrigine.apply(window, arguments);
+      return visionneuse(u);
+    };
+  }
+  function visionneuse(url) {
+    var ancien = document.querySelector('.ard-visionneuse');
+    if (ancien) ancien.remove();
+    var v = el('div', 'ard-visionneuse');
+    v.setAttribute('role', 'dialog');
+    v.setAttribute('aria-modal', 'true');
+    var barre = el('div', 'ard-visionneuse-barre');
+    var fermer = el('button', 'ard-visionneuse-bouton', 'Fermer');
+    fermer.type = 'button';
+    var titre = el('span', 'ard-visionneuse-titre', 'Document');
+    var imprimer = el('button', 'ard-visionneuse-bouton principal', 'Imprimer');
+    imprimer.type = 'button';
+    barre.appendChild(fermer); barre.appendChild(titre); barre.appendChild(imprimer);
+    var cadre = document.createElement('iframe');
+    cadre.className = 'ard-visionneuse-cadre';
+    cadre.setAttribute('title', 'Document');
+    v.appendChild(barre); v.appendChild(cadre);
+    document.body.appendChild(v);
+    racine.classList.add('ard-visionneuse-ouverte');
+    function clore() { v.remove(); racine.classList.remove('ard-visionneuse-ouverte'); window.removeEventListener('popstate', surRetour); }
+    // Le bouton « retour » du téléphone ferme le document, comme une page.
+    function surRetour() { clore(); }
+    try { history.pushState({ ardVisionneuse: true }, ''); window.addEventListener('popstate', surRetour); } catch (e) { /* rien */ }
+    fermer.addEventListener('click', function () { if (history.state && history.state.ardVisionneuse) history.back(); else clore(); });
+    imprimer.addEventListener('click', function () { try { cadre.contentWindow.focus(); cadre.contentWindow.print(); } catch (e) { /* rien */ } });
+    if (url && url !== 'about:blank') cadre.src = url;
+    var w = cadre.contentWindow;
+    // Le document peut s'imprimer tout seul au chargement : on le laisse
+    // s'afficher d'abord ; « Imprimer » reste à portée de main.
+    try {
+      var d = w.document;
+      var ecrire = d.write.bind(d);
+      d.write = function (html) {
+        var m = String(html).match(/<title>([^<]*)<\/title>/i);
+        if (m) titre.textContent = m[1];
+        ecrire(String(html).replace(/window\.onload\s*=\s*function\s*\(\)\s*\{\s*setTimeout\(function\s*\(\)\s*\{\s*window\.print\(\)\s*\},\s*\d+\)\s*\}/, ''));
+      };
+    } catch (e) { /* page chargée par URL */ }
+    return w;
+  }
+
   function demarrer() {
     // Les aperçus de bulletin suivent un chemin à part et s'arrêtent là.
     if (ajusterFeuille()) return;
@@ -1617,6 +1842,8 @@
     try { surveillerClavier(); } catch (e) {}
     try { surveillerListes(); } catch (e) {}
     try { installerActions(); } catch (e) {}
+    try { installerFeuillesGlissables(); } catch (e) {}
+    try { installerVisionneuseDocuments(); } catch (e) {}
     try { chargerProfil(); } catch (e) {}
 
     /* « Tous les menus » et « Tous les écrans » (ui.js) passent par ici : sur
@@ -1645,6 +1872,7 @@
 
     new MutationObserver(synchroniser).observe(nav, { attributes: true, attributeFilter: ['class'] });
     petitEcran.addEventListener('change', function () {
+      racine.classList.toggle('ard-mob-coque', petitEcran.matches);
       if (!petitEcran.matches) basculer(false);
       else activerMobile(nav);
       synchroniser();
@@ -1690,7 +1918,7 @@
         if (bm) bm.classList.toggle('actif', !trouve);
         placerLentille(capsule.querySelector('.ard-onglet.actif'));
       }
-      setTimeout(function () { if (titreEl) titreEl.textContent = titrePage(); if (majDefilement) majDefilement(); }, 120);
+      setTimeout(function () { if (titreEl) titreEl.textContent = titrePage(); if (majDefilement) majDefilement(); try { majRetour(); } catch (e) {} }, 120);
     });
 
     /* Le rail (`reduireRail`) et le badge de messages s'exécutent 60 ms après
@@ -1713,6 +1941,7 @@
    */
   function activerMobile(nav) {
     if (!petitEcran.matches) return;
+    try { completerMenu(nav.querySelector('.nav-liste')); } catch (e) {}
     try { deployerMenu(nav); } catch (e) { /* menu conservé tel quel */ }
     try { construireProfil(nav); } catch (e) {}
     try { calculerGroupes(nav.querySelector('.nav-liste')); } catch (e) {}

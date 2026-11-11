@@ -395,6 +395,7 @@
     window.ARDOISE_SIGNATURES_ACCUEIL_SEUL = true;
     chargerScript('didacticiel.js?v=4', { 'data-ecran': 'Centre de formation' })
       .then(function () { return chargerScript('mobile.js?v=3'); })
+      .then(function () { return chargerScript('fermetures.js?v=1'); })
       .then(function () { return chargerScript('theme-signatures.js?v=2', { 'data-ardoise-signatures': 'oui' }); });
   }
 

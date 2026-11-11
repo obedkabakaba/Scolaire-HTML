@@ -2118,6 +2118,9 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => preparerCommandes());
   else preparerCommandes();
 
+  if (!window.ArdoiseFermetures && !document.querySelector('script[src*="fermetures.js"]')) {
+    const sf = document.createElement('script'); sf.src = 'fermetures.js?v=1'; document.head.appendChild(sf);
+  }
   window.ArdoiseUI.confirmer = confirmer;
   window.ArdoiseUI.preparerCommandes = preparerCommandes;
   window.ArdoiseUI.ouvrirCommande = function (section) { if (section) ouvrirCommande(section); };

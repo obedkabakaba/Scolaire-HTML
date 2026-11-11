@@ -34,6 +34,25 @@
   function borne(v, a, b) { return Math.max(a, Math.min(b, v)); }
   function deux(n) { return (n < 10 ? '0' : '') + n; }
 
+  /* Icônes de la barre : des traits nets, et une barre oblique quand c'est
+     COUPÉ — on voit d'un coup d'œil si le micro ou la caméra est allumé. */
+  var ICO = (function () {
+    function svg(c) { return '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + c + '</svg>'; }
+    var barre = '<path d="M3 3l18 18"/>';
+    return {
+      micro: svg('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>'),
+      microOff: svg('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>' + barre),
+      verrou: svg('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>'),
+      camera: svg('<rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3z"/>'),
+      cameraOff: svg('<rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3z"/>' + barre),
+      ecran: svg('<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>'),
+      main: svg('<path d="M7 11V5a1.5 1.5 0 0 1 3 0v5M10 10V4a1.5 1.5 0 0 1 3 0v6M13 10V5a1.5 1.5 0 0 1 3 0v6M16 11V8a1.5 1.5 0 0 1 3 0v6a7 7 0 0 1-7 7h-1a6 6 0 0 1-5-3l-2.5-4.5a1.5 1.5 0 0 1 2.6-1.5L7 14"/>'),
+      discussion: svg('<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/>'),
+      plus: svg('<circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/>'),
+      quitter: svg('<path d="M4 15c4.5-4 11.5-4 16 0l-2 3-3-1v-3c-2-.6-4-.6-6 0v3l-3 1z"/>')
+    };
+  })();
+
   /* =====================================================================
      AVATARS — bustes dessinés, sans aucune image téléchargée
      ===================================================================== */
@@ -211,7 +230,7 @@
     var S = {
       participants: {}, animateur: null, scene: 'attente', micros_libres: !!(P.salle && P.salle.micros_libres), places_verrouillees: false,
       places: (P.salle && P.salle.places) || 20, chat: [], tableau: { traits: [], texte: '' }, sondage: null, minuteur: null,
-      parleurs: [], decalage: 0, terminee: false, nonLus: 0,
+      parleurs: [], decalage: 0, terminee: false, nonLus: 0, verrouillee: false,
       vue: (P.salle && P.salle.vue) || 'salle', ecran: [], cameras_apprenants: !(P.salle && P.salle.cameras_apprenants === false)
     };
     var PLACES = dispositionPlaces(S.places);
@@ -232,7 +251,7 @@
       '<header class="ca-entete"><div class="ca-titre"><span class="ca-pastille" aria-hidden="true"></span><div><strong>' + esc(P.salle.titre || 'Cours') + '</strong><span>' + esc([P.salle.theme, P.salle.heure_debut ? String(P.salle.heure_debut).slice(0, 5).replace(':', ' h ') : ''].filter(Boolean).join(' · ')) + '</span></div></div>' +
       '<div class="ca-vues" role="tablist"><button data-vue="salle" role="tab" title="La salle de classe dessinée, avec les avatars">🏫 Salle</button><button data-vue="visio" role="tab" title="La visio classique : le coach en grand, les vignettes des participants">🎥 Visio</button><button data-vue="tableau" role="tab" title="Le tableau en grand">🖥 Tableau</button></div>' +
       '<div class="ca-etat-reseau" data-reseau title="Qualité de votre connexion"><i></i><i></i><i></i><span>Connexion…</span></div>' +
-      '<div class="ca-compte" data-compte>👥 0</div><button class="ca-quitter" data-quitter>Quitter</button></header>' +
+      '<div class="ca-compte" data-compte>👥 0</div><span class="ca-porte" data-porte hidden>🔒 Classe fermée</span><button class="ca-quitter" data-quitter>Quitter</button></header>' +
       '<div class="ca-corps"><div class="ca-zone" data-zone><div class="ca-piece" data-piece>' + decorSvg() +
       '<div class="ca-tableau" data-tableau><video class="ca-video" playsinline muted></video><canvas class="ca-craie"></canvas><div class="ca-tableau-texte" data-texte-tableau></div>' +
       '<div class="ca-tableau-attente" data-attente><span>🧑‍🏫</span><strong>En attente du coach…</strong><small>La classe est ouverte : choisissez votre place.</small></div>' +
@@ -240,7 +259,8 @@
       '<div class="ca-minuteur" data-minuteur hidden></div><div class="ca-scene" data-scene></div><div class="ca-flottants" data-flottants></div></div>' +
       '<div class="ca-bande" data-bande></div><div class="ca-vignettes" data-vignettes></div></div>' +
       '<aside class="ca-panneau" data-panneau><div class="ca-onglets"><button data-onglet="discussion">💬 Discussion<b data-non-lus hidden></b></button><button data-onglet="participants">👥 Classe</button><button data-onglet="sondage">📊 Sondage</button><button class="ca-fermer-panneau" data-fermer-panneau aria-label="Fermer">✕</button></div><div class="ca-volet" data-volet></div></aside></div>' +
-      '<footer class="ca-barre" data-barre></footer><div class="ca-toasts" data-toasts></div><audio data-son autoplay></audio></div>');
+      '<footer class="ca-barre" data-barre></footer><div class="ca-moi" data-moi hidden><video playsinline muted autoplay></video><span>Vous · caméra activée</span></div>' +
+      '<div class="ca-toasts" data-toasts></div><audio data-son autoplay></audio></div>');
     document.body.appendChild(racine);
     document.documentElement.classList.add('ca-ouverte');
     var video = $('.ca-video', racine), son = $('[data-son]', racine), toile = $('.ca-craie', racine);
@@ -286,6 +306,7 @@
           S.participants = {}; m.participants.forEach(function (p) { S.participants[p.pid] = p; });
           S.participants[MOI] = m.moi;
           ['animateur', 'scene', 'micros_libres', 'places_verrouillees', 'tableau', 'sondage', 'minuteur', 'parleurs', 'terminee'].forEach(function (k) { S[k] = m[k]; });
+          S.verrouillee = !!m.verrouillee;
           if (m.vue) S.vue = m.vue;
           S.ecran = m.ecran || [];
           if (typeof m.cameras_apprenants === 'boolean') S.cameras_apprenants = m.cameras_apprenants;
@@ -339,7 +360,13 @@
         case 'reglages':
           S.micros_libres = m.micros_libres; S.places_verrouillees = m.places_verrouillees;
           if (typeof m.cameras_apprenants === 'boolean') S.cameras_apprenants = m.cameras_apprenants;
-          rendreBarre(); if (panneau === 'participants') rendreVolet(); break;
+          if (typeof m.verrouillee === 'boolean') {
+            if (m.verrouillee !== S.verrouillee && jeSuisAnimateur()) toast(m.verrouillee ? '🔒 Classe fermée : plus personne ne peut entrer.' : '🔓 Classe rouverte : les apprenants peuvent entrer.');
+            S.verrouillee = m.verrouillee;
+          }
+          rendreBarre(); majEnteteEtat(); if (panneau === 'participants') rendreVolet(); break;
+        case 'exclu': finir(m.message || 'Le coach vous a fait sortir de la classe.'); return;
+        case 'porte_fermee': finir(m.message || 'Le coach a fermé la classe.'); return;
         case 'vue':
           S.vue = m.vue;
           voirVue(vueParDefaut(m.vue));
@@ -792,7 +819,8 @@
         html += '<div class="ca-commandes"><button data-cmd="muet_tous">🔇 Couper les micros</button><button data-cmd="mains_baisser">✋ Baisser les mains</button>' +
           '<label class="ca-interrupteur"><input type="checkbox" data-reg="micros_libres"' + (S.micros_libres ? ' checked' : '') + '><span>Micros libres</span></label>' +
           '<label class="ca-interrupteur"><input type="checkbox" data-reg="places_verrouillees"' + (S.places_verrouillees ? ' checked' : '') + '><span>Figer les places</span></label>' +
-          '<label class="ca-interrupteur"><input type="checkbox" data-reg="cameras_apprenants"' + (S.cameras_apprenants ? ' checked' : '') + '><span>Caméras des apprenants</span></label></div>' +
+          '<label class="ca-interrupteur"><input type="checkbox" data-reg="cameras_apprenants"' + (S.cameras_apprenants ? ' checked' : '') + '><span>Caméras des apprenants</span></label>' +
+          '<label class="ca-interrupteur"><input type="checkbox" data-reg="verrouillee"' + (S.verrouillee ? ' checked' : '') + '><span>🔒 Fermer la classe (plus d’entrées)</span></label></div>' +
           '<div class="ca-commandes ca-modes"><span>Toute la classe en mode :</span><button data-mode="salle"' + (S.vue === 'salle' ? ' class="actif"' : '') + '>🏫 Salle</button><button data-mode="visio"' + (S.vue === 'visio' ? ' class="actif"' : '') + '>🎥 Visio</button></div>' +
           (S.ecran.length ? '<p class="ca-aide">À l’écran de toute la classe : ' + S.ecran.map(function (x) { return esc((participant(x) || {}).nom || '?'); }).join(', ') + '. En mode visio, touchez une vignette pour épingler un apprenant.</p>' : '<p class="ca-aide">En mode visio, touchez la vignette d’un apprenant qui a ouvert sa caméra pour la montrer à toute la classe.</p>');
       }
@@ -805,7 +833,7 @@
         var q = Media.qualite(p.pid);
         return '<li><span class="ca-mini-av">' + avatarSvg(p.avatar) + '</span><span class="ca-li-nom">' + esc(p.nom) + (p.pid === S.animateur ? ' <em>coach</em>' : p.role === 'observateur' ? ' <em>visiteur</em>' : '') + '</span>' +
           '<span class="ca-li-etat">' + (p.main ? '✋' : '') + (p.micro ? '🎙️' : '') + (p.faible ? '🐢' : '') + (q ? '<i class="ca-q ' + q + '" title="Connexion ' + q + '"></i>' : '') + '</span>' +
-          (anim && p.pid !== MOI && p.role === 'apprenant' ? '<button data-' + (p.parole ? 'retirer' : 'parole') + '="' + esc(p.pid) + '">' + (p.parole ? 'Reprendre' : 'Parole') + '</button>' : '') + '</li>';
+          (anim && p.pid !== MOI && p.role === 'apprenant' ? '<button data-' + (p.parole ? 'retirer' : 'parole') + '="' + esc(p.pid) + '">' + (p.parole ? 'Reprendre' : 'Parole') + '</button><button class="ca-sortir-p" data-exclure="' + esc(p.pid) + '" title="Faire sortir de la classe">Sortir</button>' : '') + '</li>';
       }).join('') + '</ul>';
       if (anim && P.inscrits) {
         var absents = P.inscrits.filter(function (a) { return !(S.participants[a.pid] && S.participants[a.pid].en_ligne); });
@@ -819,6 +847,13 @@
       $$('[data-reg]', v).forEach(function (c) { c.addEventListener('change', function () { var o = {}; o[c.getAttribute('data-reg')] = c.checked; agirSilencieux('reglages', o); }); });
       $$('[data-parole]', v).forEach(function (b) { b.addEventListener('click', function () { agirSilencieux('parole', { pid: b.getAttribute('data-parole'), donner: true }); }); });
       $$('[data-retirer]', v).forEach(function (b) { b.addEventListener('click', function () { agirSilencieux('parole', { pid: b.getAttribute('data-retirer'), donner: false }); }); });
+      $$('[data-exclure]', v).forEach(function (b) {
+        b.addEventListener('click', function () {
+          var p = participant(b.getAttribute('data-exclure'));
+          if (!p || !window.confirm('Faire sortir ' + p.nom + ' de la classe ? Il ne pourra plus revenir pour ce cours.')) return;
+          agir('exclure', { pid: p.pid }).then(function () { toast(p.nom + ' est sorti de la classe.'); }).catch(function (e) { toast(e.message, 'alerte'); });
+        });
+      });
     }
 
     function ficheParticipant(pid) {
@@ -876,32 +911,139 @@
       o = o || {};
       return '<button class="ca-b' + (o.actif ? ' actif' : '') + (o.alerte ? ' alerte' : '') + (o.classe ? ' ' + o.classe : '') + '" data-b="' + cle + '"' + (o.titre ? ' title="' + esc(o.titre) + '"' : '') + (o.desactive ? ' disabled' : '') + '><span>' + icone + '</span><small>' + esc(libelle) + '</small>' + (o.pastille ? '<b' + (o.pastille === '0' ? ' hidden' : '') + '>' + esc(o.pastille) + '</b>' : '') + '</button>';
     }
+    /* LA BARRE — les commandes d'un appel, comme dans toutes les visios :
+       Micro et Caméra disent leur ÉTAT en toutes lettres (« activé » sur fond
+       clair, « coupé » sur fond rouge barré), « Quitter » est toujours là, en
+       rouge, au même endroit. Le reste est dans « Plus ». Sur ordinateur, les
+       outils du cours restent visibles à côté. */
     function rendreBarre() {
       var b = $('[data-barre]', racine), m = moi(), anim = jeSuisAnimateur();
       var peutParler = anim || m.role !== 'apprenant' || S.micros_libres || m.parole;
-      var html = bouton('micro', Media.micActif() ? '🎙️' : (peutParler ? '🎤' : '🔒'), Media.micActif() ? 'Micro ouvert' : 'Micro', { actif: Media.micActif(), titre: peutParler ? 'Ouvrir / fermer votre micro' : 'Levez la main : le coach vous donnera la parole' });
-      if (anim) {
-        html += bouton('camera', '📷', 'Caméra', { actif: S.scene === 'video' && Media.videoDisponible() }) + bouton('ecran', '🖥', 'Écran', { actif: S.scene === 'ecran' }) +
-          bouton('craie', '✏️', 'Tableau', { actif: outil.actif }) + bouton('sondage', '📊', 'Sondage', { actif: panneau === 'sondage' }) + bouton('minuteur', '⏱', 'Minuteur', { actif: !!S.minuteur }) +
-          bouton('enregistrer', Media.enregistre() ? '⏺' : '⏺', Media.enregistre() ? 'Arrêter' : 'Enregistrer', { actif: Media.enregistre(), classe: Media.enregistre() ? 'rec' : '' });
-      } else {
-        if (S.cameras_apprenants) html += bouton('camera_moi', Media.cameraActive() ? '📷' : '📷', Media.cameraActive() ? 'Caméra ouverte' : 'Caméra', { actif: Media.cameraActive(), desactive: !!m.faible, titre: m.faible ? 'Indisponible en mode connexion faible' : 'Ouvrir votre caméra (le coach vous voit ; il peut vous mettre à l’écran de toute la classe)' });
-        html += bouton('main', '✋', m.main ? 'Baisser' : 'Lever la main', { actif: !!m.main }) + bouton('reactions', '😀', 'Réagir') +
-          bouton('compris', '❓', 'Pas compris', { titre: 'Signaler au coach que vous n’avez pas compris' });
+      var micOn = Media.micActif();
+      var camOn = anim ? Media.cameraCoach() : Media.cameraActive();
+      var camPermise = anim || (S.cameras_apprenants && !m.faible);
+      var html = '<div class="ca-barre-groupe">';
+      html += bouton('micro', micOn ? ICO.micro : (peutParler ? ICO.microOff : ICO.verrou),
+        micOn ? 'Micro activé' : (peutParler ? 'Micro coupé' : 'Demander la parole'),
+        { classe: 'prim ' + (micOn ? 'on' : (peutParler ? 'off' : 'verrou')), titre: micOn ? 'Couper votre micro' : (peutParler ? 'Activer votre micro' : 'Levez la main : le coach vous donnera la parole') });
+      if (anim || S.cameras_apprenants) {
+        html += bouton(anim ? 'camera' : 'camera_moi', camOn ? ICO.camera : ICO.cameraOff, camOn ? 'Caméra activée' : 'Caméra coupée',
+          { classe: 'prim ' + (camOn ? 'on' : 'off'), desactive: !camPermise && !camOn, titre: !camPermise ? 'Indisponible en mode connexion faible' : camOn ? 'Couper votre caméra' : 'Activer votre caméra' });
       }
-      html += bouton('discussion', '💬', 'Discussion', { actif: panneau === 'discussion', pastille: String(S.nonLus || 0) }) + bouton('participants', '👥', 'Classe', { actif: panneau === 'participants' }) +
-        bouton('faible', moi().faible ? '🐢' : '📶', moi().faible ? 'Connexion faible' : 'Connexion', { actif: !!moi().faible, titre: 'Mode connexion faible : le son et le tableau, sans l’image' });
-      if (!anim) html += bouton('avatar', '🎨', 'Avatar');
-      if (anim) html += bouton('terminer', '🏁', 'Terminer', { classe: 'fin' });
+      if (anim) html += bouton('ecran', ICO.ecran, S.scene === 'ecran' ? 'Arrêter le partage' : 'Partager l’écran', { classe: 'prim' + (S.scene === 'ecran' ? ' actif' : '') + ' large-seul' });
+      else html += bouton('main', ICO.main, m.main ? 'Baisser la main' : 'Lever la main', { classe: 'prim' + (m.main ? ' actif' : '') });
+      html += bouton('discussion', ICO.discussion, 'Discussion', { classe: 'prim', actif: panneau === 'discussion', pastille: String(S.nonLus || 0) });
+      html += '</div><div class="ca-barre-groupe sec">';
+      if (anim) {
+        html += bouton('craie', '✏️', 'Tableau', { actif: outil.actif }) + bouton('sondage', '📊', 'Sondage', { actif: panneau === 'sondage' }) +
+          bouton('minuteur', '⏱', 'Minuteur', { actif: !!S.minuteur }) +
+          bouton('enregistrer', '⏺', Media.enregistre() ? 'Arrêter l’enregistrement' : 'Enregistrer', { actif: Media.enregistre(), classe: Media.enregistre() ? 'rec' : '' });
+      } else {
+        html += bouton('reactions', '😀', 'Réagir') + bouton('compris', '❓', 'Pas compris', { titre: 'Signaler au coach que vous n’avez pas compris' });
+      }
+      html += bouton('participants', '👥', 'Classe', { actif: panneau === 'participants' }) +
+        bouton('faible', m.faible ? '🐢' : '📶', m.faible ? 'Connexion faible' : 'Connexion', { actif: !!m.faible, titre: 'Mode connexion faible : le son et le tableau, sans l’image' });
+      html += '</div><div class="ca-barre-groupe fin">' + bouton('plus', ICO.plus, 'Plus', { classe: 'prim etroit-seul' }) +
+        bouton('sortir', ICO.quitter, 'Quitter', { classe: 'prim quitter' }) + '</div>';
       b.innerHTML = html;
       $$('[data-b]', b).forEach(function (x) { x.addEventListener('click', function () { actionBarre(x.getAttribute('data-b'), x); }); });
       majNonLus();
+      majApercuMoi();
+      majEnteteEtat();
+    }
+
+    /* Votre propre image, en petit : la preuve que la caméra est allumée. */
+    function majApercuMoi() {
+      var z = $('[data-moi]', racine); if (!z) return;
+      var f = jeSuisAnimateur() ? Media.fluxCoach() : (Media.cameraActive() ? Media.fluxDe(MOI) : null);
+      var v = $('video', z);
+      if (!f || vueCourante === 'visio' && !jeSuisAnimateur()) { z.hidden = true; if (v.srcObject) v.srcObject = null; return; }
+      if (v.srcObject !== f) { v.srcObject = f; v.play().catch(function () {}); }
+      z.hidden = false;
+      $('span', z).textContent = jeSuisAnimateur() ? 'Vous · à l’écran de la classe' : 'Vous · caméra activée';
+    }
+    function majEnteteEtat() {
+      var porte = $('[data-porte]', racine); if (porte) porte.hidden = !S.verrouillee;
+    }
+
+    /* « Plus » : une feuille qui monte du bas, avec TOUTES les commandes. */
+    function menuPlus() {
+      var anim = jeSuisAnimateur(), m = moi();
+      var lignes = [];
+      function l(cle, icone, texte, aide, classe) { lignes.push('<button class="ca-plus-ligne' + (classe ? ' ' + classe : '') + '" data-p="' + cle + '"><span>' + icone + '</span><div><strong>' + esc(texte) + '</strong>' + (aide ? '<small>' + esc(aide) + '</small>' : '') + '</div></button>'); }
+      if (anim) {
+        l('ecran', '🖥', S.scene === 'ecran' ? 'Arrêter le partage d’écran' : 'Partager mon écran', 'Depuis un ordinateur');
+        l('craie', '✏️', outil.actif ? 'Ranger la craie' : 'Écrire au tableau');
+        l('sondage', '📊', 'Lancer un sondage');
+        l('minuteur', '⏱', S.minuteur ? 'Arrêter le minuteur' : 'Minuteur d’exercice');
+        l('enregistrer', '⏺', Media.enregistre() ? 'Arrêter l’enregistrement' : 'Enregistrer le cours');
+        l('participants', '👥', 'La classe', 'Mains levées, parole, faire sortir');
+        l('verrou', S.verrouillee ? '🔓' : '🔒', S.verrouillee ? 'Rouvrir la classe' : 'Fermer la classe', S.verrouillee ? 'Les apprenants pourront de nouveau entrer' : 'Plus personne n’entre ; ceux qui sont là restent');
+      } else {
+        l('main', '✋', m.main ? 'Baisser la main' : 'Lever la main');
+        l('reactions', '😀', 'Réagir');
+        l('compris', '❓', 'Je n’ai pas compris', 'Le coach le voit, sans interrompre');
+        l('participants', '👥', 'La classe');
+        l('avatar', '🎨', 'Changer mon avatar');
+      }
+      l('faible', m.faible ? '📶' : '🐢', m.faible ? 'Quitter le mode connexion faible' : 'Mode connexion faible', 'Le son et le tableau, sans l’image');
+      lignes.push('<div class="ca-plus-vues"><span>Affichage</span><button data-pv="salle">🏫 Salle</button><button data-pv="visio">🎥 Visio</button><button data-pv="tableau">🖥 Tableau</button></div>');
+      if (anim) l('terminer', '🏁', 'Terminer le cours pour tous', 'La participation de chacun est enregistrée', 'danger');
+      var f = el('<div class="ca-voile ca-feuille-voile"><div class="ca-feuille" role="dialog" aria-label="Plus de commandes"><div class="ca-feuille-poignee"></div>' + lignes.join('') + '<button class="ca-feuille-fermer" data-fermer>Fermer</button></div></div>');
+      racine.appendChild(f);
+      $$('[data-pv]', f).forEach(function (b) { b.classList.toggle('actif', b.getAttribute('data-pv') === vueCourante); b.addEventListener('click', function () { f.remove(); voirVue(b.getAttribute('data-pv')); }); });
+      function fermer() { f.remove(); }
+      f.addEventListener('click', function (ev) { if (ev.target === f) fermer(); });
+      $('[data-fermer]', f).addEventListener('click', fermer);
+      $$('[data-p]', f).forEach(function (b) {
+        b.addEventListener('click', function () {
+          var cle = b.getAttribute('data-p'); fermer();
+          if (cle === 'verrou') { agirSilencieux('reglages', { verrouillee: !S.verrouillee }); return; }
+          actionBarre(cle, $('[data-b="plus"]', racine) || b);
+        });
+      });
+      glisserPourFermer($('.ca-feuille', f), fermer);
+    }
+
+    /* Une feuille se ferme en la tirant vers le bas, comme partout sur téléphone. */
+    function glisserPourFermer(feuille, fermer) {
+      if (!feuille) return;
+      var y0 = null, dy = 0;
+      feuille.addEventListener('touchstart', function (ev) { if (feuille.scrollTop > 0) return; y0 = ev.touches[0].clientY; dy = 0; feuille.style.transition = 'none'; }, { passive: true });
+      feuille.addEventListener('touchmove', function (ev) { if (y0 === null) return; dy = Math.max(0, ev.touches[0].clientY - y0); feuille.style.transform = 'translateY(' + dy + 'px)'; }, { passive: true });
+      feuille.addEventListener('touchend', function () {
+        if (y0 === null) return; y0 = null; feuille.style.transition = '';
+        if (dy > Math.min(140, feuille.offsetHeight * 0.3)) fermer(); else feuille.style.transform = '';
+      });
+    }
+
+    /* Quitter : une vraie question, avec « Rester » en évidence. */
+    function demanderSortie() {
+      if (fermee) { quitter(); return; }
+      if ($('.ca-sortie', racine)) return;
+      var anim = jeSuisAnimateur();
+      var f = el('<div class="ca-voile ca-feuille-voile ca-sortie"><div class="ca-feuille" role="alertdialog" aria-label="Quitter la classe"><div class="ca-feuille-poignee"></div>' +
+        '<h3>Quitter la classe ?</h3><p>' + (anim ? 'La classe reste ouverte : vous pouvez revenir, ou la terminer pour tout le monde.' : 'Vous pourrez revenir tant que le cours dure. Votre présence reste enregistrée.') + '</p>' +
+        '<button class="ca-plus-ligne danger" data-ok><span>' + ICO.quitter + '</span><div><strong>Quitter la classe</strong></div></button>' +
+        (anim ? '<button class="ca-plus-ligne danger" data-fin><span>🏁</span><div><strong>Terminer le cours pour tous</strong><small>La participation de chacun est enregistrée</small></div></button>' : '') +
+        '<button class="ca-feuille-fermer principal" data-rester>Rester dans la classe</button></div></div>');
+      racine.appendChild(f);
+      function fermer() { f.remove(); }
+      f.addEventListener('click', function (ev) { if (ev.target === f) fermer(); });
+      $('[data-rester]', f).addEventListener('click', fermer);
+      $('[data-ok]', f).addEventListener('click', function () { fermer(); quitter(); });
+      var bf = $('[data-fin]', f);
+      if (bf) bf.addEventListener('click', function () { fermer(); agir('terminer').catch(function (e) { toast(e.message, 'alerte'); }); });
+      glisserPourFermer($('.ca-feuille', f), fermer);
     }
 
     function actionBarre(cle, btn) {
       var m = moi();
       switch (cle) {
-        case 'micro': Media.basculerMicro(!Media.micActif()); break;
+        case 'micro':
+          if (Media.micActif()) Media.couperMicro(false).then(function () { toast('🔇 Micro coupé.'); });
+          else Media.basculerMicro(true).then(function () { if (Media.micActif()) toast('🎙️ Micro activé : la classe vous entend.', 'succes'); });
+          break;
         case 'main': agirSilencieux('main', { levee: !m.main }); break;
         case 'reactions': menuReactions(btn); break;
         case 'compris': agirSilencieux('reaction', { e: '❓' }); toast('Le coach voit que vous n’avez pas compris. Vous pouvez aussi lever la main.'); break;
@@ -911,6 +1053,8 @@
         case 'camera': Media.camera(); break;
         case 'camera_moi': Media.basculerCamera(!Media.cameraActive()); break;
         case 'ecran': Media.ecran(); break;
+        case 'plus': menuPlus(); break;
+        case 'sortir': demanderSortie(); break;
         case 'craie':
           outil.actif = !outil.actif;
           if (outil.actif) { if (S.scene === 'attente') agirSilencieux('scene', { scene: 'tableau' }); voirVue('tableau'); }
@@ -1137,12 +1281,18 @@
       }
 
       function camera() {
-        if (camFlux) { camFlux.getTracks().forEach(function (t) { t.stop(); }); camFlux = null; definirVideo(null); return; }
+        if (camFlux) {
+          camFlux.getTracks().forEach(function (t) { t.stop(); }); camFlux = null; definirVideo(null);
+          rendreBarre(); toast('📷 Caméra coupée : la classe ne vous voit plus.');
+          return;
+        }
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { toast('Ce navigateur ne permet pas d’utiliser la caméra.', 'alerte'); return; }
         navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 960 }, height: { ideal: 540 }, frameRate: { ideal: 24, max: 30 } } }).then(function (f) {
           if (ecranFlux) { ecranFlux.getTracks().forEach(function (t) { t.stop(); }); ecranFlux = null; }
           camFlux = f; var t = f.getVideoTracks()[0]; t.contentHint = 'motion';
           definirVideo(t, 'video');
-        }).catch(function (e) { toast(e && e.name === 'NotAllowedError' ? 'Autorisez la caméra dans votre navigateur.' : 'Caméra indisponible.', 'alerte'); });
+          rendreBarre(); toast('📷 Caméra activée : toute la classe vous voit au tableau.', 'succes');
+        }).catch(function (e) { rendreBarre(); toast(e && e.name === 'NotAllowedError' ? 'La caméra est bloquée : autorisez-la dans le navigateur (icône à gauche de l’adresse), puis réessayez.' : 'Caméra indisponible.', 'alerte'); });
       }
 
       function ecran() {
@@ -1246,7 +1396,7 @@
           return agir('camera', { actif: true });
         }).then(function () {
           rendreBarre(); rendreVisio();
-          if (vueCourante !== 'visio') toast('📷 Caméra ouverte. Passez en mode Visio pour voir les vignettes.', '', { bouton: 'Mode visio', action: function () { voirVue('visio'); } });
+          toast('📷 Caméra activée : le coach vous voit.' + (vueCourante !== 'visio' ? ' Mode Visio pour voir les autres.' : ''), 'succes', vueCourante !== 'visio' ? { bouton: 'Mode visio', action: function () { voirVue('visio'); } } : {});
         }).catch(function (e) {
           couperCamera(true);
           toast(e && e.name === 'NotAllowedError' ? 'Autorisez la caméra dans votre navigateur.' : (e && e.message) || 'Caméra indisponible.', 'alerte');
@@ -1259,6 +1409,7 @@
         brancherCamMoi();
         rendreBarre(); rendreVisio();
         if (etait) agirSilencieux('camera', { actif: false });
+        if (etait && !silencieux) toast('📷 Caméra coupée.');
         return Promise.resolve();
       }
 
@@ -1538,6 +1689,8 @@
         surSignal: surSignal, surEtat: surEtat, surParticipant: surParticipant, surDepart: surDepart, surAnimateur: surAnimateur,
         qualite: qualite, arreter: arreter, audioCtx: audioCtx, assurerMicro: assurerMicro, connecte: function () { return connecteUneFois; },
         basculerCamera: basculerCamera, couperCamera: couperCamera, cameraActive: cameraActive, fluxDe: fluxDe,
+        cameraCoach: function () { return !!(camFlux && camFlux.getVideoTracks().some(function (t) { return t.readyState === 'live'; })); },
+        fluxCoach: function () { return camFlux; },
         majEcran: function () { majEcran(); }, choisirEcran: choisirEcran
       };
     })();
@@ -1579,6 +1732,12 @@
       });
     }
 
+    // Le premier toucher dans la classe autorise le son (règle des navigateurs).
+    racine.addEventListener('pointerdown', function deverrouiller() {
+      racine.removeEventListener('pointerdown', deverrouiller);
+      if (P.role !== 'apprenant') Media.audioCtx();
+      if (son.paused && son.srcObject) son.play().catch(function () {});
+    });
     function entrer() {
       // Ce clic est le geste qui autorise le son : on prépare l'audio maintenant.
       if (P.role !== 'apprenant') Media.audioCtx();
@@ -1608,16 +1767,27 @@
       racine.appendChild(m);
       $('[data-sortir]', m).addEventListener('click', quitter);
     }
-    function quitter() {
+    function quitter(depuisRetour) {
       if (!fermee) { fermee = true; if (source) source.close(); Media.arreter(); clearInterval(horloge); }
+      window.removeEventListener('popstate', surRetour);
+      if (gardeRetour && !depuisRetour && history.state && history.state.classeArdoise) { gardeRetour = false; try { history.back(); } catch (x) { /* rien */ } }
       window.removeEventListener('resize', redimensionnerCraie);
       racine.remove();
       document.documentElement.classList.remove('ca-ouverte');
       if (typeof opts.quitter === 'function') opts.quitter();
     }
-    $('[data-quitter]', racine).addEventListener('click', function () {
-      if (fermee || window.confirm(jeSuisAnimateur() ? 'Quitter la classe ? Elle reste ouverte : un autre membre du personnel peut l’animer, ou vous pouvez revenir.' : 'Quitter la classe ? Vous pouvez revenir tant que le cours dure.')) quitter();
-    });
+    $('[data-quitter]', racine).addEventListener('click', demanderSortie);
+    // La touche Retour du téléphone ne fait pas disparaître la classe en
+    // laissant le micro ouvert : elle pose la question « Quitter ? ».
+    var gardeRetour = false;
+    try { history.pushState({ classeArdoise: true }, ''); gardeRetour = true; } catch (x) { /* navigateur ancien */ }
+    function surRetour() {
+      if (!document.body.contains(racine)) return;
+      if (fermee) { quitter(true); return; }
+      try { history.pushState({ classeArdoise: true }, ''); } catch (x) { /* rien */ }
+      demanderSortie();
+    }
+    window.addEventListener('popstate', surRetour);
     window.addEventListener('beforeunload', function () { if (source) source.close(); });
 
     // Premier rendu (avant même le flux), puis le choix de l'avatar.
@@ -1625,7 +1795,13 @@
     if (P.role === 'animateur') S.animateur = MOI;
     voirVue(vueCourante);
     redessinerTout();
-    choisirAvatar(true);
+    if (monAvatar) {
+      // Entrée directe : l'avatar enregistré est repris, la classe s'ouvre.
+      entrer();
+      toast('Bienvenue ! Micro et caméra sont coupés : activez-les en bas de l’écran quand vous voulez.', '', { bouton: 'Changer d’avatar', action: function () { choisirAvatar(false); }, duree: 7000 });
+    } else {
+      choisirAvatar(true);
+    }
 
     return { quitter: quitter, etat: S };
   }

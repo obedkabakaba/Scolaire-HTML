@@ -668,7 +668,7 @@
       var aujourdhuiHtml = '<div class="cf-carte cf-aujourdhui"><h2>' + (duJour.length ? 'Aujourd’hui' : 'Prochaine séance') + '</h2>' + (vedette.length ? vedette.map(function (s) {
         return '<div class="cf-seance-vedette"><div><strong>' + e(s.groupe_nom) + '</strong><div class="doux">' + e(dateFr(s.date_seance, true)) + ' · ' + e(heure(s.heure_debut)) + (s.salle ? ' · ' + e(s.salle) : '') + '</div>' +
           (s.theme ? '<div class="doux">' + e(s.theme) + '</div>' : '') + '</div><div class="cf-actions"><button class="cf-btn principal" data-appel="' + e(s.id) + '">✓ Faire l’appel</button>' +
-          '<a class="cf-btn" href="#/salle?s=' + e(s.id) + '">' + (['en_ligne', 'hybride', 'enregistre'].indexOf(s.mode) >= 0 ? '🎥 Classe en ligne' : '▦ QR de présence') + '</a></div></div>';
+          '<a class="cf-btn' + (['en_ligne', 'hybride'].indexOf(s.mode) >= 0 ? ' principal' : '') + '" href="#/salle?s=' + e(s.id) + (['en_ligne', 'hybride'].indexOf(s.mode) >= 0 ? '&entrer=1' : '') + '">' + (['en_ligne', 'hybride', 'enregistre'].indexOf(s.mode) >= 0 ? (s.mode === 'enregistre' ? '🎥 Cours enregistré' : '🎥 Démarrer le cours en ligne') : '▦ QR de présence') + '</a></div></div>';
       }).join('') : '<div class="cf-vide"><strong>Aucune séance à venir</strong>Le chef de centre planifie les séances de vos groupes.</div>') + '</div>';
       html = carteNotifications() + aujourdhuiHtml + html;
       html += '<div class="cf-deux"><div class="cf-carte"><h2>Mes séances</h2>' + (d.seances.length ? '<div class="cf-chrono">' + d.seances.map(function (s) {
@@ -676,7 +676,7 @@
         return '<div class="item"><div class="date">' + e(dateFr(s.date_seance)) + '<br>' + e(heure(s.heure_debut)) + '</div><div><strong>' + e(s.groupe_nom) + '</strong> ' + badgeStatut('statut_seance', s.statut) +
           '<div class="doux" style="font-size:.82rem">' + e(s.theme || 'Thème à préciser') + (s.salle ? ' · ' + e(s.salle) : '') + '</div>' +
           '<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap"><button class="cf-btn petit' + (urgent ? ' principal' : '') + '" data-appel="' + e(s.id) + '">' + (s.statut === 'faite' ? 'Revoir l’appel' : 'Faire l’appel') + '</button>' +
-          (['en_ligne', 'hybride', 'enregistre'].indexOf(s.mode) >= 0 ? '<a class="cf-btn petit" href="#/salle?s=' + e(s.id) + '">🎥 Salle virtuelle</a>' : (cfg().en_ligne && cfg().en_ligne.pointage_qr ? '<a class="cf-btn petit" href="#/salle?s=' + e(s.id) + '">▦ QR de présence</a>' : '')) + '</div></div></div>';
+          (['en_ligne', 'hybride', 'enregistre'].indexOf(s.mode) >= 0 ? '<a class="cf-btn petit principal" href="#/salle?s=' + e(s.id) + '&entrer=1">🎥 Démarrer le cours</a>' : (cfg().en_ligne && cfg().en_ligne.pointage_qr ? '<a class="cf-btn petit" href="#/salle?s=' + e(s.id) + '">▦ QR de présence</a>' : '')) + '</div></div></div>';
       }).join('') + '</div>' : '<div class="cf-vide"><strong>Aucune séance planifiée</strong>Le chef de centre planifie les séances de vos groupes.</div>') + '</div>';
       html += '<div><div class="cf-carte"><h2>Mes groupes</h2>' + tableau([
         { titre: 'Groupe', rendu: function (g) { return '<strong>' + e(g.nom) + '</strong><div class="doux">' + e(g.programme_nom || '') + '</div>'; } },
@@ -1313,7 +1313,7 @@
       $('header h2', m.el).textContent = 'Appel — ' + dateFr(s.date_seance, true) + (s.heure_debut ? ' à ' + heure(s.heure_debut) : '');
       var html = (s.statut === 'faite' ? '<div class="cf-encadre">Séance déjà clôturée : vous pouvez corriger l’appel.</div>' : '') +
         '<div class="cf-actions" style="margin-bottom:10px"><button class="cf-btn petit" data-tous="present">Tous présents</button>' +
-        (enLigneS || (cfg().en_ligne && cfg().en_ligne.pointage_qr) ? '<a class="cf-btn petit" href="#/salle?s=' + e(seanceId) + '" data-fermer>' + (enLigneS ? '🎥 Salle virtuelle' : '▦ QR de présence') + '</a>' : '') +
+        (enLigneS || (cfg().en_ligne && cfg().en_ligne.pointage_qr) ? '<a class="cf-btn petit" href="#/salle?s=' + e(seanceId) + (enLigneS ? '&entrer=1' : '') + '" data-fermer>' + (enLigneS ? '🎥 Démarrer le cours' : '▦ QR de présence') + '</a>' : '') +
         '<span class="doux" style="align-self:center;font-size:.82rem">' + (enLigneS ? 'Les apprenants connectés à la classe sont déjà notés.' : 'Par défaut, chacun est noté présent.') + '</span></div>' +
         (d.apprenants.length ? '<div class="cf-appel">' + d.apprenants.map(function (x) {
           return '<div class="ligne" data-id="' + e(x.id) + '"><div><strong>' + e(nomComplet(x)) + '</strong> <span class="doux">' + e(x.matricule) + '</span></div><div class="choix">' + ['present', 'retard', 'absent', 'excuse'].map(function (st) {
@@ -2310,7 +2310,7 @@
     var enLigne = ['en_ligne', 'hybride', 'enregistre'].indexOf(s.mode) >= 0;
     var m = modale(s.groupe_nom + ' — ' + dateFr(s.date_seance, true), '<p class="doux">' + e([heure(s.heure_debut), s.salle, s.coach_nom, LIBELLES.mode[s.mode] || (s.mode === 'enregistre' ? 'Cours enregistré' : '')].filter(Boolean).join(' · ')) + ' ' + badgeStatut('statut_seance', s.statut) + '</p>' +
       (s.theme ? '<p><strong>Thème :</strong> ' + e(s.theme) + '</p>' : ''),
-      { pied: '<button class="cf-btn" data-fermer>Fermer</button>' + (enLigne || cfg().en_ligne.pointage_qr ? '<a class="cf-btn" href="#/salle?s=' + e(s.id) + '" data-fermer>' + (enLigne ? '🎥 Salle virtuelle' : '▦ QR de présence') + '</a>' : '') + '<button class="cf-btn principal" data-appel>Faire l’appel</button>' });
+      { pied: '<button class="cf-btn" data-fermer>Fermer</button>' + (enLigne || cfg().en_ligne.pointage_qr ? '<a class="cf-btn' + (enLigne ? ' principal' : '') + '" href="#/salle?s=' + e(s.id) + (enLigne ? '&entrer=1' : '') + '" data-fermer>' + (enLigne ? '🎥 Démarrer le cours' : '▦ QR de présence') + '</a>' : '') + '<button class="cf-btn principal" data-appel>Faire l’appel</button>' });
     $('[data-appel]', m.el).addEventListener('click', function () { m.fermer(); ouvrirAppel(s.id, apres); });
   }
 
@@ -2379,8 +2379,8 @@
   function chargerClasseArdoise() {
     if (window.ClasseArdoise) return Promise.resolve();
     return new Promise(function (ok, ko) {
-      var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'classe-ardoise.css?v=4'; document.head.appendChild(l);
-      var sc = document.createElement('script'); sc.src = 'classe-ardoise.js?v=4'; sc.onload = function () { ok(); }; sc.onerror = function () { ko(new Error('Impossible de charger la classe : vérifiez la connexion.')); };
+      var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'classe-ardoise.css?v=5'; document.head.appendChild(l);
+      var sc = document.createElement('script'); sc.src = 'classe-ardoise.js?v=5'; sc.onload = function () { ok(); }; sc.onerror = function () { ko(new Error('Impossible de charger la classe : vérifiez la connexion.')); };
       document.head.appendChild(sc);
     });
   }
@@ -2449,6 +2449,11 @@
       var bcp = $('[data-copier-salle]', z); if (bcp) bcp.addEventListener('click', function () { navigator.clipboard.writeText(v.url.split('#')[0]).then(function () { toast('Lien de la salle copié.'); }); });
       $('[data-cloturer]', z).addEventListener('click', function () { ouvrirAppel(id, recharger); });
       var bec = $('[data-entrer-classe]', z);
+      // Venu par « Démarrer le cours en ligne » : la classe s'ouvre aussitôt.
+      if (bec && /[?&]entrer=1/.test(window.location.hash)) {
+        try { history.replaceState(null, '', window.location.href.replace(/&entrer=1/, '')); } catch (x) { /* rien */ }
+        setTimeout(function () { bec.click(); }, 0);
+      }
       if (bec) bec.addEventListener('click', function () {
         bec.disabled = true; bec.textContent = 'Ouverture…';
         Promise.all([envoyer('/seances/' + id + '/classe', 'POST', {}), chargerClasseArdoise()]).then(function (r) {

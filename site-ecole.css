@@ -655,3 +655,11 @@ html[data-apparence="epure"] .chiffre .nb { color: var(--texte); font-weight: 50
   body { background: #fff; color: #000; }
   .section { padding: 20px 0; }
 }
+
+/* Espace apprenant : le cours en ligne du jour, tout en haut */
+.bandeau-cours { display: flex; align-items: center; gap: 14px; padding: 16px 18px; margin: 0 0 20px; border-radius: 16px; background: #0E1C33; color: #fff; text-decoration: none; box-shadow: 0 10px 30px rgba(14,28,51,.18); }
+.bandeau-cours strong { display: block; font-size: 1.02rem; }
+.bandeau-cours small { display: block; opacity: .8; font-size: .86rem; margin-top: 2px; }
+.bandeau-cours b { margin-left: auto; white-space: nowrap; background: #fff; color: #0E1C33; padding: 9px 14px; border-radius: 999px; font-size: .9rem; }
+.bandeau-cours .point-direct { width: 12px; height: 12px; flex: none; border-radius: 50%; background: #e5484d; box-shadow: 0 0 0 5px rgba(229,72,77,.25); }
+@media (max-width: 560px) { .bandeau-cours { flex-wrap: wrap; } .bandeau-cours b { margin-left: 26px; } }

@@ -347,3 +347,86 @@ html.ca-ouverte, html.ca-ouverte body { overflow: hidden !important; }
   .ca-racine[data-vue="visio"] .ca-vignette { flex: 0 0 42vw; }
   .ca-vues button { padding: 6px 7px; font-size: .76rem; }
 }
+
+/* =====================================================================
+   COMMANDES D'APPEL — état visible, sortie toujours à portée
+   ===================================================================== */
+.ca-barre { justify-content: center; align-items: flex-end; gap: 6px; overflow: visible; }
+.ca-barre-groupe { display: flex; gap: 4px; align-items: flex-end; }
+.ca-barre-groupe.sec { padding: 0 6px; border-left: 1px solid var(--ca-ligne); border-right: 1px solid var(--ca-ligne); margin: 0 4px; }
+.ca-b.etroit-seul { display: none; }
+.ca-b.prim span { width: 52px; height: 52px; border-radius: 50%; background: rgba(255,255,255,.1); }
+.ca-b.prim span svg { width: 24px; height: 24px; }
+.ca-b.prim.on span { background: #fff; color: #10203a; }
+.ca-b.prim.off span { background: var(--ca-rouge); color: #fff; }
+.ca-b.prim.verrou span { background: rgba(255,255,255,.1); color: var(--ca-doux); }
+.ca-b.prim.actif span { background: var(--ca-accent); color: #fff; }
+.ca-b.prim.on small { color: #fff; font-weight: 600; }
+.ca-b.prim.off small { color: #ffb4b4; font-weight: 600; }
+.ca-b.quitter span { width: 64px; border-radius: 26px; background: var(--ca-rouge); color: #fff; }
+.ca-b.quitter span svg { transform: rotate(0deg); }
+.ca-b.quitter small { color: #ffb4b4; font-weight: 600; }
+.ca-b.quitter:hover span { background: #b93434; }
+.ca-b:active span { transform: scale(.94); }
+
+/* Votre image, en petit, quand votre caméra est allumée */
+.ca-moi { position: absolute; right: 14px; bottom: calc(96px + env(safe-area-inset-bottom)); z-index: 25; width: 150px; border-radius: 14px; overflow: hidden; background: #000; box-shadow: 0 10px 30px rgba(0,0,0,.5); border: 2px solid #41c47b; }
+.ca-moi video { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; transform: scaleX(-1); }
+.ca-moi span { position: absolute; left: 6px; bottom: 6px; font-size: .68rem; background: rgba(0,0,0,.65); padding: 2px 7px; border-radius: 999px; }
+
+/* Classe fermée (coach) */
+.ca-porte { font-size: .78rem; background: rgba(229,181,42,.18); color: #ffd877; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+.ca-sortir-p { margin-left: 6px; background: rgba(214,69,69,.16) !important; color: #ffb4b4 !important; }
+
+/* Feuilles du bas : « Plus » et « Quitter ? » */
+.ca-feuille-voile { place-items: end center; padding: 0; }
+.ca-feuille { width: 100%; max-width: 520px; max-height: 86vh; overflow: auto; background: var(--ca-panneau, #16233a); color: var(--ca-texte, #eef2f8); border-radius: 22px 22px 0 0; padding: 8px 14px calc(16px + env(safe-area-inset-bottom)); box-shadow: 0 -20px 50px rgba(0,0,0,.5); transition: transform .2s; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+.ca-feuille-poignee { width: 42px; height: 5px; border-radius: 3px; background: rgba(255,255,255,.25); margin: 4px auto 12px; }
+.ca-feuille h3 { margin: 4px 4px 6px; font-size: 1.15rem; }
+.ca-feuille > p { margin: 0 4px 14px; color: #9fb0c8; font-size: .92rem; line-height: 1.5; }
+.ca-plus-ligne { display: flex; align-items: center; gap: 14px; width: 100% !important; text-align: left; background: none; border: 0; color: inherit; padding: 12px 8px; border-radius: 14px; }
+.ca-plus-ligne:hover { background: rgba(255,255,255,.06); }
+.ca-plus-ligne > span { width: 42px; height: 42px; flex: none; display: grid; place-items: center; border-radius: 12px; background: rgba(255,255,255,.08); font-size: 20px; }
+.ca-plus-ligne strong { display: block; font-size: .98rem; font-weight: 600; }
+.ca-plus-ligne small { display: block; color: #9fb0c8; font-size: .8rem; margin-top: 2px; }
+.ca-plus-ligne.danger strong { color: #ff9c9c; }
+.ca-plus-ligne.danger > span { background: rgba(214,69,69,.2); color: #ff9c9c; }
+.ca-plus-vues { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 10px 8px; color: #9fb0c8; font-size: .85rem; }
+.ca-plus-vues span { margin-right: 4px; }
+.ca-plus-vues button { border: 1px solid rgba(255,255,255,.14); background: none; color: inherit; padding: 7px 12px; border-radius: 999px; }
+.ca-plus-vues button.actif { background: #fff; color: #10203a; border-color: #fff; font-weight: 600; }
+.ca-feuille-fermer { display: block; width: 100% !important; margin-top: 10px; padding: 14px; border-radius: 14px; border: 0; background: rgba(255,255,255,.08); color: inherit; font-weight: 600; }
+.ca-feuille-fermer.principal { background: #fff; color: #10203a; }
+
+/* Téléphone : barre compacte, tout tient sans défilement */
+@media (max-width: 820px) {
+  .ca-barre { gap: 2px; padding: 8px 4px calc(8px + env(safe-area-inset-bottom)); justify-content: space-around; }
+  .ca-barre-groupe.sec { display: none; }
+  .ca-b.etroit-seul { display: flex; }
+  .ca-b.large-seul { display: none; }
+  .ca-barre-groupe { gap: 2px; }
+  .ca-b.prim { min-width: 0; width: 60px; padding: 2px 0; }
+  .ca-b.prim span { width: 46px; height: 46px; }
+  .ca-b.prim small { font-size: .62rem; white-space: normal; text-align: center; line-height: 1.15; max-width: 60px; }
+  .ca-b.quitter span { width: 52px; }
+  .ca-moi { width: 104px; right: 8px; bottom: calc(86px + env(safe-area-inset-bottom)); }
+  /* En-tête : le titre, la connexion ; « Quitter » est en bas, en rouge. */
+  .ca-entete .ca-quitter { display: none; }
+  .ca-vues { display: none; }
+  .ca-porte { font-size: .7rem; padding: 3px 8px; }
+  .ca-panneau { height: 58%; bottom: 0; }
+  .ca-toasts { top: 56px; }
+}
+@media (max-width: 360px) {
+  .ca-b.prim { width: 52px; }
+  .ca-b.prim span { width: 42px; height: 42px; }
+}
+/* Alignement : les ronds sur une même ligne, quelle que soit la longueur du libellé. */
+.ca-barre, .ca-barre-groupe { align-items: flex-start; }
+/* Votre image : à gauche (le panneau et la zone de message sont à droite). */
+.ca-moi { right: auto; left: 14px; }
+.ca-moi span { font-size: .62rem; line-height: 1.2; right: 6px; }
+@media (max-width: 820px) {
+  .ca-moi { left: 8px; width: 96px; }
+  .ca-racine.panneau-ouvert .ca-moi { display: none; }
+}

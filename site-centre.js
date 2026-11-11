@@ -409,15 +409,19 @@ window.ArdoiseSiteCentre = function (donnees, o) {
     var titre = function (t, s) { return '<div style="margin-bottom:22px"><h2 style="font-size:1.6rem">' + e(t) + '</h2>' + (s ? '<p class="petit" style="color:var(--texte-doux);margin:6px 0 0">' + e(s) + '</p>' : '') + '</div>'; };
     if (etat.onglet === 'accueil') {
       var aVenir = D.seances.filter(function (s) { return String(s.date_seance).slice(0, 10) >= new Date().toISOString().slice(0, 10) && s.statut !== 'faite'; });
+      // Un cours en ligne aujourd'hui : un grand bouton tout en haut, qui
+      // ouvre la classe directement — pas besoin de chercher dans la liste.
+      var enDirect = aVenir.filter(function (s) { return s.en_ligne && String(s.date_seance).slice(0, 10) === new Date().toISOString().slice(0, 10); })[0];
       var devoirs = D.seances.filter(function (s) { return s.devoirs; }).slice(-3).reverse();
       v.innerHTML = titre('Bonjour ' + (A.prenom || A.nom) + ' !', D.inscriptions.length ? D.inscriptions.map(function (i) { return i.groupe + (i.horaire ? ' — ' + i.horaire : ''); }).join(' · ') : 'Vous n’êtes inscrit dans aucun groupe pour le moment.') +
+        (enDirect ? '<a class="bandeau-cours" href="#/classe?s=' + e(enDirect.ref) + '&entrer=1"><span class="point-direct"></span><span><strong>Cours en ligne aujourd’hui' + (enDirect.heure_debut ? ' à ' + e(heure(enDirect.heure_debut)) : '') + '</strong><small>' + e(enDirect.groupe) + (enDirect.theme ? ' · ' + e(enDirect.theme) : '') + '</small></span><b>Rejoindre la classe →</b></a>' : '') +
         '<div class="tuiles">' + tuile('Assiduité', I.taux_presence === null ? '—' : Math.round(I.taux_presence) + ' %', I.taux_presence >= 85 ? 'bonne' : I.taux_presence !== null && I.taux_presence < 70 ? 'alerte' : '') + tuile('Séances suivies', e(I.seances_suivies)) + tuile('Leçons terminées', e(I.lecons_terminees) + ' / ' + e(I.lecons_disponibles)) + '</div>' +
         '<h3 style="margin:26px 0 10px">Prochaines séances</h3>' + (aVenir.length ? '<div class="agenda">' + aVenir.slice(0, 8).map(function (s) {
           var dt = o.dateObj(s.date_seance);
           var ajd = String(s.date_seance).slice(0, 10) === new Date().toISOString().slice(0, 10);
           return '<div class="evenement"><div class="jour"><b>' + (dt ? dt.getDate() : '') + '</b><small>' + (dt ? o.MOIS_COURTS[dt.getMonth()] : '') + '</small></div><div><strong>' + e(s.groupe) + (s.heure_debut ? ' — ' + e(heure(s.heure_debut)) : '') + '</strong><span>' + e(s.theme || (s.mode === 'enregistre' ? 'Cours enregistré' : MODES[s.mode]) || '') + '</span>' +
             (s.ma_presence ? '<div class="petit" style="color:#1D5E33;margin-top:4px">✓ Présence enregistrée</div>' : '') +
-            (s.en_ligne ? '<div style="margin-top:6px"><a class="bouton" style="padding:6px 12px;font-size:.85rem" href="#/classe?s=' + e(s.ref) + '">' + (ajd ? 'Rejoindre la classe' : 'Voir la classe en ligne') + '</a></div>' : (D.reglages && D.reglages.pointage_qr && ajd ? '<div class="petit" style="margin-top:4px;color:var(--texte-doux)">En salle : scannez le QR code affiché par votre coach.</div>' : '')) + '</div></div>';
+            (s.en_ligne ? '<div style="margin-top:6px"><a class="bouton" style="padding:6px 12px;font-size:.85rem" href="#/classe?s=' + e(s.ref) + (ajd ? '&entrer=1' : '') + '">' + (ajd ? 'Rejoindre la classe' : 'Voir la classe en ligne') + '</a></div>' : (D.reglages && D.reglages.pointage_qr && ajd ? '<div class="petit" style="margin-top:4px;color:var(--texte-doux)">En salle : scannez le QR code affiché par votre coach.</div>' : '')) + '</div></div>';
         }).join('') + '</div>' : vide('calendrier', 'Aucune séance programmée pour le moment.')) +
         (devoirs.length ? '<h3 style="margin:26px 0 10px">Devoirs</h3>' + devoirs.map(function (s) { return '<div class="carte" style="margin-bottom:10px"><small class="petit" style="color:var(--texte-doux)">' + e(dateCourte(s.date_seance)) + ' · ' + e(s.groupe) + '</small><p style="margin:6px 0 0" class="texte-libre">' + e(s.devoirs) + '</p></div>'; }).join('') : '');
     } else if (etat.onglet === 'replays') {
@@ -562,6 +566,11 @@ window.ArdoiseSiteCentre = function (donnees, o) {
           }).catch(function (err) { bec.disabled = false; bec.textContent = 'Entrer dans la classe'; window.alert(err.horsLigne ? 'Pas de connexion internet.' : err.message); });
         };
         bec.addEventListener('click', entrer);
+        // Venu par « Rejoindre la classe » : on entre tout de suite.
+        if (parametreHash('entrer') === '1') {
+          try { history.replaceState(null, '', window.location.href.replace(/&entrer=1/, '')); } catch (x) { /* rien */ }
+          entrer();
+        }
       }
     }).catch(function (err) {
       if (err.status === 401) { memoriser(null); formulaireConnexion(err.message, chargerClasse); return; }
@@ -571,8 +580,8 @@ window.ArdoiseSiteCentre = function (donnees, o) {
   function chargerClasseArdoise() {
     if (window.ClasseArdoise) return Promise.resolve();
     return new Promise(function (ok, ko) {
-      var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = '/classe-ardoise.css?v=4'; document.head.appendChild(l);
-      var sc = document.createElement('script'); sc.src = '/classe-ardoise.js?v=4'; sc.onload = function () { ok(); };
+      var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = '/classe-ardoise.css?v=5'; document.head.appendChild(l);
+      var sc = document.createElement('script'); sc.src = '/classe-ardoise.js?v=5'; sc.onload = function () { ok(); };
       sc.onerror = function () { var er = new Error('Impossible de charger la classe.'); er.horsLigne = true; ko(er); };
       document.head.appendChild(sc);
     });

@@ -79,9 +79,14 @@ html.ca-ouverte, html.ca-ouverte body { overflow: hidden !important; }
 
 /* La scène : bancs, places, avatars */
 .ca-scene { position: absolute; inset: 0; z-index: 4; }
-.ca-banc { position: absolute; border-radius: 6px; background: linear-gradient(#a8774c, #8a5e39); box-shadow: 0 4px 0 #6d4a2c, 0 8px 12px rgba(0,0,0,.18); }
-.ca-banc::after { content: ""; position: absolute; left: 6%; right: 6%; top: 18%; height: 18%; background: rgba(255,255,255,.12); border-radius: 3px; }
-.ca-bureau { position: absolute; border-radius: 8px; background: linear-gradient(#7a4e2e, #5f3b22); box-shadow: 0 5px 0 #4a2d19, 0 10px 18px rgba(0,0,0,.25); }
+.ca-banc { position: absolute; border-radius: 10px; background: linear-gradient(180deg, #f4e3c6 0%, #e9d1a8 55%, #dcbf8f 100%);
+  box-shadow: 0 0 0 1px rgba(120, 84, 46, .18) inset, 0 5px 0 #b48a57, 0 7px 0 #9c7546, 0 14px 18px -4px rgba(60, 38, 18, .35); }
+.ca-banc::before { content: ""; position: absolute; left: 7%; right: 7%; bottom: -22%; height: 22%; border-radius: 0 0 6px 6px;
+  background: linear-gradient(90deg, transparent 0 6%, #8f6a3f 6% 10%, transparent 10% 90%, #8f6a3f 90% 94%, transparent 94%); }
+.ca-banc::after { content: ""; position: absolute; left: 5%; right: 5%; top: 14%; height: 22%; background: linear-gradient(90deg, rgba(255,255,255,.55), rgba(255,255,255,0)); border-radius: 6px; }
+.ca-bureau { position: absolute; border-radius: 12px; background: linear-gradient(180deg, #8a5a35 0%, #74482a 60%, #643c22 100%);
+  box-shadow: 0 0 0 1px rgba(255,255,255,.06) inset, 0 6px 0 #4d2f1a, 0 18px 24px -6px rgba(30, 18, 8, .45); }
+.ca-bureau::after { content: ""; position: absolute; left: 4%; right: 4%; top: 12%; height: 18%; border-radius: 8px; background: linear-gradient(90deg, rgba(255,255,255,.18), rgba(255,255,255,0)); }
 .ca-pomme { position: absolute; right: 8%; top: -40%; font-size: clamp(9px, 1.8cqw, 20px); }
 .ca-livres { position: absolute; left: 8%; top: -22%; width: 16%; height: 40%; background: linear-gradient(90deg, #2a78d6 0 30%, #d64545 30% 60%, #e5b52a 60%); border-radius: 2px; }
 .ca-place { position: absolute; width: 5.2%; aspect-ratio: 1; border-radius: 50%; border: 2px dashed transparent; background: transparent; display: grid; place-items: center; padding: 0; pointer-events: none; }
@@ -107,6 +112,14 @@ html.ca-ouverte, html.ca-ouverte body { overflow: hidden !important; }
 .ca-avatar.parle .ca-bouche, .ca-mini.parle .ca-bouche { opacity: 1; animation: ca-parle .28s infinite alternate; transform-origin: 32px 33.5px; }
 @keyframes ca-parle { from { transform: scaleY(.35); } to { transform: scaleY(1.15); } }
 .ca-yeux { animation: ca-cligne 5s infinite; transform-origin: 32px 27px; }
+/* Avatars « Avataaars » : la bouche qui parle est une seconde version du
+   visage, montrée en alternance (aucune déformation du dessin). */
+.ca-buste-db .ca-bouche { opacity: 0; animation: none; transform: none; }
+.ca-avatar.parle .ca-buste-db .ca-bouche, .ca-mini.parle .ca-buste-db .ca-bouche { animation: ca-db-parle .34s steps(1) infinite; transform: none; }
+@keyframes ca-db-parle { 0% { opacity: 0; } 50% { opacity: 1; } }
+.ca-buste-db .ca-bras { transform-origin: 46px 54px; }
+.ca-avatar .ca-buste-db { filter: saturate(1.05); }
+.ca-apercu .ca-buste-db { width: 88%; height: 88%; margin: 6% auto 0; }
 @keyframes ca-cligne { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(.1); } }
 .ca-halo { position: absolute; left: 4%; right: 4%; top: 2%; aspect-ratio: 1; border-radius: 50%; }
 .ca-avatar.parle .ca-halo { box-shadow: 0 0 0 3px #41c47b, 0 0 18px 4px rgba(65,196,123,.55); animation: ca-halo 1s infinite; }

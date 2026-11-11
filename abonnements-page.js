@@ -25,6 +25,19 @@
  */
 (function () {
   'use strict';
+
+  /* Un centre de formation n'est pas une école : la page le nomme comme il faut. */
+  function estCentre() {
+    try {
+      if (window.ArdoiseAcces && typeof window.ArdoiseAcces.estCentre === 'function' && window.ArdoiseAcces.estCentre()) return true;
+      return JSON.parse(localStorage.getItem('ardoise_user') || sessionStorage.getItem('ardoise_user') || '{}').type_structure === 'centre_formation';
+    } catch (er) { return false; }
+  }
+  var MOT = estCentre() ? { Structure: 'Centre', votre: 'Votre centre' } : { Structure: 'École', votre: 'Votre école' };
+  document.addEventListener('DOMContentLoaded', function () {
+    if (!estCentre()) return;
+    [].forEach.call(document.querySelectorAll('.sur-titre'), function (n) { if (n.textContent.trim() === 'Votre école') n.textContent = 'Votre centre'; });
+  });
   if (!window.ArdoiseSession || !ArdoiseSession.connecte()) { location.replace('connexion.html'); return; }
 
   /* Cette page permet de choisir une offre, demander un agent et transmettre
@@ -223,7 +236,7 @@
         + '</div>';
 
     $('ecole').innerHTML =
-      '<div class="resume-case"><small>École</small><strong>' + esc(e.nom || '—') + '</strong>'
+      '<div class="resume-case"><small>' + MOT.Structure + '</small><strong>' + esc(e.nom || '—') + '</strong>'
       + '<div class="muted code" style="margin-top:4px">' + esc(e.code || '') + '</div></div>'
       + '<div class="resume-case"><small>Bouquet actuel</small><strong>'
       + (sansAbonnement ? 'Aucun abonnement actif' : enEssai
@@ -411,9 +424,9 @@
       + complement
       + '<p class="aide" style="margin-top:12px">'
       + (d.mode_paiement === 'agent'
-        ? 'L’équipe Ardoise vous contactera. Votre école sera avertie à chaque étape.'
+        ? 'L’équipe Ardoise vous contactera. ' + MOT.votre + ' sera averti' + (estCentre() ? '' : 'e') + ' à chaque étape.'
         : 'Votre abonnement s’active automatiquement dès que l’opérateur confirme le dépôt. '
-          + 'Votre école sera avertie.')
+          + MOT.votre + ' sera averti' + (estCentre() ? '' : 'e') + '.')
       + '</p>';
 
     var corriger = $('btn-corriger-verif');
@@ -915,7 +928,7 @@
     var adresse = [e.adresse, e.commune, e.ville].filter(Boolean).join(', ');
 
     $('recap-agent').innerHTML =
-      '<div><small>École</small><strong>' + esc(e.nom || '—') + '</strong></div>'
+      '<div><small>' + MOT.Structure + '</small><strong>' + esc(e.nom || '—') + '</strong></div>'
       + '<div><small>Adresse</small><strong>' + esc(adresse || 'Non renseignée') + '</strong></div>'
       + '<div><small>Téléphone</small><strong>' + esc(e.telephone || 'Non renseigné') + '</strong></div>'
       + '<div><small>Offre</small><strong>' + esc(etat.plan.nom) + '</strong></div>'

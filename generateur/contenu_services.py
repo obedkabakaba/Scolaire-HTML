@@ -135,6 +135,27 @@ def hub():
       <a class="bouton secondaire pleine-largeur" href="/services/site-vitrine/">Ce qui est fait, en détail</a>
     </article>
 
+    <article class="service service-centres" id="centres-de-formation" style="margin-top:18px">
+      <span class="eyebrow">Centres de formation</span>
+      <h2>Les mêmes services, au tarif des centres</h2>
+      <p>Langues, informatique, métiers, coaching : un centre de formation n'a ni
+         classes ni bulletins. Nous l'installons à partir de ce qu'il vend.</p>
+      <ul>
+        <li><strong>Installation &amp; configuration — 35&nbsp;$</strong>, forfait unique :
+            programmes et niveaux, tarifs, coachs, première session, groupes et
+            horaires, vocabulaire du centre, site public et test de niveau.</li>
+        <li><strong>Formation de l'équipe — 30, 60 ou 100&nbsp;$</strong> : l'accueil,
+            la caisse et les coachs, chacun sur ses gestes (inscrire, encaisser,
+            faire l'appel, animer la classe en ligne).</li>
+        <li><strong>Campagne de capture — 0,50&nbsp;$ par apprenant</strong> : vos
+            listes papier ou Excel deviennent des fiches complètes, avec photo,
+            matricule et code d'accès à l'espace apprenant.</li>
+        <li><strong>Site vitrine — 25&nbsp;$</strong> : formations, coachs, témoignages
+            et inscriptions en ligne, à vos couleurs.</li>
+      </ul>
+      <a class="bouton ocre pleine-largeur" href="/contact/">Demander un accompagnement pour mon centre</a>
+    </article>
+
     <p class="rappel-separation">
       <strong>Deux choses distinctes.</strong> L'abonnement est ce que vous payez
       pour utiliser Ardoise, tous les mois. Les services sont ce que vous payez

@@ -81,7 +81,8 @@
 /* v107 : notifications sur l'appareil (Web Push) — notifications-push.js, icône de barre d'état icone-badge-96.png, réception et toucher des notifications dans ce fichier. */
 /* v108 : finitions mobiles — « Tous les menus » / « Tous les écrans » ouvrent la feuille de menu sur téléphone, avatar avec nom réel (plus de « ? »), changement de thème plus fluide, lanceur de bureau redessiné. */
 /* v109 : la feuille Google Fonts ne bloque plus l'affichage (media="print" puis "all" au chargement) — quand fonts.googleapis.com traînait, toutes les pages restaient blanches et chargeaient sans fin. */
-const VERSION='ardoise-v109';
+const VERSION='ardoise-v110';
+/* v110 : espace des centres de formation — rail commun (.barre-laterale), coque mobile, didacticiel et accueil chargés depuis centre-formation.js ; archives, clients entreprises, comptes du personnel, documents ; offres Tremplin / Envol / Horizon ; Super Admin : catalogue des services. */
 /* v96 : publication des résultats (publication-resultats.js, précaché) dans Bulletins ; vidéo de présentation et lien Instagram sur le site public. */
 /* v95 : choix « Animations et effets » dans Mon profil et dans l'Apparence du Super Admin — theme.js (ArdoiseAnimations), theme-base.css, theme-signatures.js/.css, amorçage des pages (attribut data-animations posé avant le premier affichage). */
 /* v94 : deux nouvelles apparences, Pro (theme-pro.css) et Savane (theme-savane.css), nouvelles et précachées ; leurs scènes et widgets dans theme-signatures.js/.css et leurs fiches dans theme.js. */

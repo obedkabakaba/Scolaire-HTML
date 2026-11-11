@@ -378,11 +378,11 @@
       <div class="carte">
         <h3>À la fin de l'essai</h3>
         <p>L'accès à la gestion se met en pause, et <strong>rien n'est supprimé</strong> :
-           élèves, notes, classes, bulletins et paramètres restent intacts.</p>
+           <span data-si-ecole>élèves, notes, classes, bulletins et paramètres restent intacts.</span><span data-si-centre hidden>programmes, sessions, apprenants, paiements et réglages restent intacts.</span></p>
       </div>
       <div class="carte">
         <h3>Si vous souscrivez</h3>
-        <p>Vous choisissez librement Ascension, Prime, Pilote ou Infinite — pas forcément
+        <p>Vous choisissez librement <span data-si-ecole>Ascension, Prime, Pilote ou Infinite</span><span data-si-centre hidden>Tremplin, Envol ou Horizon (les offres des centres)</span> — pas forcément
            l'offre testée. L'accès reprend immédiatement, sur les mêmes données.</p>
       </div>
     </div>
@@ -471,6 +471,8 @@
     if (nom) nom.placeholder = centre ? 'ex. Speak Up English Center' : 'ex. Institut Saint-Joseph';
     var fonction = document.getElementById('responsable_fonction');
     if (fonction) fonction.placeholder = centre ? 'ex. Chef de centre, Fondateur' : 'ex. Directeur, Préfet des études';
+    // L'offre d'essai n'est pas la même : Prime pour une école, Envol pour un centre.
+    document.querySelectorAll('[data-offre-demo-nom]').forEach(function (x) { x.textContent = centre ? (x.getAttribute('data-nom-centre') || 'Envol') : (x.getAttribute('data-nom-ecole') || 'Prime'); });
     radios.forEach(function (r) { r.closest('label').style.borderColor = r.checked ? '#C98A3E' : '#E4DFCF'; });
   }
   radios.forEach(function (r) { r.addEventListener('change', maj); });

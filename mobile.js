@@ -45,9 +45,16 @@
      racontent la même organisation. Chaque famille a sa couleur, comme les
      rubriques des réglages d'un téléphone. Une page absente de cette table
      reste accessible : elle tombe dans « Autres ». */
+  var C = 'centre-formation.html#/';
   var FAMILLES = [
     { titre: 'Accueil', teinte: '#007AFF', pages: ['dashboard-directeur.html', 'espace-secretaire.html',
-        'espace-professeur.html', 'espace-titulaire.html'] },
+        'espace-professeur.html', 'espace-titulaire.html', C + 'tableau', C + 'moi'] },
+    /* L'espace des centres de formation (centre-formation.html). */
+    { titre: 'Apprenants', teinte: '#34C759', pages: [C + 'apprenants', C + 'demandes', C + 'certificats'] },
+    { titre: 'Cours', teinte: '#FF9500', pages: [C + 'seances', C + 'calendrier', C + 'groupes', C + 'sessions', C + 'lecons', C + 'evaluations'] },
+    { titre: 'Finances', teinte: '#30B0C7', pages: [C + 'finances', C + 'entreprises'] },
+    { titre: 'Pilotage', teinte: '#5856D6', pages: [C + 'archives', C + 'coachs', C + 'programmes', C + 'assistant'] },
+    { titre: 'Administration', teinte: '#8E8E93', pages: [C + 'site', C + 'reglages', C + 'personnel', 'abonnements.html', 'services.html', 'messages.html', 'mon-profil.html'] },
     { titre: 'Élèves et parcours', teinte: '#34C759', pages: ['eleves.html', 'inscriptions.html',
         'orientation.html', 'presences.html'] },
     { titre: 'Pédagogie', teinte: '#FF9500', pages: ['classes.html', 'cours.html', 'emploi-du-temps.html',
@@ -71,10 +78,14 @@
     'journal.html': 'Journal', 'generateur-modeles.html': 'Modèles',
     'cours-classe-titulaire.html': 'Cours', 'bulletin-annuel.html': 'Annuel',
     'annee-scolaire.html': 'Année', 'comptabilite.html': 'Compta',
-    'site-public.html': 'Site', 'mon-profil.html': 'Profil'
+    'site-public.html': 'Site', 'mon-profil.html': 'Profil',
+    'centre-formation.html#/tableau': 'Accueil', 'centre-formation.html#/moi': 'Accueil', 'centre-formation.html#/apprenants': 'Apprenants',
+    'centre-formation.html#/seances': 'Planning', 'centre-formation.html#/calendrier': 'Agenda', 'centre-formation.html#/finances': 'Caisse',
+    'centre-formation.html#/groupes': 'Groupes', 'centre-formation.html#/lecons': 'Leçons', 'centre-formation.html#/evaluations': 'Notes'
   };
   /* Si l'utilisateur n'a rien épinglé : les écrans du quotidien d'abord. */
-  var PRIORITE_ONGLETS = ['eleves.html', 'presences.html', 'notes.html', 'bulletins.html',
+  var PRIORITE_ONGLETS = ['centre-formation.html#/apprenants', 'centre-formation.html#/seances', 'centre-formation.html#/finances',
+    'centre-formation.html#/calendrier', 'centre-formation.html#/lecons', 'eleves.html', 'presences.html', 'notes.html', 'bulletins.html',
     'frais-scolaires.html', 'emploi-du-temps.html', 'messages.html', 'classes.html',
     'inscriptions.html', 'cours.html', 'calendrier.html', 'rapports.html'];
 
@@ -94,8 +105,16 @@
     loupe: '<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/>'
   };
 
+  /* L'identifiant d'un écran : le nom du fichier, plus la route pour les
+     espaces à une seule page (« centre-formation.html#/apprenants ») — sans
+     quoi tous les écrans du centre se confondraient en un seul. */
   function page(chemin) {
-    return (chemin || window.location.pathname).split('?')[0].split('#')[0].split('/').pop() || '';
+    var brut = chemin === undefined ? window.location.pathname + window.location.hash : String(chemin || '');
+    var diese = brut.indexOf('#/');
+    var route = diese !== -1 ? brut.slice(diese + 2).split(/[?\/&]/)[0] : '';
+    var fichier = brut.split('?')[0].split('#')[0].split('/').pop() || '';
+    if (!fichier && diese === 0) fichier = window.location.pathname.split('/').pop() || '';
+    return route ? fichier + '#/' + route : fichier;
   }
 
   function svg(contenu, classe) {
@@ -410,7 +429,7 @@
    * dans le menu), sinon le `<title>` sans le préfixe « Ardoise — ».
    */
   function titrePage() {
-    var h1 = document.querySelector('.entete-page h1, .contenu h1');
+    var h1 = document.querySelector('.entete-page h1, .contenu h1, .cf-entete h1');
     if (h1 && h1.textContent.trim()) return h1.textContent.trim();
     return (document.title || 'Ardoise').replace(/^Ardoise\s*[—–-]\s*/, '');
   }
@@ -426,7 +445,7 @@
     var h1 = null, observateur = null;
 
     function brancherTitre() {
-      var nouveau = document.querySelector('.entete-page h1, .contenu h1');
+      var nouveau = document.querySelector('.entete-page h1, .contenu h1, .cf-entete h1');
       if (nouveau === h1 && observateur) return;
       if (observateur) observateur.disconnect();
       observateur = null;
@@ -1583,6 +1602,26 @@
     });
     window.addEventListener('resize', function () {
       if (capsule) placerLentille(capsule.querySelector('.ard-onglet.actif'), true);
+    });
+
+    /* Espaces à une seule page : changer d'écran ne recharge rien. L'onglet
+       actif, le bouton « Menu » et le titre suivent la route. */
+    window.addEventListener('hashchange', function () {
+      basculer(false);
+      if (capsule) {
+        var courante = page();
+        var trouve = false;
+        [].forEach.call(capsule.querySelectorAll('.ard-onglet'), function (o) {
+          var actif = page(o.getAttribute('href')) === courante;
+          if (actif) trouve = true;
+          o.classList.toggle('actif', actif);
+          if (actif) o.setAttribute('aria-current', 'page'); else o.removeAttribute('aria-current');
+        });
+        var bm = document.querySelector('.ard-onglets-menu');
+        if (bm) bm.classList.toggle('actif', !trouve);
+        placerLentille(capsule.querySelector('.ard-onglet.actif'));
+      }
+      setTimeout(function () { if (titreEl) titreEl.textContent = titrePage(); if (majDefilement) majDefilement(); }, 120);
     });
 
     /* Le rail (`reduireRail`) et le badge de messages s'exécutent 60 ms après

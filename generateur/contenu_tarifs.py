@@ -43,8 +43,8 @@ def carte(code, nom, positionnement, prix, mois, semestriel, annuel,
 
     return f"""<article class="{classe}" id="{code}" data-offre="{code}" data-devise="USD"
   data-prix-mensuel="{prix}" data-mois-mensuel="{mois}" data-eco-mensuel="0" data-pct-mensuel="0"
-  data-prix-semestriel="{semestriel}" data-mois-semestriel="{mois_sem}" data-eco-semestriel="{eco_sem}" data-pct-semestriel="8"
-  data-prix-annuel="{annuel}" data-mois-annuel="{mois_an}" data-eco-annuel="{eco_an}" data-pct-annuel="17">
+  data-prix-semestriel="{semestriel}" data-mois-semestriel="{mois_sem}" data-eco-semestriel="{eco_sem}" data-pct-semestriel="{round(eco_sem * 100 / (prix * 6))}"
+  data-prix-annuel="{annuel}" data-mois-annuel="{mois_an}" data-eco-annuel="{eco_an}" data-pct-annuel="{round(eco_an * 100 / (prix * 12))}">
   {b}
   {visuel}
   <h2 class="nom">{nom}</h2>
@@ -74,8 +74,8 @@ def carte_formation(code, nom, positionnement, prix, semestriel, annuel, mois_se
     mois_txt = str(mois_an).replace(".", ",")
     return f"""<article class="{classe}" id="{code}" data-offre="{code}" data-devise="USD"
   data-prix-mensuel="{prix}" data-mois-mensuel="{prix}" data-eco-mensuel="0" data-pct-mensuel="0"
-  data-prix-semestriel="{semestriel}" data-mois-semestriel="{mois_sem}" data-eco-semestriel="{eco_sem}" data-pct-semestriel="8"
-  data-prix-annuel="{annuel}" data-mois-annuel="{mois_an}" data-eco-annuel="{eco_an}" data-pct-annuel="17">
+  data-prix-semestriel="{semestriel}" data-mois-semestriel="{mois_sem}" data-eco-semestriel="{eco_sem}" data-pct-semestriel="{round(eco_sem * 100 / (prix * 6))}"
+  data-prix-annuel="{annuel}" data-mois-annuel="{mois_an}" data-eco-annuel="{eco_an}" data-pct-annuel="{round(eco_an * 100 / (prix * 12))}">
   {b}
   <h2 class="nom">{nom}</h2>
   <div class="positionnement">{positionnement}</div>
@@ -91,28 +91,31 @@ def carte_formation(code, nom, positionnement, prix, semestriel, annuel, mois_se
 
 
 CARTES_CENTRES = "\n".join([
-    carte_formation("formation_essentiel", "Formation Essentiel", "Le centre entier, pour démarrer",
-                    19, 105, 190, "17.50", "15.83", 9, 38,
-                    "Centres qui démarrent ou qui accueillent jusqu’à 60 apprenants à la fois.",
-                    ["Programmes, niveaux et sessions", "Groupes, planning et appel",
+    carte_formation("centre_tremplin", "Ardoise Tremplin", "Le centre entier, pour démarrer",
+                    20, 110, 200, "18.33", "16.67", 10, 40,
+                    "Centres qui démarrent : un domaine, quelques groupes, une équipe réduite.",
+                    ["Programmes, niveaux et sessions", "Groupes, planning et appel (QR code en salle)",
                      "Paiements par tranches et reçus (FC et&nbsp;$)", "Certificats avec QR code vérifiable",
                      "Site du centre, préinscription et test de niveau", "Calendrier et rappels automatiques",
                      "Classe Ardoise : classe en ligne, avatars, tableau, sondages", "Espace apprenant, même hors connexion"],
-                    ["<strong>Jusqu’à 60 apprenants actifs</strong> · coachs illimités", "40 générations IA / mois"]),
-    carte_formation("formation_pro", "Formation Pro", "Piloter, pas seulement gérer",
-                    39, 215, 390, "35.83", "32.50", 19, 78,
-                    "Centres de 60 à 250 apprenants, avec plusieurs coachs et une caisse.",
-                    ['<span class="herite">Tout Essentiel</span>', "Dépenses, paie des coachs et bilan",
-                     "Score de chaque coach", "Assiduité, progression et risque d’abandon de chaque apprenant",
-                     "Assistant IA : leçons, quiz, messages", "Messages groupés aux apprenants"],
-                    ["<strong>Jusqu’à 250 apprenants actifs</strong> · coachs illimités", "400 générations IA / mois"],
+                    ["<strong>Apprenants et coachs illimités</strong>", "40 générations IA / mois"]),
+    carte_formation("centre_envol", "Ardoise Envol", "Piloter, archiver, prouver",
+                    35, 190, 350, "31.67", "29.17", 20, 70,
+                    "Centres installés, plusieurs coachs et une caisse : ceux qui veulent des chiffres et des documents.",
+                    ['<span class="herite">Tout Tremplin</span>', "<strong>Archives</strong> : sessions passées, anciens apprenants, réinscription en un clic",
+                     "Exports Excel : apprenants, paiements, présences, résultats",
+                     "Attestations d’inscription et d’assiduité, relevés, cartes d’apprenant",
+                     "Dépenses, paie des coachs et bilan", "Score de chaque coach",
+                     "Assiduité, progression et risque d’abandon de chaque apprenant", "Messages groupés aux apprenants"],
+                    ["<strong>Apprenants et coachs illimités</strong>", "400 générations IA / mois"],
                     badge="Le plus choisi"),
-    carte_formation("formation_premium", "Formation Premium", "Grandir sans compter",
-                    79, 435, 790, "72.50", "65.83", 39, 158,
-                    "Grands centres, écoles de langues à plusieurs sites, réseaux.",
-                    ['<span class="herite">Tout Pro</span>', "Assistant WhatsApp et messages par WhatsApp",
-                     "1 500 générations IA par mois", "E-mails sans limite", "Support prioritaire"],
-                    ["<strong>Apprenants illimités</strong> · coachs illimités", "1 500 générations IA / mois · e-mails sans limite"]),
+    carte_formation("centre_horizon", "Ardoise Horizon", "Vendre aux entreprises, grandir",
+                    59, 325, 590, "54.17", "49.17", 29, 118,
+                    "Grands centres, écoles de langues à plusieurs sites, formations pour entreprises et ONG.",
+                    ['<span class="herite">Tout Envol</span>', "<strong>Clients entreprises</strong> : devis, factures, règlements",
+                     "Rapports avancés de pilotage", "Assistant WhatsApp et messages par WhatsApp",
+                     "1 500 générations IA par mois", "Support prioritaire"],
+                    ["<strong>Apprenants et coachs illimités</strong>", "1 500 générations IA / mois"]),
 ])
 
 SECTION_CENTRES = f"""<section class="section" id="centres-de-formation" aria-labelledby="titre-centres">
@@ -122,15 +125,16 @@ SECTION_CENTRES = f"""<section class="section" id="centres-de-formation" aria-la
       <h2 id="titre-centres">Centres de formation</h2>
       <p>Centre d’anglais, de langues, d’informatique, de couture, de métiers… Sessions, groupes, coachs,
       paiements par tranches, certificats vérifiables, site du centre avec test de niveau, et la
-      <strong>Classe Ardoise</strong> : votre salle de classe en ligne, sans limite de durée. Toutes les
-      offres contiennent le métier entier ; elles se distinguent par la taille du centre et les outils de pilotage.</p>
+      <strong>Classe Ardoise</strong> : votre salle de classe en ligne, sans limite de durée. Aucune offre ne
+      limite le nombre d’apprenants : elles se distinguent par les outils — archives, documents officiels,
+      pilotage, ventes aux entreprises.</p>
     </div>
     <div class="grille-offres">
       {CARTES_CENTRES}
     </div>
-    <p class="rappel-separation">Un apprenant compte comme <strong>actif</strong> tant qu’il suit une
-    formation : ceux qui ont terminé ou abandonné ne comptent plus. Changer d’offre se fait à tout moment,
-    sans perte de données.</p>
+    <p class="rappel-separation">Apprenants illimités dans les trois offres. Changer d’offre se fait à tout
+    moment, sans perte de données. Pour l’installation de votre centre (35&nbsp;$), la formation de l’équipe
+    ou la saisie de vos apprenants : <a href="/services/#centres-de-formation">services pour les centres</a>.</p>
   </div>
 </section>
 """

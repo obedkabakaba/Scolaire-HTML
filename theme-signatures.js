@@ -778,7 +778,7 @@
   function accueillir() {
     var drapeau;
     try { drapeau = sessionStorage.getItem('ardoise_premiere_connexion'); } catch (e) { return; }
-    if (!drapeau || admin || !document.querySelector('.mise-en-page')) return;
+    if (!drapeau || admin || !document.querySelector('.mise-en-page') || /^#\/salle\b/.test(location.hash || '')) return;
     var u = utilisateur();
     try { sessionStorage.removeItem('ardoise_premiere_connexion'); } catch (e) {}
     if (u.id && lire('accueil_vu', false)) return;
@@ -793,12 +793,16 @@
       if (c === 'i') l.append(el('span', 'sg-point'));
       l.style.setProperty('--sg-i', i); marque.append(l);
     });
+    var centre = u.type_structure === 'centre_formation';
     var bonjour = el('h1', 'sg-accueil-titre', 'Bienvenue sur Ardoise');
-    var sous = el('p', 'sg-accueil-sous', 'Votre école est prête. Tout ce qu’il faut pour la faire vivre est à portée de main.');
+    var sous = el('p', 'sg-accueil-sous', centre
+      ? 'Votre centre est prêt. Inscriptions, cours, caisse et classe en ligne : tout est à portée de main.'
+      : 'Votre école est prête. Tout ce qu’il faut pour la faire vivre est à portée de main.');
     var puces = el('ul', 'sg-accueil-puces');
-    ['Vos élèves', 'Vos notes', 'Vos bulletins', 'Vos familles'].forEach(function (p, i) { var li = el('li', '', p); li.style.setProperty('--sg-i', i); puces.append(li); });
+    (centre ? ['Vos apprenants', 'Vos groupes', 'Votre caisse', 'Votre classe en ligne'] : ['Vos élèves', 'Vos notes', 'Vos bulletins', 'Vos familles'])
+      .forEach(function (p, i) { var li = el('li', '', p); li.style.setProperty('--sg-i', i); puces.append(li); });
     var passer = el('button', 'sg-accueil-passer', 'Passer'); passer.type = 'button';
-    var commencer = el('button', 'sg-accueil-go', 'Entrer dans mon école'); commencer.type = 'button';
+    var commencer = el('button', 'sg-accueil-go', centre ? 'Entrer dans mon centre' : 'Entrer dans mon école'); commencer.type = 'button';
     var scene = el('div', 'sg-accueil-scene'); scene.append(marque, bonjour, sous, puces, commencer);
     voile.append(halo, scene, passer);
     document.body.append(voile);
@@ -846,6 +850,9 @@
   function installer() {
     var t = theme();
     if (!t || t === 'public') return;
+    /* L'espace d'un centre de formation a sa propre coque : seule l'animation
+       d'accueil y est reprise, pas les décors et widgets des apparences. */
+    if (window.ARDOISE_SIGNATURES_ACCUEIL_SEUL) return;
     html.setAttribute('data-sg', t);
     poserScene(t);
     poserWidget(t);

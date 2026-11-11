@@ -102,7 +102,7 @@
         if (!r.ok) {
           var msg = (corps && corps.message) || 'Erreur ' + r.status;
           // Fonction réservée à une offre supérieure : dire laquelle et où la prendre.
-          if (corps && corps.code === 'offre_insuffisante') msg += ' Elle est comprise dans Formation Pro et Premium : menu Abonnement (chef de centre).';
+          if (corps && corps.code === 'offre_insuffisante') msg += ' Elle est comprise dans les offres Ardoise Envol et Horizon : menu Abonnement (chef de centre).';
           var err = new Error(msg);
           err.status = r.status; err.code = corps && corps.code; throw err;
         }
@@ -237,6 +237,15 @@
     assistant: '<path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8z"/><path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9z"/>',
     site: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18"/><path d="M12 3a15 15 0 0 0 0 18"/>',
     calendrier: '<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/><path d="M8 2v4"/><path d="M16 2v4"/><path d="M7 13h2"/><path d="M11 13h2"/><path d="M15 13h2"/><path d="M7 17h2"/><path d="M11 17h2"/>',
+    archives: '<rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9"/><path d="M10 13h4"/>',
+    entreprises: '<rect x="4" y="3" width="10" height="18" rx="1"/><path d="M14 9h5a1 1 0 0 1 1 1v11h-6"/><path d="M8 7h2"/><path d="M8 11h2"/><path d="M8 15h2"/>',
+    personnel: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M17 11l2 2 3.5-3.5"/>',
+    messages: '<path d="M4 5h16v11H8l-4 3.5z"/>',
+    abonnement: '<path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/>',
+    services: '<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/>',
+    profil: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="10" r="3"/><path d="M6.5 18.5a6.5 6.5 0 0 1 11 0"/>',
+    support: '<circle cx="12" cy="12" r="9"/><path d="M9.6 9.2a2.5 2.5 0 1 1 3.2 3.1c-.6.3-.9.8-.9 1.4v.4"/><path d="M12 17.2h.01"/>',
+    verrou: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
     reglages: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>'
   };
   var NAV = [
@@ -253,10 +262,28 @@
     ['coachs', 'Coachs et KPI', ['directeur', 'prefet']],
     ['programmes', 'Programmes', ['directeur', 'prefet']],
     ['finances', 'Finances', ['directeur', 'comptable', 'secretaire']],
+    ['entreprises', 'Clients entreprises', ['directeur', 'comptable', 'secretaire']],
     ['demandes', 'Demandes du site', ['directeur', 'prefet', 'secretaire']],
+    ['archives', 'Archives', ['directeur', 'prefet', 'secretaire', 'comptable', 'professeur']],
     ['assistant', 'Assistant IA', ['directeur', 'prefet', 'secretaire', 'professeur']],
     ['site', 'Site du centre', ['directeur', 'prefet']],
-    ['reglages', 'Réglages du centre', ['directeur', 'prefet']]
+    ['reglages', 'Réglages du centre', ['directeur', 'prefet']],
+    ['personnel', 'Comptes du personnel', ['directeur']]
+  ];
+  /* Les rubriques du rail, rangées comme dans l'espace des écoles. */
+  var SECTIONS_NAV = [
+    ['Pilotage', ['tableau', 'moi', 'sessions', 'calendrier', 'assistant']],
+    ['Apprenants', ['apprenants', 'demandes', 'certificats', 'archives']],
+    ['Formation', ['groupes', 'seances', 'lecons', 'evaluations', 'programmes', 'coachs']],
+    ['Gestion', ['finances', 'entreprises', 'site', 'reglages', 'personnel']]
+  ];
+  /* Les pages communes à toute la plateforme, au bas du rail. */
+  var PAGES_COMPTE = [
+    ['messages.html', 'Messages', 'messages', null],
+    ['abonnements.html', 'Abonnement', 'abonnement', ['directeur']],
+    ['services.html#centres-de-formation', 'Services Ardoise', 'services', ['directeur']],
+    ['mon-profil.html', 'Mon profil', 'profil', null],
+    ['support.html', 'Aide et support', 'support', null]
   ];
   function libelleNav(n) {
     var L = { moi: 'Mon espace ' + voc('coach', 'coach').toLowerCase(), apprenants: voc('apprenants', 'Apprenants'), groupes: voc('groupes', 'Groupes'),
@@ -277,29 +304,84 @@
     if (unDe('directeur', 'prefet', 'comptable')) return 'tableau';
     return 'apprenants';
   }
+  /* L'identité du centre en tête du rail : logo (s'il y en a un), nom, domaine. */
+  function dessinerIdentite() {
+    var c = etat.ctx.centre;
+    $('#cf-centre').innerHTML = (urlSure(c.logo_url) ? '<img class="cf-centre-logo" src="' + e(c.logo_url) + '" alt="">' : '<span class="cf-centre-logo initiale">' + e((c.nom || 'C').charAt(0).toUpperCase()) + '</span>') +
+      '<span class="cf-centre-texte"><strong>' + e(c.nom) + '</strong><span>' + e(c.domaine_libelle || '') + (c.ville ? ' · ' + e(c.ville) : '') + '</span></span>';
+  }
+  function pastilleNav(route) {
+    var c = etat.ctx.compteurs || {};
+    if (route === 'demandes' && c.demandes_nouvelles) return '<span class="pastille nav-badge">' + c.demandes_nouvelles + '</span>';
+    if (route === 'calendrier' && c.rappels_a_envoyer && unDe('directeur', 'prefet', 'secretaire')) return '<span class="pastille nav-badge" title="Rappels WhatsApp à envoyer">' + c.rappels_a_envoyer + '</span>';
+    return '';
+  }
+  function lienNav(href, cle, libelle, icone, extra) {
+    return '<li><a class="nav-item" href="' + href + '"' + (cle ? ' data-route="' + cle + '"' : '') + '><svg class="nav-icone" viewBox="0 0 24 24" aria-hidden="true">' + icone + '</svg><span class="nav-libelle">' + e(libelle) + '</span>' + (extra || '') + '</a></li>';
+  }
+  /* Le rail : une liste `.nav-liste` de liens `.nav-item`, comme dans l'espace
+     des écoles. La coque « application » du téléphone (mobile.js) en fait la
+     barre d'onglets et le menu en feuille ; le didacticiel y ajoute « Aide &
+     Tutoriels ». Il n'est dessiné qu'UNE fois : ensuite on le met à jour sur
+     place (libellés, pastilles), pour ne pas défaire ce que la coque a rangé. */
   function dessinerRail() {
-    var c = etat.ctx;
-    $('#cf-centre').innerHTML = '<strong>' + e(c.centre.nom) + '</strong><span>' + e(c.centre.domaine_libelle) + (c.centre.ville ? ' · ' + e(c.centre.ville) : '') + '</span>';
-    $('#cf-nav').innerHTML = rubriquesPermises().map(function (n) {
-      var pastille = n[0] === 'demandes' && c.compteurs.demandes_nouvelles ? '<span class="pastille">' + c.compteurs.demandes_nouvelles + '</span>' : '';
-      if (n[0] === 'calendrier' && c.compteurs.rappels_a_envoyer && unDe('directeur', 'prefet', 'secretaire')) pastille = '<span class="pastille" title="Rappels WhatsApp à envoyer">' + c.compteurs.rappels_a_envoyer + '</span>';
-      return '<li><a href="#/' + n[0] + '" data-route="' + n[0] + '"><svg viewBox="0 0 24 24" aria-hidden="true">' + IC[n[0]] + '</svg>' + e(libelleNav(n)) + pastille + '</a></li>';
-    }).join('');
-    var bas = '<a href="messages.html">Messages</a>';
-    if (a('directeur')) bas += '<a href="parametres.html">Paramètres du centre</a><a href="utilisateurs.html">Comptes du personnel</a><a href="abonnements.html">Abonnement</a>';
-    bas += '<a href="mon-profil.html">Mon profil</a><a href="support.html">Aide et support</a><button type="button" id="cf-deconnexion">↩ Se déconnecter</button>';
-    $('#cf-rail-bas').innerHTML = bas;
-    if (!$('#cf-aide')) {
-      var ba = document.createElement('button');
-      ba.id = 'cf-aide'; ba.className = 'cf-aide'; ba.type = 'button'; ba.setAttribute('aria-label', 'Aide et tutoriels'); ba.textContent = '?';
-      ba.addEventListener('click', aideEcran);
-      document.body.appendChild(ba);
+    dessinerIdentite();
+    var permises = rubriquesPermises(), parCle = {};
+    permises.forEach(function (n) { parCle[n[0]] = n; });
+    var html = '';
+    SECTIONS_NAV.forEach(function (sec) {
+      var items = sec[1].filter(function (k) { return parCle[k]; });
+      if (!items.length) return;
+      html += '<li class="cf-nav-titre" aria-hidden="true">' + e(sec[0]) + '</li>';
+      items.forEach(function (k) {
+        var verrou = routeVerrouillee(k) ? '<svg class="cf-verrou" viewBox="0 0 24 24" aria-label="Offre supérieure">' + IC.verrou + '</svg>' : '';
+        html += lienNav('centre-formation.html#/' + k, k, libelleNav(parCle[k]), IC[k], pastilleNav(k) + verrou);
+      });
+    });
+    var compte = PAGES_COMPTE.filter(function (pg) { return !pg[3] || pg[3].some(a); });
+    if (compte.length) {
+      html += '<li class="cf-nav-titre" aria-hidden="true">Compte</li>';
+      compte.forEach(function (pg) { html += lienNav(pg[0], null, pg[1], IC[pg[2]]); });
     }
-    $('#cf-deconnexion').addEventListener('click', function () {
+    $('#cf-nav').innerHTML = html;
+    $('#cf-nav').style.visibility = 'visible';
+  }
+  function majRail() {
+    dessinerIdentite();
+    $$('.barre-laterale [data-route]').forEach(function (l) {
+      var k = l.getAttribute('data-route');
+      var n = NAV.filter(function (x) { return x[0] === k; })[0];
+      var lib = $('.nav-libelle', l); if (n && lib) lib.textContent = libelleNav(n);
+      var p = $('.nav-badge', l), nouvelle = pastilleNav(k);
+      if (p) p.remove();
+      if (nouvelle) l.insertAdjacentHTML('beforeend', nouvelle);
+    });
+  }
+  function brancherDeconnexion() {
+    var b = $('#cf-deconnexion');
+    if (!b || b.dataset.branche) return;
+    b.dataset.branche = '1';
+    b.addEventListener('click', function () {
       var rt = S.lire('ardoise_refresh_token');
       fetch(S.baseAPI() + '/auth/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refresh_token: rt }) })
         .catch(function () {}).then(function () { S.terminer(); });
     });
+  }
+  /* La coque du téléphone, le didacticiel et l'accueil de première connexion
+     lisent le rail : ils ne sont chargés qu'une fois le rail dessiné. */
+  function chargerScript(src, attrs) {
+    return new Promise(function (ok) {
+      var sc = document.createElement('script'); sc.src = src;
+      Object.keys(attrs || {}).forEach(function (k) { sc.setAttribute(k, attrs[k]); });
+      sc.onload = ok; sc.onerror = ok;
+      document.body.appendChild(sc);
+    });
+  }
+  function chargerCoque() {
+    window.ARDOISE_SIGNATURES_ACCUEIL_SEUL = true;
+    chargerScript('didacticiel.js?v=2', { 'data-ecran': 'Centre de formation' })
+      .then(function () { return chargerScript('mobile.js?v=2'); })
+      .then(function () { return chargerScript('theme-signatures.js?v=2', { 'data-ardoise-signatures': 'oui' }); });
   }
 
   var ROUTES = {};
@@ -310,11 +392,14 @@
     if (unDe('directeur', 'prefet', 'secretaire', 'professeur')) permises.push('salle');
     if (permises.indexOf(route) === -1) route = accueil();
     etat.route = route;
-    $$('#cf-nav a').forEach(function (l) { l.classList.toggle('actif', l.getAttribute('data-route') === route); });
-    $('#cf-rail').classList.remove('ouvert');
+    $$('.barre-laterale [data-route]').forEach(function (l) {
+      var actif = l.getAttribute('data-route') === route;
+      l.classList.toggle('actif', actif);
+      if (actif) l.setAttribute('aria-current', 'page'); else l.removeAttribute('aria-current');
+    });
     document.title = 'Ardoise — ' + ((NAV.filter(function (n) { return n[0] === route; })[0] || [])[1] || 'Centre de formation');
     window.scrollTo(0, 0);
-    try { ROUTES[route](); astucePremiereVisite(); } catch (err) { console.error(err); echec(err); }
+    try { ROUTES[route](); } catch (err) { console.error(err); echec(err); }
   }
 
   /* ------------------------------------------------------------------ */
@@ -325,10 +410,10 @@
       (a('directeur') || a('prefet') ? '<button class="cf-btn" data-analyse>✦ Analyse IA du centre</button>' : '') +
       (unDe('directeur', 'prefet', 'secretaire') ? '<a class="cf-btn principal" href="#/apprenants?nouveau">+ Nouvel apprenant</a>' : ''));
     var b = $('[data-analyse]'); if (b) b.addEventListener('click', function () { window.location.hash = '#/assistant?analyse'; });
-    Promise.all([api('/tableau-de-bord'), a('directeur') || a('comptable') ? api('/bilan?mois=6').catch(function () { return null; }) : Promise.resolve(null)]).then(function (r) {
+    Promise.all([api('/tableau-de-bord'), (a('directeur') || a('comptable')) && droit('formation_finances') ? api('/bilan?mois=6').catch(function () { return null; }) : Promise.resolve(null)]).then(function (r) {
       var d = r[0], bilan = r[1], k = d.chiffres, dv = d.devise;
       var evol = k.encaisse_mois_precedent > 0 ? Math.round((k.encaisse_mois - k.encaisse_mois_precedent) / k.encaisse_mois_precedent * 100) : null;
-      var html = carteDemarrage() + (cfg().fonctionnement && cfg().fonctionnement.sessions === false ? '' : banniereSessions(d));
+      var html = (cfg().fonctionnement && cfg().fonctionnement.sessions === false ? '' : banniereSessions(d));
       html += '<div class="cf-grille-kpi">' +
         kpi('Apprenants actifs', nombre(k.apprenants_actifs, 0), '+' + k.nouveaux_30j + ' sur 30 jours' + (k.prospects ? ' · ' + k.prospects + ' prospect(s)' : '')) +
         kpi('Groupes en cours', nombre(k.groupes_en_cours, 0), k.groupes_planifies + ' planifié(s) · ' + k.coachs_actifs + ' coach(s)') +
@@ -383,7 +468,6 @@
         }).join('') : '<div class="cf-vide">Aucun groupe ouvert.</div>') + '</div></div>';
       }
       z.innerHTML = html;
-      brancherDemarrage(z);
       $$('[data-appel]', z).forEach(function (bt) { bt.addEventListener('click', function () { ouvrirAppel(bt.getAttribute('data-appel')); }); });
       brancherClic($('[data-risques]', z), d.a_risque, function (x) { ficheApprenant(x.id); });
       brancherBulles(z);
@@ -602,11 +686,26 @@
     { nom: 'notes', libelle: 'Notes internes', type: 'textarea', plein: true, lignes: 2 }
   ];
 
+  /* La liste des apprenants : avec leurs indicateurs (Envol, Horizon), ou la
+     liste simple, solde compris (Tremplin). Même forme dans les deux cas. */
+  function listeApprenants(statut) {
+    if (droit('formation_indicateurs')) {
+      return api('/kpi/apprenants' + (statut ? '?statut=' + encodeURIComponent(statut) : '')).then(function (d) { return d.apprenants; });
+    }
+    var q = statut && statut !== 'tous' ? '?statut=' + encodeURIComponent(statut) : '';
+    return api('/apprenants' + q).then(function (l) {
+      return l.map(function (x) {
+        x.indicateurs = { taux_presence: null, lecons_disponibles: 0, lecons_terminees: 0, dernier_score: null, gain: null, solde: Number(x.solde) || 0, risque: { niveau: null, raisons: [] } };
+        return x;
+      });
+    });
+  }
   ROUTES.apprenants = function () {
     var peutCreer = unDe('directeur', 'prefet', 'secretaire') || (a('professeur') && acces('coach_inscrit'));
     var z = page('Apprenants', 'Indicateurs individuels : assiduité, progression, leçons suivies, paiements et risque d’abandon.',
       peutCreer ? '<button class="cf-btn" data-export>Exporter (CSV)</button><button class="cf-btn principal" data-nouveau>+ Nouvel apprenant</button>' : '');
-    z.innerHTML = '<div class="cf-filtres"><input type="search" placeholder="Rechercher (nom, matricule, téléphone)" data-q style="min-width:260px"><select data-statut><option value="actif">Actifs</option><option value="prospect">Prospects</option><option value="en_pause">En pause</option><option value="termine">Terminés</option><option value="abandon">Abandons</option><option value="tous">Tous</option></select><select data-risque><option value="">Tous les risques</option><option value="eleve">Risque élevé</option><option value="moyen">Risque moyen</option></select></div><div data-liste><div class="cf-chargement">Chargement…</div></div>';
+    z.innerHTML = (droit('formation_indicateurs') ? '' : '<div class="cf-encadre">Assiduité, progression et risque d’abandon de chaque apprenant : inclus dans Ardoise Envol. ' + (a('directeur') ? '<a href="abonnements.html">Voir les offres</a>' : '') + '</div>') +
+      '<div class="cf-filtres"><input type="search" placeholder="Rechercher (nom, matricule, téléphone)" data-q style="min-width:260px"><select data-statut><option value="actif">Actifs</option><option value="prospect">Prospects</option><option value="en_pause">En pause</option><option value="termine">Terminés</option><option value="abandon">Abandons</option><option value="tous">Tous</option></select><select data-risque><option value="">Tous les risques</option><option value="eleve">Risque élevé</option><option value="moyen">Risque moyen</option></select></div><div data-liste><div class="cf-chargement">Chargement…</div></div>';
     var donnees = [];
     function afficher() {
       var q = $('[data-q]', z).value.trim().toLowerCase();
@@ -622,13 +721,13 @@
         { titre: 'Leçons', rendu: function (x) { return x.indicateurs.lecons_disponibles ? x.indicateurs.lecons_terminees + '/' + x.indicateurs.lecons_disponibles : '—'; } },
         { titre: 'Dernier score', num: true, rendu: function (x) { return x.indicateurs.dernier_score === null ? '—' : nombre(x.indicateurs.dernier_score, 0) + (x.indicateurs.gain !== null ? ' <span class="doux">(' + (x.indicateurs.gain >= 0 ? '+' : '') + nombre(x.indicateurs.gain, 0) + ')</span>' : ''); } },
         { titre: 'Solde', num: true, rendu: function (x) { return x.indicateurs.solde > 0 ? '<span style="color:var(--cf-rouge)">' + argent(x.indicateurs.solde) + '</span>' : '<span class="doux">À jour</span>'; } },
-        { titre: 'Risque', rendu: function (x) { var n = x.indicateurs.risque.niveau; return '<span class="cf-badge ' + (n === 'eleve' ? 'rouge' : n === 'moyen' ? 'ambre' : 'vert') + '" title="' + e(x.indicateurs.risque.raisons.join(' · ')) + '">' + e(LIBELLES.risque[n]) + '</span>'; } }
+        { titre: 'Risque', rendu: function (x) { var n = x.indicateurs.risque.niveau; if (!n) return '<span class="doux" title="Indicateurs : offre Envol">—</span>'; return '<span class="cf-badge ' + (n === 'eleve' ? 'rouge' : n === 'moyen' ? 'ambre' : 'vert') + '" title="' + e(x.indicateurs.risque.raisons.join(' · ')) + '">' + e(LIBELLES.risque[n]) + '</span>'; } }
       ], liste, { clic: true, videTitre: donnees.length ? 'Aucun résultat' : 'Aucun apprenant', vide: donnees.length ? 'Modifiez la recherche.' : 'Inscrivez votre premier apprenant, ou convertissez une demande arrivée par le site.' }) + '</div>';
       brancherClic(zone, liste, function (x) { ficheApprenant(x.id); });
     }
     function chargerListe() {
       var st = $('[data-statut]', z).value;
-      api('/kpi/apprenants?statut=' + encodeURIComponent(st)).then(function (d) { donnees = d.apprenants; afficher(); }).catch(function (err) { $('[data-liste]', z).innerHTML = '<div class="cf-vide">' + e(err.message) + '</div>'; });
+      listeApprenants(st).then(function (l) { donnees = l; afficher(); }).catch(function (err) { $('[data-liste]', z).innerHTML = '<div class="cf-vide">' + e(err.message) + '</div>'; });
     }
     $('[data-q]', z).addEventListener('input', afficher);
     $('[data-risque]', z).addEventListener('change', afficher);
@@ -705,10 +804,11 @@
       var x = d.identite, s = d.synthese.indicateurs;
       var peutGerer = unDe('directeur', 'prefet', 'secretaire');
       var w = lienWhatsApp(x.telephone, 'Bonjour ' + (x.prenom || x.nom) + ', ');
-      var corps = '<div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px"><div><h3 style="margin:0;font-size:1.25rem">' + e(nomComplet(x)) + '</h3><div class="doux">' + e(x.matricule) + ' · ' + badgeStatut('statut_apprenant', x.statut) + (x.profession ? ' · ' + e(x.profession) : '') + '</div>' +
-        (x.objectif ? '<div style="margin-top:6px;font-size:.88rem"><strong>Objectif :</strong> ' + e(x.objectif) + '</div>' : '') + '</div>' +
+      var photo = '<button type="button" class="cf-photo' + (peutGerer ? '' : ' fixe') + '" data-photo title="' + (peutGerer ? 'Changer la photo' : '') + '">' + (urlSure(x.photo_url) ? '<img src="' + e(x.photo_url) + '" alt="">' : '<span>' + e((x.prenom || x.nom || '?').charAt(0).toUpperCase()) + '</span>') + (peutGerer ? '<i>📷</i>' : '') + '</button>';
+      var corps = '<div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px"><div style="display:flex;gap:14px;align-items:center">' + photo + '<div><h3 style="margin:0;font-size:1.25rem">' + e(nomComplet(x)) + '</h3><div class="doux">' + e(x.matricule) + ' · ' + badgeStatut('statut_apprenant', x.statut) + (x.profession ? ' · ' + e(x.profession) : '') + '</div>' +
+        (x.objectif ? '<div style="margin-top:6px;font-size:.88rem"><strong>Objectif :</strong> ' + e(x.objectif) + '</div>' : '') + '</div></div>' +
         '<div class="cf-actions">' + (w ? '<a class="cf-btn petit" target="_blank" rel="noopener" href="' + e(w) + '">WhatsApp</a>' : '') + (x.telephone ? '<a class="cf-btn petit" href="tel:' + e(tel(x.telephone)) + '">Appeler</a>' : '') +
-        '<button class="cf-btn petit" data-ia-suivi>✦ Bilan IA</button>' + (peutGerer ? '<button class="cf-btn petit" data-modifier>Modifier</button><button class="cf-btn petit" data-code>Code d’accès</button><button class="cf-btn petit" data-inscrire>Inscrire dans un groupe</button>' : '') +
+        '<button class="cf-btn petit" data-ia-suivi>✦ Bilan IA</button>' + (unDe('directeur', 'prefet', 'secretaire', 'professeur') ? (droit('formation_documents') ? '<button class="cf-btn petit" data-documents>Documents</button>' : boutonOffre('formation_documents', 'Documents', '')) : '') + (peutGerer ? '<button class="cf-btn petit" data-modifier>Modifier</button><button class="cf-btn petit" data-code>Code d’accès</button><button class="cf-btn petit" data-inscrire>Inscrire dans un groupe</button>' : '') +
         (unDe('directeur', 'comptable', 'secretaire') ? '<button class="cf-btn petit principal" data-payer>Encaisser</button>' : '') + '</div></div>' +
         '<div class="cf-grille-kpi">' + kpi('Assiduité', pct(s.taux_presence), s.seances_suivies + ' séance(s) suivie(s), ' + s.absences + ' absence(s)') +
         kpi('Niveau', e(x.niveau_actuel || '—'), 'Initial : ' + e(x.niveau_initial || '—')) +
@@ -805,6 +905,10 @@
           ], {}, function (v) { v.apprenant_id = id; return avecListeAttente(function (attente) { if (attente) v.liste_attente = true; return envoyer('/inscriptions', 'POST', v); }).then(function (r) { oublier('groupes'); toast(r.statut === 'attente' ? 'Inscrit en liste d’attente.' : 'Inscription enregistrée.'); ficheApprenant(id); }); });
         });
       });
+      var bph = $('[data-photo]', m.el);
+      if (bph && peutGerer) bph.addEventListener('click', function () { changerPhotoApprenant(id, function (url) { if (urlSure(url)) bph.innerHTML = '<img src="' + e(url) + '" alt=""><i>📷</i>'; }); });
+      var bdoc = $('[data-documents]', m.el); if (bdoc) bdoc.addEventListener('click', function () { choisirDocument(id); });
+      brancherVerrous(m.el);
       if ((bt = $('[data-payer]', m.el))) bt.addEventListener('click', function () { m.fermer(); nouvelEncaissement({ apprenant: x, inscriptions: d.inscriptions }, function () { ficheApprenant(id); }); });
       if ((bt = $('[data-ia-suivi]', m.el))) bt.addEventListener('click', function () {
         bt.disabled = true; bt.textContent = 'Analyse…';
@@ -878,9 +982,13 @@
     function lister() {
       z.innerHTML = '<div class="cf-chargement">Calcul des indicateurs…</div>';
       var jours = Number($('[data-periode]').value);
-      Promise.all([api('/kpi/coachs?du=' + aujourdhui(-jours) + '&au=' + aujourdhui()), api('/coachs')]).then(function (r) {
+      var kpiCoachs = droit('formation_indicateurs') ? api('/kpi/coachs?du=' + aujourdhui(-jours) + '&au=' + aujourdhui()) : api('/coachs').then(function (cs) {
+        return { simple: true, devise: deviseCentre(), poids: {}, coachs: cs.map(function (c) { return { coach_id: c.id, nom: c.nom, prenom: c.prenom, telephone: c.telephone, specialites: c.specialites, actif: c.actif, devise: c.devise,
+          indicateurs: { score: null, appreciation: 'non_mesure', heures_donnees: 0, taux_presence: null, satisfaction_moyenne: null, taux_realisation: null, taux_retention: null, progression_moyenne: null, groupes_actifs: c.groupes_actifs || 0, apprenants_actifs: c.apprenants_actifs || 0, seances_faites: 0, seances_non_cloturees: 0, revenus_generes: 0, cout_estime: 0 } }; }) };
+      });
+      Promise.all([kpiCoachs, api('/coachs')]).then(function (r) {
         var k = r[0], profils = {}; r[1].forEach(function (p) { profils[p.id] = p; });
-        var html = '<div class="cf-encadre">Le score sur 100 combine : réalisation des séances (' + k.poids.realisation + ' %), présence des apprenants (' + k.poids.presence + ' %), satisfaction (' + k.poids.satisfaction + ' %), rétention (' + k.poids.retention + ' %) et progression aux évaluations (' + k.poids.progression + ' %). Une donnée absente n’est pas comptée comme zéro : son poids passe aux autres.</div>';
+        var html = k.simple ? '<div class="cf-encadre">Le score de chaque coach (réalisation des séances, assiduité, satisfaction, rétention, progression) : inclus dans Ardoise Envol. ' + (a('directeur') ? '<a href="abonnements.html">Voir les offres</a>' : '') + '</div>' : '<div class="cf-encadre">Le score sur 100 combine : réalisation des séances (' + k.poids.realisation + ' %), présence des apprenants (' + k.poids.presence + ' %), satisfaction (' + k.poids.satisfaction + ' %), rétention (' + k.poids.retention + ' %) et progression aux évaluations (' + k.poids.progression + ' %). Une donnée absente n’est pas comptée comme zéro : son poids passe aux autres.</div>';
         html += k.coachs.length ? '<div class="cf-cartes">' + k.coachs.map(function (c) {
           var i = c.indicateurs;
           return '<div class="cf-fiche"><div style="display:flex;gap:12px;align-items:center"><span class="cf-score ' + e(i.appreciation) + '">' + (i.score === null ? '—' : i.score) + '</span><div><h3>' + e(nomComplet(c)) + '</h3><div class="meta">' + e(c.specialites || 'Coach') + (c.actif ? '' : ' · inactif') + '</div></div></div>' +
@@ -981,9 +1089,12 @@
         '<div class="cf-actions" style="margin-bottom:12px">' + (gere ? '<button class="cf-btn petit" data-modifier>Modifier</button>' : '') + (planifie ? '<button class="cf-btn petit" data-planifier>Planifier des séances</button>' : '') +
         (unDe('directeur', 'prefet', 'professeur') ? '<button class="cf-btn petit" data-seance>+ Séance</button>' : '') +
         '<button class="cf-btn petit" data-evaluer>Saisir une évaluation</button>' + (urlSure(g.lien_visio) ? '<a class="cf-btn petit" target="_blank" rel="noopener" href="' + e(g.lien_visio) + '">Lien visio</a>' : '') +
-        '<button class="cf-btn petit" data-wa>Message au groupe</button></div>';
+        '<button class="cf-btn petit" data-wa>Message au groupe</button>' + boutonOffre('formation_documents', 'Cartes d’apprenants', 'data-cartes') + boutonOffre('formation_exports', '⬇ Excel', 'data-export-groupe') + '</div>';
       html += '<div class="cf-onglets"><button class="actif" data-o="membres">Membres (' + d.membres.filter(function (x) { return x.statut_inscription === 'active'; }).length + ')</button><button data-o="seances">Séances (' + d.seances.length + ')</button></div><div data-volet></div>';
       $('.corps', m.el).innerHTML = html;
+      var bca = $('[data-cartes]', m.el); if (bca) bca.addEventListener('click', function () { imprimerCartesGroupe(id); });
+      var bex = $('[data-export-groupe]', m.el); if (bex) bex.addEventListener('click', function () { menuExports(null, null, id); });
+      brancherVerrous(m.el);
       function voir(o) {
         $$('[data-o]', m.el).forEach(function (b) { b.classList.toggle('actif', b.getAttribute('data-o') === o); });
         var v = $('[data-volet]', m.el);
@@ -1282,11 +1393,20 @@
     var w = window.open('', '_blank');
     if (!w) { toast('Autorisez les fenêtres surgissantes pour imprimer.', true); return; }
     w.document.write('<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><title>' + e(titre) + '</title><style>' +
-      'body{font-family:Georgia,"Times New Roman",serif;color:#1F2B24;margin:0;padding:24px}@page{margin:12mm}' +
+      '*{-webkit-print-color-adjust:exact;print-color-adjust:exact}body{font-family:Georgia,"Times New Roman",serif;color:#1F2B24;margin:0;padding:24px}@page{margin:12mm}' +
       '.cert{border:10px double #C98A3E;padding:48px 56px;text-align:center;max-width:900px;margin:auto;min-height:540px;position:relative}' +
       '.cert h1{font-size:44px;letter-spacing:.08em;margin:8px 0 4px;color:#A96F2E}.cert .centre{font-size:20px;letter-spacing:.05em;text-transform:uppercase}' +
       '.cert .nom{font-size:34px;margin:18px 0;border-bottom:1px solid #ccc;display:inline-block;padding:0 24px 6px}.cert p{font-size:17px;line-height:1.6}' +
       '.cert .bas{display:flex;justify-content:space-between;margin-top:46px;font-size:14px;text-align:left}.cert .verif{font-family:monospace;font-size:13px;color:#555;margin-top:28px}' +
+      '.doc{font-family:Arial,Helvetica,sans-serif;max-width:760px;margin:auto;font-size:14px;line-height:1.55}.doc h1{text-align:center;font-size:22px;letter-spacing:.06em;text-transform:uppercase;margin:26px 0 18px;color:#A96F2E}' +
+      '.doc-entete{display:flex;gap:14px;align-items:center;border-bottom:2px solid #C98A3E;padding-bottom:12px}.doc-entete img{max-height:64px;max-width:120px}.doc-centre{font-size:20px;font-weight:bold}.doc-coord{font-size:12px;color:#555}' +
+      '.doc table{width:100%;border-collapse:collapse;margin:12px 0}.doc th,.doc td{border:1px solid #ddd;padding:6px 8px;text-align:left;font-size:13px}.doc th{background:#F6F2E7}.doc td.n{text-align:right}.doc tr.tot td{font-weight:bold;background:#FBF6EC}' +
+      '.doc-signature{display:flex;justify-content:space-between;margin-top:36px;gap:20px}.doc-signe{text-align:center;min-width:220px}' +
+      '.fac-tete{display:flex;justify-content:space-between;gap:20px;margin:18px 0}.fac-tete h1{text-align:left;margin:0 0 6px}.fac-client{border:1px solid #ddd;border-radius:6px;padding:10px 14px;min-width:240px}.fac-client small{display:block;color:#777;text-transform:uppercase;font-size:10px;letter-spacing:.08em}' +
+      '.planche{display:grid;grid-template-columns:repeat(2,86mm);gap:6mm;justify-content:center}.carte-app{width:86mm;height:54mm;border:1px solid #ccc;border-radius:3mm;overflow:hidden;font-family:Arial,sans-serif;font-size:9pt;display:flex;flex-direction:column;break-inside:avoid;margin:0 auto}' +
+      '.carte-haut{display:flex;gap:2mm;align-items:center;background:#1F2B24;color:#F6F2E7;padding:2mm 3mm}.carte-haut img{height:8mm;background:#fff;border-radius:1mm;padding:.5mm}.carte-haut small{display:block;font-size:6.5pt;opacity:.8;text-transform:uppercase;letter-spacing:.08em}' +
+      '.carte-corps{flex:1;display:flex;gap:3mm;padding:3mm;align-items:center}.carte-photo{width:20mm;height:24mm;border-radius:2mm;background:#ECE8DB;display:flex;align-items:center;justify-content:center;font-size:20pt;color:#888;overflow:hidden;flex:none}.carte-photo img{width:100%;height:100%;object-fit:cover}' +
+      '.carte-infos{flex:1;line-height:1.45}.carte-nom{font-weight:bold;font-size:10.5pt}.carte-qr{width:20mm;flex:none}.carte-qr svg{width:100%;height:auto}.carte-bas{background:#C98A3E;color:#fff;font-size:7pt;padding:1mm 3mm;text-align:center}' +
       '.recu{font-family:Arial,sans-serif;max-width:560px;margin:auto;border:1px solid #ddd;padding:24px}.recu h1{font-size:20px;margin:0}.recu table{width:100%;border-collapse:collapse;margin:14px 0}.recu td{padding:7px 4px;border-bottom:1px solid #eee;font-size:14px}.recu td:last-child{text-align:right}.recu .total{font-size:20px;font-weight:bold}' +
       '</style></head><body>' + html + '<script>window.onload=function(){setTimeout(function(){window.print()},300)}<\/script></body></html>');
     w.document.close();
@@ -1424,7 +1544,12 @@
     var onglets = [['encaissements', 'Encaissements'], ['impayes', 'Restes à payer']];
     if (caisse) onglets = onglets.concat([['depenses', 'Dépenses'], ['paie', 'Paie des coachs'], ['bilan', 'Bilan']]);
     if (!onglets.some(function (o) { return o[0] === ongletFinances; })) ongletFinances = 'encaissements';
-    z.innerHTML = '<div class="cf-onglets">' + onglets.map(function (o) { return '<button data-o="' + o[0] + '"' + (o[0] === ongletFinances ? ' class="actif"' : '') + '>' + o[1] + '</button>'; }).join('') + '</div><div data-volet><div class="cf-chargement">Chargement…</div></div>';
+    var reserve = { depenses: 1, paie: 1, bilan: 1 };
+    if (!droit('formation_finances') && reserve[ongletFinances]) ongletFinances = 'encaissements';
+    z.innerHTML = '<div class="cf-onglets">' + onglets.map(function (o) {
+      if (reserve[o[0]] && !droit('formation_finances')) return '<button data-offre-requise="formation_finances" title="Inclus dans Ardoise Envol">🔒 ' + o[1] + '</button>';
+      return '<button data-o="' + o[0] + '"' + (o[0] === ongletFinances ? ' class="actif"' : '') + '>' + o[1] + '</button>';
+    }).join('') + '</div><div data-volet><div class="cf-chargement">Chargement…</div></div>';
     var volet = $('[data-volet]', z);
     var V = {
       encaissements: function () {
@@ -1444,7 +1569,7 @@
         }).catch(function (err) { volet.innerHTML = '<div class="cf-vide">' + e(err.message) + '</div>'; });
       },
       impayes: function () {
-        var source = caisse ? api('/bilan?mois=1').then(function (b) { return b.impayes; }) : api('/kpi/apprenants').then(function (d) { return d.apprenants.filter(function (x) { return x.indicateurs.solde > 0; }).map(function (x) { return { id: x.id, nom: x.nom, prenom: x.prenom, telephone: x.telephone, matricule: x.matricule, groupe_nom: x.groupes, reste: x.indicateurs.solde, devise: deviseCentre() }; }); });
+        var source = caisse && droit('formation_finances') ? api('/bilan?mois=1').then(function (b) { return b.impayes; }) : listeApprenants('actif').then(function (d) { return d.filter(function (x) { return x.indicateurs.solde > 0; }).map(function (x) { return { id: x.id, nom: x.nom, prenom: x.prenom, telephone: x.telephone, matricule: x.matricule, groupe_nom: x.groupes, reste: x.indicateurs.solde, devise: deviseCentre() }; }); });
         source.then(function (lignes) {
           volet.innerHTML = '<div class="cf-carte">' + tableau([
             { titre: 'Apprenant', rendu: function (x) { return '<strong>' + e(nomComplet(x)) + '</strong><div class="doux">' + e(x.matricule) + '</div>'; } },
@@ -1513,7 +1638,9 @@
     };
     $$('[data-o]', z).forEach(function (b) { b.addEventListener('click', function () { ongletFinances = b.getAttribute('data-o'); $$('[data-o]', z).forEach(function (x) { x.classList.toggle('actif', x === b); }); volet.innerHTML = '<div class="cf-chargement">Chargement…</div>'; V[ongletFinances](); }); });
     $('[data-encaisser]').addEventListener('click', function () { nouvelEncaissement({}, function () { V[ongletFinances](); }); });
-    var bd = $('[data-depense]'); if (bd) bd.addEventListener('click', function () {
+    brancherVerrous(z);
+    var bd = $('[data-depense]'); if (bd && !droit('formation_finances')) { bd.setAttribute('data-offre-requise', 'formation_finances'); bd.textContent = '🔒 Dépense'; brancherVerrous($('#cf-principal')); bd = null; }
+    if (bd) bd.addEventListener('click', function () {
       charger('coachs', '/coachs').then(function (cs) {
         modaleFormulaire('Nouvelle dépense', [
           { nom: 'categorie', libelle: 'Catégorie', type: 'select', requis: true, options: options('depense') }, { nom: 'date_depense', libelle: 'Date', type: 'date', defaut: aujourdhui() },
@@ -1778,7 +1905,7 @@
       chef ? '<button class="cf-btn principal" data-enregistrer>Enregistrer les réglages</button>' : '');
     api('/reglages').then(function (d) {
       var c = d.config;
-      var html = '<div class="cf-carte"><h2>Identité visuelle <small>le fond du logo est retiré automatiquement</small></h2><div class="cf-identite">' +
+      var html = '<div class="cf-carte" data-cf-identite><h2>Identité visuelle <small>le fond du logo est retiré automatiquement</small></h2><div class="cf-identite">' +
         ['logo', 'cachet', 'signature'].map(function (t) {
           var titres = { logo: 'Logo du centre', cachet: 'Cachet', signature: 'Ma signature' };
           var aides = { logo: 'Certificats, reçus, site, espace apprenant.', cachet: 'Apposé sur les certificats.', signature: 'Signature du chef de centre sur les certificats.' };
@@ -1794,7 +1921,7 @@
           return '<label class="cf-champ-reglage"><span><strong>' + e(ch[2]) + '</strong>' + (ch[3] ? '<small>' + e(ch[3]) + '</small>' : '') + '</span><input type="' + type + '" data-cle="' + nom + '" value="' + e(val) + '"' + dis + '></label>';
         }).join('') + '</div></div>';
       }).join('');
-      html += '<div class="cf-encadre">Devise, taux de change USD/FC, adresse et téléphone du centre : <a href="parametres.html">Paramètres généraux</a>.</div>';
+      html += '<div class="cf-encadre">Devise, taux de change USD/FC, adresse et téléphone du centre : <a href="parametres.html">Paramètres généraux</a>. Comptes de l’accueil et de la caisse : <a href="#/personnel">Comptes du personnel</a>.</div>';
       z.innerHTML = html;
       chargerApercuDocument('cachet'); chargerApercuDocument('signature');
       $$('[data-televerser]', z).forEach(function (inp) { inp.addEventListener('change', function () { televerserIdentite(inp.getAttribute('data-televerser'), inp); }); });
@@ -1808,7 +1935,7 @@
         });
         be.disabled = true;
         envoyer('/reglages', 'PUT', corps).then(function (r) {
-          etat.ctx.config = r.config; toast(r.message); dessinerRail();
+          etat.ctx.config = r.config; toast(r.message); majRail();
         }).catch(echec).then(function () { be.disabled = false; });
       });
     }).catch(function (err) { z.innerHTML = '<div class="cf-vide">' + e(err.message) + '</div>'; });
@@ -1839,7 +1966,7 @@
     }).then(function (j) {
       var z = document.querySelector('[data-apercu="' + type + '"]');
       if (z && urlSure(j.url)) z.innerHTML = '<img src="' + e(j.url) + '" alt="">';
-      if (type === 'logo' && urlSure(j.url)) etat.ctx.centre.logo_url = j.url;
+      if (type === 'logo' && urlSure(j.url)) { etat.ctx.centre.logo_url = j.url; dessinerIdentite(); }
       toast({ logo: 'Logo enregistré.', cachet: 'Cachet enregistré.', signature: 'Signature enregistrée.' }[type]);
     }).catch(echec);
   }
@@ -1994,8 +2121,8 @@
   function chargerClasseArdoise() {
     if (window.ClasseArdoise) return Promise.resolve();
     return new Promise(function (ok, ko) {
-      var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'classe-ardoise.css?v=3'; document.head.appendChild(l);
-      var sc = document.createElement('script'); sc.src = 'classe-ardoise.js?v=3'; sc.onload = function () { ok(); }; sc.onerror = function () { ko(new Error('Impossible de charger la classe : vérifiez la connexion.')); };
+      var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'classe-ardoise.css?v=4'; document.head.appendChild(l);
+      var sc = document.createElement('script'); sc.src = 'classe-ardoise.js?v=4'; sc.onload = function () { ok(); }; sc.onerror = function () { ko(new Error('Impossible de charger la classe : vérifiez la connexion.')); };
       document.head.appendChild(sc);
     });
   }
@@ -2081,100 +2208,470 @@
   };
 
   /* ------------------------------------------------------------------ */
-  /*  Didacticiel : premiers pas, visite guidée, astuces par écran        */
+  /*  Offre du centre : ce qui est inclus, et l'écran « passer à l'offre »  */
   /* ------------------------------------------------------------------ */
-  function etapesDemarrage() {
-    var c = etat.ctx.compteurs, k = etat.ctx.centre;
-    var e2 = [
-      { cle: 'logo', titre: 'Ajoutez votre logo', texte: 'Il apparaît sur les certificats, les reçus et votre site. Son fond est retiré automatiquement.', fait: !!k.logo_url, route: 'reglages', cible: '[data-televerser="logo"]' },
-      { cle: 'programmes', titre: 'Créez vos programmes', texte: 'Ce que vous vendez : niveaux, durées, prix. Reliez-les en parcours (A1 → A2 → B1).', fait: c.programmes > 0, route: 'programmes', cible: '[data-nouveau]' },
-      { cle: 'coachs', titre: 'Ajoutez vos ' + voc('coachs', 'coachs').toLowerCase(), texte: 'Chacun reçoit son compte et ne voit que ses groupes.', fait: c.coachs > 0, route: 'coachs', cible: '[data-nouveau]' }
-    ];
-    if (cfg().fonctionnement && cfg().fonctionnement.sessions !== false) e2.push({ cle: 'sessions', titre: 'Ouvrez votre première ' + voc('session', 'session').toLowerCase(), texte: 'La rentrée : dates, période d’inscription, objectif d’inscrits.', fait: c.sessions > 0, route: 'sessions', cible: '[data-nouvelle]' });
-    e2.push(
-      { cle: 'groupes', titre: 'Créez un ' + voc('groupe', 'groupe').toLowerCase(), texte: 'Un programme, un coach, un horaire, des places.', fait: c.groupes > 0, route: 'groupes', cible: '[data-nouveau]' },
-      { cle: 'seances', titre: 'Planifiez les séances', texte: 'En deux clics depuis le groupe : jours, heure, durée. Les rappels partent tout seuls.', fait: c.seances > 0, route: 'groupes', cible: 'tr.cliquable' },
-      { cle: 'apprenants', titre: 'Inscrivez vos ' + voc('apprenants', 'apprenants').toLowerCase(), texte: 'Ils reçoivent leur accès à l’espace apprenant (planning, cours en ligne, résultats).', fait: c.apprenants > 0, route: 'apprenants', cible: '[data-nouveau]' },
-      { cle: 'lecons', titre: 'Publiez une leçon en ligne', texte: 'Pour réviser entre les cours — l’assistant IA peut la préparer pour vous.', fait: c.lecons > 0, route: 'lecons', cible: '[data-ia]' },
-      { cle: 'site', titre: 'Publiez votre site', texte: 'myardoise.com/votre-centre : formations, test de niveau, inscriptions en ligne.', fait: !!k.site_publie, route: 'site', cible: '.cf-entete .cf-btn.principal' }
-    );
-    return e2;
+  var OFFRES_CENTRE = { formation_archives: 'Envol', formation_exports: 'Envol', formation_documents: 'Envol', formation_finances: 'Envol',
+    formation_indicateurs: 'Envol', communication_masse: 'Envol', formation_entreprises: 'Horizon', whatsapp: 'Horizon', support_prioritaire: 'Horizon' };
+  function droit(code) {
+    var o = etat.ctx && etat.ctx.offre;
+    if (!o || !o.droits || o.droits[code] === undefined) return true;
+    return o.droits[code] === true;
   }
-  function carteDemarrage() {
-    if (!a('directeur')) return '';
-    var etapes = etapesDemarrage(), faites = etapes.filter(function (x) { return x.fait; }).length;
-    if (faites === etapes.length || localStorage.getItem('cf-demarrage-masque') === etat.ctx.centre.code) return '';
-    return '<div class="cf-carte cf-demarrage"><h2>Premiers pas — ' + faites + ' / ' + etapes.length + ' <small><button class="cf-lien" data-masquer-demarrage>Masquer</button></small></h2>' + jauge(Math.round(faites / etapes.length * 100), true) +
-      '<div class="cf-etapes">' + etapes.map(function (x, i) {
-        return '<div class="cf-etape' + (x.fait ? ' faite' : '') + '"><span class="cf-etape-num">' + (x.fait ? '✓' : i + 1) + '</span><div><strong>' + e(x.titre) + '</strong><div class="doux" style="font-size:.8rem">' + e(x.texte) + '</div></div>' + (x.fait ? '' : '<button class="cf-btn petit" data-guider="' + e(x.cle) + '">Me guider</button>') + '</div>';
-      }).join('') + '</div></div>';
+  var DROIT_ROUTE = { archives: 'formation_archives', entreprises: 'formation_entreprises' };
+  function routeVerrouillee(route) { return !!DROIT_ROUTE[route] && !droit(DROIT_ROUTE[route]); }
+  function ecranOffre(titre, code, accroche, points) {
+    var offre = OFFRES_CENTRE[code] || 'Envol';
+    var actuelle = (etat.ctx.offre && etat.ctx.offre.nom) || 'votre offre actuelle';
+    page(titre, '', '', '<div class="cf-carte cf-offre-requise"><div class="cf-offre-pastille">Inclus dans Ardoise ' + e(offre) + (offre === 'Envol' ? ' et Horizon' : '') + '</div>' +
+      '<h2>' + e(accroche) + '</h2><ul>' + points.map(function (p) { return '<li>' + e(p) + '</li>'; }).join('') + '</ul>' +
+      '<p class="doux">Vous êtes sur <strong>' + e(actuelle) + '</strong>. Vos données restent en place : changer d’offre ouvre simplement cet écran.</p>' +
+      (a('directeur') ? '<div class="cf-actions"><a class="cf-btn principal" href="abonnements.html">Voir les offres des centres</a><a class="cf-btn" href="tarifs.html#centres-de-formation" target="_blank" rel="noopener">Comparer</a></div>' : '<p class="doux">Parlez-en au chef de centre : lui seul peut changer d’offre.</p>') + '</div>');
   }
-  function brancherDemarrage(z) {
-    var bm = $('[data-masquer-demarrage]', z); if (bm) bm.addEventListener('click', function () { localStorage.setItem('cf-demarrage-masque', etat.ctx.centre.code); bm.closest('.cf-carte').remove(); });
-    $$('[data-guider]', z).forEach(function (b) {
-      b.addEventListener('click', function () {
-        var x = etapesDemarrage().filter(function (y) { return y.cle === b.getAttribute('data-guider'); })[0];
-        window.location.hash = '#/' + x.route;
-        setTimeout(function () { projecteur([{ cible: x.cible, titre: x.titre, texte: x.texte }]); }, 700);
+  function boutonOffre(code, libelle, attr) {
+    if (droit(code)) return '<button class="cf-btn petit" ' + attr + '>' + libelle + '</button>';
+    return '<button class="cf-btn petit verrou" data-offre-requise="' + e(code) + '" title="Inclus dans Ardoise ' + e(OFFRES_CENTRE[code] || 'Envol') + '">🔒 ' + libelle + '</button>';
+  }
+  function brancherVerrous(zone) {
+    $$('[data-offre-requise]', zone).forEach(function (b) {
+      b.addEventListener('click', function (ev) {
+        ev.preventDefault(); ev.stopPropagation();
+        var code = b.getAttribute('data-offre-requise');
+        var m = modale('Fonction incluse dans Ardoise ' + (OFFRES_CENTRE[code] || 'Envol'), '<p>' + e({
+          formation_exports: 'Exportez vos apprenants, paiements, présences et résultats en fichiers Excel, pour votre comptable, un partenaire ou vos archives.',
+          formation_documents: 'Attestations d’inscription et d’assiduité, relevés de notes et cartes d’apprenant avec QR code, au nom et au logo de votre centre.',
+          formation_archives: 'Retrouvez vos sessions passées, vos anciens apprenants et faites-les revenir en un clic.',
+          formation_entreprises: 'Gérez vos clients entreprises : devis, factures, règlements.'
+        }[code] || 'Cette fonction fait partie d’une offre supérieure.') + '</p>', {
+          pied: a('directeur') ? '<button class="cf-btn" data-fermer>Plus tard</button><a class="cf-btn principal" href="abonnements.html">Voir les offres</a>' : '<button class="cf-btn" data-fermer>Fermer</button>'
+        });
+        return m;
       });
     });
   }
 
-  var ASTUCES = {
-    tableau: [['.cf-sessions-bandeaux, .cf-encadre', 'Vos sessions', 'La rentrée en cours et la prochaine : inscrits, remplissage, objectif.'], ['.cf-grille-kpi', 'Vos indicateurs', 'Assiduité, satisfaction, encaissements, réinscription : l’essentiel du centre en un coup d’œil.'], ['.cf-alerte', 'À faire aujourd’hui', 'Chaque alerte dit quoi faire et mène au bon écran.']],
-    sessions: [['[data-nouvelle]', 'Une session = une rentrée', 'Créez-la, rattachez-y vos groupes. À la fin : clôturez, préparez la suivante, réinscrivez.']],
-    apprenants: [['[data-nouveau]', 'Inscrire un apprenant', 'Il reçoit un matricule et un code pour son espace en ligne.'], ['.cf-filtres', 'Filtrer', 'Cherchez un nom, un téléphone, ou affichez seulement les apprenants à risque.']],
-    groupes: [['tr.cliquable', 'Ouvrir un groupe', 'Membres, séances, planification, message WhatsApp au groupe.']],
-    seances: [['.cf-semaine', 'Votre semaine', 'Cliquez une séance pour faire l’appel. En orange : séance passée sans appel.']],
-    calendrier: [['[data-abonner]', 'Dans votre téléphone', 'Abonnez-vous : vos cours apparaissent dans Google Agenda avec une alerte.'], ['.cf-cal, .cf-agenda', 'Double-cliquez un jour', 'pour y ajouter un examen, une réunion ou une fermeture.']],
-    salle: [['[data-onglets-salle]', 'Présents en direct', 'Les apprenants qui rejoignent sont notés tout seuls. Clôturez l’appel à la fin.']],
-    lecons: [['[data-ia]', 'Laissez l’IA préparer', 'Une leçon complète avec quiz en quelques secondes, à relire et publier.']],
-    finances: [['[data-encaisser]', 'Encaisser', 'Chaque paiement donne un reçu numéroté, imprimable.']],
-    reglages: [['.cf-interrupteur', 'À votre manière', 'Ouvrez des accès à votre équipe, choisissez la paie, les rappels, le certificat.']]
+  /** Téléchargement authentifié d'un export Excel. */
+  function telecharger(chemin, nomParDefaut) {
+    return S.appelApi(PREFIXE_API + chemin).then(function (r) {
+      if (!r.ok) return r.json().catch(function () { return {}; }).then(function (j) { throw new Error(j.message || 'Export impossible.'); });
+      var nom = nomParDefaut;
+      var cd = r.headers.get('Content-Disposition') || '';
+      var m = cd.match(/filename="?([^";]+)"?/); if (m) nom = m[1];
+      return r.blob().then(function (b) {
+        var url = URL.createObjectURL(b), l = document.createElement('a');
+        l.href = url; l.download = nom; document.body.appendChild(l); l.click();
+        setTimeout(function () { URL.revokeObjectURL(url); l.remove(); }, 1500);
+        toast('Fichier Excel téléchargé.');
+      });
+    }).catch(echec);
+  }
+  function menuExports(du, au, groupe) {
+    var q = '?du=' + (du || aujourdhui(-365)) + '&au=' + (au || aujourdhui(0)) + (groupe ? '&groupe_id=' + groupe : '');
+    var types = [['apprenants', 'Apprenants'], ['presences', 'Présences'], ['resultats', 'Résultats']];
+    if (unDe('directeur', 'comptable', 'secretaire')) types.splice(1, 0, ['paiements', 'Paiements']);
+    var m = modale('Exporter en Excel', '<p class="doux">Un classeur par type, prêt pour votre comptable, un partenaire ou vos archives.</p>' +
+      '<div class="cf-form"><label>Du<input type="date" data-du value="' + e(q.slice(4, 14)) + '"></label><label>Au<input type="date" data-au value="' + e(aujourdhui(0)) + '"></label></div>' +
+      '<div class="cf-actions" style="margin-top:12px">' + types.map(function (t) { return '<button class="cf-btn" data-exp="' + t[0] + '">⬇ ' + t[1] + '</button>'; }).join('') + '</div>');
+    $$('[data-exp]', m.el).forEach(function (b) {
+      b.addEventListener('click', function () {
+        var d = $('[data-du]', m.el).value, f = $('[data-au]', m.el).value;
+        b.disabled = true;
+        telecharger('/exports/' + b.getAttribute('data-exp') + '?du=' + d + '&au=' + f + (groupe ? '&groupe_id=' + groupe : ''), b.getAttribute('data-exp') + '.xlsx').then(function () { b.disabled = false; });
+      });
+    });
+  }
+
+  /* ------------------------------------------------------------------ */
+  /*  Documents officiels : attestations, relevé, carte d'apprenant        */
+  /* ------------------------------------------------------------------ */
+  function enteteDocument(c) {
+    return '<div class="doc-entete">' + (urlSure(c.logo_url) ? '<img src="' + e(c.logo_url) + '" alt="">' : '') + '<div><div class="doc-centre">' + e(c.nom) + '</div><div class="doc-coord">' +
+      e([c.adresse, c.ville].filter(Boolean).join(', ')) + (c.telephone ? ' · ' + e(c.telephone) : '') + (c.email ? ' · ' + e(c.email) : '') + '</div></div></div>';
+  }
+  function piedDocument(d) {
+    return '<div class="doc-signature"><div>Fait à ' + e(d.centre.ville || '………') + ', le ' + e(dateFr(d.edite_le, true)) + '</div><div class="doc-signe">Le chef de centre<br><br><br>Signature et cachet</div></div>';
+  }
+  function imprimerDocument(id, type) {
+    api('/apprenants/' + id + '/documents').then(function (d) {
+      var x = d.apprenant, nom = nomComplet(x), c = d.centre, html = '', titre = '';
+      var ne = x.sexe === 'F' ? 'née' : 'né', ins = x.sexe === 'F' ? 'inscrite' : 'inscrit';
+      var cours = d.formations.filter(function (f) { return f.statut !== 'abandon'; });
+      if (type === 'inscription') {
+        titre = 'Attestation d’inscription — ' + nom;
+        html = '<div class="doc">' + enteteDocument(c) + '<h1>Attestation d’inscription</h1><p>Le chef de centre de <strong>' + e(c.nom) + '</strong> atteste que <strong>' + e(nom) + '</strong>' +
+          (x.date_naissance ? ', ' + ne + ' le ' + e(dateFr(x.date_naissance, true)) : '') + ', matricule <strong>' + e(x.matricule) + '</strong>, est régulièrement ' + ins + ' dans notre centre' +
+          (cours.length ? ' pour la formation suivante :' : '.') + '</p>' + (cours.length ? '<table><tr><th>Formation</th><th>Groupe</th><th>Période</th><th>Horaire</th></tr>' + cours.map(function (f) {
+            return '<tr><td>' + e([f.programme, f.niveau].filter(Boolean).join(' — ') || '—') + '</td><td>' + e(f.groupe) + '</td><td>' + e(f.date_debut ? dateFr(f.date_debut) + ' → ' + dateFr(f.date_fin) : '—') + '</td><td>' + e(f.horaire || '—') + '</td></tr>';
+          }).join('') + '</table>' : '') + '<p>La présente attestation lui est délivrée pour servir et valoir ce que de droit.</p>' + piedDocument(d) + '</div>';
+      } else if (type === 'assiduite') {
+        titre = 'Attestation d’assiduité — ' + nom;
+        html = '<div class="doc">' + enteteDocument(c) + '<h1>Attestation d’assiduité</h1><p>Nous attestons que <strong>' + e(nom) + '</strong> (matricule ' + e(x.matricule) + ') a suivi les formations ci-dessous dans notre centre :</p>' +
+          '<table><tr><th>Formation</th><th>Période</th><th>Heures suivies</th><th>Assiduité</th></tr>' + (cours.map(function (f) {
+            return '<tr><td>' + e([f.programme, f.groupe].filter(Boolean).join(' — ')) + '</td><td>' + e(f.date_debut ? dateFr(f.date_debut) + ' → ' + dateFr(f.date_fin) : '—') + '</td><td>' + e(nombre(f.heures_suivies, 1)) + ' h' + (f.heures_total ? ' / ' + e(f.heures_total) + ' h' : '') + '</td><td>' + (f.taux_presence === null ? '—' : f.taux_presence + ' %') + '</td></tr>';
+          }).join('') || '<tr><td colspan="4">Aucune séance enregistrée.</td></tr>') + '</table><p>Les présences sont relevées à chaque séance (appel du coach ou QR code de la salle).</p>' + piedDocument(d) + '</div>';
+      } else if (type === 'releve') {
+        titre = 'Relevé de résultats — ' + nom;
+        html = '<div class="doc">' + enteteDocument(c) + '<h1>Relevé de résultats</h1><p><strong>' + e(nom) + '</strong> · matricule ' + e(x.matricule) + ' · niveau à l’entrée : ' + e(x.niveau_initial || '—') + ' · niveau actuel : <strong>' + e(x.niveau_actuel || '—') + '</strong></p>' +
+          '<table><tr><th>Date</th><th>Évaluation</th><th>Groupe</th><th>Oral</th><th>Écrit</th><th>Global</th><th>Niveau</th></tr>' + (d.evaluations.map(function (v) {
+            return '<tr><td>' + e(dateFr(v.date_evaluation)) + '</td><td>' + e(LIBELLES.type_eval[v.type] || v.type) + '</td><td>' + e(v.groupe || '—') + '</td><td>' + nombre(v.score_oral, 0) + '</td><td>' + nombre(v.score_ecrit, 0) + '</td><td><strong>' + nombre(v.score_global, 0) + '</strong></td><td>' + e(v.niveau_atteint || '—') + '</td></tr>';
+          }).join('') || '<tr><td colspan="7">Aucune évaluation enregistrée.</td></tr>') + '</table>' +
+          (d.certificats.length ? '<p>Certificat(s) obtenu(s) : ' + d.certificats.map(function (k) { return e(k.programme_nom) + (k.niveau ? ' (' + e(k.niveau) + ')' : '') + ' — n° ' + e(k.numero); }).join(' ; ') + '</p>' : '') + piedDocument(d) + '</div>';
+      } else {
+        titre = 'Carte d’apprenant — ' + nom;
+        html = carteApprenant(c, { nom: x.nom, prenom: x.prenom, matricule: x.matricule, photo_url: x.photo_url, qr_svg: d.carte.qr_svg }, cours[0] ? (cours[0].programme || cours[0].groupe) : '', cours[0] ? cours[0].date_fin : null);
+      }
+      fenetreImpression(titre, html);
+    }).catch(echec);
+  }
+  function carteApprenant(c, x, formation, validite) {
+    return '<div class="carte-app"><div class="carte-haut">' + (urlSure(c.logo_url) ? '<img src="' + e(c.logo_url) + '" alt="">' : '') + '<div><strong>' + e(c.nom) + '</strong><small>Carte d’apprenant</small></div></div>' +
+      '<div class="carte-corps"><div class="carte-photo">' + (urlSure(x.photo_url) ? '<img src="' + e(x.photo_url) + '" alt="">' : e(((x.prenom || x.nom || '?').charAt(0)).toUpperCase())) + '</div><div class="carte-infos"><div class="carte-nom">' + e(nomComplet(x)) + '</div>' +
+      '<div>Matricule <strong>' + e(x.matricule) + '</strong></div>' + (formation ? '<div>' + e(formation) + '</div>' : '') + (validite ? '<div>Valable jusqu’au ' + e(dateFr(validite)) + '</div>' : '') + '</div>' +
+      '<div class="carte-qr">' + (x.qr_svg || '') + '</div></div><div class="carte-bas">' + e(c.telephone || '') + (c.site ? ' · ' + e(String(c.site).replace(/^https?:\/\//, '')) : '') + '</div></div>';
+  }
+  function imprimerCartesGroupe(id) {
+    api('/groupes/' + id + '/cartes').then(function (d) {
+      if (!d.cartes.length) { toast('Aucun apprenant actif dans ce groupe.', true); return; }
+      fenetreImpression('Cartes — ' + d.groupe.nom, '<div class="planche">' + d.cartes.map(function (x) { return carteApprenant(d.centre, x, d.groupe.programme || d.groupe.nom, d.groupe.valide_jusqu_au); }).join('') + '</div>');
+    }).catch(echec);
+  }
+  function choisirDocument(id) {
+    if (!droit('formation_documents')) { var b = document.createElement('button'); b.setAttribute('data-offre-requise', 'formation_documents'); document.body.appendChild(b); brancherVerrous(document.body); b.click(); b.remove(); return; }
+    var m = modale('Documents officiels', '<p class="doux">Au nom et au logo du centre, prêts à imprimer ou à enregistrer en PDF.</p><div class="cf-documents">' +
+      [['inscription', 'Attestation d’inscription', 'Pour un employeur, une ambassade, une bourse.'], ['assiduite', 'Attestation d’assiduité', 'Heures suivies et taux de présence, relevés à chaque séance.'],
+        ['releve', 'Relevé de résultats', 'Toutes ses évaluations, le niveau atteint, ses certificats.'], ['carte', 'Carte d’apprenant', 'Avec sa photo et un QR code vers son espace.']].map(function (t) {
+        return '<button class="cf-document" data-doc="' + t[0] + '"><strong>' + t[1] + '</strong><span>' + t[2] + '</span></button>';
+      }).join('') + '</div>');
+    $$('[data-doc]', m.el).forEach(function (b) { b.addEventListener('click', function () { imprimerDocument(id, b.getAttribute('data-doc')); }); });
+  }
+  /** Photo de l'apprenant : recadrée au carré dans le navigateur, puis envoyée. */
+  function changerPhotoApprenant(id, apres) {
+    var inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*'; inp.setAttribute('capture', 'user');
+    inp.addEventListener('change', function () {
+      var f = inp.files && inp.files[0]; if (!f) return;
+      carre(f, 600).then(function (fichier) {
+        var fd = new FormData(); fd.append('fichier', fichier, 'photo.jpg');
+        return S.appelApi('/uploads/photo-apprenant/' + id, { method: 'POST', body: fd }).then(function (r) {
+          return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.message || 'Envoi impossible.'); return j; });
+        });
+      }).then(function (j) { toast('Photo enregistrée.'); if (apres) apres(j.url); }).catch(echec);
+    });
+    inp.click();
+  }
+  function carre(fichier, taille) {
+    return new Promise(function (ok) {
+      var img = new Image(), url = URL.createObjectURL(fichier);
+      img.onload = function () {
+        var c = Math.min(img.naturalWidth, img.naturalHeight), t = Math.min(taille, c);
+        var cv = document.createElement('canvas'); cv.width = t; cv.height = t;
+        cv.getContext('2d').drawImage(img, (img.naturalWidth - c) / 2, (img.naturalHeight - c) / 2, c, c, 0, 0, t, t);
+        URL.revokeObjectURL(url);
+        cv.toBlob(function (b) { ok(b || fichier); }, 'image/jpeg', 0.86);
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); ok(fichier); };
+      img.src = url;
+    });
+  }
+
+  /* ------------------------------------------------------------------ */
+  /*  Archives du centre                                                   */
+  /* ------------------------------------------------------------------ */
+  var ongletArchives = 'sessions';
+  ROUTES.archives = function () {
+    if (routeVerrouillee('archives')) {
+      return ecranOffre('Archives', 'formation_archives', 'La mémoire de votre centre, intacte et consultable',
+        ['Chaque session clôturée : inscrits, abandons, certifiés, réinscrits, encaissé', 'Le détail apprenant par apprenant : présence, score final, certificat, solde',
+          'Les anciens apprenants : retrouvez-les, relancez-les, réinscrivez-les en un clic', 'Exports Excel : apprenants, paiements, présences, résultats']);
+    }
+    var z = page('Archives', 'Sessions clôturées, groupes terminés et anciens apprenants. Rien ne se perd : tout reste consultable et exportable.',
+      boutonOffre('formation_exports', '⬇ Exporter en Excel', 'data-exporter'));
+    var be = $('[data-exporter]'); if (be) be.addEventListener('click', function () { menuExports(); });
+    brancherVerrous($('#cf-principal'));
+    api('/archives').then(function (d) {
+      var onglets = [['sessions', voc('sessions', 'Sessions') + ' (' + d.sessions.length + ')'], ['groupes', voc('groupes', 'Groupes') + ' terminés (' + d.groupes.length + ')']];
+      if (unDe('directeur', 'prefet', 'secretaire')) onglets.push(['anciens', 'Anciens ' + voc('apprenants', 'apprenants').toLowerCase() + ' (' + (d.anciens.termines + d.anciens.abandons + d.anciens.en_pause) + ')']);
+      if (!onglets.some(function (o) { return o[0] === ongletArchives; })) ongletArchives = 'sessions';
+      z.innerHTML = '<div class="cf-grille-kpi">' + kpi('Sessions archivées', d.sessions.length) + kpi('Ont terminé', d.anciens.termines, 'apprenants au statut « terminé »') +
+        kpi('En pause', d.anciens.en_pause, 'à relancer') + kpi('Abandons', d.anciens.abandons) + '</div>' +
+        '<div class="cf-onglets">' + onglets.map(function (o) { return '<button data-o="' + o[0] + '"' + (o[0] === ongletArchives ? ' class="actif"' : '') + '>' + e(o[1]) + '</button>'; }).join('') + '</div><div data-volet></div>';
+      var v = $('[data-volet]', z);
+      function voir(o) {
+        ongletArchives = o;
+        $$('[data-o]', z).forEach(function (b) { b.classList.toggle('actif', b.getAttribute('data-o') === o); });
+        if (o === 'sessions') {
+          v.innerHTML = '<div class="cf-carte">' + tableau([
+            { titre: 'Session', rendu: function (s) { return '<strong>' + e(s.nom) + '</strong><div class="doux">' + e(dateFr(s.date_debut)) + ' → ' + e(dateFr(s.date_fin)) + '</div>'; } },
+            { titre: 'Groupes', num: true, rendu: function (s) { return e(s.groupes); } },
+            { titre: 'Inscrits', num: true, rendu: function (s) { return e(s.inscrits); } },
+            { titre: 'Certifiés', num: true, rendu: function (s) { return e(s.certifies) + (s.taux_reussite !== null ? ' <span class="doux">(' + s.taux_reussite + ' %)</span>' : ''); } },
+            { titre: 'Abandons', num: true, rendu: function (s) { return e(s.abandons); } },
+            { titre: 'Réinscrits', num: true, rendu: function (s) { return e(s.reinscrits); } },
+            { titre: 'Encaissé', num: true, rendu: function (s) { return argent(s.encaisse) + (s.attendu ? '<div class="doux">sur ' + argent(s.attendu) + '</div>' : ''); } }
+          ], d.sessions, { clic: true, videTitre: 'Aucune session archivée', vide: 'Une session apparaît ici quand vous la clôturez (rubrique Sessions).' }) + '</div>';
+          brancherClic(v, d.sessions, function (s) { detailArchiveSession(s.id, s.nom); });
+        } else if (o === 'groupes') {
+          v.innerHTML = '<div class="cf-carte">' + tableau([
+            { titre: 'Groupe', rendu: function (g) { return '<strong>' + e(g.nom) + '</strong><div class="doux">' + e([g.programme, g.session].filter(Boolean).join(' · ')) + '</div>'; } },
+            { titre: 'Période', rendu: function (g) { return e(g.date_debut ? dateFr(g.date_debut) + ' → ' + dateFr(g.date_fin) : '—'); } },
+            { titre: 'Statut', rendu: function (g) { return badgeStatut('statut_groupe', g.statut); } },
+            { titre: 'Inscrits', num: true, rendu: function (g) { return e(g.inscrits); } },
+            { titre: 'Certifiés', num: true, rendu: function (g) { return e(g.certifies); } },
+            { titre: '', rendu: function (g) { return '<button class="cf-btn petit" data-voir-groupe="' + e(g.id) + '">Ouvrir</button>'; } }
+          ], d.groupes, { videTitre: 'Aucun groupe terminé' }) + '</div>';
+          $$('[data-voir-groupe]', v).forEach(function (b) { b.addEventListener('click', function () { detailGroupe(b.getAttribute('data-voir-groupe')); }); });
+        } else {
+          v.innerHTML = '<div class="cf-carte"><div class="cf-filtres"><input type="search" placeholder="Nom, matricule, téléphone…" data-q></div><div data-liste><div class="cf-chargement">Chargement…</div></div></div>';
+          var minuterie = null;
+          function chargerAnciens() {
+            var q = $('[data-q]', v).value.trim();
+            api('/archives/apprenants' + (q ? '?q=' + encodeURIComponent(q) : '')).then(function (liste) {
+              $('[data-liste]', v).innerHTML = tableau([
+                { titre: 'Apprenant', rendu: function (x) { return '<strong>' + e(nomComplet(x)) + '</strong><div class="doux">' + e(x.matricule) + (x.telephone ? ' · ' + e(x.telephone) : '') + '</div>'; } },
+                { titre: 'Parcours', rendu: function (x) { return e(x.parcours || '—') + (x.niveau_actuel ? '<div class="doux">Niveau ' + e(x.niveau_actuel) + '</div>' : ''); } },
+                { titre: 'Statut', rendu: function (x) { return badgeStatut('statut_apprenant', x.statut); } },
+                { titre: 'Certificats', num: true, rendu: function (x) { return e(x.certificats); } },
+                { titre: '', rendu: function (x) {
+                  var w = lienWhatsApp(x.telephone, 'Bonjour ' + (x.prenom || x.nom) + ', une nouvelle session commence chez ' + etat.ctx.centre.nom + '. ');
+                  return '<div class="cf-actions">' + (w ? '<a class="cf-btn petit" target="_blank" rel="noopener" href="' + e(w) + '">Relancer</a>' : '') + '<button class="cf-btn petit principal" data-reactiver="' + e(x.id) + '">Faire revenir</button></div>';
+                } }
+              ], liste, { clic: true, videTitre: 'Aucun ancien apprenant', vide: 'Un apprenant arrive ici quand il termine, abandonne ou se met en pause.' });
+              brancherClic($('[data-liste]', v), liste, function (x) { ficheApprenant(x.id); });
+              $$('[data-reactiver]', v).forEach(function (b) {
+                b.addEventListener('click', function () {
+                  b.disabled = true;
+                  envoyer('/archives/apprenants/' + b.getAttribute('data-reactiver') + '/reactiver', 'POST').then(function (r) { toast(r.message); oublier('apprenants'); ficheApprenant(r.id); chargerAnciens(); }).catch(echec).then(function () { b.disabled = false; });
+                });
+              });
+            }).catch(function (err) { $('[data-liste]', v).innerHTML = '<div class="cf-vide">' + e(err.message) + '</div>'; });
+          }
+          $('[data-q]', v).addEventListener('input', function () { clearTimeout(minuterie); minuterie = setTimeout(chargerAnciens, 300); });
+          chargerAnciens();
+        }
+      }
+      $$('[data-o]', z).forEach(function (b) { b.addEventListener('click', function () { voir(b.getAttribute('data-o')); }); });
+      voir(ongletArchives);
+    }).catch(function (err) { z.innerHTML = '<div class="cf-vide">' + e(err.message) + '</div>'; });
   };
-  function projecteur(etapes, i) {
-    i = i || 0;
-    $$('.cf-projo, .cf-bulle-guide').forEach(function (x) { x.remove(); });
-    var et = etapes[i]; if (!et) return;
-    var cible = null;
-    String(et.cible).split(',').some(function (sel) { cible = document.querySelector(sel.trim()); return !!cible; });
-    if (!cible) { if (i + 1 < etapes.length) projecteur(etapes, i + 1); else toast(et.titre + ' — ' + et.texte); return; }
-    cible.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    setTimeout(function () {
-      var r = cible.getBoundingClientRect();
-      var p = document.createElement('div'); p.className = 'cf-projo';
-      p.style.cssText = 'top:' + (r.top - 6) + 'px;left:' + (r.left - 6) + 'px;width:' + (r.width + 12) + 'px;height:' + (Math.min(r.height, window.innerHeight * .6) + 12) + 'px';
-      var b = document.createElement('div'); b.className = 'cf-bulle-guide';
-      b.innerHTML = '<strong>' + e(et.titre) + '</strong><p>' + e(et.texte) + '</p><div class="cf-actions"><span class="doux" style="font-size:.76rem;margin-right:auto">' + (i + 1) + ' / ' + etapes.length + '</span><button class="cf-btn petit" data-fin>Terminer</button>' + (i + 1 < etapes.length ? '<button class="cf-btn petit principal" data-suite>Suivant</button>' : '') + '</div>';
-      document.body.appendChild(p); document.body.appendChild(b);
-      var bas = r.bottom + 14 + 160 < window.innerHeight;
-      b.style.top = (bas ? r.bottom + 14 : Math.max(10, r.top - 14 - b.offsetHeight)) + 'px';
-      b.style.left = Math.max(10, Math.min(window.innerWidth - b.offsetWidth - 10, r.left)) + 'px';
-      $('[data-fin]', b).addEventListener('click', function () { p.remove(); b.remove(); });
-      var bs = $('[data-suite]', b); if (bs) bs.addEventListener('click', function () { projecteur(etapes, i + 1); });
-    }, 350);
+  function detailArchiveSession(id, nom) {
+    var m = modale(nom || 'Session', '<div class="cf-chargement">Chargement…</div>', { large: true });
+    api('/archives/sessions/' + id).then(function (d) {
+      var s = d.session;
+      $('.corps', m.el).innerHTML = '<div class="doux" style="margin-bottom:10px">' + e(dateFr(s.date_debut)) + ' → ' + e(dateFr(s.date_fin)) + '</div><div class="cf-grille-kpi">' +
+        kpi('Inscrits', s.inscrits) + kpi('Certifiés', s.certifies, s.inscrits ? Math.round(s.certifies / s.inscrits * 100) + ' % de réussite' : '') + kpi('Abandons', s.abandons) + kpi('Réinscrits', s.reinscrits) + kpi('Encaissé', argent(s.encaisse), s.attendu ? 'sur ' + argent(s.attendu) : '') + '</div>' +
+        tableau([
+          { titre: 'Apprenant', rendu: function (x) { return '<strong>' + e(nomComplet(x)) + '</strong><div class="doux">' + e(x.matricule) + ' · ' + e(x.groupe) + '</div>'; } },
+          { titre: 'Présence', rendu: function (x) { return jauge(x.presence); } },
+          { titre: 'Score', num: true, rendu: function (x) { return x.score === null ? '—' : nombre(x.score, 0); } },
+          { titre: 'Résultat', rendu: function (x) { return x.certificat ? '<span class="cf-badge vert">Certifié</span> <span class="cf-code">' + e(x.certificat) + '</span>' : badgeStatut('statut_inscription', x.statut); } },
+          { titre: 'Payé', num: true, rendu: function (x) { var r = x.du - x.paye; return argent(x.paye, x.devise) + (r > 0 ? '<div class="doux" style="color:var(--cf-rouge)">reste ' + argent(r, x.devise) + '</div>' : ''); } }
+        ], d.apprenants, { clic: true, videTitre: 'Aucun inscrit' });
+      brancherClic($('.corps', m.el), d.apprenants, function (x) { m.fermer(); ficheApprenant(x.id); });
+    }).catch(function (err) { $('.corps', m.el).innerHTML = '<div class="cf-vide">' + e(err.message) + '</div>'; });
   }
-  function aideEcran() {
-    var astuces = ASTUCES[etat.route] || [];
-    var m = modale('Aide et tutoriels', '<p>Écran : <strong>' + e(((NAV.filter(function (n) { return n[0] === etat.route; })[0] || [])[1]) || etat.route) + '</strong></p>' +
-      (astuces.length ? '<ul style="line-height:1.7">' + astuces.map(function (x) { return '<li><strong>' + e(x[1]) + '</strong> — ' + e(x[2]) + '</li>'; }).join('') + '</ul>' : '<p class="doux">Pas d’astuce particulière pour cet écran.</p>') +
-      (a('directeur') ? '<h3 style="font-size:1rem">Premiers pas du centre</h3><div class="cf-etapes">' + etapesDemarrage().map(function (x, i) { return '<div class="cf-etape' + (x.fait ? ' faite' : '') + '"><span class="cf-etape-num">' + (x.fait ? '✓' : i + 1) + '</span><div><strong>' + e(x.titre) + '</strong></div></div>'; }).join('') + '</div>' : ''),
-      { pied: '<a class="cf-btn" href="#/assistant?question" data-fermer>Poser une question à l’assistant</a><a class="cf-btn" href="support.html">Contacter le support</a>' + (astuces.length ? '<button class="cf-btn principal" data-visite>Visite guidée de l’écran</button>' : '') });
-    var bv = $('[data-visite]', m.el); if (bv) bv.addEventListener('click', function () { m.fermer(); projecteur(astuces.map(function (x) { return { cible: x[0], titre: x[1], texte: x[2] }; })); });
+
+  /* ------------------------------------------------------------------ */
+  /*  Clients entreprises : devis et factures                              */
+  /* ------------------------------------------------------------------ */
+  var TYPES_CLIENT = [['entreprise', 'Entreprise'], ['ong', 'ONG / association'], ['administration', 'Administration'], ['ecole', 'École / université'], ['particulier', 'Particulier'], ['autre', 'Autre']];
+  var STATUTS_FACTURE = { brouillon: ['Brouillon', ''], envoyee: ['Envoyée', 'bleu'], acceptee: ['Acceptée', 'vert'], refusee: ['Refusée', 'rouge'], payee: ['Payée', 'vert'], partielle: ['Partiellement payée', 'ambre'], annulee: ['Annulée', 'rouge'] };
+  function badgeFacture(s) { var x = STATUTS_FACTURE[s] || [s, '']; return '<span class="cf-badge ' + x[1] + '">' + e(x[0]) + '</span>'; }
+  var CHAMPS_CLIENT = [
+    { nom: 'nom', libelle: 'Nom du client', requis: true, placeholder: 'Ex. Banque Kivu, ONG Avenir…' }, { nom: 'type', libelle: 'Type', type: 'select', vide: false, options: TYPES_CLIENT, defaut: 'entreprise' },
+    { nom: 'contact_nom', libelle: 'Personne de contact' }, { nom: 'telephone', libelle: 'Téléphone', type: 'tel' }, { nom: 'email', libelle: 'E-mail', type: 'email' },
+    { nom: 'adresse', libelle: 'Adresse' }, { nom: 'rccm', libelle: 'RCCM / Id. nat.' }, { nom: 'notes', libelle: 'Notes', type: 'textarea' }
+  ];
+  var ongletEntreprises = 'factures';
+  ROUTES.entreprises = function () {
+    if (routeVerrouillee('entreprises')) {
+      return ecranOffre('Clients entreprises', 'formation_entreprises', 'Vendez vos formations aux entreprises, aux ONG et aux administrations',
+        ['Un fichier clients : contact, RCCM, historique de ce qui a été facturé et réglé', 'Des devis numérotés, transformés en facture en un clic une fois acceptés',
+          'Des factures au logo du centre, avec règlements partiels et reste dû', 'Le lien avec le groupe formé pour le client']);
+    }
+    var gere = unDe('directeur', 'comptable');
+    var z = page('Clients entreprises', 'Formations vendues aux entreprises, ONG et administrations : clients, devis, factures et règlements.',
+      (gere ? '<button class="cf-btn" data-devis>+ Devis</button><button class="cf-btn" data-facture>+ Facture</button>' : '') + '<button class="cf-btn principal" data-client>+ Client</button>');
+    Promise.all([api('/clients'), api('/factures')]).then(function (r) {
+      var clients = r[0], docs = r[1];
+      var factures = docs.filter(function (f) { return f.nature === 'facture' && f.statut !== 'annulee'; });
+      var du = factures.reduce(function (t, f) { return t + f.total - f.paye; }, 0);
+      var regle = factures.reduce(function (t, f) { return t + f.paye; }, 0);
+      z.innerHTML = '<div class="cf-grille-kpi">' + kpi('Clients', clients.filter(function (c) { return c.actif; }).length) + kpi('Facturé', argent(factures.reduce(function (t, f) { return t + f.total; }, 0))) +
+        kpi('Réglé', argent(regle), '', 'hausse') + kpi('Reste à encaisser', argent(du), '', du > 0 ? 'baisse' : 'hausse') + kpi('Devis en attente', docs.filter(function (f) { return f.nature === 'devis' && (f.statut === 'brouillon' || f.statut === 'envoyee'); }).length) + '</div>' +
+        '<div class="cf-onglets"><button data-o="factures">Factures</button><button data-o="devis">Devis</button><button data-o="clients">Clients (' + clients.length + ')</button></div><div data-volet></div>';
+      var v = $('[data-volet]', z);
+      function lignesDocs(nature) {
+        var liste = docs.filter(function (f) { return f.nature === nature; });
+        v.innerHTML = '<div class="cf-carte">' + tableau([
+          { titre: 'Numéro', rendu: function (f) { return '<span class="cf-code">' + e(f.numero) + '</span><div class="doux">' + e(dateFr(f.date_emission)) + '</div>'; } },
+          { titre: 'Client', rendu: function (f) { return '<strong>' + e(f.client) + '</strong><div class="doux">' + e(f.objet) + '</div>'; } },
+          { titre: 'Statut', rendu: function (f) { return badgeFacture(f.statut); } },
+          { titre: 'Montant', num: true, rendu: function (f) { return argent(f.total, f.devise) + (nature === 'facture' && f.paye > 0 && f.paye < f.total ? '<div class="doux">reste ' + argent(f.total - f.paye, f.devise) + '</div>' : ''); } }
+        ], liste, { clic: true, videTitre: nature === 'devis' ? 'Aucun devis' : 'Aucune facture', vide: gere ? 'Créez-en un avec le bouton en haut de l’écran.' : '' }) + '</div>';
+        brancherClic(v, liste, function (f) { ouvrirFacture(f.id, ROUTES.entreprises); });
+      }
+      function voir(o) {
+        ongletEntreprises = o;
+        $$('[data-o]', z).forEach(function (b) { b.classList.toggle('actif', b.getAttribute('data-o') === o); });
+        if (o === 'clients') {
+          v.innerHTML = '<div class="cf-carte">' + tableau([
+            { titre: 'Client', rendu: function (c) { return '<strong>' + e(c.nom) + '</strong>' + (c.actif ? '' : ' <span class="cf-badge">inactif</span>') + '<div class="doux">' + e((TYPES_CLIENT.filter(function (t) { return t[0] === c.type; })[0] || [0, c.type])[1]) + (c.contact_nom ? ' · ' + e(c.contact_nom) : '') + '</div>'; } },
+            { titre: 'Contact', rendu: function (c) { return e(c.telephone || '') + (c.email ? '<div class="doux">' + e(c.email) + '</div>' : ''); } },
+            { titre: 'Facturé', num: true, rendu: function (c) { return argent(c.facture); } },
+            { titre: 'Reste dû', num: true, rendu: function (c) { var r = Number(c.facture) - Number(c.paye); return r > 0 ? '<span style="color:var(--cf-rouge)">' + argent(r) + '</span>' : 'À jour'; } }
+          ], clients, { clic: true, videTitre: 'Aucun client', vide: 'Ajoutez l’entreprise, l’ONG ou l’administration qui vous confie ses équipes.' }) + '</div>';
+          brancherClic(v, clients, function (c) {
+            modaleFormulaire('Client — ' + c.nom, CHAMPS_CLIENT.concat([{ nom: 'actif', libelle: 'Client actif', type: 'case' }]), c, function (d) { return envoyer('/clients/' + c.id, 'PATCH', d).then(function () { toast('Client mis à jour.'); ROUTES.entreprises(); }); }, { large: true });
+          });
+        } else lignesDocs(o === 'devis' ? 'devis' : 'facture');
+      }
+      $$('[data-o]', z).forEach(function (b) { b.addEventListener('click', function () { voir(b.getAttribute('data-o')); }); });
+      voir(ongletEntreprises);
+      var bc = $('[data-client]'); if (bc) bc.addEventListener('click', function () {
+        modaleFormulaire('Nouveau client', CHAMPS_CLIENT, {}, function (d) { return envoyer('/clients', 'POST', d).then(function () { toast('Client ajouté.'); ongletEntreprises = 'clients'; ROUTES.entreprises(); }); }, { large: true });
+      });
+      ['devis', 'facture'].forEach(function (nature) {
+        var b = $('[data-' + nature + ']'); if (!b) return;
+        b.addEventListener('click', function () {
+          if (!clients.length) { toast('Ajoutez d’abord un client.', true); return; }
+          nouveauDocument(nature, clients);
+        });
+      });
+    }).catch(function (err) { z.innerHTML = '<div class="cf-vide">' + e(err.message) + '</div>'; });
+  };
+  function nouveauDocument(nature, clients) {
+    charger('groupes', '/groupes').then(function (groupes) {
+      var champs = [
+        { nom: 'client_id', libelle: 'Client', type: 'select', requis: true, vide: false, options: clients.filter(function (c) { return c.actif; }).map(function (c) { return [c.id, c.nom]; }) },
+        { nom: 'objet', libelle: 'Objet', requis: true, placeholder: 'Ex. Anglais des affaires — 20 agents, 40 heures' },
+        { nom: 'groupe_id', libelle: 'Groupe formé (facultatif)', type: 'select', options: (groupes || []).map(function (g) { return [g.id, g.nom]; }) },
+        { nom: 'devise', libelle: 'Devise', type: 'select', vide: false, options: [['USD', 'USD'], ['FC', 'FC']], defaut: deviseCentre() === 'FC' ? 'FC' : 'USD' },
+        { nom: 'date_echeance', libelle: nature === 'devis' ? 'Valable jusqu’au' : 'Échéance', type: 'date' },
+        { nom: 'notes', libelle: 'Conditions / notes', type: 'textarea' }
+      ];
+      var lignes = '<p style="font-size:.82rem;font-weight:600;color:var(--cf-doux);margin:14px 0 6px">Lignes</p><div class="cf-lignes" data-lignes></div><button type="button" class="cf-lien" data-ajouter-ligne>+ Ajouter une ligne</button><div class="cf-total" data-total></div>';
+      var m = modaleFormulaire(nature === 'devis' ? 'Nouveau devis' : 'Nouvelle facture', champs, {}, function (d, mm) {
+        d.nature = nature;
+        d.lignes = $$('.cf-ligne', mm.el).map(function (l) { return { libelle: $('[data-l]', l).value, quantite: Number($('[data-q]', l).value), prix: Number($('[data-p]', l).value) }; });
+        if (!d.groupe_id) delete d.groupe_id;
+        return envoyer('/factures', 'POST', d).then(function (f) { toast((nature === 'devis' ? 'Devis ' : 'Facture ') + f.numero + ' créé' + (nature === 'devis' ? '.' : 'e.')); ongletEntreprises = nature === 'devis' ? 'devis' : 'factures'; ROUTES.entreprises(); ouvrirFacture(f.id); });
+      }, { large: true, apres: lignes, bouton: 'Créer' });
+      var el = m.el;
+      var zone = $('[data-lignes]', el);
+      function total() {
+        var t = $$('.cf-ligne', el).reduce(function (s, l) { return s + (Number($('[data-q]', l).value) || 0) * (Number($('[data-p]', l).value) || 0); }, 0);
+        $('[data-total]', el).textContent = 'Total : ' + argent(t, ($('[name=devise]', el) || {}).value || 'USD');
+      }
+      function ajouter() {
+        var l = document.createElement('div'); l.className = 'cf-ligne';
+        l.innerHTML = '<input data-l placeholder="Libellé (ex. Module 1 — 20 h)"><input data-q type="number" min="0" step="0.5" value="1" aria-label="Quantité"><input data-p type="number" min="0" step="0.01" placeholder="Prix unitaire" aria-label="Prix unitaire"><button type="button" class="cf-lien" aria-label="Retirer">✕</button>';
+        $('button', l).addEventListener('click', function () { l.remove(); total(); });
+        $$('input', l).forEach(function (i) { i.addEventListener('input', total); });
+        zone.appendChild(l);
+      }
+      $('[data-ajouter-ligne]', el).addEventListener('click', ajouter);
+      var sd = $('[name=devise]', el); if (sd) sd.addEventListener('change', total);
+      ajouter(); total();
+    }).catch(echec);
   }
-  function astucePremiereVisite() {
-    var cle = 'cf-vu-' + etat.route;
-    try { if (localStorage.getItem(cle) || !ASTUCES[etat.route]) return; localStorage.setItem(cle, '1'); } catch (x) { return; }
-    var t = ASTUCES[etat.route][0];
-    setTimeout(function () {
-      var b = document.createElement('div'); b.className = 'cf-astuce';
-      b.innerHTML = '<strong>💡 ' + e(t[1]) + '</strong><span>' + e(t[2]) + '</span><button class="cf-lien" data-visite>Visite guidée</button><button class="cf-lien" data-ok>OK</button>';
-      document.body.appendChild(b);
-      $('[data-ok]', b).addEventListener('click', function () { b.remove(); });
-      $('[data-visite]', b).addEventListener('click', function () { b.remove(); projecteur(ASTUCES[etat.route].map(function (x) { return { cible: x[0], titre: x[1], texte: x[2] }; })); });
-      setTimeout(function () { if (b.parentNode) b.remove(); }, 12000);
-    }, 1200);
+  function ouvrirFacture(id, apres) {
+    var m = modale('Document', '<div class="cf-chargement">Chargement…</div>', { large: true });
+    api('/factures/' + id).then(function (f) {
+      var gere = unDe('directeur', 'comptable');
+      $('header h2', m.el).textContent = (f.nature === 'devis' ? 'Devis ' : 'Facture ') + f.numero;
+      var lignes = Array.isArray(f.lignes) ? f.lignes : [];
+      $('.corps', m.el).innerHTML = '<div class="doux" style="margin-bottom:8px">' + e(f.client_nom) + ' · ' + e(dateFr(f.date_emission)) + ' ' + badgeFacture(f.statut) + '</div><p><strong>' + e(f.objet) + '</strong></p>' +
+        tableau([{ titre: 'Libellé', rendu: function (l) { return e(l.libelle); } }, { titre: 'Qté', num: true, rendu: function (l) { return nombre(l.quantite, 2); } },
+          { titre: 'Prix', num: true, rendu: function (l) { return argent(l.prix, f.devise); } }, { titre: 'Montant', num: true, rendu: function (l) { return argent(l.montant, f.devise); } }], lignes) +
+        '<div class="cf-total">Total : ' + argent(f.total, f.devise) + (f.nature === 'facture' ? ' · réglé ' + argent(f.paye, f.devise) + ' · reste <strong>' + argent(f.reste, f.devise) + '</strong>' : '') + '</div>' +
+        '<div class="cf-actions" style="margin-top:14px"><button class="cf-btn" data-imprimer>Imprimer / PDF</button>' +
+        (gere && f.nature === 'devis' && ['brouillon', 'envoyee', 'acceptee'].indexOf(f.statut) !== -1 ? '<button class="cf-btn" data-statut="envoyee">Marquer envoyé</button><button class="cf-btn" data-statut="refusee">Refusé</button><button class="cf-btn principal" data-facturer>Accepté → Facturer</button>' : '') +
+        (gere && f.nature === 'facture' && f.reste > 0 && f.statut !== 'annulee' ? (f.statut === 'brouillon' ? '<button class="cf-btn" data-statut="envoyee">Marquer envoyée</button>' : '') + '<button class="cf-btn principal" data-regler>Enregistrer un règlement</button>' : '') +
+        (gere && f.statut !== 'annulee' && f.statut !== 'payee' ? '<button class="cf-btn danger" data-statut="annulee">Annuler</button>' : '') + '</div>';
+      function suite() { m.fermer(); if (apres) apres(); else if (etat.route === 'entreprises') ROUTES.entreprises(); }
+      $('[data-imprimer]', m.el).addEventListener('click', function () { imprimerFacture(f); });
+      $$('[data-statut]', m.el).forEach(function (b) { b.addEventListener('click', function () { envoyer('/factures/' + id, 'PATCH', { statut: b.getAttribute('data-statut') }).then(function () { toast('Statut mis à jour.'); suite(); }).catch(echec); }); });
+      var bf = $('[data-facturer]', m.el); if (bf) bf.addEventListener('click', function () { envoyer('/factures/' + id + '/facturer', 'POST').then(function (n) { toast('Facture ' + n.numero + ' créée.'); m.fermer(); ongletEntreprises = 'factures'; if (etat.route === 'entreprises') ROUTES.entreprises(); ouvrirFacture(n.id); }).catch(echec); });
+      var br = $('[data-regler]', m.el); if (br) br.addEventListener('click', function () {
+        modaleFormulaire('Règlement — ' + f.numero, [{ nom: 'reglement', libelle: 'Montant reçu (' + f.devise + ')', type: 'nombre', requis: true, pas: 0.01, defaut: f.reste }], {}, function (d) {
+          return envoyer('/factures/' + id, 'PATCH', d).then(function (r) { toast(r.statut === 'payee' ? 'Facture soldée.' : 'Règlement enregistré.'); suite(); });
+        });
+      });
+    }).catch(function (err) { $('.corps', m.el).innerHTML = '<div class="cf-vide">' + e(err.message) + '</div>'; });
   }
+  function imprimerFacture(f) {
+    var lignes = Array.isArray(f.lignes) ? f.lignes : [];
+    fenetreImpression((f.nature === 'devis' ? 'Devis ' : 'Facture ') + f.numero, '<div class="doc facture">' +
+      enteteDocument({ nom: f.centre_nom, logo_url: f.centre_logo, adresse: f.centre_adresse, ville: f.centre_ville, telephone: f.centre_telephone, email: f.centre_email }) +
+      '<div class="fac-tete"><div><h1>' + (f.nature === 'devis' ? 'DEVIS' : 'FACTURE') + '</h1><div>N° <strong>' + e(f.numero) + '</strong></div><div>Date : ' + e(dateFr(f.date_emission, true)) + '</div>' +
+      (f.date_echeance ? '<div>' + (f.nature === 'devis' ? 'Valable jusqu’au' : 'Échéance') + ' : ' + e(dateFr(f.date_echeance, true)) + '</div>' : '') + '</div>' +
+      '<div class="fac-client"><small>' + (f.nature === 'devis' ? 'Destinataire' : 'Facturé à') + '</small><strong>' + e(f.client_nom) + '</strong>' + (f.contact_nom ? '<div>À l’attention de ' + e(f.contact_nom) + '</div>' : '') +
+      (f.client_adresse ? '<div>' + e(f.client_adresse) + '</div>' : '') + (f.client_rccm ? '<div>RCCM : ' + e(f.client_rccm) + '</div>' : '') + (f.client_telephone ? '<div>' + e(f.client_telephone) + '</div>' : '') + '</div></div>' +
+      '<p><strong>Objet :</strong> ' + e(f.objet) + '</p><table><tr><th>Désignation</th><th>Quantité</th><th>Prix unitaire</th><th>Montant</th></tr>' + lignes.map(function (l) {
+        return '<tr><td>' + e(l.libelle) + '</td><td class="n">' + nombre(l.quantite, 2) + '</td><td class="n">' + argent(l.prix, f.devise) + '</td><td class="n">' + argent(l.montant, f.devise) + '</td></tr>';
+      }).join('') + '<tr class="tot"><td colspan="3">Total</td><td class="n">' + argent(f.total, f.devise) + '</td></tr>' +
+      (f.nature === 'facture' && f.paye > 0 ? '<tr><td colspan="3">Déjà réglé</td><td class="n">' + argent(f.paye, f.devise) + '</td></tr><tr class="tot"><td colspan="3">Reste à payer</td><td class="n">' + argent(f.reste, f.devise) + '</td></tr>' : '') + '</table>' +
+      (f.notes ? '<p style="white-space:pre-line">' + e(f.notes) + '</p>' : '') + '<div class="doc-signature"><div></div><div class="doc-signe">Pour ' + e(f.centre_nom) + '<br><br><br>Signature et cachet</div></div></div>');
+  }
+
+  /* ------------------------------------------------------------------ */
+  /*  Comptes du personnel (accueil, caisse, adjoint)                      */
+  /* ------------------------------------------------------------------ */
+  var ROLES_PERSONNEL = [['secretaire', 'Accueil / secrétariat'], ['comptable', 'Caisse / comptabilité'], ['prefet', 'Adjoint pédagogique']];
+  function libelleRole(r) {
+    var L = { directeur: 'Chef de centre', professeur: voc('coach', 'Coach'), secretaire: 'Accueil', comptable: 'Caisse', prefet: 'Adjoint pédagogique' };
+    return L[r] || r;
+  }
+  function apiRacine(chemin, opts) {
+    return S.appelApi(chemin, opts).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) { var er = new Error(j.message || 'Erreur ' + r.status); er.code = j.code; throw er; } return j; });
+    });
+  }
+  ROUTES.personnel = function () {
+    var z = page('Comptes du personnel', 'L’accueil, la caisse et votre adjoint : chacun son compte, et seulement ce que son rôle permet. Vos ' + voc('coachs', 'coachs').toLowerCase() + ' se gèrent dans la rubrique ' + voc('coachs', 'Coachs') + '.',
+      '<button class="cf-btn principal" data-nouveau>+ Nouveau compte</button>');
+    function charger2() {
+      apiRacine('/utilisateurs').then(function (liste) {
+        liste = (liste || []).filter(function (u) { return (u.roles || []).some(function (r) { return r !== 'professeur'; }); });
+        z.innerHTML = '<div class="cf-encadre">Qui voit quoi ? <strong>Accueil</strong> : apprenants, inscriptions, planning, demandes du site. <strong>Caisse</strong> : encaissements, dépenses, restes à payer. <strong>Adjoint</strong> : la pédagogie (groupes, séances, évaluations, coachs). Les accès fins se règlent dans <a href="#/reglages">Réglages</a>.</div>' +
+          '<div class="cf-carte">' + tableau([
+            { titre: 'Personne', rendu: function (u) { return '<strong>' + e(nomComplet(u)) + '</strong><div class="doux">' + e(u.email || '') + (u.telephone ? ' · ' + e(u.telephone) : '') + '</div>'; } },
+            { titre: 'Rôle', rendu: function (u) { return (u.roles || []).map(function (r) { return '<span class="cf-badge">' + e(libelleRole(r)) + '</span>'; }).join(' '); } },
+            { titre: 'Statut', rendu: function (u) { return u.statut === 'actif' ? '<span class="cf-badge vert">Actif</span>' : '<span class="cf-badge rouge">Désactivé</span>'; } },
+            { titre: '', rendu: function (u) {
+              if ((u.roles || []).indexOf('directeur') !== -1) return '';
+              return '<div class="cf-actions"><button class="cf-btn petit" data-mdp="' + e(u.id) + '">Nouveau mot de passe</button><button class="cf-btn petit' + (u.statut === 'actif' ? ' danger' : '') + '" data-bascule="' + e(u.id) + '" data-statut="' + (u.statut === 'actif' ? 'inactif' : 'actif') + '">' + (u.statut === 'actif' ? 'Désactiver' : 'Réactiver') + '</button></div>';
+            } }
+          ], liste, { videTitre: 'Aucun compte', vide: 'Créez le compte de votre accueil ou de votre caisse.' }) + '</div>';
+        $$('[data-mdp]', z).forEach(function (b) {
+          b.addEventListener('click', function () {
+            b.disabled = true;
+            apiRacine('/utilisateurs/' + b.getAttribute('data-mdp') + '/reinitialiser-mot-de-passe', { method: 'POST', body: {} }).then(function (r) {
+              modale('Nouveau mot de passe', '<p>' + e(r.message) + '</p>' + (r.mot_de_passe_provisoire ? '<div class="cf-code" style="font-size:1.4rem;padding:10px;text-align:center">' + e(r.mot_de_passe_provisoire) + '</div><p class="doux">Transmettez-le de vive voix ou par WhatsApp : il ne sera plus affiché.</p>' : ''));
+            }).catch(echec).then(function () { b.disabled = false; });
+          });
+        });
+        $$('[data-bascule]', z).forEach(function (b) {
+          b.addEventListener('click', function () {
+            apiRacine('/utilisateurs/' + b.getAttribute('data-bascule'), { method: 'PATCH', body: { statut: b.getAttribute('data-statut') } }).then(function () { toast('Compte mis à jour.'); charger2(); }).catch(echec);
+          });
+        });
+      }).catch(function (err) { z.innerHTML = '<div class="cf-vide">' + e(err.message) + '</div>'; });
+    }
+    $('[data-nouveau]').addEventListener('click', function () {
+      modaleFormulaire('Nouveau compte', [
+        { nom: 'prenom', libelle: 'Prénom' }, { nom: 'nom', libelle: 'Nom', requis: true }, { nom: 'email', libelle: 'E-mail (identifiant de connexion)', type: 'email', requis: true },
+        { nom: 'telephone', libelle: 'Téléphone', type: 'tel' }, { nom: 'role', libelle: 'Rôle', type: 'select', vide: false, options: ROLES_PERSONNEL, defaut: 'secretaire', requis: true }
+      ], {}, function (d) {
+        var corps = { nom: d.nom, prenom: d.prenom, email: d.email, telephone: d.telephone, roles: [d.role] };
+        return apiRacine('/utilisateurs', { method: 'POST', body: corps }).then(function (r) {
+          charger2();
+          modale('Compte créé', '<p>Identifiant : <strong>' + e(d.email) + '</strong></p>' + (r.mot_de_passe_provisoire ? '<p>Mot de passe provisoire :</p><div class="cf-code" style="font-size:1.4rem;padding:10px;text-align:center">' + e(r.mot_de_passe_provisoire) + '</div>' : '') +
+            '<p class="doux">À la première connexion sur myardoise.com, la personne choisit son propre mot de passe. Elle arrive directement dans l’espace du centre.</p>' +
+            (d.telephone ? '<a class="cf-btn principal" target="_blank" rel="noopener" href="' + e(lienWhatsApp(d.telephone, 'Bonjour ' + (d.prenom || d.nom) + ', votre compte Ardoise pour ' + etat.ctx.centre.nom + ' est prêt. Identifiant : ' + d.email + (r.mot_de_passe_provisoire ? ' — mot de passe provisoire : ' + r.mot_de_passe_provisoire : '') + ' — https://myardoise.com/connexion.html')) + '">Envoyer par WhatsApp</a>' : ''));
+        });
+      });
+    });
+    charger2();
+  };
 
   /* Le coach dépose sa signature (certificats) depuis son espace. */
   function blocSignatureCoach() {
@@ -2186,7 +2683,7 @@
   /* ------------------------------------------------------------------ */
   /*  Démarrage                                                           */
   /* ------------------------------------------------------------------ */
-  $('.cf-menu-mobile').addEventListener('click', function () { $('#cf-rail').classList.toggle('ouvert'); });
+  brancherDeconnexion();
   api('/contexte').then(function (ctx) {
     etat.ctx = ctx;
     etat.roles = ctx.moi.roles || [];
@@ -2198,6 +2695,7 @@
     $('#cf-chargement-initial').remove();
     window.addEventListener('hashchange', naviguer);
     naviguer();
+    chargerCoque();
   }).catch(function (err) {
     var el = $('#cf-chargement-initial');
     if (err.code === 'pas_un_centre') {

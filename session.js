@@ -733,28 +733,44 @@
   }
 
   /* ==================================================================
-     CENTRE DE FORMATION — LE BON ESPACE, MÊME PAR UN ANCIEN LIEN
+     DEUX ESPACES ÉTANCHES — LES ÉCOLES ET LES CENTRES DE FORMATION
 
-     Un compte de centre de formation n'a rien à faire sur le tableau de
-     bord d'une école (classes, bulletins, notes) : ces écrans attendent une
-     année scolaire qu'un centre n'a pas. Un favori, un lien d'e-mail ou un
-     ancien raccourci l'y mènerait pourtant. On le renvoie vers son espace ;
-     les pages communes (messages, paramètres, profil, abonnement, support,
-     site public, utilisateurs) restent ouvertes.
+     Un centre de formation n'est pas une école : il a son propre espace
+     (centre-formation.html), avec ses menus, ses réglages, son personnel,
+     ses archives. Les écrans des écoles (paramètres d'école, utilisateurs,
+     élèves, bulletins…) lui sont FERMÉS : un favori, un lien d'e-mail ou une
+     adresse tapée à la main le ramène au bon endroit de son espace. Seules
+     les pages réellement communes restent ouvertes, habillées aux couleurs
+     du centre (ui.js) : abonnement, messages, profil, support, services.
+
+     Dans l'autre sens, une école n'entre pas dans l'espace d'un centre.
+     Le serveur applique la même règle (middleware/espace.middleware.js) :
+     ce qui suit n'est qu'une politesse de navigation.
      ================================================================== */
-  var PAGES_ECOLE_SEULEMENT = [
-    'dashboard-directeur.html', 'espace-secretaire.html', 'espace-professeur.html', 'espace-titulaire.html',
-    'annee-scolaire.html', 'cours-classe-titulaire.html', 'eleves.html', 'inscriptions.html', 'orientation.html',
-    'frais-scolaires.html', 'comptabilite.html', 'classes.html', 'cours.html', 'presences.html',
-    'emploi-du-temps.html', 'discipline.html', 'notes.html', 'bulletins.html', 'bulletin-annuel.html',
-    'repechage.html', 'generateur-modeles.html', 'archives.html', 'rapports.html'
-  ];
-  (function redirigerCentre() {
+  var PAGES_COMMUNES_CENTRE = ['centre-formation.html', 'abonnements.html', 'messages.html', 'mon-profil.html',
+    'support.html', 'services.html', 'changer-mot-de-passe.html', 'connexion.html', 'reinitialiser-mot-de-passe.html',
+    'index.html', 'confidentialite.html', 'tarifs.html', ''];
+  var EQUIVALENTS_CENTRE = {
+    'parametres.html': 'reglages', 'utilisateurs.html': 'personnel', 'archives.html': 'archives',
+    'calendrier.html': 'calendrier', 'site-public.html': 'site', 'eleves.html': 'apprenants', 'inscriptions.html': 'demandes',
+    'presences.html': 'seances', 'emploi-du-temps.html': 'seances', 'frais-scolaires.html': 'finances',
+    'comptabilite.html': 'finances', 'rapports.html': 'tableau', 'espace-professeur.html': 'moi', 'notes.html': 'evaluations'
+  };
+  function estCentre(u) { return !!(u && u.type_structure === 'centre_formation'); }
+  (function garderLesEspaces() {
     try {
       var u = utilisateur();
-      if (!u || u.type_structure !== 'centre_formation') return;
-      if (PAGES_ECOLE_SEULEMENT.indexOf(pageCourante()) === -1) return;
-      window.location.replace('centre-formation.html');
+      if (!u || !u.roles || u.roles.indexOf('super_admin') !== -1) return;
+      var page = pageCourante();
+      if (estCentre(u)) {
+        if (PAGES_COMMUNES_CENTRE.indexOf(page) !== -1) return;
+        if (!(page in ROLES_PAR_PAGE) && !EQUIVALENTS_CENTRE[page]) return;
+        window.location.replace('centre-formation.html#/' + (EQUIVALENTS_CENTRE[page] || ''));
+        return;
+      }
+      if (page === 'centre-formation.html' && u.type_structure) {
+        window.location.replace(pageDeRepli(u.roles) || 'dashboard-directeur.html');
+      }
     } catch (e) { /* jamais bloquant */ }
   })();
 
@@ -767,7 +783,8 @@
     peutVoirPage: peutVoirPage,
     pageConnue: pageConnue,
     peutGererAbonnements: peutGererAbonnements,
-    pageDeRepli: pageDeRepli
+    pageDeRepli: pageDeRepli,
+    estCentre: function () { return estCentre(utilisateur()); }
   };
 
 

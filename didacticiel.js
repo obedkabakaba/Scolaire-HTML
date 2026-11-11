@@ -78,7 +78,19 @@
      reprise (§5.1 bis) et la checklist intégrée (§10 bis). Le reste de la
      plateforme est du travail en cours ; on n'y interrompt personne. */
   var ECRANS_ACCUEIL = ['dashboard-directeur.html', 'espace-professeur.html',
-                        'espace-titulaire.html', 'espace-secretaire.html'];
+                        'espace-titulaire.html', 'espace-secretaire.html',
+                        'centre-formation.html#/tableau', 'centre-formation.html#/moi'];
+
+  /* L'écran courant. Dans l'espace d'un centre de formation, une seule page
+     porte tous les écrans (« centre-formation.html#/apprenants ») : l'écran
+     est le fichier PLUS sa route, et il change sans rechargement. */
+  function ecranCourant() {
+    var h = window.location.hash || '';
+    if (h.indexOf('#/') !== 0) return FICHIER;
+    var route = h.slice(2).split(/[?\/&]/)[0];
+    return route ? FICHIER + '#/' + route : FICHIER;
+  }
+  function memeFichier(ecran) { return String(ecran || '').toLowerCase().split('#')[0] === FICHIER; }
 
   function lireStockage(cle) {
     try { return localStorage.getItem(cle) || sessionStorage.getItem(cle); }
@@ -114,8 +126,15 @@
    * voir §12), la constante — déclarée n'importe où sur la page — est
    * toujours visible le moment venu.
    */
+  /** Un centre de formation (et non une école) : ses textes parlent de son métier. */
+  function estUnCentre() {
+    if (etat && etat.ecole && etat.ecole.type_structure) return etat.ecole.type_structure === 'centre_formation';
+    try { return JSON.parse(lireStockage('ardoise_user') || '{}').type_structure === 'centre_formation'; } catch (e) { return false; }
+  }
+
   function baseAPI() {
-    return (typeof API_BASE_URL !== 'undefined' && API_BASE_URL) || window.API_BASE_URL || '';
+    return (typeof API_BASE_URL !== 'undefined' && API_BASE_URL) || window.API_BASE_URL
+      || (window.ArdoiseSession && typeof window.ArdoiseSession.baseAPI === 'function' && window.ArdoiseSession.baseAPI()) || '';
   }
 
   /* ==========================================================================
@@ -152,6 +171,11 @@
    */
   function appeler(chemin, options) {
     var o = options || {};
+    /* Pages sans fonction d'appel propre (espace d'un centre de formation) :
+       on passe par la session commune, qui renouvelle le jeton au besoin. */
+    if (typeof API_BASE_URL === 'undefined' && !window.API_BASE_URL && window.ArdoiseSession && typeof window.ArdoiseSession.appelApi === 'function') {
+      return window.ArdoiseSession.appelApi(chemin, { method: o.method || 'GET', body: o.body || undefined });
+    }
     var entetes = { Authorization: 'Bearer ' + lireStockage('ardoise_access_token') };
     if (o.body) entetes['Content-Type'] = 'application/json';
     return fetch(baseAPI() + chemin, {
@@ -465,6 +489,18 @@
       parent: "Nous allons vous montrer où suivre la scolarité de votre enfant.",
       eleve: "Nous allons vous montrer votre espace."
     };
+    /* Un centre de formation n'a ni élèves, ni cotes, ni bulletins : son
+       accueil parle de SON métier. */
+    var estCentre = (etat.ecole && etat.ecole.type_structure === 'centre_formation') || u.type_structure === 'centre_formation';
+    if (estCentre) {
+      TEXTES = {
+        directeur: "Nous allons configurer votre centre ensemble : vos formations, vos coachs, votre première session, puis vos premiers apprenants et votre premier encaissement.",
+        prefet: "Nous allons parcourir les groupes, le planning, les évaluations et le suivi des coachs.",
+        secretaire: "Nous allons vous montrer l'accueil : inscrire un apprenant, encaisser, répondre aux demandes du site.",
+        comptable: "Nous allons vous montrer la caisse : encaissements, restes à payer, dépenses et bilan.",
+        professeur: "Nous allons vous montrer vos groupes, l'appel, les évaluations et votre classe en ligne."
+      };
+    }
     var texte = TEXTES[u.role_dominant] || "Nous allons vous faire découvrir votre espace.";
 
     // Établissement déjà largement configuré : on ne fait refaire les étapes à
@@ -478,7 +514,9 @@
     // l'intéresse — où trouver ses cours.
     var aDesConfigs = (etat.etapes || []).some(function (e) { return e.type === 'configuration'; });
     if (aDesConfigs && (etat.mode === 'decouverte' || etat.mode === 'termine')) {
-      texte = ecole
+      texte = estCentre
+        ? 'Votre centre est déjà bien configuré. Nous allons simplement vous faire découvrir les principales fonctionnalités.'
+        : ecole
         ? 'Votre établissement est déjà bien configuré. Nous allons simplement vous faire découvrir les principales fonctionnalités.'
         : 'Votre espace est déjà prêt. Nous allons simplement vous faire découvrir les principales fonctionnalités.';
     }
@@ -568,7 +606,7 @@
   function vueParcours() {
     var p = etat.progression || {};
     var titre = etat.mode === 'configuration'
-      ? "Configuration de votre établissement"
+      ? (estUnCentre() ? 'Configuration de votre centre' : "Configuration de votre établissement")
       : 'Prise en main d\'Ardoise';
 
     var pct = (p.pourcentage_configuration !== null && p.pourcentage_configuration !== undefined
@@ -958,7 +996,7 @@
 
     appeler('/assistant/aide-contextuelle', {
       method: 'POST',
-      body: { etape: code || etapeAffichee || null, question: question || null, ecran: FICHIER }
+      body: { etape: code || etapeAffichee || null, question: question || null, ecran: ecranCourant() }
     })
       .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
       .then(function (res) {
@@ -1015,7 +1053,13 @@
     codeGuideAvant = code;
     fermer();
 
-    if (e.ecran && e.ecran.toLowerCase() !== FICHIER) {
+    if (e.ecran && e.ecran.toLowerCase() !== ecranCourant()) {
+      if (memeFichier(e.ecran) && e.ecran.indexOf('#/') !== -1) {
+        // Même page, autre route : on change d'écran sans recharger, puis on éclaire.
+        window.location.hash = e.ecran.slice(e.ecran.indexOf('#'));
+        setTimeout(function () { eclairer(code); }, 650);
+        return;
+      }
       window.location.href = e.ecran;
       return;
     }
@@ -1431,7 +1475,7 @@
     // Conditions de non-affichage : on retire ce qui traîne et on s'arrête.
     var stop = function () { if (existante) existante.remove(); return false; };
 
-    if (ECRANS_ACCUEIL.indexOf(FICHIER) === -1) return stop();
+    if (ECRANS_ACCUEIL.indexOf(ecranCourant()) === -1) return stop();
     if (!etat || ancienMode || !etat.etapes) return stop();
     try { if (sessionStorage.getItem(CLE_CHECKLIST_MASQUEE)) return stop(); } catch (e) {}
 
@@ -1441,7 +1485,8 @@
 
     // Le point d'ancrage : `#lanceur` est présent sur les quatre écrans
     // d'accueil, juste sous l'en-tête. À défaut, le début de `main.contenu`.
-    var ancre = document.getElementById('lanceur');
+    // Espace d'un centre de formation : sous l'en-tête de l'écran.
+    var ancre = document.getElementById('lanceur') || document.querySelector('#cf-principal > .cf-entete');
     var parent = ancre ? ancre.parentNode : document.querySelector('main.contenu');
     if (!parent) return stop();
 
@@ -1457,7 +1502,7 @@
 
     var pct = Math.round((faites.length / comptees.length) * 100);
     var titre = etat.mode === 'configuration'
-      ? 'Configuration de votre établissement'
+      ? (estUnCentre() ? 'Configuration de votre centre' : 'Configuration de votre établissement')
       : "Prise en main d'Ardoise";
 
     // Au-delà de huit lignes la carte cesse d'être lisible d'un coup d'œil et
@@ -1530,7 +1575,7 @@
   var codeGuideAvant = null;
 
   function charger(celebrer) {
-    return appeler('/assistant/onboarding?ecran=' + encodeURIComponent(FICHIER))
+    return appeler('/assistant/onboarding?ecran=' + encodeURIComponent(ecranCourant()))
       .then(function (r) {
         if (r.status === 404) return chargerAncien();      // serveur pas encore à jour
         if (!r.ok) return null;
@@ -1623,7 +1668,12 @@
      script injecté dynamiquement…), on démarre immédiatement.
      ========================================================================== */
 
+  /* Une classe en direct (centre de formation, « #/salle ») : rien ne doit
+     s'ouvrir par-dessus le cours. Le didacticiel attend l'écran suivant. */
+  function enDirect() { return /^#\/salle\b/.test(window.location.hash || ''); }
+
   function demarrer() {
+    if (enDirect()) return;
     charger().then(function (d) {
       if (!d || ancienMode) return;
 
@@ -1637,7 +1687,7 @@
 
       // 2. Un guidage était en cours et nous a amenés ici : on le reprend.
       var g = lireGuidage();
-      if (g && g.ecran && g.ecran.toLowerCase() === FICHIER) {
+      if (g && g.ecran && g.ecran.toLowerCase() === ecranCourant()) {
         codeGuideAvant = g.code;
         eclairer(g.code);
         return;
@@ -1651,6 +1701,21 @@
 
       // 4. Sinon, le mini-tutoriel de l'écran, s'il y en a un et s'il est neuf.
       if (d.tutoriel) afficherTutoriel(d.tutoriel);
+    });
+
+    /* Espace à une seule page (centre de formation) : changer d'écran ne
+       recharge rien. On relit le parcours pour le nouvel écran : checklist
+       du tableau de bord, guidage en cours, mini-tutoriel de l'écran. */
+    window.addEventListener('hashchange', function () {
+      setTimeout(function () {
+        if (enDirect()) return;
+        charger().then(function (d) {
+          if (!d || ancienMode) return;
+          var g = lireGuidage();
+          if (g && g.ecran && g.ecran.toLowerCase() === ecranCourant()) { codeGuideAvant = g.code; eclairer(g.code); return; }
+          if (d.tutoriel) afficherTutoriel(d.tutoriel);
+        });
+      }, 450);
     });
   }
 
@@ -1671,7 +1736,7 @@
   var CLE_REPRISE = 'ardoise_didacticiel_reprise_vue';
 
   function proposerReprise(d) {
-    if (ECRANS_ACCUEIL.indexOf(FICHIER) === -1) return false;
+    if (ECRANS_ACCUEIL.indexOf(ecranCourant()) === -1) return false;
     try { if (sessionStorage.getItem(CLE_REPRISE)) return false; } catch (e) {}
     if (lireGuidage()) return false;
 

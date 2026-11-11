@@ -34,25 +34,49 @@
 .cf-racine * { box-sizing: border-box; }
 body { margin: 0; }
 
-.cf-coque { display: grid; grid-template-columns: 248px 1fr; min-height: 100vh; }
-.cf-rail { background: var(--cf-nav); color: var(--cf-nav-fort); padding: 24px 16px; position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; }
-.cf-marque { font-family: var(--police-titre, 'Fraunces', Georgia, serif); font-size: 1.4rem; font-weight: 600; padding: 0 8px; }
-.cf-marque small { display: block; font-family: var(--police-corps, sans-serif); font-size: .72rem; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--cf-nav-texte); margin-top: 4px; }
-.cf-centre-nom { padding: 10px 10px; border-radius: var(--cf-r-petit); background: var(--cf-nav-actif); font-size: .86rem; line-height: 1.35; }
-.cf-centre-nom strong { display: block; color: var(--cf-nav-fort); }
-.cf-centre-nom span { color: var(--cf-nav-texte); font-size: .78rem; }
-.cf-nav { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
-.cf-nav a { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: var(--cf-r-petit); color: var(--cf-nav-texte); text-decoration: none; font-size: .9rem; }
-.cf-nav a:hover { color: var(--cf-nav-fort); background: rgba(255, 255, 255, .04); }
-.cf-nav a.actif { color: var(--cf-nav-fort); background: var(--cf-nav-actif); font-weight: 600; }
-.cf-nav svg { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+/* ---------------- Rail (ordinateur) ----------------
+   Le rail porte les classes de l'espace des écoles (.barre-laterale,
+   .nav-liste, .nav-item, .nav-icone, .nav-libelle) : la coque du téléphone
+   (mobile.js) et le didacticiel le reconnaissent. Sur ordinateur, son
+   apparence reste celle du centre ; sous 780 px, mobile.css en fait la barre
+   d'onglets et le menu en feuille, comme pour les écoles. */
+.cf-coque { display: grid; grid-template-columns: 252px minmax(0, 1fr); min-height: 100vh; }
+.cf-rail { background: var(--cf-nav); color: var(--cf-nav-fort); padding: 22px 14px 14px; position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; gap: 12px; }
+.cf-rail-contenu { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, .15) transparent; }
+.cf-marque { font-family: var(--police-titre, 'Fraunces', Georgia, serif); font-size: 1.5rem; font-weight: 600; padding: 0 8px; color: var(--cf-nav-fort); letter-spacing: -.01em; }
+.cf-marque small { display: block; font-family: var(--police-corps, sans-serif); font-size: .66rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--cf-nav-texte); margin-top: 4px; }
+.cf-marque .lettre-i { position: relative; display: inline-block; line-height: 1; }
+.cf-marque .point-i-marque { position: absolute; width: .14em; height: .14em; border-radius: 50%; background: var(--cf-accent); left: 50%; top: .14em; transform: translateX(-50%); animation: cf-point 2.8s ease-in-out 1s 1 both; }
+@keyframes cf-point { 0% { transform: translate(-50%, -.9em); opacity: 0; } 30% { transform: translate(-50%, 0); opacity: 1; } 42% { transform: translate(-50%, -.22em); } 54%, 100% { transform: translate(-50%, 0); } }
+html[data-animations="non"] .cf-marque .point-i-marque { animation: none; }
+.cf-centre-nom { display: flex; gap: 10px; align-items: center; padding: 10px; border-radius: var(--cf-r-petit); background: var(--cf-nav-actif); font-size: .86rem; line-height: 1.3; }
+.cf-centre-nom:empty { display: none; }
+.cf-centre-logo { flex: none; width: 38px; height: 38px; border-radius: 10px; object-fit: contain; background: #fff; padding: 3px; }
+.cf-centre-logo.initiale { display: flex; align-items: center; justify-content: center; background: var(--cf-accent); color: #fff; font-weight: 700; font-family: var(--police-titre, Georgia, serif); font-size: 1.1rem; padding: 0; }
+.cf-centre-texte { min-width: 0; }
+.cf-centre-texte strong { display: block; color: var(--cf-nav-fort); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cf-centre-texte span { color: var(--cf-nav-texte); font-size: .76rem; }
+.cf-nav { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; visibility: hidden; }
+.cf-nav-titre { font-size: .64rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--cf-nav-texte); opacity: .7; padding: 12px 10px 4px; }
+.cf-nav-titre:first-child { padding-top: 2px; }
+@media (min-width: 781px) {
+  .cf-nav .nav-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--cf-r-petit); color: var(--cf-nav-texte); text-decoration: none; font-size: .88rem; transition: background .15s, color .15s; }
+  .cf-nav .nav-item:hover { color: var(--cf-nav-fort); background: rgba(255, 255, 255, .05); }
+  .cf-nav .nav-item.actif { color: var(--cf-nav-fort); background: var(--cf-nav-actif); font-weight: 600; box-shadow: inset 3px 0 0 var(--cf-accent); }
+  .cf-nav .nav-icone { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .cf-nav .nav-libelle { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cf-deconnexion { background: none; border: 0; border-top: 1px solid rgba(255, 255, 255, .08); color: var(--cf-nav-texte); text-align: left; padding: 12px 10px 4px; font: inherit; font-size: .85rem; cursor: pointer; }
+  .cf-deconnexion:hover { color: var(--cf-nav-fort); }
+}
 .cf-nav .pastille { margin-left: auto; background: var(--cf-accent); color: #fff; border-radius: 999px; font-size: .7rem; padding: 1px 7px; font-weight: 700; }
-.cf-rail-bas { margin-top: auto; display: flex; flex-direction: column; gap: 4px; border-top: 1px solid rgba(255, 255, 255, .08); padding-top: 12px; }
-.cf-rail-bas a, .cf-rail-bas button { background: none; border: 0; color: var(--cf-nav-texte); text-align: left; padding: 8px 10px; font: inherit; font-size: .85rem; cursor: pointer; text-decoration: none; border-radius: var(--cf-r-petit); }
-.cf-rail-bas a:hover, .cf-rail-bas button:hover { color: var(--cf-nav-fort); }
+.cf-verrou { width: 14px; height: 14px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; opacity: .55; margin-left: auto; }
+.cf-btn.verrou { opacity: .75; }
 
 .cf-principal { padding: 28px 36px 64px; min-width: 0; }
-.cf-entete { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 22px; }
+.cf-entete { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px 16px; flex-wrap: wrap; margin-bottom: 22px; min-width: 0; }
+.cf-entete > div:first-child { flex: 1 1 300px; min-width: 0; }
+.cf-entete h1 { overflow-wrap: anywhere; }
+.cf-entete .cf-actions { flex: 0 1 auto; justify-content: flex-end; max-width: 100%; }
 .cf-entete h1 { font-family: var(--police-titre, Georgia, serif); font-weight: 600; font-size: 1.75rem; margin: 0; }
 .cf-entete p { margin: 4px 0 0; color: var(--cf-doux); font-size: .93rem; }
 .cf-actions { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -204,17 +228,17 @@ body { margin: 0; }
 .cf-semaine .seance.annulee { border-left-color: var(--cf-rouge); opacity: .6; text-decoration: line-through; }
 .cf-semaine .seance.a-cloturer { border-left-color: var(--cf-ambre); background: #FFF8EE; }
 
-.cf-menu-mobile { display: none; }
-@media (max-width: 900px) {
-  .cf-coque { grid-template-columns: 1fr; }
-  .cf-rail { position: sticky; top: 0; height: auto; z-index: 50; padding: 10px 12px; flex-direction: row; align-items: center; gap: 10px; overflow: visible; }
-  .cf-marque small, .cf-centre-nom, .cf-rail-bas { display: none; }
-  .cf-menu-mobile { display: inline-flex; margin-left: auto; background: var(--cf-nav-actif); border: 0; color: var(--cf-nav-fort); padding: 8px 12px; border-radius: 10px; font: inherit; font-size: .88rem; }
-  .cf-nav { display: none; position: absolute; top: 100%; left: 0; right: 0; background: var(--cf-nav); padding: 8px 12px 14px; box-shadow: 0 12px 24px rgba(0, 0, 0, .25); max-height: 75vh; overflow-y: auto; }
-  .cf-rail.ouvert .cf-nav { display: flex; }
-  .cf-principal { padding: 18px 14px 56px; }
+/* ---------------- Téléphone : la coque d'application (mobile.css) ---------------- */
+@media (max-width: 780px) {
+  .cf-coque { display: block; }
+  .cf-nav { visibility: visible; }
+  .cf-nav-titre, .cf-centre-nom, .cf-marque { display: none !important; }
+  .cf-verrou { margin-left: 6px; }
+  .cf-principal { padding: 4px 14px 40px; }
   .cf-form { grid-template-columns: 1fr; }
+  .cf-entete { margin-bottom: 14px; }
   .cf-entete h1 { font-size: 1.4rem; }
+  .cf-entete p { font-size: .86rem; }
 }
 @media print {
   .cf-rail, .cf-actions, .cf-filtres { display: none !important; }
@@ -222,7 +246,7 @@ body { margin: 0; }
 }
 
 /* Bandeaux de session (tableau de bord) */
-.cf-sessions-bandeaux { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.cf-sessions-bandeaux { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(380px, 100%), 1fr)); gap: 12px; margin-bottom: 16px; }
 .cf-session-bandeau { display: flex; align-items: center; gap: 18px; justify-content: space-between; flex-wrap: wrap; background: linear-gradient(135deg, #1F2B24, #2D3E35); color: #F6F2E7; border-radius: var(--cf-r); padding: 16px 18px; box-shadow: var(--cf-ombre); }
 .cf-session-bandeau h3 { margin: 6px 0 2px; font-family: var(--police-titre, Georgia, serif); font-size: 1.2rem; }
 .cf-session-bandeau .doux { color: rgba(246, 242, 231, .7); font-size: .84rem; }
@@ -231,7 +255,7 @@ body { margin: 0; }
 .cf-session-chiffres div { font-size: .74rem; color: rgba(246, 242, 231, .7); text-align: center; }
 .cf-session-chiffres b { display: block; font-size: 1.35rem; color: #F6F2E7; font-variant-numeric: tabular-nums; }
 .cf-session-chiffres small { font-size: .8rem; color: rgba(246, 242, 231, .6); }
-.cf-cartes-sessions { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
+.cf-cartes-sessions { grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr)); }
 
 /* ---------------- Réglages ---------------- */
 .cf-identite { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
@@ -309,11 +333,6 @@ body { margin: 0; }
 .cf-projo { position: fixed; z-index: 1500; border-radius: 12px; box-shadow: 0 0 0 9999px rgba(15, 20, 18, .55); pointer-events: none; transition: all .25s; }
 .cf-bulle-guide { position: fixed; z-index: 1501; width: min(340px, calc(100vw - 20px)); background: #fff; border-radius: 14px; padding: 14px 16px; box-shadow: 0 16px 40px rgba(0, 0, 0, .3); font-size: .9rem; }
 .cf-bulle-guide p { margin: 6px 0 10px; color: var(--cf-doux); line-height: 1.45; }
-.cf-astuce { position: fixed; z-index: 1200; right: 20px; bottom: 80px; max-width: min(360px, calc(100vw - 40px)); background: #1F2B24; color: #F6F2E7; border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; font-size: .86rem; box-shadow: 0 12px 30px rgba(0, 0, 0, .3); }
-.cf-astuce span { color: rgba(246, 242, 231, .8); }
-.cf-astuce .cf-lien { color: #F2C98A; align-self: flex-start; }
-.cf-aide { position: fixed; right: 20px; bottom: 20px; z-index: 1100; width: 46px; height: 46px; border-radius: 50%; border: 0; background: var(--cf-accent); color: #fff; font: 700 1.25rem var(--police-corps, Inter, sans-serif); cursor: pointer; box-shadow: 0 8px 20px rgba(169, 111, 46, .45); }
-.cf-aide:hover { background: var(--cf-accent-fonce); }
 
 @media (max-width: 900px) {
   .cf-salle { grid-template-columns: 1fr; }
@@ -324,8 +343,6 @@ body { margin: 0; }
   .cf-reglages { grid-template-columns: 1fr; }
   .cf-actions .cf-btn { flex: 1 1 auto; justify-content: center; }
   .cf-entete .cf-actions { width: 100%; }
-  .cf-aide { right: 14px; bottom: 14px; width: 42px; height: 42px; }
-  .cf-astuce { right: 12px; left: 12px; bottom: 66px; max-width: none; }
   .cf-sessions-bandeaux { grid-template-columns: 1fr; }
   .cf-session-chiffres { gap: 12px; }
   .cf-table { font-size: .82rem; }
@@ -336,3 +353,27 @@ body { margin: 0; }
 .cf-salle-cote .cf-onglets button { padding: 8px 9px; font-size: .84rem; }
 @media (max-width: 900px) { .cf-agenda .cf-cal-item b { display: inline; } .cf-agenda .cf-cal-item { font-size: .86rem; padding: 7px 9px; } }
 .cf-ca-illus { font-size: 3.2rem; line-height: 1; filter: drop-shadow(0 6px 10px rgba(0,0,0,.3)); }
+
+
+/* ---------------- Offre supérieure ---------------- */
+.cf-offre-requise { max-width: 640px; padding: 28px; }
+.cf-offre-requise h2 { font-family: var(--police-titre, Georgia, serif); font-size: 1.35rem; margin: 10px 0 12px; }
+.cf-offre-requise ul { margin: 0 0 16px; padding-left: 20px; line-height: 1.75; }
+.cf-offre-pastille { display: inline-block; background: #FFF4E2; color: var(--cf-accent-fonce); border: 1px solid #F0D9B5; border-radius: 999px; padding: 4px 12px; font-size: .78rem; font-weight: 700; }
+
+/* ---------------- Photo de l'apprenant, documents ---------------- */
+.cf-photo { position: relative; flex: none; width: 64px; height: 64px; border-radius: 50%; border: 2px solid var(--cf-ligne); background: #ECE8DB; padding: 0; overflow: hidden; cursor: pointer; display: flex; align-items: center; justify-content: center; font: 700 1.5rem var(--police-titre, Georgia, serif); color: var(--cf-doux); }
+.cf-photo.fixe { cursor: default; }
+.cf-photo img { width: 100%; height: 100%; object-fit: cover; }
+.cf-photo i { position: absolute; right: -2px; bottom: -2px; font-style: normal; font-size: .75rem; background: #fff; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 4px rgba(0, 0, 0, .2); }
+.cf-documents { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+.cf-document { text-align: left; border: 1.5px solid var(--cf-ligne); background: #fff; border-radius: 12px; padding: 14px; cursor: pointer; font: inherit; display: flex; flex-direction: column; gap: 4px; }
+.cf-document:hover { border-color: var(--cf-accent); }
+.cf-document span { color: var(--cf-doux); font-size: .82rem; }
+
+/* ---------------- Devis et factures ---------------- */
+.cf-lignes { display: flex; flex-direction: column; gap: 6px; }
+.cf-ligne { display: grid; grid-template-columns: minmax(0, 1fr) 80px 120px 28px; gap: 6px; align-items: center; }
+.cf-ligne input { padding: 8px 10px; border: 1.5px solid var(--cf-ligne); border-radius: var(--cf-r-petit); font: inherit; font-size: .86rem; min-width: 0; }
+.cf-total { text-align: right; font-weight: 700; margin-top: 10px; }
+@media (max-width: 600px) { .cf-ligne { grid-template-columns: 1fr 70px 90px 24px; } }

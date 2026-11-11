@@ -242,6 +242,7 @@ body { overflow-wrap: break-word; }
   }
   .ard-mob-marque .lettre-i { position: relative; }
   .ard-mob-marque .point-i-marque { display: none; }
+  .ard-mob-marque small, .ard-mob-marque .ard-sous-marque { display: none; }
   .ard-mob-titre {
     font-weight: 600; font-size: 17px; letter-spacing: -0.01em;
     opacity: 0; transform: translateY(6px);

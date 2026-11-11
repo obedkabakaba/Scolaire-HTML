@@ -26,7 +26,14 @@
 <!-- Seules les VARIABLES du thème sont chargées : cet espace a sa propre
      coque (préfixe cf-), que les habillages d'école ne doivent pas restyler. -->
 <link rel="stylesheet" href="theme-base.css" />
-<link rel="stylesheet" href="centre-formation.css?v=3" />
+<link rel="stylesheet" href="centre-formation.css?v=5" />
+<!-- La coque « application » du téléphone et le didacticiel : les mêmes que
+     dans l'espace des écoles (barre d'onglets, menu en feuille, accueil,
+     projecteur, checklist). -->
+<link rel="stylesheet" href="mobile.css" />
+<link rel="stylesheet" href="didacticiel.css" />
+<!-- L'animation d'accueil de la première connexion (theme-signatures.js). -->
+<link rel="stylesheet" href="theme-signatures.css" />
 <!-- Session partagée : renouvellement du jeton, rejeu des requêtes expirées,
      écran de blocage d'abonnement. Doit rester AVANT le script de la page. -->
 <script src="session.js"></script>
@@ -34,18 +41,22 @@
 <script src="detourage.js?v=1"></script>
 </head>
 <body class="cf-racine">
-<div class="cf-coque">
-  <nav class="cf-rail" id="cf-rail" aria-label="Menu du centre">
-    <div class="cf-marque">Ardoise<small>Centre de formation</small></div>
-    <div class="cf-centre-nom" id="cf-centre"></div>
-    <button class="cf-menu-mobile" type="button" aria-label="Ouvrir le menu">☰ Menu</button>
-    <ul class="cf-nav" id="cf-nav"></ul>
-    <div class="cf-rail-bas" id="cf-rail-bas"></div>
+<div class="cf-coque mise-en-page">
+  <nav class="cf-rail barre-laterale" id="cf-rail" aria-label="Menu du centre">
+    <div class="cf-rail-contenu">
+      <div class="marque cf-marque">Ardo<span class="lettre-i">ı<span class="point-i-marque"></span></span>se<small>Centre de formation</small></div>
+      <div class="cf-centre-nom" id="cf-centre"></div>
+      <ul class="cf-nav nav-liste" id="cf-nav"></ul>
+    </div>
+    <button class="nav-deconnexion cf-deconnexion" type="button" id="cf-deconnexion">↩ Se déconnecter</button>
   </nav>
   <main class="cf-principal" id="cf-principal">
     <div id="cf-chargement-initial" class="cf-chargement">Ouverture de l’espace du centre…</div>
   </main>
 </div>
-<script src="centre-formation.js?v=5"></script>
+<!-- mobile.js, didacticiel.js et theme-signatures.js lisent le rail : c'est
+     centre-formation.js qui les charge, une fois le rail dessiné. -->
+<script src="centre-formation.js?v=8"></script>
+<script src="notifications-push.js"></script>
 </body>
 </html>

@@ -76,6 +76,14 @@
           ]
         },
         {
+          /* Écoles et centres de formation : deux métiers, deux catalogues d'offres. */
+          type: 'select', nom: 'type_structure', libelle: 'Écoles et centres', valeur: params.type_structure,
+          options: [
+            { valeur: 'ecole', libelle: 'Écoles uniquement' },
+            { valeur: 'centre_formation', libelle: 'Centres de formation uniquement' }
+          ]
+        },
+        {
           type: 'select', nom: 'type_enseignement', libelle: 'Tous les cycles', valeur: params.type_enseignement,
           options: [
             { valeur: 'primaire', libelle: 'Primaire' },
@@ -105,8 +113,9 @@
                                aria-label="Sélectionner ${esc(l.nom)}" ${selectionEcoles.has(l.id) ? 'checked' : ''}>`
             },
             {
-              cle: 'nom', titre: 'École', triable: true,
+              cle: 'nom', titre: 'Établissement', triable: true,
               rendu: (l) => `<strong>${esc(l.nom)}</strong>
+                             ${l.type_structure === 'centre_formation' ? ' ' + ui.badge('centre de formation', 'succes') : ''}
                              ${l.mode_test ? ' ' + ui.badge('test', 'info') : ''}
                              <div class="sa-muet" style="font-size:.76rem">${esc(l.code)}${l.ville ? ' · ' + esc(l.ville) : ''}</div>`
             },
@@ -122,7 +131,8 @@
                 : `${l.plan_nom ? esc(l.plan_nom) : '<span class="sa-muet">aucun</span>'}
                    <div style="margin-top:3px">${ui.badgeStatut(l.statut_abonnement)}</div>`
             },
-            { cle: 'eleves', titre: 'Élèves', classe: 'sa-num', triable: true, rendu: (l) => fmt.nombre(l.nb_eleves) },
+            { cle: 'eleves', titre: 'Élèves / apprenants', classe: 'sa-num', triable: true,
+              rendu: (l) => l.type_structure === 'centre_formation' ? `${fmt.nombre(l.nb_apprenants || 0)} <div class="sa-muet" style="font-size:.72rem">apprenants</div>` : fmt.nombre(l.nb_eleves) },
             { cle: 'utilisateurs', titre: 'Utilisateurs', classe: 'sa-num', triable: true, rendu: (l) => fmt.nombre(l.nb_utilisateurs) },
             { cle: 'stockage', titre: 'Documents', classe: 'sa-num', rendu: (l) => fmt.nombre(l.nb_documents) },
             {

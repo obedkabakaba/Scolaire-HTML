@@ -1593,7 +1593,60 @@
     }
   }
 
+  /* ------------------------------------------------------------------
+     Pages communes vues par un CENTRE DE FORMATION
+
+     Abonnement, messages, profil, support et services sont communs aux
+     écoles et aux centres. Leur rail était celui d'une école (Élèves,
+     Bulletins, Année scolaire…) : un chef de centre qui ouvrait
+     « Abonnement » se retrouvait dans l'espace des écoles. Pour un centre,
+     le rail devient celui de SON espace, et le titre le dit.
+     ------------------------------------------------------------------ */
+  var MENU_CENTRE = [
+    ['tableau', 'Tableau de bord', ['directeur', 'prefet', 'comptable']],
+    ['moi', 'Mon espace coach', ['professeur']],
+    ['apprenants', 'Apprenants', ['directeur', 'prefet', 'secretaire', 'professeur']],
+    ['seances', 'Planning et appel', ['directeur', 'prefet', 'secretaire', 'professeur']],
+    ['calendrier', 'Calendrier', ['directeur', 'prefet', 'secretaire', 'professeur']],
+    ['finances', 'Finances', ['directeur', 'comptable', 'secretaire']],
+    ['archives', 'Archives', ['directeur', 'prefet', 'secretaire']],
+    ['reglages', 'Réglages du centre', ['directeur']],
+    ['personnel', 'Comptes du personnel', ['directeur']]
+  ];
+  var PAGES_CENTRE = [
+    ['messages.html', 'Messages', null], ['abonnements.html', 'Abonnement', ['directeur']],
+    ['services.html#centres-de-formation', 'Services', ['directeur']], ['mon-profil.html', 'Mon profil', null], ['support.html', 'Aide et support', null]
+  ];
+  function habillerPourCentre() {
+    var a = acces();
+    if (!a || typeof a.estCentre !== 'function' || !a.estCentre()) return false;
+    var roles = rolesDeLaSession();
+    var permis = function (r) { return !r || r.some(function (x) { return roles.indexOf(x) !== -1; }); };
+    var liste = document.querySelector('.barre-laterale .nav-liste');
+    if (!liste) return true;
+    var courante = (window.location.pathname.split('/').pop() || '').toLowerCase();
+    var html = MENU_CENTRE.filter(function (m) { return permis(m[2]); }).map(function (m) {
+      return '<li><a class="nav-item" href="centre-formation.html#/' + m[0] + '">' + m[1] + '</a></li>';
+    }).join('') + PAGES_CENTRE.filter(function (m) { return permis(m[2]); }).map(function (m) {
+      return '<li><a class="nav-item' + (courante === m[0] ? ' actif' : '') + '" href="' + m[0] + '">' + m[1] + '</a></li>';
+    }).join('');
+    liste.innerHTML = html;
+    liste.style.visibility = 'visible';
+    var marque = document.querySelector('.barre-laterale .marque');
+    if (marque && !marque.querySelector('.ard-sous-marque')) {
+      var sous = document.createElement('small');
+      sous.className = 'ard-sous-marque';
+      sous.textContent = 'Centre de formation';
+      sous.style.cssText = 'display:block;font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;opacity:.7;margin-top:2px;font-family:var(--police-corps,system-ui)';
+      marque.appendChild(sous);
+    }
+    document.documentElement.classList.add('ard-espace-centre');
+    return true;
+  }
+
   function demarrer() {
+    // Un centre de formation sur une page commune : le rail de SON espace.
+    try { habillerPourCentre(); } catch (e) { /* le rail d'origine reste, filtré par rôle */ }
     // AVANT tout le reste : si la page n'est pas celle de ce rôle, on part.
     // Rien ne sert de dessiner un rail, des icônes et un lanceur sur un écran
     // que l'on quitte dans la milliseconde.

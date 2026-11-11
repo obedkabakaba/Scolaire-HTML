@@ -206,6 +206,10 @@
         limites[cle.slice('limite_'.length)] = (v === '' || v === null || v === undefined) ? null : v;
         delete valeurs[cle];
         toucheLimites = true;
+      } else if (cle.startsWith('fonction_')) {
+        valeurs.fonctionnalites = valeurs.fonctionnalites || {};
+        valeurs.fonctionnalites[cle.slice('fonction_'.length)] = valeurs[cle] === true;
+        delete valeurs[cle];
       } else if (cle.startsWith('espace_')) {
         espaces[cle.slice('espace_'.length)] = valeurs[cle] === true;
         delete valeurs[cle];
@@ -215,6 +219,7 @@
 
     if (toucheLimites) valeurs.limites = limites;
     if (toucheEspaces) valeurs.espaces = espaces;
+    if (valeurs.fonctionnalites && valeurs.type_structure && valeurs.type_structure !== 'centre_formation') delete valeurs.fonctionnalites;
     return valeurs;
   }
 
@@ -247,6 +252,23 @@
      1. Offres
      ====================================================================== */
 
+  /* Les fonctions qui distinguent les offres des CENTRES DE FORMATION
+     (utils/catalogue.utils.js, migration 081). Aucune n'est un plafond
+     d'apprenants : les trois offres en donnent un nombre illimité. */
+  const FONCTIONS_CENTRE = [
+    ['formation_finances', 'Dépenses, paie des coachs et bilan'],
+    ['formation_indicateurs', 'Indicateurs : score des coachs, assiduité et risque d\'abandon'],
+    ['formation_archives', 'Archives : sessions passées, anciens apprenants'],
+    ['formation_exports', 'Exports Excel'],
+    ['formation_documents', 'Attestations, relevés et cartes d\'apprenant'],
+    ['formation_entreprises', 'Clients entreprises : devis et factures'],
+    ['communication_masse', 'Messages groupés'],
+    ['rapports_avances', 'Rapports avancés'],
+    ['whatsapp', 'Assistant et messages WhatsApp'],
+    ['support_prioritaire', 'Support prioritaire']
+  ];
+  const estOffreCentre = (o) => (o && o.type_structure) === 'centre_formation';
+
   /**
    * Les trois prix ne passent QUE par la route tracée `/offres/:id/prix`.
    * Le serveur les refuse ailleurs — silencieusement, faute de mieux : il
@@ -258,6 +280,9 @@
   const CHAMPS_OFFRE = (o = {}) => [
     { cle: 'nom', libelle: "Nom de l'offre", requis: true, valeur: o.nom, exemple: 'Ex. Formule Découverte' },
     { cle: 'code', libelle: 'Code interne', valeur: o.code, longueurMax: 40, aide: 'Repère stable pour les exports. Facultatif.' },
+    { cle: 'type_structure', libelle: 'Pour qui', type: 'liste', valeur: o.type_structure || 'ecole',
+      options: [{ valeur: 'ecole', libelle: 'Écoles' }, { valeur: 'centre_formation', libelle: 'Centres de formation' }],
+      aide: 'Une école ne voit que les offres des écoles, un centre que celles des centres (abonnement, essai, renouvellement).' },
     { cle: 'prix', libelle: 'Prix', type: 'nombre', min: 0, requis: true, valeur: o.prix,
       aide: o.id ? 'Le prix se modifie depuis le bouton dédié : il exige un motif.' : 'Prix facturé sur la durée indiquée.' },
     { cle: 'devise', libelle: 'Devise', valeur: o.devise || 'USD', longueurMax: 8 },
@@ -300,6 +325,13 @@
       texteBascule: 'Ouvert dans cette offre', aide,
       valeur: (o.espaces || {})[code] === true
     })),
+    /* Offres des centres : ce qui est inclus. Une bascule fermée ferme
+       l'écran correspondant chez tous les centres abonnés, immédiatement. */
+    ...(estOffreCentre(o) || !o.id ? FONCTIONS_CENTRE.map(([code, libelle]) => ({
+      cle: `fonction_${code}`, libelle: `Centre — ${libelle}`, type: 'bascule',
+      texteBascule: 'Inclus dans cette offre', valeur: (o.fonctionnalites || {})[code] === true,
+      aide: o.id ? '' : 'Ne compte que pour une offre « Centres de formation ».'
+    })) : []),
     { cle: 'ordre_affichage', libelle: 'Ordre', type: 'nombre', pas: '1', min: 0, valeur: o.ordre_affichage || 0 },
     { cle: 'badge', libelle: 'Badge', valeur: o.badge, longueurMax: 40, exemple: 'Ex. Le plus choisi' },
     { cle: 'description', libelle: 'Description', type: 'zone', valeur: o.description },
@@ -359,8 +391,16 @@
         </section>
 
         <section class="sa-section">
+          <h2 class="sa-section-titre">Écoles</h2>
           <div class="sa-grille-3">
-            ${(d.offres || []).map((o) => carteOffre(o, peut)).join('') || ui.etatVide('Aucune offre', 'Créez votre première offre pour commencer à facturer.')}
+            ${(d.offres || []).filter((o) => !estOffreCentre(o)).map((o) => carteOffre(o, peut)).join('') || ui.etatVide('Aucune offre', 'Créez votre première offre pour commencer à facturer.')}
+          </div>
+        </section>
+        <section class="sa-section">
+          <h2 class="sa-section-titre">Centres de formation</h2>
+          <p class="sa-note">Apprenants illimités dans toutes les offres : elles se distinguent par les fonctions incluses. Les prix des services pour les centres se règlent dans <a href="#/catalogue-services">Catalogue des services</a>.</p>
+          <div class="sa-grille-3">
+            ${(d.offres || []).filter(estOffreCentre).map((o) => carteOffre(o, peut)).join('') || ui.etatVide('Aucune offre de centre', 'Créez une offre et choisissez « Centres de formation ».')}
           </div>
         </section>`;
 
@@ -390,13 +430,15 @@
       </div>
 
       <div class="sa-liste-infos">
-        <div class="sa-ligne-info"><span>Écoles abonnées</span><span>${fmt.nombre(o.abonnements_actifs)}${Number(o.en_essai) ? ` <span class="sa-muet">(${fmt.nombre(o.en_essai)} en essai)</span>` : ''}</span></div>
+        <div class="sa-ligne-info"><span>${estOffreCentre(o) ? 'Centres abonnés' : 'Écoles abonnées'}</span><span>${fmt.nombre(o.abonnements_actifs)}${Number(o.en_essai) ? ` <span class="sa-muet">(${fmt.nombre(o.en_essai)} en essai)</span>` : ''}</span></div>
         <div class="sa-ligne-info"><span>MRR généré</span><span>${argent(o.mrr)}</span></div>
         <div class="sa-ligne-info"><span>ARR généré</span><span>${argent(o.arr)}</span></div>
         <div class="sa-ligne-info"><span>Encaissé à ce jour</span><span>${argent(o.revenu_encaisse)}</span></div>
         <div class="sa-ligne-info"><span>Remises en cours</span><span>${Number(o.remises_mensuelles) ? `<span class="sa-negatif">−${fmt.decimal(o.remises_mensuelles, 2)}</span>` : '<span class="sa-muet">aucune</span>'}${Number(o.tarifs_negocies) ? ` <span class="sa-muet">· ${fmt.nombre(o.tarifs_negocies)} négocié(s)</span>` : ''}</span></div>
-        <div class="sa-ligne-info"><span>Capacité</span><span>Élèves, comptes, classes et archives illimités</span></div>
-        <div class="sa-ligne-info"><span>Espaces métiers</span><span>${resumeEspaces(o.espaces)}</span></div>
+        ${estOffreCentre(o) ? `<div class="sa-ligne-info"><span>Capacité</span><span>Apprenants, coachs et comptes illimités</span></div>
+        <div class="sa-ligne-info"><span>Fonctions incluses</span><span>${FONCTIONS_CENTRE.filter(([c]) => (o.fonctionnalites || {})[c] === true).map(([, l]) => esc(l)).join(' · ') || '<span class="sa-muet">le socle seulement</span>'}</span></div>`
+        : `<div class="sa-ligne-info"><span>Capacité</span><span>Élèves, comptes, classes et archives illimités</span></div>
+        <div class="sa-ligne-info"><span>Espaces métiers</span><span>${resumeEspaces(o.espaces)}</span></div>`}
         <div class="sa-ligne-info"><span>Semestriel / annuel</span><span>${o.prix_semestriel ? argent(o.prix_semestriel) : '<span class="sa-muet">non proposé</span>'} · ${o.prix_annuel ? argent(o.prix_annuel) : '<span class="sa-muet">non proposé</span>'}</span></div>
         <div class="sa-ligne-info"><span>Quota IA mensuel</span><span>${(o.limites && o.limites.ia_quota_mensuel != null) ? `${fmt.nombre(o.limites.ia_quota_mensuel)} générations` : '<span class="sa-muet">illimité</span>'}</span></div>
         <div class="sa-ligne-info"><span>E-mails par mois</span><span>${(o.limites && o.limites.notifications_email_mois != null) ? fmt.nombre(o.limites.notifications_email_mois) : '<span class="sa-muet">illimité</span>'}</span></div>

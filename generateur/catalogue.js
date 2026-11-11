@@ -638,8 +638,13 @@
           // « Ardoise Prime » → « Prime » : le nom de marque est déjà partout
           // sur la page, le répéter dans chaque phrase l'alourdit.
           var court = r.offre.nom.replace(/^Ardoise\s+/i, '');
+          var courtCentre = r.offre_centre && r.offre_centre.nom ? r.offre_centre.nom.replace(/^Ardoise\s+/i, '') : null;
+          var choixCentre = doc.querySelector('input[name="type_structure"][value="centre_formation"]');
           doc.querySelectorAll('[data-offre-demo-nom]').forEach(function (e) {
-            e.textContent = court;
+            // La page bascule entre école et centre : chaque nom est gardé sur l'élément.
+            e.setAttribute('data-nom-ecole', court);
+            if (courtCentre) e.setAttribute('data-nom-centre', courtCentre);
+            e.textContent = choixCentre && choixCentre.checked && courtCentre ? courtCentre : court;
           });
         }
         if (r.ouverte === false) {

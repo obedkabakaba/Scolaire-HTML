@@ -409,16 +409,23 @@
 
   function modaleReglages(d) {
     const r = d.reglages || {};
-    const options = (d.offres_disponibles || []).map((o) =>
+    const offres = d.offres_disponibles || [];
+    const options = offres.filter((o) => o.type_structure !== 'centre_formation').map((o) =>
       '<option value="' + esc(o.code) + '"' + (o.code === r.offre_code ? ' selected' : '')
+      + '>' + esc(o.nom) + '</option>').join('');
+    /* Un centre de formation essaie une offre de CENTRE (jamais une offre d'école). */
+    const optionsCentre = offres.filter((o) => o.type_structure === 'centre_formation').map((o) =>
+      '<option value="' + esc(o.code) + '"' + (o.code === r.offre_code_centre ? ' selected' : '')
       + '>' + esc(o.nom) + '</option>').join('');
 
     modaleSaisie({
       titre: "Réglages de l'essai gratuit",
       sousTitre: 'Ils prennent effet immédiatement, pour toute nouvelle démonstration.',
       libelleValider: 'Enregistrer',
-      contenu: '<label class="sa-champ"><span>Offre servie pendant l\'essai</span>'
+      contenu: '<label class="sa-champ"><span>Offre servie pendant l\'essai — écoles</span>'
         + '<select id="reg-offre">' + options + '</select></label>'
+        + (optionsCentre ? '<label class="sa-champ"><span>Offre servie pendant l\'essai — centres de formation</span>'
+        + '<select id="reg-offre-centre">' + optionsCentre + '</select></label>' : '')
         + '<p class="sa-muet">Les démonstrations déjà en cours conservent l\'offre qui leur a '
         + 'été attribuée.</p>'
         + '<label class="sa-champ"><span>Durée (jours)</span>'
@@ -438,6 +445,7 @@
             method: 'PATCH',
             body: JSON.stringify({
               offre_code: (document.getElementById('reg-offre') || {}).value,
+              ...(document.getElementById('reg-offre-centre') ? { offre_code_centre: document.getElementById('reg-offre-centre').value } : {}),
               duree_jours: Number((document.getElementById('reg-duree') || {}).value),
               preavis_jours: preavis,
               ouverte: (document.getElementById('reg-ouverte') || {}).checked

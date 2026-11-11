@@ -38,16 +38,21 @@
      AVATARS — bustes dessinés, sans aucune image téléchargée
      ===================================================================== */
   var PEAU = { p1: '#f6d3b3', p2: '#e8b48c', p3: '#c98e62', p4: '#a8693f', p5: '#7d4a28', p6: '#573420' };
-  var CHEVEUX = { noir: '#1d1a19', brun: '#4a2e1d', chatain: '#7a5230', roux: '#b5541f', gris: '#a9a9a9', bleu: '#2f5fd0' };
+  var CHEVEUX = { noir: '#1d1a19', brun: '#4a2e1d', chatain: '#7a5230', roux: '#b5541f', blond: '#d6b370', gris: '#a9a9a9', bleu: '#2f5fd0' };
   var HAUT = { bleu: '#2a78d6', rouge: '#d64545', vert: '#2f9e6b', jaune: '#e5b52a', violet: '#7a4fc9', orange: '#eb6834', blanc: '#eeeeee', noir: '#2b2b2b' };
   var CHOIX = {
     peau: { titre: 'Teint', valeurs: ['p1', 'p2', 'p3', 'p4', 'p5', 'p6'] },
-    coiffure: { titre: 'Coiffure', valeurs: ['court', 'afro', 'tresses', 'chignon', 'foulard', 'long', 'rase', 'locks'],
-      noms: { court: 'Courte', afro: 'Afro', tresses: 'Tresses', chignon: 'Chignon', foulard: 'Foulard', long: 'Longue', rase: 'Rasée', locks: 'Locks' } },
-    cheveux: { titre: 'Couleur', valeurs: ['noir', 'brun', 'chatain', 'roux', 'gris', 'bleu'] },
-    haut: { titre: 'Tenue', valeurs: ['bleu', 'rouge', 'vert', 'jaune', 'violet', 'orange', 'blanc', 'noir'] },
-    accessoire: { titre: 'Accessoire', valeurs: ['aucun', 'lunettes', 'casquette', 'noeud', 'boucles', 'casque'],
-      noms: { aucun: 'Aucun', lunettes: 'Lunettes', casquette: 'Casquette', noeud: 'Nœud', boucles: 'Boucles', casque: 'Casque' } }
+    coiffure: { titre: 'Coiffure', valeurs: ['court', 'boucle', 'afro', 'bandeau', 'tresses', 'locks', 'chignon', 'carre', 'long', 'volume', 'degrade', 'rase', 'foulard', 'turban', 'bonnet'],
+      noms: { court: 'Courte', boucle: 'Bouclée', afro: 'Afro', bandeau: 'Afro bandeau', tresses: 'Tresses', locks: 'Locks', chignon: 'Chignon', carre: 'Carré', long: 'Longue',
+        volume: 'Volume', degrade: 'Dégradé', rase: 'Rasée', foulard: 'Foulard', turban: 'Turban', bonnet: 'Bonnet' } },
+    cheveux: { titre: 'Couleur des cheveux', valeurs: ['noir', 'brun', 'chatain', 'roux', 'blond', 'gris', 'bleu'] },
+    tenue: { titre: 'Vêtement', valeurs: ['pull', 'col', 'vneck', 'sweat', 'chemise', 'veste', 'salopette'],
+      noms: { pull: 'T-shirt', col: 'Pull à col', vneck: 'Col en V', sweat: 'Sweat', chemise: 'Chemise', veste: 'Veste', salopette: 'Salopette' } },
+    haut: { titre: 'Couleur du vêtement', valeurs: ['bleu', 'rouge', 'vert', 'jaune', 'violet', 'orange', 'blanc', 'noir'] },
+    humeur: { titre: 'Expression', valeurs: ['sourire', 'joyeux', 'calme', 'clin', 'concentre'],
+      noms: { sourire: 'Sourire', joyeux: 'Joyeux', calme: 'Calme', clin: 'Clin d’œil', concentre: 'Concentré' } },
+    accessoire: { titre: 'Accessoire', valeurs: ['aucun', 'lunettes', 'rondes', 'soleil', 'barbe', 'moustache'],
+      noms: { aucun: 'Aucun', lunettes: 'Lunettes', rondes: 'Lunettes rondes', soleil: 'Lunettes de soleil', barbe: 'Barbe', moustache: 'Moustache' } }
   };
   var COULEURS_CHOIX = { peau: PEAU, cheveux: CHEVEUX, haut: HAUT };
 
@@ -57,8 +62,48 @@
     return '#' + ((1 << 24) + (c(r) << 16) + (c(g) << 8) + c(b)).toString(16).slice(1);
   }
 
+  /* ---- Avatars « Avataaars » (avatars-avataaars.js, embarqué) ---- */
+  var DB_PEAU = { p1: 'ffdbb4', p2: 'edb98a', p3: 'd08b5b', p4: 'ae5d29', p5: '8d5524', p6: '614335' };
+  var DB_COIFFURE = { court: 'shortFlat', boucle: 'shortCurly', afro: 'fro', bandeau: 'froBand', tresses: 'frida', locks: 'dreads', chignon: 'bun', carre: 'bob',
+    long: 'straight01', volume: 'bigHair', degrade: 'shavedSides', rase: 'theCaesar', foulard: 'hijab', turban: 'turban', bonnet: 'winterHat02' };
+  var DB_TENUE = { pull: 'shirtCrewNeck', col: 'collarAndSweater', vneck: 'shirtVNeck', sweat: 'hoodie', chemise: 'blazerAndSweater', veste: 'blazerAndShirt', salopette: 'overall' };
+  var DB_HUMEUR = { sourire: ['smile', 'default', 'defaultNatural'], joyeux: ['twinkle', 'happy', 'raisedExcitedNatural'], calme: ['default', 'default', 'flatNatural'],
+    clin: ['smile', 'wink', 'defaultNatural'], concentre: ['serious', 'squint', 'upDownNatural'] };
+  var DB_ACCESSOIRE = { lunettes: 'prescription02', rondes: 'round', soleil: 'wayfarers' };
+  function dicebear(av, parle) {
+    var h = DB_HUMEUR[av.humeur] || DB_HUMEUR.sourire;
+    var ht = (HAUT[av.haut] || HAUT.bleu).slice(1);
+    var o = {
+      seed: 'ardoise', randomizeIds: true,
+      skinColor: [DB_PEAU[av.peau] || DB_PEAU.p3],
+      top: [DB_COIFFURE[av.coiffure] || 'shortFlat'], topProbability: 100,
+      hairColor: [(CHEVEUX[av.cheveux] || CHEVEUX.noir).slice(1)], hatColor: [teinte('#' + ht, 0.82).slice(1)],
+      clothing: [DB_TENUE[av.tenue] || 'shirtCrewNeck'], clothesColor: [ht],
+      mouth: [parle ? 'disbelief' : h[0]], eyes: [h[1]], eyebrows: [h[2]],
+      accessoriesProbability: DB_ACCESSOIRE[av.accessoire] ? 100 : 0, accessories: [DB_ACCESSOIRE[av.accessoire] || 'prescription02'], accessoriesColor: ['262e33'],
+      facialHairProbability: av.accessoire === 'barbe' || av.accessoire === 'moustache' ? 100 : 0,
+      facialHair: [av.accessoire === 'moustache' ? 'moustacheFancy' : 'beardLight'], facialHairColor: [(CHEVEUX[av.cheveux] || CHEVEUX.noir).slice(1)]
+    };
+    var svg = window.ArdoiseDiceBear(o);
+    return svg.replace(/^<svg[^>]*>/, '').replace(/<\/svg>\s*$/, '');
+  }
+  function avatarDiceBear(av) {
+    var ht = HAUT[av.haut] || HAUT.bleu, pe = '#' + (DB_PEAU[av.peau] || DB_PEAU.p3);
+    // Le bras levé (main levée) passe derrière l'épaule droite ; la bouche qui
+    // parle est une seconde version du visage, montrée en alternance.
+    return '<svg viewBox="0 0 64 64" class="ca-buste ca-buste-db" aria-hidden="true">' +
+      '<g class="ca-bras"><path d="M46 54 q8 -9 8 -30" stroke="' + teinte(ht, 0.92) + '" stroke-width="6.5" stroke-linecap="round" fill="none"/><circle cx="54" cy="21" r="4.6" fill="' + pe + '"/><path d="M51.5 18 v-4 M54 17 v-5 M56.5 18 v-4" stroke="' + pe + '" stroke-width="2.2" stroke-linecap="round"/></g>' +
+      '<svg class="ca-av-repos" x="0" y="0" width="64" height="64" viewBox="0 0 280 280">' + dicebear(av, false) + '</svg>' +
+      '<svg class="ca-bouche ca-av-parle" x="0" y="0" width="64" height="64" viewBox="0 0 280 280">' + dicebear(av, true) + '</svg></svg>';
+  }
+
   /** Buste de face (viewBox 64×64), bras levé et bouche qui parle pilotés en CSS. */
   function avatarSvg(av) {
+    av = av || {};
+    if (window.ArdoiseDiceBear) { try { return avatarDiceBear(av); } catch (x) { /* repli : le dessin d'origine */ } }
+    return avatarDessine(av);
+  }
+  function avatarDessine(av) {
     av = av || {};
     var pe = PEAU[av.peau] || PEAU.p3, ch = CHEVEUX[av.cheveux] || CHEVEUX.noir, ht = HAUT[av.haut] || HAUT.bleu;
     var co = av.coiffure || 'court', ac = av.accessoire || 'aucun';
@@ -128,15 +173,25 @@
     var plante = function (x, y) { return '<g transform="translate(' + x + ' ' + y + ')"><ellipse cx="0" cy="34" rx="26" ry="8" fill="rgba(0,0,0,.18)"/><path d="M-18 6 h36 l-5 28 h-26z" fill="#c4713b"/><g fill="#3f9b5a"><ellipse cx="-12" cy="-8" rx="9" ry="20" transform="rotate(-30 -12 -8)"/><ellipse cx="12" cy="-8" rx="9" ry="20" transform="rotate(30 12 -8)"/><ellipse cx="0" cy="-16" rx="9" ry="22"/></g><g fill="#2f7d47"><ellipse cx="-5" cy="-2" rx="5" ry="14" transform="rotate(-12 -5 -2)"/><ellipse cx="6" cy="-4" rx="5" ry="14" transform="rotate(16 6 -4)"/></g></g>'; };
     var etagere = '<g transform="translate(940 520)"><rect x="-16" y="-120" width="40" height="240" rx="4" fill="#8a6a48"/>' + [-100, -40, 20, 80].map(function (y, i) { return '<rect x="-12" y="' + y + '" width="9" height="34" fill="' + ['#2a78d6', '#d64545', '#e5b52a', '#2f9e6b'][i] + '"/><rect x="-1" y="' + (y + 4) + '" width="8" height="30" fill="' + ['#7a4fc9', '#eb6834', '#2a78d6', '#d64545'][i] + '"/><rect x="9" y="' + (y + 2) + '" width="9" height="32" fill="' + ['#2f9e6b', '#2a78d6', '#7a4fc9', '#e5b52a'][i] + '"/>'; }).join('') + '</g>';
     return '<svg class="ca-decor" viewBox="0 0 1000 800" preserveAspectRatio="none" aria-hidden="true"><defs>' +
-      '<pattern id="ca-parquet" width="120" height="44" patternUnits="userSpaceOnUse"><rect width="120" height="44" fill="#d8b382"/><rect width="120" height="22" fill="#d2ab78"/><path d="M0 22 h120 M0 44 h120 M40 0 v22 M100 0 v22 M10 22 v22 M70 22 v22" stroke="#b98f5d" stroke-width="2"/></pattern>' +
-      '<linearGradient id="ca-mur" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3ead9"/><stop offset="1" stop-color="#e7dbc4"/></linearGradient>' +
+      /* Parquet à longues lames, joints décalés, veinage discret. */
+      '<pattern id="ca-parquet" width="360" height="96" patternUnits="userSpaceOnUse">' +
+        '<rect width="360" height="96" fill="#e2c193"/>' +
+        '<rect y="0" width="360" height="24" fill="#e6c79b"/><rect y="24" width="360" height="24" fill="#dfbd8d"/><rect y="48" width="360" height="24" fill="#e4c497"/><rect y="72" width="360" height="24" fill="#dbb886"/>' +
+        '<path d="M0 24 h360 M0 48 h360 M0 72 h360 M0 96 h360" stroke="#c9a473" stroke-width="1.4" opacity=".8"/>' +
+        '<path d="M110 0 v24 M290 0 v24 M40 24 v24 M220 24 v24 M160 48 v24 M330 48 v24 M70 72 v24 M250 72 v24" stroke="#c39c69" stroke-width="1.4"/>' +
+        '<path d="M8 10 q50 -3 96 2 M130 15 q60 4 150 -1 M50 36 q70 -4 160 1 M240 33 q50 3 110 0 M20 60 q60 3 130 -1 M180 58 q70 -3 140 2 M90 84 q60 4 150 0" stroke="#cfa978" stroke-width="1" fill="none" opacity=".55"/>' +
+      '</pattern>' +
+      '<linearGradient id="ca-mur" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f7efe1"/><stop offset=".72" stop-color="#efe3cc"/><stop offset=".72" stop-color="#cfd9c8"/><stop offset="1" stop-color="#bccab4"/></linearGradient>' +
+      '<radialGradient id="ca-tapis" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#2f6f73" stop-opacity=".30"/><stop offset=".8" stop-color="#2f6f73" stop-opacity=".22"/><stop offset="1" stop-color="#2f6f73" stop-opacity="0"/></radialGradient>' +
       '<radialGradient id="ca-lumiere" cx=".5" cy=".55" r=".7"><stop offset="0" stop-color="#fff" stop-opacity=".18"/><stop offset="1" stop-color="#000" stop-opacity=".12"/></radialGradient></defs>' +
       '<rect width="1000" height="800" fill="url(#ca-parquet)"/>' +
       '<rect width="1000" height="328" fill="url(#ca-mur)"/><rect y="316" width="1000" height="14" fill="#b88a5b"/><rect y="328" width="1000" height="6" fill="rgba(0,0,0,.12)"/>' +
       fenetre + horloge + affiche +
       '<rect x="228" y="6" width="544" height="314" rx="8" fill="#6d4c2f"/><rect x="236" y="12" width="528" height="300" rx="4" fill="#5a3d24"/>' +
       '<rect x="250" y="308" width="500" height="10" rx="3" fill="#8a6a48"/><rect x="300" y="303" width="22" height="6" rx="2" fill="#fff"/><rect x="330" y="304" width="16" height="5" rx="2" fill="#f7d25c"/><rect x="660" y="302" width="40" height="8" rx="2" fill="#3a5f9a"/>' +
-      '<ellipse cx="500" cy="392" rx="190" ry="44" fill="#a33b3b" opacity=".35"/><ellipse cx="500" cy="392" rx="170" ry="34" fill="none" stroke="#f5d48a" stroke-width="3" opacity=".5" stroke-dasharray="10 8"/>' +
+      '<ellipse cx="500" cy="392" rx="200" ry="46" fill="#8f2f3a" opacity=".28"/><ellipse cx="500" cy="392" rx="178" ry="36" fill="none" stroke="#f3d28f" stroke-width="2.5" opacity=".55"/>' +
+      '<rect x="80" y="440" width="840" height="340" rx="40" fill="url(#ca-tapis)"/>' +
+      '<rect x="0" y="330" width="1000" height="40" fill="rgba(0,0,0,.06)"/>' +
       plante(60, 380) + etagere +
       '<path d="M0 800 h30 M130 800 h870" stroke="#6b4f3a" stroke-width="16"/><path d="M0 330 v470 M1000 330 v470" stroke="#6b4f3a" stroke-width="12"/>' +
       '<path d="M30 800 a100 100 0 0 1 100 -100" stroke="#8a6a48" stroke-width="3" fill="none" stroke-dasharray="6 6"/><rect x="38" y="770" width="84" height="22" rx="6" fill="#4b7a5a" opacity=".85"/><text x="80" y="786" text-anchor="middle" font-size="12" fill="#fff" font-family="system-ui,sans-serif">Entrée</text>' +
@@ -1489,7 +1544,7 @@
 
     /* ---------- Choix de l'avatar (et entrée dans la classe) ---------- */
     function choisirAvatar(entree) {
-      var av = Object.assign({ peau: 'p3', coiffure: 'court', cheveux: 'noir', haut: 'bleu', accessoire: 'aucun' }, monAvatar || {});
+      var av = Object.assign({ peau: 'p3', coiffure: 'court', cheveux: 'noir', tenue: 'pull', haut: 'bleu', humeur: 'sourire', accessoire: 'aucun' }, monAvatar || {});
       var m = el('<div class="ca-voile"><div class="ca-carte-avatar" role="dialog" aria-label="Votre avatar"><div class="ca-apercu" data-apercu></div><div class="ca-reglages-avatar">' +
         '<h2>' + (entree ? 'Bienvenue en classe' : 'Votre avatar') + '</h2><p>' + (entree ? 'Choisissez votre avatar : il prendra votre place dans la salle.' + (P.role === 'apprenant' ? ' Votre présence est déjà enregistrée.' : '') : 'Changez de tête quand vous voulez.') + '</p>' +
         Object.keys(CHOIX).map(function (k) {
@@ -1575,5 +1630,15 @@
     return { quitter: quitter, etat: S };
   }
 
-  window.ClasseArdoise = { ouvrir: ouvrir, avatarSvg: avatarSvg, CHOIX: CHOIX };
+  /* Le lot d'avatars (avatars-avataaars.js, ~47 Ko compressé) est chargé avec
+     la classe ; si le réseau le refuse, la classe s'ouvre avec les avatars
+     dessinés d'origine — jamais d'attente au-delà de quatre secondes. */
+  var BASE = (function () { try { return (document.currentScript && document.currentScript.src || '').replace(/classe-ardoise\.js.*$/, ''); } catch (x) { return ''; } })();
+  var avatarsPrets = new Promise(function (ok) {
+    if (window.ArdoiseDiceBear) return ok();
+    var sc = document.createElement('script'); sc.src = BASE + 'avatars-avataaars.js?v=1';
+    sc.onload = ok; sc.onerror = ok; document.head.appendChild(sc);
+    setTimeout(ok, 4000);
+  });
+  window.ClasseArdoise = { ouvrir: function (opts) { return avatarsPrets.then(function () { return ouvrir(opts); }); }, avatarSvg: avatarSvg, CHOIX: CHOIX, avatarsPrets: avatarsPrets };
 })();

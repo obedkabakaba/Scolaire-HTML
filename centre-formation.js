@@ -2380,7 +2380,7 @@
     if (window.ClasseArdoise) return Promise.resolve();
     return new Promise(function (ok, ko) {
       var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'classe-ardoise.css?v=5'; document.head.appendChild(l);
-      var sc = document.createElement('script'); sc.src = 'classe-ardoise.js?v=5'; sc.onload = function () { ok(); }; sc.onerror = function () { ko(new Error('Impossible de charger la classe : vérifiez la connexion.')); };
+      var sc = document.createElement('script'); sc.src = 'classe-ardoise.js?v=6'; sc.onload = function () { ok(); }; sc.onerror = function () { ko(new Error('Impossible de charger la classe : vérifiez la connexion.')); };
       document.head.appendChild(sc);
     });
   }

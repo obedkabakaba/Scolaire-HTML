@@ -581,7 +581,7 @@ window.ArdoiseSiteCentre = function (donnees, o) {
     if (window.ClasseArdoise) return Promise.resolve();
     return new Promise(function (ok, ko) {
       var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = '/classe-ardoise.css?v=5'; document.head.appendChild(l);
-      var sc = document.createElement('script'); sc.src = '/classe-ardoise.js?v=5'; sc.onload = function () { ok(); };
+      var sc = document.createElement('script'); sc.src = '/classe-ardoise.js?v=6'; sc.onload = function () { ok(); };
       sc.onerror = function () { var er = new Error('Impossible de charger la classe.'); er.horsLigne = true; ko(er); };
       document.head.appendChild(sc);
     });

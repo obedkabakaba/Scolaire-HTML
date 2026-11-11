@@ -182,6 +182,12 @@ body { overflow-wrap: break-word; }
   /* La bulle « ? » flottante masquait le contenu : l'aide est dans le menu
      (« Aide & Tutoriels »), comme dans une application. */
   html.ard-mob-coque .ard-di-bouton { display: none !important; }
+  /* … et revient dans la barre haute, à côté de la cloche. */
+  .ard-mob-aide { position: relative; }
+  .ard-mob-aide[hidden] { display: none !important; }
+  .ard-mob-point { position: absolute; top: 7px; right: 7px; width: 9px; height: 9px; border-radius: 50%;
+    background: #FF9F0A; box-shadow: 0 0 0 2px var(--ard-barre-fond, #fff); }
+  .ard-mob-point[hidden] { display: none; }
 
   /* Le bandeau « hors ligne » se pose au-dessus de la barre d'onglets. */
   html.ard-mob-coque #bandeau-hors-ligne {
@@ -737,6 +743,8 @@ body { overflow-wrap: break-word; }
     transition: transform 0.5s var(--ard-ressort), visibility 0s !important;
   }
   html.ard-mob-coque .barre-laterale.ard-tire-en-cours { transition: none !important; }
+  html.ard-mob-coque.ard-mob-sans-transition .barre-laterale,
+  html.ard-mob-coque.ard-mob-sans-transition .ard-mob-voile { transition: none !important; }
   html.ard-mob-coque .barre-laterale::before,
   html.ard-mob-coque .barre-laterale::after { display: none !important; }
 

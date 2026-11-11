@@ -21,17 +21,28 @@
   (function(){var t;
    try{t=localStorage.getItem('ardoise_theme')||sessionStorage.getItem('ardoise_theme');}catch(e){}
    var th=(t&&/^[a-z][a-z0-9-]{1,19}$/.test(t))?t:'ardoise';
-   document.documentElement.setAttribute('data-theme', th);})();
+   document.documentElement.setAttribute('data-theme', th);
+   /* Retour arrière depuis « Mon profil » : la page revient du cache avec
+      l'ancienne apparence. On relit le choix enregistré. */
+   function relire(){var t2;try{t2=localStorage.getItem('ardoise_theme')||sessionStorage.getItem('ardoise_theme');}catch(e){}
+     if(t2&&/^[a-z][a-z0-9-]{1,19}$/.test(t2)&&t2!==document.documentElement.getAttribute('data-theme')){document.documentElement.setAttribute('data-theme',t2);
+       try{document.dispatchEvent(new CustomEvent('ardoise:theme-change',{detail:{theme:t2}}));}catch(e){}}}
+   window.ArdoiseRelireTheme=relire;
+   window.addEventListener('pageshow',function(e){if(e.persisted)relire();});
+   window.addEventListener('storage',function(e){if(e.key==='ardoise_theme')relire();});
+   document.addEventListener('visibilitychange',function(){if(!document.hidden)relire();});})();
 </script>
 <!-- Seules les VARIABLES du thème sont chargées : cet espace a sa propre
      coque (préfixe cf-), que les habillages d'école ne doivent pas restyler. -->
 <link rel="stylesheet" href="theme-base.css" />
-<link rel="stylesheet" href="centre-formation.css?v=5" />
+<!-- Les couleurs de TOUTES les apparences (variables seulement). -->
+<link rel="stylesheet" href="theme-variables.css?v=1" />
+<link rel="stylesheet" href="centre-formation.css?v=7" />
 <!-- La coque « application » du téléphone et le didacticiel : les mêmes que
      dans l'espace des écoles (barre d'onglets, menu en feuille, accueil,
      projecteur, checklist). -->
 <link rel="stylesheet" href="mobile.css" />
-<link rel="stylesheet" href="didacticiel.css" />
+<link rel="stylesheet" href="didacticiel.css?v=2" />
 <!-- L'animation d'accueil de la première connexion (theme-signatures.js). -->
 <link rel="stylesheet" href="theme-signatures.css" />
 <!-- Session partagée : renouvellement du jeton, rejeu des requêtes expirées,
@@ -56,7 +67,7 @@
 </div>
 <!-- mobile.js, didacticiel.js et theme-signatures.js lisent le rail : c'est
      centre-formation.js qui les charge, une fois le rail dessiné. -->
-<script src="centre-formation.js?v=8"></script>
+<script src="centre-formation.js?v=9"></script>
 <script src="notifications-push.js"></script>
 </body>
 </html>

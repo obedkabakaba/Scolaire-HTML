@@ -616,6 +616,106 @@
    * Si l'API ne répond pas, la page garde ses valeurs publiées plutôt que
    * d'afficher un trou : elles sont exactes dans l'immense majorité des cas.
    */
+  /* -----------------------------------------------------------------------
+     L'ÉCRAN DE VÉRIFICATION — ouvert depuis le lien de l'e-mail.
+     Rien d'autre à l'écran : pas de présentation à faire défiler, pas de
+     formulaire. On confirme l'adresse, on montre les identifiants et le
+     bouton « Me connecter », en haut de la page, du premier coup d'œil.
+     ----------------------------------------------------------------------- */
+  function ecranVerification(zone, jeton) {
+    var doc = global.document;
+    var racine = doc.documentElement;
+    racine.classList.add('ard-mode-verification');
+    if (!doc.getElementById('ard-style-verification')) {
+      var st = doc.createElement('style');
+      st.id = 'ard-style-verification';
+      st.textContent =
+        'html.ard-mode-verification main > *:not(.ard-verif-zone){display:none!important}' +
+        'html.ard-mode-verification main{min-height:70vh}' +
+        '.ard-verif-zone{padding:clamp(24px,6vh,64px) 16px 48px}' +
+        '.ard-verif{max-width:520px;margin:0 auto;background:var(--surface,#fff);border:1px solid var(--bordure,#e4dfcf);border-radius:20px;padding:clamp(22px,5vw,36px);box-shadow:0 18px 48px rgba(31,43,36,.10);text-align:center}' +
+        '.ard-verif h1{font-size:clamp(1.5rem,5vw,2rem);margin:10px 0 8px}' +
+        '.ard-verif p{color:var(--texte-att,#6b7269);margin:0 0 14px}' +
+        '.ard-verif .ard-verif-icone{width:64px;height:64px;border-radius:50%;margin:0 auto;display:grid;place-items:center;font-size:30px;background:#eef6ef}' +
+        '.ard-verif.erreur .ard-verif-icone{background:#fbeeec}' +
+        '.ard-verif-ident{text-align:left;background:var(--craie,#f6f2e7);border-radius:14px;padding:14px 16px;margin:16px 0;font-size:.95rem;line-height:1.7}' +
+        '.ard-verif-ident div{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}' +
+        '.ard-verif-ident span{color:var(--texte-att,#6b7269)}' +
+        '.ard-verif-ident strong{word-break:break-all}' +
+        '.ard-verif .bouton{display:block;width:100%;margin-top:6px;font-size:1.05rem;padding:14px 18px}' +
+        '.ard-verif-roue{width:38px;height:38px;margin:8px auto;border:3px solid #e4dfcf;border-top-color:#c98a3e;border-radius:50%;animation:ard-verif-tourne .8s linear infinite}' +
+        '@keyframes ard-verif-tourne{to{transform:rotate(360deg)}}';
+      doc.head.appendChild(st);
+    }
+    var main = doc.querySelector('main') || doc.body;
+    var section = doc.createElement('section');
+    section.className = 'ard-verif-zone';
+    main.insertBefore(section, main.firstChild);
+    zone.hidden = true;
+    global.scrollTo(0, 0);
+    section.innerHTML = '<div class="ard-verif"><div class="ard-verif-roue" aria-hidden="true"></div><h1>Activation de votre espace…</h1><p>Nous confirmons votre adresse e-mail.</p></div>';
+    var carte = section.firstChild;
+
+    function echec(texte) {
+      carte.className = 'ard-verif erreur';
+      carte.innerHTML = '<div class="ard-verif-icone" aria-hidden="true">!</div><h1>Validation impossible</h1>';
+      var p = doc.createElement('p'); p.textContent = texte; carte.appendChild(p);
+      var a = doc.createElement('a'); a.className = 'bouton secondaire'; a.href = '/connexion.html'; a.textContent = 'Aller à la page de connexion';
+      carte.appendChild(a);
+    }
+
+    fetch(API + '/demonstration/verifier', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jeton: jeton })
+    })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+      .then(function (res) {
+        var d = res.d || {};
+        if (!res.ok) { echec(d.message || "La validation n'a pas pu être terminée."); return; }
+        if (d.code !== 'demonstration_activee') {
+          carte.innerHTML = '<div class="ard-verif-icone" aria-hidden="true">✓</div><h1>Adresse confirmée</h1>';
+          var p0 = doc.createElement('p'); p0.textContent = d.message || 'Adresse confirmée.'; carte.appendChild(p0);
+          return;
+        }
+        var email = (d.connexion || {}).email || '';
+        var lien = '/connexion.html?nouveau=1&email=' + encodeURIComponent(email)
+          + (d.code_ecole ? '&code=' + encodeURIComponent(d.code_ecole) : '');
+        carte.innerHTML = '<div class="ard-verif-icone" aria-hidden="true">🎉</div><h1>Votre espace est prêt</h1>';
+        var p1 = doc.createElement('p');
+        p1.textContent = d.message || 'Votre essai Ardoise est actif.';
+        carte.appendChild(p1);
+        var ident = doc.createElement('div');
+        ident.className = 'ard-verif-ident';
+        [['Identifiant', email], [d.code_ecole ? 'Code' : '', d.code_ecole], ['Mot de passe', 'celui que vous avez choisi']].forEach(function (l) {
+          if (!l[0] || !l[1]) return;
+          var ligne = doc.createElement('div');
+          var a = doc.createElement('span'); a.textContent = l[0];
+          var b = doc.createElement('strong'); b.textContent = l[1];
+          ligne.appendChild(a); ligne.appendChild(b); ident.appendChild(ligne);
+        });
+        carte.appendChild(ident);
+        var bouton = doc.createElement('a');
+        bouton.className = 'bouton ocre';
+        bouton.href = lien;
+        bouton.textContent = 'Me connecter maintenant';
+        carte.appendChild(bouton);
+        var note = doc.createElement('p');
+        note.style.cssText = 'margin-top:14px;font-size:.88rem';
+        note.textContent = 'Ces informations vous ont aussi été envoyées par e-mail.';
+        carte.appendChild(note);
+        try { bouton.focus({ preventScroll: true }); } catch (e) { /* ancien navigateur */ }
+      })
+      .catch(function () { echec('Connexion impossible. Ouvrez de nouveau le lien reçu par e-mail.'); })
+      .finally(function () {
+        try {
+          var url = new URL(global.location.href);
+          url.searchParams.delete('verification');
+          global.history.replaceState({}, '', url.pathname + url.search + url.hash);
+        } catch (_) { /* navigateur ancien : sans conséquence */ }
+      });
+  }
+
   function brancherEssai(racine) {
     var doc = racine || document;
     var form = doc.querySelector('[data-formulaire-demo]');
@@ -674,67 +774,7 @@
     var jetonVerification = new URLSearchParams(global.location.search).get('verification');
     if (jetonVerification) {
       form.hidden = true;
-      if (retourVerification) {
-        retourVerification.hidden = false;
-        retourVerification.className = 'message-retour';
-        retourVerification.textContent = 'Validation de votre adresse e-mail…';
-      }
-
-      fetch(API + '/demonstration/verifier', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jeton: jetonVerification })
-      })
-        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
-        .then(function (res) {
-          if (!retourVerification) return;
-          retourVerification.className = 'message-retour ' + (res.ok ? 'succes' : 'erreur');
-          retourVerification.textContent = res.d.message
-            || (res.ok ? 'Adresse confirmée.' : "La validation n'a pas pu être terminée.");
-          if (res.ok && res.d.code === 'demonstration_activee') {
-            // Les identifiants sont affichés ET repris dans le lien : l'école
-            // qui revient plus tard les retrouve aussi dans l'e-mail de
-            // bienvenue. Pas de redirection automatique : un écran qui
-            // disparaît en deux secondes ne laisse pas le temps de les noter.
-            var email = (res.d.connexion || {}).email || '';
-            var lienConnexion = '/connexion.html?nouveau=1&email=' + encodeURIComponent(email)
-              + (res.d.code_ecole ? '&code=' + encodeURIComponent(res.d.code_ecole) : '');
-            var bloc = doc.createElement('p');
-            bloc.style.margin = '10px 0';
-            bloc.appendChild(doc.createTextNode('Vos identifiants : '));
-            var b1 = doc.createElement('strong');
-            b1.textContent = email;
-            bloc.appendChild(b1);
-            bloc.appendChild(doc.createTextNode(' et le mot de passe que vous avez choisi.'));
-            if (res.d.code_ecole) {
-              bloc.appendChild(doc.createElement('br'));
-              bloc.appendChild(doc.createTextNode('Code de votre école : '));
-              var b2 = doc.createElement('strong');
-              b2.textContent = res.d.code_ecole;
-              bloc.appendChild(b2);
-            }
-            bloc.appendChild(doc.createElement('br'));
-            bloc.appendChild(doc.createTextNode('Un e-mail récapitulatif vient de vous être envoyé.'));
-            retourVerification.appendChild(bloc);
-            var bouton = doc.createElement('a');
-            bouton.className = 'bouton ocre';
-            bouton.href = lienConnexion;
-            bouton.textContent = 'Me connecter maintenant';
-            retourVerification.appendChild(bouton);
-          }
-        })
-        .catch(function () {
-          if (!retourVerification) return;
-          retourVerification.className = 'message-retour erreur';
-          retourVerification.textContent = 'Connexion impossible. Ouvrez de nouveau le lien reçu par e-mail.';
-        })
-        .finally(function () {
-          try {
-            var url = new URL(global.location.href);
-            url.searchParams.delete('verification');
-            global.history.replaceState({}, '', url.pathname + url.search + url.hash);
-          } catch (_) { /* navigateur ancien : sans conséquence */ }
-        });
+      if (retourVerification) ecranVerification(retourVerification, jetonVerification);
       return;
     }
 

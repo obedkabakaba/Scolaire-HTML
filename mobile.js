@@ -101,6 +101,7 @@
     retour: '<path d="M15 4.5 7.5 12l7.5 7.5"/>',
     personne: '<circle cx="12" cy="8.5" r="3.6"/><path d="M5 19.5c1.2-3.4 4-5.2 7-5.2s5.8 1.8 7 5.2"/>',
     cloche: '<path d="M6 16.5V11a6 6 0 1 1 12 0v5.5l1.5 2h-15z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/>',
+    aide: '<circle cx="12" cy="12" r="9"/><path d="M9.6 9.2a2.5 2.5 0 1 1 3.2 3.1c-.6.3-.9.8-.9 1.4v.4"/><path d="M12 17.2h.01"/>',
     fermer: '<path d="m6 6 12 12"/><path d="m18 6-12 12"/>',
     loupe: '<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/>'
   };
@@ -410,6 +411,39 @@
     compte.appendChild(avatar(utilisateurComplet()));
     compte.addEventListener('click', function () { basculer(); });
 
+    /* Le didacticiel, à portée de pouce : l'icône « ? » de la barre haute
+       remplace la bulle flottante (masquée sur téléphone). Un point s'y
+       allume tant qu'il reste des étapes à faire. */
+    var aideEl = el('button', 'ard-mob-icone ard-mob-aide');
+    aideEl.type = 'button';
+    aideEl.hidden = true;
+    aideEl.setAttribute('aria-label', 'Aide et tutoriels');
+    aideEl.appendChild(svg(SVG.aide));
+    var pointAide = el('span', 'ard-mob-point');
+    aideEl.appendChild(pointAide);
+    aideEl.addEventListener('click', function () {
+      if (window.ArdoiseDidacticiel && typeof window.ArdoiseDidacticiel.ouvrir === 'function') window.ArdoiseDidacticiel.ouvrir();
+      else if (window.ArdoiseAide && typeof window.ArdoiseAide.ouvrir === 'function') window.ArdoiseAide.ouvrir();
+      else window.location.href = 'support.html';
+    });
+    function suivreDidacticiel() {
+      // Toujours à la même place, sur toutes les pages (sauf la page d'aide).
+      var present = page() !== 'support.html';
+      aideEl.hidden = !present;
+      var bulle = document.querySelector('.ard-di-bouton');
+      var pastille = bulle && bulle.querySelector('.ard-di-pastille');
+      pointAide.hidden = !(pastille && !pastille.hidden && String(pastille.textContent || '').trim() !== '0');
+      return present;
+    }
+    suivreDidacticiel();
+    var aideEnAttente = false;
+    new MutationObserver(function () {
+      if (aideEnAttente) return;
+      aideEnAttente = true;
+      setTimeout(function () { aideEnAttente = false; suivreDidacticiel(); }, 400);
+    }).observe(document.body, { childList: true, subtree: true });
+
+    droite.appendChild(aideEl);
     droite.appendChild(clocheEl);
     droite.appendChild(compte);
 
@@ -421,7 +455,14 @@
     /* Drapeau lu par `mobile.css` : lui seul autorise la feuille à réserver
        la place des barres. Les pages sans barre latérale (site public)
        n'arrivent jamais ici et gardent leur mise en page intacte. */
+    /* Sans transition au moment de la bascule : sinon le menu, encore
+       affiché, glissait sous les yeux de l'utilisateur jusqu'à sa place
+       cachée (le « flash » de la feuille au chargement). */
+    racine.classList.add('ard-mob-sans-transition');
     racine.classList.add('ard-mob-coque');
+    requestAnimationFrame(function () { requestAnimationFrame(function () {
+      setTimeout(function () { racine.classList.remove('ard-mob-sans-transition'); }, 60);
+    }); });
   }
 
   /**
@@ -817,11 +858,39 @@
     return choisis;
   }
 
+  /* LES MÊMES ONGLETS PARTOUT. Chaque page a son propre menu, pas toujours
+     identique (Support, Messages…) : la barre du bas changeait d'une page à
+     l'autre. Les onglets calculés sur l'écran d'ACCUEIL sont mémorisés pour
+     cet utilisateur et repris tels quels sur toutes les autres pages. */
+  function memoriserOnglets(choisis) {
+    var id = '';
+    try { id = (JSON.parse(localStorage.getItem('ardoise_user') || sessionStorage.getItem('ardoise_user') || '{}') || {}).id || ''; } catch (e) { /* rien */ }
+    if (!id) return choisis;
+    var cle = 'ard-onglets:' + id;
+    var courante = page();
+    var surAccueil = FAMILLES[0].pages.indexOf(courante) !== -1;
+    try {
+      if (surAccueil) {
+        localStorage.setItem(cle, JSON.stringify(choisis.map(function (c) {
+          return { href: c.href, page: c.page, libelle: c.libelle, icone: c.icone ? c.icone.outerHTML : '' };
+        })));
+        return choisis;
+      }
+      var memo = JSON.parse(localStorage.getItem(cle) || 'null');
+      if (!Array.isArray(memo) || memo.length < 2) return choisis;
+      return memo.map(function (m) {
+        var icone = null;
+        if (m.icone) { var t = document.createElement('div'); t.innerHTML = m.icone; icone = t.firstElementChild; }
+        return { href: m.href, page: m.page, libelle: m.libelle, icone: icone };
+      });
+    } catch (e) { return choisis; }
+  }
+
   function construireOnglets(nav) {
     if (onglets) return;
     var candidats = candidatsOnglets(nav);
     if (candidats.length < 2) return;
-    var choisis = choisirOnglets(candidats);
+    var choisis = memoriserOnglets(choisirOnglets(candidats));
     var courante = page();
     pagesOnglets = choisis.map(function (c) { return c.page; });
 

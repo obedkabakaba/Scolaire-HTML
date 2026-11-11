@@ -123,6 +123,12 @@
   border-color: var(--ardoise, #1F2B24); font-weight: 600;
 }
 .ard-di-btn-principal:hover { background: var(--ardoise-2, #2A3830); }
+/* Apparences sombres : « ardoise » et « craie » y sont toutes deux foncées —
+   le bouton principal disparaissait. Il prend la couleur d'accent. */
+html:is([data-theme="nuit"], [data-theme="nexus"]) .ard-di-btn-principal {
+  background: var(--ocre, #5FB08C); border-color: var(--ocre, #5FB08C); color: #0E1416;
+}
+html:is([data-theme="nuit"], [data-theme="nexus"]) .ard-di-btn-principal:hover { background: var(--ocre-dark, #4E9877); }
 .ard-di-btn-discret { border-color: transparent; color: var(--texte-att, #6B7269); }
 .ard-di-btn-ia {
   border-color: var(--encre, #3C5A62); color: var(--encre, #3C5A62); font-weight: 600;

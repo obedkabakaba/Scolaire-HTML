@@ -64,15 +64,25 @@
     ferme: 'Clôturé'
   };
 
+  /* Un centre de formation n'a ni bulletins ni élèves : ses sujets parlent
+     de SON métier. */
+  var CENTRE = (function () {
+    try {
+      if (window.ArdoiseAcces && typeof window.ArdoiseAcces.estCentre === 'function') return window.ArdoiseAcces.estCentre();
+      return JSON.parse(localStorage.getItem('ardoise_user') || sessionStorage.getItem('ardoise_user') || '{}').type_structure === 'centre_formation';
+    } catch (e) { return false; }
+  })();
   var MOTIFS = [
     { cle: 'technique', titre: 'Problème technique', aide: 'Une page ne s’ouvre pas, un bouton ne répond plus.' },
     { cle: 'facturation', titre: 'Paiement et abonnement', aide: 'Renouvellement, facture, offre.' },
     { cle: 'compte', titre: 'Compte et accès', aide: 'Connexion, mot de passe, utilisateurs.' },
-    { cle: 'notes', titre: 'Notes et bulletins', aide: 'Saisie, calcul, impression des bulletins.' },
-    { cle: 'donnees', titre: 'Données de l’école', aide: 'Élèves, classes, années scolaires.' },
+    CENTRE ? { cle: 'notes', titre: 'Évaluations et certificats', aide: 'Notes des apprenants, certificats, attestations.' }
+      : { cle: 'notes', titre: 'Notes et bulletins', aide: 'Saisie, calcul, impression des bulletins.' },
+    CENTRE ? { cle: 'donnees', titre: 'Données du centre', aide: 'Apprenants, groupes, sessions, paiements.' }
+      : { cle: 'donnees', titre: 'Données de l’école', aide: 'Élèves, classes, années scolaires.' },
     { cle: 'formation', titre: 'Formation et utilisation', aide: 'Comment réaliser une action dans Ardoise.' },
     { cle: 'autre', titre: 'Autre', aide: 'Une demande qui ne correspond à aucun sujet ci-dessus.' }
-  ];
+  ].filter(Boolean);
 
   var actif = null;
   var motif = null;
@@ -131,8 +141,8 @@
 
   function configurerSelonRole() {
     if (estDirecteur()) {
-      $('libelle-action-tickets').textContent = 'Demandes de l’école';
-      $('titre-liste-tickets').textContent = 'Demandes de l’école';
+      $('libelle-action-tickets').textContent = CENTRE ? 'Demandes du centre' : 'Demandes de l’école';
+      $('titre-liste-tickets').textContent = CENTRE ? 'Demandes du centre' : 'Demandes de l’école';
     }
 
     var lienAbonnements = $('lien-abonnements');

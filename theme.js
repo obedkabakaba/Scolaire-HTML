@@ -173,18 +173,44 @@ window.ARDOISE_THEME_DEFAUT = 'ardoise';
     if (reglages.synchroniserServeur !== false) enregistrerSurServeur(theme);
     return theme;
   }
+  /* La fonction d'appel de la page, ou celle de la session commune : sans ce
+     repli, une apparence choisie sur une page qui n'a pas `appelApi` n'était
+     jamais enregistrée sur le compte, et revenait à l'ancienne ailleurs. */
+  function appelant() {
+    if (typeof appelApi === 'function') return appelApi;
+    if (window.ArdoiseSession && typeof window.ArdoiseSession.appelApi === 'function') return window.ArdoiseSession.appelApi;
+    return null;
+  }
   function enregistrerSurServeur(theme) {
-    if (typeof appelApi !== 'function') return;
-    try { appelApi('/utilisateurs/moi', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ theme: theme }) }); } catch (e) {}
+    var api = appelant(); if (!api) return;
+    try {
+      var dePage = typeof appelApi === 'function' && api === appelApi;
+      var p = dePage ? api('/utilisateurs/moi', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ theme: theme }) })
+        : api('/utilisateurs/moi', { method: 'PATCH', body: { theme: theme } });
+      if (p && p.catch) p.catch(function () {});
+    } catch (e) {}
   }
   function synchroniserDepuisServeur() {
+    var appelApi = appelant();
     if (typeof appelApi !== 'function') return;
     var dejaChoisiIci = false;
     try { dejaChoisiIci = !!(localStorage.getItem(CLE_STOCKAGE) || sessionStorage.getItem(CLE_STOCKAGE)); } catch (e) {}
     if (dejaChoisiIci) return;
     appelApi('/utilisateurs/moi').then(function (r) { return r && r.ok ? r.json() : null; }).then(function (profil) { if (profil && profil.theme) appliquerTheme(normaliser(profil.theme), { synchroniserServeur: false }); }).catch(function () {});
   }
-  window.ArdoiseTheme = { liste: window.ARDOISE_THEMES, actuel: themeActuel, appliquer: appliquerTheme, synchroniser: synchroniserDepuisServeur, dispositionDisponible: dispositionDisponible };
+  /* RETOUR ARRIÈRE : le navigateur restitue la page précédente telle qu'elle
+     était, avec l'ANCIENNE apparence (cache « précédent / suivant »). On relit
+     le choix enregistré à chaque retour, à chaque retour au premier plan de
+     l'application et quand un autre onglet le change. */
+  function resynchroniser() {
+    var stocke = null;
+    try { stocke = localStorage.getItem(CLE_STOCKAGE) || sessionStorage.getItem(CLE_STOCKAGE); } catch (e) {}
+    if (stocke && normaliser(stocke) !== document.documentElement.getAttribute('data-theme')) appliquerTheme(stocke, { synchroniserServeur: false });
+  }
+  window.addEventListener('pageshow', function (e) { if (e.persisted) resynchroniser(); });
+  window.addEventListener('storage', function (e) { if (e.key === CLE_STOCKAGE) resynchroniser(); });
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) resynchroniser(); });
+  window.ArdoiseTheme = { liste: window.ARDOISE_THEMES, actuel: themeActuel, appliquer: appliquerTheme, synchroniser: synchroniserDepuisServeur, dispositionDisponible: dispositionDisponible, resynchroniser: resynchroniser };
   appliquerTheme(themeActuel(), { synchroniserServeur: false });
   synchroniserDepuisServeur();
 })();

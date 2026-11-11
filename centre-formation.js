@@ -367,6 +367,20 @@
         .catch(function () {}).then(function () { S.terminer(); });
     });
   }
+  /* L'apparence choisie sur le compte (Mon profil), si cet appareil n'en a
+     pas encore : sans cela, un centre retrouvait l'apparence par défaut à
+     chaque nouvelle connexion. */
+  function synchroniserApparence() {
+    var local = null;
+    try { local = localStorage.getItem('ardoise_theme') || sessionStorage.getItem('ardoise_theme'); } catch (x) { /* rien */ }
+    if (local) return;
+    S.appelApi('/utilisateurs/moi').then(function (r) { return r && r.ok ? r.json() : null; }).then(function (p) {
+      if (!p || !p.theme || !/^[a-z][a-z0-9-]{1,19}$/.test(p.theme)) return;
+      try { localStorage.setItem('ardoise_theme', p.theme); } catch (x) { /* rien */ }
+      if (window.ArdoiseRelireTheme) window.ArdoiseRelireTheme(); else document.documentElement.setAttribute('data-theme', p.theme);
+    }).catch(function () {});
+  }
+
   /* La coque du téléphone, le didacticiel et l'accueil de première connexion
      lisent le rail : ils ne sont chargés qu'une fois le rail dessiné. */
   function chargerScript(src, attrs) {
@@ -379,8 +393,8 @@
   }
   function chargerCoque() {
     window.ARDOISE_SIGNATURES_ACCUEIL_SEUL = true;
-    chargerScript('didacticiel.js?v=2', { 'data-ecran': 'Centre de formation' })
-      .then(function () { return chargerScript('mobile.js?v=2'); })
+    chargerScript('didacticiel.js?v=3', { 'data-ecran': 'Centre de formation' })
+      .then(function () { return chargerScript('mobile.js?v=3'); })
       .then(function () { return chargerScript('theme-signatures.js?v=2', { 'data-ardoise-signatures': 'oui' }); });
   }
 
@@ -2691,6 +2705,7 @@
       var u = S.utilisateur();
       if (u && u.type_structure !== 'centre_formation') { u.type_structure = 'centre_formation'; S.ecrire('ardoise_user', JSON.stringify(u)); }
     } catch (err) { /* sans conséquence */ }
+    synchroniserApparence();
     dessinerRail();
     $('#cf-chargement-initial').remove();
     window.addEventListener('hashchange', naviguer);

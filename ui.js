@@ -1602,21 +1602,69 @@
      « Abonnement » se retrouvait dans l'espace des écoles. Pour un centre,
      le rail devient celui de SON espace, et le titre le dit.
      ------------------------------------------------------------------ */
+  /* Le MÊME menu que dans l'espace du centre (centre-formation.js : NAV,
+     SECTIONS_NAV, IC) — mêmes entrées, mêmes icônes, même ordre — pour que la
+     barre d'onglets du téléphone ne change pas d'une page à l'autre. */
+  var ICONES_CENTRE = {
+    tableau: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+    moi: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+    sessions: '<path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/><circle cx="18.5" cy="18" r="2.5"/>',
+    calendrier: '<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/><path d="M8 2v4"/><path d="M16 2v4"/><path d="M7 13h2"/><path d="M11 13h2"/><path d="M15 13h2"/><path d="M7 17h2"/><path d="M11 17h2"/>',
+    assistant: '<path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8z"/><path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9z"/>',
+    apprenants: '<path d="M12 4 2 9l10 5 10-5z"/><path d="M6 11.5V17c0 1.5 3 3 6 3s6-1.5 6-3v-5.5"/>',
+    demandes: '<path d="M4 4h16v12H5.2L4 17.5z"/><path d="M8 9h8"/><path d="M8 12h5"/>',
+    certificats: '<circle cx="12" cy="9" r="5"/><path d="m8.5 13.5-1.5 7.5 5-3 5 3-1.5-7.5"/>',
+    archives: '<rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9"/><path d="M10 13h4"/>',
+    groupes: '<circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M16 5a3 3 0 0 1 0 6"/><path d="M18 20a5 5 0 0 0-3-4.6"/>',
+    seances: '<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/><path d="M8 2v4"/><path d="M16 2v4"/><path d="m9 15 2 2 4-4"/>',
+    lecons: '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H19v3H6.5A2.5 2.5 0 0 1 4 20.5z"/><path d="m10 8 4 2.5-4 2.5z"/>',
+    evaluations: '<path d="M4 20h4L18 10a2.8 2.8 0 0 0-4-4L4 16z"/><path d="M13.5 6.5 17.5 10.5"/>',
+    programmes: '<path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3.5 6h.01"/><path d="M3.5 12h.01"/><path d="M3.5 18h.01"/>',
+    coachs: '<path d="M3 20h18"/><rect x="5" y="11" width="3" height="7"/><rect x="10.5" y="7" width="3" height="11"/><rect x="16" y="4" width="3" height="14"/>',
+    finances: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7v10"/><path d="M14.5 9.5A2.5 2.5 0 0 0 12 8.5h-.5a2 2 0 0 0 0 4h1a2 2 0 0 1 0 4H12a2.5 2.5 0 0 1-2.5-1"/>',
+    entreprises: '<rect x="4" y="3" width="10" height="18" rx="1"/><path d="M14 9h5a1 1 0 0 1 1 1v11h-6"/><path d="M8 7h2"/><path d="M8 11h2"/><path d="M8 15h2"/>',
+    site: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18"/><path d="M12 3a15 15 0 0 0 0 18"/>',
+    reglages: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>',
+    personnel: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M17 11l2 2 3.5-3.5"/>',
+    messages: '<path d="M4 5h16v11H8l-4 3.5z"/>',
+    abonnement: '<path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/>',
+    services: '<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/>',
+    profil: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="10" r="3"/><path d="M6.5 18.5a6.5 6.5 0 0 1 11 0"/>',
+    support: '<circle cx="12" cy="12" r="9"/><path d="M9.6 9.2a2.5 2.5 0 1 1 3.2 3.1c-.6.3-.9.8-.9 1.4v.4"/><path d="M12 17.2h.01"/>'
+  };
+  var TOUS = ['directeur', 'prefet', 'secretaire', 'comptable', 'professeur'];
   var MENU_CENTRE = [
     ['tableau', 'Tableau de bord', ['directeur', 'prefet', 'comptable']],
     ['moi', 'Mon espace coach', ['professeur']],
-    ['apprenants', 'Apprenants', ['directeur', 'prefet', 'secretaire', 'professeur']],
+    ['sessions', 'Sessions', ['directeur', 'prefet', 'secretaire', 'comptable']],
+    ['calendrier', 'Calendrier', TOUS],
+    ['assistant', 'Assistant IA', ['directeur', 'prefet', 'secretaire', 'professeur']],
+    ['apprenants', 'Apprenants', TOUS],
+    ['demandes', 'Demandes du site', ['directeur', 'prefet', 'secretaire']],
+    ['certificats', 'Certificats', ['directeur', 'prefet', 'secretaire']],
+    ['archives', 'Archives', TOUS],
+    ['groupes', 'Groupes', TOUS],
     ['seances', 'Planning et appel', ['directeur', 'prefet', 'secretaire', 'professeur']],
-    ['calendrier', 'Calendrier', ['directeur', 'prefet', 'secretaire', 'professeur']],
+    ['lecons', 'Leçons en ligne', ['directeur', 'prefet', 'professeur']],
+    ['evaluations', 'Évaluations', ['directeur', 'prefet', 'secretaire', 'professeur']],
+    ['programmes', 'Programmes', ['directeur', 'prefet']],
+    ['coachs', 'Coachs et KPI', ['directeur', 'prefet']],
     ['finances', 'Finances', ['directeur', 'comptable', 'secretaire']],
-    ['archives', 'Archives', ['directeur', 'prefet', 'secretaire']],
-    ['reglages', 'Réglages du centre', ['directeur']],
+    ['entreprises', 'Clients entreprises', ['directeur', 'comptable', 'secretaire']],
+    ['site', 'Site du centre', ['directeur', 'prefet']],
+    ['reglages', 'Réglages du centre', ['directeur', 'prefet']],
     ['personnel', 'Comptes du personnel', ['directeur']]
   ];
   var PAGES_CENTRE = [
-    ['messages.html', 'Messages', null], ['abonnements.html', 'Abonnement', ['directeur']],
-    ['services.html#centres-de-formation', 'Services', ['directeur']], ['mon-profil.html', 'Mon profil', null], ['support.html', 'Aide et support', null]
+    ['messages.html', 'Messages', 'messages', null], ['abonnements.html', 'Abonnement', 'abonnement', ['directeur']],
+    ['services.html#centres-de-formation', 'Services Ardoise', 'services', ['directeur']], ['mon-profil.html', 'Mon profil', 'profil', null],
+    ['support.html', 'Aide et support', 'support', null]
   ];
+  function lienCentre(href, cle, libelle, actif) {
+    return '<li data-permanent="oui"><a class="nav-item' + (actif ? ' actif' : '') + '" href="' + href + '"' + (actif ? ' aria-current="page"' : '') + '>'
+      + '<svg class="nav-icone" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + (ICONES_CENTRE[cle] || '') + '</svg>'
+      + '<span class="nav-libelle">' + libelle + '</span></a></li>';
+  }
   function habillerPourCentre() {
     var a = acces();
     if (!a || typeof a.estCentre !== 'function' || !a.estCentre()) return false;
@@ -1626,19 +1674,28 @@
     if (!liste) return true;
     var courante = (window.location.pathname.split('/').pop() || '').toLowerCase();
     var html = MENU_CENTRE.filter(function (m) { return permis(m[2]); }).map(function (m) {
-      return '<li><a class="nav-item" href="centre-formation.html#/' + m[0] + '">' + m[1] + '</a></li>';
-    }).join('') + PAGES_CENTRE.filter(function (m) { return permis(m[2]); }).map(function (m) {
-      return '<li><a class="nav-item' + (courante === m[0] ? ' actif' : '') + '" href="' + m[0] + '">' + m[1] + '</a></li>';
+      return lienCentre('centre-formation.html#/' + m[0], m[0], m[1], false);
+    }).join('') + PAGES_CENTRE.filter(function (m) { return permis(m[3]); }).map(function (m) {
+      return lienCentre(m[0], m[2], m[1], courante === m[0].split('#')[0]);
     }).join('');
     liste.innerHTML = html;
+    // Le menu d'un centre est complet et ordonné : pas de « rail réduit ».
+    liste.dataset.reduit = 'oui';
     liste.style.visibility = 'visible';
     var marque = document.querySelector('.barre-laterale .marque');
     if (marque && !marque.querySelector('.ard-sous-marque')) {
       var sous = document.createElement('small');
       sous.className = 'ard-sous-marque';
       sous.textContent = 'Centre de formation';
-      sous.style.cssText = 'display:block;font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;opacity:.7;margin-top:2px;font-family:var(--police-corps,system-ui)';
       marque.appendChild(sous);
+      if (!document.getElementById('ard-style-sous-marque')) {
+        var st = document.createElement('style');
+        st.id = 'ard-style-sous-marque';
+        st.textContent = '.barre-laterale .marque .ard-sous-marque{display:block;font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;opacity:.7;margin-top:2px;font-family:var(--police-corps,system-ui)}'
+          + 'html.ard-espace-centre .barre-laterale .nav-item{display:flex;align-items:center;gap:10px}'
+          + 'html.ard-espace-centre .barre-laterale .nav-icone{width:18px;height:18px;flex:none}';
+        document.head.appendChild(st);
+      }
     }
     document.documentElement.classList.add('ard-espace-centre');
     return true;

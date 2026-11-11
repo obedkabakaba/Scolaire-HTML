@@ -211,7 +211,7 @@
         (o.bandeau || '') +
         '<main class="app-ecran" id="' + (o.idVolet || 'app-volet') + '"></main>' +
         '<nav class="app-onglets" aria-label="Navigation de l’espace">' + bas.map(function (x) {
-          return '<button data-onglet="' + e(x.cle) + '" class="' + (x.cle === o.actif ? 'actif' : '') + '">' + ico(x.ico) + '<span>' + e(x.libelle) + '</span>' + (x.badge ? '<b class="app-badge">' + e(x.badge) + '</b>' : '') + '</button>';
+          return '<button data-onglet="' + e(x.cle) + '" class="' + (x.cle === o.actif ? 'actif' : '') + '"' + (x.cle === o.actif ? ' aria-current="page"' : '') + '>' + ico(x.ico) + '<span>' + e(x.libelle) + '</span>' + (x.badge ? '<b class="app-badge">' + e(x.badge) + '</b>' : '') + '</button>';
         }).join('') +
         '<button data-plus class="' + (dansPlus ? 'actif' : '') + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span>Plus</span>' +
         (autres.some(function (x) { return x.badge; }) ? '<b class="app-badge point"></b>' : '') + '</button></nav></div>';

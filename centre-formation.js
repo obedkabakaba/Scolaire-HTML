@@ -104,7 +104,7 @@
           // Fonction réservée à une offre supérieure : dire laquelle et où la prendre.
           if (corps && corps.code === 'offre_insuffisante') msg += ' Elle est comprise dans les offres Ardoise Envol et Horizon : menu Abonnement (chef de centre).';
           var err = new Error(msg);
-          err.status = r.status; err.code = corps && corps.code; throw err;
+          err.status = r.status; err.code = corps && corps.code; err.donnees = corps || {}; throw err;
         }
         return corps;
       });
@@ -676,7 +676,7 @@
         return '<div class="item"><div class="date">' + e(dateFr(s.date_seance)) + '<br>' + e(heure(s.heure_debut)) + '</div><div><strong>' + e(s.groupe_nom) + '</strong> ' + badgeStatut('statut_seance', s.statut) +
           '<div class="doux" style="font-size:.82rem">' + e(s.theme || 'Thème à préciser') + (s.salle ? ' · ' + e(s.salle) : '') + '</div>' +
           '<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap"><button class="cf-btn petit' + (urgent ? ' principal' : '') + '" data-appel="' + e(s.id) + '">' + (s.statut === 'faite' ? 'Revoir l’appel' : 'Faire l’appel') + '</button>' +
-          (['en_ligne', 'hybride', 'enregistre'].indexOf(s.mode) >= 0 ? '<a class="cf-btn petit principal" href="#/salle?s=' + e(s.id) + '&entrer=1">🎥 Démarrer le cours</a>' : (cfg().en_ligne && cfg().en_ligne.pointage_qr ? '<a class="cf-btn petit" href="#/salle?s=' + e(s.id) + '">▦ QR de présence</a>' : '')) + '</div></div></div>';
+          (['en_ligne', 'hybride', 'enregistre'].indexOf(s.mode) >= 0 ? (s.statut === 'faite' ? '<a class="cf-btn petit" href="#/salle?s=' + e(s.id) + '">Cours terminé · salle</a>' : '<a class="cf-btn petit principal" href="#/salle?s=' + e(s.id) + '&entrer=1">🎥 Démarrer le cours</a>') : (cfg().en_ligne && cfg().en_ligne.pointage_qr ? '<a class="cf-btn petit" href="#/salle?s=' + e(s.id) + '">▦ QR de présence</a>' : '')) + '</div></div></div>';
       }).join('') + '</div>' : '<div class="cf-vide"><strong>Aucune séance planifiée</strong>Le chef de centre planifie les séances de vos groupes.</div>') + '</div>';
       html += '<div><div class="cf-carte"><h2>Mes groupes</h2>' + tableau([
         { titre: 'Groupe', rendu: function (g) { return '<strong>' + e(g.nom) + '</strong><div class="doux">' + e(g.programme_nom || '') + '</div>'; } },
@@ -2458,7 +2458,16 @@
         bec.disabled = true; bec.textContent = 'Ouverture…';
         Promise.all([envoyer('/seances/' + id + '/classe', 'POST', {}), chargerClasseArdoise()]).then(function (r) {
           window.ClasseArdoise.ouvrir({ api: S.baseAPI(), paquet: r[0], quitter: function () { recharger(); } });
-        }).catch(echec).then(function () { bec.disabled = false; bec.textContent = 'Entrer dans la classe'; });
+        }).catch(function (err) {
+          // Ce n'était pas la séance de maintenant : on ouvre la bonne, celle
+          // où les apprenants entrent.
+          if (err.code === 'autre_seance' && err.donnees && err.donnees.seance_id) {
+            toast(err.message);
+            window.location.hash = '#/salle?s=' + err.donnees.seance_id + '&entrer=1';
+            return;
+          }
+          echec(err);
+        }).then(function () { bec.disabled = false; bec.textContent = 'Entrer dans la classe'; });
       });
       dessiner.majPresences = function (nd) { d.presences = nd.presences; if (courant === 'presents') voir('presents'); var b = $('[data-o="presents"]', z); if (b) b.textContent = 'Présents ' + nd.presences.filter(function (p) { return p.statut === 'present' || p.statut === 'retard'; }).length + '/' + nd.presences.length; };
     }

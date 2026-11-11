@@ -1795,6 +1795,15 @@
     if (P.role === 'animateur') S.animateur = MOI;
     voirVue(vueCourante);
     redessinerTout();
+    // Le coach sait tout de suite si ses apprenants peuvent entrer dans CETTE
+    // séance : c'est ce qui manquait quand chacun attendait dans sa salle.
+    var F = P.fenetre_apprenants;
+    if (F && P.role !== 'apprenant') {
+      var avis = F.seance_terminee ? 'Ce cours est marqué terminé : vos apprenants ne peuvent plus y entrer. Ouvrez le cours d’aujourd’hui depuis le planning.'
+        : F.sans_heure ? 'Cette séance n’a pas d’heure : vos apprenants ne la verront pas ouverte. Donnez-lui une heure dans le planning.'
+        : !F.ouverte ? 'Vos apprenants pourront entrer à partir de ' + F.a_partir_de + ' (30 min avant le cours).' : '';
+      if (avis) setTimeout(function () { toast('⚠️ ' + avis, 'alerte', { duree: 20000 }); }, 900);
+    }
     if (monAvatar) {
       // Entrée directe : l'avatar enregistré est repris, la classe s'ouvre.
       entrer();

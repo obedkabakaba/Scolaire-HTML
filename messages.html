@@ -743,14 +743,33 @@
   // ============================================================
   //  Diffusion
   // ============================================================
+  /* CENTRE DE FORMATION : ni classes ni parents — des groupes et leurs
+     apprenants (sans compte : e-mail ou WhatsApp), et l'équipe du centre. */
+  const LIBELLES_ROLE_CENTRE = { directeur: 'Direction', prefet: 'Adjoint pédagogique', secretaire: 'Accueil',
+    comptable: 'Caisse', professeur: 'Coachs' };
+  function adapterAuCentre() {
+    const select = document.getElementById('select-cible');
+    const direction = destinataires.portee === 'centre';
+    const options = [['utilisateurs', 'Une ou plusieurs personnes de l’équipe']];
+    if (direction) options.push(['roles', 'Des rôles (équipe du centre)']);
+    options.push(['apprenants_groupe', 'Les apprenants d’un groupe']);
+    if (direction) options.push(['apprenants_centre', 'Tous les apprenants du centre']);
+    select.innerHTML = options.map(o => `<option value="${o[0]}">${o[1]}</option>`).join('');
+    const label = document.querySelector('label[for="select-classe"]');
+    if (label) label.textContent = 'Groupe';
+  }
+
   async function chargerDestinataires() {
     const r = await appelApi('/communication/destinataires');
     if (!r || !r.ok) return;
     destinataires = await r.json();
+    destinataires.roles = destinataires.roles || [];
+    destinataires.classes = destinataires.classes || [];
+    if (destinataires.centre) adapterAuCentre();
 
     document.getElementById('choix-roles').innerHTML = destinataires.roles.map(r => `
       <button type="button" class="puce-role" data-role="${r.role}">
-        ${echapper(LIBELLES_ROLE[r.role] || r.role)}<span class="compte">${r.nb}</span>
+        ${echapper((destinataires.centre ? LIBELLES_ROLE_CENTRE[r.role] : null) || LIBELLES_ROLE[r.role] || r.role)}<span class="compte">${r.nb}</span>
       </button>
     `).join('') || '<span class="aide">Aucun utilisateur actif.</span>';
 
@@ -765,9 +784,13 @@
       });
     });
 
-    document.getElementById('select-classe').innerHTML = destinataires.classes.length
-      ? destinataires.classes.map(c => `<option value="${c.id}">${echapper(c.nom)}</option>`).join('')
-      : '<option value="">Aucune classe</option>';
+    document.getElementById('select-classe').innerHTML = destinataires.centre
+      ? (destinataires.groupes.length
+        ? destinataires.groupes.map(g => `<option value="${g.id}">${echapper(g.nom)}${g.coach ? ' — ' + echapper(g.coach) : ''}</option>`).join('')
+        : '<option value="">Aucun groupe</option>')
+      : destinataires.classes.length
+        ? destinataires.classes.map(c => `<option value="${c.id}">${echapper(c.nom)}</option>`).join('')
+        : '<option value="">Aucune classe</option>';
 
     majFormulaireCible();
   }
@@ -825,13 +848,13 @@
     document.getElementById('zone-personnes').style.display = type === 'utilisateurs' ? '' : 'none';
     document.getElementById('zone-roles').style.display = type === 'roles' ? '' : 'none';
     document.getElementById('zone-classe').style.display =
-      ['equipe_classe', 'parents_classe'].includes(type) ? '' : 'none';
+      ['equipe_classe', 'parents_classe', 'apprenants_groupe'].includes(type) ? '' : 'none';
 
     // Les parents n'ont pas de compte : le canal interne ne leur parviendrait
     // jamais. On bascule donc sur un canal qui sort de la plateforme, sans
     // choisir à la place de l'expéditeur lequel des deux — c'est lui qui sait
     // si ses familles relèvent leur boîte ou leur téléphone.
-    const versParents = type.startsWith('parents');
+    const versParents = type.startsWith('parents') || type.startsWith('apprenants');
     const interne = document.getElementById('canal-interne');
     const email = document.getElementById('canal-email');
     const whatsapp = document.getElementById('canal-whatsapp');
@@ -841,7 +864,9 @@
       if (!email.checked && !whatsapp.checked) email.checked = true;
     }
     document.getElementById('avertissement-canal').textContent = versParents
-      ? "Les parents n'ayant pas de compte, seuls le courriel et WhatsApp peuvent les atteindre."
+      ? (type.startsWith('apprenants')
+        ? "Les apprenants n'ayant pas de compte, seuls le courriel et WhatsApp peuvent les atteindre."
+        : "Les parents n'ayant pas de compte, seuls le courriel et WhatsApp peuvent les atteindre.")
       : '';
 
     majResumeCible();
@@ -877,6 +902,14 @@
         ? `${classe.nb_parents_email} parent(s) de ${classe.nom} ont une adresse, `
           + `${classe.nb_parents_whatsapp || 0} ont un numéro, sur ${classe.nb_eleves} élève(s).`
         : 'Choisissez une classe.';
+    } else if (type === 'apprenants_groupe') {
+      const g = (destinataires.groupes || []).find(x => x.id === classeId);
+      texte = g
+        ? `${g.nb_email} apprenant(s) de ${g.nom} ont une adresse, ${g.nb_whatsapp} ont un numéro, sur ${g.nb_apprenants}.`
+        : 'Choisissez un groupe.';
+    } else if (type === 'apprenants_centre') {
+      const a = destinataires.apprenants || { nb: 0, nb_email: 0, nb_whatsapp: 0 };
+      texte = `${a.nb_email} apprenant(s) ont une adresse, ${a.nb_whatsapp} ont un numéro, sur ${a.nb} apprenant(s) actif(s).`;
     } else if (type === 'parents_ecole') {
       const avecEmail = destinataires.classes.reduce((a, c) => a + c.nb_parents_email, 0);
       const avecNumero = destinataires.classes.reduce((a, c) => a + (c.nb_parents_whatsapp || 0), 0);
@@ -915,6 +948,7 @@
     if (['equipe_classe', 'parents_classe'].includes(type)) {
       cible.classe_id = document.getElementById('select-classe').value;
     }
+    if (type === 'apprenants_groupe') cible.groupe_id = document.getElementById('select-classe').value;
 
     const r = await appelApi('/communication/envoyer', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },

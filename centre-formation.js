@@ -427,7 +427,7 @@
     Promise.all([api('/tableau-de-bord'), (a('directeur') || a('comptable')) && droit('formation_finances') ? api('/bilan?mois=6').catch(function () { return null; }) : Promise.resolve(null)]).then(function (r) {
       var d = r[0], bilan = r[1], k = d.chiffres, dv = d.devise;
       var evol = k.encaisse_mois_precedent > 0 ? Math.round((k.encaisse_mois - k.encaisse_mois_precedent) / k.encaisse_mois_precedent * 100) : null;
-      var html = (cfg().fonctionnement && cfg().fonctionnement.sessions === false ? '' : banniereSessions(d));
+      var html = carteNotifications() + (cfg().fonctionnement && cfg().fonctionnement.sessions === false ? '' : banniereSessions(d));
       html += '<div class="cf-grille-kpi">' +
         kpi('Apprenants actifs', nombre(k.apprenants_actifs, 0), '+' + k.nouveaux_30j + ' sur 30 jours' + (k.prospects ? ' · ' + k.prospects + ' prospect(s)' : '')) +
         kpi('Groupes en cours', nombre(k.groupes_en_cours, 0), k.groupes_planifies + ' planifié(s) · ' + k.coachs_actifs + ' coach(s)') +
@@ -481,7 +481,7 @@
           return '<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:.84rem"><span>' + e(g.nom) + '</span><span class="doux">' + g.inscrits + (g.capacite ? ' / ' + g.capacite : ' inscrits') + '</span></div>' + (t !== null ? jauge(t, true) : '') + '</div>';
         }).join('') : '<div class="cf-vide">Aucun groupe ouvert.</div>') + '</div></div>';
       }
-      z.innerHTML = html;
+      z.innerHTML = html; brancherNotifications(z);
       $$('[data-appel]', z).forEach(function (bt) { bt.addEventListener('click', function () { ouvrirAppel(bt.getAttribute('data-appel')); }); });
       brancherClic($('[data-risques]', z), d.a_risque, function (x) { ficheApprenant(x.id); });
       brancherBulles(z);
@@ -659,6 +659,18 @@
         kpi('Progression moyenne', k.progression_moyenne === null || k.progression_moyenne === undefined ? '—' : (k.progression_moyenne >= 0 ? '+' : '') + nombre(k.progression_moyenne) + ' pts', 'entre première et dernière évaluation') +
         '</div>';
       if (aCloturer.length) html += '<div class="cf-encadre"><strong>' + aCloturer.length + ' séance(s) à clôturer.</strong> Faites l’appel : c’est ce qui compte vos heures et l’assiduité de vos apprenants.</div>';
+      /* AUJOURD'HUI, en premier : la séance du jour (ou la prochaine), avec les
+         deux gestes du coach — faire l'appel, ouvrir la classe en ligne. */
+      var prochaines = d.seances.filter(function (s) { return s.statut !== 'faite' && s.statut !== 'annulee'; })
+        .sort(function (x, y) { return String(x.date_seance + x.heure_debut).localeCompare(String(y.date_seance + y.heure_debut)); });
+      var duJour = prochaines.filter(function (s) { return String(s.date_seance).slice(0, 10) <= aujourdhui(); });
+      var vedette = duJour.length ? duJour : prochaines.slice(0, 1);
+      var aujourdhuiHtml = '<div class="cf-carte cf-aujourdhui"><h2>' + (duJour.length ? 'Aujourd’hui' : 'Prochaine séance') + '</h2>' + (vedette.length ? vedette.map(function (s) {
+        return '<div class="cf-seance-vedette"><div><strong>' + e(s.groupe_nom) + '</strong><div class="doux">' + e(dateFr(s.date_seance, true)) + ' · ' + e(heure(s.heure_debut)) + (s.salle ? ' · ' + e(s.salle) : '') + '</div>' +
+          (s.theme ? '<div class="doux">' + e(s.theme) + '</div>' : '') + '</div><div class="cf-actions"><button class="cf-btn principal" data-appel="' + e(s.id) + '">✓ Faire l’appel</button>' +
+          '<a class="cf-btn" href="#/salle?s=' + e(s.id) + '">' + (['en_ligne', 'hybride', 'enregistre'].indexOf(s.mode) >= 0 ? '🎥 Classe en ligne' : '▦ QR de présence') + '</a></div></div>';
+      }).join('') : '<div class="cf-vide"><strong>Aucune séance à venir</strong>Le chef de centre planifie les séances de vos groupes.</div>') + '</div>';
+      html = carteNotifications() + aujourdhuiHtml + html;
       html += '<div class="cf-deux"><div class="cf-carte"><h2>Mes séances</h2>' + (d.seances.length ? '<div class="cf-chrono">' + d.seances.map(function (s) {
         var urgent = s.statut !== 'faite' && s.date_seance <= aujourdhui();
         return '<div class="item"><div class="date">' + e(dateFr(s.date_seance)) + '<br>' + e(heure(s.heure_debut)) + '</div><div><strong>' + e(s.groupe_nom) + '</strong> ' + badgeStatut('statut_seance', s.statut) +
@@ -681,6 +693,7 @@
       }).join('') : '<div class="cf-vide">Pas encore d’avis. Les apprenants notent leurs séances depuis leur espace.</div>') + '</div></div></div>';
       z.innerHTML = html;
       $$('[data-appel]', z).forEach(function (b) { b.addEventListener('click', function () { ouvrirAppel(b.getAttribute('data-appel'), ROUTES.moi); }); });
+      brancherNotifications(z);
       $$('[data-televerser]', z).forEach(function (inp) { inp.addEventListener('change', function () { televerserIdentite(inp.getAttribute('data-televerser'), inp); }); });
       if ($('[data-apercu="signature"]', z)) chargerApercuDocument('signature', true);
       brancherClic(z, d.groupes, function (g) { detailGroupe(g.id); });
@@ -699,6 +712,50 @@
     { nom: 'objectif', libelle: 'Objectif de l’apprenant', type: 'textarea', plein: true, lignes: 2, placeholder: 'ex. Réussir un entretien d’embauche en anglais' },
     { nom: 'notes', libelle: 'Notes internes', type: 'textarea', plein: true, lignes: 2 }
   ];
+
+  /* Notifications : la carte « Activer » apparaît tant que la permission
+     n'a été ni donnée ni refusée. La demande part d'un toucher : c'est ce
+     qu'exigent les téléphones (et l'application installée sur iPhone). */
+  function carteNotifications() {
+    try {
+      if (!window.ArdoisePush || !('Notification' in window) || Notification.permission !== 'default') return '';
+    } catch (x) { return ''; }
+    return '<div class="cf-carte cf-notif"><div><strong>🔔 Recevez les alertes du centre sur ce téléphone</strong><div class="doux" style="font-size:.86rem">Paiements, demandes du site, séances sans appel, messages de l’équipe.</div></div><button class="cf-btn principal" data-activer-notif>Activer</button></div>';
+  }
+  function brancherNotifications(z) {
+    var b = $('[data-activer-notif]', z); if (!b) return;
+    b.addEventListener('click', function () {
+      b.disabled = true;
+      Promise.resolve(window.ArdoisePush.activer()).then(function () {
+        var carte = b.closest('.cf-notif'); if (carte) carte.style.display = 'none';
+        toast(Notification.permission === 'granted' ? 'Notifications activées.' : 'Notifications non autorisées : vous pourrez les activer dans « Mon profil ».', Notification.permission !== 'granted');
+      }).catch(function () { b.disabled = false; });
+    });
+  }
+
+  /* Sur téléphone (coque native), une liste d'application plutôt qu'un
+     tableau à faire défiler de côté : avatar, nom, ce qui compte, chevron. */
+  function surTelephone() {
+    var h = document.documentElement.classList;
+    return h.contains('ard-mob-coque') || (h.contains('ard-appareil-mobile') && window.matchMedia('(max-width: 780px)').matches);
+  }
+  function avatarApprenant(x) {
+    var ini = ((x.prenom || '').charAt(0) + (x.nom || '').charAt(0)).toUpperCase() || '?';
+    var teintes = ['#C98A3E', '#3C7A5A', '#3C5A8A', '#8A3C6E', '#6E5A3C', '#2F7F86'];
+    var t = teintes[(String(x.nom || '').length + String(x.prenom || '').length) % teintes.length];
+    return urlSure(x.photo_url) ? '<img class="cf-av" src="' + e(x.photo_url) + '" alt="">' : '<span class="cf-av" style="background:' + t + '">' + e(ini) + '</span>';
+  }
+  function listeApprenantsMobile(liste, total) {
+    if (!liste.length) return '<div class="cf-vide"><strong>' + (total ? 'Aucun résultat' : 'Aucun apprenant') + '</strong>' + (total ? 'Modifiez la recherche.' : 'Inscrivez votre premier apprenant.') + '</div>';
+    return '<div class="cf-liste-app">' + liste.map(function (x) {
+      var ind = x.indicateurs || {}, r = ind.risque && ind.risque.niveau;
+      var droite = ind.solde > 0 ? '<span class="cf-montant-du">' + argent(ind.solde) + '</span>' : '<span class="cf-a-jour">À jour</span>';
+      return '<button type="button" class="cf-ligne-app" data-ouvrir-apprenant="' + e(x.id) + '">' + avatarApprenant(x) +
+        '<span class="cf-ligne-texte"><strong>' + e(nomComplet(x)) + (r === 'eleve' ? ' <i class="cf-point rouge" title="Risque d’abandon élevé"></i>' : r === 'moyen' ? ' <i class="cf-point ambre"></i>' : '') + '</strong>' +
+        '<small>' + e(x.matricule) + (x.groupes ? ' · ' + e(x.groupes) : '') + (ind.taux_presence !== null && ind.taux_presence !== undefined ? ' · présence ' + pct(ind.taux_presence) : '') + '</small></span>' +
+        '<span class="cf-ligne-droite">' + droite + '</span><span class="cf-chevron" aria-hidden="true">›</span></button>';
+    }).join('') + '</div>';
+  }
 
   /* La liste des apprenants : avec leurs indicateurs (Envol, Horizon), ou la
      liste simple, solde compris (Tremplin). Même forme dans les deux cas. */
@@ -728,6 +785,11 @@
         return (!q || [x.nom, x.prenom, x.matricule, x.telephone].join(' ').toLowerCase().indexOf(q) !== -1) && (!r || x.indicateurs.risque.niveau === r);
       });
       var zone = $('[data-liste]', z);
+      if (surTelephone()) {
+        zone.innerHTML = listeApprenantsMobile(liste, donnees.length);
+        $$('[data-ouvrir-apprenant]', zone).forEach(function (b) { b.addEventListener('click', function () { ficheApprenant(b.getAttribute('data-ouvrir-apprenant')); }); });
+        return;
+      }
       zone.innerHTML = '<div class="cf-carte">' + tableau([
         { titre: 'Apprenant', rendu: function (x) { return '<strong>' + e(nomComplet(x)) + '</strong><div class="doux">' + e(x.matricule) + (x.groupes ? ' · ' + e(x.groupes) : '') + '</div>'; } },
         { titre: 'Niveau', rendu: function (x) { return e(x.niveau_actuel || x.niveau_initial || '—'); } },
@@ -1042,7 +1104,8 @@
       { nom: 'nom', libelle: 'Nom du groupe', requis: true, placeholder: 'ex. B1 — Soir — Janvier' },
       { nom: 'session_id', libelle: 'Session', type: 'select', vide: '— Hors session —', options: (sessions || []).filter(function (s) { return s.statut !== 'cloturee'; }).map(function (s) { return [s.id, s.nom]; }) },
       { nom: 'programme_id', libelle: 'Programme', type: 'select', options: programmes.map(function (p) { return [p.id, p.nom]; }) },
-      { nom: 'coach_id', libelle: 'Coach', type: 'select', options: coachs.map(function (c) { return [c.id, nomComplet(c)]; }) },
+      { nom: 'coach_id', libelle: 'Coach', type: 'select', options: coachs.map(function (c) { return [c.id, nomComplet(c)]; }),
+        aide: coachs.length ? '' : 'Aucun coach : ajoutez-en un dans « Coachs », ou activez « Je donne aussi des cours » dans Réglages.' },
       { nom: 'capacite', libelle: 'Places', type: 'nombre', pas: 1 },
       { nom: 'date_debut', libelle: 'Début', type: 'date' }, { nom: 'date_fin', libelle: 'Fin', type: 'date' },
       { nom: 'horaire', libelle: 'Horaire', placeholder: 'ex. Lun, Mer, Ven — 17h30 à 19h' }, { nom: 'salle', libelle: 'Salle' },
@@ -1080,6 +1143,40 @@
     lister(true);
   };
 
+  /* Inscrire plusieurs apprenants dans un groupe, en une fois : on coche,
+     on valide. Le tarif est celui du programme du groupe. */
+  function inscrireDansGroupe(g, membres, apres) {
+    var deja = {}; (membres || []).forEach(function (x) { deja[x.id] = true; });
+    var m = modale('Inscrire dans ' + g.nom, '<div class="cf-chargement">Chargement…</div>', { large: true,
+      pied: '<button class="cf-btn" data-fermer>Annuler</button><button class="cf-btn principal" data-valider-membres disabled>Inscrire</button>' });
+    api('/apprenants').then(function (liste) {
+      var dispo = liste.filter(function (x) { return !deja[x.id] && (x.statut === 'actif' || x.statut === 'prospect'); });
+      $('.corps', m.el).innerHTML = '<div class="cf-filtres"><input type="search" placeholder="Rechercher un apprenant…" data-q style="flex:1"></div>' +
+        (dispo.length ? '<div class="cf-coches">' + dispo.map(function (x) {
+          return '<label class="cf-coche" data-texte="' + e((nomComplet(x) + ' ' + x.matricule + ' ' + (x.telephone || '')).toLowerCase()) + '"><input type="checkbox" value="' + e(x.id) + '"><span><strong>' + e(nomComplet(x)) + '</strong><small>' + e(x.matricule) + (x.groupes ? ' · ' + e(x.groupes) : ' · sans groupe') + '</small></span></label>';
+        }).join('') + '</div>' : '<div class="cf-vide"><strong>Tous les apprenants sont déjà dans ce groupe</strong>Créez un nouvel apprenant depuis « Apprenants ».</div>');
+      var bouton = $('[data-valider-membres]', m.el);
+      function compter() { var n = $$('.cf-coche input:checked', m.el).length; bouton.disabled = !n; bouton.textContent = n ? 'Inscrire ' + n + ' apprenant' + (n > 1 ? 's' : '') : 'Inscrire'; }
+      $$('.cf-coche input', m.el).forEach(function (c) { c.addEventListener('change', compter); });
+      var q = $('[data-q]', m.el); if (q) q.addEventListener('input', function () {
+        var t = q.value.trim().toLowerCase();
+        $$('.cf-coche', m.el).forEach(function (l) { l.style.display = !t || l.getAttribute('data-texte').indexOf(t) !== -1 ? '' : 'none'; });
+      });
+      bouton.addEventListener('click', function () {
+        var ids = $$('.cf-coche input:checked', m.el).map(function (c) { return c.value; });
+        bouton.disabled = true; bouton.textContent = 'Inscription…';
+        var ok = 0, erreurs = [];
+        ids.reduce(function (p, idA) {
+          return p.then(function () { return envoyer('/inscriptions', 'POST', { apprenant_id: idA, groupe_id: g.id }).then(function () { ok++; }).catch(function (err) { erreurs.push(err.message); }); });
+        }, Promise.resolve()).then(function () {
+          oublier('groupes', 'apprenants');
+          toast(ok + ' apprenant(s) inscrit(s)' + (erreurs.length ? ' — ' + erreurs.length + ' refus : ' + erreurs[0] : '.'), !!erreurs.length && !ok);
+          m.fermer(); if (apres) apres();
+        });
+      });
+    }).catch(function (err) { $('.corps', m.el).innerHTML = '<div class="cf-vide">' + e(err.message) + '</div>'; });
+  }
+
   function planifier(g, apres) {
     var champs = [
       { nom: 'date_debut', libelle: 'Du', type: 'date', requis: true }, { nom: 'date_fin', libelle: 'Au', type: 'date', requis: true },
@@ -1103,10 +1200,12 @@
         '<div class="cf-actions" style="margin-bottom:12px">' + (gere ? '<button class="cf-btn petit" data-modifier>Modifier</button>' : '') + (planifie ? '<button class="cf-btn petit" data-planifier>Planifier des séances</button>' : '') +
         (unDe('directeur', 'prefet', 'professeur') ? '<button class="cf-btn petit" data-seance>+ Séance</button>' : '') +
         '<button class="cf-btn petit" data-evaluer>Saisir une évaluation</button>' + (urlSure(g.lien_visio) ? '<a class="cf-btn petit" target="_blank" rel="noopener" href="' + e(g.lien_visio) + '">Lien visio</a>' : '') +
+        (unDe('directeur', 'prefet', 'secretaire') ? '<button class="cf-btn petit principal" data-ajouter-membres>+ Inscrire des apprenants</button>' : '') +
         '<button class="cf-btn petit" data-wa>Message au groupe</button>' + boutonOffre('formation_documents', 'Cartes d’apprenants', 'data-cartes') + boutonOffre('formation_exports', '⬇ Excel', 'data-export-groupe') + '</div>';
       html += '<div class="cf-onglets"><button class="actif" data-o="membres">Membres (' + d.membres.filter(function (x) { return x.statut_inscription === 'active'; }).length + ')</button><button data-o="seances">Séances (' + d.seances.length + ')</button></div><div data-volet></div>';
       $('.corps', m.el).innerHTML = html;
       var bca = $('[data-cartes]', m.el); if (bca) bca.addEventListener('click', function () { imprimerCartesGroupe(id); });
+      var bam = $('[data-ajouter-membres]', m.el); if (bam) bam.addEventListener('click', function () { m.fermer(); inscrireDansGroupe(g, d.membres, function () { detailGroupe(id); }); });
       var bex = $('[data-export-groupe]', m.el); if (bex) bex.addEventListener('click', function () { menuExports(null, null, id); });
       brancherVerrous(m.el);
       function voir(o) {
@@ -1950,6 +2049,11 @@
           return '<div class="cf-identite-bloc"><div class="cf-identite-apercu damier" data-apercu="' + t + '">' + (t === 'logo' && urlSure(etat.ctx.centre.logo_url) ? '<img src="' + e(etat.ctx.centre.logo_url) + '" alt="">' : '<span class="doux">Aucun</span>') + '</div>' +
             '<strong>' + titres[t] + '</strong><div class="doux" style="font-size:.78rem">' + aides[t] + '</div>' + (chef ? '<label class="cf-btn petit" style="margin-top:6px">Choisir une image<input type="file" accept="image/*" hidden data-televerser="' + t + '"></label>' : '') + '</div>';
         }).join('') + '</div></div>';
+      if (chef) {
+        var enseigne = a('professeur');
+        html += '<div class="cf-carte" data-cf-enseigner><h2>Vous donnez aussi des cours&nbsp;?</h2><p class="doux" style="margin:-4px 0 12px;font-size:.86rem">Activé, vous apparaissez parmi les ' + e(voc('coachs', 'coachs').toLowerCase()) + ' : on peut vous attribuer un groupe, vous faites l’appel, vous ouvrez la classe en ligne et vous avez votre espace coach — sans rien perdre de la direction du centre.</p>' +
+          '<label class="cf-interrupteur"><input type="checkbox" data-enseigner' + (enseigne ? ' checked' : '') + '><span class="cf-curseur"></span><span><strong>Je donne aussi des cours</strong><small>' + (enseigne ? 'Activé : « Mon espace coach » est dans votre menu.' : 'Désactivé') + '</small></span></label></div>';
+      }
       html += SECTIONS_REGLAGES.map(function (sec) {
         return '<div class="cf-carte"><h2>' + e(sec[1]) + '</h2><p class="doux" style="margin:-4px 0 12px;font-size:.86rem">' + e(sec[2]) + '</p><div class="cf-reglages">' + sec[3].map(function (ch) {
           var val = (c[sec[0]] || {})[ch[0]], nom = sec[0] + '.' + ch[0], dis = chef ? '' : ' disabled';
@@ -1962,6 +2066,15 @@
       html += '<div class="cf-encadre">Devise, taux de change USD/FC, adresse et téléphone du centre : <a href="parametres.html">Paramètres généraux</a>. Comptes de l’accueil et de la caisse : <a href="#/personnel">Comptes du personnel</a>.</div>';
       z.innerHTML = html;
       chargerApercuDocument('cachet'); chargerApercuDocument('signature');
+      var cEns = $('[data-enseigner]', z);
+      if (cEns) cEns.addEventListener('change', function () {
+        cEns.disabled = true;
+        envoyer('/moi/enseigner', 'POST', { actif: cEns.checked }).then(function (r) {
+          toast(r.message);
+          // Le rôle de coach entre dans la session : on la renouvelle, puis on recharge.
+          return Promise.resolve(S.rafraichir ? S.rafraichir() : null).then(function () { window.location.reload(); });
+        }).catch(function (err) { cEns.checked = !cEns.checked; cEns.disabled = false; echec(err); });
+      });
       $$('[data-televerser]', z).forEach(function (inp) { inp.addEventListener('change', function () { televerserIdentite(inp.getAttribute('data-televerser'), inp); }); });
       var be = $('[data-enregistrer]');
       if (be) be.addEventListener('click', function () {

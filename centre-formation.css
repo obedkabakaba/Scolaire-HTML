@@ -416,3 +416,34 @@ html:not(.ard-mob-coque) .cf-deconnexion:hover { color: var(--cf-nav-fort); }
   .cf-kpi { padding: 12px; }
   .cf-kpi .valeur { font-size: 1.35rem; }
 }
+
+/* ---------------- Liste d'apprenants (téléphone) ---------------- */
+.cf-liste-app { background: var(--cf-carte); border: 1px solid var(--cf-ligne); border-radius: 16px; overflow: hidden; }
+.cf-ligne-app { display: flex; align-items: center; gap: 12px; width: 100%; padding: 11px 12px; background: none; border: 0; border-bottom: 1px solid var(--cf-ligne);
+  text-align: left; font: inherit; color: var(--cf-encre); cursor: pointer; }
+.cf-ligne-app:last-child { border-bottom: 0; }
+.cf-ligne-app:active { background: var(--cf-nav-actif, rgba(0,0,0,.05)); }
+.cf-av { flex: none; width: 42px; height: 42px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+  color: #fff; font-weight: 700; font-size: .9rem; object-fit: cover; }
+.cf-ligne-texte { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.cf-ligne-texte strong { font-size: .95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cf-ligne-texte small { color: var(--cf-doux); font-size: .78rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cf-ligne-droite { flex: none; font-size: .82rem; font-weight: 600; }
+.cf-montant-du { color: var(--cf-rouge); }
+.cf-a-jour { color: var(--cf-vert); }
+.cf-chevron { flex: none; color: var(--cf-doux); font-size: 1.3rem; line-height: 1; opacity: .6; }
+.cf-point { display: inline-block; width: 8px; height: 8px; border-radius: 50%; vertical-align: middle; }
+.cf-point.rouge { background: var(--cf-rouge); } .cf-point.ambre { background: var(--cf-ambre); }
+
+/* ---------------- Espace coach : aujourd'hui ---------------- */
+.cf-aujourdhui { border-color: var(--cf-accent); }
+.cf-seance-vedette { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 0; border-top: 1px solid var(--cf-ligne); }
+.cf-seance-vedette:first-of-type { border-top: 0; }
+
+/* ---------------- Inscrire dans un groupe ---------------- */
+.cf-coches { display: flex; flex-direction: column; gap: 6px; max-height: 55vh; overflow-y: auto; }
+.cf-coche { display: flex; gap: 10px; align-items: center; padding: 10px; border: 1px solid var(--cf-ligne); border-radius: 10px; background: var(--cf-surface); cursor: pointer; }
+.cf-coche input { width: 20px; height: 20px; accent-color: var(--cf-accent); }
+.cf-coche span { display: flex; flex-direction: column; }
+.cf-coche small { color: var(--cf-doux); font-size: .78rem; }
+.cf-notif { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; border-color: var(--cf-accent); }

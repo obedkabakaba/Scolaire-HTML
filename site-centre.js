@@ -49,7 +49,7 @@ window.ArdoiseSiteCentre = function (donnees, o) {
     var menu = RUBRIQUES.map(function (r) { return '<a href="' + lien(r[0]) + '" data-page="' + r[0] + '">' + e(r[1]) + '</a>'; }).join('');
     var tiroir = RUBRIQUES.map(function (r) { return '<a class="lien" href="' + lien(r[0]) + '" data-page="' + r[0] + '">' + e(r[1]) + '<span>›</span></a>'; }).join('') +
       '<div class="actions"><a class="bouton plein" href="#/apprenant">' + ico('cadenas') + 'Espace apprenant</a>' +
-      (ec.telephone ? '<a class="bouton contour plein" href="' + e(o.tel(ec.telephone)) + '">' + ico('telephone') + 'Appeler le centre</a>' : '') + '</div>';
+      (ec.telephone ? '<a class="bouton contour plein" href="' + e(o.tel(ec.telephone)) + '">' + ico('telephone') + 'Appeler le centre</a>' : '') + '<a class="bouton contour plein" href="#" data-installer-app>📲 Installer l’application</a></div>';
     $('#site').innerHTML = haut + '<header class="entete" id="entete"><div class="contenant">' + marque +
       '<nav class="menu" aria-label="Menu principal">' + menu + '</nav><a class="bouton bouton-entete" href="#/apprenant">' + ico('cadenas') + 'Espace apprenant</a>' +
       '<button class="burger" id="burger" aria-label="Ouvrir le menu" aria-expanded="false"><span></span></button></div></header><div class="tiroir" id="tiroir">' + tiroir + '</div>' +
@@ -64,7 +64,7 @@ window.ArdoiseSiteCentre = function (donnees, o) {
       '<div><h4>Apprenants</h4><ul><li><a href="#/apprenant">Mon espace</a></li><li><a href="#/apprenant">Leçons en ligne</a></li><li><a href="#/certificat">Vérifier un certificat</a></li></ul></div>' +
       '<div><h4>Nous trouver</h4><ul>' + (ec.adresse ? '<li>' + e(ec.adresse) + '</li>' : '') + (lieu() ? '<li>' + e(lieu()) + '</li>' : '') +
       (ec.telephone ? '<li><a href="' + e(o.tel(ec.telephone)) + '">' + e(ec.telephone) + '</a></li>' : '') + (ec.email ? '<li><a href="mailto:' + e(ec.email) + '">' + e(ec.email) + '</a></li>' : '') + '</ul></div></div>' +
-      '<div class="bas"><span>© ' + new Date().getFullYear() + ' ' + e(ec.nom) + '.</span><a href="/connexion.html">Accès du personnel</a></div></div></footer>';
+      '<div class="bas"><span>© ' + new Date().getFullYear() + ' ' + e(ec.nom) + '.</span><span class="liens-bas"><a href="#" data-installer-app>📲 Installer l’application</a> · <a href="' + e(window.ArdoiseSiteLiens ? window.ArdoiseSiteLiens.personnel(ec) : '/connexion.html') + '">Accès du personnel</a></span></div></div></footer>';
   }
   function heros(titre, chapeau, fil) {
     var couv = urlSure(c.couverture_url);

@@ -32,6 +32,15 @@
   // Adresse courte : premier segment du chemin, s'il a la forme d'une
   // adresse d'école. `/faq/` ou `/ecole.html` n'en sont pas.
   var ADRESSE_COURTE = false;
+  // L'invitation à installer peut arriver avant que le site soit dessiné :
+  // on la garde pour le bouton « Installer l'application ».
+  window.addEventListener('beforeinstallprompt', function (ev) { ev.preventDefault(); window.__ardoiseInvite = ev; });
+  // Site servi sur sa propre adresse (<ecole>.myardoise.com) : le serveur
+  // indique l'école dans la page.
+  if (!CODE && !APERCU && typeof window.ARDOISE_SITE_CODE === 'string' && window.ARDOISE_SITE_CODE) {
+    CODE = window.ARDOISE_SITE_CODE;
+    ADRESSE_COURTE = true;
+  }
   if (!CODE && !APERCU) {
     var segment = decodeURIComponent(window.location.pathname).replace(/^\/+|\/+$/g, '');
     if (/^[a-z0-9]+(-[a-z0-9]+)*$/i.test(segment) && segment.length >= 3 && segment.length <= 40) {
@@ -286,7 +295,8 @@
     }).join('') + '<div class="actions">' +
       (c.pages.parents ? '<a class="bouton plein" href="#/parents">' + ico('cadenas') + 'Espace parents</a>' : '') +
       (ouverte('eleve') ? '<a class="bouton contour plein" href="#/eleve">Espace élève</a>' : '') +
-      (ec.telephone ? '<a class="bouton contour plein" href="' + e(tel(ec.telephone)) + '">' + ico('telephone') + 'Appeler l’école</a>' : '') + '</div>';
+      (ec.telephone ? '<a class="bouton contour plein" href="' + e(tel(ec.telephone)) + '">' + ico('telephone') + 'Appeler l’école</a>' : '') +
+      '<a class="bouton contour plein" href="#" data-installer-app>📲 Installer l’application</a></div>';
 
     $('#site').innerHTML = haut +
       '<header class="entete" id="entete"><div class="contenant">' + marque +
@@ -339,7 +349,7 @@
       (ec.email ? '<li><a href="mailto:' + e(ec.email) + '">' + e(ec.email) + '</a></li>' : '') +
       '</ul></div></div>' +
       '<div class="bas"><span>© ' + new Date().getFullYear() + ' ' + e(ec.nom) + '. Tous droits réservés.</span>' +
-      '<a href="/connexion.html">Accès du personnel</a></div></div></footer>';
+      '<span class="liens-bas"><a href="#" data-installer-app>📲 Installer l’application</a> · <a href="' + e(window.ArdoiseSiteLiens.personnel(ec)) + '">Accès du personnel</a></span></div></div></footer>';
   }
 
   /* ------------------------------------------------------------------ */
@@ -1124,7 +1134,32 @@
     if (changement) window.scrollTo(0, 0);
   }
 
+  /* L'application de l'école : installable depuis son site (voir installer-app.js). */
+  function preparerApplication(ec) {
+    if (APERCU || !ec) return;
+    var options = { adresse: String(ec.site_adresse || ec.code || CODE).toLowerCase(), code: ec.code, nom: ec.nom,
+      logo: urlSure(ec.logo_url), api: API, centre: ec.type_structure === 'centre_formation' };
+    function lancer() { if (window.ArdoiseInstallerApp) window.ArdoiseInstallerApp.preparer(options); }
+    if (window.ArdoiseInstallerApp) { lancer(); return; }
+    var s = document.createElement('script');
+    s.src = '/installer-app.js?v=1';
+    s.onload = lancer;
+    document.head.appendChild(s);
+  }
+  // Liens du pied de page, communs à l'école et au centre.
+  window.ArdoiseSiteLiens = {
+    installer: function () { if (window.ArdoiseInstallerApp) window.ArdoiseInstallerApp.ouvrir(); },
+    personnel: function (ec) { return 'https://myardoise.com/connexion.html?code=' + encodeURIComponent((ec && ec.code) || CODE); }
+  };
+  document.addEventListener('click', function (ev) {
+    var a = ev.target.closest && ev.target.closest('[data-installer-app]');
+    if (!a) return;
+    ev.preventDefault();
+    window.ArdoiseSiteLiens.installer();
+  });
+
   function rendre(donnees) {
+    if (donnees && donnees.ecole) preparerApplication(donnees.ecole);
     // Centre de formation : un autre site (programmes, test de niveau,
     // espace apprenant), dessiné par site-centre.js avec les mêmes thèmes.
     if (donnees && donnees.formation && donnees.ecole && donnees.ecole.type_structure === 'centre_formation') {
@@ -1169,7 +1204,7 @@
     }
     if (window.ArdoiseSiteCentre) { lancer(); return; }
     var s = document.createElement('script');
-    s.src = '/site-centre.js?v=6';
+    s.src = '/site-centre.js?v=7';
     s.onload = lancer;
     s.onerror = function () { erreur('Impossible de charger le site du centre. Vérifiez votre connexion et réessayez.'); };
     document.head.appendChild(s);

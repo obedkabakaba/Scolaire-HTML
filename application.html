@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>L’application de mon école — Ardoise</title>
+<meta name="description" content="Installez l’application de votre école ou de votre centre de formation : espace parents, élèves et apprenants, directement sur votre téléphone." />
+<link rel="canonical" href="https://myardoise.com/application.html" />
+<meta name="theme-color" content="#0E1C33" />
+<link rel="icon" href="/favicon.ico" />
+<style>
+  :root { --encre: #0E1C33; --fond: #F6F1E7; --doux: #5d6766; --vert: #1D5E33; }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--fond); color: #1d2a2a; display: grid; place-items: center; padding: 24px 16px; }
+  main { width: 100%; max-width: 460px; }
+  .carte { background: #fff; border-radius: 22px; padding: 26px 22px; box-shadow: 0 10px 40px rgba(14, 28, 51, .08); }
+  h1 { font-size: 1.45rem; margin: 6px 0 8px; color: var(--encre); }
+  p { margin: 0 0 14px; color: var(--doux); }
+  label { display: block; font-weight: 600; margin: 16px 0 6px; }
+  input { width: 100%; font: inherit; padding: 13px 14px; border: 1.5px solid #d9d5cc; border-radius: 12px; }
+  input:focus { outline: none; border-color: var(--encre); }
+  button { width: 100%; margin-top: 14px; border: 0; border-radius: 12px; padding: 14px; font: 600 16px system-ui, sans-serif; background: var(--encre); color: #fff; cursor: pointer; }
+  button:disabled { opacity: .6; }
+  .message { min-height: 22px; margin-top: 10px; font-size: .92rem; }
+  .erreur { color: #8F2318; }
+  ul { padding-left: 18px; color: var(--doux); margin: 14px 0 0; }
+  li { margin: 4px 0; }
+  .bas { text-align: center; margin-top: 16px; font-size: .9rem; }
+  .bas a { color: var(--vert); font-weight: 600; }
+  .logo { font: 700 1.3rem Georgia, serif; color: var(--encre); text-decoration: none; }
+</style>
+</head>
+<body>
+<main>
+  <div class="carte">
+    <a class="logo" href="/">Ardoise</a>
+    <h1>📲 L’application de mon école</h1>
+    <p>Chaque école et chaque centre de formation a sa propre application : son nom, son logo, et l’espace des parents, des élèves ou des apprenants, directement sur votre téléphone.</p>
+    <form id="form" novalidate>
+      <label for="adresse">Adresse ou code de votre école</label>
+      <input id="adresse" autocomplete="organization" autocapitalize="none" spellcheck="false" placeholder="ex. eacenter, college-boboto" required />
+      <button type="submit" id="ok">Trouver l’application</button>
+      <div class="message" id="msg" role="status"></div>
+    </form>
+    <ul>
+      <li>L’adresse est celle du site de votre école : <strong>myardoise.com/<em>adresse</em></strong> ou <strong><em>adresse</em>.myardoise.com</strong>.</li>
+      <li>Vous ne la connaissez pas ? Demandez-la au secrétariat ou à l’accueil.</li>
+    </ul>
+  </div>
+  <p class="bas">Vous êtes du personnel ? <a href="/connexion.html">Se connecter à Ardoise</a></p>
+</main>
+<script>
+(function () {
+  var API = (typeof API_BASE_URL === 'string' && API_BASE_URL) || 'https://scolaire-saas-backend.onrender.com';
+  var champ = document.getElementById('adresse'), msg = document.getElementById('msg'), bouton = document.getElementById('ok');
+  var q = new URLSearchParams(location.search).get('ecole'); if (q) champ.value = q;
+  document.getElementById('form').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var v = champ.value.trim().toLowerCase()
+      .replace(/^https?:\/\//, '').replace(/\.myardoise\.com.*$/, '').replace(/^(www\.)?myardoise\.com\//, '').replace(/[\/?#].*$/, '');
+    if (!v) { msg.className = 'message erreur'; msg.textContent = 'Indiquez l’adresse ou le code de votre école.'; return; }
+    bouton.disabled = true; msg.className = 'message'; msg.textContent = 'Recherche…';
+    fetch(API + '/public/ecole/' + encodeURIComponent(v)).then(function (r) {
+      if (r.status === 404) throw new Error('Aucune école publiée ne correspond à « ' + v + ' ». Vérifiez l’orthographe auprès de l’école.');
+      if (!r.ok) throw new Error('Le serveur ne répond pas. Réessayez dans un instant.');
+      return r.json();
+    }).then(function (d) {
+      var ec = d.ecole || {};
+      var adresse = String(ec.site_adresse || ec.code || v).toLowerCase();
+      msg.textContent = 'Ouverture du site de ' + (ec.nom || adresse) + '…';
+      location.href = '/' + encodeURIComponent(adresse) + '?installer=1';
+    }).catch(function (x) {
+      bouton.disabled = false; msg.className = 'message erreur';
+      msg.textContent = /fetch/i.test(x.message) ? 'Pas de connexion : réessayez.' : x.message;
+    });
+  });
+})();
+</script>
+</body>
+</html>

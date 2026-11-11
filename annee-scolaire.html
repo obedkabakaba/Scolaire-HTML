@@ -237,12 +237,14 @@
         <button class="bouton bouton-secondaire bouton-petit" id="bouton-ignorer-proposition">Plus tard</button>
       </div>
 
+      <div data-commande="+ Nouvelle année scolaire" data-commande-titre="Nouvelle année scolaire" class="commande-sans-titre">
       <form class="form-inline" id="form-annee">
         <input type="text" id="champ-annee-libelle" placeholder="ex. 2026-2027" required />
         <input type="date" id="champ-annee-debut" title="Date de début" />
         <input type="date" id="champ-annee-fin" title="Date de fin" />
         <button type="submit" class="bouton bouton-principal">+ Créer une année</button>
       </form>
+      </div>
       <div id="liste-annees"><p class="etat-vide-tableau"><span class="spinner"></span>Chargement…</p></div>
     </div>
 
@@ -254,7 +256,7 @@
       </div>
 
       <div class="grille-2col">
-        <div class="panneau">
+        <div class="panneau" data-commande="+ Ajouter" data-commande-titre="Ajouter une période, un examen ou un regroupement" data-commande-resume="Périodes, examens, trimestres ou semestres de l’année choisie.">
           <h3>Ajouter</h3>
           <form id="form-periode" style="display:flex; flex-direction:column; gap:10px;">
             <!-- Le type « trimestre » manquait : une école primaire ne pouvait

@@ -146,6 +146,7 @@
      ================================================================== */
   var EspaceApp = (function () {
     function activer(oui) {
+      if (!oui) actualiseur = null;
       document.body.classList.toggle('mode-app', !!oui);
       var meta = document.querySelector('meta[name="theme-color"]');
       if (meta) {
@@ -218,7 +219,9 @@
       function ouvrirPlus() {
         var lignes = autres.map(function (x) { return { cle: 'onglet:' + x.cle, ico: x.ico, libelle: x.libelle, badge: x.badge, aide: x.aide }; });
         if (lignes.length && o.plus.length) lignes.push('-');
-        feuille('', lignes.concat(o.plus), function (c) {
+        var actions = (actualiseur ? [{ cle: '__actualiser', ico: 'horloge', libelle: 'Actualiser', aide: 'Ou tirez l’écran vers le bas' }] : []).concat(o.plus);
+        feuille('', lignes.concat(actions), function (c) {
+          if (c === '__actualiser') { actualiser(); return; }
           if (c.indexOf('onglet:') === 0) o.surOnglet(c.slice(7)); else o.surPlus(c);
         });
       }
@@ -232,7 +235,60 @@
 
     function titre(t, s) { return '<div class="app-titre"><h2>' + e(t) + '</h2>' + (s ? '<p>' + e(s) + '</p>' : '') + '</div>'; }
 
-    return { activer: activer, connexion: connexion, coque: coque, feuille: feuille, titre: titre };
+    /* ACTUALISER — une application installée n'a ni bouton « recharger »
+       ni « tirer pour actualiser » du navigateur. On les fournit :
+       tirer l'écran vers le bas, revenir dans l'application après un
+       moment, ou « Actualiser » dans « Plus ». */
+    var actualiseur = null, cache = 0, enCours = false;
+    function surActualiser(fn) { actualiseur = fn; }
+    function actualiser(o) {
+      o = o || {};
+      if (!actualiseur || enCours || !document.body.classList.contains('mode-app')) return Promise.resolve();
+      enCours = true;
+      var ind = indicateur(); ind.classList.add('tourne'); ind.style.transform = 'translate(-50%, 64px)';
+      return Promise.resolve(actualiseur()).catch(function () {}).then(function () {
+        enCours = false; ind.classList.remove('tourne'); ind.style.transform = '';
+        if (!o.silencieux) { ind.classList.add('fait'); setTimeout(function () { ind.classList.remove('fait'); }, 900); }
+      });
+    }
+    function indicateur() {
+      var i = document.getElementById('app-tirer');
+      if (!i) {
+        i = document.createElement('div'); i.id = 'app-tirer'; i.className = 'app-tirer';
+        i.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>';
+        document.body.appendChild(i);
+      }
+      return i;
+    }
+    var y0 = null, dy = 0;
+    document.addEventListener('touchstart', function (ev) {
+      if (!document.body.classList.contains('mode-app') || !actualiseur || enCours) return;
+      if ((window.scrollY || document.documentElement.scrollTop) > 0) return;
+      if (ev.target.closest && ev.target.closest('.app-voile, .ca-racine, input, textarea, select')) return;
+      y0 = ev.touches[0].clientY; dy = 0;
+    }, { passive: true });
+    document.addEventListener('touchmove', function (ev) {
+      if (y0 === null) return;
+      dy = ev.touches[0].clientY - y0;
+      if (dy <= 0) return;
+      var ind = indicateur(), d = Math.min(90, dy * 0.5);
+      ind.style.transform = 'translate(-50%, ' + d + 'px) rotate(' + (dy * 2) + 'deg)';
+      ind.style.opacity = String(Math.min(1, dy / 120));
+    }, { passive: true });
+    document.addEventListener('touchend', function () {
+      if (y0 === null) return;
+      y0 = null;
+      var ind = indicateur(); ind.style.opacity = '';
+      if (dy > 120) actualiser(); else ind.style.transform = '';
+    });
+    // Retour dans l'application après plus de 30 secondes : données fraîches.
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) { cache = Date.now(); return; }
+      if (cache && Date.now() - cache > 30000) actualiser({ silencieux: true });
+    });
+    window.addEventListener('pageshow', function (ev) { if (ev.persisted) actualiser({ silencieux: true }); });
+
+    return { activer: activer, connexion: connexion, coque: coque, feuille: feuille, titre: titre, surActualiser: surActualiser, actualiser: actualiser };
   })();
   window.ArdoiseEspaceApp = EspaceApp;
 
@@ -1002,17 +1058,19 @@
     if (annuler) annuler.addEventListener('click', function () { chargerFamille(vue, etat.famille.actif); });
   }
 
-  function chargerFamille(vue, index, nouveau) {
-    var zone = $('#zone-famille'); if (!zone) return;
+  function chargerFamille(vue, index, nouveau, silencieux) {
+    var zone = $('#zone-famille'); if (!zone) return Promise.resolve();
     var id = etat.famille.liste[index];
-    if (APERCU) { formulaireFamille(vue, 'Aperçu : la connexion fonctionnera une fois le site publié.'); return; }
-    zone.innerHTML = '<div class="ecran-etat" style="min-height:240px"><div class="anneau"></div>Chargement…</div>';
-    fetch(API + '/public/famille', {
+    if (APERCU) { formulaireFamille(vue, 'Aperçu : la connexion fonctionnera une fois le site publié.'); return Promise.resolve(); }
+    if (!silencieux) zone.innerHTML = '<div class="ecran-etat" style="min-height:240px"><div class="anneau"></div>Chargement…</div>';
+    return fetch(API + '/public/famille', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ code_ecole: CODE, matricule: id.matricule, code_acces: id.code_acces, vue: vue === 'parents' ? 'parents' : 'eleve' })
     }).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return { ok: r.ok, status: r.status, j: j }; }); })
       .then(function (res) {
         if (!res.ok) {
+          // Actualisation en arrière-plan : un échec passager ne déconnecte personne.
+          if (silencieux && res.status !== 401 && res.status !== 404) return;
           etat.famille.liste.splice(index, 1);
           ecrireSession(vue, etat.famille.liste);
           formulaireFamille(vue, res.status === 429 ? res.j.message : (res.j.message || 'Matricule ou code d’accès incorrect.'));
@@ -1023,8 +1081,9 @@
         etat.famille.donnees = res.j;
         if (nouveau || !etat.famille.onglet) etat.famille.onglet = vue === 'parents' ? 'apercu' : 'journee';
         tableauFamille(vue);
+        EspaceApp.surActualiser(function () { return chargerFamille(vue, etat.famille.actif, false, true); });
       })
-      .catch(function () { zone.innerHTML = '<div class="vide">' + ico('vide') + 'Connexion au serveur impossible. Vérifiez votre réseau puis rechargez la page.</div>'; });
+      .catch(function () { if (silencieux) return; zone.innerHTML = '<div class="vide">' + ico('vide') + 'Connexion au serveur impossible. Vérifiez votre réseau puis rechargez la page.</div>'; });
   }
 
   function tableauFamille(vue) {
@@ -1385,7 +1444,7 @@
     }
     if (window.ArdoiseSiteCentre) { lancer(); return; }
     var s = document.createElement('script');
-    s.src = '/site-centre.js?v=9';
+    s.src = '/site-centre.js?v=10';
     s.onload = lancer;
     s.onerror = function () { erreur('Impossible de charger le site du centre. Vérifiez votre connexion et réessayez.'); };
     document.head.appendChild(s);

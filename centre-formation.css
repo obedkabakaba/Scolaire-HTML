@@ -456,3 +456,9 @@ html:not(.ard-mob-coque) .cf-deconnexion:hover { color: var(--cf-nav-fort); }
 .cf-quiz-tete { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
 .cf-quiz-tete .cf-quiz-titre { flex: 1 1 180px; padding: 8px 10px; border: 1.5px solid var(--cf-ligne); border-radius: 10px; font-weight: 600; font: inherit; }
 .cf-quiz-tete .doux { font-size: .8rem; }
+
+/* Séance clôturée : un résumé, plus de commande ouverte */
+.cf-appel-clos { margin-top: 12px; padding: 12px 14px; border-radius: 14px; background: color-mix(in srgb, #1D7A45 10%, var(--cf-surface)); display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+.cf-appel-clos strong { color: #1D7A45; }
+.cf-appel-clos span { color: var(--cf-doux, #6b7280); font-size: .88rem; }
+.cf-lien { margin-left: auto; background: none; border: 0; padding: 0; color: var(--cf-accent, #1E4E8C); font: inherit; font-size: .86rem; text-decoration: underline; cursor: pointer; }

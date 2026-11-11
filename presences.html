@@ -114,6 +114,11 @@
   <script src="acces-presences.js"></script>
   <script src="filtre-cycle.js"></script>
 <link rel="stylesheet" href="mobile.css" />
+<style>
+  .appel-clos .bouton-statut:not(.choisi) { opacity: .35; }
+  .appel-clos .bouton-statut, .appel-clos .champ-motif { cursor: default; }
+  .etat-appel { font-weight: 600; }
+</style>
 </head>
 <body>
 
@@ -293,6 +298,9 @@
 
   let mesClasses = [];
   let elevesAppel = [];      // feuille d'appel en cours d'édition
+  // Un appel enregistré est CLOS : la feuille passe en lecture, avec un
+  // résumé. « Modifier l'appel » la rouvre — l'exception, pas la règle.
+  let appelClos = false;
   let vueCourante = 'appel';
 
   const utilisateur = (() => {
@@ -469,8 +477,9 @@
       motif: e.motif || ''
     }));
 
+    appelClos = !!donnees.deja_fait;
     document.getElementById('etat-appel').textContent = donnees.deja_fait
-      ? "Appel déjà enregistré pour cette date — vos modifications le remplaceront."
+      ? "✓ Appel enregistré pour cette date."
       : "Appel non encore enregistré pour cette date.";
 
     dessinerFeuilleAppel();
@@ -492,12 +501,12 @@
           <div class="groupe-statut">
             ${STATUTS.map(s => `
               <button type="button" class="bouton-statut ${e.statut === s.cle ? 'choisi' : ''}"
-                      data-statut="${s.cle}" data-index="${index}" ${peutModifierPresence ? '' : 'disabled'}>${s.libelle}</button>
+                      data-statut="${s.cle}" data-index="${index}" ${peutModifierPresence && !appelClos ? '' : 'disabled'}>${s.libelle}</button>
             `).join('')}
           </div>
         </td>
         <td><input type="text" class="champ-motif" data-index="${index}" value="${(e.motif || '').replace(/"/g, '&quot;')}"
-                   placeholder="${e.statut === 'present' ? '—' : 'ex. maladie'}" ${peutModifierPresence ? '' : 'disabled'} /></td>
+                   placeholder="${e.statut === 'present' ? '—' : 'ex. maladie'}" ${peutModifierPresence && !appelClos ? '' : 'disabled'} /></td>
       </tr>
     `).join('');
 
@@ -514,6 +523,23 @@
     });
 
     majCompteurs();
+    majCommandesAppel();
+  }
+
+  function majCommandesAppel() {
+    const bouton = document.getElementById('bouton-enregistrer');
+    const tous = document.getElementById('bouton-tout-present');
+    document.querySelector('.conteneur-tableau')?.classList.toggle('appel-clos', appelClos);
+    if (!bouton) return;
+    if (appelClos) {
+      bouton.textContent = "Modifier l'appel";
+      bouton.className = 'bouton bouton-secondaire';
+      if (tous) tous.style.display = 'none';
+    } else {
+      bouton.textContent = "Enregistrer l'appel";
+      bouton.className = 'bouton bouton-principal';
+      if (tous && peutModifierPresence) tous.style.display = '';
+    }
   }
 
   function majCompteurs() {
@@ -531,6 +557,13 @@
   }
 
   async function enregistrerAppel() {
+    // Appel clos : le bouton rouvre la feuille, il n'enregistre rien.
+    if (appelClos) {
+      appelClos = false;
+      document.getElementById('etat-appel').textContent = "Modification de l'appel : enregistrez pour remplacer l'ancien.";
+      dessinerFeuilleAppel();
+      return;
+    }
     const classeId = document.getElementById('select-classe').value;
     const date = document.getElementById('champ-date').value;
     if (!classeId || !date) { afficherMessage('Choisissez une classe et une date.', 'erreur'); return; }
@@ -586,8 +619,9 @@
     if (!r.ok) { afficherMessage(reponse.message || "Erreur lors de l'enregistrement.", 'erreur'); return; }
 
     afficherMessage(reponse.message || 'Appel enregistré.', 'succes');
-    document.getElementById('etat-appel').textContent =
-      "Appel déjà enregistré pour cette date — vos modifications le remplaceront.";
+    appelClos = true;
+    document.getElementById('etat-appel').textContent = "✓ Appel enregistré pour cette date.";
+    dessinerFeuilleAppel();
   }
 
   // ============================================================

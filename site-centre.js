@@ -356,7 +356,13 @@ window.ArdoiseSiteCentre = function (donnees, o) {
     return '<a class="bouton" target="_blank" rel="noopener" href="' + e(u) + '">▶ Ouvrir la vidéo</a>';
   }
   function pageApprenant() {
-    setTimeout(etat.apprenant ? dessinerEspace : (identifiants() ? chargerEspace : formulaireConnexion), 0);
+    // Les données déjà connues s'affichent tout de suite, puis on les
+    // rafraîchit : l'espace n'est jamais figé sur le premier chargement.
+    setTimeout(function () {
+      if (etat.apprenant) { dessinerEspace(); actualiserEspace(); }
+      else if (identifiants()) chargerEspace();
+      else formulaireConnexion();
+    }, 0);
     if (o.app) o.app.activer(true);
     return '<div class="app-zone" id="zone-apprenant"><div class="ecran-etat" style="min-height:60vh"><div class="anneau"></div>Chargement…</div></div>';
   }
@@ -411,6 +417,13 @@ window.ArdoiseSiteCentre = function (donnees, o) {
       z.innerHTML = vide('vide', 'Connexion au serveur impossible. Vérifiez votre réseau puis rechargez la page.');
     });
   }
+  function actualiserEspace() {
+    if (!identifiants()) return Promise.resolve();
+    return appelApprenant('').then(function (D) {
+      etat.apprenant = D; etat.horsLigne = false; mettreEnCache('espace', D);
+      if ($('#volet-apprenant')) dessinerEspace();
+    }).catch(function (err) { if (err.status === 401 || err.status === 404) { memoriser(null); formulaireConnexion(err.message); } });
+  }
   function tuile(lib, val, cls) { return '<div class="tuile ' + (cls || '') + '"><small>' + e(lib) + '</small><b>' + val + '</b></div>'; }
   function dessinerEspace() {
     var z = $('#zone-apprenant'), D = etat.apprenant; if (!z || !D) return;
@@ -448,6 +461,7 @@ window.ArdoiseSiteCentre = function (donnees, o) {
       });
       etat.onglet = etat.onglet || 'accueil';
       remplirVolet(vApp, D, A, I);
+      o.app.surActualiser(actualiserEspace);
       return;
     }
     z.innerHTML = '<div class="tableau-bord"><aside class="panneau profil-eleve"><div class="avatar">' + e(o.initiales([A.prenom, A.nom].join(' '))) + '</div><h3 style="margin:0">' + e([A.prenom, A.nom].filter(Boolean).join(' ')) + '</h3>' +

@@ -789,3 +789,9 @@ body.mode-app #contenu { padding: 0; }
 .app-choix-carte strong { display: block; font-size: 1.05rem; }
 .app-choix-carte small { display: block; color: var(--texte-doux); font-size: .84rem; margin-top: 3px; line-height: 1.4; }
 .app-choix-carte:active { transform: scale(.985); }
+
+/* Tirer pour actualiser */
+.app-tirer { position: fixed; top: calc(env(safe-area-inset-top) + 10px); left: 50%; z-index: 60; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--surface); color: var(--accent); box-shadow: 0 6px 20px rgba(0,0,0,.18); transform: translate(-50%, -70px); transition: transform .2s, opacity .2s; pointer-events: none; }
+.app-tirer.tourne svg { animation: app-tourne .8s linear infinite; }
+.app-tirer.fait { transform: translate(-50%, 64px) !important; color: #1D7A45; }
+@keyframes app-tourne { to { transform: rotate(360deg); } }

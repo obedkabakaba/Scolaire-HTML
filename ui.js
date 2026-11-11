@@ -2005,7 +2005,123 @@
   }
 
   window.ArdoiseUI = window.ArdoiseUI || {};
+
+  /* =====================================================================
+     LES COMMANDES — une action ne reste pas ouverte dans la page
+     ---------------------------------------------------------------------
+     « Changer mon mot de passe », « Enregistrer un mouvement », « Ouvrir
+     une session »… sont des COMMANDES : on les déclenche, on les remplit,
+     elles se referment. Les laisser déployées en permanence dans la page
+     encombre l'écran et donne l'impression d'un formulaire à remplir.
+
+     Déclaratif : une section porte data-commande="Libellé du bouton"
+     (et, si besoin, data-commande-resume="Une phrase"). Son formulaire est
+     rangé ; à sa place, une ligne : titre, résumé, bouton. Le bouton ouvre
+     la commande dans une fenêtre (une feuille sur téléphone). Elle se
+     referme d'elle-même quand l'action a réussi — la page remet le
+     formulaire à zéro (reset) ou appelle ArdoiseUI.fermerCommande(form) —
+     ou avec « Annuler ». Les messages d'erreur restent dans la fenêtre.
+     ===================================================================== */
+  function preparerCommandes(racine) {
+    (racine || document).querySelectorAll('[data-commande]:not([data-commande-prete])').forEach((section) => {
+      section.setAttribute('data-commande-prete', '1');
+      const form = section.querySelector('form');
+      if (!form) return;
+      const titreEl = section.querySelector(':scope > h2, :scope > h3');
+      const titre = section.getAttribute('data-commande-titre') || (titreEl ? titreEl.textContent.trim() : section.getAttribute('data-commande').replace(/^\+\s*/, ''));
+      section.setAttribute('data-commande-nom', titre);
+      const contenu = document.createElement('div');
+      contenu.className = 'commande-contenu';
+      Array.from(section.childNodes).forEach((n) => { if (n !== titreEl) contenu.appendChild(n); });
+      contenu.hidden = true;
+      section.classList.add('commande-repliee');
+      const ligne = document.createElement('div');
+      ligne.className = 'commande-ligne';
+      ligne.innerHTML = (titreEl || section.hasAttribute('data-commande-titre') ? '<div class="commande-texte"><strong></strong><span></span></div>' : '') +
+        '<button type="button" class="bouton ' + (section.hasAttribute('data-commande-principal') ? 'bouton-principal' : 'bouton-secondaire') + ' commande-ouvrir"></button>';
+      if (ligne.querySelector('strong')) ligne.querySelector('strong').textContent = titre;
+      if (ligne.querySelector('span')) ligne.querySelector('span').textContent = section.getAttribute('data-commande-resume') || '';
+      ligne.querySelector('button').textContent = section.getAttribute('data-commande');
+      if (titreEl) titreEl.remove();
+      section.appendChild(ligne);
+      section.appendChild(contenu);
+      ligne.querySelector('button').addEventListener('click', () => ouvrirCommande(section));
+    });
+  }
+
+  let commandeOuverte = null;
+  function ouvrirCommande(section) {
+    if (commandeOuverte) fermerCommande();
+    const contenu = section.querySelector('.commande-contenu');
+    const titre = section.getAttribute('data-commande-nom');
+    const voile = construireBoite('<div class="commande-tete"><h3></h3><button type="button" class="commande-fermer" aria-label="Fermer">✕</button></div><div class="commande-corps"></div>', 'boite-commande');
+    voile.querySelector('h3').textContent = titre;
+    contenu.hidden = false;
+    voile.querySelector('.commande-corps').appendChild(contenu);
+    const form = contenu.querySelector('form');
+    // « Annuler » à côté du bouton d'envoi, s'il n'y en a pas déjà.
+    if (form && !form.querySelector('.commande-annuler')) {
+      const envoi = form.querySelector('[type="submit"]');
+      if (envoi) {
+        const annuler = document.createElement('button');
+        annuler.type = 'button'; annuler.className = 'bouton bouton-secondaire commande-annuler'; annuler.textContent = 'Annuler';
+        annuler.addEventListener('click', () => fermerCommande());
+        const actions = document.createElement('div'); actions.className = 'commande-actions';
+        envoi.parentNode.insertBefore(actions, envoi);
+        actions.appendChild(annuler); actions.appendChild(envoi);
+      }
+    }
+    // Les messages de la page (en haut, cachés par la fenêtre) sont recopiés
+    // dans la fenêtre tant qu'elle est ouverte : une erreur ne passe pas
+    // inaperçue, un succès se voit avant la fermeture.
+    const zoneMsg = document.createElement('div');
+    zoneMsg.className = 'commande-message'; zoneMsg.setAttribute('role', 'status');
+    voile.querySelector('.commande-corps').insertBefore(zoneMsg, contenu);
+    const flash = document.querySelector('#message-flash, .message-flash');
+    let obs = null;
+    if (flash) {
+      obs = new MutationObserver((mutations) => {
+        if (!mutations.some((m) => m.type === 'childList' || m.type === 'characterData')) return;
+        const txt = (flash.textContent || '').trim();
+        if (!txt) return;
+        const erreur = /erreur/.test(flash.className);
+        zoneMsg.textContent = txt;
+        zoneMsg.className = 'commande-message visible ' + (erreur ? 'erreur' : 'succes');
+        // L'action a réussi : la commande se referme, le message reste lisible
+        // en haut de la page.
+        if (!erreur) setTimeout(() => { if (commandeOuverte && commandeOuverte.voile === voile) fermerCommande(); }, 1100);
+      });
+      obs.observe(flash, { childList: true, characterData: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+    }
+    const surReset = () => setTimeout(() => fermerCommande(), 0);
+    if (form) form.addEventListener('reset', surReset);
+    const surEchap = (e) => { if (e.key === 'Escape') fermerCommande(); };
+    document.addEventListener('keydown', surEchap);
+    voile.addEventListener('click', (e) => { if (e.target === voile) fermerCommande(); });
+    voile.querySelector('.commande-fermer').addEventListener('click', () => fermerCommande());
+    commandeOuverte = { section, contenu, voile, form, surReset, surEchap, obs };
+    const premier = contenu.querySelector('input:not([type=hidden]):not([disabled]), select, textarea');
+    if (premier) setTimeout(() => premier.focus(), 80);
+  }
+
+  function fermerCommande() {
+    const c = commandeOuverte; if (!c) return;
+    commandeOuverte = null;
+    if (c.form) c.form.removeEventListener('reset', c.surReset);
+    if (c.obs) c.obs.disconnect();
+    document.removeEventListener('keydown', c.surEchap);
+    c.contenu.hidden = true;
+    c.section.appendChild(c.contenu);
+    detruireBoite(c.voile);
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => preparerCommandes());
+  else preparerCommandes();
+
   window.ArdoiseUI.confirmer = confirmer;
+  window.ArdoiseUI.preparerCommandes = preparerCommandes;
+  window.ArdoiseUI.ouvrirCommande = function (section) { if (section) ouvrirCommande(section); };
+  window.ArdoiseUI.fermerCommande = fermerCommande;
   window.ArdoiseUI.demander = demander;
 })();
 

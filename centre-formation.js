@@ -1332,7 +1332,7 @@
         envoyer('/seances/' + seanceId + '/appel', 'PUT', {
           presences: Object.keys(choix).map(function (k) { return { apprenant_id: k, statut: choix[k] }; }),
           theme: f.elements.theme.value, notes_coach: f.elements.notes_coach.value, devoirs: f.elements.devoirs.value, cloturer: true
-        }).then(function (r) { m.fermer(); toast('Appel enregistré (' + r.enregistrees + ' apprenant(s)).'); if (apres) apres(); }).catch(echec);
+        }).then(function (r) { m.fermer(); toast('Appel clôturé (' + r.enregistrees + ' apprenant(s)).' + (r.classe_fermee ? ' La classe en ligne est fermée pour tous.' : '')); if (apres) apres(); }).catch(echec);
       });
       var ba = $('[data-annuler]', m.el); if (ba) ba.addEventListener('click', function () {
         var motif = window.prompt('Motif de l’annulation (coupure, absence du coach, jour férié…) :');
@@ -2396,7 +2396,10 @@
       $('.cf-entete p').textContent = dateFr(s.date_seance, true) + (s.heure_debut ? ' à ' + heure(s.heure_debut) : '') + (s.theme ? ' · ' + s.theme : '');
       var presents = d.presences.filter(function (p) { return p.statut === 'present' || p.statut === 'retard'; }).length;
       var visio;
-      if (enLigne && v.fournisseur === 'ardoise') visio = '<div class="cf-salle-visio cf-classe-ardoise"><div class="cf-ca-illus" aria-hidden="true">🏫</div><strong>La Classe Ardoise est prête</strong>' +
+      var cloturee = s.statut === 'faite';
+      if (cloturee && enLigne) visio = '<div class="cf-salle-visio cf-salle-close"><div class="cf-ca-illus" aria-hidden="true">✅</div><strong>Cours terminé — appel clôturé</strong>' +
+        '<p>La classe en ligne est fermée pour tous : les apprenants ne peuvent plus y entrer. Publiez le replay (onglet « Replay ») pour ceux qui ont manqué le cours.</p></div>';
+      else if (enLigne && v.fournisseur === 'ardoise') visio = '<div class="cf-salle-visio cf-classe-ardoise"><div class="cf-ca-illus" aria-hidden="true">🏫</div><strong>La Classe Ardoise est prête</strong>' +
         '<p>Votre salle de classe en ligne, sans limite de durée : les apprenants entrent avec leur avatar et prennent une place, lèvent la main, répondent aux sondages. Vous donnez la parole, écrivez au tableau, partagez votre écran.</p>' +
         '<div class="cf-actions" style="justify-content:center"><button class="cf-btn principal" data-entrer-classe>Entrer dans la classe</button>' + (v.secours && v.secours.url ? '<a class="cf-btn" target="_blank" rel="noopener" href="' + e(v.secours.url) + '" title="Si un réseau bloque tout : une visio Jitsi de secours">Visio de secours</a>' : '') + '</div>' +
         '<p class="doux" style="font-size:.78rem;margin-top:10px">Conseil : branchez-vous en Wi-Fi ou en 4G et gardez cette page au premier plan. Si votre connexion sature, passez au tableau sans vidéo.</p></div>';
@@ -2408,7 +2411,9 @@
       z.innerHTML = '<div class="cf-salle"><div class="cf-salle-principal">' + visio +
         (enLigne && v.fournisseur !== 'ardoise' ? '<div class="cf-salle-faible"><strong>Connexion difficile ?</strong> <span>1. Passez en <a href="#" data-leger>mode connexion faible</a> (audio seul, image 180p). 2. Coupez votre caméra : le son passe mieux. 3. Publiez l’enregistrement après le cours : les apprenants qui ont décroché le suivent en replay et leur présence est comptée.</span></div>' : '') +
         '</div><aside class="cf-salle-cote"><div class="cf-onglets" data-onglets-salle><button class="actif" data-o="presents">Présents ' + presents + '/' + d.presences.length + '</button><button data-o="lecon">Leçon</button><button data-o="notes">Devoirs</button><button data-o="replay">Replay</button>' + (d.pointage ? '<button data-o="qr">QR</button>' : '') + '</div><div data-volet-salle></div>' +
-        '<button class="cf-btn principal" style="width:100%;margin-top:12px;justify-content:center" data-cloturer>Clôturer et enregistrer l’appel</button></aside></div>';
+        (cloturee
+          ? '<div class="cf-appel-clos"><strong>✓ Appel clôturé</strong><span>' + presents + ' présent(s) sur ' + d.presences.length + '</span><button class="cf-lien" data-cloturer>Corriger l’appel</button></div>'
+          : '<button class="cf-btn principal" style="width:100%;margin-top:12px;justify-content:center" data-cloturer>Clôturer et enregistrer l’appel</button>') + '</aside></div>';
       var volets = {
         presents: function () {
           return '<div class="cf-appel">' + d.presences.map(function (p) {

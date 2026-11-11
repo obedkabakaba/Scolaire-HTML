@@ -393,7 +393,7 @@
   }
   function chargerCoque() {
     window.ARDOISE_SIGNATURES_ACCUEIL_SEUL = true;
-    chargerScript('didacticiel.js?v=3', { 'data-ecran': 'Centre de formation' })
+    chargerScript('didacticiel.js?v=4', { 'data-ecran': 'Centre de formation' })
       .then(function () { return chargerScript('mobile.js?v=3'); })
       .then(function () { return chargerScript('theme-signatures.js?v=2', { 'data-ardoise-signatures': 'oui' }); });
   }
@@ -1365,6 +1365,73 @@
     lister(true);
   };
 
+  /* Supports d'une leçon : un VRAI import de fichier (document, audio) et,
+     pour l'audio, l'enregistrement direct au micro du téléphone. Le lien
+     reste possible (Drive, YouTube…) pour qui préfère. */
+  function televerserSupport(fichier) {
+    var fd = new FormData(); fd.append('fichier', fichier, fichier.name || 'fichier');
+    return S.appelApi('/uploads/ressource-lecon', { method: 'POST', body: fd }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.message || 'Envoi impossible.'); return j; });
+    });
+  }
+  function tailleLisible(o) { return o > 1048576 ? (o / 1048576).toFixed(1).replace('.', ',') + ' Mo' : Math.max(1, Math.round(o / 1024)) + ' Ko'; }
+  function brancherSupports(racine) {
+    var form = $('form', racine);
+    [['ressource_url', 'document', '.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,image/*,application/pdf', '📎 Importer un document'],
+     ['audio_url', 'audio', 'audio/*,.mp3,.m4a,.aac,.ogg,.wav,.amr', '🎧 Importer un audio']].forEach(function (cfgS) {
+      var champ = form && form.elements[cfgS[0]]; if (!champ) return;
+      var zone = document.createElement('div');
+      zone.className = 'cf-support';
+      zone.innerHTML = '<div class="cf-support-actions"><button type="button" class="cf-btn petit" data-importer>' + cfgS[3] + '</button>' +
+        (cfgS[1] === 'audio' && window.MediaRecorder && navigator.mediaDevices ? '<button type="button" class="cf-btn petit" data-micro>🎙 Enregistrer ma voix</button>' : '') +
+        '<span class="doux" data-etat></span></div><div data-apercu></div>' +
+        '<input type="file" hidden accept="' + cfgS[2] + '">';
+      var hote = champ.closest('label') || champ;
+      zone.classList.add('plein');
+      hote.parentNode.insertBefore(zone, hote.nextSibling);
+      var etatEl = $('[data-etat]', zone), apercu = $('[data-apercu]', zone), inp = $('input[type=file]', zone);
+      function montrer(url) {
+        if (!url) { apercu.innerHTML = ''; return; }
+        apercu.innerHTML = cfgS[1] === 'audio'
+          ? '<audio controls preload="none" src="' + e(url) + '" style="width:100%;margin-top:6px"></audio>'
+          : '<a href="' + e(url) + '" target="_blank" rel="noopener" class="doux" style="font-size:.85rem">Ouvrir le document actuel ↗</a>';
+      }
+      function envoyerFichier(f) {
+        if (f.size > 25 * 1024 * 1024) { toast('Fichier trop lourd (25 Mo au maximum).', true); return; }
+        etatEl.textContent = 'Envoi… (' + tailleLisible(f.size) + ')';
+        televerserSupport(f).then(function (j) {
+          champ.value = j.url; etatEl.textContent = '✓ ' + (j.nom || f.name || 'Fichier') + ' — ' + tailleLisible(j.taille || f.size);
+          montrer(j.url);
+        }).catch(function (err) { etatEl.textContent = ''; toast(err.message, true); });
+      }
+      montrer(champ.value);
+      champ.addEventListener('change', function () { montrer(champ.value); });
+      $('[data-importer]', zone).addEventListener('click', function () { inp.click(); });
+      inp.addEventListener('change', function () { var f = inp.files && inp.files[0]; if (f) envoyerFichier(f); inp.value = ''; });
+      var micro = $('[data-micro]', zone), rec = null, morceaux = [];
+      if (micro) micro.addEventListener('click', function () {
+        if (rec && rec.state === 'recording') { rec.stop(); return; }
+        navigator.mediaDevices.getUserMedia({ audio: true }).then(function (flux) {
+          var type = ['audio/webm;codecs=opus', 'audio/ogg;codecs=opus', 'audio/mp4'].filter(function (t) { return MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t); })[0];
+          rec = type ? new MediaRecorder(flux, { mimeType: type }) : new MediaRecorder(flux);
+          morceaux = [];
+          var debut = Date.now(), minuteur = setInterval(function () { var sec = Math.round((Date.now() - debut) / 1000); etatEl.textContent = '● Enregistrement… ' + Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0'); }, 500);
+          rec.ondataavailable = function (ev) { if (ev.data && ev.data.size) morceaux.push(ev.data); };
+          rec.onstop = function () {
+            clearInterval(minuteur);
+            flux.getTracks().forEach(function (t) { t.stop(); });
+            micro.textContent = '🎙 Enregistrer ma voix';
+            var mime = rec.mimeType || 'audio/webm';
+            var ext = /mp4/.test(mime) ? 'm4a' : /ogg/.test(mime) ? 'ogg' : 'webm';
+            envoyerFichier(new File(morceaux, 'lecon-audio.' + ext, { type: mime.split(';')[0] }));
+          };
+          rec.start(1000);
+          micro.textContent = '■ Arrêter';
+        }).catch(function () { toast('Micro refusé : autorisez-le dans les réglages du navigateur.', true); });
+      });
+    });
+  }
+
   function editerLecon(l, apres) {
     charger('programmes', '/programmes').then(function (ps) {
       var champs = [
@@ -1374,32 +1441,72 @@
         { nom: 'competence', libelle: 'Compétence', type: 'select', vide: false, options: options('competence') }, { nom: 'duree_minutes', libelle: 'Durée estimée (min)', type: 'nombre' },
         { nom: 'resume', libelle: 'Résumé', type: 'textarea', plein: true, lignes: 2 },
         { nom: 'contenu', libelle: 'Contenu de la leçon', type: 'textarea', plein: true, lignes: 10 },
-        { nom: 'video_url', libelle: 'Lien vidéo (YouTube…)', type: 'url' }, { nom: 'ressource_url', libelle: 'Document (Drive, PDF…)', type: 'url' },
-        { nom: 'audio_url', libelle: 'Version audio (connexions faibles)', type: 'url', aide: 'Un audio de 10 minutes pèse 20 fois moins qu’une vidéo.' },
+        { nom: 'video_url', libelle: 'Lien vidéo (YouTube…)', type: 'url', plein: true },
+        { nom: 'ressource_url', libelle: 'Document de la leçon', type: 'url', plein: true, placeholder: 'Importez un fichier ci-dessous, ou collez un lien' },
+        { nom: 'audio_url', libelle: 'Version audio (connexions faibles)', type: 'url', plein: true, placeholder: 'Importez ou enregistrez un audio ci-dessous', aide: 'Un audio de 10 minutes pèse 20 fois moins qu’une vidéo.' },
         { nom: 'ordre', libelle: 'Ordre', type: 'nombre', pas: 1 }, { nom: 'publiee', libelle: 'Publier pour les apprenants', type: 'case' }
       ];
-      var quiz = (l.quiz || []).map(function (q) { return { question: q.question, choix: q.choix.slice(), bonne: q.bonne, explication: q.explication || '' }; });
+      // Plusieurs quiz par leçon : chaque question garde le nom de son quiz.
+      var quizz = [];
+      (l.quiz || []).forEach(function (q) {
+        var nom = q.partie || '';
+        var g = quizz.filter(function (x) { return x.titre === nom; })[0];
+        if (!g) { g = { titre: nom, questions: [] }; quizz.push(g); }
+        g.questions.push({ question: q.question, choix: q.choix.slice(), bonne: q.bonne, explication: q.explication || '' });
+      });
       var m = modaleFormulaire(l.id ? 'Modifier la leçon' : 'Nouvelle leçon', champs, l, function (d) {
-        d.quiz = quiz.filter(function (q) { return q.question && q.choix.filter(Boolean).length >= 2; });
+        d.quiz = [];
+        quizz.forEach(function (g, gi) {
+          var titre = (g.titre || '').trim() || (quizz.length > 1 ? 'Quiz ' + (gi + 1) : '');
+          g.questions.forEach(function (q) {
+            if (q.question && q.choix.filter(Boolean).length >= 2) {
+              // Les choix vides sont retirés : la bonne réponse suit son texte.
+              var bonneTexte = q.choix[q.bonne];
+              var choix = q.choix.filter(Boolean);
+              var bonne = Math.max(0, choix.indexOf(bonneTexte));
+              d.quiz.push({ question: q.question, choix: choix, bonne: bonne, explication: q.explication, partie: titre || null });
+            }
+          });
+        });
         return (l.id ? envoyer('/lecons/' + l.id, 'PATCH', d) : envoyer('/lecons', 'POST', d)).then(function () { oublier('lecons'); toast('Leçon enregistrée.'); if (apres) apres(); });
-      }, { large: true, apres: '<h3 style="margin:18px 0 8px;font-size:1rem">Quiz <span class="doux" style="font-weight:400;font-size:.82rem">— corrigé automatiquement, les réponses ne sont jamais montrées avant la validation</span></h3><div data-quiz></div><button class="cf-btn petit" type="button" data-ajout>+ Question</button>' });
+      }, { large: true, apres: '<h3 style="margin:18px 0 8px;font-size:1rem">Quiz <span class="doux" style="font-weight:400;font-size:.82rem">— autant que vous voulez, corrigés automatiquement ; les réponses ne sont jamais montrées avant la validation</span></h3><div data-quiz></div><button class="cf-btn petit principal" type="button" data-ajout-quiz>+ Ajouter un quiz</button>' });
+      brancherSupports(m.el);
       function peindre() {
-        $('[data-quiz]', m.el).innerHTML = quiz.map(function (q, i) {
-          return '<div class="cf-quiz-q" data-i="' + i + '"><div class="entete"><span>Question ' + (i + 1) + '</span><button type="button" class="cf-btn petit danger" data-retirer>Retirer</button></div>' +
-            '<input class="cf-q" style="width:100%;padding:8px;border:1.5px solid var(--cf-ligne);border-radius:8px;margin-bottom:6px" value="' + e(q.question) + '" placeholder="Énoncé">' +
-            q.choix.map(function (c, j) { return '<div style="display:flex;gap:6px;align-items:center;margin-bottom:4px"><input type="radio" name="bonne-' + i + '" value="' + j + '"' + (q.bonne === j ? ' checked' : '') + ' title="Bonne réponse"><input class="cf-c" data-j="' + j + '" style="flex:1;padding:6px;border:1.5px solid var(--cf-ligne);border-radius:8px" value="' + e(c) + '" placeholder="Choix ' + (j + 1) + '"></div>'; }).join('') +
-            '<input class="cf-x" style="width:100%;padding:6px;border:1.5px dashed var(--cf-ligne);border-radius:8px" value="' + e(q.explication) + '" placeholder="Explication affichée après la réponse (facultatif)"></div>';
-        }).join('') || '<p class="doux" style="font-size:.85rem">Aucune question.</p>';
-        $$('.cf-quiz-q', m.el).forEach(function (bloc) {
-          var i = Number(bloc.getAttribute('data-i'));
-          $('.cf-q', bloc).addEventListener('input', function (ev) { quiz[i].question = ev.target.value; });
-          $('.cf-x', bloc).addEventListener('input', function (ev) { quiz[i].explication = ev.target.value; });
-          $$('.cf-c', bloc).forEach(function (c) { c.addEventListener('input', function () { quiz[i].choix[Number(c.getAttribute('data-j'))] = c.value; }); });
-          $$('[type=radio]', bloc).forEach(function (r) { r.addEventListener('change', function () { quiz[i].bonne = Number(r.value); }); });
-          $('[data-retirer]', bloc).addEventListener('click', function () { quiz.splice(i, 1); peindre(); });
+        $('[data-quiz]', m.el).innerHTML = quizz.map(function (g, gi) {
+          return '<div class="cf-quiz-bloc" data-g="' + gi + '"><div class="cf-quiz-tete"><input class="cf-quiz-titre" value="' + e(g.titre) + '" placeholder="Nom du quiz (ex. Vocabulaire)"><span class="doux">' + g.questions.length + ' question(s)</span><button type="button" class="cf-btn petit danger" data-retirer-quiz>Retirer ce quiz</button></div>' +
+            g.questions.map(function (q, i) { return blocQuestion(q, gi, i); }).join('') +
+            '<button class="cf-btn petit" type="button" data-ajout>+ Question</button></div>';
+        }).join('') || '<p class="doux" style="font-size:.85rem">Aucun quiz pour cette leçon.</p>';
+        $$('.cf-quiz-bloc', m.el).forEach(function (bloc) {
+          var gi = Number(bloc.getAttribute('data-g')), g = quizz[gi];
+          $('.cf-quiz-titre', bloc).addEventListener('input', function (ev) { g.titre = ev.target.value; });
+          $('[data-retirer-quiz]', bloc).addEventListener('click', function () {
+            if (g.questions.length && !window.confirm('Retirer ce quiz et ses ' + g.questions.length + ' question(s) ?')) return;
+            quizz.splice(gi, 1); peindre();
+          });
+          $('[data-ajout]', bloc).addEventListener('click', function () { g.questions.push({ question: '', choix: ['', '', '', ''], bonne: 0, explication: '' }); peindre(); });
+          $$('.cf-quiz-q', bloc).forEach(function (bq) {
+            var i = Number(bq.getAttribute('data-i')), q = g.questions[i];
+            $('.cf-q', bq).addEventListener('input', function (ev) { q.question = ev.target.value; });
+            $('.cf-x', bq).addEventListener('input', function (ev) { q.explication = ev.target.value; });
+            $$('.cf-c', bq).forEach(function (c) { c.addEventListener('input', function () { q.choix[Number(c.getAttribute('data-j'))] = c.value; }); });
+            $$('[type=radio]', bq).forEach(function (r) { r.addEventListener('change', function () { q.bonne = Number(r.value); }); });
+            $('[data-retirer]', bq).addEventListener('click', function () { g.questions.splice(i, 1); peindre(); });
+          });
         });
       }
-      $('[data-ajout]', m.el).addEventListener('click', function () { quiz.push({ question: '', choix: ['', '', '', ''], bonne: 0, explication: '' }); peindre(); });
+      function blocQuestion(q, gi, i) {
+          return '<div class="cf-quiz-q" data-i="' + i + '"><div class="entete"><span>Question ' + (i + 1) + '</span><button type="button" class="cf-btn petit danger" data-retirer>Retirer</button></div>' +
+            '<input class="cf-q" style="width:100%;padding:8px;border:1.5px solid var(--cf-ligne);border-radius:8px;margin-bottom:6px" value="' + e(q.question) + '" placeholder="Énoncé">' +
+            q.choix.map(function (c, j) { return '<div style="display:flex;gap:6px;align-items:center;margin-bottom:4px"><input type="radio" name="bonne-' + gi + '-' + i + '" value="' + j + '"' + (q.bonne === j ? ' checked' : '') + ' title="Bonne réponse"><input class="cf-c" data-j="' + j + '" style="flex:1;padding:6px;border:1.5px solid var(--cf-ligne);border-radius:8px" value="' + e(c) + '" placeholder="Choix ' + (j + 1) + '"></div>'; }).join('') +
+            '<input class="cf-x" style="width:100%;padding:6px;border:1.5px dashed var(--cf-ligne);border-radius:8px" value="' + e(q.explication) + '" placeholder="Explication affichée après la réponse (facultatif)"></div>';
+      }
+      $('[data-ajout-quiz]', m.el).addEventListener('click', function () {
+        quizz.push({ titre: '', questions: [{ question: '', choix: ['', '', '', ''], bonne: 0, explication: '' }] });
+        peindre();
+        var blocs = $$('.cf-quiz-bloc', m.el); var dernier = blocs[blocs.length - 1];
+        if (dernier) { var t = $('.cf-quiz-titre', dernier); t.focus(); }
+      });
       peindre();
       if (l.id && (unDe('directeur', 'prefet') || l.cree_par === etat.ctx.moi.id)) {
         $('footer', m.el).insertAdjacentHTML('afterbegin', '<button class="cf-btn danger" data-suppr style="margin-right:auto">Supprimer</button>');

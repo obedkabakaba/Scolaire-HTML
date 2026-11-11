@@ -684,3 +684,17 @@ html:is([data-theme="nuit"], [data-theme="nexus"]) .ard-di-btn-principal:hover {
     transform: translateY(-1px);
   }
 }
+/* Guide « mains libres » : la personne agit, le guide attend en bas. */
+.ard-di-libre-note { display: none; }
+.ard-di-bulle.ard-di-bulle-libre {
+  left: 12px !important; right: 12px !important; top: auto !important;
+  bottom: calc(14px + env(safe-area-inset-bottom, 0px)) !important;
+  width: auto !important; max-width: 560px; margin: 0 auto;
+}
+html.ard-mob-coque .ard-di-bulle.ard-di-bulle-libre { bottom: calc(74px + env(safe-area-inset-bottom, 0px)) !important; }
+.ard-di-bulle-libre .ard-di-fleche,
+.ard-di-bulle-libre .ard-di-gestes,
+.ard-di-bulle-libre .ard-di-plus,
+.ard-di-bulle-libre > p:not(.ard-di-libre-note):not(.ard-di-attente-etape) { display: none; }
+.ard-di-bulle-libre .ard-di-libre-note { display: block; font-size: .8rem; opacity: .85; margin: 0 0 8px; }
+.ard-di-bulle-libre h3 { font-size: .95rem; margin-bottom: 4px; }

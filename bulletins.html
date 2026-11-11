@@ -218,7 +218,7 @@
         <p class="sous-titre">Résultats calculés, appréciations du titulaire, et génération du PDF.</p>
       </div>
       <button class="bouton bouton-principal" id="bouton-generer-pdf">📄 Générer les bulletins de la classe</button>
-      <button class="bouton bouton-secondaire" id="bouton-signer-tout" style="display:none;">✍️ Tout signer</button>
+      <button class="bouton bouton-secondaire" id="bouton-signer-tout" style="display:none;" title="Signer d'un coup les bulletins pas encore signés de la classe">✍️ Signer la classe</button>
     </div>
 
     <div class="message-flash" id="message-flash"></div>
@@ -453,8 +453,15 @@
       return;
     }
 
-    const ilResteAsSigner = eleves.some(e => !e.signe_at);
-    document.getElementById('bouton-signer-tout').style.display = ilResteAsSigner ? 'inline-block' : 'none';
+    // « Signer la classe » : seulement pour qui en a le droit (titulaire,
+    // direction) et seulement s'il reste quelque chose à signer — avec le
+    // NOMBRE, pour qu'on sache ce que le bouton va faire.
+    const peutSigner = rolesConnecte.some(r => ['titulaire', 'directeur', 'prefet'].includes(r));
+    const nbASigner = eleves.filter(e => !e.signe_at).length;
+    const boutonSignerTout = document.getElementById('bouton-signer-tout');
+    boutonSignerTout.style.display = (peutSigner && nbASigner > 0) ? 'inline-block' : 'none';
+    boutonSignerTout.textContent = `✍️ Signer la classe (${nbASigner})`;
+    boutonSignerTout.dataset.nb = String(nbASigner);
 
     corps.innerHTML = eleves.map(e => `
       <tr data-eleve-id="${e.eleve_id}" style="cursor:pointer;">
@@ -659,21 +666,57 @@
   document.getElementById('bouton-signer-tout').addEventListener('click', async () => {
     const classeId = document.getElementById('select-classe').value;
     const periodeId = document.getElementById('select-periode').value;
-    if (!await ArdoiseUI.confirmer('Signer tous les bulletins pas encore signés de cette classe, pour cette période ?')) return;
-
     const bouton = document.getElementById('bouton-signer-tout');
+    const libelleAvant = bouton.textContent;
+
+    // Avant de signer, on DIT ce qui va se passer : combien de bulletins,
+    // ce qui manque encore, ce que la signature déclenche. Avant, le bouton
+    // signait en silence et l'on découvrait après coup les familles
+    // prévenues, les appréciations verrouillées… ou l'absence de signature.
+    bouton.disabled = true; bouton.textContent = 'Vérification…';
+    const rv = await appelApi(`/bulletins/classe/${classeId}/verification?periodeId=${periodeId}`);
+    bouton.disabled = false; bouton.textContent = libelleAvant;
+    const v = (rv && rv.ok) ? await rv.json() : null;
+
+    if (v && v.signature_disponible === false) {
+      afficherMessage("Aucune signature n'est enregistrée pour l'école : ajoutez-la dans Paramètres → « Ma signature », puis revenez signer.", 'erreur');
+      return;
+    }
+
+    const nbASigner = Number(bouton.dataset.nb || 0);
+    const classeNom = document.getElementById('select-classe').selectedOptions[0]?.textContent || 'la classe';
+    const periodeNom = document.getElementById('select-periode').selectedOptions[0]?.textContent || '';
+    const lignes = [`${nbASigner} bulletin(s) de ${classeNom}${periodeNom ? ' — ' + periodeNom : ''} vont être signés.`];
+    if (v && v.nb_signes > 0) lignes.push(`${v.nb_signes} déjà signé(s) : ils ne changent pas.`);
+    lignes.push('', 'La signature :');
+    lignes.push('• appose la signature enregistrée sur chaque bulletin ;');
+    lignes.push('• prévient par e-mail les familles qui ont une adresse ;');
+    lignes.push(autoriserModifApresSignature
+      ? '• les appréciations restent modifiables (réglage de l’école).'
+      : '• verrouille les appréciations du titulaire.');
+    if (v && !v.prete) {
+      const manques = [];
+      if (v.cours_sans_note?.length) manques.push(`${v.cours_sans_note.length} cours sans aucune note`);
+      if (v.cours_partiels?.length) manques.push(`${v.cours_partiels.length} cours incomplet(s)`);
+      if (v.eleves_sans_aucune_note?.length) manques.push(`${v.eleves_sans_aucune_note.length} élève(s) sans note`);
+      if (manques.length) lignes.push('', '⚠ À vérifier avant : ' + manques.join(', ') + '.');
+    }
+    if (!await ArdoiseUI.confirmer(lignes.join('\n'), {
+      danger: false, titre: 'Signer la classe', libelleValider: `Signer ${nbASigner} bulletin(s)`
+    })) return;
+
     bouton.disabled = true; bouton.textContent = 'Signature en cours…';
 
     const r = await appelApi(`/bulletins/classe/${classeId}/signer-tout`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ periodeId })
     });
 
-    bouton.disabled = false; bouton.textContent = '✍️ Tout signer';
+    bouton.disabled = false; bouton.textContent = libelleAvant;
 
     if (!r) return;
     const donnees = await r.json();
     if (!r.ok) { afficherMessage(donnees.message || 'Erreur lors de la signature en masse.', 'erreur'); return; }
-    afficherMessage('Bulletins signés.', 'succes');
+    afficherMessage(donnees.message || 'Bulletins signés.', 'succes');
     chargerBulletins(); // le bouton disparaîtra tout seul si plus rien à signer
   });
 

@@ -1939,8 +1939,10 @@
       // textContent, jamais innerHTML, pour le message : il contient souvent
       // des noms d'élèves ou de classes saisis par l'école, jamais fiables
       // comme HTML.
-      voile.querySelector('h3').textContent = danger ? 'Confirmer la suppression' : 'Confirmation';
+      voile.querySelector('h3').textContent = options.titre || (danger ? 'Confirmer la suppression' : 'Confirmation');
       voile.querySelector('p').textContent = message;
+      // Les retours à la ligne du message sont respectés (listes courtes).
+      voile.querySelector('p').style.whiteSpace = 'pre-line';
       voile.querySelector('.annuler').textContent = libelleAnnuler;
       voile.querySelector('.valider').textContent = libelleValider;
 

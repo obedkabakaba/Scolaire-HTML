@@ -559,7 +559,15 @@
       }
 
       entetes.Authorization = 'Bearer ' + access;
-      if (reglage.body && !entetes['Content-Type']) {
+      // Un fichier (FormData, Blob…) part TEL QUEL : le navigateur pose
+      // lui-même l'en-tête multipart et sa frontière. Le transformer en JSON
+      // envoyait « {} » et le serveur répondait « aucun fichier reçu ».
+      var brut = reglage.body && (
+        (typeof FormData !== 'undefined' && reglage.body instanceof FormData) ||
+        (typeof Blob !== 'undefined' && reglage.body instanceof Blob) ||
+        (typeof URLSearchParams !== 'undefined' && reglage.body instanceof URLSearchParams) ||
+        (typeof ArrayBuffer !== 'undefined' && reglage.body instanceof ArrayBuffer));
+      if (reglage.body && !brut && !entetes['Content-Type']) {
         entetes['Content-Type'] = 'application/json';
       }
 
@@ -570,7 +578,7 @@
         // poser de délai, et une requête partie vers un serveur endormi reste
         // en attente indéfiniment — la page attend avec elle.
         signal: reglage.signal,
-        body: (reglage.body && typeof reglage.body !== 'string')
+        body: (reglage.body && !brut && typeof reglage.body !== 'string')
           ? JSON.stringify(reglage.body)
           : reglage.body
       });

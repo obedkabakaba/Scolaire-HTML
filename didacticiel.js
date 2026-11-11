@@ -1066,7 +1066,55 @@
     eclairer(code);
   }
 
+  /* Le guide se met de côté : plus de voile, une petite barre en bas de
+     l'écran qui garde « J'ai terminé », « Pas pour moi » et « Fermer ». */
+  function modeLibre(oui) {
+    if (!bulle) return;
+    bulle.classList.toggle('ard-di-bulle-libre', !!oui);
+    [projecteur, halo].forEach(function (n) { if (n) n.style.display = oui ? 'none' : ''; });
+    var plus = bulle.querySelector('[data-g="agrandir"]');
+    if (oui && !plus) {
+      plus = document.createElement('button');
+      plus.type = 'button';
+      plus.className = 'ard-di-btn ard-di-btn-discret';
+      plus.dataset.g = 'agrandir';
+      plus.textContent = 'Revoir';
+      plus.addEventListener('click', function () { modeLibre(false); });
+      var actions = bulle.querySelector('.ard-di-bulle-actions');
+      if (actions) actions.insertBefore(plus, actions.firstChild);
+    } else if (!oui && plus) {
+      plus.parentNode.removeChild(plus);
+    }
+    if (oui) { bulle.style.left = ''; bulle.style.top = ''; bulle.style.width = ''; }
+    else repositionner();
+  }
+
+  /* L'étape se valide d'elle-même : dès que le serveur la voit faite, on
+     félicite et on enchaîne, sans attendre un clic sur « J'ai terminé ». */
+  var veille = null;
+  function surveillerEtape(e) {
+    if (veille) { clearInterval(veille); veille = null; }
+    if (!e || e.type === 'decouverte') return;
+    var essais = 0;
+    veille = setInterval(function () {
+      essais++;
+      if (!bulle || etapeGuidee !== e || essais > 40 || document.hidden) {
+        if (!bulle || etapeGuidee !== e || essais > 40) { clearInterval(veille); veille = null; }
+        return;
+      }
+      charger(true).then(function () {
+        var apres = etapeParCode(e.code);
+        if (apres && apres.fait && bulle && etapeGuidee === e) {
+          clearInterval(veille); veille = null;
+          arreterGuidage();
+          enchainer(e.code);
+        }
+      });
+    }, 12000);
+  }
+
   function arreterGuidage() {
+    if (veille) { clearInterval(veille); veille = null; }
     ecrireGuidage(null);
     // Le pendant de l'affectation faite dans `demarrerGuidage`. Le laisser en
     // place féliciterait pour une étape terminée bien après l'abandon du
@@ -1169,12 +1217,14 @@
     }
 
     var e = etapeGuidee;
-    var restantes = (etat.etapes || []).filter(function (x) { return !x.fait && !x.ignoree; }).length;
+    var restantes = (etat.etapes || []).filter(function (x) { return x.obligatoire && !x.fait && !x.ignoree; }).length;
+    var facultative = e.obligatoire === false && e.type !== 'decouverte';
 
+    bulle.classList.remove('ard-di-bulle-libre');
     bulle.innerHTML = '<span class="ard-di-fleche" aria-hidden="true"></span>'
       + '<div class="ard-di-cartouche"><span>'
       + (e.type === 'decouverte' ? 'Découverte' : 'Étape') + '</span>'
-      + '<span>' + restantes + ' restante' + (restantes > 1 ? 's' : '') + '</span></div>'
+      + '<span>' + (facultative ? 'Facultatif' : (restantes + ' restante' + (restantes > 1 ? 's' : ''))) + '</span></div>'
       + '<h3>' + echapper(e.titre) + '</h3>'
       + '<p>' + echapper(e.resume || '') + '</p>'
       // La bulle disait « créez vos classes » et laissait la personne devant
@@ -1191,8 +1241,10 @@
                   + 'Voir les ' + e.details.length + ' étapes</button>'
                 : '')
           : '')
+      + '<p class="ard-di-libre-note">À vous : faites-le sur l’écran, le guide se met de côté et vérifie tout seul.</p>'
       + '<div class="ard-di-bulle-actions">'
       + '<button type="button" class="ard-di-btn ard-di-btn-discret" data-g="arreter">Fermer</button>'
+      + (facultative ? '<button type="button" class="ard-di-btn ard-di-btn-discret" data-g="ignorer">Pas pour moi</button>' : '')
       + '<button type="button" class="ard-di-btn ard-di-btn-ia" data-g="aide">Besoin d\'aide ?</button>'
       + '<button type="button" class="ard-di-btn ard-di-btn-principal" data-g="suivante">'
       + (e.type === 'decouverte' ? 'J\'ai vu' : 'Continuer') + '</button>'
@@ -1202,6 +1254,15 @@
       b.addEventListener('click', function () {
         var g = b.dataset.g;
         if (g === 'arreter') { arreterGuidage(); return; }
+        if (g === 'ignorer') {
+          // Une étape facultative se passe POUR DE BON : elle ne revient plus
+          // et n'allume plus le point jaune.
+          arreterGuidage();
+          noter('ignorer_etape', e.code).then(function () { return charger(true); })
+            .then(function () { enchainer(e.code); });
+          return;
+        }
+        if (g === 'agrandir') { modeLibre(false); return; }
         if (g === 'details') { arreterGuidage(); ouvrirEtape(e.code); ouvrir('etape'); return; }
         if (g === 'aide') { arreterGuidage(); ouvrirEtape(e.code); ouvrir('etape'); demanderIA(e.code); return; }
         if (g === 'suivante') {
@@ -1272,7 +1333,12 @@
               passer.textContent = 'Étape suivante';
               passer.addEventListener('click', function () {
                 arreterGuidage();
-                enchainer(e.code);
+                if (e.obligatoire === false) {
+                  noter('ignorer_etape', e.code).then(function () { return charger(true); })
+                    .then(function () { enchainer(e.code); });
+                } else {
+                  enchainer(e.code);
+                }
               });
               actions.insertBefore(passer, actions.firstChild);
             }
@@ -1281,6 +1347,14 @@
         }
       });
     });
+
+    if (cibleCourante && cibleCourante !== bouton && !cibleCourante.__ardDiLibre) {
+      cibleCourante.__ardDiLibre = true;
+      cibleCourante.addEventListener('click', function () {
+        if (etapeGuidee && bulle) setTimeout(function () { modeLibre(true); }, 60);
+      }, true);
+    }
+    surveillerEtape(e);
 
     repositionner();
     window.addEventListener('resize', repositionner);
@@ -1327,6 +1401,7 @@
 
   function repositionner() {
     if (!cibleCourante || !halo || !bulle) return;
+    if (bulle.classList.contains('ard-di-bulle-libre')) return;
     var r = cibleCourante.getBoundingClientRect();
     var marge = 6;
     var h = window.innerHeight, l = window.innerWidth;
@@ -1446,7 +1521,11 @@
       bouton.title = 'Aide et tutoriels';
     }
 
-    if (restantes > 0 || (etat.alertes && etat.alertes.length)) {
+    var alertesUtiles = (etat.alertes || []).filter(function (a) {
+      var et = a && a.code ? etapeParCode(a.code) : null;
+      return !et || (et.obligatoire && !et.ignoree);
+    });
+    if (restantes > 0 || alertesUtiles.length) {
       var pastille = document.createElement('span');
       pastille.className = 'ard-di-pastille';
       pastille.textContent = restantes > 0 ? String(restantes) : '!';
@@ -1629,7 +1708,7 @@
         etat = d;
         ancienMode = true;
         majBouton();
-        if (d.prochaine_etape || (d.alertes && d.alertes.length)) {
+        if (d.alertes && d.alertes.length) {
           var pastille = document.createElement('span');
           pastille.className = 'ard-di-pastille';
           pastille.textContent = '!';

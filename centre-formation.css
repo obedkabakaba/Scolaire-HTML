@@ -447,3 +447,12 @@ html:not(.ard-mob-coque) .cf-deconnexion:hover { color: var(--cf-nav-fort); }
 .cf-coche span { display: flex; flex-direction: column; }
 .cf-coche small { color: var(--cf-doux); font-size: .78rem; }
 .cf-notif { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; border-color: var(--cf-accent); }
+
+/* Leçons : supports importés et plusieurs quiz */
+.cf-support { margin-top: 8px; }
+.cf-support-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.cf-support-actions .doux { font-size: .82rem; }
+.cf-quiz-bloc { border: 1.5px solid var(--cf-ligne); border-radius: 14px; padding: 12px; margin-bottom: 12px; background: var(--cf-surface); }
+.cf-quiz-tete { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+.cf-quiz-tete .cf-quiz-titre { flex: 1 1 180px; padding: 8px 10px; border: 1.5px solid var(--cf-ligne); border-radius: 10px; font-weight: 600; font: inherit; }
+.cf-quiz-tete .doux { font-size: .8rem; }

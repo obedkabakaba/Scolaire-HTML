@@ -478,13 +478,16 @@ window.ArdoiseSiteCentre = function (donnees, o) {
       throw err;
     }).then(function (r) {
       var l = r.lecon, choix = new Array(l.quiz.length);
+      var nbParties = l.quiz.reduce(function (acc, q, i) { return acc + ((i === 0 || l.quiz[i - 1].partie !== q.partie) ? 1 : 0); }, 0);
       var video = urlSure(l.video_url), doc = urlSure(l.ressource_url);
       v.innerHTML = '<button class="lien-fleche" data-retour style="background:none;border:0;cursor:pointer;padding:0;margin-bottom:14px">← Toutes les leçons</button><h2 style="font-size:1.6rem;margin:0 0 6px">' + e(l.titre) + '</h2>' +
         (l.resume ? '<p class="chapeau">' + e(l.resume) + '</p>' : '') + '<div style="display:flex;gap:10px;flex-wrap:wrap;margin:14px 0">' + (video ? '<a class="bouton" target="_blank" rel="noopener" href="' + e(video) + '">▶ Regarder la vidéo</a>' : '') + (doc ? '<a class="bouton contour" target="_blank" rel="noopener" href="' + e(doc) + '">' + ico('document') + 'Document</a>' : '') + '</div>' +
         (urlSure(l.audio_url) ? '<div class="carte" style="margin:10px 0"><strong>Version audio</strong> <span class="petit" style="color:var(--texte-doux)">— idéale avec une petite connexion</span><audio controls preload="none" src="' + e(l.audio_url) + '" style="width:100%;margin-top:8px"></audio></div>' : '') +
         (l.contenu ? '<div class="texte-libre" style="line-height:1.7;margin:18px 0">' + e(l.contenu) + '</div>' : '') +
-        (l.quiz.length ? '<h3 style="margin-top:26px">Quiz — ' + l.quiz.length + ' question(s)</h3><form id="form-quiz" novalidate>' + l.quiz.map(function (q) {
-          return '<div class="carte" style="margin-bottom:10px" data-q="' + q.numero + '"><p style="font-weight:600;margin:0 0 10px">' + (q.numero + 1) + '. ' + e(q.question) + '</p><div style="display:grid;gap:6px">' + q.choix.map(function (ch, j) {
+        (l.quiz.length ? '<h3 style="margin-top:26px">' + (nbParties > 1 ? nbParties + ' quiz — ' : 'Quiz — ') + l.quiz.length + ' question(s)</h3><form id="form-quiz" novalidate>' + l.quiz.map(function (q, qi) {
+          // Plusieurs quiz dans une leçon : un intertitre à chaque changement.
+          var tete = (q.partie && (qi === 0 || l.quiz[qi - 1].partie !== q.partie)) ? '<h4 style="margin:18px 0 8px;font-size:1.05rem">' + e(q.partie) + '</h4>' : '';
+          return tete + '<div class="carte" style="margin-bottom:10px" data-q="' + q.numero + '"><p style="font-weight:600;margin:0 0 10px">' + (q.numero + 1) + '. ' + e(q.question) + '</p><div style="display:grid;gap:6px">' + q.choix.map(function (ch, j) {
             return '<label style="display:flex;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--bordure);border-radius:10px;cursor:pointer" data-choix="' + j + '"><input type="radio" name="q' + q.numero + '" value="' + j + '"> ' + e(ch) + '</label>';
           }).join('') + '</div><div class="petit" data-explication style="margin-top:8px"></div></div>';
         }).join('') + '<div class="message" role="status"></div><button class="bouton plein" type="submit">Valider mes réponses</button></form>' : '<button class="bouton plein" data-terminer>J’ai terminé cette leçon</button><div class="message" role="status" style="margin-top:10px"></div>');

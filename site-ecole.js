@@ -135,6 +135,107 @@
       '<path d="M24 6.5 39 11.2V22c0 9.6-6.6 16.6-15 19.6C15.6 38.6 9 31.6 9 22V11.2Z" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="1"/>' +
       '<text x="24" y="' + (ini.length > 2 ? 28.5 : 30) + '" text-anchor="middle" fill="#fff" style="font-family:var(--police-titre);font-weight:700;font-size:' + taille + 'px;letter-spacing:.5px">' + e(ini) + '</text></svg>';
   }
+  /* ==================================================================
+     ESPACES CONNECTÉS EN MODE APPLICATION
+     Parents, élèves (école) et apprenants (centre) ne visitent pas un
+     site : ils utilisent l'application de leur établissement. Une fois
+     dans leur espace, l'habillage du site disparaît (bandeau, en-tête,
+     grand titre, pied de page) au profit d'une vraie interface
+     d'application : la personne en haut, les onglets en bas, « Plus »
+     pour le reste, des feuilles qui montent du bas.
+     ================================================================== */
+  var EspaceApp = (function () {
+    function activer(oui) {
+      document.body.classList.toggle('mode-app', !!oui);
+      var meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) {
+        if (!meta.getAttribute('data-site')) meta.setAttribute('data-site', meta.getAttribute('content') || '');
+        meta.setAttribute('content', oui ? (getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#0E1C33') : meta.getAttribute('data-site'));
+      }
+    }
+
+    /** Écran de connexion d'application. Rend le <form> ; l'appelant branche l'envoi. */
+    function connexion(zone, o) {
+      zone.innerHTML = '<div class="app-connexion">' +
+        '<a class="app-retour-site" href="#/">' + ico('fleche') + '<span>Site ' + e(o.article || 'de l’établissement') + '</span></a>' +
+        '<div class="app-connexion-tete"><div class="app-logo">' + o.logo + '</div><strong>' + e(o.nom) + '</strong><span>' + e(o.titre) + '</span></div>' +
+        '<form class="app-form" novalidate><div class="message' + (o.message ? ' visible erreur' : '') + '" role="status">' + e(o.message || '') + '</div>' +
+        o.champs.map(function (c) {
+          return '<label class="app-champ"><span>' + e(c.label) + '</span><input id="' + c.id + '" autocomplete="' + (c.auto || 'off') + '" autocapitalize="characters" spellcheck="false" ' +
+            (c.code ? 'maxlength="12" class="code" ' : '') + 'placeholder="' + e(c.placeholder || '') + '" required>' + (c.aide ? '<small>' + e(c.aide) + '</small>' : '') + '</label>';
+        }).join('') +
+        '<button class="app-bouton" type="submit">' + e(o.bouton || 'Entrer') + '</button>' +
+        (o.secondaire || '') + '</form>' +
+        '<p class="app-aide">' + o.aide + '</p></div>';
+      return zone.querySelector('form');
+    }
+
+    function feuille(titre, lignes, surChoix) {
+      var v = document.createElement('div');
+      v.className = 'app-voile';
+      v.innerHTML = '<div class="app-feuille" role="dialog" aria-label="' + e(titre) + '"><div class="app-poignee"></div>' +
+        (titre ? '<h3>' + e(titre) + '</h3>' : '') +
+        lignes.map(function (l) {
+          if (l === '-') return '<hr>';
+          return '<button class="app-ligne' + (l.danger ? ' danger' : '') + '" data-c="' + e(l.cle) + '"><span class="app-ligne-ico">' + ico(l.ico) + '</span><span class="app-ligne-txt"><strong>' + e(l.libelle) + '</strong>' + (l.aide ? '<small>' + e(l.aide) + '</small>' : '') + '</span>' + (l.badge ? '<b class="app-badge">' + e(l.badge) + '</b>' : '') + '</button>';
+        }).join('') + '<button class="app-feuille-fermer" data-fermer>Fermer</button></div>';
+      document.body.appendChild(v);
+      var f = v.querySelector('.app-feuille');
+      function fermer() { v.classList.add('sort'); setTimeout(function () { v.remove(); }, 180); }
+      v.addEventListener('click', function (ev) { if (ev.target === v) fermer(); });
+      v.querySelector('[data-fermer]').addEventListener('click', fermer);
+      Array.prototype.forEach.call(v.querySelectorAll('[data-c]'), function (b) {
+        b.addEventListener('click', function () { fermer(); surChoix(b.getAttribute('data-c')); });
+      });
+      var y0 = null, dy = 0;
+      f.addEventListener('touchstart', function (ev) { if (f.scrollTop > 0) return; y0 = ev.touches[0].clientY; dy = 0; f.style.transition = 'none'; }, { passive: true });
+      f.addEventListener('touchmove', function (ev) { if (y0 === null) return; dy = Math.max(0, ev.touches[0].clientY - y0); f.style.transform = 'translateY(' + dy + 'px)'; }, { passive: true });
+      f.addEventListener('touchend', function () { if (y0 === null) return; y0 = null; f.style.transition = ''; if (dy > Math.min(140, f.offsetHeight * 0.3)) fermer(); else f.style.transform = ''; });
+      return { fermer: fermer };
+    }
+
+    /**
+     * La coquille : barre du haut (la personne), écran, onglets du bas.
+     * o.onglets : [{cle, ico, libelle, badge}] — les 4 premiers en bas, le
+     * reste dans « Plus », avec o.plus (actions : agenda, déconnexion…).
+     */
+    function coque(zone, o) {
+      var bas = o.onglets.slice(0, 4), autres = o.onglets.slice(4);
+      var dansPlus = autres.some(function (x) { return x.cle === o.actif; });
+      zone.innerHTML = '<div class="app-coque">' +
+        '<header class="app-barre"><div class="app-qui">' +
+        '<span class="app-av">' + (o.qui.photo ? '<img alt="" src="' + e(o.qui.photo) + '">' : e(o.qui.initiales)) + '</span>' +
+        '<span class="app-qui-txt"><strong>' + e(o.qui.nom) + '</strong><small>' + e(o.qui.sous || '') + '</small></span></div>' +
+        (o.entete || '') +
+        '<button class="app-rond" data-menu aria-label="Menu">' + '<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>' + '</button></header>' +
+        (o.bandeau || '') +
+        '<main class="app-ecran" id="' + (o.idVolet || 'app-volet') + '"></main>' +
+        '<nav class="app-onglets" aria-label="Navigation de l’espace">' + bas.map(function (x) {
+          return '<button data-onglet="' + e(x.cle) + '" class="' + (x.cle === o.actif ? 'actif' : '') + '">' + ico(x.ico) + '<span>' + e(x.libelle) + '</span>' + (x.badge ? '<b class="app-badge">' + e(x.badge) + '</b>' : '') + '</button>';
+        }).join('') +
+        '<button data-plus class="' + (dansPlus ? 'actif' : '') + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span>Plus</span>' +
+        (autres.some(function (x) { return x.badge; }) ? '<b class="app-badge point"></b>' : '') + '</button></nav></div>';
+      function ouvrirPlus() {
+        var lignes = autres.map(function (x) { return { cle: 'onglet:' + x.cle, ico: x.ico, libelle: x.libelle, badge: x.badge, aide: x.aide }; });
+        if (lignes.length && o.plus.length) lignes.push('-');
+        feuille('', lignes.concat(o.plus), function (c) {
+          if (c.indexOf('onglet:') === 0) o.surOnglet(c.slice(7)); else o.surPlus(c);
+        });
+      }
+      Array.prototype.forEach.call(zone.querySelectorAll('.app-onglets [data-onglet]'), function (b) {
+        b.addEventListener('click', function () { o.surOnglet(b.getAttribute('data-onglet')); });
+      });
+      zone.querySelector('[data-plus]').addEventListener('click', ouvrirPlus);
+      zone.querySelector('[data-menu]').addEventListener('click', ouvrirPlus);
+      return zone.querySelector('.app-ecran');
+    }
+
+    function titre(t, s) { return '<div class="app-titre"><h2>' + e(t) + '</h2>' + (s ? '<p>' + e(s) + '</p>' : '') + '</div>'; }
+
+    return { activer: activer, connexion: connexion, coque: coque, feuille: feuille, titre: titre };
+  })();
+  window.ArdoiseEspaceApp = EspaceApp;
+
   function blason(ecole) {
     var logo = urlSure(ecole.logo_url);
     return logo ? '<img class="blason" src="' + e(logo) + '" alt="" />' : blasonSvg(ecole.nom);
@@ -794,11 +895,37 @@
   /* Les identifiants restent dans sessionStorage : ils disparaissent à la
      fermeture du navigateur, et un parent peut y ranger plusieurs enfants. */
   function cleSession(vue) { return 'site-' + CODE.toLowerCase() + '-' + vue; }
+  function stockageEspace() {
+    try { if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) return localStorage; } catch (x) { /* rien */ }
+    return sessionStorage;
+  }
   function lireSession(vue) {
-    try { return JSON.parse(sessionStorage.getItem(cleSession(vue)) || '[]'); } catch (x) { return []; }
+    try { return JSON.parse(stockageEspace().getItem(cleSession(vue)) || sessionStorage.getItem(cleSession(vue)) || '[]'); } catch (x) { return []; }
   }
   function ecrireSession(vue, liste) {
-    try { sessionStorage.setItem(cleSession(vue), JSON.stringify(liste)); } catch (x) { /* navigation privée */ }
+    try {
+      if (liste.length) stockageEspace().setItem(cleSession(vue), JSON.stringify(liste));
+      else { localStorage.removeItem(cleSession(vue)); sessionStorage.removeItem(cleSession(vue)); }
+    } catch (x) { /* navigation privée */ }
+  }
+
+  /* L'application de l'école s'ouvre ici : « Parent ou élève ? ». Déjà
+     connecté, on va directement à son espace. */
+  function pageEspace() {
+    var c = etat.c, parents = c.pages.parents, eleves = ouverte('eleve');
+    if (parents && lireSession('parents').length) { setTimeout(function () { window.location.replace('#/parents'); }, 0); }
+    else if (eleves && lireSession('eleve').length) { setTimeout(function () { window.location.replace('#/eleve'); }, 0); }
+    else if (parents && !eleves) { setTimeout(function () { window.location.replace('#/parents'); }, 0); }
+    else if (eleves && !parents) { setTimeout(function () { window.location.replace('#/eleve'); }, 0); }
+    EspaceApp.activer(true);
+    var ec = etat.d.ecole;
+    return '<div class="app-zone"><div class="app-connexion">' +
+      '<a class="app-retour-site" href="#/">' + ico('fleche') + '<span>Site de l’école</span></a>' +
+      '<div class="app-connexion-tete"><div class="app-logo">' + blason(ec) + '</div><strong>' + e(ec.nom) + '</strong><span>Bienvenue ! Qui êtes-vous ?</span></div>' +
+      '<div class="app-choix">' +
+      (parents ? '<a class="app-choix-carte" href="#/parents"><span class="app-ligne-ico">' + ico('equipe') + '</span><span><strong>Je suis parent</strong><small>Résultats, présences, frais, emploi du temps de mon enfant</small></span></a>' : '') +
+      (eleves ? '<a class="app-choix-carte" href="#/eleve"><span class="app-ligne-ico">' + ico('livre') + '</span><span><strong>Je suis élève</strong><small>Ma journée, mes résultats, ma conduite, l’agenda</small></span></a>' : '') +
+      '</div><p class="app-aide">Il vous faut le matricule de l’élève et le code d’accès remis par le secrétariat.</p></div></div>';
   }
 
   function pageFamille(vue) {
@@ -806,11 +933,8 @@
     var parents = vue === 'parents';
     if ((parents && !c.pages.parents) || (!parents && !ouverte('eleve'))) return pageAccueil();
     etat.famille.liste = lireSession(vue);
-    var titre = parents ? 'Espace parents' : 'Espace élève';
-    var h = herosPage(titre, parents
-      ? 'Suivez la scolarité de votre enfant : résultats, présences, frais et emploi du temps.'
-      : 'Ton emploi du temps, tes résultats, tes frais, ta conduite et l’agenda de l’école, au même endroit.');
-    h += '<section class="section" style="padding-top:clamp(40px,6vw,70px)"><div class="contenant" id="zone-famille"></div></section>';
+    EspaceApp.activer(true);
+    var h = '<div class="app-zone" id="zone-famille"><div class="ecran-etat" style="min-height:60vh"><div class="anneau"></div>Chargement…</div></div>';
     setTimeout(function () {
       if (etat.famille.liste.length) chargerFamille(vue, etat.famille.actif < etat.famille.liste.length ? etat.famille.actif : 0);
       else formulaireFamille(vue);
@@ -822,6 +946,33 @@
     var parents = vue === 'parents';
     var zone = $('#zone-famille'); if (!zone) return;
     var ajout = etat.famille.liste.length > 0;
+    var tel = etat.d.ecole.telephone;
+    var formApp = EspaceApp.connexion(zone, {
+      logo: blason(etat.d.ecole), nom: etat.d.ecole.nom, article: 'de l’école',
+      titre: ajout ? 'Ajouter un enfant' : (parents ? 'Espace parents' : 'Espace élève'), message: message,
+      champs: [
+        { id: 'fa-matricule', label: 'Matricule de l’élève', placeholder: 'ex. ELV-0001' },
+        { id: 'fa-code', label: 'Code d’accès', placeholder: 'XXXXXX', code: true, aide: 'Six caractères, sans confusion entre O et 0 ni entre I et 1.' }
+      ],
+      bouton: ajout ? 'Ajouter cet enfant' : (parents ? 'Voir le suivi de mon enfant' : 'Entrer dans mon espace'),
+      secondaire: ajout ? '<button class="app-bouton second" type="button" id="annuler-ajout">Annuler</button>' : '',
+      aide: (parents ? 'Le matricule et le code d’accès sont remis par le secrétariat. Aucun compte à créer.' : 'Demande ton matricule et ton code d’accès à tes parents ou au secrétariat.') +
+        (tel ? ' <a href="' + e(tel ? 'tel:' + String(tel).replace(/[^+0-9]/g, '') : '#') + '">Appeler l’école</a>' : '')
+    });
+    formApp.id = 'form-famille';
+    if (true) {
+      $('#form-famille').addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        var m = $('#fa-matricule').value.trim(), code = $('#fa-code').value.trim().toUpperCase();
+        if (!m || !code) { var z = $('#form-famille .message'); afficher(z, 'Renseignez le matricule et le code d’accès.', 'erreur'); return; }
+        etat.famille.liste = etat.famille.liste.filter(function (x) { return x.matricule.toUpperCase() !== m.toUpperCase(); });
+        etat.famille.liste.push({ matricule: m, code_acces: code });
+        chargerFamille(vue, etat.famille.liste.length - 1, true);
+      });
+      var annulerApp = $('#annuler-ajout');
+      if (annulerApp) annulerApp.addEventListener('click', function () { chargerFamille(vue, etat.famille.actif); });
+      return;
+    }
     zone.innerHTML = '<div class="connexion-famille"><div class="apparait vu">' +
       '<span class="surtitre">' + (ajout ? 'Ajouter un enfant' : 'Connexion') + '</span>' +
       '<h2>' + (parents ? 'Accédez au suivi de votre enfant' : 'Connecte-toi à ton espace') + '</h2>' +
@@ -888,6 +1039,35 @@
     onglets = onglets.filter(Boolean);
     if (!onglets.some(function (o) { return o[0] === etat.famille.onglet; })) etat.famille.onglet = onglets[0][0];
 
+    var plusApp = [];
+    if (parents) {
+      etat.famille.liste.forEach(function (x, i) { if (i !== etat.famille.actif) plusApp.push({ cle: 'enfant:' + i, ico: 'equipe', libelle: 'Voir ' + x.matricule, aide: 'Passer à cet enfant' }); });
+      plusApp.push({ cle: 'ajouter', ico: 'plus', libelle: 'Ajouter un enfant', aide: 'Avec son matricule et son code d’accès' });
+    }
+    plusApp.push({ cle: 'installer', ico: 'accueil', libelle: 'Installer l’application', aide: 'Sur l’écran d’accueil du téléphone' });
+    plusApp.push({ cle: 'site', ico: 'globe', libelle: 'Site de l’école' });
+    plusApp.push({ cle: 'sortir', ico: 'sortie', libelle: 'Se déconnecter', danger: true });
+    var COURTS = { apercu: 'Accueil', journee: 'Ma journée', resultats: 'Résultats', finances: 'Frais', presences: 'Présences', discipline: parents ? 'Discipline' : 'Conduite', edt: 'Emploi du temps', agenda: 'Agenda' };
+    var volet = EspaceApp.coque($('#zone-famille'), {
+      idVolet: 'volet-famille', actif: etat.famille.onglet,
+      qui: { initiales: initiales(D.eleve.nom_complet), nom: parents ? D.eleve.nom_complet : 'Bonjour ' + D.eleve.prenom,
+        sous: [D.eleve.classe || 'Classe non renseignée', D.eleve.matricule].filter(Boolean).join(' · ') },
+      onglets: onglets.map(function (x) { return { cle: x[0], ico: x[1], libelle: COURTS[x[0]] || x[2] }; }),
+      plus: plusApp,
+      surOnglet: function (cle) { etat.famille.onglet = cle; tableauFamille(vue); window.scrollTo(0, 0); },
+      surPlus: function (cle) {
+        if (cle.indexOf('enfant:') === 0) { chargerFamille(vue, Number(cle.slice(7))); return; }
+        if (cle === 'ajouter') { formulaireFamille(vue); return; }
+        if (cle === 'installer') { if (window.ArdoiseInstallerApp) window.ArdoiseInstallerApp.ouvrir(); return; }
+        if (cle === 'site') { window.location.hash = '#/'; return; }
+        if (cle === 'sortir') { ecrireSession(vue, []); etat.famille = { liste: [], actif: 0, donnees: null, onglet: null }; formulaireFamille(vue); }
+      }
+    });
+    volet.innerHTML = voletFamille(etat.famille.onglet, D, parents);
+    requestAnimationFrame(function () {
+      $$('.barre-progression i[data-largeur]').forEach(function (i) { i.style.width = i.getAttribute('data-largeur'); });
+    });
+    if (volet) return;
     var enfants = parents && etat.famille.liste.length
       ? '<div class="enfants">' + etat.famille.liste.map(function (x, i) {
         return '<button data-enfant="' + i + '" class="' + (i === etat.famille.actif ? 'actif' : '') + '">' + e(i === etat.famille.actif ? D.eleve.prenom : x.matricule) + '</button>';
@@ -1116,8 +1296,8 @@
   /*  Navigation                                                         */
   /* ------------------------------------------------------------------ */
   var PAGES = { accueil: pageAccueil, ecole: pageEcole, inscriptions: pageInscriptions, vie: pageVie, infos: pageInfos, contact: pageContact,
-    parents: function () { return pageFamille('parents'); }, eleve: function () { return pageFamille('eleve'); } };
-  var TITRES = { ecole: 'L’établissement', inscriptions: 'Inscriptions', vie: 'Vie scolaire', infos: 'Informations pratiques', contact: 'Contact', parents: 'Espace parents', eleve: 'Espace élève' };
+    parents: function () { return pageFamille('parents'); }, eleve: function () { return pageFamille('eleve'); }, espace: pageEspace };
+  var TITRES = { espace: 'Mon espace', ecole: 'L’établissement', inscriptions: 'Inscriptions', vie: 'Vie scolaire', infos: 'Informations pratiques', contact: 'Contact', parents: 'Espace parents', eleve: 'Espace élève' };
 
   function naviguer() {
     if (!etat.d) return;
@@ -1125,6 +1305,7 @@
     if (!PAGES[cle] || !ouverte(cle)) cle = 'accueil';
     var changement = cle !== etat.page;
     etat.page = cle;
+    EspaceApp.activer(false);
     $('#contenu').innerHTML = PAGES[cle]();
     document.title = (cle === 'accueil' ? '' : TITRES[cle] + ' — ') + etat.d.ecole.nom;
     $$('[data-page]').forEach(function (a) { a.classList.toggle('actif', a.getAttribute('data-page') === cle); });
@@ -1194,7 +1375,7 @@
       API: API, CODE: CODE, APERCU: APERCU, e: e, urlSure: urlSure, ico: ico, blason: blason, blasonSvg: blasonSvg,
       initiales: initiales, dateLongue: dateLongue, dateObj: dateObj, montant: montant, tel: tel, MOIS_COURTS: MOIS_COURTS,
       appliquerApparence: appliquerApparence, normaliser: normaliser, illustration: illustration, liensReseaux: liensReseaux,
-      favicon: favicon, afficher: afficher, animer: animer
+      favicon: favicon, afficher: afficher, animer: animer, app: EspaceApp
     };
     function lancer() {
       try {
@@ -1204,7 +1385,7 @@
     }
     if (window.ArdoiseSiteCentre) { lancer(); return; }
     var s = document.createElement('script');
-    s.src = '/site-centre.js?v=8';
+    s.src = '/site-centre.js?v=9';
     s.onload = lancer;
     s.onerror = function () { erreur('Impossible de charger le site du centre. Vérifiez votre connexion et réessayez.'); };
     document.head.appendChild(s);

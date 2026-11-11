@@ -81,7 +81,7 @@
 /* v107 : notifications sur l'appareil (Web Push) — notifications-push.js, icône de barre d'état icone-badge-96.png, réception et toucher des notifications dans ce fichier. */
 /* v108 : finitions mobiles — « Tous les menus » / « Tous les écrans » ouvrent la feuille de menu sur téléphone, avatar avec nom réel (plus de « ? »), changement de thème plus fluide, lanceur de bureau redessiné. */
 /* v109 : la feuille Google Fonts ne bloque plus l'affichage (media="print" puis "all" au chargement) — quand fonts.googleapis.com traînait, toutes les pages restaient blanches et chargeaient sans fin. */
-const VERSION='ardoise-v114';
+const VERSION='ardoise-v115';
 /* v111 : apparences qui tiennent au retour arrière (theme.js, toutes les pages) et toutes les apparences dans l'espace des centres (theme-variables.css) ; plus de « flash » du menu au chargement (mobile.js) ; mêmes onglets sur toutes les pages, icône « ? » du didacticiel dans la barre haute ; écran de vérification de l'essai sans défilement. */
 /* v110 : espace des centres de formation — rail commun (.barre-laterale), coque mobile, didacticiel et accueil chargés depuis centre-formation.js ; archives, clients entreprises, comptes du personnel, documents ; offres Tremplin / Envol / Horizon ; Super Admin : catalogue des services. */
 /* v96 : publication des résultats (publication-resultats.js, précaché) dans Bulletins ; vidéo de présentation et lien Instagram sur le site public. */

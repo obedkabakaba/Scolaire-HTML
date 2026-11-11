@@ -663,3 +663,129 @@ html[data-apparence="epure"] .chiffre .nb { color: var(--texte); font-weight: 50
 .bandeau-cours b { margin-left: auto; white-space: nowrap; background: #fff; color: #0E1C33; padding: 9px 14px; border-radius: 999px; font-size: .9rem; }
 .bandeau-cours .point-direct { width: 12px; height: 12px; flex: none; border-radius: 50%; background: #e5484d; box-shadow: 0 0 0 5px rgba(229,72,77,.25); }
 @media (max-width: 560px) { .bandeau-cours { flex-wrap: wrap; } .bandeau-cours b { margin-left: 26px; } }
+
+/* =====================================================================
+   ESPACES CONNECTÉS — MODE APPLICATION
+   (parents, élèves, apprenants : l'application de leur établissement)
+   ===================================================================== */
+body.mode-app { background: var(--fond); }
+body.mode-app .bandeau-haut, body.mode-app .entete, body.mode-app .tiroir, body.mode-app .pied,
+body.mode-app .heros-page, body.mode-app #ard-app-pastille { display: none !important; }
+body.mode-app #contenu { padding: 0; }
+.app-zone { min-height: 100vh; min-height: 100dvh; font-family: var(--police-corps); -webkit-tap-highlight-color: transparent; }
+.app-zone button, .app-voile button { font: inherit; cursor: pointer; }
+
+/* Connexion */
+.app-connexion { min-height: 100vh; min-height: 100dvh; max-width: 440px; margin: 0 auto; padding: calc(18px + env(safe-area-inset-top)) 20px calc(28px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; }
+.app-retour-site { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px 8px 8px; border-radius: 999px; background: var(--surface); color: var(--texte); text-decoration: none; font-size: .88rem; box-shadow: var(--ombre); }
+.app-retour-site svg { width: 18px; height: 18px; transform: rotate(180deg); }
+.app-connexion-tete { text-align: center; margin: 9vh 0 26px; }
+.app-logo { width: 88px; height: 88px; margin: 0 auto 14px; display: grid; place-items: center; border-radius: 24px; background: var(--surface); box-shadow: var(--ombre); overflow: hidden; }
+.app-logo svg, .app-logo img { width: 64px; height: 64px; object-fit: contain; }
+.app-connexion-tete strong { display: block; font-size: 1.4rem; line-height: 1.25; color: var(--texte); font-family: var(--police-corps); }
+.app-connexion-tete span { display: block; margin-top: 4px; color: var(--texte-doux); font-size: .98rem; }
+.app-form { display: flex; flex-direction: column; gap: 14px; background: var(--surface); border-radius: 22px; padding: 20px; box-shadow: var(--ombre); }
+.app-champ { display: flex; flex-direction: column; gap: 6px; font-size: .86rem; font-weight: 600; color: var(--texte-doux); }
+.app-champ input { height: 54px; border: 1.5px solid transparent; border-radius: 14px; background: var(--fond-alt); padding: 0 16px; font: 500 1.05rem var(--police-corps); color: var(--texte); outline: none; transition: border-color .15s, background .15s; }
+.app-champ input:focus { border-color: var(--accent); background: var(--surface); }
+.app-champ input.code { text-transform: uppercase; letter-spacing: .22em; font-family: ui-monospace, Menlo, monospace; }
+.app-champ small { font-weight: 400; font-size: .78rem; }
+.app-bouton { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 54px; border: 0; border-radius: 14px; background: var(--accent); color: var(--sur-accent); font: 700 1rem var(--police-corps); text-decoration: none; margin-top: 4px; }
+.app-bouton:active { transform: scale(.98); }
+.app-bouton.second { background: var(--fond-alt); color: var(--texte); }
+.app-form .message { margin: 0; }
+.app-aide { text-align: center; color: var(--texte-doux); font-size: .88rem; line-height: 1.5; margin: 18px 6px 0; }
+.app-aide a { color: var(--accent); font-weight: 600; }
+
+/* Coquille */
+.app-coque { min-height: 100vh; min-height: 100dvh; }
+.app-barre { position: sticky; top: 0; z-index: 40; display: flex; align-items: center; gap: 12px; padding: calc(12px + env(safe-area-inset-top)) 16px 14px; background: var(--accent); color: var(--sur-accent); box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 25%, transparent); }
+.app-qui { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1; }
+.app-av { width: 46px; height: 46px; flex: none; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.2); font-weight: 700; font-size: 1.02rem; overflow: hidden; border: 2px solid rgba(255,255,255,.45); }
+.app-av img { width: 100%; height: 100%; object-fit: cover; }
+.app-qui-txt { min-width: 0; }
+.app-qui-txt strong { display: block; font-size: 1.04rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.app-qui-txt small { display: block; font-size: .8rem; opacity: .85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.app-rond { width: 42px; height: 42px; flex: none; border: 0; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.16); color: inherit; }
+.app-ecran { max-width: 760px; margin: 0 auto; padding: 18px 16px calc(104px + env(safe-area-inset-bottom)); }
+.app-onglets { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; display: grid; grid-template-columns: repeat(5, 1fr); background: color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-top: 1px solid var(--bordure); padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); }
+.app-onglets button { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; border: 0; background: none; color: var(--texte-doux); padding: 4px 0; font-size: .7rem; font-weight: 600; }
+.app-onglets button svg { width: 24px; height: 24px; padding: 3px 14px; box-sizing: content-box; border-radius: 999px; transition: background .15s; }
+.app-onglets button.actif { color: var(--accent); }
+.app-onglets button.actif svg { background: var(--accent-doux); }
+.app-onglets .app-badge { position: absolute; top: 0; left: 55%; }
+@media (min-width: 900px) {
+  .app-onglets { left: 50%; right: auto; bottom: 16px; width: 520px; transform: translateX(-50%); border: 1px solid var(--bordure); border-radius: 22px; box-shadow: var(--ombre); padding-bottom: 6px; }
+  .app-barre { padding-left: max(16px, calc(50% - 380px)); padding-right: max(16px, calc(50% - 380px)); }
+}
+.app-badge { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: #E5484D; color: #fff; font-size: .68rem; font-weight: 700; }
+.app-badge.point { min-width: 9px; width: 9px; height: 9px; padding: 0; }
+
+/* Le contenu des écrans, à la manière d'une application */
+.app-titre { margin: 4px 2px 16px; }
+.app-titre h2, .app-ecran > div > h2:first-child, .app-ecran h2 { font-family: var(--police-corps) !important; font-size: 1.32rem !important; font-weight: 700 !important; letter-spacing: -.01em; text-transform: none !important; margin: 0; }
+.app-titre p, .app-ecran > div:first-child > p.petit { color: var(--texte-doux); font-size: .9rem; margin: 6px 0 0 !important; }
+.app-ecran h3 { font-family: var(--police-corps) !important; font-size: 1.02rem !important; font-weight: 700 !important; text-transform: none !important; letter-spacing: 0 !important; }
+.app-ecran .carte, .app-ecran .panneau, .app-ecran .bulletin, .app-carte { background: var(--surface); border: 0 !important; border-radius: 18px !important; box-shadow: var(--ombre); padding: 16px; }
+.app-carte { display: flex; flex-direction: column; gap: 10px; }
+.app-note { color: var(--texte-doux); font-size: .84rem; margin: 0; }
+.app-ecran .grille.g2, .app-ecran .grille.g3 { grid-template-columns: 1fr; gap: 12px; }
+@media (min-width: 700px) { .app-ecran .grille.g2 { grid-template-columns: 1fr 1fr; } }
+.app-ecran .tuiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.app-ecran .tuile { background: var(--surface); border: 0; border-radius: 16px; box-shadow: var(--ombre); padding: 12px; }
+.app-ecran .tuile small { font-size: .68rem; letter-spacing: .02em; }
+.app-ecran .tuile b { font-size: 1.35rem; }
+.app-ecran .agenda { display: flex; flex-direction: column; gap: 10px; }
+.app-ecran .agenda .evenement { background: var(--surface); border: 0; border-radius: 16px; box-shadow: var(--ombre); padding: 12px 14px; }
+.app-ecran .bouton { border-radius: 12px; }
+.app-ecran .tableau-conteneur { border-radius: 16px; overflow: auto; box-shadow: var(--ombre); background: var(--surface); border: 0; }
+.app-ecran .bulletins { display: grid; grid-template-columns: 1fr; gap: 12px; }
+@media (min-width: 700px) { .app-ecran .bulletins { grid-template-columns: 1fr 1fr; } }
+.app-ecran .vide { background: var(--surface); border-radius: 18px; box-shadow: var(--ombre); }
+.app-ecran .bandeau-cours { margin-top: 0; }
+
+/* Feuille du bas (« Plus ») */
+.app-voile { position: fixed; inset: 0; z-index: 1000; background: rgba(8, 12, 20, .45); display: flex; align-items: flex-end; justify-content: center; animation: app-fondu .18s ease-out; }
+.app-voile.sort { opacity: 0; transition: opacity .18s; }
+@keyframes app-fondu { from { opacity: 0; } }
+.app-feuille { width: 100%; max-width: 520px; max-height: 86vh; overflow: auto; background: var(--surface); color: var(--texte); border-radius: 24px 24px 0 0; padding: 8px 12px calc(14px + env(safe-area-inset-bottom)); font-family: var(--police-corps); animation: app-monte .22s ease-out; transition: transform .2s; }
+@keyframes app-monte { from { transform: translateY(40px); } }
+@media (min-width: 700px) { .app-voile { align-items: center; } .app-feuille { border-radius: 24px; } }
+.app-poignee { width: 42px; height: 5px; border-radius: 3px; background: var(--bordure); margin: 4px auto 10px; }
+.app-feuille h3 { margin: 4px 8px 8px; font-size: 1.05rem; }
+.app-feuille hr { border: 0; border-top: 1px solid var(--bordure); margin: 6px 8px; }
+.app-ligne { display: flex; align-items: center; gap: 14px; width: 100%; text-align: left; background: none; border: 0; color: inherit; padding: 11px 8px; border-radius: 14px; }
+.app-ligne:active { background: var(--fond-alt); }
+.app-ligne-ico { width: 42px; height: 42px; flex: none; display: grid; place-items: center; border-radius: 12px; background: var(--accent-doux); color: var(--accent); }
+.app-ligne-ico svg { width: 22px; height: 22px; }
+.app-ligne-txt { flex: 1; min-width: 0; }
+.app-ligne-txt strong { display: block; font-size: .98rem; }
+.app-ligne-txt small { display: block; color: var(--texte-doux); font-size: .8rem; margin-top: 2px; }
+.app-ligne.danger strong { color: #C2362B; }
+.app-ligne.danger .app-ligne-ico { background: #FDECEA; color: #C2362B; }
+.app-feuille-fermer { display: block; width: 100%; margin-top: 8px; padding: 14px; border: 0; border-radius: 14px; background: var(--fond-alt); color: var(--texte); font-weight: 700; }
+.app-paiement-tete strong { display: block; font-size: 1.02rem; }
+.app-paiement-tete span { color: var(--texte-doux); font-size: .85rem; }
+.app-paiement-chiffres { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.app-paiement-chiffres small { display: block; color: var(--texte-doux); font-size: .74rem; }
+.app-paiement-chiffres b { font-size: 1.05rem; }
+.app-paiement-chiffres b.du { color: #C2362B; }
+.app-paiement-chiffres b.ok { color: #1D7A45; }
+.app-progression { height: 8px; border-radius: 999px; background: var(--fond-alt); overflow: hidden; }
+.app-progression i { display: block; height: 100%; background: var(--accent); border-radius: inherit; }
+.app-ecran .app-paiement { margin-bottom: 12px; }
+.app-sous-titre { margin: 22px 2px 10px; }
+.app-liste { background: var(--surface); border-radius: 18px; box-shadow: var(--ombre); overflow: hidden; }
+.app-liste-ligne { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--bordure); }
+.app-liste-ligne:last-child { border-bottom: 0; }
+.app-liste-ico { width: 38px; height: 38px; flex: none; display: grid; place-items: center; border-radius: 12px; background: var(--accent-doux); color: var(--accent); }
+.app-liste-ico svg { width: 20px; height: 20px; }
+.app-liste-txt strong { display: block; }
+.app-liste-txt small { color: var(--texte-doux); font-size: .82rem; }
+
+.app-ecran .tuile b { font-family: var(--police-corps) !important; font-weight: 700; }
+.app-choix { display: flex; flex-direction: column; gap: 12px; }
+.app-choix-carte { display: flex; align-items: center; gap: 14px; padding: 18px 16px; border-radius: 20px; background: var(--surface); box-shadow: var(--ombre); color: var(--texte); text-decoration: none; }
+.app-choix-carte strong { display: block; font-size: 1.05rem; }
+.app-choix-carte small { display: block; color: var(--texte-doux); font-size: .84rem; margin-top: 3px; line-height: 1.4; }
+.app-choix-carte:active { transform: scale(.985); }

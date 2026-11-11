@@ -310,8 +310,12 @@ window.ArdoiseSiteCentre = function (donnees, o) {
 
   /* ---------------------------- Espace apprenant --------------------- */
   var CLE = 'centre-' + String(CODE).toLowerCase() + '-apprenant';
-  function identifiants() { try { return JSON.parse(sessionStorage.getItem(CLE) || 'null'); } catch (x) { return null; } }
-  function memoriser(v) { try { if (v) sessionStorage.setItem(CLE, JSON.stringify(v)); else sessionStorage.removeItem(CLE); } catch (x) { /* privé */ } }
+  function stockageEspace() {
+    try { if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) return localStorage; } catch (x) { /* rien */ }
+    return sessionStorage;
+  }
+  function identifiants() { try { return JSON.parse(stockageEspace().getItem(CLE) || sessionStorage.getItem(CLE) || 'null'); } catch (x) { return null; } }
+  function memoriser(v) { try { if (v) stockageEspace().setItem(CLE, JSON.stringify(v)); else { localStorage.removeItem(CLE); sessionStorage.removeItem(CLE); } } catch (x) { /* privé */ } }
   function appelApprenant(chemin, corps) {
     return fetch(API + '/public/centre/' + encodeURIComponent(CODE) + '/apprenant' + chemin, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.assign({}, identifiants(), corps || {})) })
       .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) { var er = new Error(j.message || 'Erreur'); er.status = r.status; throw er; } return j; }); },
@@ -353,11 +357,33 @@ window.ArdoiseSiteCentre = function (donnees, o) {
   }
   function pageApprenant() {
     setTimeout(etat.apprenant ? dessinerEspace : (identifiants() ? chargerEspace : formulaireConnexion), 0);
-    return heros('Espace apprenant', 'Votre planning, vos leçons en ligne, vos résultats, vos paiements et vos certificats.') +
-      '<section class="section" style="padding-top:clamp(40px,6vw,70px)"><div class="contenant" id="zone-apprenant"><div class="ecran-etat" style="min-height:200px"><div class="anneau"></div>Chargement…</div></div></section>';
+    if (o.app) o.app.activer(true);
+    return '<div class="app-zone" id="zone-apprenant"><div class="ecran-etat" style="min-height:60vh"><div class="anneau"></div>Chargement…</div></div>';
   }
   function formulaireConnexion(message, apres) {
     var z = $('#zone-apprenant'); if (!z) return;
+    if (o.app) {
+      var f = o.app.connexion(z, {
+        logo: o.blason(ec), nom: ec.nom, titre: 'Espace apprenant', article: 'du centre', message: message,
+        champs: [
+          { id: 'ap-mat', label: 'Matricule', placeholder: 'ex. AP-2026-00001', auto: 'username' },
+          { id: 'ap-code', label: 'Code d’accès', placeholder: 'XXXXXX', code: true, auto: 'current-password' }
+        ],
+        bouton: 'Entrer dans mon espace',
+        aide: 'Votre matricule et votre code d’accès sont sur votre fiche d’inscription. Perdus ? Demandez-les à l’accueil' +
+          (ec.telephone ? ' : <a href="' + e(o.tel(ec.telephone)) + '">appeler le centre</a>.' : '.')
+      });
+      f.id = 'form-apprenant';
+      f.addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        if (APERCU) { o.afficher($('.message', f), 'Aperçu : l’espace apprenant fonctionnera une fois le site publié.', 'info'); return; }
+        var mat = $('#ap-mat').value.trim(), code = $('#ap-code').value.trim().toUpperCase();
+        if (!mat || !code) { o.afficher($('.message', f), 'Indiquez votre matricule et votre code d’accès.', 'erreur'); return; }
+        memoriser({ matricule: mat, code_acces: code });
+        (apres || chargerEspace)();
+      });
+      return;
+    }
     z.innerHTML = '<div class="connexion-famille"><div class="apparait vu"><span class="surtitre">Connexion</span><h2>Accédez à votre espace</h2><p class="chapeau" style="margin:18px 0 28px">Le centre vous a remis un matricule et un code d’accès à votre inscription. Vous les avez perdus ? Demandez-les à l’accueil.</p>' +
       '<div class="carte-code" aria-hidden="true"><div class="puce-or"></div><div style="font-weight:700">' + e(ec.nom) + '</div><div class="ligne-code"><span>Matricule</span><span>Code d’accès</span></div><div style="display:flex;justify-content:space-between;margin-top:4px"><span class="valeur-code">AP-2026-00001</span><span class="valeur-code">K7P•••</span></div></div></div>' +
       '<form class="panneau formulaire apparait vu" id="form-apprenant" novalidate><div class="message' + (message ? ' visible erreur' : '') + '" role="status">' + e(message || '') + '</div>' +
@@ -391,6 +417,39 @@ window.ArdoiseSiteCentre = function (donnees, o) {
     var A = D.apprenant, I = D.indicateurs;
     var onglets = [['accueil', 'accueil', 'Mon planning'], ['replays', 'presence', 'Cours enregistrés' + ((D.replays || []).filter(function (r) { return !r.valide_at; }).length ? ' (' + D.replays.filter(function (r) { return !r.valide_at; }).length + ')' : '')], ['lecons', 'livre', 'Leçons en ligne'], ['resultats', 'resultats', 'Mes résultats'], ['paiements', 'portefeuille', 'Paiements'], ['certificats', 'etoile', 'Certificats']];
     if (!D.reglages || D.reglages.avis !== false) onglets.push(['avis', 'coeur', 'Donner mon avis']);
+    if (o.app) {
+      var aSuivre = (D.replays || []).filter(function (r) { return !r.valide_at; }).length;
+      var vApp = o.app.coque(z, {
+        idVolet: 'volet-apprenant', actif: etat.onglet || 'accueil',
+        qui: { initiales: o.initiales([A.prenom, A.nom].join(' ')), photo: A.photo_url && urlSure(A.photo_url), nom: [A.prenom, A.nom].filter(Boolean).join(' '),
+          sous: [A.matricule, A.niveau_actuel ? 'Niveau ' + A.niveau_actuel : ''].filter(Boolean).join(' · ') },
+        onglets: [{ cle: 'accueil', ico: 'calendrier', libelle: 'Planning' }, { cle: 'lecons', ico: 'livre', libelle: 'Leçons' },
+          { cle: 'resultats', ico: 'resultats', libelle: 'Résultats' }, { cle: 'paiements', ico: 'portefeuille', libelle: 'Paiements' },
+          { cle: 'replays', ico: 'presence', libelle: 'Cours enregistrés', badge: aSuivre ? String(aSuivre) : '', aide: 'Rattrapez un cours manqué' },
+          { cle: 'certificats', ico: 'etoile', libelle: 'Certificats' }].concat(onglets.some(function (x) { return x[0] === 'avis'; }) ? [{ cle: 'avis', ico: 'coeur', libelle: 'Donner mon avis' }] : []),
+        plus: [{ cle: 'agenda', ico: 'calendrier', libelle: 'Ajouter à mon agenda', aide: 'Vos cours dans l’agenda du téléphone' },
+          { cle: 'installer', ico: 'accueil', libelle: 'Installer l’application', aide: 'Sur l’écran d’accueil du téléphone' },
+          { cle: 'site', ico: 'globe', libelle: 'Site du centre' },
+          { cle: 'sortir', ico: 'sortie', libelle: 'Se déconnecter', danger: true }],
+        surOnglet: function (cle) { etat.onglet = cle; dessinerEspace(); window.scrollTo(0, 0); },
+        surPlus: function (cle) {
+          if (cle === 'agenda') {
+            appelApprenant('/agenda').then(function (l) {
+              var v2 = $('#volet-apprenant');
+              v2.innerHTML = o.app.titre('Mon agenda', 'Vos cours apparaissent dans l’agenda de votre téléphone, avec une alerte une heure avant. Tout se met à jour automatiquement.') +
+                '<div class="app-carte"><a class="app-bouton" target="_blank" rel="noopener" href="' + e(l.google) + '">Android / Google Agenda</a><a class="app-bouton second" href="' + e(l.webcal) + '">iPhone</a><p class="app-note">Ce lien est personnel : ne le partagez pas.</p></div>';
+            }).catch(function (err) { bandeau(err.message, 'info'); });
+            return;
+          }
+          if (cle === 'installer') { if (window.ArdoiseInstallerApp) window.ArdoiseInstallerApp.ouvrir(); return; }
+          if (cle === 'site') { window.location.hash = '#/'; return; }
+          if (cle === 'sortir') { memoriser(null); etat.apprenant = null; try { localStorage.removeItem(CLE_CACHE); } catch (x) {} formulaireConnexion(); }
+        }
+      });
+      etat.onglet = etat.onglet || 'accueil';
+      remplirVolet(vApp, D, A, I);
+      return;
+    }
     z.innerHTML = '<div class="tableau-bord"><aside class="panneau profil-eleve"><div class="avatar">' + e(o.initiales([A.prenom, A.nom].join(' '))) + '</div><h3 style="margin:0">' + e([A.prenom, A.nom].filter(Boolean).join(' ')) + '</h3>' +
       '<div class="meta">' + e(A.niveau_actuel ? 'Niveau ' + A.niveau_actuel : 'Niveau à évaluer') + '</div><span class="matricule">' + e(A.matricule) + '</span>' +
       '<nav class="onglets-famille">' + onglets.map(function (x) { return '<button data-onglet="' + x[0] + '" class="' + (x[0] === etat.onglet ? 'actif' : '') + '">' + ico(x[1]) + e(x[2]) + '</button>'; }).join('') + '</nav>' +
@@ -405,7 +464,9 @@ window.ArdoiseSiteCentre = function (donnees, o) {
           '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px"><a class="bouton" target="_blank" rel="noopener" href="' + e(l.google) + '">Android / Google Agenda</a><a class="bouton contour" href="' + e(l.webcal) + '">iPhone</a></div><p class="petit" style="margin-top:14px;color:var(--texte-doux)">Ce lien est personnel : ne le partagez pas.</p>';
       }).catch(function (err) { bandeau(err.message, 'info'); });
     });
-    var v = $('#volet-apprenant');
+    remplirVolet($('#volet-apprenant'), D, A, I);
+  }
+  function remplirVolet(v, D, A, I) {
     var titre = function (t, s) { return '<div style="margin-bottom:22px"><h2 style="font-size:1.6rem">' + e(t) + '</h2>' + (s ? '<p class="petit" style="color:var(--texte-doux);margin:6px 0 0">' + e(s) + '</p>' : '') + '</div>'; };
     if (etat.onglet === 'accueil') {
       var aVenir = D.seances.filter(function (s) { return String(s.date_seance).slice(0, 10) >= new Date().toISOString().slice(0, 10) && s.statut !== 'faite'; });
@@ -448,6 +509,19 @@ window.ArdoiseSiteCentre = function (donnees, o) {
           ['score_oral', 'score_ecrit', 'score_comprehension_orale', 'score_comprehension_ecrite'].filter(function (k) { return x[k] !== null; }).map(function (k) { return '<div class="rang">' + e({ score_oral: 'Oral', score_ecrit: 'Écrit', score_comprehension_orale: 'Compréhension orale', score_comprehension_ecrite: 'Compréhension écrite' }[k]) + ' : ' + Math.round(x[k]) + '</div>'; }).join('') +
           (x.commentaire ? '<div class="rang" style="font-style:italic">' + e(x.commentaire) + '</div>' : '') + '</div>';
       }).join('') + '</div>' : vide('resultats', 'Aucune évaluation pour le moment.'));
+    } else if (etat.onglet === 'paiements' && o.app) {
+      // Application : une carte par formation, une ligne par reçu.
+      v.innerHTML = titre('Paiements', 'Ce que vous avez réglé et ce qu’il reste à payer.') +
+        D.inscriptions.map(function (i) {
+          var pc = Number(i.montant) > 0 ? Math.min(100, Math.round(Number(i.paye) / Number(i.montant) * 100)) : 100;
+          var solde = Number(i.reste) <= 0;
+          return '<div class="app-carte app-paiement"><div class="app-paiement-tete"><strong>' + e(i.programme || 'Formation') + '</strong><span>' + e(i.groupe || '') + '</span></div>' +
+            '<div class="app-paiement-chiffres"><div><small>Payé</small><b>' + e(argent(i.paye, i.devise)) + '</b></div><div><small>' + (solde ? 'Soldé' : 'Reste à payer') + '</small><b class="' + (solde ? 'ok' : 'du') + '">' + (solde ? '✓' : e(argent(i.reste, i.devise))) + '</b></div><div><small>Total</small><b>' + e(argent(i.montant, i.devise)) + '</b></div></div>' +
+            '<div class="app-progression"><i style="width:' + pc + '%"></i></div></div>';
+        }).join('') +
+        '<h3 class="app-sous-titre">Reçus</h3>' + (D.paiements.length ? '<div class="app-liste">' + D.paiements.map(function (p) {
+          return '<div class="app-liste-ligne"><span class="app-liste-ico">' + ico('document') + '</span><span class="app-liste-txt"><strong>' + e(argent(p.montant, p.devise)) + '</strong><small>Reçu ' + e(p.numero_recu) + ' · ' + e(dateCourte(p.date_paiement)) + '</small></span></div>';
+        }).join('') + '</div>' : vide('portefeuille', 'Aucun paiement enregistré pour le moment.'));
     } else if (etat.onglet === 'paiements') {
       v.innerHTML = titre('Paiements', 'Ce que vous avez réglé et ce qu’il reste à payer.') + (D.inscriptions.length ? '<div class="tableau-conteneur"><table><thead><tr><th>Formation</th><th class="nombre">Montant</th><th class="nombre">Payé</th><th class="nombre">Reste</th></tr></thead><tbody>' +
         D.inscriptions.map(function (i) { return '<tr><td>' + e([i.programme, i.groupe].filter(Boolean).join(' — ')) + '</td><td class="nombre">' + e(argent(i.montant, i.devise)) + '</td><td class="nombre">' + e(argent(i.paye, i.devise)) + '</td><td class="nombre"><strong>' + e(argent(i.reste, i.devise)) + '</strong></td></tr>'; }).join('') + '</tbody></table></div>' : '') +
@@ -534,8 +608,18 @@ window.ArdoiseSiteCentre = function (donnees, o) {
     if (identifiants()) { suite(); return; }
     formulaireConnexion(null, suite);
   }
+  /* Pages de l'apprenant hors de l'espace (classe, replay, présence) :
+     elles restent dans l'application, avec « ← Mon espace » en haut. */
+  function pageApp(titre, sous, attente) {
+    if (!o.app) return null;
+    o.app.activer(true);
+    return '<div class="app-zone"><header class="app-barre"><a class="app-rond" href="#/apprenant" aria-label="Mon espace"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></a>' +
+      '<span class="app-qui-txt"><strong>' + e(titre) + '</strong><small>' + e(sous) + '</small></span></header>' +
+      '<main class="app-ecran" id="zone-apprenant"><div class="ecran-etat" style="min-height:50vh"><div class="anneau"></div>' + e(attente) + '</div></main></div>';
+  }
   function pageClasse() {
     setTimeout(function () { exigerConnexion(chargerClasse); }, 0);
+    var app = pageApp('Classe en ligne', ec.nom, 'Ouverture de la classe…'); if (app) return app;
     return heros('Classe en ligne', 'Votre présence est enregistrée dès que vous rejoignez — même si la connexion coupe ensuite.') +
       '<section class="section" style="padding-top:clamp(30px,5vw,60px)"><div class="contenant" id="zone-apprenant"><div class="ecran-etat" style="min-height:200px"><div class="anneau"></div>Ouverture de la classe…</div></div></section>';
   }
@@ -588,6 +672,7 @@ window.ArdoiseSiteCentre = function (donnees, o) {
   }
   function pageReplay() {
     setTimeout(function () { exigerConnexion(chargerReplay); }, 0);
+    var app = pageApp('Cours enregistré', ec.nom, 'Chargement…'); if (app) return app;
     return heros('Cours enregistré', 'Suivez le cours à votre rythme ; votre présence est comptée quand vous l’avez suivi.') +
       '<section class="section" style="padding-top:clamp(30px,5vw,60px)"><div class="contenant" id="zone-apprenant"><div class="ecran-etat" style="min-height:200px"><div class="anneau"></div>Chargement…</div></div></section>';
   }
@@ -616,6 +701,7 @@ window.ArdoiseSiteCentre = function (donnees, o) {
   }
   function pagePointer() {
     setTimeout(function () { exigerConnexion(pointerMaintenant); }, 0);
+    var app = pageApp('Présence', ec.nom, 'Enregistrement de votre présence…'); if (app) return app;
     return heros('Présence', 'Pointage de votre présence au cours.') + '<section class="section"><div class="contenant" id="zone-apprenant" style="max-width:640px"><div class="ecran-etat" style="min-height:200px"><div class="anneau"></div>Enregistrement de votre présence…</div></div></section>';
   }
   function pointerMaintenant() {
@@ -663,6 +749,7 @@ window.ArdoiseSiteCentre = function (donnees, o) {
     if (!PAGES[cle]) cle = 'accueil';
     var changement = cle !== etat.page;
     etat.page = cle;
+    if (o.app) o.app.activer(false);
     $('#contenu').innerHTML = PAGES[cle]();
     document.title = (cle === 'accueil' ? '' : TITRES[cle] + ' — ') + ec.nom;
     $$('[data-page]').forEach(function (a) { a.classList.toggle('actif', a.getAttribute('data-page') === cle); });

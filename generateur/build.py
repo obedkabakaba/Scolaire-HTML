@@ -27,6 +27,7 @@ import contenu_services
 import contenu_divers
 import contenu_guides
 import contenu_apporteurs
+import contenu_centres
 
 ICI = os.path.dirname(os.path.abspath(__file__))
 RACINE_DEPOT = os.path.dirname(ICI)
@@ -39,7 +40,7 @@ def construire_pages():
     urls = [contenu_accueil.construire()]
     for module in (contenu_fonctionnalites_a, contenu_fonctionnalites_b,
                    contenu_fonctionnalites_c, contenu_tarifs,
-                   contenu_services, contenu_divers, contenu_apporteurs):
+                   contenu_services, contenu_divers, contenu_apporteurs, contenu_centres):
         urls.extend(module.construire())
     urls.extend(contenu_guides.construire())
     return urls

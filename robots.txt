@@ -33,6 +33,7 @@ Allow: /faq/
 Allow: /contact/
 Allow: /ecrire/
 Allow: /apporteurs/
+Allow: /fonctionnalites/centres-de-formation/
 Allow: /guides/
 Allow: /guides/choisir-logiciel-gestion-scolaire-rdc/
 Allow: /guides/digitaliser-ecole-rdc/

@@ -216,6 +216,32 @@ CORPS = """
   </div>
 </section>
 
+<!-- ===================================================== CENTRES DE FORMATION -->
+<section class="section bande-centres" id="centres-de-formation">
+  <div class="conteneur grille-deux">
+    <div>
+      <span class="eyebrow">Nouveau · Centres de formation</span>
+      <h2>Vous dirigez un centre d'anglais, d'informatique ou de métiers&nbsp;?</h2>
+      <p class="chapeau">Ardoise a un espace fait pour vous&nbsp;: sessions, groupes, appel
+        par QR code, paiements par tranches, certificats vérifiables, site avec test de
+        niveau et une classe en ligne sans limite de durée. Apprenants illimités, dès
+        20&nbsp;$ par mois.</p>
+      <p class="groupe-cta">
+        <a class="bouton ocre" href="/fonctionnalites/centres-de-formation/">Découvrir l'espace des centres</a>
+        <a class="bouton secondaire" href="/tarifs/#centres-de-formation">Voir les offres</a>
+      </p>
+    </div>
+    <div>
+      <ul class="liste-avantages">
+        <li><span><strong>Sessions et groupes</strong> — chaque rentrée, ses groupes, ses coachs et ses horaires</span></li>
+        <li><span><strong>Caisse</strong> — tranches, reçus, restes à payer, en dollars comme en francs</span></li>
+        <li><span><strong>Classe Ardoise</strong> — salle en ligne avec avatars, ou visio classique</span></li>
+        <li><span><strong>Archives et documents</strong> — anciennes sessions, attestations, cartes d'apprenant</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
 <!-- ==================================================================== IA -->
 <section class="section">
   <div class="conteneur grille-deux">

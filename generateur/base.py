@@ -57,6 +57,8 @@ MENU = [
                      "Concours, candidats, vœux, affectation"),
                     ("/fonctionnalites/direction-et-pilotage/", "Direction et pilotage",
                      "Rapports, communication, archives"),
+                    ("/fonctionnalites/centres-de-formation/", "Centres de formation",
+                     "Langues, informatique, métiers : sessions, caisse, classe en ligne"),
                 ],
             },
         ],
@@ -223,6 +225,7 @@ PIED = """<footer class="pied">
           <li><a href="/fonctionnalites/finances/">Finances</a></li>
           <li><a href="/fonctionnalites/admissions-et-orientation/">Admissions et orientation</a></li>
           <li><a href="/fonctionnalites/direction-et-pilotage/">Direction et pilotage</a></li>
+          <li><a href="/fonctionnalites/centres-de-formation/">Centres de formation</a></li>
         </ul>
       </div>
       <div>

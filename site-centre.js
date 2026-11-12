@@ -193,8 +193,23 @@ window.ArdoiseSiteCentre = function (donnees, o) {
     return m ? decodeURIComponent(m[1] || '') : '';
   }
 
+  /* Une formation, telle qu'on la lit dans la liste : « Business English —
+     B1 · 8 semaines · 210 $ ». */
+  function libelleFormation(p) {
+    var details = [p.niveau, p.duree_semaines ? p.duree_semaines + ' semaine' + (p.duree_semaines > 1 ? 's' : '') : (p.heures_total ? p.heures_total + ' h' : ''),
+      p.horaire || '', p.prix ? Number(p.prix).toLocaleString('fr-FR') + ' ' + (p.devise === 'USD' ? '$' : (p.devise || '')) : ''].filter(Boolean);
+    return p.nom + (details.length ? ' — ' + details.join(' · ') : '');
+  }
+  function optionsFormations(ps, choix) {
+    var parCategorie = {}, ordre = [];
+    ps.forEach(function (p) { var k = p.categorie || ''; if (!parCategorie[k]) { parCategorie[k] = []; ordre.push(k); } parCategorie[k].push(p); });
+    var opt = function (p) { return '<option value="' + e(p.nom) + '"' + (p.nom === choix ? ' selected' : '') + '>' + e(libelleFormation(p)) + '</option>'; };
+    if (ordre.length <= 1) return ps.map(opt).join('');
+    return ordre.map(function (k) { return k ? '<optgroup label="' + e(k) + '">' + parCategorie[k].map(opt).join('') + '</optgroup>' : parCategorie[k].map(opt).join(''); }).join('');
+  }
+
   function pageInscription() {
-    var ps = F.programmes || [], gs = F.groupes || [];
+    var ps = (F.formations_inscription && F.formations_inscription.length ? F.formations_inscription : F.programmes) || [], gs = F.groupes || [];
     var choixProg = parametre('programme'), choixGroupe = parametre('groupe');
     var niveau = etat.test ? etat.test.niveau : '';
     if (c.inscriptions_en_ligne === false || (c.pages && c.pages.inscriptions === false)) {
@@ -206,9 +221,9 @@ window.ArdoiseSiteCentre = function (donnees, o) {
         return '<div class="etape apparait"><span class="pastille-num">' + (i + 1) + '</span><h3>' + e(x[0]) + '</h3><p>' + e(x[1]) + '</p></div>';
       }).join('') + '</div>' + (anglais && !niveau ? '<p class="petit" style="margin-top:18px">Vous ne connaissez pas votre niveau ? <a href="#/test-niveau">Passez le test gratuit</a> d’abord.</p>' : '') + '</div>' +
       '<form class="panneau formulaire apparait" data-centre="preinscription" novalidate><div class="message" role="status"></div>' +
-      '<div class="champ"><label for="ci-prog">Formation souhaitée <em>*</em></label><select id="ci-prog" name="programme_souhaite" required><option value="">— Choisir —</option>' +
-      ps.map(function (p) { return '<option' + (p.nom === choixProg ? ' selected' : '') + '>' + e(p.nom) + '</option>'; }).join('') + '<option>Je ne sais pas encore — conseillez-moi</option></select></div>' +
-      (gs.length ? '<div class="champ"><label for="ci-groupe">Groupe ou horaire préféré</label><select id="ci-groupe" name="groupe_souhaite"><option value="">— Indifférent —</option>' + gs.map(function (g) { return '<option' + (g.nom === choixGroupe ? ' selected' : '') + ' value="' + e(g.nom) + '">' + e(g.nom + (g.horaire ? ' — ' + g.horaire : '')) + '</option>'; }).join('') + '</select></div>' : '') +
+      '<div class="champ"><label for="ci-prog">Formation souhaitée <em>*</em></label><select id="ci-prog" name="programme_souhaite" required><option value="">— Choisissez votre formation —</option>' +
+      optionsFormations(ps, choixProg) + '<option value="Je ne sais pas encore — conseillez-moi">Je ne sais pas encore — conseillez-moi</option></select><small class="petit" data-detail-formation style="display:block;color:var(--texte-doux);margin-top:6px"></small></div>' +
+      (gs.length ? '<div class="champ"><label for="ci-groupe">Groupe ou horaire préféré</label><select id="ci-groupe" name="groupe_souhaite"><option value="">— Indifférent —</option>' + gs.map(function (g) { return '<option' + (g.nom === choixGroupe ? ' selected' : '') + ' value="' + e(g.nom) + '" data-programme="' + e(g.programme || '') + '">' + e(g.nom + (g.session ? ' · ' + g.session : '') + (g.horaire && g.nom.indexOf(g.horaire) < 0 ? ' — ' + g.horaire : '') + (g.places === 0 ? ' (complet)' : g.places ? ' (' + g.places + ' place' + (g.places > 1 ? 's' : '') + ')' : '')) + '</option>'; }).join('') + '</select></div>' : '') +
       '<div class="ligne"><div class="champ"><label for="ci-mode">Mode</label><select id="ci-mode" name="mode_souhaite"><option value="">— Indifférent —</option><option value="presentiel">Présentiel</option><option value="en_ligne">En ligne</option><option value="hybride">Hybride</option></select></div>' +
       '<div class="champ"><label for="ci-niv">Niveau estimé</label><input id="ci-niv" name="niveau_estime" maxlength="40" value="' + e(niveau) + '" placeholder="' + (anglais ? 'ex. A2, ou « débutant »' : 'ex. débutant') + '"></div></div>' +
       '<div class="ligne"><div class="champ"><label for="ci-nom">Nom complet <em>*</em></label><input id="ci-nom" name="nom" required maxlength="120" autocomplete="name"></div>' +
@@ -898,6 +913,32 @@ window.ArdoiseSiteCentre = function (donnees, o) {
   /*  Formulaires de demande                                             */
   /* ------------------------------------------------------------------ */
   function brancherDemandes() {
+    /* Inscription : la formation choisie se décrit sous la liste, et les
+       groupes proposés sont ceux de cette formation. */
+    var prog = $('#ci-prog');
+    if (prog) {
+      var formations = (F.formations_inscription && F.formations_inscription.length ? F.formations_inscription : F.programmes) || [];
+      var majChoix = function () {
+        var p = formations.filter(function (x) { return x.nom === prog.value; })[0];
+        var z = $('[data-detail-formation]');
+        if (z) z.textContent = p ? [p.description ? String(p.description).slice(0, 180) : '', p.mode ? ({ presentiel: 'En présentiel', en_ligne: 'En ligne', hybride: 'Présentiel ou en ligne' }[p.mode] || '') : '', p.prochaine_rentree ? 'Prochaine rentrée : ' + o.dateLongue(p.prochaine_rentree) : ''].filter(Boolean).join(' · ') : '';
+        var g = $('#ci-groupe');
+        if (g) {
+          var aDesGroupes = false;
+          Array.prototype.forEach.call(g.options, function (opt) {
+            if (!opt.value) return;
+            var lie = opt.getAttribute('data-programme');
+            var visible = !p || !lie || lie === p.nom;
+            opt.hidden = !visible; opt.disabled = !visible;
+            if (visible) aDesGroupes = true;
+            if (!visible && opt.selected) g.value = '';
+          });
+          g.closest('.champ').style.display = aDesGroupes ? '' : 'none';
+        }
+      };
+      prog.addEventListener('change', majChoix);
+      majChoix();
+    }
     $$('form[data-centre]').forEach(function (f) {
       var type = f.getAttribute('data-centre');
       f.addEventListener('submit', function (ev) {

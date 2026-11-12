@@ -806,3 +806,49 @@ body.mode-app #contenu { padding: 0; }
 .resume-points { margin: 6px 0 0; padding-left: 20px; line-height: 1.55; }
 .resume-mots { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 .resume-mots span { background: #EEF3FA; border: 1px solid #DCE5F2; border-radius: 10px; padding: 5px 10px; font-size: .86rem; }
+
+/* « Se souvenir de moi » */
+.app-souvenir { display: flex; gap: 10px; align-items: flex-start; margin: 4px 0 14px; cursor: pointer; text-align: left; }
+.app-souvenir input { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--accent, #1E4E8C); flex: none; }
+.app-souvenir strong { display: block; font-size: .95rem; }
+.app-souvenir small { display: block; color: var(--texte-doux, #5A6B85); font-size: .8rem; margin-top: 2px; }
+
+/* Activer les notifications */
+.carte-notif { display: flex; gap: 14px; align-items: flex-start; margin: 0 0 18px; border: 1px solid #DCE5F2; background: linear-gradient(135deg, #F4F8FF, #FFFFFF); }
+.carte-notif-ico { font-size: 1.6rem; line-height: 1; }
+.carte-notif p { margin: 4px 0 10px; }
+.carte-notif-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.carte-notif-actions .bouton { padding: 8px 14px; font-size: .88rem; }
+
+/* Discussions de l'apprenant */
+.disc-liste { display: flex; flex-direction: column; gap: 8px; }
+.disc-canal { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 14px; border: 1px solid #E3E9F2; border-radius: 14px; background: #fff; text-align: left; cursor: pointer; font: inherit; color: inherit; }
+.disc-canal.non-lu { border-color: var(--accent, #1E4E8C); box-shadow: 0 4px 14px rgba(30,78,140,.08); }
+.disc-canal.non-lu strong { color: var(--accent, #1E4E8C); }
+.disc-av { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; font-size: 1.3rem; background: #EEF3FA; flex: none; }
+.disc-av.groupe { background: #E9F6EE; }
+.disc-txt { flex: 1; min-width: 0; }
+.disc-txt strong { display: block; font-size: .98rem; }
+.disc-txt small { display: block; color: var(--texte-doux, #5A6B85); font-size: .84rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+.disc-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex: none; }
+.disc-meta time { font-size: .74rem; color: var(--texte-doux, #5A6B85); }
+.disc-meta b { background: var(--accent, #1E4E8C); color: #fff; border-radius: 999px; min-width: 22px; height: 22px; display: grid; place-items: center; font-size: .75rem; padding: 0 6px; }
+.disc-fil { display: flex; flex-direction: column; height: calc(100vh - 210px); min-height: 360px; }
+.disc-tete { display: flex; align-items: center; gap: 10px; padding: 4px 0 10px; border-bottom: 1px solid #E3E9F2; }
+.disc-tete strong { font-size: 1.05rem; }
+.disc-tete strong small { display: block; font-weight: 400; font-size: .78rem; color: var(--texte-doux, #5A6B85); }
+.disc-retour { width: 38px; height: 38px; border-radius: 50%; border: 0; background: #EEF3FA; font-size: 1.5rem; line-height: 1; cursor: pointer; color: inherit; }
+.disc-messages { flex: 1; overflow-y: auto; padding: 14px 2px; display: flex; flex-direction: column; gap: 8px; -webkit-overflow-scrolling: touch; }
+.disc-msg { max-width: 82%; align-self: flex-start; background: #F1F4F9; border-radius: 16px 16px 16px 4px; padding: 8px 12px; }
+.disc-msg.moi { align-self: flex-end; background: var(--accent, #1E4E8C); color: #fff; border-radius: 16px 16px 4px 16px; }
+.disc-msg.equipe:not(.moi) { background: #FFF6E6; }
+.disc-msg b { display: block; font-size: .78rem; margin-bottom: 2px; }
+.disc-msg b i { font-style: normal; font-weight: 600; font-size: .7rem; background: #F5C26B; color: #4A3000; border-radius: 6px; padding: 0 5px; margin-left: 4px; }
+.disc-msg p { margin: 0; line-height: 1.4; overflow-wrap: anywhere; }
+.disc-msg em { font-size: .85rem; opacity: .7; }
+.disc-msg time { display: block; font-size: .68rem; opacity: .65; text-align: right; margin-top: 3px; }
+.disc-vide { text-align: center; color: var(--texte-doux, #5A6B85); margin: auto; }
+.disc-ecrire { display: flex; gap: 8px; align-items: flex-end; padding-top: 10px; border-top: 1px solid #E3E9F2; }
+.disc-ecrire textarea { flex: 1; resize: none; border: 1px solid #D5DEEA; border-radius: 20px; padding: 10px 14px; font: inherit; font-size: 1rem; max-height: 140px; }
+.disc-ecrire button { width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--accent, #1E4E8C); color: #fff; font-size: 1.1rem; cursor: pointer; flex: none; }
+@media (max-width: 720px) { .disc-fil { height: calc(100vh - 190px); height: calc(100dvh - 190px); } }

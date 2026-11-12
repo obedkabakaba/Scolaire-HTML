@@ -165,6 +165,7 @@
           return '<label class="app-champ"><span>' + e(c.label) + '</span><input id="' + c.id + '" autocomplete="' + (c.auto || 'off') + '" autocapitalize="characters" spellcheck="false" ' +
             (c.code ? 'maxlength="12" class="code" ' : '') + 'placeholder="' + e(c.placeholder || '') + '" required>' + (c.aide ? '<small>' + e(c.aide) + '</small>' : '') + '</label>';
         }).join('') +
+        (o.souvenir !== undefined ? '<label class="app-souvenir"><input type="checkbox" id="app-souvenir"' + (o.souvenir ? ' checked' : '') + '><span><strong>Se souvenir de moi</strong><small>Rester connecté sur cet appareil. À décocher sur un téléphone prêté.</small></span></label>' : '') +
         '<button class="app-bouton" type="submit">' + e(o.bouton || 'Entrer') + '</button>' +
         (o.secondaire || '') + '</form>' +
         '<p class="app-aide">' + o.aide + '</p></div>';
@@ -951,12 +952,31 @@
   /* Les identifiants restent dans sessionStorage : ils disparaissent à la
      fermeture du navigateur, et un parent peut y ranger plusieurs enfants. */
   function cleSession(vue) { return 'site-' + CODE.toLowerCase() + '-' + vue; }
-  function stockageEspace() {
-    try { if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) return localStorage; } catch (x) { /* rien */ }
-    return sessionStorage;
+  /* « Se souvenir de moi » : les identifiants restent sur l'appareil
+     (localStorage) au lieu de disparaître à la fermeture du navigateur.
+     L'application installée s'en souvient d'office. */
+  function cleSouvenir() { return 'site-' + CODE.toLowerCase() + '-souvenir'; }
+  function seSouvenir() {
+    try {
+      var v = localStorage.getItem(cleSouvenir());
+      if (v === '1') return true;
+      if (v === '0') return false;
+      return true; // coché par défaut : on décoche sur un appareil prêté
+    } catch (x) { return false; }
   }
+  function choisirSouvenir(oui) {
+    try {
+      localStorage.setItem(cleSouvenir(), oui ? '1' : '0');
+      ['parents', 'eleve'].forEach(function (vue) {
+        var k = cleSession(vue), v = localStorage.getItem(k) || sessionStorage.getItem(k);
+        if (!v) return;
+        if (oui) { localStorage.setItem(k, v); sessionStorage.removeItem(k); } else { sessionStorage.setItem(k, v); localStorage.removeItem(k); }
+      });
+    } catch (x) { /* rien */ }
+  }
+  function stockageEspace() { return seSouvenir() ? localStorage : sessionStorage; }
   function lireSession(vue) {
-    try { return JSON.parse(stockageEspace().getItem(cleSession(vue)) || sessionStorage.getItem(cleSession(vue)) || '[]'); } catch (x) { return []; }
+    try { return JSON.parse(stockageEspace().getItem(cleSession(vue)) || sessionStorage.getItem(cleSession(vue)) || localStorage.getItem(cleSession(vue)) || '[]'); } catch (x) { return []; }
   }
   function ecrireSession(vue, liste) {
     try {
@@ -1011,6 +1031,7 @@
         { id: 'fa-code', label: 'Code d’accès', placeholder: 'XXXXXX', code: true, aide: 'Six caractères, sans confusion entre O et 0 ni entre I et 1.' }
       ],
       bouton: ajout ? 'Ajouter cet enfant' : (parents ? 'Voir le suivi de mon enfant' : 'Entrer dans mon espace'),
+      souvenir: ajout ? undefined : seSouvenir(),
       secondaire: ajout ? '<button class="app-bouton second" type="button" id="annuler-ajout">Annuler</button>' : '',
       aide: (parents ? 'Le matricule et le code d’accès sont remis par le secrétariat. Aucun compte à créer.' : 'Demande ton matricule et ton code d’accès à tes parents ou au secrétariat.') +
         (tel ? ' <a href="' + e(tel ? 'tel:' + String(tel).replace(/[^+0-9]/g, '') : '#') + '">Appeler l’école</a>' : '')
@@ -1021,6 +1042,7 @@
         ev.preventDefault();
         var m = $('#fa-matricule').value.trim(), code = $('#fa-code').value.trim().toUpperCase();
         if (!m || !code) { var z = $('#form-famille .message'); afficher(z, 'Renseignez le matricule et le code d’accès.', 'erreur'); return; }
+        var caseSouvenir = $('#app-souvenir'); if (caseSouvenir) choisirSouvenir(caseSouvenir.checked);
         etat.famille.liste = etat.famille.liste.filter(function (x) { return x.matricule.toUpperCase() !== m.toUpperCase(); });
         etat.famille.liste.push({ matricule: m, code_acces: code });
         chargerFamille(vue, etat.famille.liste.length - 1, true);
@@ -1444,7 +1466,7 @@
     }
     if (window.ArdoiseSiteCentre) { lancer(); return; }
     var s = document.createElement('script');
-    s.src = '/site-centre.js?v=12';
+    s.src = '/site-centre.js?v=13';
     s.onload = lancer;
     s.onerror = function () { erreur('Impossible de charger le site du centre. Vérifiez votre connexion et réessayez.'); };
     document.head.appendChild(s);

@@ -234,6 +234,7 @@
     programmes: '<path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3.5 6h.01"/><path d="M3.5 12h.01"/><path d="M3.5 18h.01"/>',
     finances: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7v10"/><path d="M14.5 9.5A2.5 2.5 0 0 0 12 8.5h-.5a2 2 0 0 0 0 4h1a2 2 0 0 1 0 4H12a2.5 2.5 0 0 1-2.5-1"/>',
     demandes: '<path d="M4 4h16v12H5.2L4 17.5z"/><path d="M8 9h8"/><path d="M8 12h5"/>',
+    discussions: '<path d="M3 5h12v8H7l-4 3z"/><path d="M15 9h6v8l-3-2h-7v-2"/>',
     assistant: '<path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8z"/><path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9z"/>',
     site: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18"/><path d="M12 3a15 15 0 0 0 0 18"/>',
     calendrier: '<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/><path d="M8 2v4"/><path d="M16 2v4"/><path d="M7 13h2"/><path d="M11 13h2"/><path d="M15 13h2"/><path d="M7 17h2"/><path d="M11 17h2"/>',
@@ -264,6 +265,7 @@
     ['finances', 'Finances', ['directeur', 'comptable', 'secretaire']],
     ['entreprises', 'Clients entreprises', ['directeur', 'comptable', 'secretaire']],
     ['demandes', 'Demandes du site', ['directeur', 'prefet', 'secretaire']],
+    ['discussions', 'Discussions', ['directeur', 'prefet', 'secretaire', 'professeur']],
     ['archives', 'Archives', ['directeur', 'prefet', 'secretaire', 'comptable', 'professeur']],
     ['assistant', 'Assistant IA', ['directeur', 'prefet', 'secretaire', 'professeur']],
     ['site', 'Site du centre', ['directeur', 'prefet']],
@@ -273,7 +275,7 @@
   /* Les rubriques du rail, rangées comme dans l'espace des écoles. */
   var SECTIONS_NAV = [
     ['Pilotage', ['tableau', 'moi', 'sessions', 'calendrier', 'assistant']],
-    ['Apprenants', ['apprenants', 'demandes', 'certificats', 'archives']],
+    ['Apprenants', ['apprenants', 'discussions', 'demandes', 'certificats', 'archives']],
     ['Formation', ['groupes', 'seances', 'lecons', 'evaluations', 'programmes', 'coachs']],
     ['Gestion', ['finances', 'entreprises', 'site', 'reglages', 'personnel']]
   ];
@@ -2115,7 +2117,8 @@
       ['coach_inscrit', 'case', 'Le coach peut inscrire des apprenants dans SES groupes'],
       ['accueil_planifie', 'case', 'L’accueil crée les groupes et planifie les séances'],
       ['accueil_finances', 'case', 'L’accueil voit les dépenses, la paie et le bilan'],
-      ['adjoint_finances', 'case', 'L’adjoint pédagogique voit les finances']
+      ['adjoint_finances', 'case', 'L’adjoint pédagogique voit les finances'],
+      ['discussion_groupe', 'case', 'Les apprenants d’un groupe discutent entre eux dans l’application (la discussion privée avec le coach reste toujours ouverte)']
     ]],
     ['paie', 'Paie des coachs', 'Le montant saisi pour chaque coach est payé par unité choisie ici.', [
       ['mode', 'choix', 'Mode de paie', '', [['heure', 'À l’heure de cours donnée'], ['seance', 'À la séance donnée'], ['mensuel', 'Forfait mensuel']]]
@@ -2405,6 +2408,97 @@
       document.head.appendChild(sc);
     });
   }
+  /* ------------------------------------------------------------------ */
+  /*  Discussions avec les apprenants (groupe et privé)                   */
+  /* ------------------------------------------------------------------ */
+  var minuteurDiscussion = null;
+  ROUTES.discussions = function () {
+    if (minuteurDiscussion) { clearInterval(minuteurDiscussion); minuteurDiscussion = null; }
+    var voulu = decodeURIComponent(((window.location.hash.split('?')[1] || '').match(/(?:^|&)c=([^&]+)/) || [])[1] || '');
+    var z = page('Discussions', 'Les apprenants vous écrivent depuis leur application : la discussion de chaque groupe, et les messages privés. Ils sont prévenus sur leur téléphone quand vous répondez.',
+      '<button class="cf-btn principal" data-nouveau-prive>✉️ Écrire à un apprenant</button>');
+    var canaux = [];
+    function heure(d) { var t = new Date(d); return t.toDateString() === new Date().toDateString() ? t.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : t.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }); }
+    function lister(puisOuvrir) {
+      api('/discussions').then(function (d) {
+        if (!d.disponible) { z.innerHTML = '<div class="cf-vide">Les discussions s’ouvrent dès que la mise à jour de la base (migration 084) est appliquée.</div>'; return; }
+        canaux = d.canaux || [];
+        z.innerHTML = '<div class="cf-disc"><aside class="cf-disc-liste">' + (canaux.length ? canaux.map(function (c) {
+          var der = c.dernier;
+          return '<button class="cf-disc-canal' + (c.non_lus ? ' non-lu' : '') + '" data-canal="' + e(c.canal) + '"><span class="av">' + (c.type === 'prive' ? '👤' : '👥') + '</span><span class="tx"><strong>' + e(c.titre) + '</strong><small>' + e(der ? (der.auteur ? der.auteur + ' : ' : '') + (der.texte || 'message retiré') : c.sous_titre) + '</small></span><span class="mt">' + (der ? '<time>' + e(heure(der.at)) + '</time>' : '') + (c.non_lus ? '<b>' + c.non_lus + '</b>' : '') + '</span></button>';
+        }).join('') : '<div class="cf-vide">Aucun groupe ouvert pour le moment.</div>') + '</aside><section class="cf-disc-fil" data-fil><div class="cf-vide">Choisissez une discussion.</div></section></div>';
+        $$('[data-canal]', z).forEach(function (b) { b.addEventListener('click', function () { ouvrir(b.getAttribute('data-canal')); }); });
+        var cible = puisOuvrir || voulu; voulu = '';
+        if (cible) ouvrir(cible); else if (!surTelephone() && canaux.length) ouvrir(canaux[0].canal);
+      }).catch(echec);
+    }
+    function ouvrir(canal) {
+      if (minuteurDiscussion) { clearInterval(minuteurDiscussion); minuteurDiscussion = null; }
+      var f = $('[data-fil]', z); if (!f) return;
+      $$('[data-canal]', z).forEach(function (b) { b.classList.toggle('actif', b.getAttribute('data-canal') === canal); });
+      z.querySelector('.cf-disc').classList.add('fil-ouvert');
+      var c = canaux.filter(function (x) { return x.canal === canal; })[0] || { titre: 'Discussion privée', sous_titre: '' };
+      f.innerHTML = '<div class="cf-disc-tete"><button class="cf-btn petit" data-retour-liste>‹</button><div><strong>' + e(c.titre) + '</strong><small>' + e(c.sous_titre || '') + '</small></div></div>' +
+        '<div class="cf-disc-messages" data-msgs><div class="cf-chargement">Chargement…</div></div>' +
+        '<form class="cf-disc-ecrire" data-ecrire><textarea name="t" rows="1" maxlength="1500" placeholder="Votre message…"></textarea><button class="cf-btn principal">Envoyer</button></form>';
+      $('[data-retour-liste]', f).addEventListener('click', function () { z.querySelector('.cf-disc').classList.remove('fil-ouvert'); lister(); });
+      var zone = $('[data-msgs]', f), form = $('[data-ecrire]', f), champ = form.elements.t, dernier = null;
+      champ.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' && !ev.shiftKey && !surTelephone()) { ev.preventDefault(); form.dispatchEvent(new Event('submit', { cancelable: true })); } });
+      function charger(force) {
+        return api('/discussions/messages?canal=' + encodeURIComponent(canal)).then(function (r) {
+          var der = r.messages.length ? r.messages[r.messages.length - 1].id : null;
+          if (!force && der === dernier) return;
+          dernier = der;
+          var bas = zone.scrollHeight - zone.scrollTop - zone.clientHeight < 60;
+          zone.innerHTML = r.messages.length ? r.messages.map(function (m) {
+            var mien = m.auteur === r.moi;
+            return '<div class="cf-disc-msg' + (mien ? ' moi' : '') + (m.equipe ? ' equipe' : '') + '">' + (mien ? '' : '<b>' + e(m.auteur_nom) + '</b>') +
+              (m.supprime ? '<em>Message retiré</em>' : '<p>' + e(m.texte).replace(/\n/g, '<br>') + '</p>') +
+              '<span class="pied"><time>' + e(new Date(m.created_at).toDateString() === new Date().toDateString() ? heure(m.created_at) : heure(m.created_at) + ' ' + new Date(m.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })) + '</time>' +
+              (!m.supprime ? '<button type="button" data-retirer="' + e(m.id) + '" title="Retirer ce message">Retirer</button>' : '') + '</span></div>';
+          }).join('') : '<div class="cf-vide">Pas encore de message.</div>';
+          $$('[data-retirer]', zone).forEach(function (b) {
+            b.addEventListener('click', function () {
+              if (!window.confirm('Retirer ce message ? Il sera remplacé par « Message retiré » pour tout le monde.')) return;
+              envoyer('/discussions/messages/' + b.getAttribute('data-retirer'), 'DELETE').then(function () { charger(true); }).catch(echec);
+            });
+          });
+          if (force || bas) zone.scrollTop = zone.scrollHeight;
+        }).catch(echec);
+      }
+      charger(true);
+      minuteurDiscussion = setInterval(function () { if (!document.body.contains(zone)) { clearInterval(minuteurDiscussion); minuteurDiscussion = null; return; } if (!document.hidden) charger(false); }, 8000);
+      form.addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        var t = champ.value.trim(); if (!t) return;
+        champ.value = '';
+        envoyer('/discussions/messages', 'POST', { canal: canal, texte: t }).then(function () { charger(true); }).catch(function (err) { champ.value = t; echec(err); });
+      });
+    }
+    $('[data-nouveau-prive]').addEventListener('click', function () {
+      var groupes = canaux.filter(function (c) { return c.type === 'groupe'; });
+      if (!groupes.length) { toast('Aucun groupe ouvert.'); return; }
+      var m = modale('Écrire à un apprenant', '<label class="cf-champ"><span>Groupe</span><select data-g>' + groupes.map(function (g) { return '<option value="' + e(g.groupe_id) + '">' + e(g.titre) + '</option>'; }).join('') + '</select></label>' +
+        '<label class="cf-champ"><span>Apprenant</span><select data-a><option>Chargement…</option></select></label>',
+        { pied: '<button class="cf-btn" data-fermer>Annuler</button><button class="cf-btn principal" data-ok>Ouvrir la discussion</button>' });
+      var sg = m.el.querySelector('[data-g]'), sa = m.el.querySelector('[data-a]');
+      function remplir() {
+        api('/apprenants?groupe_id=' + encodeURIComponent(sg.value)).then(function (ls) {
+          sa.innerHTML = ls.map(function (x) { return '<option value="' + e(x.id) + '">' + e(nomComplet(x)) + '</option>'; }).join('') || '<option value="">Aucun apprenant</option>';
+        }).catch(echec);
+      }
+      sg.addEventListener('change', remplir); remplir();
+      m.el.querySelector('[data-ok]').addEventListener('click', function () {
+        if (!sa.value) return;
+        var canal = 'p:' + sg.value + ':' + sa.value;
+        m.fermer();
+        canaux.push({ canal: canal, type: 'prive', titre: sa.options[sa.selectedIndex].text, sous_titre: sg.options[sg.selectedIndex].text, non_lus: 0 });
+        ouvrir(canal);
+      });
+    });
+    lister();
+  };
+
   ROUTES.salle = function () {
     var id = (window.location.hash.split('?s=')[1] || '').split('&')[0];
     if (minuteurSalle) { clearInterval(minuteurSalle); minuteurSalle = null; }

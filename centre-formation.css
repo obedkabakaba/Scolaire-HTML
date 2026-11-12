@@ -222,6 +222,11 @@ html:not(.ard-mob-coque) .cf-deconnexion:hover { color: var(--cf-nav-fort); }
 .cf-toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); background: #1F2B24; color: #F6F2E7; padding: 11px 18px; border-radius: 12px; font-size: .9rem; z-index: 1100; box-shadow: 0 10px 30px rgba(0, 0, 0, .25); max-width: min(92vw, 560px); }
 .cf-toast.erreur { background: #8E2B22; }
 .cf-encadre { background: #FFF8EE; border: 1px solid #F0D9B5; border-radius: 12px; padding: 12px 14px; font-size: .88rem; line-height: 1.5; margin-bottom: 14px; }
+/* Dans les apparences sombres, l'encadré prend la couleur de la carte (teintée) :
+   un fond crème sous un texte clair devenait illisible. */
+@supports (background: color-mix(in srgb, red 50%, blue)) {
+  .cf-encadre { background: color-mix(in srgb, var(--cf-carte, #FBF9F3) 86%, #E8A13A); border-color: color-mix(in srgb, var(--cf-carte, #FBF9F3) 70%, #E8A13A); color: inherit; }
+}
 .cf-code { font-family: var(--police-mono, 'IBM Plex Mono', monospace); background: var(--cf-surface); border: 1px dashed var(--cf-ligne); border-radius: 8px; padding: 2px 8px; font-weight: 600; letter-spacing: .05em; }
 .cf-chrono { display: flex; flex-direction: column; gap: 8px; }
 .cf-chrono .item { display: flex; gap: 12px; align-items: flex-start; padding: 10px; border: 1px solid var(--cf-ligne); border-radius: 10px; background: var(--cf-surface); }

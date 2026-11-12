@@ -231,7 +231,8 @@
       participants: {}, animateur: null, scene: 'attente', micros_libres: !!(P.salle && P.salle.micros_libres), places_verrouillees: false,
       places: (P.salle && P.salle.places) || 20, chat: [], tableau: { traits: [], texte: '' }, sondage: null, minuteur: null,
       parleurs: [], decalage: 0, terminee: false, nonLus: 0, verrouillee: false,
-      vue: (P.salle && P.salle.vue) || 'salle', ecran: [], cameras_apprenants: !(P.salle && P.salle.cameras_apprenants === false)
+      vue: (P.salle && P.salle.vue) || 'salle', ecran: [], cameras_apprenants: !(P.salle && P.salle.cameras_apprenants === false),
+      transcription: [], ia: (P.salle && P.salle.ia) || {}
     };
     var PLACES = dispositionPlaces(S.places);
     var monAvatar = chargerAvatar();
@@ -251,14 +252,14 @@
       '<header class="ca-entete"><div class="ca-titre"><span class="ca-pastille" aria-hidden="true"></span><div><strong>' + esc(P.salle.titre || 'Cours') + '</strong><span>' + esc([P.salle.theme, P.salle.heure_debut ? String(P.salle.heure_debut).slice(0, 5).replace(':', ' h ') : ''].filter(Boolean).join(' · ')) + '</span></div></div>' +
       '<div class="ca-vues" role="tablist"><button data-vue="salle" role="tab" title="La salle de classe dessinée, avec les avatars">🏫 Salle</button><button data-vue="visio" role="tab" title="La visio classique : le coach en grand, les vignettes des participants">🎥 Visio</button><button data-vue="tableau" role="tab" title="Le tableau en grand">🖥 Tableau</button></div>' +
       '<div class="ca-etat-reseau" data-reseau title="Qualité de votre connexion"><i></i><i></i><i></i><span>Connexion…</span></div>' +
-      '<div class="ca-compte" data-compte>👥 0</div><span class="ca-porte" data-porte hidden>🔒 Classe fermée</span><button class="ca-quitter" data-quitter>Quitter</button></header>' +
+      '<div class="ca-compte" data-compte>👥 0</div><span class="ca-porte" data-porte hidden>🔒 Classe fermée</span>' + (S.ia.assistant ? '<button class="ca-ia-puce" data-ia-puce title="L’IA Ardoise suit le cours">✨ IA</button>' : '') + '<button class="ca-quitter" data-quitter>Quitter</button></header>' +
       '<div class="ca-corps"><div class="ca-zone" data-zone><div class="ca-piece" data-piece>' + decorSvg() +
       '<div class="ca-tableau" data-tableau><video class="ca-video" playsinline muted></video><canvas class="ca-craie"></canvas><div class="ca-tableau-texte" data-texte-tableau></div>' +
       '<div class="ca-tableau-attente" data-attente><span>🧑‍🏫</span><strong>En attente du coach…</strong><small>La classe est ouverte : choisissez votre place.</small></div>' +
       '<button class="ca-agrandir" data-agrandir title="Agrandir le tableau">⤢</button><div class="ca-outils-craie" data-outils-craie></div></div>' +
-      '<div class="ca-minuteur" data-minuteur hidden></div><div class="ca-scene" data-scene></div><div class="ca-flottants" data-flottants></div></div>' +
+      '<div class="ca-minuteur" data-minuteur hidden></div><div class="ca-scene" data-scene></div><div class="ca-flottants" data-flottants></div></div><div class="ca-st" data-st hidden aria-live="polite"></div>' +
       '<div class="ca-bande" data-bande></div><div class="ca-vignettes" data-vignettes></div></div>' +
-      '<aside class="ca-panneau" data-panneau><div class="ca-onglets"><button data-onglet="discussion">💬 Discussion<b data-non-lus hidden></b></button><button data-onglet="participants">👥 Classe</button><button data-onglet="sondage">📊 Sondage</button><button class="ca-fermer-panneau" data-fermer-panneau aria-label="Fermer">✕</button></div><div class="ca-volet" data-volet></div></aside></div>' +
+      '<aside class="ca-panneau" data-panneau><div class="ca-onglets"><button data-onglet="discussion">💬 Discussion<b data-non-lus hidden></b></button><button data-onglet="participants">👥 Classe</button><button data-onglet="sondage">📊 Sondage</button>' + (S.ia.assistant || S.ia.sous_titres ? '<button data-onglet="ia">✨ IA<b data-ia-non-lus hidden></b></button>' : '') + '<button class="ca-fermer-panneau" data-fermer-panneau aria-label="Fermer">✕</button></div><div class="ca-volet" data-volet></div></aside></div>' +
       '<footer class="ca-barre" data-barre></footer><div class="ca-moi" data-moi hidden><video playsinline muted autoplay></video><span>Vous · caméra activée</span></div>' +
       '<div class="ca-toasts" data-toasts></div><audio data-son autoplay></audio></div>');
     document.body.appendChild(racine);
@@ -312,6 +313,11 @@
           if (typeof m.cameras_apprenants === 'boolean') S.cameras_apprenants = m.cameras_apprenants;
           if (premierEtat) { premierEtat = false; voirVue(vueParDefaut(S.vue)); }
           S.chat = m.chat || [];
+          if (m.ia) { S.ia = m.ia; IA_DISPO = m.ia; }
+          if (Array.isArray(m.transcription)) {
+            var connus = {}; S.transcription.forEach(function (l) { connus[l.id] = true; });
+            m.transcription.forEach(function (l) { if (!connus[l.id]) S.transcription.push(l); });
+          }
           if (m.places && m.places !== S.places) { S.places = m.places; PLACES = dispositionPlaces(S.places); }
           if (m.terminee) { finir(); return; }
           redessinerTout();
@@ -339,6 +345,7 @@
           if (m.m.pid !== MOI) bulle(m.m.pid, m.m.texte);
           break;
         case 'reaction': reaction(m.pid, m.e); break;
+        case 'sous_titre': recevoirSousTitre(m.l); break;
         case 'parleurs': S.parleurs = m.pids || []; rendreParleurs(); break;
         case 'parole':
           if (m.donner) { toast('🎙️ Le coach vous donne la parole.', 'succes', { bouton: 'Parler maintenant', action: function () { Media.basculerMicro(true); } }); Media.basculerMicro(true, { silencieux: true }); }
@@ -352,7 +359,7 @@
           var etaitOuvert = S.sondage && S.sondage.ouvert;
           S.sondage = m.sondage;
           if (S.sondage && S.sondage.ouvert && !etaitOuvert && !jeSuisAnimateur()) { ouvrirPanneau('sondage'); sonnerie('sondage'); }
-          if (panneau === 'sondage') rendreVolet();
+          if (panneau === 'sondage' || panneau === 'ia') rendreVolet();
           rendreScene();
           break;
         case 'minuteur': S.decalage = m.maintenant - Date.now(); S.minuteur = m.minuteur; rendreMinuteur(); break;
@@ -778,12 +785,14 @@
       racine.classList.toggle('panneau-ouvert', !!nom);
       $$('[data-onglet]', racine).forEach(function (b) { b.classList.toggle('actif', b.getAttribute('data-onglet') === nom); });
       if (nom === 'discussion') { S.nonLus = 0; majNonLus(); }
+      if (nom === 'ia') IA.nonLus = 0;
       rendreVolet();
       rendreBarre();
     }
     function majNonLus() {
       var b = $('[data-non-lus]', racine); b.hidden = !S.nonLus; b.textContent = S.nonLus;
       var bb = $('[data-b="discussion"] b', racine); if (bb) { bb.hidden = !S.nonLus; bb.textContent = S.nonLus; }
+      var bi = $('[data-ia-non-lus]', racine); if (bi && typeof IA !== 'undefined') { bi.hidden = !IA.nonLus; bi.textContent = IA.nonLus; }
     }
     $$('[data-onglet]', racine).forEach(function (b) { b.addEventListener('click', function () { ouvrirPanneau(b.getAttribute('data-onglet')); }); });
     $('[data-fermer-panneau]', racine).addEventListener('click', function () { ouvrirPanneau(null); });
@@ -807,6 +816,9 @@
       } else if (panneau === 'sondage') {
         v.innerHTML = voletSondage();
         brancherVoletSondage(v);
+      } else if (panneau === 'ia') {
+        v.innerHTML = voletIA();
+        brancherVoletIA(v);
       }
     }
 
@@ -941,6 +953,8 @@
       } else {
         html += bouton('reactions', '😀', 'Réagir') + bouton('compris', '❓', 'Pas compris', { titre: 'Signaler au coach que vous n’avez pas compris' });
       }
+      if (IA_DISPO.sous_titres) html += bouton('cc', 'CC', ST.langue ? 'Sous-titres · ' + ST.langue.toUpperCase() : (ST.affiches ? 'Sous-titres' : 'Sous-titres coupés'), { actif: ST.affiches, titre: 'Sous-titres, traduction et reconnaissance de votre voix', classe: 'cc' + (Voix.actif() ? ' ecoute' : '') });
+      if (IA_DISPO.assistant) html += bouton('ia', '✨', 'IA', { actif: panneau === 'ia', pastille: String(IA.nonLus || 0), titre: jeSuisAnimateur() ? 'Suggestions, résumé, quiz et bilan' : 'Résumé et explications du cours' });
       html += bouton('participants', '👥', 'Classe', { actif: panneau === 'participants' }) +
         bouton('faible', m.faible ? '🐢' : '📶', m.faible ? 'Connexion faible' : 'Connexion', { actif: !!m.faible, titre: 'Mode connexion faible : le son et le tableau, sans l’image' });
       html += '</div><div class="ca-barre-groupe fin">' + bouton('plus', ICO.plus, 'Plus', { classe: 'prim etroit-seul' }) +
@@ -978,15 +992,18 @@
         l('minuteur', '⏱', S.minuteur ? 'Arrêter le minuteur' : 'Minuteur d’exercice');
         l('enregistrer', '⏺', Media.enregistre() ? 'Arrêter l’enregistrement' : 'Enregistrer le cours');
         l('participants', '👥', 'La classe', 'Mains levées, parole, faire sortir');
+        if (IA_DISPO.assistant) l('ia', '✨', 'IA de la classe', 'Suggestions, résumé, question de quiz, bilan');
         l('verrou', S.verrouillee ? '🔓' : '🔒', S.verrouillee ? 'Rouvrir la classe' : 'Fermer la classe', S.verrouillee ? 'Les apprenants pourront de nouveau entrer' : 'Plus personne n’entre ; ceux qui sont là restent');
       } else {
         l('main', '✋', m.main ? 'Baisser la main' : 'Lever la main');
         l('reactions', '😀', 'Réagir');
         l('compris', '❓', 'Je n’ai pas compris', 'Le coach le voit, sans interrompre');
         l('participants', '👥', 'La classe');
+        if (IA_DISPO.assistant) l('ia', '✨', 'IA de la classe', 'Ce qu’on a vu, mots clés, explications');
         l('avatar', '🎨', 'Changer mon avatar');
       }
       l('faible', m.faible ? '📶' : '🐢', m.faible ? 'Quitter le mode connexion faible' : 'Mode connexion faible', 'Le son et le tableau, sans l’image');
+      if (IA_DISPO.sous_titres) l('cc', '💬', 'Sous-titres' + (IA_DISPO.traduction ? ' et traduction' : ''), ST.langue ? 'Lus en ' + nomLangue(ST.langue) : (ST.affiches ? 'Affichés en version originale' : 'Masqués'));
       lignes.push('<div class="ca-plus-vues"><span>Affichage</span><button data-pv="salle">🏫 Salle</button><button data-pv="visio">🎥 Visio</button><button data-pv="tableau">🖥 Tableau</button></div>');
       if (anim) l('terminer', '🏁', 'Terminer le cours pour tous', 'La participation de chacun est enregistrée', 'danger');
       var f = el('<div class="ca-voile ca-feuille-voile"><div class="ca-feuille" role="dialog" aria-label="Plus de commandes"><div class="ca-feuille-poignee"></div>' + lignes.join('') + '<button class="ca-feuille-fermer" data-fermer>Fermer</button></div></div>');
@@ -1026,6 +1043,7 @@
         '<h3>Quitter la classe ?</h3><p>' + (anim ? 'La classe reste ouverte : vous pouvez revenir, ou la terminer pour tout le monde.' : 'Vous pourrez revenir tant que le cours dure. Votre présence reste enregistrée.') + '</p>' +
         '<button class="ca-plus-ligne danger" data-ok><span>' + ICO.quitter + '</span><div><strong>Quitter la classe</strong></div></button>' +
         (anim ? '<button class="ca-plus-ligne danger" data-fin><span>🏁</span><div><strong>Terminer le cours pour tous</strong><small>La participation de chacun est enregistrée</small></div></button>' : '') +
+        (anim && IA_DISPO.assistant ? '<button class="ca-plus-ligne" data-fin-bilan><span>✨</span><div><strong>Terminer avec le bilan de l’IA</strong><small>Ce qui a été vu, la participation, les notions à revoir</small></div></button>' : '') +
         '<button class="ca-feuille-fermer principal" data-rester>Rester dans la classe</button></div></div>');
       racine.appendChild(f);
       function fermer() { f.remove(); }
@@ -1034,6 +1052,8 @@
       $('[data-ok]', f).addEventListener('click', function () { fermer(); quitter(); });
       var bf = $('[data-fin]', f);
       if (bf) bf.addEventListener('click', function () { fermer(); agir('terminer').catch(function (e) { toast(e.message, 'alerte'); }); });
+      var bb = $('[data-fin-bilan]', f);
+      if (bb) bb.addEventListener('click', function () { fermer(); terminerAvecBilan(); });
       glisserPourFermer($('.ca-feuille', f), fermer);
     }
 
@@ -1054,6 +1074,8 @@
         case 'camera_moi': Media.basculerCamera(!Media.cameraActive()); break;
         case 'ecran': Media.ecran(); break;
         case 'plus': menuPlus(); break;
+        case 'cc': feuilleSousTitres(); break;
+        case 'ia': ouvrirPanneau(panneau === 'ia' && etroit() ? null : 'ia'); break;
         case 'sortir': demanderSortie(); break;
         case 'craie':
           outil.actif = !outil.actif;
@@ -1114,6 +1136,289 @@
       var z = $('[data-reseau]', racine);
       z.className = 'ca-etat-reseau ' + q;
       $('span', z).textContent = { bonne: 'Bonne connexion', moyenne: 'Connexion moyenne', faible: 'Connexion faible', coupe: 'Reconnexion…' }[q] || 'Connexion…';
+    }
+
+    /* =================================================================
+       L'IA DANS LA CLASSE — sous-titres, traduction, assistant
+       -----------------------------------------------------------------
+       La voix de celui qui parle est reconnue SUR SON APPAREIL (Chrome,
+       Edge, Safari récents) puis envoyée en texte : rien d'autre ne
+       transite. Chacun choisit de lire les sous-titres en version
+       originale ou dans sa langue ; une traduction faite sert à toute
+       la classe. L'IA lit ces sous-titres, le tableau, le chat et les
+       sondages : elle aide le coach, résume et explique pour
+       l'apprenant, et se tait pendant les quiz et les exercices.
+       ================================================================= */
+    var IA_DISPO = S.ia || {};
+    var LANGUES_LECTURE = [['', 'Version originale'], ['fr', 'Français'], ['en', 'English'], ['sw', 'Kiswahili'], ['ln', 'Lingala'], ['kg', 'Kikongo'], ['lu', 'Tshiluba'], ['pt', 'Português'], ['es', 'Español'], ['ar', 'العربية'], ['de', 'Deutsch'], ['zh', '中文']];
+    var LANGUES_PAROLE = [['fr-FR', 'Français'], ['en-US', 'English (US)'], ['en-GB', 'English (UK)'], ['sw-KE', 'Kiswahili'], ['pt-PT', 'Português'], ['es-ES', 'Español'], ['ar-SA', 'العربية'], ['de-DE', 'Deutsch'], ['it-IT', 'Italiano'], ['zh-CN', '中文']];
+    var RECO = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+    var ST = (function () {
+      var pref = {}; try { pref = JSON.parse(localStorage.getItem('ca-sous-titres') || '{}') || {}; } catch (x) { pref = {}; }
+      return {
+        affiches: pref.affiches !== false,
+        langue: typeof pref.langue === 'string' ? pref.langue : '',
+        // Le coach sur ordinateur est sous-titré d'office ; sur téléphone, et pour
+        // l'apprenant qui a la parole, c'est un choix (certains téléphones coupent
+        // le micro de la visio un instant quand la reconnaissance démarre).
+        voix: typeof pref.voix === 'boolean' ? pref.voix : (P.role === 'animateur' && !etroit()),
+        parlee: pref.parlee || (P.salle && P.salle.langue) || 'fr-FR',
+        traductions: {}, attente: [], minuterie: null, provisoires: {}, masquer: null
+      };
+    })();
+    function sauverST() { try { localStorage.setItem('ca-sous-titres', JSON.stringify({ affiches: ST.affiches, langue: ST.langue, voix: ST.voix, parlee: ST.parlee })); } catch (x) { /* rien */ } }
+    function nomLangue(code) { var l = LANGUES_LECTURE.filter(function (x) { return x[0] === code; })[0]; return l ? l[1] : code; }
+
+    function appelIA(chemin, corps) {
+      return fetch(API + '/classe/' + chemin, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.assign({ j: J }, corps || {})) })
+        .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) { var e = new Error(j.message || 'L’IA ne répond pas.'); e.status = r.status; e.code = j.code; throw e; } return j; }); },
+          function () { var e = new Error('Pas de connexion : réessayez dans un instant.'); e.horsLigne = true; throw e; });
+    }
+
+    /* ---------- Les sous-titres à l'écran ---------- */
+    function texteLigne(l) { return (ST.langue && ST.traductions[ST.langue] && ST.traductions[ST.langue][l.id]) || l.texte; }
+    function rendreSousTitres() {
+      var z = $('[data-st]', racine); if (!z) return;
+      if (!IA_DISPO.sous_titres || !ST.affiches) { z.hidden = true; return; }
+      var maintenant = Date.now();
+      var lignes = (S.transcription || []).filter(function (l) { return maintenant - (l.recu || l.at || 0) < 9000; }).slice(-2);
+      Object.keys(ST.provisoires).forEach(function (pid) { var l = ST.provisoires[pid]; if (maintenant - l.recu < 5000) lignes.push(l); });
+      lignes = lignes.slice(-2);
+      if (!lignes.length) { z.hidden = true; return; }
+      z.hidden = false;
+      z.innerHTML = lignes.map(function (l) {
+        var traduite = ST.langue && ST.traductions[ST.langue] && ST.traductions[ST.langue][l.id];
+        var nom = l.pid === MOI ? 'Vous' : (l.role === 'animateur' || l.pid === S.animateur ? (l.nom || 'Coach') : l.nom);
+        return '<p class="' + (l.final === false ? 'provisoire' : '') + (ST.langue && !traduite && l.final !== false ? ' en-traduction' : '') + '"><b>' + esc(nom) + '</b> ' + esc(texteLigne(l)) + '</p>';
+      }).join('');
+      clearTimeout(ST.masquer);
+      ST.masquer = setTimeout(rendreSousTitres, 3000);
+    }
+    function recevoirSousTitre(l) {
+      l.recu = Date.now();
+      if (l.final === false) { ST.provisoires[l.pid] = l; rendreSousTitres(); return; }
+      delete ST.provisoires[l.pid];
+      S.transcription = S.transcription || [];
+      S.transcription.push(l);
+      if (S.transcription.length > 400) S.transcription.shift();
+      if (ST.langue && IA_DISPO.traduction) demanderTraduction([l.id]);
+      rendreSousTitres();
+      if (panneau === 'ia') majTranscriptionIA();
+      IA.lignesDepuis += 1;
+    }
+    function demanderTraduction(ids) {
+      ids.forEach(function (id) { if (ST.attente.indexOf(id) < 0) ST.attente.push(id); });
+      clearTimeout(ST.minuterie);
+      ST.minuterie = setTimeout(function () {
+        var lot = ST.attente.splice(0, 8), langue = ST.langue;
+        if (!lot.length || !langue) return;
+        appelIA('traduire', { langue: langue, ids: lot }).then(function (r) {
+          var t = ST.traductions[r.langue] = ST.traductions[r.langue] || {};
+          (r.lignes || []).forEach(function (l) { if (l.traduit) t[l.id] = l.texte; });
+          rendreSousTitres(); if (panneau === 'ia') majTranscriptionIA();
+        }).catch(function (e) { if (e.status === 403 || e.status === 429) toast(e.message, 'alerte'); });
+      }, 700);
+    }
+    function choisirLangue(code) {
+      ST.langue = code; sauverST();
+      if (code && IA_DISPO.traduction) demanderTraduction((S.transcription || []).slice(-8).map(function (l) { return l.id; }));
+      rendreSousTitres(); if (panneau === 'ia') rendreVolet();
+    }
+
+    /* ---------- Ma voix → texte (reconnaissance sur l'appareil) ---------- */
+    var Voix = (function () {
+      var rec = null, enMarche = false, dernierProvisoire = 0, refusee = false, signalee = false;
+      function peutParler() { var m = moi(); return jeSuisAnimateur() || (m.micro && (S.micros_libres || m.parole)); }
+      function doit() { return !!(RECO && IA_DISPO.sous_titres && ST.voix && !refusee && !fermee && Media.micActif() && peutParler()); }
+      function envoyer(t, final) {
+        t = String(t || '').trim(); if (!t) return;
+        var l = { id: final ? 'moi-' + Date.now() : 'p-' + MOI, pid: MOI, nom: 'Vous', role: P.role, texte: t, final: final, recu: Date.now() };
+        // La phrase finie s'affiche tout de suite ; l'écho du serveur la remplace.
+        ST.provisoires[MOI] = l;
+        rendreSousTitres();
+        agir('sous_titre', { texte: t.slice(0, 400), final: final }).catch(function () { /* une phrase perdue n'est pas grave */ });
+      }
+      function demarrer() {
+        if (rec) return;
+        try {
+          rec = new RECO();
+          rec.lang = ST.parlee; rec.continuous = true; rec.interimResults = true; rec.maxAlternatives = 1;
+          rec.onresult = function (ev) {
+            for (var i = ev.resultIndex; i < ev.results.length; i += 1) {
+              var r = ev.results[i], t = r[0] && r[0].transcript;
+              if (r.isFinal) envoyer(t, true);
+              else if (Date.now() - dernierProvisoire > 650) { dernierProvisoire = Date.now(); envoyer(t, false); }
+            }
+          };
+          rec.onerror = function (e) {
+            if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+              refusee = true;
+              if (!signalee) { signalee = true; toast('Ce navigateur refuse de sous-titrer votre voix. Les autres sous-titres restent visibles.', 'alerte'); }
+            }
+          };
+          rec.onend = function () { rec = null; enMarche = false; if (doit()) setTimeout(maj, 300); else if (!fermee) rendreBarre(); };
+          rec.start(); enMarche = true; rendreBarre();
+        } catch (x) { rec = null; enMarche = false; }
+      }
+      function arreter() { if (rec) { try { rec.stop(); } catch (x) { /* rien */ } } rec = null; enMarche = false; }
+      function maj() { if (doit()) { if (!rec) demarrer(); } else if (rec) arreter(); }
+      function relancer() { arreter(); setTimeout(maj, 350); }
+      return { maj: maj, relancer: relancer, arreter: arreter, actif: function () { return enMarche; }, possible: function () { return !!RECO; } };
+    })();
+    var veilleVoix = setInterval(function () { if (!fermee) Voix.maj(); else { clearInterval(veilleVoix); Voix.arreter(); } }, 1500);
+
+    /* Réglages des sous-titres : une feuille, comme « Plus ». */
+    function feuilleSousTitres() {
+      var anim = jeSuisAnimateur();
+      var html = '<h3>Sous-titres' + (IA_DISPO.traduction ? ' et traduction' : '') + '</h3>' +
+        '<label class="ca-interrupteur"><input type="checkbox" data-st-aff' + (ST.affiches ? ' checked' : '') + '><span>Afficher les sous-titres</span></label>' +
+        (IA_DISPO.traduction ? '<label class="ca-champ">Lire dans la langue<select data-st-langue>' + LANGUES_LECTURE.map(function (l) { return '<option value="' + l[0] + '"' + (l[0] === ST.langue ? ' selected' : '') + '>' + esc(l[1]) + '</option>'; }).join('') + '</select></label>' +
+          '<p class="ca-aide">La traduction arrive une ou deux secondes après la phrase.</p>' : '') +
+        '<hr><label class="ca-interrupteur"><input type="checkbox" data-st-voix' + (ST.voix ? ' checked' : '') + (Voix.possible() ? '' : ' disabled') + '><span>Sous-titrer ma voix quand mon micro est ouvert</span></label>' +
+        (Voix.possible() ? '<label class="ca-champ">Langue que je parle<select data-st-parlee>' + LANGUES_PAROLE.map(function (l) { return '<option value="' + l[0] + '"' + (l[0] === ST.parlee ? ' selected' : '') + '>' + esc(l[1]) + '</option>'; }).join('') + '</select></label>' +
+          '<p class="ca-aide">' + (anim ? 'Vos phrases deviennent la mémoire du cours : l’IA s’en sert pour vos suggestions, le résumé et le bilan.' : 'Quand le coach vous donne la parole, la classe lit ce que vous dites.') + '</p>'
+          : '<p class="ca-aide">Ce navigateur ne sait pas reconnaître la voix : ouvrez la classe dans Chrome ou Edge pour être sous-titré. Vous lisez quand même les sous-titres des autres.</p>');
+      var f = el('<div class="ca-voile ca-feuille-voile"><div class="ca-feuille ca-feuille-st" role="dialog" aria-label="Sous-titres"><div class="ca-feuille-poignee"></div>' + html + '<button class="ca-feuille-fermer" data-fermer>Fermer</button></div></div>');
+      racine.appendChild(f);
+      function fermer() { f.remove(); rendreBarre(); }
+      f.addEventListener('click', function (ev) { if (ev.target === f) fermer(); });
+      $('[data-fermer]', f).addEventListener('click', fermer);
+      $('[data-st-aff]', f).addEventListener('change', function (ev) { ST.affiches = ev.target.checked; sauverST(); rendreSousTitres(); });
+      var sl = $('[data-st-langue]', f); if (sl) sl.addEventListener('change', function () { choisirLangue(sl.value); toast(sl.value ? '🌍 Sous-titres en ' + nomLangue(sl.value) + '.' : 'Sous-titres en version originale.'); });
+      $('[data-st-voix]', f).addEventListener('change', function (ev) { ST.voix = ev.target.checked; sauverST(); Voix.maj(); toast(ST.voix ? '💬 Votre voix sera sous-titrée quand votre micro est ouvert.' : 'Votre voix n’est plus sous-titrée.'); });
+      var sp = $('[data-st-parlee]', f); if (sp) sp.addEventListener('change', function () { ST.parlee = sp.value; sauverST(); Voix.relancer(); });
+      glisserPourFermer($('.ca-feuille', f), fermer);
+    }
+
+    /* ---------- L'assistant ---------- */
+    var IA = { cartes: [], enCours: null, auto: P.role === 'animateur', lignesDepuis: 0, dernierAuto: Date.now(), nonLus: 0, bilanFinal: null };
+    function iaEnPause() {
+      if (jeSuisAnimateur() || moi().role !== 'apprenant') return null;
+      if (S.sondage && !S.sondage.revele) return 'Un sondage est en cours : l’IA se tait pour vous laisser répondre par vous-même. Elle revient dès que le coach révèle la réponse.';
+      if (S.minuteur && S.minuteur.fin > Date.now() + S.decalage) return 'Exercice en cours : l’IA reprend à la fin du temps.';
+      return null;
+    }
+    var LIBELLES_IA = { suggestions: '💡 Suggestions', resume: '📝 Résumé', quiz: '📊 Question de quiz', bilan: '🏁 Bilan du cours', question: '💬 Réponse', expliquer: '💬 Explication', vocabulaire: '🔤 Vocabulaire' };
+    function demanderIA(mode, question, o) {
+      o = o || {};
+      if (IA.enCours) return Promise.resolve(null);
+      var pause = iaEnPause(); if (pause) { toast(pause); return Promise.resolve(null); }
+      IA.enCours = mode;
+      if (panneau === 'ia') rendreVolet();
+      return appelIA('assistant', { mode: mode, question: question || '' }).then(function (r) {
+        IA.enCours = null;
+        var carte = { id: Date.now(), mode: mode, question: question || '', texte: r.texte || '', quiz: r.quiz || null, at: Date.now(), auto: !!o.auto };
+        IA.cartes.unshift(carte); IA.cartes = IA.cartes.slice(0, 20);
+        if (panneau !== 'ia') { IA.nonLus += 1; rendreBarre(); if (o.auto) toast('✨ L’IA a une suggestion pour votre cours.', '', { bouton: 'Voir', action: function () { ouvrirPanneau('ia'); } }); }
+        else rendreVolet();
+        return carte;
+      }).catch(function (e) {
+        IA.enCours = null;
+        if (panneau === 'ia') rendreVolet();
+        if (!o.auto) toast(e.message, e.status === 423 ? '' : 'alerte');
+        return null;
+      });
+    }
+    // Le coach : toutes les cinq minutes, si le cours a avancé, une suggestion.
+    var veilleIA = setInterval(function () {
+      if (fermee) { clearInterval(veilleIA); return; }
+      if (!IA_DISPO.assistant || !IA.auto || !jeSuisAnimateur()) return;
+      if (Date.now() - IA.dernierAuto < 5 * 60000 || IA.lignesDepuis < 6) return;
+      IA.dernierAuto = Date.now(); IA.lignesDepuis = 0;
+      demanderIA('suggestions', '', { auto: true });
+    }, 30000);
+
+    function carteIA(c) {
+      var corps = c.quiz
+        ? '<div class="ca-ia-quiz"><strong>' + esc(c.quiz.question) + '</strong><ol>' + c.quiz.choix.map(function (x, i) { return '<li' + (i === c.quiz.bonne ? ' class="juste"' : '') + '>' + esc(x) + (i === c.quiz.bonne ? ' ✓' : '') + '</li>'; }).join('') + '</ol>' + (c.quiz.explication ? '<small>' + esc(c.quiz.explication) + '</small>' : '') + '</div>'
+        : '<div class="ca-ia-texte">' + esc(c.texte).replace(/\n/g, '<br>') + '</div>';
+      var actions = '';
+      if (c.quiz && jeSuisAnimateur()) actions = c.lance ? '<span class="ca-ia-fait">✓ Sondage lancé</span>' : '<button class="ca-principal" data-ia-lancer="' + c.id + '">Lancer ce sondage</button><button data-ia-modifier="' + c.id + '">Modifier avant</button>';
+      else if (jeSuisAnimateur() && (c.mode === 'resume' || c.mode === 'question')) actions = '<button data-ia-envoyer="' + c.id + '">Envoyer à la classe</button><button data-ia-copier="' + c.id + '">Copier</button>';
+      else actions = '<button data-ia-copier="' + c.id + '">Copier</button>';
+      return '<article class="ca-ia-carte"><header><span>' + esc(LIBELLES_IA[c.mode] || '✨') + (c.auto ? ' <em>automatique</em>' : '') + '</span><time>' + new Date(c.at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) + '</time></header>' +
+        (c.question ? '<p class="ca-ia-q">« ' + esc(c.question) + ' »</p>' : '') + corps + '<div class="ca-ia-actions">' + actions + '</div></article>';
+    }
+    function voletIA() {
+      var anim = jeSuisAnimateur();
+      var n = (S.transcription || []).length;
+      var pause = iaEnPause();
+      var html = '<div class="ca-ia-entete"><span class="ca-ia-logo">✨</span><div><strong>L’IA Ardoise suit le cours</strong><small>' +
+        (IA_DISPO.sous_titres ? (n ? n + ' phrase' + (n > 1 ? 's' : '') + ' entendue' + (n > 1 ? 's' : '') : 'Elle écoute grâce aux sous-titres : ouvrez le micro et parlez.') : 'Elle lit le tableau, le chat et les sondages.') +
+        '</small></div></div>';
+      if (!IA_DISPO.assistant) {
+        html += '<p class="ca-vide">L’assistant n’est pas activé pour ce cours.</p>';
+      } else if (anim) {
+        html += '<div class="ca-ia-boutons"><button data-ia="suggestions">💡 Que faire maintenant ?</button><button data-ia="resume">📝 Résumer</button><button data-ia="quiz">📊 Proposer un quiz</button><button data-ia="bilan">🏁 Bilan</button></div>' +
+          '<form class="ca-ecrire ca-ia-form"><input name="q" maxlength="500" placeholder="Demandez à l’IA (ex. une activité de 5 min)…" autocomplete="off"><button aria-label="Demander">➤</button></form>' +
+          '<label class="ca-interrupteur"><input type="checkbox" data-ia-auto' + (IA.auto ? ' checked' : '') + '><span>Suggestions automatiques toutes les 5 min</span></label>' +
+          '<p class="ca-aide">Les apprenants ont aussi leur IA : elle résume et explique, mais se tait pendant vos sondages et exercices, et ne donne jamais une réponse de quiz.</p>';
+      } else if (pause) {
+        html += '<div class="ca-ia-pause">🤫 ' + esc(pause) + '</div>';
+      } else {
+        html += '<div class="ca-ia-boutons"><button data-ia="resume">📝 Ce qu’on a vu</button><button data-ia="vocabulaire">🔤 Mots clés</button></div>' +
+          '<form class="ca-ecrire ca-ia-form"><input name="q" maxlength="500" placeholder="Je n’ai pas compris…" autocomplete="off"><button aria-label="Demander">➤</button></form>' +
+          '<p class="ca-aide">L’IA vous aide à comprendre le cours. Elle ne répond pas aux quiz ni aux exercices à votre place.</p>';
+      }
+      if (IA.enCours) html += '<div class="ca-ia-attente"><i></i><i></i><i></i><span>L’IA réfléchit…</span></div>';
+      html += IA.cartes.map(carteIA).join('');
+      if (IA_DISPO.sous_titres) {
+        html += '<details class="ca-ia-transcription"' + (n ? '' : ' hidden') + '><summary>Transcription du cours' + (ST.langue ? ' · ' + esc(nomLangue(ST.langue)) : '') + '</summary><div data-transcription></div></details>' +
+          '<button class="ca-lien" data-st-reglages>💬 Sous-titres' + (IA_DISPO.traduction ? ' et traduction' : '') + '…</button>';
+      }
+      return html;
+    }
+    function majTranscriptionIA() {
+      var z = $('[data-transcription]', racine); if (!z) return;
+      var d = z.closest('details'); if (d) d.hidden = !(S.transcription || []).length;
+      z.innerHTML = (S.transcription || []).slice(-80).map(function (l) {
+        var nom = l.pid === MOI ? 'Vous' : l.nom;
+        return '<p><b>' + esc(nom) + '</b> ' + esc(texteLigne(l)) + '</p>';
+      }).join('');
+    }
+    function brancherVoletIA(v) {
+      $$('[data-ia]', v).forEach(function (b) { b.addEventListener('click', function () { demanderIA(b.getAttribute('data-ia')); }); });
+      var f = $('.ca-ia-form', v);
+      if (f) f.addEventListener('submit', function (ev) {
+        ev.preventDefault(); var q = f.elements.q.value.trim(); if (q.length < 3) return;
+        f.elements.q.value = '';
+        demanderIA(jeSuisAnimateur() ? 'question' : 'expliquer', q);
+      });
+      var au = $('[data-ia-auto]', v); if (au) au.addEventListener('change', function () { IA.auto = au.checked; });
+      var rg = $('[data-st-reglages]', v); if (rg) rg.addEventListener('click', feuilleSousTitres);
+      function carte(id) { return IA.cartes.filter(function (c) { return String(c.id) === String(id); })[0]; }
+      $$('[data-ia-lancer]', v).forEach(function (b) { b.addEventListener('click', function () { var c = carte(b.getAttribute('data-ia-lancer')); if (!c) return; agir('sondage_ouvrir', { question: c.quiz.question, choix: c.quiz.choix, bonne: c.quiz.bonne }).then(function () { c.lance = true; toast('📊 Sondage lancé : les apprenants répondent.', 'succes'); ouvrirPanneau('sondage'); }).catch(function (e) { toast(e.message, 'alerte'); }); }); });
+      $$('[data-ia-modifier]', v).forEach(function (b) {
+        b.addEventListener('click', function () {
+          var c = carte(b.getAttribute('data-ia-modifier')); if (!c) return;
+          if (S.sondage) { toast('Un sondage est déjà ouvert : fermez-le d’abord.'); return; }
+          ouvrirPanneau('sondage');
+          var fs = $('.ca-form-sondage', racine); if (!fs) return;
+          fs.elements.q.value = c.quiz.question;
+          c.quiz.choix.forEach(function (x, i) { if (fs.elements['c' + i]) fs.elements['c' + i].value = x; });
+          var r = fs.querySelector('input[name=bonne][value="' + c.quiz.bonne + '"]'); if (r) r.checked = true;
+        });
+      });
+      $$('[data-ia-envoyer]', v).forEach(function (b) { b.addEventListener('click', function () { var c = carte(b.getAttribute('data-ia-envoyer')); if (!c) return; agir('chat', { texte: ('✨ ' + c.texte).slice(0, 500) }).then(function () { toast('Envoyé dans la discussion.', 'succes'); }).catch(function (e) { toast(e.message, 'alerte'); }); }); });
+      $$('[data-ia-copier]', v).forEach(function (b) {
+        b.addEventListener('click', function () {
+          var c = carte(b.getAttribute('data-ia-copier')); if (!c) return;
+          var t = c.quiz ? c.quiz.question + '\n' + c.quiz.choix.map(function (x, i) { return String.fromCharCode(65 + i) + '. ' + x; }).join('\n') : c.texte;
+          (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () { toast('Copié.'); }, function () { toast('Copie impossible sur cet appareil.'); });
+        });
+      });
+      majTranscriptionIA();
+    }
+    /* Terminer avec le bilan : l'IA écrit le bilan AVANT que la classe ferme
+       (après, elle n'a plus accès au cours). */
+    function terminerAvecBilan() {
+      var t = toast('✨ L’IA prépare le bilan du cours…', '', { duree: 20000 });
+      IA.enCours = null;
+      demanderIA('bilan').then(function (c) {
+        t.remove();
+        IA.bilanFinal = c && c.texte;
+        agir('terminer').catch(function (e) { toast(e.message, 'alerte'); });
+      });
     }
 
     /* =================================================================
@@ -1763,12 +2068,17 @@
       if (racine._veille) racine._veille.release().catch(function () {});
       var m = el('<div class="ca-voile"><div class="ca-carte-fin"><div class="ca-fin-icone">' + (message ? '🔒' : '🎓') + '</div><h2>' + esc(message ? 'Classe fermée' : 'Le cours est terminé') + '</h2><p>' + esc(message || 'Merci à tous ! Votre participation est enregistrée.') + '</p>' +
         (bilan ? '<div class="ca-bilan"><div><strong>' + esc(bilan.duree_minutes) + ' min</strong><span>de cours</span></div><div><strong>' + esc(bilan.pic) + '</strong><span>connectés au plus</span></div><div><strong>' + esc((bilan.sondages || []).length) + '</strong><span>sondage' + ((bilan.sondages || []).length > 1 ? 's' : '') + '</span></div></div>' : '') +
+        (IA.bilanFinal ? '<div class="ca-bilan-ia"><strong>✨ Bilan de l’IA</strong><div>' + esc(IA.bilanFinal).replace(/\n/g, '<br>') + '</div><button data-copier-bilan>Copier le bilan</button></div>' : '') +
         '<button class="ca-principal" data-sortir>Retour</button></div></div>');
       racine.appendChild(m);
+      Voix.arreter();
+      var cb = $('[data-copier-bilan]', m);
+      if (cb) cb.addEventListener('click', function () { (navigator.clipboard ? navigator.clipboard.writeText(IA.bilanFinal) : Promise.reject()).then(function () { toast('Bilan copié.'); }, function () { toast('Copie impossible.'); }); });
       $('[data-sortir]', m).addEventListener('click', quitter);
     }
     function quitter(depuisRetour) {
       if (!fermee) { fermee = true; if (source) source.close(); Media.arreter(); clearInterval(horloge); }
+      Voix.arreter();
       window.removeEventListener('popstate', surRetour);
       if (gardeRetour && !depuisRetour && history.state && history.state.classeArdoise) { gardeRetour = false; try { history.back(); } catch (x) { /* rien */ } }
       window.removeEventListener('resize', redimensionnerCraie);
@@ -1777,6 +2087,7 @@
       if (typeof opts.quitter === 'function') opts.quitter();
     }
     $('[data-quitter]', racine).addEventListener('click', demanderSortie);
+    var puceIA = $('[data-ia-puce]', racine); if (puceIA) puceIA.addEventListener('click', function () { ouvrirPanneau('ia'); });
     // La touche Retour du téléphone ne fait pas disparaître la classe en
     // laissant le micro ouvert : elle pose la question « Quitter ? ».
     var gardeRetour = false;

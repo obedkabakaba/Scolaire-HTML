@@ -393,6 +393,14 @@
           </ul>
         </div>
         <div class="sa-nav-groupe">
+          <p class="sa-nav-groupe-titre">Centres, classes et sites</p>
+          <ul class="sa-menu">
+            <li><a href="#/centres" data-route="centres">Centres de formation</a></li>
+            <li><a href="#/classes-direct" data-route="classes-direct">Classes en direct · IA</a></li>
+            <li><a href="#/sites" data-route="sites">Sites et applications</a></li>
+          </ul>
+        </div>
+        <div class="sa-nav-groupe">
           <p class="sa-nav-groupe-titre">Abonnements</p>
           <ul class="sa-menu">
             <li><a href="#/renouvellements" data-route="renouvellements" data-compteur="renouvellements">Renouvellements à traiter</a></li>
@@ -716,6 +724,7 @@
 <script src="super-admin-vues-apporteurs.js"></script>
 <script src="super-admin-vues-apporteurs-badges.js"></script>
 <script src="super-admin-vues-services-catalogue.js"></script>
+<script src="super-admin-vues-centres.js"></script>
 <!-- Vues du Control Center. Chargées APRÈS les vues existantes : elles
      n'enregistrent que des clés commençant par `cc/`, donc aucune ne peut
      remplacer une vue actuelle. La palette vient en dernier, elle référence
@@ -776,6 +785,7 @@
     'super-admin-vues-prospects.js',
     'super-admin-vues-apporteurs.js', 'super-admin-vues-apporteurs-badges.js',
     'super-admin-vues-services-catalogue.js',
+    'super-admin-vues-centres.js',
     'super-admin-vues-controle.js', 'super-admin-vues-audit.js',
     'super-admin-vues-cc-ia.js', 'super-admin-vues-cc-systeme.js',
     'super-admin-vues-cc-release.js',

@@ -1914,7 +1914,7 @@
           { titre: 'Détail', rendu: function (d) {
             var x = d.donnees || {};
             if (d.type === 'test_niveau') return 'Niveau <strong>' + e(x.niveau) + '</strong> (' + e(x.score) + ' %)' + (x.objectif ? '<div class="doux">' + e(x.objectif) + '</div>' : '');
-            if (d.type === 'preinscription') return e(x.programme_souhaite || x.classe_souhaitee || '') + (x.disponibilites ? '<div class="doux">Disponible : ' + e(x.disponibilites) + '</div>' : '');
+            if (d.type === 'preinscription') return e(x.programme_souhaite || x.classe_souhaitee || '') + (x.groupe_souhaite ? '<div class="doux">Groupe : ' + e(x.groupe_souhaite) + '</div>' : '') + (x.mode_souhaite ? '<div class="doux">' + e({ presentiel: 'Présentiel', en_ligne: 'En ligne', hybride: 'Hybride' }[x.mode_souhaite] || x.mode_souhaite) + '</div>' : '') + (x.disponibilites ? '<div class="doux">Disponible : ' + e(x.disponibilites) + '</div>' : '');
             return e((d.message || '').slice(0, 120));
           } },
           { titre: 'Statut', rendu: function (d) { return badgeStatut('', d.statut); } },
@@ -1926,13 +1926,28 @@
         $$('[data-arch]', z).forEach(function (b) { b.addEventListener('click', function () { envoyer('/demandes/' + b.getAttribute('data-arch'), 'PATCH', { statut: 'archivee' }).then(lister).catch(echec); }); });
         $$('[data-conv]', z).forEach(function (b) {
           b.addEventListener('click', function () {
+            var dem = ds.filter(function (x) { return x.id === b.getAttribute('data-conv'); })[0] || {};
+            var x = dem.donnees || {};
             groupesOptions().then(function (opts) {
+              // Le groupe que la personne a choisi sur le site, sinon un groupe de sa formation.
+              var norm = function (t) { return String(t || '').toLowerCase(); };
+              var choisi = opts.filter(function (o) { return x.groupe_souhaite && norm(o[1]).indexOf(norm(x.groupe_souhaite)) === 0; })[0] ||
+                opts.filter(function (o) { return x.programme_souhaite && norm(o[1]).indexOf(norm(x.programme_souhaite)) >= 0; })[0];
+              var resume = '<div class="cf-encadre"><strong>' + e(dem.nom || '') + '</strong>' + (dem.telephone || dem.email ? ' · ' + e([dem.telephone, dem.email].filter(Boolean).join(' · ')) : '') +
+                (x.programme_souhaite ? '<br>Formation : <strong>' + e(x.programme_souhaite) + '</strong>' : '') + (x.groupe_souhaite ? ' · groupe souhaité : ' + e(x.groupe_souhaite) : '') +
+                (x.niveau || x.niveau_estime ? '<br>Niveau : ' + e(x.niveau || x.niveau_estime) + (x.score != null ? ' (' + e(x.score) + ' % au test)' : '') : '') +
+                (x.disponibilites ? '<br>Disponibilités : ' + e(x.disponibilites) : '') + (x.objectif ? '<br>Objectif : ' + e(x.objectif) : '') +
+                '<br><span class="doux">Si cette personne est déjà apprenante (même téléphone ou e-mail), elle est inscrite sur sa fiche existante : pas de doublon.</span></div>';
               modaleFormulaire('Convertir en apprenant', [
                 { nom: 'groupe_id', libelle: 'Inscrire dans le groupe', type: 'select', vide: '— Plus tard (prospect) —', options: opts, plein: true },
                 { nom: 'montant_du', libelle: 'Montant de la formation', type: 'nombre', aide: 'Vide : prix du programme.' }, { nom: 'remise', libelle: 'Remise', type: 'nombre' }
-              ], {}, function (d) {
-                return envoyer('/demandes/' + b.getAttribute('data-conv') + '/convertir', 'POST', d).then(function (r) { oublier('groupes'); etat.ctx.compteurs.demandes_nouvelles = Math.max(0, etat.ctx.compteurs.demandes_nouvelles - 1); dessinerRail(); naviguer(); afficherIdentifiants(r); });
-              }, { bouton: 'Créer l’apprenant' });
+              ], { groupe_id: choisi ? choisi[0] : '' }, function (d) {
+                return envoyer('/demandes/' + b.getAttribute('data-conv') + '/convertir', 'POST', d).then(function (r) {
+                  oublier('groupes'); oublier('apprenants'); etat.ctx.compteurs.demandes_nouvelles = Math.max(0, etat.ctx.compteurs.demandes_nouvelles - 1); dessinerRail(); naviguer();
+                  if (r.existant) toast(nomComplet(r) + ' était déjà apprenant(e) : inscrit(e) sur sa fiche existante.');
+                  afficherIdentifiants(r);
+                });
+              }, { bouton: 'Créer l’apprenant', avant: resume });
             });
           });
         });
@@ -2111,6 +2126,10 @@
       ['cameras_apprenants', 'case', 'Classe Ardoise : les apprenants peuvent ouvrir leur caméra (mode visio)'],
       ['micros_libres', 'case', 'Classe Ardoise : les apprenants ouvrent leur micro sans attendre que le coach leur donne la parole'],
       ['debit_video_max', 'nombre', 'Classe Ardoise : débit total que le coach partage entre les apprenants (kbit/s, 2500 conseillé)'],
+      ['langue_cours', 'choix', 'Classe Ardoise : langue parlée pendant les cours', 'Sert aux sous-titres en direct. Chaque coach peut la changer dans la classe (bouton CC).', [['fr-FR', 'Français'], ['en-US', 'Anglais (États-Unis)'], ['en-GB', 'Anglais (Royaume-Uni)'], ['sw-KE', 'Swahili'], ['pt-PT', 'Portugais'], ['es-ES', 'Espagnol'], ['ar-SA', 'Arabe'], ['de-DE', 'Allemand'], ['it-IT', 'Italien'], ['zh-CN', 'Chinois']]],
+      ['sous_titres', 'case', 'Classe Ardoise : sous-titres en direct (la voix du coach écrite à l’écran)'],
+      ['traduction', 'case', 'Classe Ardoise : traduction instantanée (chaque apprenant lit les sous-titres dans sa langue)'],
+      ['assistant_ia', 'case', 'Classe Ardoise : l’IA suit le cours (suggestions et bilan pour le coach, résumé et explications pour l’apprenant — jamais les réponses aux quiz)'],
       ['domaine_jitsi', 'texte', 'Serveur Jitsi (visio de secours ou outil Jitsi)', 'meet.jit.si par défaut. Avec votre propre serveur (ou 8x8.vc), la visio Jitsi peut s’afficher directement dans Ardoise.'],
       ['integrer', 'case', 'Afficher la visio directement dans Ardoise (serveur propre uniquement)'],
       ['retard_minutes', 'nombre', 'Au-delà de combien de minutes un apprenant est « en retard »'],
@@ -2381,8 +2400,8 @@
   function chargerClasseArdoise() {
     if (window.ClasseArdoise) return Promise.resolve();
     return new Promise(function (ok, ko) {
-      var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'classe-ardoise.css?v=5'; document.head.appendChild(l);
-      var sc = document.createElement('script'); sc.src = 'classe-ardoise.js?v=6'; sc.onload = function () { ok(); }; sc.onerror = function () { ko(new Error('Impossible de charger la classe : vérifiez la connexion.')); };
+      var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'classe-ardoise.css?v=6'; document.head.appendChild(l);
+      var sc = document.createElement('script'); sc.src = 'classe-ardoise.js?v=7'; sc.onload = function () { ok(); }; sc.onerror = function () { ko(new Error('Impossible de charger la classe : vérifiez la connexion.')); };
       document.head.appendChild(sc);
     });
   }

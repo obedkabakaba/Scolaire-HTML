@@ -77,9 +77,12 @@
         },
         {
           /* Écoles et centres de formation : deux métiers, deux catalogues d'offres. */
-          type: 'select', nom: 'type_structure', libelle: 'Écoles et centres', valeur: params.type_structure,
+          /* Par défaut, cet écran ne montre QUE les écoles : les centres de
+             formation ont leur écran (« Centres de formation »), leurs
+             chiffres et leur fiche. On peut tout de même tout voir ensemble. */
+          type: 'select', nom: 'type_structure', libelle: 'Écoles uniquement', valeur: params.type_structure,
           options: [
-            { valeur: 'ecole', libelle: 'Écoles uniquement' },
+            { valeur: 'tous', libelle: 'Écoles et centres ensemble' },
             { valeur: 'centre_formation', libelle: 'Centres de formation uniquement' }
           ]
         },
@@ -100,6 +103,9 @@
           tri: params.tri || 'creation',
           sens: params.sens || 'desc'
         });
+        if (!requete.type_structure) requete.type_structure = 'ecole';
+        // Le cycle (primaire / secondaire) n'a de sens que pour une école.
+        if (requete.type_structure === 'centre_formation') delete requete.type_enseignement;
 
         const d = await SA.api(SA.url('/super-admin/ecoles', requete));
 
@@ -365,6 +371,47 @@
      Fiche détaillée d'une école
      ====================================================================== */
 
+  /* Suppression DÉFINITIVE d'une école ou d'un centre (DELETE, pas une
+     suspension). La phrase se tape sans souci de majuscules — sur téléphone,
+     le clavier en met où il veut — mais c'est toujours la phrase exacte qui
+     part au serveur, qui la revérifie et redemande le mot de passe. */
+  function supprimerDefinitivement(ecole, apres) {
+    const centre = ecole.type_structure === 'centre_formation';
+    const attendu = `SUPPRIMER ${ecole.code}`;
+    const normaliser = (t) => String(t || '').trim().replace(/\s+/g, ' ').toUpperCase();
+    const m = SA.modale({
+      titre: `Supprimer définitivement ${centre ? 'le centre' : "l'école"} « ${ecole.nom} »`,
+      sousTitre: 'Effacement total de la base, sans retour possible. Votre mot de passe vous sera redemandé.',
+      contenu: `<p class="sa-texte">${centre ? 'Le centre, ses comptes, apprenants, groupes, séances, paiements, discussions, son site et son abonnement' : "L'école, ses comptes, élèves, classes, notes, bulletins, paiements, son site et son abonnement"} seront effacés. Ce n'est pas une suspension.</p>
+        <p class="sa-texte" style="margin-top:10px">Pour confirmer, tapez :</p>
+        <p class="sa-mono" style="font-weight:700;margin:6px 0 10px">${esc(attendu)}</p>
+        <input class="sa-champ" id="confirmation-suppression" autocomplete="off" autocapitalize="characters" spellcheck="false" style="width:100%">`,
+      actions: `<button class="sa-bouton sa-bouton-secondaire" data-role="annuler">Annuler</button>
+        <button class="sa-bouton sa-bouton-danger" data-role="valider" disabled>🗑 Supprimer définitivement</button>`
+    });
+    const champ = m.querySelector('#confirmation-suppression');
+    const valider = m.querySelector('[data-role="valider"]');
+    champ.addEventListener('input', () => { valider.disabled = normaliser(champ.value) !== normaliser(attendu); });
+    setTimeout(() => champ.focus(), 50);
+    m.querySelector('[data-role="annuler"]').addEventListener('click', () => m.fermer());
+    valider.addEventListener('click', async () => {
+      valider.disabled = true;
+      valider.textContent = 'Suppression…';
+      try {
+        const r = await SA.api(`/admin/ecoles/${ecole.id}`, { method: 'DELETE', body: JSON.stringify({ confirmation: attendu }) });
+        m.fermer();
+        SA.toast(`${r.message || 'Supprimé définitivement.'}${r.ecole && r.ecole.compteurs ? ` (${r.ecole.compteurs.utilisateurs} compte(s) effacé(s))` : ''}`, r.avertissement ? 'attention' : 'succes', 8000);
+        try { await SA.chargerReferentiels(true); } catch (e) { /* la liste se recharge quand même */ }
+        if (apres) apres(r);
+      } catch (erreur) {
+        valider.disabled = false;
+        valider.textContent = '🗑 Supprimer définitivement';
+        if (erreur && erreur.code === 'REAUTHENTIFICATION_ANNULEE') return;
+        SA.toast(erreur.message, 'erreur');
+      }
+    });
+  }
+
   async function ouvrirFicheEcole(ecoleId, surChangement) {
     const modale = SA.modale({
       titre: 'Chargement…',
@@ -389,23 +436,46 @@
     const plans = (SA.referentiels && SA.referentiels.plans) || [];
     const suspendue = ecole.statut === 'suspendu';
     const enTest = ecole.mode_test === true;
+    /* Un centre de formation n'est pas une école : pas d'élèves, de classes,
+       de cycle ni de bulletins. Sa fiche parle d'apprenants, de groupes, de
+       coachs et de séances, et ses offres sont celles des centres. */
+    const centre = ecole.type_structure === 'centre_formation';
+    const V = centre
+      ? { le: 'le centre', ce: 'ce centre', Le: 'Le centre', du: 'du centre', type: 'Centre', resp: 'responsable du centre', test: 'centre de test', Test: 'Centre de test' }
+      : { le: "l'école", ce: 'cette école', Le: "L'école", du: "de l'école", type: 'École', resp: 'Directeur', test: 'école de test', Test: 'École de test' };
+    const st = detail.stats || {};
+    const domaine = ecole.domaine_libelle || (ecole.domaine_formation ? String(ecole.domaine_formation).replace(/_/g, ' ') : '—');
+    const plansAdaptes = plans.filter((p) => (p.type_structure || 'ecole') === (centre ? 'centre_formation' : 'ecole'));
 
     modale.querySelector('.sa-modale-entete h2').textContent =
-      ecole.nom + (enTest ? '  🧪' : '');
+      (centre ? '🎓 ' : '🏫 ') + ecole.nom + (enTest ? '  🧪' : '');
     modale.querySelector('.sa-modale-corps').innerHTML = `
       ${enTest ? `<div class="sa-note" style="margin-bottom:14px">
-        <strong>École de test.</strong> Accès complet à toutes les fonctionnalités,
-        sans abonnement et sans aucun paiement enregistré. Elle est exclue du
-        chiffre d'affaires, du MRR et du nombre d'écoles clientes.
+        <strong>${V.Test}.</strong> Accès complet à toutes les fonctionnalités,
+        sans abonnement et sans aucun paiement enregistré. Exclu${centre ? '' : 'e'} du
+        chiffre d'affaires, du MRR et du nombre ${centre ? 'de centres' : "d'écoles"} client${centre ? 's' : 'es'}.
         ${ecole.mode_test_motif ? `<br><span class="sa-muet">Motif : ${esc(ecole.mode_test_motif)}</span>` : ''}
         ${ecole.mode_test_active_at ? `<br><span class="sa-muet">Activé le ${esc(fmt.dateHeure(ecole.mode_test_active_at))}</span>` : ''}
       </div>` : ''}
 
+      ${suspendue ? `<div class="sa-note" style="margin-bottom:14px;border-color:#e5b4b4">
+        <strong>${V.Le} est suspendu${centre ? '' : 'e'}, pas supprimé${centre ? '' : 'e'}.</strong> Ses données sont intactes et
+        personne ne peut s'y connecter. Pour l'effacer totalement, utilisez
+        « Supprimer définitivement » dans la zone rouge, en bas de l'onglet Identité.
+      </div>` : ''}
+
       <div class="sa-grille-stats" style="margin-bottom:18px">
-        ${ui.carteStat({ valeur: fmt.nombre(detail.stats && detail.stats.nb_eleves), etiquette: 'Élèves actifs' })}
-        ${ui.carteStat({ valeur: fmt.nombre(detail.stats && detail.stats.nb_utilisateurs), etiquette: 'Utilisateurs' })}
-        ${ui.carteStat({ valeur: fmt.nombre(detail.stats && detail.stats.nb_classes), etiquette: 'Classes' })}
+        ${centre ? `
+        ${ui.carteStat({ valeur: fmt.nombre(st.nb_apprenants), etiquette: 'Apprenants actifs', detail: `${fmt.nombre(st.nb_apprenants_total)} au total` })}
+        ${ui.carteStat({ valeur: fmt.nombre(st.nb_groupes_ouverts), etiquette: 'Groupes ouverts' })}
+        ${ui.carteStat({ valeur: fmt.nombre(st.nb_coachs), etiquette: 'Coachs' })}
+        ${ui.carteStat({ valeur: fmt.pourcent(stats.assiduite && stats.assiduite.taux_presence), etiquette: 'Présence aux séances (90 j)' })}
+        ` : `
+        ${ui.carteStat({ valeur: fmt.nombre(st.nb_eleves), etiquette: 'Élèves actifs' })}
+        ${ui.carteStat({ valeur: fmt.nombre(st.nb_utilisateurs), etiquette: 'Utilisateurs' })}
+        ${ui.carteStat({ valeur: fmt.nombre(st.nb_classes), etiquette: 'Classes' })}
         ${ui.carteStat({ valeur: fmt.pourcent(stats.reussite && stats.reussite.taux_reussite), etiquette: 'Taux de réussite' })}
+        `}
       </div>
 
       <div class="sa-onglets" id="onglets-ecole">
@@ -417,28 +487,40 @@
 
       <div data-panneau="identite">
         <div class="sa-liste-infos">
+          <div class="sa-ligne-info"><span>Type</span><span>${centre ? ui.badge('Centre de formation', 'succes') : ui.badge('École', 'info')}</span></div>
           <div class="sa-ligne-info"><span>Code</span><span class="sa-mono">${esc(ecole.code)}</span></div>
           <div class="sa-ligne-info"><span>Statut</span><span>${ui.badgeStatut(ecole.statut)}</span></div>
           <div class="sa-ligne-info"><span>Email</span><span>${esc(ecole.email || '—')}</span></div>
           <div class="sa-ligne-info"><span>Téléphone</span><span>${esc(ecole.telephone || '—')}</span></div>
           <div class="sa-ligne-info"><span>Ville / Province</span><span>${esc([ecole.ville, ecole.province].filter(Boolean).join(' · ') || '—')}</span></div>
-          <div class="sa-ligne-info"><span>Type d'enseignement</span><span>${esc(String(ecole.type_enseignement || '').replace('_', ' '))}</span></div>
-          <div class="sa-ligne-info"><span>Créée le</span><span>${esc(fmt.date(ecole.created_at))}</span></div>
+          ${centre ? `
+          <div class="sa-ligne-info"><span>Domaine de formation</span><span>${esc(domaine)}</span></div>
+          <div class="sa-ligne-info"><span>Programmes</span><span>${fmt.nombre(stats.programmes && stats.programmes.total)} dont ${fmt.nombre(stats.programmes && stats.programmes.publies)} publié(s) sur le site</span></div>
+          <div class="sa-ligne-info"><span>Séances faites (30 j)</span><span>${fmt.nombre(st.nb_seances_30j)}</span></div>
+          <div class="sa-ligne-info"><span>Comptes du personnel</span><span>${fmt.nombre(st.nb_utilisateurs)}</span></div>
+          <div class="sa-ligne-info"><span>Site public</span><span>${ecole.site_public_actif ? ui.badge('en ligne', 'succes') : '<span class="sa-muet">non publié</span>'}</span></div>
+          ` : `
+          <div class="sa-ligne-info"><span>Cycles</span><span>${esc({ primaire: 'Primaire', secondaire: 'Secondaire', les_deux: 'Primaire et secondaire' }[ecole.type_enseignement] || '—')}</span></div>
+          `}
+          <div class="sa-ligne-info"><span>${centre ? 'Créé le' : 'Créée le'}</span><span>${esc(fmt.date(ecole.created_at))}</span></div>
           <div class="sa-ligne-info"><span>Mode test</span><span>${enTest ? ui.badge('activé', 'info') : '<span class="sa-muet">non</span>'}</span></div>
         </div>
         <div style="display:flex;gap:9px;margin-top:16px;flex-wrap:wrap">
-          <button class="sa-bouton ${suspendue ? 'sa-bouton-principal' : 'sa-bouton-danger'} sa-bouton-petit" id="btn-statut">
-            ${suspendue ? "Réactiver l'école" : "Suspendre l'école"}
+          <button class="sa-bouton ${suspendue ? 'sa-bouton-principal' : 'sa-bouton-secondaire'} sa-bouton-petit" id="btn-statut"
+                  title="Bloque les connexions sans rien effacer">
+            ${suspendue ? `▶ Réactiver ${V.le}` : `⏸ Suspendre ${V.le} (sans supprimer)`}
           </button>
           <button class="sa-bouton ${enTest ? 'sa-bouton-secondaire' : 'sa-bouton-principal'} sa-bouton-petit" id="btn-mode-test">
-            ${enTest ? 'Désactiver le mode test' : '🧪 Passer en école de test'}
+            ${enTest ? 'Désactiver le mode test' : `🧪 Passer en ${V.test}`}
           </button>
-          <button class="sa-bouton sa-bouton-secondaire sa-bouton-petit" id="btn-explorer">Explorer l'école</button>
-          <button class="sa-bouton sa-bouton-secondaire sa-bouton-petit" id="btn-observer">Voir comme Directeur</button>
+          ${centre
+            ? `<button class="sa-bouton sa-bouton-secondaire sa-bouton-petit" id="btn-centres">Voir dans « Centres de formation »</button>`
+            : `<button class="sa-bouton sa-bouton-secondaire sa-bouton-petit" id="btn-explorer">Explorer l'école</button>`}
+          <button class="sa-bouton sa-bouton-secondaire sa-bouton-petit" id="btn-observer">Voir comme ${esc(V.resp)}</button>
         </div>
         <div class="sa-zone-danger" style="margin-top:22px;padding:14px;border:1px solid #e5b4b4;border-radius:12px;background:#fdf4f4">
           <strong style="color:#a12b2b">Zone dangereuse</strong>
-          <p class="sa-muet" style="margin:4px 0 10px;font-size:.82rem">Supprime définitivement ${ecole.type_structure === 'centre_formation' ? 'ce centre' : 'cette école'} et TOUTES ses données (comptes, ${ecole.type_structure === 'centre_formation' ? 'apprenants, groupes, séances, paiements, discussions' : 'élèves, classes, notes, bulletins, paiements'}, site, abonnement, essai). Irréversible. La personne pourra ensuite se réinscrire avec la même adresse.</p>
+          <p class="sa-muet" style="margin:4px 0 10px;font-size:.82rem">Efface définitivement ${V.ce} de la base, avec TOUTES ses données (comptes, ${centre ? 'apprenants, groupes, séances, paiements, discussions' : 'élèves, classes, notes, bulletins, paiements'}, site, abonnement, essai). Ce n'est pas une suspension : rien n'est conservé et c'est irréversible. La personne pourra ensuite se réinscrire avec la même adresse.</p>
           <button class="sa-bouton sa-bouton-danger sa-bouton-petit" id="btn-supprimer-definitif">🗑 Supprimer définitivement</button>
         </div>
       </div>
@@ -456,7 +538,7 @@
         <label class="sa-champ-bloc"><span>Changer de plan</span>
           <select class="sa-champ" id="champ-plan">
             <option value="">— inchangé —</option>
-            ${plans.map((p) => `<option value="${esc(p.id)}" ${abonnement && abonnement.plan_id === p.id ? 'selected' : ''}>
+            ${plansAdaptes.map((p) => `<option value="${esc(p.id)}" ${abonnement && abonnement.plan_id === p.id ? 'selected' : ''}>
               ${esc(p.nom)} — ${esc(fmt.montant(p.prix, p.devise))}</option>`).join('')}
           </select>
         </label>
@@ -472,11 +554,11 @@
         <p class="sa-note" style="margin-bottom:12px">
           Espèces, virement, chèque ou mobile money reçu hors ligne. L'enregistrement
           émet la facture, confirme le paiement, prolonge l'abonnement et remet
-          l'école en service — en une seule opération.
+          ${V.le} en service — en une seule opération.
         </p>
         <div style="display:flex;gap:9px;flex-wrap:wrap">
           <button class="sa-bouton sa-bouton-principal sa-bouton-petit" id="btn-encaisser"
-                  ${abonnement ? '' : 'disabled title="Cette école n\'a pas d\'abonnement"'}>
+                  ${abonnement ? '' : `disabled title="${centre ? "Ce centre n'a pas d'abonnement" : "Cette école n'a pas d'abonnement"}"`}>
             Enregistrer un paiement
           </button>
         </div>
@@ -522,19 +604,26 @@
           }))
         }])}
 
-        <h4 class="sa-section-titre" style="margin-top:18px">Assiduité <span class="sa-annexe">90 derniers jours</span></h4>
+        <h4 class="sa-section-titre" style="margin-top:18px">${centre ? 'Présence aux séances' : 'Assiduité'} <span class="sa-annexe">90 derniers jours</span></h4>
         <div class="sa-liste-infos">
           <div class="sa-ligne-info"><span>Taux de présence</span><span>${esc(fmt.pourcent(stats.assiduite && stats.assiduite.taux_presence))}</span></div>
           <div class="sa-ligne-info"><span>Taux d'absence</span><span>${esc(fmt.pourcent(stats.assiduite && stats.assiduite.taux_absence))}</span></div>
-          <div class="sa-ligne-info"><span>Moyenne générale</span><span>${esc(fmt.pourcent(stats.reussite && stats.reussite.moyenne))}</span></div>
+          ${centre ? '' : `<div class="sa-ligne-info"><span>Moyenne générale</span><span>${esc(fmt.pourcent(stats.reussite && stats.reussite.moyenne))}</span></div>`}
         </div>
 
+        ${centre ? `
+        <h4 class="sa-section-titre" style="margin-top:18px">Encaissements des formations <span class="sa-annexe">12 derniers mois</span></h4>
+        ${(stats.finances_par_mois || []).length ? SA.graphe.barres(stats.finances_par_mois.slice().reverse().map((f) => ({ libelle: f.mois, valeur: f.montant }))) : '<p class="sa-muet">Aucun encaissement enregistré.</p>'}
+        <h4 class="sa-section-titre" style="margin-top:18px">Apprenants par groupe</h4>
+        ${(stats.groupes || []).length ? SA.graphe.barres(stats.groupes.slice(0, 20).map((g) => ({ libelle: g.nom, valeur: g.effectif }))) : '<p class="sa-muet">Aucun groupe créé.</p>'}
+        ` : `
         <h4 class="sa-section-titre" style="margin-top:18px">Effectifs par classe</h4>
         ${SA.graphe.barres((stats.classes || []).slice(0, 20).map((c) => ({ libelle: c.nom, valeur: c.effectif })))}
+        `}
       </div>
 
       <div data-panneau="acces" style="display:none">
-        <h4 class="sa-section-titre">Compte Directeur principal</h4>
+        <h4 class="sa-section-titre">${centre ? 'Compte du responsable du centre' : 'Compte Directeur principal'}</h4>
         ${directeur ? `
           <div class="sa-liste-infos">
             <div class="sa-ligne-info"><span>Nom</span><span>${esc([directeur.prenom, directeur.nom].filter(Boolean).join(' '))}</span></div>
@@ -546,7 +635,7 @@
             Réinitialiser son mot de passe
           </button>
           <div id="zone-mdp" style="display:none;margin-top:12px" class="sa-bloc-code"></div>
-        ` : ui.etatVide('Aucun compte Directeur', "Cette école n'a pas de compte directeur principal.")}
+        ` : ui.etatVide(centre ? 'Aucun compte responsable' : 'Aucun compte Directeur', centre ? "Ce centre n'a pas de compte responsable." : "Cette école n'a pas de compte directeur principal.")}
       </div>`;
 
     /* ---- Onglets ---- */
@@ -562,9 +651,15 @@
     });
 
     /* ---- Actions ---- */
-    modale.querySelector('#btn-explorer').addEventListener('click', () => {
+    const boutonExplorer = modale.querySelector('#btn-explorer');
+    if (boutonExplorer) boutonExplorer.addEventListener('click', () => {
       modale.fermer();
       SA.naviguer(`explorer/ecole/${ecoleId}`);
+    });
+    const boutonCentres = modale.querySelector('#btn-centres');
+    if (boutonCentres) boutonCentres.addEventListener('click', () => {
+      modale.fermer();
+      SA.naviguer('centres');
     });
 
     modale.querySelector('#btn-observer').addEventListener('click', () => {
@@ -574,10 +669,10 @@
 
     modale.querySelector('#btn-statut').addEventListener('click', async () => {
       const confirme = await SA.confirmer({
-        titre: suspendue ? "Réactiver l'école" : "Suspendre l'école",
+        titre: suspendue ? `Réactiver ${V.le}` : `Suspendre ${V.le}`,
         message: suspendue
           ? `Les utilisateurs de « ${ecole.nom} » pourront à nouveau se connecter.`
-          : `Les utilisateurs de « ${ecole.nom} » ne pourront plus se connecter. Aucune donnée n'est supprimée.`,
+          : `Les utilisateurs de « ${ecole.nom} » ne pourront plus se connecter. ATTENTION : suspendre ne supprime rien, ${V.le} reste dans la base. Pour l'effacer totalement, utilisez plutôt « Supprimer définitivement » (zone rouge, en bas).`,
         libelleValider: suspendue ? 'Réactiver' : 'Suspendre',
         danger: !suspendue
       });
@@ -588,7 +683,7 @@
           method: 'PATCH',
           body: JSON.stringify({ statut: suspendue ? 'actif' : 'suspendu' })
         });
-        SA.toast(suspendue ? 'École réactivée.' : 'École suspendue.', 'succes');
+        SA.toast(suspendue ? `${V.Le} est réactivé${centre ? '' : 'e'}.` : `${V.Le} est suspendu${centre ? '' : 'e'} (rien n'est supprimé).`, 'succes');
         modale.fermer();
         if (surChangement) surChangement();
       } catch (erreur) {
@@ -597,34 +692,9 @@
     });
 
     modale.querySelector('#btn-supprimer-definitif').addEventListener('click', () => {
-      const attendu = `SUPPRIMER ${ecole.code}`;
-      const quoi = ecole.type_structure === 'centre_formation' ? 'le centre' : "l'école";
-      const m = SA.modale({
-        titre: `Supprimer définitivement ${quoi} « ${ecole.nom} »`,
-        sousTitre: 'Toutes les données partent, sans retour possible. Votre mot de passe vous sera redemandé.',
-        contenu: `<p class="sa-texte">Pour confirmer, tapez exactement :</p>
-          <p class="sa-mono" style="font-weight:700;margin:6px 0 10px">${esc(attendu)}</p>
-          <input class="sa-champ" id="confirmation-suppression" autocomplete="off" spellcheck="false" style="width:100%">`,
-        actions: `<button class="sa-bouton sa-bouton-secondaire" data-role="annuler">Annuler</button>
-          <button class="sa-bouton sa-bouton-danger" data-role="valider" disabled>Supprimer définitivement</button>`
-      });
-      const champ = m.querySelector('#confirmation-suppression');
-      const valider = m.querySelector('[data-role="valider"]');
-      champ.addEventListener('input', () => { valider.disabled = champ.value.trim() !== attendu; });
-      setTimeout(() => champ.focus(), 50);
-      m.querySelector('[data-role="annuler"]').addEventListener('click', () => m.fermer());
-      valider.addEventListener('click', async () => {
-        valider.disabled = true;
-        try {
-          const r = await SA.api(`/admin/ecoles/${ecoleId}`, { method: 'DELETE', body: JSON.stringify({ confirmation: champ.value.trim() }) });
-          m.fermer();
-          modale.fermer();
-          SA.toast(`${r.message || 'Supprimé définitivement.'}${r.ecole && r.ecole.compteurs ? ` (${r.ecole.compteurs.utilisateurs} compte(s))` : ''}`, r.avertissement ? 'attention' : 'succes');
-          if (surChangement) surChangement(); else SA.rafraichirVue();
-        } catch (erreur) {
-          valider.disabled = false;
-          SA.toast(erreur.message, 'erreur');
-        }
+      supprimerDefinitivement(ecole, () => {
+        modale.fermer();
+        if (surChangement) surChangement(); else SA.rafraichirVue();
       });
     });
 
@@ -637,7 +707,7 @@
           });
           SA.toast(corps.actif
             ? 'Mode test activé : accès complet, sans abonnement ni paiement.'
-            : "Mode test désactivé : l'école repasse sous le régime des abonnements.",
+            : `Mode test désactivé : ${V.le} repasse sous le régime des abonnements.`,
             'succes');
           modale.fermer();
           if (surChangement) surChangement();
@@ -668,13 +738,12 @@
       // a-t-elle un accès gratuit ? » sera une vraie question, et le journal
       // sera le seul endroit à pouvoir y répondre.
       const demande = SA.modale({
-        titre: 'Passer en école de test',
+        titre: `Passer en ${V.test}`,
         sousTitre: `« ${ecole.nom} » aura accès à toutes les fonctionnalités.`,
         contenu: `
           <p class="sa-texte">
             Aucun abonnement ne sera créé et aucun paiement ne sera enregistré.
-            L'école est exclue du chiffre d'affaires, du MRR et du nombre
-            d'écoles clientes. Si elle était suspendue, elle est réactivée.
+            ${centre ? "Le centre est exclu du chiffre d'affaires, du MRR et du nombre de centres clients. S'il était suspendu, il est réactivé." : "L'école est exclue du chiffre d'affaires, du MRR et du nombre d'écoles clientes. Si elle était suspendue, elle est réactivée."}
           </p>
           <label class="sa-champ-bloc"><span>Motif (recommandé)</span>
             <input class="sa-champ" id="f-motif-test"
@@ -1091,6 +1160,7 @@
   SA.ouvrirEncaissement = ouvrirEncaissement;
   // Utilisé par Finance → Abonnements, qui a repris l'échéancier.
   SA.ouvrirFicheEcole = ouvrirFicheEcole;
+  SA.supprimerEtablissement = supprimerDefinitivement;
 
   /* ======================================================================
      Abonnements (échéancier) — fusionné dans Finance → Abonnements

@@ -133,6 +133,9 @@
         detail: 'À relancer avant l’échéance', route: 'offres/abonnements' });
       ajouter({ nombre: n(e.suspendues), libelle: 'Écoles suspendues', icone: 'ecole', ton: 'danger',
         detail: 'Sans accès à la plateforme', route: 'ecoles', params: { statut: 'suspendu' } });
+      const ce = r.tdb.centres || {};
+      ajouter({ nombre: n(ce.suspendus), libelle: 'Centres de formation suspendus', icone: 'ecole', ton: 'danger',
+        detail: 'Suspendus, pas supprimés', route: 'ecoles', params: { statut: 'suspendu', type_structure: 'centre_formation' } });
     }
 
     const rang = { danger: 0, attention: 1, info: 2 };
@@ -317,6 +320,9 @@
       const a = r.tdb.activite || {};
       cartes.push(kpi({ libelle: 'Écoles actives', valeur: esc(fmt.nombre(e.actives)), route: 'ecoles',
         detail: `sur ${esc(fmt.nombre(e.total))} · ${esc(fmt.nombre(e.en_essai))} en essai` }));
+      const ce = r.tdb.centres || {};
+      if (ce.total) cartes.push(kpi({ libelle: 'Centres de formation actifs', valeur: esc(fmt.nombre(ce.actifs)), route: 'centres',
+        detail: `sur ${esc(fmt.nombre(ce.total))} · ${esc(fmt.nombre(ce.apprenants_actifs))} apprenants` }));
       cartes.push(kpi({ libelle: 'Élèves actifs', valeur: esc(fmt.nombre(p.eleves)), route: 'analyses',
         detail: `${esc(fmt.nombre(p.professeurs))} enseignants · ${esc(fmt.nombre(p.parents))} parents` }));
       cartes.push(kpi({ libelle: 'Sessions ouvertes', valeur: esc(fmt.nombre(a.sessions_ouvertes)), route: 'securite',

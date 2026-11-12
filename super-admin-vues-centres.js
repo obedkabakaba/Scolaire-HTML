@@ -124,11 +124,20 @@
         <p>Ce mois : <strong>${fmt.nombre(c.ia_classe_utilise || 0)}</strong> / ${fmt.nombre(c.mode_test ? 2000 : (c.ia_classe_plafond || 300))} générations.</p>
         <div style="display:flex;gap:8px;align-items:center"><input type="number" min="1" max="5000" value="50" class="sa-champ" data-rendre style="width:110px"><button class="sa-bouton sa-bouton-secondaire sa-bouton-petit" data-rendre-ok>Rendre ces générations</button></div>
         <h3 class="sa-section-titre">Le centre</h3>
-        <p class="sa-muet" style="font-size:.82rem">Passer en centre de test (accès complet, sans abonnement, hors chiffre d'affaires et hors totaux), suspendre, ou supprimer définitivement : depuis la fiche.</p>
-        <button class="sa-bouton sa-bouton-principal sa-bouton-petit" data-fiche>Ouvrir la fiche du centre</button>`,
+        <p class="sa-muet" style="font-size:.82rem">Passer en centre de test (accès complet, sans abonnement, hors chiffre d'affaires et hors totaux), suspendre ou réactiver : depuis la fiche.</p>
+        <button class="sa-bouton sa-bouton-principal sa-bouton-petit" data-fiche>Ouvrir la fiche du centre</button>
+        <div style="margin-top:16px;padding:12px;border:1px solid #e5b4b4;border-radius:12px;background:#fdf4f4">
+          <strong style="color:#a12b2b">Supprimer définitivement</strong>
+          <p class="sa-muet" style="font-size:.8rem;margin:4px 0 8px">Efface le centre et toutes ses données de la base (pas une suspension). La personne pourra se réinscrire.</p>
+          <button class="sa-bouton sa-bouton-danger sa-bouton-petit" data-supprimer>🗑 Supprimer définitivement ce centre</button>
+        </div>`,
       actions: '<button class="sa-bouton sa-bouton-secondaire" data-role="annuler">Fermer</button><button class="sa-bouton sa-bouton-principal" data-role="valider">Enregistrer les réglages</button>'
     });
     m.querySelector('[data-role="annuler"]').addEventListener('click', () => m.fermer());
+    m.querySelector('[data-supprimer]').addEventListener('click', () => {
+      if (typeof SA.supprimerEtablissement !== 'function') return SA.toast('Rechargez la page puis réessayez.', 'attention');
+      SA.supprimerEtablissement({ id: c.id, nom: c.nom, code: c.code, type_structure: 'centre_formation' }, () => { m.fermer(); SA.rafraichirVue(); });
+    });
     m.querySelector('[data-fiche]').addEventListener('click', () => { m.fermer(); if (typeof SA.ouvrirFicheEcole === 'function') SA.ouvrirFicheEcole(c.id, () => SA.rafraichirVue()); });
     m.querySelector('[data-rendre-ok]').addEventListener('click', async () => {
       try {

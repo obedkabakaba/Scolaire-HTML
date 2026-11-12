@@ -1655,6 +1655,12 @@
     ['reglages', 'Réglages du centre', ['directeur', 'prefet']],
     ['personnel', 'Comptes du personnel', ['directeur']]
   ];
+  var SECTIONS_CENTRE = [
+    ['Pilotage', ['tableau', 'moi', 'sessions', 'calendrier', 'assistant']],
+    ['Apprenants', ['apprenants', 'demandes', 'certificats', 'archives']],
+    ['Formation', ['groupes', 'seances', 'lecons', 'evaluations', 'programmes', 'coachs']],
+    ['Gestion', ['finances', 'entreprises', 'site', 'reglages', 'personnel']]
+  ];
   var PAGES_CENTRE = [
     ['messages.html', 'Messages', 'messages', null], ['abonnements.html', 'Abonnement', 'abonnement', ['directeur']],
     ['services.html#centres-de-formation', 'Services Ardoise', 'services', ['directeur']], ['mon-profil.html', 'Mon profil', 'profil', null],
@@ -1673,15 +1679,55 @@
     var liste = document.querySelector('.barre-laterale .nav-liste');
     if (!liste) return true;
     var courante = (window.location.pathname.split('/').pop() || '').toLowerCase();
-    var html = MENU_CENTRE.filter(function (m) { return permis(m[2]); }).map(function (m) {
-      return lienCentre('centre-formation.html#/' + m[0], m[0], m[1], false);
-    }).join('') + PAGES_CENTRE.filter(function (m) { return permis(m[3]); }).map(function (m) {
-      return lienCentre(m[0], m[2], m[1], courante === m[0].split('#')[0]);
-    }).join('');
+    /* LE MÊME MENU QUE DANS L'ESPACE DU CENTRE
+       Mêmes rubriques (Pilotage, Apprenants, Formation, Gestion, Compte),
+       même carte du centre en tête, même largeur : passer de « Groupes » à
+       « Aide et support » ne doit rien faire disparaître. */
+    var permisMenu = MENU_CENTRE.filter(function (m) { return permis(m[2]); });
+    var parCle = {}; permisMenu.forEach(function (m) { parCle[m[0]] = m; });
+    var html = '';
+    SECTIONS_CENTRE.forEach(function (sec) {
+      var items = sec[1].filter(function (k) { return parCle[k]; });
+      if (!items.length) return;
+      html += '<li class="cf-nav-titre" aria-hidden="true" data-permanent="oui">' + sec[0] + '</li>';
+      items.forEach(function (k) { html += lienCentre('centre-formation.html#/' + k, k, parCle[k][1], false); });
+    });
+    var pages = PAGES_CENTRE.filter(function (m) { return permis(m[3]); });
+    if (pages.length) {
+      html += '<li class="cf-nav-titre" aria-hidden="true" data-permanent="oui">Compte</li>';
+      html += pages.map(function (m) { return lienCentre(m[0], m[2], m[1], courante === m[0].split('#')[0]); }).join('');
+    }
+    // « Aide & Tutoriels » (posée par didacticiel.js) survit à la reconstruction.
+    var aide = document.getElementById('ard-di-nav');
+    if (aide) aide.remove();
     liste.innerHTML = html;
-    // Le menu d'un centre est complet et ordonné : pas de « rail réduit ».
+    if (aide) liste.appendChild(aide);
+    // Le menu d'un centre est complet et ordonné : pas de « rail réduit »,
+    // ni de mode compact (l'espace du centre n'en a pas non plus).
     liste.dataset.reduit = 'oui';
     liste.style.visibility = 'visible';
+    document.documentElement.setAttribute('data-nav-compact', 'non');
+    // La carte du centre en tête du rail, comme dans son espace.
+    var carte = document.querySelector('.barre-laterale .cf-centre-commun');
+    if (!carte) {
+      var id = null;
+      try { id = JSON.parse(localStorage.getItem('ard-centre-identite') || 'null'); } catch (x) { id = null; }
+      if (id && id.nom) {
+        carte = document.createElement('a');
+        carte.className = 'cf-centre-commun';
+        carte.href = 'centre-formation.html';
+        var initiale = document.createElement('span');
+        if (id.logo_url && /^https:\/\//.test(id.logo_url)) {
+          initiale = document.createElement('img'); initiale.src = id.logo_url; initiale.alt = ''; initiale.className = 'cf-cc-logo';
+        } else { initiale.className = 'cf-cc-logo initiale'; initiale.textContent = String(id.nom).charAt(0).toUpperCase(); }
+        var txt = document.createElement('span'); txt.className = 'cf-cc-texte';
+        var n = document.createElement('strong'); n.textContent = id.nom;
+        var d = document.createElement('span'); d.textContent = [id.domaine, id.ville].filter(Boolean).join(' · ');
+        txt.appendChild(n); txt.appendChild(d);
+        carte.appendChild(initiale); carte.appendChild(txt);
+        liste.parentNode.insertBefore(carte, liste);
+      }
+    }
     var marque = document.querySelector('.barre-laterale .marque');
     if (marque && !marque.querySelector('.ard-sous-marque')) {
       var sous = document.createElement('small');
@@ -1740,6 +1786,7 @@
   // Les icônes sont réinjectées si le thème change (le menu peut être redessiné).
   document.addEventListener('ardoise:theme-change', function () {
     try { injecterIcones(); } catch (e) {}
+    if (document.documentElement.classList.contains('ard-espace-centre')) document.documentElement.setAttribute('data-nav-compact', 'non');
   });
 })();
 

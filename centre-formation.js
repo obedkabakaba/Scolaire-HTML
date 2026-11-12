@@ -307,6 +307,7 @@
   /* L'identité du centre en tête du rail : logo (s'il y en a un), nom, domaine. */
   function dessinerIdentite() {
     var c = etat.ctx.centre;
+    try { localStorage.setItem('ard-centre-identite', JSON.stringify({ nom: c.nom, logo_url: c.logo_url || null, domaine: c.domaine_libelle || '', ville: c.ville || '' })); } catch (x) { /* rien */ }
     $('#cf-centre').innerHTML = (urlSure(c.logo_url) ? '<img class="cf-centre-logo" src="' + e(c.logo_url) + '" alt="">' : '<span class="cf-centre-logo initiale">' + e((c.nom || 'C').charAt(0).toUpperCase()) + '</span>') +
       '<span class="cf-centre-texte"><strong>' + e(c.nom) + '</strong><span>' + e(c.domaine_libelle || '') + (c.ville ? ' · ' + e(c.ville) : '') + '</span></span>';
   }

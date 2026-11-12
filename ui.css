@@ -1553,3 +1553,29 @@ label:where(.case, .case-a-cocher, .champ-case, .interrupteur-controle) {
 .commande-sans-titre .commande-ligne { justify-content: flex-start; }
 .commande-contenu .form-inline { flex-wrap: wrap; }
 .commande-contenu form > * { max-width: 100%; }
+
+/* Pages communes vues depuis un centre de formation : le même rail que
+   l'espace du centre (rubriques, carte du centre). */
+html.ard-espace-centre .barre-laterale .cf-nav-titre { list-style: none; margin: 16px 12px 6px; font-size: .66rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; opacity: .6; }
+html.ard-espace-centre .barre-laterale .cf-nav-titre:first-child { margin-top: 6px; }
+html.ard-espace-centre .cf-centre-commun { display: flex; align-items: center; gap: 10px; margin: 10px 10px 4px; padding: 10px 12px; border-radius: 14px; background: rgba(255,255,255,.08); color: inherit; text-decoration: none; }
+html.ard-espace-centre .cf-centre-commun .cf-cc-logo { width: 38px; height: 38px; flex: none; border-radius: 10px; object-fit: contain; background: #fff; }
+html.ard-espace-centre .cf-centre-commun .cf-cc-logo.initiale { display: grid; place-items: center; background: var(--accent, #C2542F); color: #fff; font-weight: 700; font-family: var(--police-titre, Georgia, serif); font-size: 1.1rem; }
+html.ard-espace-centre .cf-centre-commun .cf-cc-texte { min-width: 0; }
+html.ard-espace-centre .cf-centre-commun strong { display: block; font-size: .92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html.ard-espace-centre .cf-centre-commun .cf-cc-texte span { display: block; font-size: .74rem; opacity: .75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html.ard-mob-coque .cf-centre-commun, html.ard-mob-coque .barre-laterale .cf-nav-titre { display: none; }
+
+/* Tuiles « Actions rapides » : le nom au-dessus de sa description (ils
+   étaient collés sur une même ligne : « ÉlèvesRegistre et fiches »). */
+.tuile .textes { display: flex; flex-direction: column; gap: 2px; }
+.tuile .nom, .tuile .desc { display: block; }
+
+/* Apparences à navigation dédiée (barre du haut ou rail d'icônes) : pas de
+   titres de rubriques au milieu des liens. */
+html.ard-espace-centre:is([data-theme="elan"], [data-theme="recre"], [data-theme="perspective"], [data-theme="nexus"], [data-theme="orbite"], [data-theme="vibra"]) .barre-laterale .cf-nav-titre { display: none; }
+html.ard-espace-centre:is([data-theme="orbite"], [data-theme="vibra"]) .cf-centre-commun .cf-cc-texte { display: none; }
+html.ard-espace-centre:is([data-theme="orbite"], [data-theme="vibra"]) .cf-centre-commun { justify-content: center; padding: 6px; background: none; }
+/* Pastille de notifications : rouge franc sous tous les thèmes (les thèmes
+   sombres éclaircissent --rouge, et le chiffre blanc devenait illisible). */
+#badge-notif { background: #C62828 !important; color: #fff !important; }

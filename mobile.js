@@ -126,6 +126,9 @@
     retour: '<path d="M15 4.5 7.5 12l7.5 7.5"/>',
     personne: '<circle cx="12" cy="8.5" r="3.6"/><path d="M5 19.5c1.2-3.4 4-5.2 7-5.2s5.8 1.8 7 5.2"/>',
     cloche: '<path d="M6 16.5V11a6 6 0 1 1 12 0v5.5l1.5 2h-15z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/>',
+    // Les MESSAGES ont leur bulle : la cloche reste aux notifications de la
+    // page (tableau de bord), qui n'ont pas le même sens.
+    bulle: '<path d="M20 12a8 8 0 0 1-11.6 7.1L4 20l1-4.4A8 8 0 1 1 20 12z"/>',
     aide: '<circle cx="12" cy="12" r="9"/><path d="M9.6 9.2a2.5 2.5 0 1 1 3.2 3.1c-.6.3-.9.8-.9 1.4v.4"/><path d="M12 17.2h.01"/>',
     fermer: '<path d="m6 6 12 12"/><path d="m18 6-12 12"/>',
     loupe: '<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/>'
@@ -428,7 +431,7 @@
     clocheEl.href = 'messages.html';
     clocheEl.hidden = true;
     clocheEl.setAttribute('aria-label', 'Messages');
-    clocheEl.appendChild(svg(SVG.cloche));
+    clocheEl.appendChild(svg(SVG.bulle));
     pastilleEl = el('span', 'ard-mob-pastille');
     clocheEl.appendChild(pastilleEl);
 

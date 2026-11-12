@@ -1738,3 +1738,11 @@ html.ard-visionneuse-ouverte, html.ard-visionneuse-ouverte body { overflow: hidd
   html.ard-mob-coque .ard-di-tuto { left: 12px !important; right: 12px !important; width: auto !important; max-width: none !important;
     bottom: calc(var(--ard-reserve-bas, 100px) + 6px) !important; }
 }
+
+/* La cloche des notifications d'une page (tableau de bord) : en haut à
+   droite du titre, et non perdue sous le sous-titre. */
+html.ard-mob-coque .entete-page { position: relative; }
+html.ard-mob-coque .entete-page > div:has(> #bouton-cloche) { position: absolute !important; top: 0; right: 0; }
+html.ard-mob-coque .entete-page #bouton-cloche { padding: 7px 10px !important; font-size: 1rem !important; }
+html.ard-mob-coque #panneau-notifications { width: min(340px, calc(100vw - 32px)) !important; }
+html.ard-mob-coque .entete-page:has(#bouton-cloche) > div:first-child { padding-right: 56px; }

@@ -110,7 +110,14 @@ window.ARDOISE_THEME_DEFAUT = 'ardoise';
     var theme = normaliser(cle), reglages = options || {};
     document.documentElement.setAttribute('data-theme', theme);
     try { localStorage.setItem(CLE_STOCKAGE, theme); if (sessionStorage.getItem('ardoise_refresh_token')) sessionStorage.setItem(CLE_STOCKAGE, theme); } catch (e) {}
-    try { if (theme === 'studio' && !localStorage.getItem('ardoise_nav_compact')) localStorage.setItem('ardoise_nav_compact', 'oui'); if (window.ArdoiseDisposition) ArdoiseDisposition.appliquer(); } catch (e) {}
+    try {
+      // Studio se présente en menu compact : c'est SA disposition. On la
+      // pose en le notant, et on la retire en quittant Studio — sinon toute
+      // apparence choisie ensuite gardait un menu réduit en icônes.
+      if (theme === 'studio' && !localStorage.getItem('ardoise_nav_compact')) { localStorage.setItem('ardoise_nav_compact', 'oui'); localStorage.setItem('ardoise_nav_compact_auto', 'oui'); }
+      if (theme !== 'studio' && localStorage.getItem('ardoise_nav_compact_auto') === 'oui') { localStorage.removeItem('ardoise_nav_compact'); localStorage.removeItem('ardoise_nav_compact_auto'); }
+      if (window.ArdoiseDisposition) ArdoiseDisposition.appliquer();
+    } catch (e) {}
     document.dispatchEvent(new CustomEvent('ardoise:theme-change', { detail: { theme: theme } }));
     if (theme === 'vibra' && !document.querySelector('script[data-ardoise-vibra]')) {
       var scriptVibra = document.createElement('script');

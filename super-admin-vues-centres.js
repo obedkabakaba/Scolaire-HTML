@@ -54,6 +54,8 @@
             ${ui.carteStat({ valeur: fmt.nombre(t.apprenants_actifs), etiquette: 'Apprenants actifs', ton: 'succes' })}
             ${ui.carteStat({ valeur: fmt.nombre(t.seances_30j), etiquette: 'Séances données (30 j)', detail: `${fmt.nombre(t.classes_ardoise_30j)} en Classe Ardoise` })}
             ${ui.carteStat({ valeur: fmt.nombre(t.demandes_30j), etiquette: 'Demandes des sites (30 j)', ton: t.demandes_30j ? 'succes' : 'neutre' })}
+            ${ui.carteStat({ valeur: fmt.nombre(t.messages_30j), etiquette: 'Messages apprenants ↔ coachs (30 j)', detail: `${fmt.nombre(t.apprenants_notifiables)} apprenant(s) avec notifications` })}
+            ${ui.carteStat({ valeur: fmt.nombre(t.centres_test), etiquette: 'Centres de test 🧪', detail: 'hors totaux, sans abonnement', ton: 'neutre' })}
           </div>
         </section>
         <section class="sa-section">
@@ -64,7 +66,7 @@
           </div>
           ${ui.tableau({
             colonnes: [
-              { titre: 'Centre', rendu: (c) => `<div style="min-width:180px"><strong>${esc(c.nom)}</strong><div class="sa-muet" style="font-size:.75rem">${esc(c.code)} · ${esc(c.ville || '—')}${c.domaine ? ' · ' + esc(c.domaine) : ''}</div></div>` },
+              { titre: 'Centre', rendu: (c) => `<div style="min-width:180px"><strong>${esc(c.nom)}</strong>${c.mode_test ? ' ' + ui.badge('🧪 test', 'info') : ''}<div class="sa-muet" style="font-size:.75rem">${esc(c.code)} · ${esc(c.ville || '—')}${c.domaine ? ' · ' + esc(c.domaine) : ''}</div></div>` },
               { titre: 'Offre', rendu: (c) => `${esc(c.offre || '—')}<div>${c.statut_abonnement ? ui.badgeStatut(c.statut_abonnement) : ''}</div>` },
               { titre: 'Apprenants', rendu: (c) => `${fmt.nombre(c.apprenants_actifs)}<div class="sa-muet" style="font-size:.72rem">sur ${fmt.nombre(c.apprenants_total)}</div>` },
               { titre: 'Groupes', rendu: (c) => fmt.nombre(c.groupes_ouverts) },
@@ -76,7 +78,10 @@
               { titre: 'IA de la classe', rendu: (c) => !c.classe_ardoise ? '<span class="sa-muet">autre outil</span>'
                 : ([c.ia_classe.sous_titres ? 'sous-titres' : null, c.ia_classe.traduction ? 'traduction' : null, c.ia_classe.assistant ? 'assistant' : null].filter(Boolean).map((x) => ui.badge(x, 'info')).join(' ') || ui.badge('éteinte', 'neutre'))
                   + `<div class="sa-muet" style="font-size:.72rem">enveloppe du mois : ${fmt.nombre(c.ia_classe_utilise || 0)} / ${fmt.nombre(c.ia_classe_plafond || 300)}</div>` },
-              { titre: 'Dernière connexion', rendu: (c) => depuis(c.derniere_connexion) }
+              { titre: 'Discussions', rendu: (c) => `${fmt.nombre(c.messages_30j)} msg / 30 j${c.messages_retires ? `<div class="sa-muet" style="font-size:.7rem">${fmt.nombre(c.messages_retires)} retiré(s)</div>` : ''}${c.discussion_groupe === false ? `<div>${ui.badge('groupe fermé', 'attention')}</div>` : ''}` },
+              { titre: 'Notifications', rendu: (c) => `<span title="Apprenants avec notifications">🎓 ${fmt.nombre(c.apprenants_notifiables)}</span> · <span title="Personnel avec notifications">👤 ${fmt.nombre(c.personnel_notifiable)}</span><div class="sa-muet" style="font-size:.7rem">${fmt.nombre(c.alertes_email_30j)} alerte(s) e-mail / 30 j</div>` },
+              { titre: 'Dernière connexion', rendu: (c) => depuis(c.derniere_connexion) },
+              { titre: '', rendu: (c) => `<button class="sa-bouton sa-bouton-secondaire sa-bouton-petit" data-gerer="${esc(c.id)}">Gérer</button>` }
             ],
             lignes, cliquable: true,
             vide: 'Aucun centre de formation'
@@ -86,14 +91,60 @@
       const champ = conteneur.querySelector('#filtre-centres');
       champ.addEventListener('input', SA.antiRebond(() => SA.naviguer('centres', champ.value ? { q: champ.value } : {}), 400));
       // Un clic ouvre la fiche du centre (abonnement, utilisateurs, actions), comme dans « Toutes les écoles ».
+      conteneur.querySelectorAll('[data-gerer]').forEach((b) => b.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        const c = (d.centres || []).find((x) => x.id === b.getAttribute('data-gerer'));
+        if (c) gererCentre(c);
+      }));
       conteneur.querySelectorAll('tr[data-id]').forEach((tr) => tr.addEventListener('click', (ev) => {
-        if (ev.target.closest('a')) return;
+        if (ev.target.closest('a, button')) return;
         const id = tr.getAttribute('data-id');
         if (typeof SA.ouvrirFicheEcole === 'function') SA.ouvrirFicheEcole(id, () => SA.rafraichirVue());
         else SA.naviguer('ecoles/statistiques', { ecole_id: id });
       }));
     }
   });
+
+  /* Gérer un centre : ce qui relève des nouveautés (discussions, IA de la
+     classe, enveloppe), et l'accès à la fiche (test, suspension, suppression). */
+  function gererCentre(c) {
+    const ia = c.ia_classe || {};
+    const cas = (cle, val, libelle) => `<label style="display:flex;gap:8px;align-items:center;margin:6px 0"><input type="checkbox" data-r="${cle}"${val ? ' checked' : ''}> ${esc(libelle)}</label>`;
+    const m = SA.modale({
+      titre: `Gérer « ${c.nom} »${c.mode_test ? ' 🧪' : ''}`,
+      sousTitre: `${c.code} · ${c.offre || 'sans offre'}${c.mode_test ? ' · centre de test (hors totaux, sans abonnement)' : ''}`,
+      contenu: `
+        <h3 class="sa-section-titre" style="margin-top:0">Discussions et IA de la classe</h3>
+        ${cas('discussion_groupe', c.discussion_groupe !== false, 'Discussion entre apprenants dans les groupes (le fil privé avec le coach reste toujours)')}
+        ${cas('sous_titres', ia.sous_titres !== false, 'Sous-titres en direct')}
+        ${cas('traduction', ia.traduction !== false, 'Traduction instantanée')}
+        ${cas('assistant_ia', ia.assistant !== false, 'Assistant IA dans la classe')}
+        <p class="sa-muet" style="font-size:.78rem">Le centre voit ces réglages dans Réglages → Cours en ligne / Accès. Chaque changement est journalisé.</p>
+        <h3 class="sa-section-titre">Enveloppe IA de la classe</h3>
+        <p>Ce mois : <strong>${fmt.nombre(c.ia_classe_utilise || 0)}</strong> / ${fmt.nombre(c.mode_test ? 2000 : (c.ia_classe_plafond || 300))} générations.</p>
+        <div style="display:flex;gap:8px;align-items:center"><input type="number" min="1" max="5000" value="50" class="sa-champ" data-rendre style="width:110px"><button class="sa-bouton sa-bouton-secondaire sa-bouton-petit" data-rendre-ok>Rendre ces générations</button></div>
+        <h3 class="sa-section-titre">Le centre</h3>
+        <p class="sa-muet" style="font-size:.82rem">Passer en centre de test (accès complet, sans abonnement, hors chiffre d'affaires et hors totaux), suspendre, ou supprimer définitivement : depuis la fiche.</p>
+        <button class="sa-bouton sa-bouton-principal sa-bouton-petit" data-fiche>Ouvrir la fiche du centre</button>`,
+      actions: '<button class="sa-bouton sa-bouton-secondaire" data-role="annuler">Fermer</button><button class="sa-bouton sa-bouton-principal" data-role="valider">Enregistrer les réglages</button>'
+    });
+    m.querySelector('[data-role="annuler"]').addEventListener('click', () => m.fermer());
+    m.querySelector('[data-fiche]').addEventListener('click', () => { m.fermer(); if (typeof SA.ouvrirFicheEcole === 'function') SA.ouvrirFicheEcole(c.id, () => SA.rafraichirVue()); });
+    m.querySelector('[data-rendre-ok]').addEventListener('click', async () => {
+      try {
+        const r = await SA.api(`/super-admin/centres/${c.id}/enveloppe-ia`, { method: 'POST', body: JSON.stringify({ rendre: Number(m.querySelector('[data-rendre]').value) }) });
+        SA.toast(r.message, 'succes'); m.fermer(); SA.rafraichirVue();
+      } catch (err) { SA.toast(err.message, 'danger'); }
+    });
+    m.querySelector('[data-role="valider"]').addEventListener('click', async () => {
+      const corps = {};
+      m.querySelectorAll('[data-r]').forEach((x) => { corps[x.getAttribute('data-r')] = x.checked; });
+      try {
+        const r = await SA.api(`/super-admin/centres/${c.id}/reglages`, { method: 'PATCH', body: JSON.stringify(corps) });
+        SA.toast(r.message, 'succes'); m.fermer(); SA.rafraichirVue();
+      } catch (err) { SA.toast(err.message, 'danger'); }
+    });
+  }
 
   /* =========================================================================
      CLASSES EN DIRECT

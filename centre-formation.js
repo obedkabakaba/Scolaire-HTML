@@ -1232,9 +1232,24 @@
             { titre: 'Thème', rendu: function (s) { return e(s.theme || s.lecon_titre || '—'); } },
             { titre: 'Présents', num: true, rendu: function (s) { return s.appels ? s.presents + ' / ' + s.appels : '—'; } },
             { titre: 'Statut', rendu: function (s) { return badgeStatut('statut_seance', s.statut); } },
-            { titre: '', rendu: function (s) { return s.statut === 'annulee' ? '' : '<button class="cf-btn petit" data-appel="' + e(s.id) + '">Appel</button>'; } }
+            { titre: '', rendu: function (s) {
+              var supp = unDe('directeur', 'prefet') || (a('professeur') && s.statut !== 'faite');
+              return (s.statut === 'annulee' ? '' : '<button class="cf-btn petit" data-appel="' + e(s.id) + '">Appel</button> ') + (supp ? '<button class="cf-btn petit danger" data-suppr-seance="' + e(s.id) + '" title="Supprimer cette séance">🗑</button>' : '');
+            } }
           ], d.seances, { videTitre: 'Aucune séance', vide: 'Planifiez les séances de ce groupe.' });
+          var aVenir = d.seances.filter(function (s) { return s.statut !== 'faite' && String(s.date_seance).slice(0, 10) >= aujourdhui(); }).length;
+          if (aVenir && unDe('directeur', 'prefet', 'professeur')) v.insertAdjacentHTML('afterbegin', '<div class="cf-actions" style="margin:0 0 10px;justify-content:flex-end"><button class="cf-btn petit danger" data-suppr-a-venir>🗑 Supprimer les ' + aVenir + ' séance(s) à venir</button></div>');
           $$('[data-appel]', v).forEach(function (b) { b.addEventListener('click', function () { m.fermer(); ouvrirAppel(b.getAttribute('data-appel'), function () { detailGroupe(id); }); }); });
+          $$('[data-suppr-seance]', v).forEach(function (b) {
+            b.addEventListener('click', function () {
+              var s = d.seances.filter(function (x) { return x.id === b.getAttribute('data-suppr-seance'); })[0];
+              if (s) supprimerSeance(s, function () { m.fermer(); detailGroupe(id); });
+            });
+          });
+          var bav = $('[data-suppr-a-venir]', v); if (bav) bav.addEventListener('click', function () {
+            if (!window.confirm('Supprimer les ' + aVenir + ' séance(s) à venir de « ' + g.nom + ' » ? Les séances déjà données restent. Vous pourrez replanifier ensuite.')) return;
+            api('/groupes/' + id + '/seances', { method: 'DELETE' }).then(function (r) { oublier('groupes'); toast(r.message); m.fermer(); detailGroupe(id); }).catch(echec);
+          });
         }
       }
       $$('[data-o]', m.el).forEach(function (b) { b.addEventListener('click', function () { voir(b.getAttribute('data-o')); }); });
@@ -1309,6 +1324,23 @@
     }).catch(echec);
   }
 
+  /* Supprimer une séance : programmée par erreur, elle part entièrement ;
+     déjà donnée, la direction confirme (l'appel et les heures partent aussi). */
+  function supprimerSeance(s, apres) {
+    var faite = s.statut === 'faite';
+    if (faite && !unDe('directeur', 'prefet')) { toast('Seule la direction peut supprimer une séance déjà donnée.', true); return; }
+    var quand = dateFr(s.date_seance) + (s.heure_debut ? ' à ' + heure(s.heure_debut) : '');
+    var question = faite
+      ? 'Supprimer DÉFINITIVEMENT la séance du ' + quand + ' ?\n\nElle a déjà été donnée : son appel, la participation en ligne et les heures du coach seront effacés. Cette action est irréversible.'
+      : 'Supprimer la séance du ' + quand + ' ? Elle disparaît du planning et de l’espace des apprenants.';
+    if (!window.confirm(question)) return;
+    api('/seances/' + s.id + (faite ? '?definitif=1' : ''), { method: 'DELETE' }).then(function (r) {
+      oublier('groupes');
+      toast((r && r.message) || 'Séance supprimée.');
+      if (apres) apres();
+    }).catch(echec);
+  }
+
   function ouvrirAppel(seanceId, apres) {
     var m = modale('Appel', '<div class="cf-chargement">Chargement…</div>', { large: true });
     api('/seances/' + seanceId + '/appel').then(function (d) {
@@ -1328,7 +1360,8 @@
         }).join('') + '</div>' : '<div class="cf-vide">Aucun apprenant inscrit dans ce groupe.</div>') +
         '<form class="cf-form" style="margin-top:14px"><label class="plein">Thème de la séance<input name="theme" value="' + e(s.theme || '') + '"></label><label>Notes du coach<textarea name="notes_coach" rows="2">' + e(s.notes_coach || '') + '</textarea></label><label>Devoirs (visibles par les apprenants)<textarea name="devoirs" rows="2">' + e(s.devoirs || '') + '</textarea></label></form>';
       $('.corps', m.el).innerHTML = html;
-      $('.cf-modale', m.el).insertAdjacentHTML('beforeend', '<footer>' + (s.statut !== 'faite' && s.statut !== 'annulee' ? '<button class="cf-btn danger" data-annuler style="margin-right:auto">Annuler la séance</button>' : '') + '<button class="cf-btn" data-fermer>Fermer</button><button class="cf-btn principal" data-enregistrer>Enregistrer l’appel</button></footer>');
+      var peutSupprimer = unDe('directeur', 'prefet') || (a('professeur') && s.statut !== 'faite');
+      $('.cf-modale', m.el).insertAdjacentHTML('beforeend', '<footer>' + (peutSupprimer ? '<button class="cf-btn danger" data-supprimer-seance title="Supprimer complètement cette séance">🗑 Supprimer</button>' : '') + (s.statut !== 'faite' && s.statut !== 'annulee' ? '<button class="cf-btn danger" data-annuler style="margin-right:auto">Annuler la séance</button>' : '<span style="margin-right:auto"></span>') + '<button class="cf-btn" data-fermer>Fermer</button><button class="cf-btn principal" data-enregistrer>Enregistrer l’appel</button></footer>');
       function peindre() { $$('.ligne', m.el).forEach(function (l) { var id = l.getAttribute('data-id'); $$('[data-st]', l).forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-st') === choix[id]); }); }); }
       $$('.ligne [data-st]', m.el).forEach(function (b) { b.addEventListener('click', function () { choix[b.closest('.ligne').getAttribute('data-id')] = b.getAttribute('data-st'); peindre(); }); });
       $('[data-tous]', m.el).addEventListener('click', function () { Object.keys(choix).forEach(function (k) { choix[k] = 'present'; }); peindre(); });
@@ -1340,6 +1373,7 @@
           theme: f.elements.theme.value, notes_coach: f.elements.notes_coach.value, devoirs: f.elements.devoirs.value, cloturer: true
         }).then(function (r) { m.fermer(); toast('Appel clôturé (' + r.enregistrees + ' apprenant(s)).' + (r.classe_fermee ? ' La classe en ligne est fermée pour tous.' : '')); if (apres) apres(); }).catch(echec);
       });
+      var bsu = $('[data-supprimer-seance]', m.el); if (bsu) bsu.addEventListener('click', function () { supprimerSeance(s, function () { m.fermer(); if (apres) apres(); else naviguer(); }); });
       var ba = $('[data-annuler]', m.el); if (ba) ba.addEventListener('click', function () {
         var motif = window.prompt('Motif de l’annulation (coupure, absence du coach, jour férié…) :');
         if (!motif) return;

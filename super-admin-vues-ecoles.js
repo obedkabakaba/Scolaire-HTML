@@ -436,6 +436,11 @@
           <button class="sa-bouton sa-bouton-secondaire sa-bouton-petit" id="btn-explorer">Explorer l'école</button>
           <button class="sa-bouton sa-bouton-secondaire sa-bouton-petit" id="btn-observer">Voir comme Directeur</button>
         </div>
+        <div class="sa-zone-danger" style="margin-top:22px;padding:14px;border:1px solid #e5b4b4;border-radius:12px;background:#fdf4f4">
+          <strong style="color:#a12b2b">Zone dangereuse</strong>
+          <p class="sa-muet" style="margin:4px 0 10px;font-size:.82rem">Supprime définitivement ${ecole.type_structure === 'centre_formation' ? 'ce centre' : 'cette école'} et TOUTES ses données (comptes, ${ecole.type_structure === 'centre_formation' ? 'apprenants, groupes, séances, paiements, discussions' : 'élèves, classes, notes, bulletins, paiements'}, site, abonnement, essai). Irréversible. La personne pourra ensuite se réinscrire avec la même adresse.</p>
+          <button class="sa-bouton sa-bouton-danger sa-bouton-petit" id="btn-supprimer-definitif">🗑 Supprimer définitivement</button>
+        </div>
       </div>
 
       <div data-panneau="abonnement" style="display:none">
@@ -589,6 +594,38 @@
       } catch (erreur) {
         SA.toast(erreur.message, 'erreur');
       }
+    });
+
+    modale.querySelector('#btn-supprimer-definitif').addEventListener('click', () => {
+      const attendu = `SUPPRIMER ${ecole.code}`;
+      const quoi = ecole.type_structure === 'centre_formation' ? 'le centre' : "l'école";
+      const m = SA.modale({
+        titre: `Supprimer définitivement ${quoi} « ${ecole.nom} »`,
+        sousTitre: 'Toutes les données partent, sans retour possible. Votre mot de passe vous sera redemandé.',
+        contenu: `<p class="sa-texte">Pour confirmer, tapez exactement :</p>
+          <p class="sa-mono" style="font-weight:700;margin:6px 0 10px">${esc(attendu)}</p>
+          <input class="sa-champ" id="confirmation-suppression" autocomplete="off" spellcheck="false" style="width:100%">`,
+        actions: `<button class="sa-bouton sa-bouton-secondaire" data-role="annuler">Annuler</button>
+          <button class="sa-bouton sa-bouton-danger" data-role="valider" disabled>Supprimer définitivement</button>`
+      });
+      const champ = m.querySelector('#confirmation-suppression');
+      const valider = m.querySelector('[data-role="valider"]');
+      champ.addEventListener('input', () => { valider.disabled = champ.value.trim() !== attendu; });
+      setTimeout(() => champ.focus(), 50);
+      m.querySelector('[data-role="annuler"]').addEventListener('click', () => m.fermer());
+      valider.addEventListener('click', async () => {
+        valider.disabled = true;
+        try {
+          const r = await SA.api(`/admin/ecoles/${ecoleId}`, { method: 'DELETE', body: JSON.stringify({ confirmation: champ.value.trim() }) });
+          m.fermer();
+          modale.fermer();
+          SA.toast(`${r.message || 'Supprimé définitivement.'}${r.ecole && r.ecole.compteurs ? ` (${r.ecole.compteurs.utilisateurs} compte(s))` : ''}`, r.avertissement ? 'attention' : 'succes');
+          if (surChangement) surChangement(); else SA.rafraichirVue();
+        } catch (erreur) {
+          valider.disabled = false;
+          SA.toast(erreur.message, 'erreur');
+        }
+      });
     });
 
     modale.querySelector('#btn-mode-test').addEventListener('click', async () => {

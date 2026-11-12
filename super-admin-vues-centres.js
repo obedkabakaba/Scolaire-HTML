@@ -74,7 +74,8 @@
               { titre: 'Demandes', rendu: (c) => `${fmt.nombre(c.demandes_30j)}${c.demandes_en_attente ? ' ' + ui.badge(c.demandes_en_attente + ' en attente', c.demandes_en_attente > 3 ? 'attention' : 'info') : ''}` },
               { titre: 'Site', rendu: (c) => c.site_public_actif ? lien(`https://myardoise.com/${c.site_adresse || 'ecole.html?code=' + encodeURIComponent(c.code)}`, c.site_adresse || c.code) : ui.badge('non publié', 'neutre') },
               { titre: 'IA de la classe', rendu: (c) => !c.classe_ardoise ? '<span class="sa-muet">autre outil</span>'
-                : [c.ia_classe.sous_titres ? 'sous-titres' : null, c.ia_classe.traduction ? 'traduction' : null, c.ia_classe.assistant ? 'assistant' : null].filter(Boolean).map((x) => ui.badge(x, 'info')).join(' ') || ui.badge('éteinte', 'neutre') },
+                : ([c.ia_classe.sous_titres ? 'sous-titres' : null, c.ia_classe.traduction ? 'traduction' : null, c.ia_classe.assistant ? 'assistant' : null].filter(Boolean).map((x) => ui.badge(x, 'info')).join(' ') || ui.badge('éteinte', 'neutre'))
+                  + `<div class="sa-muet" style="font-size:.72rem">enveloppe du mois : ${fmt.nombre(c.ia_classe_utilise || 0)} / ${fmt.nombre(c.ia_classe_plafond || 300)}</div>` },
               { titre: 'Dernière connexion', rendu: (c) => depuis(c.derniere_connexion) }
             ],
             lignes, cliquable: true,

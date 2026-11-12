@@ -795,3 +795,14 @@ body.mode-app #contenu { padding: 0; }
 .app-tirer.tourne svg { animation: app-tourne .8s linear infinite; }
 .app-tirer.fait { transform: translate(-50%, 64px) !important; color: #1D7A45; }
 @keyframes app-tourne { to { transform: rotate(360deg); } }
+
+/* Résumés des cours (écrits par l'IA à la fin du cours en ligne) */
+.resume-cours { margin-bottom: 12px; }
+.resume-cours summary { cursor: pointer; list-style: none; }
+.resume-cours summary::-webkit-details-marker { display: none; }
+.resume-cours summary > span { display: flex; flex-direction: column; gap: 4px; }
+.resume-cours summary strong { font-size: 1.02rem; }
+.resume-cours summary em { align-self: flex-start; font-style: normal; }
+.resume-points { margin: 6px 0 0; padding-left: 20px; line-height: 1.55; }
+.resume-mots { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.resume-mots span { background: #EEF3FA; border: 1px solid #DCE5F2; border-radius: 10px; padding: 5px 10px; font-size: .86rem; }

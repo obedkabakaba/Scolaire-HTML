@@ -482,6 +482,25 @@ window.ArdoiseSiteCentre = function (donnees, o) {
   }
   function remplirVolet(v, D, A, I) {
     var titre = function (t, s) { return '<div style="margin-bottom:22px"><h2 style="font-size:1.6rem">' + e(t) + '</h2>' + (s ? '<p class="petit" style="color:var(--texte-doux);margin:6px 0 0">' + e(s) + '</p>' : '') + '</div>'; };
+    /* Le cours se résume tout seul : à la fin d'un cours en ligne, l'IA écrit
+       les points vus, les mots clés et quoi réviser. Tout le groupe le reçoit,
+       et l'absent découvre ce qu'il a manqué. */
+    function resumesCours(seances) {
+      var rs = (seances || []).filter(function (x) { return x.resume_cours && x.resume_cours.points && x.resume_cours.points.length; })
+        .sort(function (a, b) { return String(b.date_seance).localeCompare(String(a.date_seance)); }).slice(0, 3);
+      if (!rs.length) return '';
+      return '<h3 style="margin:26px 0 10px">📝 Vos cours résumés</h3>' + rs.map(function (x, rang) {
+        var r = x.resume_cours;
+        var absent = !x.ma_presence || x.ma_presence === 'absent';
+        return '<details class="carte resume-cours"' + (absent || rang === 0 ? ' open' : '') + '><summary><span><small class="petit" style="color:var(--texte-doux)">' + e(dateCourte(x.date_seance)) + ' · ' + e(x.groupe) + '</small><strong>' + e(x.theme || r.phrase || 'Le cours') + '</strong>' +
+          (absent ? '<em class="etiquette" style="background:#FFF4E0;color:#8A5300">Vous étiez absent : voici ce que vous avez manqué</em>' : '') + '</span></summary>' +
+          (r.phrase ? '<p class="texte-libre" style="margin:8px 0">' + e(r.phrase) + '</p>' : '') +
+          '<ul class="resume-points">' + r.points.map(function (p) { return '<li>' + e(p) + '</li>'; }).join('') + '</ul>' +
+          (r.vocabulaire && r.vocabulaire.length ? '<div class="resume-mots">' + r.vocabulaire.map(function (v) { return '<span><b>' + e(v.mot) + '</b>' + (v.sens ? ' — ' + e(v.sens) : '') + '</span>'; }).join('') + '</div>' : '') +
+          (r.a_reviser && r.a_reviser.length ? '<p class="petit" style="margin:10px 0 0"><strong>À réviser :</strong> ' + r.a_reviser.map(e).join(' · ') + '</p>' : '') +
+          '<p class="petit" style="color:var(--texte-doux);margin:8px 0 0">✨ Résumé écrit par l’IA à partir du cours.</p></details>';
+      }).join('');
+    }
     if (etat.onglet === 'accueil') {
       var aVenir = D.seances.filter(function (s) { return String(s.date_seance).slice(0, 10) >= new Date().toISOString().slice(0, 10) && s.statut !== 'faite'; });
       // Un cours en ligne aujourd'hui : un grand bouton tout en haut, qui
@@ -498,7 +517,8 @@ window.ArdoiseSiteCentre = function (donnees, o) {
             (s.ma_presence ? '<div class="petit" style="color:#1D5E33;margin-top:4px">✓ Présence enregistrée</div>' : '') +
             (s.en_ligne ? '<div style="margin-top:6px"><a class="bouton" style="padding:6px 12px;font-size:.85rem" href="#/classe?s=' + e(s.ref) + (ajd ? '&entrer=1' : '') + '">' + (ajd ? 'Rejoindre la classe' : 'Voir la classe en ligne') + '</a></div>' : (D.reglages && D.reglages.pointage_qr && ajd ? '<div class="petit" style="margin-top:4px;color:var(--texte-doux)">En salle : scannez le QR code affiché par votre coach.</div>' : '')) + '</div></div>';
         }).join('') + '</div>' : vide('calendrier', 'Aucune séance programmée pour le moment.')) +
-        (devoirs.length ? '<h3 style="margin:26px 0 10px">Devoirs</h3>' + devoirs.map(function (s) { return '<div class="carte" style="margin-bottom:10px"><small class="petit" style="color:var(--texte-doux)">' + e(dateCourte(s.date_seance)) + ' · ' + e(s.groupe) + '</small><p style="margin:6px 0 0" class="texte-libre">' + e(s.devoirs) + '</p></div>'; }).join('') : '');
+        (devoirs.length ? '<h3 style="margin:26px 0 10px">Devoirs</h3>' + devoirs.map(function (s) { return '<div class="carte" style="margin-bottom:10px"><small class="petit" style="color:var(--texte-doux)">' + e(dateCourte(s.date_seance)) + ' · ' + e(s.groupe) + '</small><p style="margin:6px 0 0" class="texte-libre">' + e(s.devoirs) + '</p></div>'; }).join('') : '') +
+        resumesCours(D.seances);
     } else if (etat.onglet === 'replays') {
       var rs = D.replays || [];
       v.innerHTML = titre('Cours enregistrés', D.reglages && D.reglages.replay_compte_presence ? 'Vous avez manqué un cours ou votre connexion a coupé ? Suivez l’enregistrement : votre présence est comptée après ' + D.reglages.replay_minutes_min + ' minutes.' : 'Revoyez vos cours quand vous voulez.') +
@@ -678,8 +698,8 @@ window.ArdoiseSiteCentre = function (donnees, o) {
   function chargerClasseArdoise() {
     if (window.ClasseArdoise) return Promise.resolve();
     return new Promise(function (ok, ko) {
-      var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = '/classe-ardoise.css?v=6'; document.head.appendChild(l);
-      var sc = document.createElement('script'); sc.src = '/classe-ardoise.js?v=7'; sc.onload = function () { ok(); };
+      var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = '/classe-ardoise.css?v=7'; document.head.appendChild(l);
+      var sc = document.createElement('script'); sc.src = '/classe-ardoise.js?v=8'; sc.onload = function () { ok(); };
       sc.onerror = function () { var er = new Error('Impossible de charger la classe.'); er.horsLigne = true; ko(er); };
       document.head.appendChild(sc);
     });

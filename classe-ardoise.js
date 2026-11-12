@@ -252,12 +252,12 @@
       '<header class="ca-entete"><div class="ca-titre"><span class="ca-pastille" aria-hidden="true"></span><div><strong>' + esc(P.salle.titre || 'Cours') + '</strong><span>' + esc([P.salle.theme, P.salle.heure_debut ? String(P.salle.heure_debut).slice(0, 5).replace(':', ' h ') : ''].filter(Boolean).join(' · ')) + '</span></div></div>' +
       '<div class="ca-vues" role="tablist"><button data-vue="salle" role="tab" title="La salle de classe dessinée, avec les avatars">🏫 Salle</button><button data-vue="visio" role="tab" title="La visio classique : le coach en grand, les vignettes des participants">🎥 Visio</button><button data-vue="tableau" role="tab" title="Le tableau en grand">🖥 Tableau</button></div>' +
       '<div class="ca-etat-reseau" data-reseau title="Qualité de votre connexion"><i></i><i></i><i></i><span>Connexion…</span></div>' +
-      '<div class="ca-compte" data-compte>👥 0</div><span class="ca-porte" data-porte hidden>🔒 Classe fermée</span>' + (S.ia.assistant ? '<button class="ca-ia-puce" data-ia-puce title="L’IA Ardoise suit le cours">✨ IA</button>' : '') + '<button class="ca-quitter" data-quitter>Quitter</button></header>' +
+      '<div class="ca-compte" data-compte>👥 0</div><span class="ca-porte" data-porte hidden>🔒 Classe fermée</span><button class="ca-meteo" data-meteo hidden></button>' + (S.ia.assistant ? '<button class="ca-ia-puce" data-ia-puce title="L’IA Ardoise suit le cours">✨ IA</button>' : '') + '<button class="ca-quitter" data-quitter>Quitter</button></header>' +
       '<div class="ca-corps"><div class="ca-zone" data-zone><div class="ca-piece" data-piece>' + decorSvg() +
       '<div class="ca-tableau" data-tableau><video class="ca-video" playsinline muted></video><canvas class="ca-craie"></canvas><div class="ca-tableau-texte" data-texte-tableau></div>' +
       '<div class="ca-tableau-attente" data-attente><span>🧑‍🏫</span><strong>En attente du coach…</strong><small>La classe est ouverte : choisissez votre place.</small></div>' +
       '<button class="ca-agrandir" data-agrandir title="Agrandir le tableau">⤢</button><div class="ca-outils-craie" data-outils-craie></div></div>' +
-      '<div class="ca-minuteur" data-minuteur hidden></div><div class="ca-scene" data-scene></div><div class="ca-flottants" data-flottants></div></div><div class="ca-st" data-st hidden aria-live="polite"></div>' +
+      '<div class="ca-minuteur" data-minuteur hidden></div><div class="ca-scene" data-scene></div><div class="ca-flottants" data-flottants></div></div><div class="ca-st" data-st hidden aria-live="polite"></div><div class="ca-defi" data-defi hidden></div>' +
       '<div class="ca-bande" data-bande></div><div class="ca-vignettes" data-vignettes></div></div>' +
       '<aside class="ca-panneau" data-panneau><div class="ca-onglets"><button data-onglet="discussion">💬 Discussion<b data-non-lus hidden></b></button><button data-onglet="participants">👥 Classe</button><button data-onglet="sondage">📊 Sondage</button>' + (S.ia.assistant || S.ia.sous_titres ? '<button data-onglet="ia">✨ IA<b data-ia-non-lus hidden></b></button>' : '') + '<button class="ca-fermer-panneau" data-fermer-panneau aria-label="Fermer">✕</button></div><div class="ca-volet" data-volet></div></aside></div>' +
       '<footer class="ca-barre" data-barre></footer><div class="ca-moi" data-moi hidden><video playsinline muted autoplay></video><span>Vous · caméra activée</span></div>' +
@@ -314,6 +314,7 @@
           if (premierEtat) { premierEtat = false; voirVue(vueParDefaut(S.vue)); }
           S.chat = m.chat || [];
           if (m.ia) { S.ia = m.ia; IA_DISPO = m.ia; }
+          S.defi = m.defi || null;
           if (Array.isArray(m.transcription)) {
             var connus = {}; S.transcription.forEach(function (l) { connus[l.id] = true; });
             m.transcription.forEach(function (l) { if (!connus[l.id]) S.transcription.push(l); });
@@ -346,6 +347,12 @@
           break;
         case 'reaction': reaction(m.pid, m.e); break;
         case 'sous_titre': recevoirSousTitre(m.l); break;
+        case 'defi':
+          if (m.defi && (!S.defi || S.defi.id !== m.defi.id) && !jeSuisAnimateur()) { sonnerie('sondage'); racine._defiResultat = null; }
+          S.defi = m.defi;
+          if (m.fin && m.defi && !jeSuisAnimateur()) { var r0 = (m.defi.classement || [])[0]; if (r0 && r0.pid === MOI) { confettis(90); toast('🥇 Vous gagnez le défi !', 'succes'); } }
+          rendreDefi(); majMeteo();
+          break;
         case 'parleurs': S.parleurs = m.pids || []; rendreParleurs(); break;
         case 'parole':
           if (m.donner) { toast('🎙️ Le coach vous donne la parole.', 'succes', { bouton: 'Parler maintenant', action: function () { Media.basculerMicro(true); } }); Media.basculerMicro(true, { silencieux: true }); }
@@ -728,6 +735,7 @@
       return { x: r.left - z.left + r.width / 2, y: r.top - z.top };
     }
     function reaction(pid, e) {
+      noterSignal(e);
       var c = centreAvatar(pid); if (!c) return;
       var f = el('<div class="ca-reaction">' + esc(e) + '</div>');
       f.style.left = c.x + 'px'; f.style.top = c.y + 'px';
@@ -992,6 +1000,8 @@
         l('minuteur', '⏱', S.minuteur ? 'Arrêter le minuteur' : 'Minuteur d’exercice');
         l('enregistrer', '⏺', Media.enregistre() ? 'Arrêter l’enregistrement' : 'Enregistrer le cours');
         l('participants', '👥', 'La classe', 'Mains levées, parole, faire sortir');
+        l('defi', '🎤', 'Défi de prononciation', 'Chacun dit une phrase : score mot à mot, classement en direct');
+        l('pouls', '🌡️', 'Prendre le pouls', 'Compris · À moitié · Perdu — la météo de la classe se met à jour');
         if (IA_DISPO.assistant) l('ia', '✨', 'IA de la classe', 'Suggestions, résumé, question de quiz, bilan');
         l('verrou', S.verrouillee ? '🔓' : '🔒', S.verrouillee ? 'Rouvrir la classe' : 'Fermer la classe', S.verrouillee ? 'Les apprenants pourront de nouveau entrer' : 'Plus personne n’entre ; ceux qui sont là restent');
       } else {
@@ -1075,6 +1085,8 @@
         case 'ecran': Media.ecran(); break;
         case 'plus': menuPlus(); break;
         case 'cc': feuilleSousTitres(); break;
+        case 'defi': if (S.defi && S.defi.ouvert) toast('Un défi est déjà en cours : terminez-le d’abord.'); else feuilleDefi(); break;
+        case 'pouls': prendrePouls(); break;
         case 'ia': ouvrirPanneau(panneau === 'ia' && etroit() ? null : 'ia'); break;
         case 'sortir': demanderSortie(); break;
         case 'craie':
@@ -1129,6 +1141,7 @@
 
     function redessinerTout() {
       dessinerBancs();
+      if (typeof rendreDefi === 'function') { rendreDefi(); majMeteo(); }
       rendreScene(); rendreTableau(); rendreTexteTableau(); redessinerCraie(); rendreMinuteur(); rendreBarre(); rendreVolet();
     }
 
@@ -1229,7 +1242,7 @@
     var Voix = (function () {
       var rec = null, enMarche = false, dernierProvisoire = 0, refusee = false, signalee = false;
       function peutParler() { var m = moi(); return jeSuisAnimateur() || (m.micro && (S.micros_libres || m.parole)); }
-      function doit() { return !!(RECO && IA_DISPO.sous_titres && ST.voix && !refusee && !fermee && Media.micActif() && peutParler()); }
+      function doit() { return !!(RECO && IA_DISPO.sous_titres && ST.voix && !refusee && !fermee && !defiEcoute && Media.micActif() && peutParler()); }
       function envoyer(t, final) {
         t = String(t || '').trim(); if (!t) return;
         var l = { id: final ? 'moi-' + Date.now() : 'p-' + MOI, pid: MOI, nom: 'Vous', role: P.role, texte: t, final: final, recu: Date.now() };
@@ -1319,11 +1332,11 @@
         return null;
       });
     }
-    // Le coach : toutes les cinq minutes, si le cours a avancé, une suggestion.
+    // Le coach : toutes les dix minutes, si le cours a avancé, une suggestion.
     var veilleIA = setInterval(function () {
       if (fermee) { clearInterval(veilleIA); return; }
       if (!IA_DISPO.assistant || !IA.auto || !jeSuisAnimateur()) return;
-      if (Date.now() - IA.dernierAuto < 5 * 60000 || IA.lignesDepuis < 6) return;
+      if (Date.now() - IA.dernierAuto < 10 * 60000 || IA.lignesDepuis < 6) return;
       IA.dernierAuto = Date.now(); IA.lignesDepuis = 0;
       demanderIA('suggestions', '', { auto: true });
     }, 30000);
@@ -1349,9 +1362,9 @@
       if (!IA_DISPO.assistant) {
         html += '<p class="ca-vide">L’assistant n’est pas activé pour ce cours.</p>';
       } else if (anim) {
-        html += '<div class="ca-ia-boutons"><button data-ia="suggestions">💡 Que faire maintenant ?</button><button data-ia="resume">📝 Résumer</button><button data-ia="quiz">📊 Proposer un quiz</button><button data-ia="bilan">🏁 Bilan</button></div>' +
+        html += '<div class="ca-ia-boutons"><button data-ia="suggestions">💡 Que faire maintenant ?</button><button data-ia="resume">📝 Résumer</button><button data-ia="quiz">📊 Proposer un quiz</button><button data-ia="bilan">🏁 Bilan</button><button data-outil="defi">🎤 Défi de prononciation</button><button data-outil="pouls">🌡️ Prendre le pouls</button></div>' +
           '<form class="ca-ecrire ca-ia-form"><input name="q" maxlength="500" placeholder="Demandez à l’IA (ex. une activité de 5 min)…" autocomplete="off"><button aria-label="Demander">➤</button></form>' +
-          '<label class="ca-interrupteur"><input type="checkbox" data-ia-auto' + (IA.auto ? ' checked' : '') + '><span>Suggestions automatiques toutes les 5 min</span></label>' +
+          '<label class="ca-interrupteur"><input type="checkbox" data-ia-auto' + (IA.auto ? ' checked' : '') + '><span>Suggestions automatiques toutes les 10 min</span></label>' +
           '<p class="ca-aide">Les apprenants ont aussi leur IA : elle résume et explique, mais se tait pendant vos sondages et exercices, et ne donne jamais une réponse de quiz.</p>';
       } else if (pause) {
         html += '<div class="ca-ia-pause">🤫 ' + esc(pause) + '</div>';
@@ -1378,6 +1391,7 @@
     }
     function brancherVoletIA(v) {
       $$('[data-ia]', v).forEach(function (b) { b.addEventListener('click', function () { demanderIA(b.getAttribute('data-ia')); }); });
+      $$('[data-outil]', v).forEach(function (b) { b.addEventListener('click', function () { actionBarre(b.getAttribute('data-outil'), b); }); });
       var f = $('.ca-ia-form', v);
       if (f) f.addEventListener('submit', function (ev) {
         ev.preventDefault(); var q = f.elements.q.value.trim(); if (q.length < 3) return;
@@ -1419,6 +1433,181 @@
         IA.bilanFinal = c && c.texte;
         agir('terminer').catch(function (e) { toast(e.message, 'alerte'); });
       });
+    }
+
+    /* =================================================================
+       DÉFI DE PRONONCIATION — le coach donne une phrase, chacun la dit
+       -----------------------------------------------------------------
+       La voix est écoutée PAR LE NAVIGATEUR de l'apprenant (rien à payer,
+       rien d'enregistré) ; le score compare mot à mot ce qui a été
+       reconnu et la phrase attendue. Le coach voit les scores arriver en
+       direct, et les mots qui coincent pour toute la classe.
+       ================================================================= */
+    var defiEcoute = false;
+    function normaliserMots(t) {
+      return String(t || '').toLowerCase().replace(/[’']/g, "'").normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .replace(/[^a-z0-9'\s-]/g, ' ').split(/[\s-]+/).filter(Boolean);
+    }
+    function distance(a, b) {
+      if (a === b) return 0;
+      var m = a.length, n = b.length, d = [], i, j;
+      for (i = 0; i <= m; i += 1) { d[i] = [i]; }
+      for (j = 1; j <= n; j += 1) d[0][j] = j;
+      for (i = 1; i <= m; i += 1) for (j = 1; j <= n; j += 1) d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      return d[m][n];
+    }
+    function proches(a, b) { return a === b || (a.length >= 4 && distance(a, b) <= 1) || (a.length >= 7 && distance(a, b) <= 2); }
+    /** Alignement (plus longue sous-suite commune, tolérante) : quels mots attendus ont été dits. */
+    function noter(attendu, entendu) {
+      var T = normaliserMots(attendu), H = normaliserMots(entendu);
+      var L = [], i, j;
+      for (i = 0; i <= T.length; i += 1) { L[i] = []; for (j = 0; j <= H.length; j += 1) L[i][j] = 0; }
+      for (i = T.length - 1; i >= 0; i -= 1) for (j = H.length - 1; j >= 0; j -= 1) L[i][j] = proches(T[i], H[j]) ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
+      var ok = T.map(function () { return false; });
+      i = 0; j = 0;
+      while (i < T.length && j < H.length) { if (proches(T[i], H[j])) { ok[i] = true; i += 1; j += 1; } else if (L[i + 1][j] >= L[i][j + 1]) i += 1; else j += 1; }
+      var bons = ok.filter(Boolean).length;
+      // Des mots en trop (hésitations) coûtent un peu, jamais tout.
+      var trop = Math.max(0, H.length - T.length);
+      var score = T.length ? Math.max(0, Math.round(100 * bons / T.length - trop * 3)) : 0;
+      return { score: score, mots: T, ok: ok, entendu: H.join(' '), manques: T.filter(function (_, k) { return !ok[k]; }) };
+    }
+
+    function rendreDefi() {
+      var z = $('[data-defi]', racine); if (!z) return;
+      var d = S.defi;
+      if (!d) { z.hidden = true; z.innerHTML = ''; return; }
+      z.hidden = false;
+      var anim = jeSuisAnimateur();
+      var html = '<div class="ca-defi-tete"><span>🎤 Défi de prononciation</span>' + (anim ? '<button class="ca-defi-x" data-defi-effacer aria-label="Fermer">✕</button>' : (!d.ouvert ? '<button class="ca-defi-x" data-defi-masquer aria-label="Fermer">✕</button>' : '')) + '</div>' +
+        '<p class="ca-defi-phrase" lang="' + esc(String(d.langue || '').slice(0, 2)) + '">' + esc(d.phrase) + '</p>';
+      if (anim) {
+        html += '<div class="ca-defi-stats"><b>' + (d.participants || 0) + '</b> essai' + ((d.participants || 0) > 1 ? 's' : '') + (d.moyenne !== null && d.moyenne !== undefined ? ' · moyenne <b>' + d.moyenne + ' %</b>' : '') + '</div>' +
+          (d.classement && d.classement.length ? '<ol class="ca-defi-classement">' + d.classement.slice(0, 6).map(function (x, i) { return '<li><span>' + (['🥇', '🥈', '🥉'][i] || (i + 1) + '.') + ' ' + esc(x.nom) + '</span><b class="' + (x.score >= 80 ? 'bon' : x.score >= 50 ? 'moyen' : 'faible') + '">' + x.score + ' %</b></li>'; }).join('') + '</ol>' : '<p class="ca-aide">Les scores arrivent ici dès que les apprenants parlent.</p>') +
+          (d.mots_difficiles && d.mots_difficiles.length ? '<div class="ca-defi-durs"><small>Les mots qui coincent :</small>' + d.mots_difficiles.map(function (m) { return '<span>' + esc(m.mot) + ' <i>' + m.n + '</i></span>'; }).join('') + '</div>' : '') +
+          (d.ouvert ? '<button class="ca-principal" data-defi-fermer>Terminer le défi et montrer le classement</button>' : '<button data-defi-nouveau>Nouveau défi</button>');
+      } else if (d.ouvert) {
+        var r = racine._defiResultat && racine._defiResultat.id === d.id ? racine._defiResultat : null;
+        if (r) html += '<p class="ca-defi-mots">' + r.mots.map(function (m, i) { return '<span class="' + (r.ok[i] ? 'ok' : 'ko') + '">' + esc(m) + '</span>'; }).join(' ') + '</p>' +
+          '<div class="ca-defi-score ' + (r.score >= 80 ? 'bon' : r.score >= 50 ? 'moyen' : 'faible') + '"><b>' + r.score + ' %</b><small>' + (r.score >= 90 ? 'Parfait ! 🎉' : r.score >= 70 ? 'Très bien !' : r.score >= 50 ? 'Pas mal, encore un essai ?' : 'Écoutez le coach et réessayez.') + '</small></div>' +
+          (r.entendu ? '<p class="ca-aide">Entendu : « ' + esc(r.entendu) + ' »</p>' : '');
+        var restants = 5 - (d.mes_essais || 0);
+        html += RECO ? (restants > 0 ? '<button class="ca-principal ca-defi-micro' + (defiEcoute ? ' ecoute' : '') + '" data-defi-parler>' + (defiEcoute ? '👂 Je vous écoute… parlez' : r ? '🎙️ Réessayer (' + restants + ')' : '🎙️ Je me lance') + '</button>' : '<p class="ca-aide">Vos cinq essais sont faits : meilleur score ' + (d.mon_score || 0) + ' %.</p>')
+          : '<p class="ca-aide">Ce navigateur ne sait pas écouter la voix : ouvrez la classe dans Chrome (téléphone ou ordinateur) pour participer.</p>';
+      } else {
+        var rang = (d.classement || []).findIndex(function (x) { return x.pid === MOI; });
+        html += '<div class="ca-defi-podium">' + (d.classement || []).slice(0, 3).map(function (x, i) { return '<div class="p' + (i + 1) + '"><span>' + ['🥇', '🥈', '🥉'][i] + '</span><strong>' + esc(x.nom) + '</strong><b>' + x.score + ' %</b></div>'; }).join('') + '</div>' +
+          (rang >= 0 ? '<p class="ca-aide">Vous : ' + d.classement[rang].score + ' % · ' + (rang + 1) + '<sup>e</sup> sur ' + d.classement.length + '</p>' : '') +
+          (d.mots_difficiles && d.mots_difficiles.length ? '<div class="ca-defi-durs"><small>À travailler :</small>' + d.mots_difficiles.map(function (m) { return '<span>' + esc(m.mot) + '</span>'; }).join('') + '</div>' : '');
+      }
+      z.innerHTML = html;
+      var b;
+      if ((b = $('[data-defi-parler]', z))) b.addEventListener('click', ecouterDefi);
+      if ((b = $('[data-defi-fermer]', z))) b.addEventListener('click', function () { agirSilencieux('defi_fermer'); });
+      if ((b = $('[data-defi-nouveau]', z))) b.addEventListener('click', feuilleDefi);
+      if ((b = $('[data-defi-effacer]', z))) b.addEventListener('click', function () { agirSilencieux('defi_effacer'); });
+      if ((b = $('[data-defi-masquer]', z))) b.addEventListener('click', function () { S.defi = null; rendreDefi(); });
+    }
+
+    function ecouterDefi() {
+      var d = S.defi; if (!d || !d.ouvert || defiEcoute || !RECO) return;
+      defiEcoute = true; Voix.arreter(); rendreDefi();
+      var rec = new RECO(), meilleur = null, fini = false;
+      rec.lang = d.langue || ST.parlee; rec.continuous = false; rec.interimResults = false; rec.maxAlternatives = 4;
+      rec.onresult = function (ev) {
+        var res = ev.results[ev.results.length - 1];
+        for (var k = 0; k < res.length; k += 1) { var n = noter(d.phrase, res[k].transcript); if (!meilleur || n.score > meilleur.score) meilleur = n; }
+      };
+      function terminer(erreur) {
+        if (fini) return; fini = true; defiEcoute = false;
+        if (erreur === 'not-allowed' || erreur === 'service-not-allowed') { toast('Autorisez le micro pour participer au défi.', 'alerte'); rendreDefi(); return; }
+        if (!meilleur) { toast('Je n’ai rien entendu : touchez le bouton puis dites la phrase.', ''); rendreDefi(); return; }
+        meilleur.id = d.id; racine._defiResultat = meilleur;
+        if (meilleur.score >= 90) confettis(40);
+        agir('defi_score', { id: d.id, score: meilleur.score, manques: meilleur.manques }).catch(function (e) { toast(e.message, 'alerte'); });
+        rendreDefi();
+      }
+      rec.onerror = function (e) { terminer(e.error); };
+      rec.onend = function () { terminer(); };
+      try { rec.start(); } catch (x) { terminer('start'); }
+      setTimeout(function () { try { rec.stop(); } catch (x) { /* rien */ } }, 12000);
+    }
+
+    function feuilleDefi() {
+      var f = el('<div class="ca-voile ca-feuille-voile"><div class="ca-feuille ca-feuille-st" role="dialog" aria-label="Défi de prononciation"><div class="ca-feuille-poignee"></div>' +
+        '<h3>🎤 Défi de prononciation</h3><p class="ca-aide">Écrivez une phrase : chaque apprenant la dit dans son micro, son téléphone lui donne un score mot à mot, et vous voyez les résultats arriver.</p>' +
+        '<label class="ca-champ">Phrase à prononcer<input data-defi-phrase maxlength="160" placeholder="ex. I would consider a lower price"></label>' +
+        '<label class="ca-champ">Langue<select data-defi-langue>' + LANGUES_PAROLE.map(function (l) { return '<option value="' + l[0] + '"' + (l[0] === ST.parlee ? ' selected' : '') + '>' + esc(l[1]) + '</option>'; }).join('') + '</select></label>' +
+        '<button class="ca-principal" data-defi-lancer>Lancer le défi</button><button class="ca-feuille-fermer" data-fermer>Annuler</button></div></div>');
+      racine.appendChild(f);
+      function fermer() { f.remove(); }
+      f.addEventListener('click', function (ev) { if (ev.target === f) fermer(); });
+      $('[data-fermer]', f).addEventListener('click', fermer);
+      var champ = $('[data-defi-phrase]', f);
+      var dernier = (S.transcription || []).filter(function (l) { return l.pid === MOI || l.role === 'animateur'; }).slice(-1)[0];
+      if (dernier && dernier.texte.split(' ').length <= 14) champ.placeholder = dernier.texte;
+      setTimeout(function () { champ.focus(); }, 50);
+      $('[data-defi-lancer]', f).addEventListener('click', function () {
+        var phrase = champ.value.trim() || (dernier && champ.placeholder === dernier.texte ? dernier.texte : '');
+        if (!phrase) { toast('Écrivez la phrase à prononcer.'); return; }
+        agir('defi_ouvrir', { phrase: phrase, langue: $('[data-defi-langue]', f).value }).then(function () { fermer(); toast('🎤 Défi lancé : les apprenants le voient à l’écran.', 'succes'); }).catch(function (e) { toast(e.message, 'alerte'); });
+      });
+      glisserPourFermer($('.ca-feuille', f), fermer);
+    }
+
+    /* =================================================================
+       LA MÉTÉO DE LA CLASSE — pour le coach, en un coup d'œil
+       Les « Pas compris », les 👍, le dernier sondage, le dernier défi :
+       ☀️ ça passe, ⛅ à surveiller, 🌧️ il faut reprendre.
+       ================================================================= */
+    var signaux = [];
+    function noterSignal(e) { signaux.push({ e: e, at: Date.now() }); if (signaux.length > 300) signaux.shift(); }
+    var POULS = 'Où en êtes-vous ?';
+    function meteo() {
+      var t = Date.now(), fenetre = signaux.filter(function (x) { return t - x.at < 5 * 60000; });
+      var plus = fenetre.filter(function (x) { return ['👍', '✅', '👏', '🎉', '❤️'].indexOf(x.e) >= 0; }).length;
+      var moins = fenetre.filter(function (x) { return x.e === '❓'; }).length;
+      var score = Math.max(5, Math.min(100, 78 + plus * 4 - moins * 12)), raisons = [];
+      if (plus || moins) raisons.push(plus + ' 👍 · ' + moins + ' ❓ en 5 min');
+      var q = S.sondage;
+      if (q && q.revele && q.compte && q.total) {
+        var pc = null;
+        if (q.question === POULS) pc = Math.round(100 * ((q.compte[0] || 0) + 0.5 * (q.compte[1] || 0)) / q.total);
+        else if (q.bonne !== null && q.bonne !== undefined) pc = Math.round(100 * (q.compte[q.bonne] || 0) / q.total);
+        if (pc !== null) { score = Math.round((score + pc * 2) / 3); raisons.push('sondage : ' + pc + ' %'); }
+      }
+      if (S.defi && S.defi.moyenne !== null && S.defi.moyenne !== undefined) { score = Math.round((score * 2 + S.defi.moyenne) / 3); raisons.push('défi : ' + S.defi.moyenne + ' %'); }
+      return { score: score, icone: score >= 75 ? '☀️' : score >= 50 ? '⛅' : '🌧️', raisons: raisons };
+    }
+    function majMeteo() {
+      var z = $('[data-meteo]', racine); if (!z) return;
+      if (!jeSuisAnimateur()) { z.hidden = true; return; }
+      var m = meteo();
+      z.hidden = false;
+      z.className = 'ca-meteo ' + (m.score >= 75 ? 'beau' : m.score >= 50 ? 'moyen' : 'pluie');
+      z.innerHTML = '<span>' + m.icone + '</span><b>' + m.score + ' %</b>';
+      z.title = 'Compréhension estimée de la classe' + (m.raisons.length ? ' — ' + m.raisons.join(' · ') : '') + '. Touchez pour prendre le pouls.';
+    }
+    var veilleMeteo = setInterval(function () { if (fermee) { clearInterval(veilleMeteo); return; } majMeteo(); }, 4000);
+    function prendrePouls() {
+      if (S.sondage && S.sondage.ouvert) { toast('Un sondage est déjà ouvert.'); return; }
+      agir('sondage_ouvrir', { question: POULS, choix: ['😃 J’ai compris', '🤔 À moitié', '😵 Je suis perdu'] })
+        .then(function () { toast('🌡️ Pouls lancé : révélez quand tout le monde a répondu.', 'succes'); ouvrirPanneau('sondage'); }).catch(function (e) { toast(e.message, 'alerte'); });
+    }
+
+    /* Confettis : pour un 100 % au défi et le podium de fin. */
+    function confettis(n) {
+      var couleurs = ['#ffd479', '#7ee0a8', '#9cc4ff', '#ff9a8b', '#d7a6ff', '#ffffff'];
+      var c = el('<div class="ca-confettis" aria-hidden="true"></div>');
+      for (var i = 0; i < (n || 80); i += 1) {
+        var p = document.createElement('i');
+        p.style.left = Math.random() * 100 + '%'; p.style.background = couleurs[i % couleurs.length];
+        p.style.animationDelay = (Math.random() * 0.6) + 's'; p.style.animationDuration = (2.2 + Math.random() * 1.6) + 's';
+        p.style.transform = 'rotate(' + Math.round(Math.random() * 360) + 'deg)';
+        c.appendChild(p);
+      }
+      racine.appendChild(c);
+      setTimeout(function () { c.remove(); }, 4500);
     }
 
     /* =================================================================
@@ -2068,10 +2257,13 @@
       if (racine._veille) racine._veille.release().catch(function () {});
       var m = el('<div class="ca-voile"><div class="ca-carte-fin"><div class="ca-fin-icone">' + (message ? '🔒' : '🎓') + '</div><h2>' + esc(message ? 'Classe fermée' : 'Le cours est terminé') + '</h2><p>' + esc(message || 'Merci à tous ! Votre participation est enregistrée.') + '</p>' +
         (bilan ? '<div class="ca-bilan"><div><strong>' + esc(bilan.duree_minutes) + ' min</strong><span>de cours</span></div><div><strong>' + esc(bilan.pic) + '</strong><span>connectés au plus</span></div><div><strong>' + esc((bilan.sondages || []).length) + '</strong><span>sondage' + ((bilan.sondages || []).length > 1 ? 's' : '') + '</span></div></div>' : '') +
+        (bilan && bilan.podium && bilan.podium.length ? '<div class="ca-podium">' + [1, 0, 2].map(function (i) { var x = bilan.podium[i]; return x ? '<div class="marche m' + (i + 1) + '"><span class="ca-podium-av">' + avatarSvg(x.avatar) + '</span><strong>' + esc(x.nom) + '</strong><small>' + esc(x.points) + ' pts</small><i>' + ['🥇', '🥈', '🥉'][i] + '</i></div>' : ''; }).join('') + '</div>' +
+          (bilan.mes_points !== null && bilan.mes_points !== undefined ? '<p class="ca-mes-points">Vous : <b>' + esc(bilan.mes_points) + ' points</b> · ' + esc(bilan.mon_rang) + '<sup>e</sup> sur ' + esc(bilan.classes) + '</p>' : '') : '') +
         (IA.bilanFinal ? '<div class="ca-bilan-ia"><strong>✨ Bilan de l’IA</strong><div>' + esc(IA.bilanFinal).replace(/\n/g, '<br>') + '</div><button data-copier-bilan>Copier le bilan</button></div>' : '') +
         '<button class="ca-principal" data-sortir>Retour</button></div></div>');
       racine.appendChild(m);
       Voix.arreter();
+      if (bilan && bilan.podium && bilan.podium.length) confettis(110);
       var cb = $('[data-copier-bilan]', m);
       if (cb) cb.addEventListener('click', function () { (navigator.clipboard ? navigator.clipboard.writeText(IA.bilanFinal) : Promise.reject()).then(function () { toast('Bilan copié.'); }, function () { toast('Copie impossible.'); }); });
       $('[data-sortir]', m).addEventListener('click', quitter);
@@ -2087,6 +2279,10 @@
       if (typeof opts.quitter === 'function') opts.quitter();
     }
     $('[data-quitter]', racine).addEventListener('click', demanderSortie);
+    $('[data-meteo]', racine).addEventListener('click', function () {
+      var m = meteo();
+      toast(m.icone + ' Compréhension estimée : ' + m.score + ' %' + (m.raisons.length ? ' (' + m.raisons.join(' · ') + ')' : ' — pas encore de signal'), '', { bouton: 'Prendre le pouls', action: prendrePouls });
+    });
     var puceIA = $('[data-ia-puce]', racine); if (puceIA) puceIA.addEventListener('click', function () { ouvrirPanneau('ia'); });
     // La touche Retour du téléphone ne fait pas disparaître la classe en
     // laissant le micro ouvert : elle pose la question « Quitter ? ».

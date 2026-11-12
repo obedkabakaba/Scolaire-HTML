@@ -503,3 +503,10 @@ html:not(.ard-mob-coque) .cf-deconnexion:hover { color: var(--cf-nav-fort); }
   .cf-disc-tete [data-retour-liste] { display: inline-flex; }
   .cf-disc-msg .pied button { opacity: 1; }
 }
+
+/* Alerte en direct : nouvelle demande du site, nouveau message d'apprenant */
+.cf-alerte-direct { position: fixed; z-index: 9500; right: 18px; bottom: 18px; max-width: min(440px, calc(100vw - 36px)); display: flex; align-items: center; gap: 10px; padding: 12px 12px 12px 16px; border-radius: 14px; background: #0E1C33; color: #fff; box-shadow: 0 18px 40px rgba(0,0,0,.3); animation: cf-alerte-entre .35s ease-out; font-size: .92rem; }
+.cf-alerte-direct span { flex: 1; }
+.cf-alerte-direct button { border: 0; background: rgba(255,255,255,.12); color: #fff; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; }
+@keyframes cf-alerte-entre { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@media (max-width: 780px) { .cf-alerte-direct { left: 12px; right: 12px; bottom: calc(76px + env(safe-area-inset-bottom)); } }

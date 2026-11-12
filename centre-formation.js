@@ -316,6 +316,7 @@
   function pastilleNav(route) {
     var c = etat.ctx.compteurs || {};
     if (route === 'demandes' && c.demandes_nouvelles) return '<span class="pastille nav-badge">' + c.demandes_nouvelles + '</span>';
+    if (route === 'discussions' && c.discussions_non_lues) return '<span class="pastille nav-badge" title="Messages non lus">' + c.discussions_non_lues + '</span>';
     if (route === 'calendrier' && c.rappels_a_envoyer && unDe('directeur', 'prefet', 'secretaire')) return '<span class="pastille nav-badge" title="Rappels WhatsApp à envoyer">' + c.rappels_a_envoyer + '</span>';
     return '';
   }
@@ -868,6 +869,7 @@
     var w = lienWhatsApp(r.telephone, texte);
     modale('Accès de ' + nomComplet(r), '<p>Remettez ces identifiants à l’apprenant. Il y retrouve son planning, ses leçons en ligne, ses résultats, ses paiements et ses certificats.</p>' +
       '<p>Adresse : <span class="cf-code">' + e(adresse) + '</span></p><p>Matricule : <span class="cf-code">' + e(r.matricule) + '</span> &nbsp; Code d’accès : <span class="cf-code">' + e(r.code_acces) + '</span></p>' +
+      (r.acces_envoyes ? '<div class="cf-encadre">✉️ Ces accès viennent de partir par e-mail à <strong>' + e(r.email) + '</strong>, avec le lien de l’espace apprenant.</div>' : (r.email ? '' : '<p class="doux">Pas d’adresse e-mail sur la fiche : envoyez-les par WhatsApp.</p>')) +
       (etat.ctx.centre.site_publie ? '' : '<div class="cf-encadre">Le site du centre n’est pas encore publié : l’espace apprenant s’ouvrira dès sa publication (rubrique Site du centre).</div>'),
       { pied: (w ? '<a class="cf-btn principal" target="_blank" rel="noopener" href="' + e(w) + '">Envoyer par WhatsApp</a>' : '') + '<button class="cf-btn" data-copier>Copier le message</button><button class="cf-btn" data-fermer>Fermer</button>' })
       .el.querySelector('[data-copier]').addEventListener('click', function () { navigator.clipboard.writeText(texte).then(function () { toast('Message copié.'); }); });
@@ -3076,6 +3078,33 @@
   /*  Démarrage                                                           */
   /* ------------------------------------------------------------------ */
   brancherDeconnexion();
+  /* Les compteurs du menu sont relus chaque minute (page visible) : une
+     préinscription ou un message d'apprenant qui arrive pendant qu'on
+     travaille se voit tout de suite, avec une alerte qui y mène. */
+  function veillerCompteurs() {
+    setInterval(function () {
+      if (document.hidden) return;
+      api('/compteurs').then(function (c) {
+        var avant = etat.ctx.compteurs || {};
+        var nouvellesDemandes = (c.demandes_nouvelles || 0) - (avant.demandes_nouvelles || 0);
+        var nouveauxMessages = (c.discussions_non_lues || 0) - (avant.discussions_non_lues || 0);
+        etat.ctx.compteurs = Object.assign({}, avant, c);
+        if (nouvellesDemandes > 0 || nouveauxMessages > 0 || c.rappels_a_envoyer !== avant.rappels_a_envoyer) dessinerRail();
+        if (nouvellesDemandes > 0 && unDe('directeur', 'prefet', 'secretaire')) alerteNav('📥 ' + (nouvellesDemandes > 1 ? nouvellesDemandes + ' nouvelles demandes' : 'Nouvelle demande') + ' arrivée(s) par votre site.', '#/demandes', 'Voir');
+        else if (nouveauxMessages > 0 && !/^#\/discussions/.test(window.location.hash)) alerteNav('💬 ' + (nouveauxMessages > 1 ? nouveauxMessages + ' nouveaux messages' : 'Nouveau message') + ' d’apprenant.', '#/discussions', 'Lire');
+      }).catch(function () { /* hors ligne : on réessaiera */ });
+    }, 60000);
+  }
+  function alerteNav(texte, lien, bouton) {
+    var t = document.createElement('div');
+    t.className = 'cf-alerte-direct';
+    t.innerHTML = '<span>' + e(texte) + '</span><a class="cf-btn petit principal" href="' + e(lien) + '">' + e(bouton) + '</a><button type="button" aria-label="Fermer">×</button>';
+    document.body.appendChild(t);
+    t.querySelector('a').addEventListener('click', function () { t.remove(); });
+    t.querySelector('button').addEventListener('click', function () { t.remove(); });
+    setTimeout(function () { if (t.parentNode) t.remove(); }, 20000);
+  }
+
   api('/contexte').then(function (ctx) {
     etat.ctx = ctx;
     etat.roles = ctx.moi.roles || [];
@@ -3089,6 +3118,7 @@
     window.addEventListener('hashchange', naviguer);
     naviguer();
     chargerCoque();
+    veillerCompteurs();
   }).catch(function (err) {
     var el = $('#cf-chargement-initial');
     if (err.code === 'pas_un_centre') {
